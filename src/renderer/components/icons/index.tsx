@@ -15,10 +15,13 @@ import {
   BrainIcon,
   Bug01Icon,
   Calendar01Icon,
+  CalendarClockIcon,
   Camera01Icon,
   CancelCircleIcon,
+  CanvasIcon,
   CaseSensitiveIcon,
   Chat01Icon,
+  ChatEdit01Icon,
   CheckIcon,
   CheckmarkCircle02Icon,
   ChevronDownIcon as ChevronDownIconData,
@@ -39,6 +42,7 @@ import {
   Clock01Icon,
   CodeIcon,
   Comment01Icon,
+  ComputerTerminal01Icon,
   CopyIcon,
   CopyXIcon,
   CpuIcon,
@@ -46,6 +50,7 @@ import {
   Delete01Icon,
   DotIcon,
   Download01Icon,
+  Edit01Icon,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
@@ -58,16 +63,16 @@ import {
   Files01Icon,
   FileTextIcon as FileTextIconData,
   Folder01Icon,
+  Folder02Icon,
   FolderEditIcon,
   FolderGit2Icon,
   FolderInputIcon,
   FolderKanbanIcon,
   FolderOpenIcon,
   FolderPlusIcon,
-  FolderTreeIcon,
   GitBranchIcon,
   GitCommitHorizontalIcon,
-  GithubIcon,
+  Github01Icon,
   GitMergeIcon,
   GitPullRequestClosedIcon,
   GitPullRequestDraftIcon,
@@ -112,8 +117,6 @@ import {
   PanelLeftOpenIcon,
   PanelRightIcon,
   PaperclipIcon as PaperclipIconData,
-  PencilEdit01Icon,
-  PencilIcon,
   PenTool01Icon,
   PinIcon,
   PlusIcon,
@@ -128,6 +131,7 @@ import {
   SaveIcon,
   ScissorsIcon,
   Search01Icon,
+  SearchList01Icon,
   ServerIcon,
   Settings01Icon,
   ShieldAlertIcon,
@@ -139,7 +143,6 @@ import {
   SquareTerminalIcon,
   StarIcon,
   Tag01Icon,
-  TerminalIcon,
   TriangleAlertIcon,
   TypeIcon,
   Undo02Icon,
@@ -150,7 +153,6 @@ import {
   WholeWordIcon,
   Wifi01Icon,
   WifiOff01Icon,
-  WorkflowSquare03Icon,
   Wrench01Icon,
   XIcon as XIconData,
   ZapIcon,
@@ -266,7 +268,7 @@ export const CopyX = hugeIcon('CopyX', CopyXIcon)
 export const Cpu = hugeIcon('Cpu', CpuIcon)
 export const Dot = hugeIcon('Dot', DotIcon)
 export const ExternalLink = hugeIcon('ExternalLink', ExternalLinkIcon)
-export const Edit2 = hugeIcon('Edit2', PencilEdit01Icon)
+export const Edit = hugeIcon('Edit', Edit01Icon)
 export const EyeOff = hugeIcon('EyeOff', EyeOffIcon)
 export const File = hugeIcon('File', File02Icon)
 export const FileCode = hugeIcon('FileCode', FileCodeIcon)
@@ -286,7 +288,6 @@ export const FolderInput = hugeIcon('FolderInput', FolderInputIcon)
 export const FolderKanban = hugeIcon('FolderKanban', FolderKanbanIcon)
 export const FolderOpen = hugeIcon('FolderOpen', FolderOpenIcon)
 export const FolderPlus = hugeIcon('FolderPlus', FolderPlusIcon)
-export const FolderTree = hugeIcon('FolderTree', FolderTreeIcon)
 export const GitBranch = hugeIcon('GitBranch', GitBranchIcon)
 export const GitCommit = hugeIcon('GitCommit', GitCommitHorizontalIcon)
 export const GitMerge = hugeIcon('GitMerge', GitMergeIcon)
@@ -322,7 +323,6 @@ export const PanelLeftExpand = hugeIcon('PanelLeftExpand', PanelLeftCloseIcon)
 export const PanelRight = hugeIcon('PanelRight', PanelRightIcon)
 export const Paperclip = hugeIcon('Paperclip', PaperclipIconData)
 export const PenTool = hugeIcon('PenTool', PenTool01Icon)
-export const Pencil = hugeIcon('Pencil', PencilIcon)
 export const Pin = hugeIcon('Pin', PinIcon)
 export const RefreshCcw = hugeIcon('RefreshCcw', RefreshCcwIcon)
 export const RefreshCw = hugeIcon('RefreshCw', RefreshCwIcon)
@@ -339,7 +339,7 @@ export const Star = hugeIcon('Star', StarIcon)
 export const Shuffle = hugeIcon('Shuffle', ShuffleIcon)
 export const Skull = hugeIcon('Skull', SkullIcon)
 export const Sparkles = hugeIcon('Sparkles', SparklesIcon)
-export const Terminal = hugeIcon('Terminal', TerminalIcon)
+export const Terminal = hugeIcon('Terminal', ComputerTerminal01Icon)
 export const TerminalSquare = hugeIcon('TerminalSquare', SquareTerminalIcon)
 export const Tag = hugeIcon('Tag', Tag01Icon)
 export const Type = hugeIcon('Type', TypeIcon)
@@ -350,7 +350,6 @@ export const WifiOff = hugeIcon('WifiOff', WifiOff01Icon)
 export const Wrench = hugeIcon('Wrench', Wrench01Icon)
 export const XCircle = hugeIcon('XCircle', CancelCircleIcon)
 export const Zap = hugeIcon('Zap', ZapIcon)
-export const Workflow = hugeIcon('Workflow', WorkflowSquare03Icon)
 
 // The stop button fills this square, so this glyph stays in the app.
 export const Square = forwardRef<SVGSVGElement, TermulIconProps>(function Square(
@@ -397,7 +396,14 @@ export const CircleCheck = hugeIcon('CircleCheck', CircleCheckIcon)
 export const CircleDashed = hugeIcon('CircleDashed', CircleDashedIcon)
 export const CircleMinus = hugeIcon('CircleMinus', CircleMinusIcon)
 export const Comment = hugeIcon('Comment', Comment01Icon)
-export const Github = hugeIcon('Github', GithubIcon)
+export const Github = hugeIcon('Github', Github01Icon)
 export const GitPullRequest = hugeIcon('GitPullRequest', GitPullRequestIcon)
 export const GitPullRequestClosed = hugeIcon('GitPullRequestClosed', GitPullRequestClosedIcon)
 export const GitPullRequestDraft = hugeIcon('GitPullRequestDraft', GitPullRequestDraftIcon)
+
+// V2 glyphs (Paper "Sidebar" and "Tool strip" frames).
+export const ChatEdit = hugeIcon('ChatEdit', ChatEdit01Icon)
+export const SearchList = hugeIcon('SearchList', SearchList01Icon)
+export const Canvas = hugeIcon('Canvas', CanvasIcon)
+export const CalendarClock = hugeIcon('CalendarClock', CalendarClockIcon)
+export const Folder2 = hugeIcon('Folder2', Folder02Icon)

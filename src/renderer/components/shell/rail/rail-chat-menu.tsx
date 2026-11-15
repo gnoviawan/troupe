@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ReloadChatMenuItem } from '@/components/chat/ReloadChatMenuItem'
-import { Columns2, Copy, FolderOpen, Hash, Pencil, Terminal, Trash2 } from '@/components/icons'
+import { Columns2, Copy, Edit, FolderOpen, Hash, Terminal, Trash2 } from '@/components/icons'
 import type { ProjectChatEntry } from '@/components/sidebar/project-chat-row'
 import {
   ContextMenu,
@@ -78,7 +78,7 @@ export function RailChatMenu({
         <ContextMenuSeparator />
         {onRename && (
           <ContextMenuItem onSelect={() => onRename(entry)}>
-            <Pencil className={ICON} /> Rename
+            <Edit className={ICON} /> Rename
           </ContextMenuItem>
         )}
         <ContextMenuItem variant="destructive" onSelect={() => onRequestDelete(entry)}>
