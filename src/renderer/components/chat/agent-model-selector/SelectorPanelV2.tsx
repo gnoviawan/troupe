@@ -10,11 +10,13 @@ import {
   useState
 } from 'react'
 import { toast } from 'sonner'
-import { Check, MoreHorizontal, Search, Star } from '@/components/icons'
+import { MoreHorizontal, Search, Star } from '@/components/icons'
+import { Button } from '@/components/ui/button'
 import { BAND_FOCUS_CLASS, INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
+import { flattenConfigOptionValues } from '../chat-input-bar-config'
 import {
   type FavoriteKey,
   type FavoritesStore,
@@ -67,7 +69,6 @@ import {
   splitContextOption
 } from './selector-model'
 import {
-  PICKER_ICON,
   PICKER_LABEL,
   PICKER_ROW_NAME_PULL,
   PICKER_ROW_SELECTED,
@@ -176,8 +177,8 @@ function DenseModelRow({
   })
   const editable = Boolean(edit && edit.length > 0)
   // Edit showing the level marks the selected row (its list row and its
-  // Favorites copy alike); it replaces the check there. A selected row with no
-  // level on Edit keeps it.
+  // Favorites copy alike); it replaces the check slot there. A selected row
+  // with no level on Edit keeps the empty slot.
   const level = editable && edit !== undefined ? thinkingLabel(edit) : undefined
   const levelOnEdit = level !== undefined
   // A pick moves Edit: in on the picked row, out (inert) on the old one.
@@ -237,7 +238,7 @@ function DenseModelRow({
           (editable || favorite || exiting) && 'min-w-0 flex-1 hover:bg-transparent',
           flush && 'pr-0',
           fillOn('row') && PICKER_ROW_SELECTED_BOX,
-          highlightOn('row') && 'bg-row-hover'
+          highlightOn('row') && 'bg-foreground/[0.06]'
         )}
       >
         <span
@@ -250,7 +251,7 @@ function DenseModelRow({
         <span
           data-row-name=""
           aria-hidden="true"
-          className={cn(PICKER_ROW_NAME_PULL, 'min-w-0 flex-1 truncate')}
+          className={cn(PICKER_ROW_NAME_PULL, 'fade-end min-w-0 flex-1')}
         >
           {name}
         </span>
@@ -259,13 +260,10 @@ function DenseModelRow({
         {favorite ? (
           <span aria-hidden="true" className={cn('shrink-0', touch ? 'w-11' : 'w-5')} />
         ) : null}
+        {/* The check's 14px slot stays so the star keeps its place, but it
+            shows no tick: the selected fill marks the picked model. */}
         {levelOnEdit ? null : (
-          <Check
-            size={PICKER_ICON.check}
-            data-row-check=""
-            aria-hidden="true"
-            className={cn('shrink-0', selected ? 'opacity-100' : 'opacity-0')}
-          />
+          <span data-row-check="" aria-hidden="true" className="size-3.5 shrink-0" />
         )}
       </button>
     )
@@ -303,9 +301,9 @@ function DenseModelRow({
         className={cn(
           'group/fav relative flex min-w-0 flex-1 rounded-md',
           // An editable row's hover already belongs to the row around Edit.
-          !editable && 'transition-colors duration-150 ease-out hover:bg-row-hover',
+          !editable && 'transition-colors duration-150 ease-out hover:bg-foreground/[0.06]',
           fillOn('favorite') && PICKER_ROW_SELECTED_BOX,
-          highlightOn('favorite') && 'bg-row-hover'
+          highlightOn('favorite') && 'bg-foreground/[0.06]'
         )}
       >
         {withTip}
@@ -332,7 +330,7 @@ function DenseModelRow({
               ? cn(
                   EDIT_ROW_BOX,
                   fillOn('exiting') && PICKER_ROW_SELECTED_BOX,
-                  highlightOn('exiting') && 'bg-row-hover'
+                  highlightOn('exiting') && 'bg-foreground/[0.06]'
                 )
               : 'contents'
           }
@@ -502,7 +500,7 @@ function AgentTabStrip({
               AGENT_TRACK_CLASS.railPadding,
               touch ? 'w-14' : 'w-10'
             )
-          : cn('border-b border-border', touch ? 'px-3' : 'px-1')
+          : cn('border-b-[0.5px] border-border', touch ? 'px-3' : 'px-1')
       )}
     >
       {items.map((item, index) => (
@@ -626,7 +624,10 @@ function SessionOptions({
       onKeyDown={(event) => {
         moveFocus(event, ref.current, '[data-option-row]')
       }}
-      className={cn('flex min-w-0 flex-col border-t border-border', touch ? 'px-3 py-1.5' : 'p-1')}
+      className={cn(
+        'flex min-w-0 flex-col border-t-[0.5px] border-border',
+        touch ? 'px-3 py-1.5' : 'p-1'
+      )}
     >
       {sections.map((section) =>
         section.kind === 'toggle' ? (
@@ -691,12 +692,19 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
   const { context, rest } = splitContextOption(props.genericOptions)
   const edit = editSections(props, context, isRejected, trySet)
   // The Edit flyout hangs off the active model's row. With no such row on
-  // screen (no model list, or a value outside it) the footer takes its rows.
+  // screen (no model list, or a value outside it) the model is pinned under
+  // the Context row with its own Edit, so Thinking, Context and Fast mode
+  // always open from the picked model.
   const activeShown =
     modelValue !== undefined &&
     (view.kind === 'effective'
       ? Boolean(view.catalog?.options.some((m) => m.value === modelValue))
       : view.kind === 'search' && view.own.some((m) => m.value === modelValue))
+  // The pinned row's name: the model's own name, else the agent's.
+  const pinnedName =
+    (modelValue !== undefined && props.modelOption
+      ? flattenConfigOptionValues(props.modelOption).find((m) => m.value === modelValue)?.name
+      : undefined) ?? nameOf(effectiveId)
 
   const [searchFocused, setSearchFocused] = useState(false)
   // Command palette: while typing, the first result is highlighted and Enter
@@ -780,13 +788,17 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
     /** Rows from several agents: another agent's row says whose it is. */
     mixed: boolean,
     /** A Favorites row: its own key and snapshot, picked with the model. */
-    fav?: FavoriteHit
+    fav?: FavoriteHit,
+    /** The pinned current model: no star, and a pick does nothing (it is already picked). */
+    pinned = false
   ): ReactNode => {
     // The row's own agent, never the open tab: Favorites and search mix agents.
     const tab = tabOf(configId)
     const inFavorites = fav !== undefined
     return options.map((model) => {
-      const key = fav?.favorite ?? (configId ? state.favoriteKeyFor(configId, model.value) : null)
+      const key = pinned
+        ? null
+        : (fav?.favorite ?? (configId ? state.favoriteKeyFor(configId, model.value) : null))
       const rowKey = rowKeyOf(configId, model.value, fav?.favorite)
       return (
         <DenseModelRow
@@ -822,6 +834,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
           touch={touch}
           reduced={reduced}
           onPick={() => {
+            if (pinned) return
             const active = document.activeElement as HTMLElement | null
             if (active?.dataset.rowKey === rowKey) pickedRow.current = rowKey
             state.pick(configId, catalog, model.value, fav?.favorite.options)
@@ -948,7 +961,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
               onCancelAndSwitch={state.cancelAndSwitch}
             />
           ) : (
-            <Hint>{`Switches to ${nameOf(viewId)} on the next send`}</Hint>
+            <Hint>{`Switches to ${nameOf(viewId)} on the next send.`}</Hint>
           )}
         </>
       )
@@ -969,13 +982,17 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
               touch={touch}
             />
           ) : view.retry ? (
-            <button
-              type="button"
-              onClick={view.retry}
-              className={cn(DENSE_ROW, denseRowSize(touch), 'justify-center')}
-            >
-              Try again
-            </button>
+            <div className="flex px-1">
+              <Button
+                type="button"
+                variant="secondary"
+                size={touch ? 'touch' : 'xs'}
+                onClick={view.retry}
+                className="min-w-0 flex-1"
+              >
+                Try again
+              </Button>
+            </div>
           ) : null}
         </div>
       )
@@ -1071,7 +1088,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
     >
       <div
         className={cn(
-          'flex items-center gap-2 border-b border-border transition-colors duration-150 ease-out',
+          'flex items-center gap-2 border-b-[0.5px] border-border transition-colors duration-150 ease-out',
           BAND_FOCUS_CLASS,
           // With the rail, the 14px icon sits on the rail's centre line (20px in);
           // on touch px-5 already centres the 16px icon on the 56px rail.
@@ -1099,7 +1116,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
           aria-label="Search models and agents"
           className={cn(
             `min-w-0 flex-1 bg-transparent text-foreground placeholder:text-muted-foreground ${INNER_FIELD_FOCUS_CLASS}`,
-            touch ? 'text-base' : 'text-sm'
+            touch ? 'text-base' : 'text-xs'
           )}
         />
         {view.kind === 'search' ? (
@@ -1146,13 +1163,27 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
       </div>
       {!searching && state.contextUsage ? (
         <>
-          <div className="h-px bg-border" />
+          <div className="h-[0.5px] bg-border" />
           <ContextSummary usage={state.contextUsage} touch={touch} />
         </>
       ) : null}
+      {state.ownFooter && !activeShown && edit.length > 0 ? (
+        <div data-testid="selector-pinned-model" className={cn('flex min-w-0 flex-col pb-1', pad)}>
+          <SectionLabel>Current model</SectionLabel>
+          {rows(
+            effectiveId,
+            effectiveCatalog,
+            [{ value: modelValue ?? '', name: pinnedName }],
+            modelValue ?? '',
+            false,
+            undefined,
+            true
+          )}
+        </div>
+      ) : null}
       {state.ownFooter ? (
         <SessionOptions
-          sections={[...(activeShown ? [] : edit), ...restSections(rest, isRejected, trySet)]}
+          sections={restSections(rest, isRejected, trySet)}
           disabled={disabled}
           touch={touch}
         />
@@ -1160,7 +1191,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
       {otherHint ? (
         <p
           className={cn(
-            'flex items-center border-t border-border text-xs text-muted-foreground',
+            'flex items-center border-t-[0.5px] border-border text-xs text-muted-foreground',
             touch ? 'min-h-12 px-5' : 'min-h-9 px-3'
           )}
         >

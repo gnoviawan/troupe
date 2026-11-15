@@ -2,6 +2,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
 import { AlertCircle, Check, Copy, Monitor, ShieldAlert } from '@/components/icons'
 import { ToolStrip } from '@/components/shell/tool-strip/ToolStrip'
+import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Switch } from '@/components/ui/switch'
 import { remoteServerApi } from '@/lib/api'
@@ -127,15 +128,17 @@ export function RemoteAccessPopover(): React.JSX.Element {
                   random and changes each time you toggle off and on.
                 </span>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="xs"
                 onClick={() => void handleCopyLink()}
-                className="w-full inline-flex items-center justify-center gap-2 text-xs bg-secondary hover:bg-secondary/80 border border-border rounded-md px-3 py-1.5 transition-colors"
+                className="w-full [&_svg]:size-3.5"
                 aria-label="Copy tunnel link"
               >
-                {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedUrl ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
                 {copiedUrl ? 'Copied' : 'Copy link'}
-              </button>
+              </Button>
             </div>
           )}
 

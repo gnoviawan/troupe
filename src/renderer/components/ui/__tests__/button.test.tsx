@@ -98,8 +98,8 @@ describe('Button size="touch" (44px touch-target floor)', () => {
     const variantClasses: Record<string, string> = {
       default: 'bg-primary-fill text-primary-foreground',
       destructive: 'bg-destructive-fill text-destructive-foreground',
-      outline: 'border border-input bg-background',
-      secondary: 'bg-secondary text-secondary-foreground',
+      outline: 'bg-control-fill text-foreground shadow-control',
+      secondary: 'bg-control-fill text-foreground shadow-control',
       ghost: 'hover:bg-secondary',
       link: 'text-primary underline-offset-4',
       composer: 'bg-primary-fill text-primary-foreground'
@@ -179,12 +179,26 @@ describe('Button size="touch" (44px touch-target floor)', () => {
     unmount()
   })
 
-  it('ghost and outline hover text reads the per-theme token, not accent-foreground', () => {
-    for (const variant of ['ghost', 'outline'] as const) {
+  it('ghost hover text reads the per-theme token, not accent-foreground', () => {
+    render(<Button variant="ghost">Label</Button>)
+    const className = screen.getByRole('button').className
+    expect(className).toContain('hover:text-ghost-hover-foreground')
+    expect(className).not.toContain('hover:text-accent-foreground')
+  })
+
+  it('secondary and outline share the raised control recipe: no border, a 0.5px edge and drop', () => {
+    for (const variant of ['secondary', 'outline'] as const) {
       const { unmount } = render(<Button variant={variant}>Label</Button>)
-      const className = screen.getByRole('button').className
-      expect(className).toContain('hover:text-ghost-hover-foreground')
-      expect(className).not.toContain('hover:text-accent-foreground')
+      const button = screen.getByRole('button')
+      expect(button).toHaveClass(
+        'bg-control-fill',
+        'hover:bg-control-fill-hover',
+        'text-foreground',
+        'shadow-control',
+        'active:scale-[0.97]',
+        'disabled:opacity-60'
+      )
+      expect(button.className).not.toMatch(/(^|\s)border(\s|$)/)
       unmount()
     }
   })

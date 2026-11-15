@@ -14,6 +14,14 @@ import { cn } from '@/lib/utils'
 const primaryEmboss =
   'bg-primary-fill text-primary-foreground active:scale-[0.96] motion-reduce:active:scale-100 transition-[scale,background-color,box-shadow] duration-150 ease-out hover:bg-primary-fill-hover active:bg-primary-fill-active disabled:bg-muted disabled:text-disabled-foreground disabled:opacity-100 disabled:hover:bg-muted disabled:shadow-none shadow-emboss hover:shadow-emboss-hover'
 
+/**
+ * Secondary chrome for `secondary` and `outline`: a raised control one step
+ * above its surface, a 0.5px edge and a tight drop (light: white, a 1px ink
+ * ring and a soft drop). Per-theme values in component-tokens.ts.
+ */
+const secondaryControl =
+  'bg-control-fill text-foreground shadow-control hover:bg-control-fill-hover active:scale-[0.97] motion-reduce:active:scale-100 transition-[scale,background-color] duration-150 ease-out disabled:opacity-60'
+
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
@@ -21,9 +29,8 @@ const buttonVariants = cva(
       variant: {
         default: primaryEmboss,
         destructive: 'bg-destructive-fill text-destructive-foreground hover:bg-destructive-fill/90',
-        outline:
-          'border border-input bg-background hover:bg-secondary hover:text-ghost-hover-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        outline: secondaryControl,
+        secondary: secondaryControl,
         ghost: 'hover:bg-secondary hover:text-ghost-hover-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
         composer: primaryEmboss

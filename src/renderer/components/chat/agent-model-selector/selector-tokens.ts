@@ -4,7 +4,7 @@
  * inherits nothing from it; sharing the classes is what keeps the two equal.
  */
 export const PICKER_ROW = {
-  text: 'text-sm',
+  text: 'text-xs',
   height: 'h-7',
   heightTouch: 'min-h-11',
   padX: 'px-2',
@@ -43,14 +43,14 @@ export const PICKER_ROW_SELECTED_BOX = `${PICKER_ROW_SELECTED} hover:bg-foregrou
 export const PICKER_ICON = { glyph: 16, check: 14 } as const
 
 /** A group label: Favorites and the agent name in the list, Thinking and Context in the flyout. */
-export const PICKER_LABEL = 'truncate px-2 pb-1 pt-2 text-xs text-muted-foreground'
+export const PICKER_LABEL = 'truncate px-2 pb-1.5 pt-1.5 text-xs text-muted-foreground'
 
 /** The surface both the panel and the flyout sit on. */
 export const PICKER_SURFACE = {
-  radius: 'rounded-xl',
+  radius: 'rounded-[10px]',
   padding: 'p-1',
   paddingTouch: 'px-3 pb-3',
-  separator: 'border-t border-border'
+  separator: 'border-t-[0.5px] border-border'
 } as const
 
 /**

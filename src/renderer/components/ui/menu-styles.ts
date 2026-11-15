@@ -15,6 +15,14 @@ export const MENU_CONTENT_CLASS =
   'z-50 min-w-[8rem] overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-md'
 
 /**
+ * V2 overlay panel surface: radius 10, a 0.5px `popover-edge` outline (lighter
+ * than the fill, the same colour all round) and the two-step black drop. The
+ * Rail hover panels and the model picker use it.
+ */
+export const OVERLAY_PANEL_SURFACE_CLASS =
+  'rounded-[10px] bg-popover text-popover-foreground outline-[0.5px] outline-solid outline-popover-edge shadow-rail-hover-panel'
+
+/**
  * Radix menu shell motion: grows from the trigger (`--scale-medium` to 1, the
  * origin comes from Radix) and closes with a fade only. Timing is in
  * `index.css` (`[data-radix-popper-content-wrapper] > *`).
