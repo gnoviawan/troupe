@@ -1825,6 +1825,18 @@ describe('ChatInputBar draft persistence', () => {
     })
   })
 
+  it('keeps the draft when the send reports that nothing was sent', async () => {
+    persistenceStore.set('chat-draft/p1/session-1', 'not yet')
+    const onSend = vi.fn(() => false as const)
+    renderInputBar({ onSend })
+    await waitFor(() => expect(getComposerValue()).toBe('not yet'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }))
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledWith('not yet'))
+    expect(getComposerValue()).toBe('not yet')
+  })
+
   it('does not crash when storage is empty', () => {
     // No draft persisted → empty composer, current behavior, no throw.
     renderInputBar()

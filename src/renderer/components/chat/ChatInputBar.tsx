@@ -11,7 +11,6 @@ import { useAgentSkills } from '@/hooks/use-agent-skills'
 import { useAttachmentDropZone } from '@/hooks/use-attachment-drop-zone'
 import { useMentionRecents } from '@/hooks/use-mention-recents'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
-import { useOskViewport } from '@/hooks/use-osk-viewport'
 import { useVisibleSnapshot } from '@/hooks/use-visible-snapshot'
 import type {
   AvailableCommand,
@@ -23,19 +22,12 @@ import { registerSessionTempFiles } from '@/lib/attachment-temp-cleanup'
 import type { TermulToolId } from '@/lib/composer/termul-tools'
 import { cn } from '@/lib/utils'
 import type { AcpSession, PendingPermission, QueuedPrompt } from '@/stores/acp-store'
-import {
-  useAcpMessages,
-  useAcpStore,
-  useAgentIcon,
-  useAgentTemplateId,
-  useSessionUsage
-} from '@/stores/acp-store'
+import { useAcpMessages, useSessionUsage } from '@/stores/acp-store'
 import type { OptionValues } from '@/stores/acp-store/composer-options'
 import { useCodexRestartingStore } from '@/stores/codex-account-restart'
 import { ModeChip } from './AgentHeader'
 import { AttachmentPreviewGroup } from './AttachmentPreviewGroup'
 import { AgentModelSelector } from './agent-model-selector/AgentModelSelector'
-import { useCurrentAgentConfigId } from './agent-model-selector/use-agent-switch'
 import { ComposerBeamShell } from './ComposerBeamShell'
 import { ContextUsageIndicator } from './ContextUsageIndicator'
 import { appOwnedTempPaths } from './chat-attachments'
@@ -72,12 +64,14 @@ import { PromptQueuePanel } from './PromptQueuePanel'
 import { SlashCommandMenu, type SlashMenuHandle } from './SlashCommandMenu'
 import { SkillFilesProvider } from './skill-file-links'
 import { useChatComposer } from './use-chat-composer'
+import { useComposerAgent } from './use-composer-agent'
 import { useComposerAttachments } from './use-composer-attachments'
 import { useComposerCaretRestore, useComposerMentionSelect } from './use-composer-caret-restore'
 import { useComposerDraft } from './use-composer-draft'
 import { useComposerDraftStart } from './use-composer-draft-start'
 import { useComposerMentions } from './use-composer-mentions'
 import { useComposerSendLock } from './use-composer-send-lock'
+import { useScrollEditorOnOsk } from './use-scroll-editor-on-osk'
 
 interface ChatInputBarProps {
   /** Active session — drives selector chips. */
@@ -99,7 +93,8 @@ interface ChatInputBarProps {
   imageCapable?: boolean
   /** Whether the agent accepts embedded `resource` blocks (drag/paste text files). */
   embedCapable?: boolean
-  onSend: (text: string) => void
+  /** Returns `false` when nothing was sent: the composer keeps its draft. */
+  onSend: (text: string) => false | undefined
   /**
    * Send a prompt carrying structured content blocks (text + attachments).
    * The first arg is the wire text dispatched to the agent; the optional second
@@ -108,7 +103,7 @@ interface ChatInputBarProps {
    * receives the path-based wire framing. When omitted, the wire blocks are
    * also used for display.
    */
-  onSendBlocks: (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) => void
+  onSendBlocks: (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) => false | undefined
   onCancel: () => void
   /** Slash-menu data sources from the active session. */
   commands: AvailableCommand[]
@@ -252,24 +247,12 @@ export function ChatInputBar({
   // derived value freezes while the host panel is hidden (the composer only
   // reads `messages` for the context-usage ring's bootstrap filter).
   const messages = useVisibleSnapshot(isVisible, useAcpMessages(session.id))
-  // Armed agent switch: the composer's chips advertise the TARGET config's
-  // options (armedOptions overlay in AgentChatPanel), so the glyph must too —
-  // resolving by the session's live `agentId` keeps the OLD agent's icon
-  // (Devin) while the model list already shows the target's (OpenCode).
-  // Read `switching` from the store (not the prop) — the same field the
-  // model selector reads — so the icon flips the moment the arm lands.
-  const armedConfigId = useAcpStore((s) => s.sessions?.[session.id]?.switching?.toConfigId)
-  // Names the mode menu's "Let <agent> act" group: the armed target while a
-  // switch is armed (the menu then lists the target's modes), else this chat's agent.
-  const currentAgentConfigId = useCurrentAgentConfigId(session.id)
-  const modeAgentName = useAcpStore(
-    (s) => s.agentConfigs?.find((c) => c.id === (armedConfigId ?? currentAgentConfigId))?.name
-  )
-  // A launch placeholder has no agent yet, so resolve by config id: the armed
-  // target, else the chat's own config (the launching one before spawn).
-  const glyphConfigId = armedConfigId ?? currentAgentConfigId ?? undefined
-  const agentTemplateId = useAgentTemplateId(session.agentId, glyphConfigId)
-  const agentIcon = useAgentIcon(session.agentId, glyphConfigId)
+  const {
+    currentAgentConfigId,
+    agentName: modeAgentName,
+    agentTemplateId,
+    agentIcon
+  } = useComposerAgent(session)
   const { connectors, host: connectorsHost } = useChatConnectors(session)
   const termulTools = useTermulTools(session.projectId)
   const [value, setValue, draftHydrated] = useComposerDraft({
@@ -280,15 +263,7 @@ export function ChatInputBar({
   const { locked: sending, hold: holdComposer } = useComposerSendLock()
   const reduced = useReducedMotion() ?? false
   const morph = useComposerMorph(startScreen, reduced)
-  // Story 5.3: OSK awareness on mobile web. On Tauri desktop, the hook returns
-  // a no-OSK default (no `visualViewport` thrash — desktop non-regression).
-  const osk = useOskViewport()
   const isMobileShell = useMobileWebShell()
-  // OSK-open transition: scroll the textarea into view exactly once per
-  // OSK-open window. The OSK state can lag the focus event (focus fires
-  // before `osk.isOskOpen` flips true), so a closed→open transition effect
-  // is more reliable than reading `osk.isOskOpen` in onFocus.
-  const prevOskOpenRef = useRef(false)
   const {
     attachments,
     addFiles,
@@ -403,9 +378,13 @@ export function ChatInputBar({
       }
       const send = buildComposerSend(parts, attachments)
       if (!send) return
-      if (send.kind === 'text') onSend(send.text)
-      else if (send.display) onSendBlocks(send.wire, send.display)
-      else onSendBlocks(send.wire)
+      const sent =
+        send.kind === 'text'
+          ? onSend(send.text)
+          : send.display
+            ? onSendBlocks(send.wire, send.display)
+            : onSendBlocks(send.wire)
+      if (sent === false) return
       // Register app-owned temp files (pasted screenshots) with the session so
       // they are deleted when the session closes; clearAttachments drops state
       // without deleting because the agent reads them by path during the turn.
@@ -499,23 +478,7 @@ export function ChatInputBar({
   )
   useSelectionContextInsertRequest(editorRef, selectionContextInsert, disabled)
 
-  // Story 5.3 (T2.3): on mobile web, scroll the editor into view once per
-  // OSK-open window so iOS Safari doesn't leave the input under the keyboard.
-  // rAF-deferred to let layout settle; fires once per OSK-open window.
-  // `nearest` scrolls only as far as needed to show the editor (iOS) and not
-  // at all when it already shows above the keyboard (Android resizes the
-  // layout onto it); `center` slid the composer up and left it there.
-  useEffect(() => {
-    const wasOpen = prevOskOpenRef.current
-    prevOskOpenRef.current = osk.isOskOpen
-    if (!wasOpen && osk.isOskOpen && isMobileShell) {
-      const ed = editorRef.current
-      const el = ed?.view.dom ?? null
-      if (el) {
-        requestAnimationFrame(() => el.scrollIntoView({ block: 'nearest' }))
-      }
-    }
-  }, [osk.isOskOpen, isMobileShell])
+  useScrollEditorOnOsk(editorRef, isMobileShell)
 
   // Story 4 (spec-in-chat-agent-switch): the in-chat agent control joins the
   // right chip cluster (CAP-1). Reads the store itself (session.switching,
@@ -651,13 +614,7 @@ export function ChatInputBar({
               onDragOver={dropProps.onDragOver}
               onDrop={dropProps.onDrop}
             >
-              {dragActive && canDropPaste && (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground backdrop-blur-sm">
-                  <span className="flex items-center gap-2">
-                    <Paperclip size={16} /> Drop files to attach
-                  </span>
-                </div>
-              )}
+              {dragActive && canDropPaste && <ComposerDropOverlay />}
               {notice}
               {queue.length > 0 && onRemoveQueued && onSendQueuedNow && (
                 <PromptQueuePanel
@@ -838,6 +795,17 @@ export function ChatInputBar({
           </ComposerBeamShell>
         </motion.div>
       </div>
+    </div>
+  )
+}
+
+/** Shown over the composer card while files are dragged over it. */
+function ComposerDropOverlay(): React.JSX.Element {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground backdrop-blur-sm">
+      <span className="flex items-center gap-2">
+        <Paperclip size={16} /> Drop files to attach
+      </span>
     </div>
   )
 }

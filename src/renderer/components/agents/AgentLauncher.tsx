@@ -1,4 +1,3 @@
-import type { LastSelectedAgent } from '@shared/types/persistence.types'
 import { PersistenceKeys } from '@shared/types/persistence.types'
 import type { Editor } from '@tiptap/core'
 import { useIsPresent, useReducedMotion } from 'framer-motion'
@@ -100,6 +99,12 @@ import { useServerAdmitsRemoteWrites } from '@/hooks/use-server-admits-remote-wr
 import { acpApi, type ContentBlock } from '@/lib/acp-api'
 import { deriveAgentUpdates, deriveSpawnBasis } from '@/lib/agents/agent-update-utils'
 import {
+  cachedLastSelectedAgentId,
+  holdLastSelectedAgentId,
+  readLastSelectedAgentId,
+  rememberLastSelectedAgent
+} from '@/lib/agents/last-selected-agent'
+import {
   installedBinaryConfig,
   manualBinaryConfig,
   pickDefaultConfiguredAgent,
@@ -139,14 +144,6 @@ interface AgentLauncherProps {
   className?: string
 }
 
-/** Survives overlay unmount so the new-thread picker does not flash the default. */
-let cachedConfigId: string | null = null
-
-/** Test-only: clear the cross-unmount selection cache. */
-export function __resetLauncherSelectionCache(): void {
-  cachedConfigId = null
-}
-
 /**
  * Agent launcher surface for a pane — hero + launch composer. Rendered either
  * as empty-pane content or as the Ctrl+T overlay; when a launch hands off to
@@ -155,13 +152,13 @@ export function __resetLauncherSelectionCache(): void {
  */
 export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.JSX.Element {
   const [prompt, setPrompt] = useState('')
-  const [selectedConfigId, setSelectedConfigId] = useState(() => cachedConfigId ?? '')
+  const [selectedConfigId, setSelectedConfigId] = useState(() => cachedLastSelectedAgentId() ?? '')
   /**
    * Issue #907 (F1): the configId of the last EXPLICIT user pick
    * (`handleSelectAgent`), vs a restore/default at mount. Only an explicit
    * pick may persist a catalog-derived config and prewarm on web — the
    * discriminator the #840 no-auto-spawn guard needs. Cleared on unmount
-   * with the component (never persisted; `persistSelection` owns durable
+   * with the component (never persisted; `rememberLastSelectedAgent` owns durable
    * selection).
    */
   const [userPickedConfigId, setUserPickedConfigId] = useState<string | null>(null)
@@ -625,17 +622,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     effectiveConfigOptions,
     cachedOptions?.updatedAt
   ])
-  // `persistSelection` is declared before the ACP setters below so the setters
-  // ACP setters below so the setters can close over them without a temporal-dead-zone
-  // reference (the setters are also passed into `useChatComposer` before its line).
-  const persistSelection = useCallback((configId: string) => {
-    cachedConfigId = configId
-    void persistenceApi.write<LastSelectedAgent>(PersistenceKeys.lastSelectedAgent, {
-      agentId: configId,
-      mode: 'acp'
-    })
-  }, [])
-
   // Persist the in-progress launch prompt per project (same lifecycle as the
   // chat composer's session draft, ChatInputBar): hydrate on mount/project
   // change, debounced write on change, delete when empty, flush on unmount.
@@ -945,14 +931,11 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       : pickDefaultConfiguredAgent(supportedAgents, new Set(acpConfigs.map((config) => config.id)))
     void (async () => {
       try {
-        const persisted = await persistenceApi.read<unknown>(PersistenceKeys.lastSelectedAgent)
+        const savedId = await readLastSelectedAgentId()
         if (cancelled) return
-        const raw = persisted.success ? persisted.data : null
-        const saved = raw as Partial<LastSelectedAgent> | null
-        const restored =
-          saved?.mode === 'acp' && typeof saved.agentId === 'string'
-            ? supportedAgents.find((entry) => entry.configId === saved.agentId)
-            : null
+        const restored = savedId
+          ? supportedAgents.find((entry) => entry.configId === savedId)
+          : null
         // Issue #840 core: a persisted-but-unconfigured agent must not
         // auto-persist an `npx` config nobody chose on web. Issue #907
         // narrows that: a `ready` entry WITH a derivable `config` (same
@@ -976,22 +959,17 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         // whose config has not loaded yet. Keep its id as the selection and
         // leave the saved value alone; the list shows the default meanwhile,
         // and the prewarm effect only warms the selection once it resolves.
-        if (
-          isTauriContext() &&
-          !restored &&
-          saved?.mode === 'acp' &&
-          typeof saved.agentId === 'string'
-        ) {
-          setSelectedConfigId(saved.agentId)
+        if (isTauriContext() && !restored && savedId) {
+          setSelectedConfigId(savedId)
           // The next launcher starts from this cache; without it, it opens on
           // the default and a quick send launches that agent instead.
-          cachedConfigId = saved.agentId
+          holdLastSelectedAgentId(savedId)
           return
         }
         const next = (restoredOk ? restored : null) ?? defaultAgent ?? supportedAgents[0]
         if (next) {
           setSelectedConfigId(next.configId)
-          persistSelection(next.configId)
+          rememberLastSelectedAgent(next.configId)
         }
       } catch {
         const next = defaultAgent ?? supportedAgents[0]
@@ -1001,7 +979,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     return () => {
       cancelled = true
     }
-  }, [acpConfigs, persistSelection, selectedConfigId, supportedAgents])
+  }, [acpConfigs, selectedConfigId, supportedAgents])
 
   // Persist worktree isolation mode + base branch changes for the current
   // agent so the next chat starts with the same worktree preference. Only
@@ -1095,7 +1073,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     async (entry: SupportedAcpAgentEntry) => {
       if (!entry.install || installingConfigId) return
       setSelectedConfigId(entry.configId)
-      persistSelection(entry.configId)
+      rememberLastSelectedAgent(entry.configId)
       setInstallingConfigId(entry.configId)
       try {
         // CAP-6 / Story 9: host-owned verified-atomic install. The request is
@@ -1111,7 +1089,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         )
         await saveAgentConfig(config)
         setSelectedConfigId(config.id)
-        persistSelection(config.id)
+        rememberLastSelectedAgent(config.id)
         toast.success(`${entry.agent.name} installed`)
       } catch (err) {
         toast.error(`Failed to install ${entry.agent.name}: ${String(err)}`)
@@ -1126,7 +1104,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         setInstallingConfigId(null)
       }
     },
-    [installingConfigId, persistSelection, saveAgentConfig]
+    [installingConfigId, saveAgentConfig]
   )
 
   const handleBrowseManualPath = useCallback(async () => {
@@ -1149,13 +1127,13 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         return
       }
       setSelectedConfigId(entry.configId)
-      persistSelection(entry.configId)
+      rememberLastSelectedAgent(entry.configId)
       setSavingManualPath(true)
       try {
         const config = manualBinaryConfig(entry.agent, command, manual)
         await saveAgentConfig(config)
         setSelectedConfigId(config.id)
-        persistSelection(config.id)
+        rememberLastSelectedAgent(config.id)
         toast.success(`${entry.agent.name} configured`)
       } catch (err) {
         toast.error(`Failed to save ${entry.agent.name}: ${String(err)}`)
@@ -1163,7 +1141,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         setSavingManualPath(false)
       }
     },
-    [manualPath, persistSelection, saveAgentConfig, savingManualPath]
+    [manualPath, saveAgentConfig, savingManualPath]
   )
 
   const handleRetryPrepare = useCallback(() => {
@@ -1219,10 +1197,10 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       workspace.resetWorkspace()
       setBaseBranch(null)
       setSelectedConfigId(entry.configId)
-      persistSelection(entry.configId)
+      rememberLastSelectedAgent(entry.configId)
       deferEditorFocusRef.current = true
     },
-    [persistSelection, selectedConfigId, factoryKeyAuth, workspace.resetWorkspace]
+    [selectedConfigId, factoryKeyAuth, workspace.resetWorkspace]
   )
 
   // Focus the composer when the selector popover finishes closing, but only
@@ -1404,7 +1382,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       if (needsSave) {
         await saveAgentConfig(configSnapshot)
       }
-      persistSelection(configSnapshot.id)
+      rememberLastSelectedAgent(configSnapshot.id)
       // Persist only the user's PICKED values (the not-yet-flushed pending
       // queue), never the displayed snapshot: picks that already flushed to
       // a warm session were persisted at pick time, and persisting
@@ -1532,7 +1510,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     selectedEntry?.status,
     acpConfigs,
     saveAgentConfig,
-    persistSelection,
     paneId,
     attachments,
     clearAttachments,

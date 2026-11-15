@@ -8,7 +8,7 @@ import { useAcpStore } from '@/stores/acp-store'
 import { useShellLayoutStore } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
-import { buildChatCards, type ChatCardData } from './chat-cards'
+import { buildChatCards, type ChatCardData, hasChatCards } from './chat-cards'
 
 /** Accessible status word of each live state; idle has none. */
 const CHAT_STATUS_WORD: Record<ProjectChatLiveState, string | null> = {
@@ -51,20 +51,35 @@ export interface ProjectChats {
  * each row.
  */
 export function useProjectChats(project: Project): ProjectChats {
+  const pick = useShellLayoutStore((s) => s.worktreePickByProject[project.id])
+  const cards = useProjectChatCards(project, pick)
+  return { cards, openChatId: useOpenChatSessionId() }
+}
+
+/**
+ * A project's chat cards for a worktree pick (`null`: every chat of the
+ * project, as the command palette lists them).
+ */
+export function useProjectChatCards(
+  project: Project,
+  pick: string | null | undefined
+): ChatCardData[] {
   const sessionIndex = useAcpStore((s) => s.sessionIndex)
   const agentConfigs = useAcpStore((s) => s.agentConfigs)
-  const pick = useShellLayoutStore((s) => s.worktreePickByProject[project.id])
-  const openChatId = useOpenChatSessionId()
-
   const agentNames = useMemo(
     () => new Map(agentConfigs.map((config) => [config.id, config.name])),
     [agentConfigs]
   )
-  const cards = useMemo(
+  return useMemo(
     () => buildChatCards({ sessionIndex, project, pick, agentNames }),
     [sessionIndex, project, pick, agentNames]
   )
-  return { cards, openChatId }
+}
+
+/** Whether the project shows any chat in the Rail (re-renders only when that flips). */
+export function useProjectHasChats(project: Project): boolean {
+  const pick = useShellLayoutStore((s) => s.worktreePickByProject[project.id])
+  return useAcpStore((s) => hasChatCards({ sessionIndex: s.sessionIndex, project, pick }))
 }
 
 /** Maps the host-owned chat signals to one row state, needs-you first. */

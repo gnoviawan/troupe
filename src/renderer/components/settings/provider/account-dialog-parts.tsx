@@ -18,9 +18,6 @@ const NAME_SUGGESTIONS = ['Work', 'Personal', 'Team']
 
 export type AddAccountStep = 'name' | 'signing' | 'done' | 'failed'
 
-export const accountErrorText = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
-
 /** "1 Name — 2 Sign in — 3 Done" at the top of the dialog. */
 export function AccountSteps({ step }: { step: AddAccountStep }): React.JSX.Element {
   const index = step === 'name' ? 0 : step === 'done' ? 2 : 1

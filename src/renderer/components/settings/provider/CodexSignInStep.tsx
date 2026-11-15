@@ -1,9 +1,11 @@
-import { CODEX_CHATGPT_METHOD } from '@shared/types/codex-accounts.types'
+import { CODEX_CHATGPT_METHOD, type CodexAccountView } from '@shared/types/codex-accounts.types'
+import { useState } from 'react'
 import { Globe } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { DialogFooter } from '@/components/ui/dialog'
-import { CODEX_SIGN_IN_METHODS } from '@/lib/codex-account-sign-in'
+import { CODEX_SIGN_IN_METHODS, signInCodexAccount } from '@/lib/codex-account-sign-in'
 import { AccountSignInWaiting, AccountStepHeader } from './account-dialog-parts'
+import { accountErrorText } from './account-error'
 
 /**
  * The Codex "Sign in" step: pick ChatGPT in the browser or a device code,
@@ -58,10 +60,62 @@ export function CodexSignInStep({
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       <DialogFooter>
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+        {/* A running sign-in cannot be stopped here: the host window has its own Cancel. */}
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={method !== null}>
           Cancel
         </Button>
       </DialogFooter>
     </>
+  )
+}
+
+/**
+ * Runs a Codex sign-in: the method pick, then the wait. `onRunningChange`
+ * reports a running sign-in, so the dialog can stay open until it ends.
+ * Without `onFailed` a failure shows its reason here and the pick comes back.
+ */
+export function CodexSignInRun({
+  account,
+  onRunningChange,
+  onSignedIn,
+  onFailed,
+  onCancel
+}: {
+  account: CodexAccountView
+  onRunningChange: (running: boolean) => void
+  onSignedIn: () => void
+  onFailed?: (reason: string) => void
+  onCancel: () => void
+}): React.JSX.Element {
+  const [method, setMethod] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const start = async (methodId: string): Promise<void> => {
+    setMethod(methodId)
+    setError(null)
+    onRunningChange(true)
+    try {
+      await signInCodexAccount(account.id, methodId)
+      onRunningChange(false)
+      onSignedIn()
+    } catch (err) {
+      onRunningChange(false)
+      if (onFailed) {
+        onFailed(accountErrorText(err))
+        return
+      }
+      setError(accountErrorText(err))
+      setMethod(null)
+    }
+  }
+
+  return (
+    <CodexSignInStep
+      accountName={account.name}
+      method={method}
+      error={error}
+      onPick={(methodId) => void start(methodId)}
+      onCancel={onCancel}
+    />
   )
 }

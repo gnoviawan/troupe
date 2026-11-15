@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { treeFileIconTone } from './tree-entry-icon'
+import { treeFileIconTone } from './tree-entry-tone'
 
 describe('treeFileIconTone', () => {
   it('tints the file types from Paper 3.2', () => {

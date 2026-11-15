@@ -5,7 +5,7 @@ import { logFrontendError } from '@/lib/log-api'
 import { useAcpStore } from '@/stores/acp-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
-const LOG_SOURCE = 'shell-chats-list'
+const LOG_SOURCE = 'shell-chat-open'
 
 export interface ChatCardActions {
   onOpen: (entry: ProjectChatEntry) => void

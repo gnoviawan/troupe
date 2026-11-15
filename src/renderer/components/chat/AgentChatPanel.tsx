@@ -49,7 +49,7 @@ import { useGitSheetStore } from '@/stores/git-sheet-store'
 import { hydrateGithubChatLinks } from '@/stores/github-chat-links-store'
 import { useProjectStore } from '@/stores/project-store'
 import { isAgentDeadError, sessionTurnBusy } from '@/stores/prompt-queue-orchestration'
-import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stores/workspace-store'
+import { agentChatTabId, useWorkspaceStore } from '@/stores/workspace-store'
 import { AgentConnectionLamp } from './AgentConnectionLamp'
 import { AskUserQuestion } from './AskUserQuestion'
 import { BrowserConsentCard } from './BrowserConsentCard'
@@ -59,24 +59,22 @@ import { ChatInputBar } from './ChatInputBar'
 import { ChatMessageList } from './ChatMessageList'
 import { ChatStartContextRow } from './ChatStartContextRow'
 import { ChatStatusChips } from './ChatStatusChips'
-import { ChatStoppedNotice } from './ChatStoppedNotice'
 import { CHAT_GUTTER_X, COMPOSER_CARD_CLASS } from './chat-layout'
 import { ChatStartFooter, ChatStartGlow, ChatTimelineStage } from './chat-start-morph'
 import { buildTimeline, consolidateThoughtGroups, spliceReloadMarker } from './chat-timeline'
 import { ClaudeLimitNotice } from './claude-account/ClaudeLimitNotice'
-import { ClaudeSignInAction } from './claude-account/ClaudeSignInAction'
 import { isAtLimit, useClaudeLimit } from './claude-account/use-claude-limit'
 import { CodexLimitNotice } from './codex-account/CodexLimitNotice'
 import { isAtLimit as isAtCodexLimit, useCodexLimit } from './codex-account/use-codex-limit'
 import type { SelectionContextInsertRequest } from './composer/insert-selection-context'
 import { ElicitationPrompt } from './ElicitationPrompt'
-import { openNewChat } from './new-chat/open-new-chat'
 import { sendFromChatStart } from './new-chat/send-from-chat-start'
 import { PendingRestartBanner } from './PendingRestartBanner'
 import { PermissionPrompt } from './PermissionPrompt'
 import { PlanPanel } from './PlanPanel'
 import { PromptReconcileNotice } from './PromptReconcileNotice'
 import { ReloadChatConfirmDialog } from './ReloadChatConfirmDialog'
+import { StoppedChatDock } from './StoppedChatDock'
 import { SubagentSurfaceProvider } from './SubagentSurface'
 import { useApprovalDock } from './use-approval-dock'
 import { AUTO_RESUME_FAILED_REASON, useIdleStopAutoResume } from './use-idle-stop-auto-resume'
@@ -452,34 +450,33 @@ export function AgentChatPanel({
   // and the open dispatches it once the agent is back.
   // An empty chat's first send applies its context-row pick (another folder
   // or a new worktree): the chat starts again there with this message.
-  const sendFromStart = useCallback(
-    (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) =>
-      sendFromChatStart({ sessionId, blocks, displayBlocks, onBlocked: seedComposer }),
-    [sessionId, seedComposer]
-  )
-
+  // `false` tells the composer nothing was sent, so it keeps the draft.
   const handleSend = useCallback(
-    (text: string) => {
-      if (sendFromStart([{ type: 'text', text }])) return
+    (text: string): false | undefined => {
+      const start = sendFromChatStart({ sessionId, blocks: [{ type: 'text', text }] })
+      if (start === 'blocked') return false
+      if (start === 'restarted') return
       startAutoResume()
       void sendPrompt(sessionId, text).catch((err) => {
         if (isAgentDeadError(err)) return
         toast.error('Could not send your message. Try again.')
       })
     },
-    [sendPrompt, sessionId, startAutoResume, sendFromStart]
+    [sendPrompt, sessionId, startAutoResume]
   )
 
   const handleSendBlocks = useCallback(
-    (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) => {
-      if (sendFromStart(blocks, displayBlocks)) return
+    (blocks: ContentBlock[], displayBlocks?: ContentBlock[]): false | undefined => {
+      const start = sendFromChatStart({ sessionId, blocks, displayBlocks })
+      if (start === 'blocked') return false
+      if (start === 'restarted') return
       startAutoResume()
       void sendPromptBlocks(sessionId, blocks, { displayBlocks }).catch((err) => {
         if (isAgentDeadError(err)) return
         toast.error('Could not send your message. Try again.')
       })
     },
-    [sendPromptBlocks, sessionId, startAutoResume, sendFromStart]
+    [sendPromptBlocks, sessionId, startAutoResume]
   )
 
   const handleCancel = useCallback(() => {
@@ -885,17 +882,6 @@ export function AgentChatPanel({
     !codexSignedOut && session.lastError && session.lastError !== dismissedError
       ? formatAcpAgentError(session.lastError)
       : null
-  const chatPaneId = (): string | undefined =>
-    findPaneContainingTab(useWorkspaceStore.getState().root, agentChatTabId(session.id))?.id
-  // A sign-in has no home in the chat: the launcher shows the agent's sign-in
-  // methods (the one state the launcher still covers).
-  const openCodexSignIn = (): void => {
-    const paneId = chatPaneId()
-    if (paneId) useWorkspaceStore.getState().showAgentLauncher(paneId)
-  }
-  const startNewChat = (): void => {
-    void openNewChat({ paneId: chatPaneId(), projectId: session.projectId, reason: 'stopped-chat' })
-  }
   // The composer dock shows one notice at a time: a stopped chat (with the
   // failed resume as its reason), else the usage limit, else a turn error.
   const showStoppedNotice =
@@ -921,22 +907,12 @@ export function AgentChatPanel({
     />
   )
   const composerNotice = showStoppedNotice ? (
-    <ChatStoppedNotice
-      reason={codexSignedOut ? CODEX_CLI_SIGNED_OUT_MESSAGE : activeError}
-      actionLabel={codexSignedOut ? 'Sign in' : 'Resume chat'}
-      onAction={() => {
-        if (codexSignedOut) {
-          openCodexSignIn()
-          return
-        }
-        if (isClosedResumeFailure && activeError) {
-          handleRetry()
-          return
-        }
-        resumeStoppedChat()
-      }}
-      onNewChat={codexSignedOut ? undefined : startNewChat}
-      extraAction={codexSignedOut ? undefined : <ClaudeSignInAction sessionId={sessionId} />}
+    <StoppedChatDock
+      session={session}
+      codexSignedOut={codexSignedOut}
+      activeError={activeError}
+      retryResume={isClosedResumeFailure && activeError ? handleRetry : undefined}
+      onResume={resumeStoppedChat}
     />
   ) : atUsageLimit && !isClosed ? (
     <>

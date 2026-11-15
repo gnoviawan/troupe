@@ -1,7 +1,7 @@
 //! Codex login state from the account's `auth.json`, for a host without the
 //! `codex` CLI on PATH (the Codex agent can run as `npx codex-acp`, which
-//! brings its own Codex). Only the presence of a ChatGPT login is read: token
-//! values are never logged, copied or returned.
+//! brings its own Codex). Only whether a login is there is read: token and
+//! key values are never logged, copied or returned.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,21 +20,23 @@ fn codex_home_dir(codex_home: Option<&str>) -> Option<PathBuf> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from);
-    explicit
-        .or_else(|| {
-            std::env::var("CODEX_HOME")
-                .ok()
-                .map(|value| value.trim().to_string())
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-        })
+    // An account home is always absolute (the store builds it). A relative
+    // one is not this account's file: never fall back to `~/.codex` for it.
+    if let Some(dir) = explicit {
+        return dir.is_absolute().then_some(dir);
+    }
+    std::env::var("CODEX_HOME")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
         .filter(|dir| dir.is_absolute())
         .or_else(|| std::env::home_dir().map(|home| home.join(".codex")))
 }
 
-/// Login state from the auth file contents: a ChatGPT login has a non-empty
-/// access or refresh token. An API key alone is not a ChatGPT login, so it
-/// reads as signed out (Troupe signs Codex accounts in with ChatGPT only).
+/// Login state from the auth file contents, as `codex login status` reports
+/// it: a ChatGPT login (a non-empty access or refresh token) or a stored API
+/// key is signed in.
 pub(crate) fn login_from_auth_json(contents: &str) -> CodexLoginProbe {
     let Ok(value) = serde_json::from_str::<serde_json::Value>(contents) else {
         log::warn!("[acp] codex auth file is not valid JSON");
@@ -47,7 +49,11 @@ pub(crate) fn login_from_auth_json(contents: &str) -> CodexLoginProbe {
             .and_then(serde_json::Value::as_str)
             .is_some_and(|token| !token.trim().is_empty())
     };
-    if has_token("refresh_token") || has_token("access_token") {
+    let has_api_key = value
+        .get("OPENAI_API_KEY")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|key| !key.trim().is_empty());
+    if has_token("refresh_token") || has_token("access_token") || has_api_key {
         CodexLoginProbe::SignedIn
     } else {
         CodexLoginProbe::SignedOut
@@ -81,48 +87,5 @@ pub(crate) fn codex_login_from_file(codex_home: Option<&str>) -> CodexLoginProbe
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_chatgpt_login_reads_as_signed_in() {
-        let json = r#"{"auth_mode":"chatgpt","OPENAI_API_KEY":null,"tokens":{"id_token":"a","access_token":"b","refresh_token":"c","account_id":"d"}}"#;
-        assert_eq!(login_from_auth_json(json), CodexLoginProbe::SignedIn);
-    }
-
-    #[test]
-    fn an_api_key_or_empty_tokens_read_as_signed_out() {
-        assert_eq!(
-            login_from_auth_json(r#"{"OPENAI_API_KEY":"sk-x","tokens":null}"#),
-            CodexLoginProbe::SignedOut
-        );
-        assert_eq!(
-            login_from_auth_json(r#"{"tokens":{"access_token":"","refresh_token":"  "}}"#),
-            CodexLoginProbe::SignedOut
-        );
-    }
-
-    #[test]
-    fn a_broken_file_is_unavailable() {
-        assert_eq!(
-            login_from_auth_json("{not json"),
-            CodexLoginProbe::Unavailable
-        );
-    }
-
-    #[test]
-    fn a_home_without_the_file_is_signed_out_and_with_it_signed_in() {
-        let dir = tempfile::tempdir().expect("temp dir");
-        let home = dir.path().to_str().expect("utf-8 path");
-        assert_eq!(
-            codex_login_from_file(Some(home)),
-            CodexLoginProbe::SignedOut
-        );
-        std::fs::write(
-            dir.path().join(AUTH_FILE),
-            r#"{"tokens":{"refresh_token":"r"}}"#,
-        )
-        .expect("write auth file");
-        assert_eq!(codex_login_from_file(Some(home)), CodexLoginProbe::SignedIn);
-    }
-}
+#[path = "codex_login_file_tests.rs"]
+mod tests;

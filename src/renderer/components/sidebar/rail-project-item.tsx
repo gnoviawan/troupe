@@ -5,7 +5,7 @@ import { useRailCollapsed } from '../shell/rail/rail-density'
 import { RailWorktreeChip, RailWorktreeSwitcher } from '../shell/rail/worktree-switcher'
 import { railChatsListId } from '../shell/rail-layout'
 import { logRailEvent } from '../shell/shell-log'
-import { useProjectChats } from '../shell/use-project-chats'
+import { useProjectHasChats } from '../shell/use-project-chats'
 import { ProjectIconItem } from './project-icon-item'
 import { ProjectItem, type ProjectItemProps } from './project-item'
 
@@ -48,9 +48,9 @@ export const RailProjectItem = memo(function RailProjectItem(
  */
 function ActiveRailProjectItem(props: ProjectItemProps): React.JSX.Element {
   const { project, onClick } = props
-  const { cards } = useProjectChats(project)
+  const hasChats = useProjectHasChats(project)
   const hidden = useProjectChatsHidden(project.id)
-  if (cards.length === 0) return <ProjectItem {...props} />
+  if (!hasChats) return <ProjectItem {...props} />
   const toggle = (): void => {
     logRailEvent(`${hidden ? 'expand' : 'collapse'} chats ${project.id}`)
     useShellLayoutStore.getState().setProjectChatsHidden(project.id, !hidden)

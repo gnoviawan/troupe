@@ -13,7 +13,7 @@ import { gitApi } from '@/lib/git-api'
 import { logFrontendError } from '@/lib/log-api'
 import { platform } from '@/lib/tauri-os'
 import { normalizePath } from '@/lib/working-copy'
-import { reconcileProjectWorktrees } from '@/lib/worktree-reconciler'
+import { reconcileWorktreeOwnerOf } from '@/lib/worktree-reconciler'
 import { useProjectStore } from './project-store'
 import { useTerminalStore } from './terminal-store'
 
@@ -560,6 +560,7 @@ export const useGitStatusStore = create<GitStatusState>((set, get) => ({
     set({ selectedFile: null })
     await refreshAfterMutation(get, cwd)
     await updateStoresWithBranch(cwd, name)
+    reconcileWorktreeOwnerOf(cwd)
   },
 
   branchCreate: async (cwd, name) => {
@@ -603,20 +604,6 @@ async function updateStoresWithBranch(cwd: string, branchName: string) {
     const project = projectStore.projects.find((p) => matchPath(p.path))
     if (project) {
       projectStore.updateProject(project.id, { gitBranch: branchName })
-    }
-    // A switch in a listed worktree (the Changes header at a worktree pick):
-    // re-list the worktrees so the Rail chip and chat rows show the new branch
-    // now, not on the reconciler's next tick.
-    const worktreeOwner = projectStore.projects.find((p) =>
-      p.worktrees?.some((w) => matchPath(w.path))
-    )
-    if (worktreeOwner) {
-      void logFrontendError({
-        level: 'info',
-        source: 'git-status-store',
-        message: `[git-status] branch switch in a worktree of project ${worktreeOwner.id}: reconcile worktrees`
-      })
-      void reconcileProjectWorktrees(worktreeOwner.id)
     }
 
     const terminalStore = useTerminalStore.getState()

@@ -51,6 +51,31 @@ interface BuildChatCardsInput {
   agentNames: ReadonlyMap<string, string>
 }
 
+/** The project's Troupe-created chats, and those in the picked scope. */
+function projectChatScope({
+  sessionIndex,
+  project,
+  pick
+}: Omit<BuildChatCardsInput, 'agentNames'>): {
+  projectChats: SessionIndexEntry[]
+  scoped: SessionIndexEntry[]
+} {
+  const picked = pickedWorkingCopy(project, pick)
+  const narrowKey = picked?.state === 'resolved' && picked.kind === 'worktree' ? picked.key : null
+  const projectChats = sessionIndex.filter(
+    (e) => e.projectId === project.id && e.discovered !== true
+  )
+  const scoped = projectChats.filter(
+    (e) => narrowKey === null || workingCopyOf(e.cwd, project)?.key === narrowKey
+  )
+  return { projectChats, scoped }
+}
+
+/** Whether {@link buildChatCards} would return any card (folding never empties a list). */
+export function hasChatCards(input: Omit<BuildChatCardsInput, 'agentNames'>): boolean {
+  return projectChatScope(input).scoped.length > 0
+}
+
 /**
  * Cards for the active project: Troupe-created chats only, scoped by the pick
  * (a picked worktree keeps its own chats; Workspace keeps all of them), newest
@@ -62,9 +87,6 @@ export function buildChatCards({
   pick,
   agentNames
 }: BuildChatCardsInput): ChatCardData[] {
-  const picked = pickedWorkingCopy(project, pick)
-  const narrowKey = picked?.state === 'resolved' && picked.kind === 'worktree' ? picked.key : null
-
   // CAP-8 (spec-in-chat-agent-switch): scope first, then fold every
   // `continuedFrom` chain to its terminal session — a handed-off chat is one
   // row, opened/reloaded on the live session, deleted as a whole via
@@ -72,12 +94,7 @@ export function buildChatCards({
   // member outside it stays its own row), but DELETE membership resolves
   // against the whole project index so a folded card removes members beyond
   // the pick too — otherwise the out-of-scope member resurfaces standalone.
-  const projectChats = sessionIndex.filter(
-    (e) => e.projectId === project.id && e.discovered !== true
-  )
-  const scoped = projectChats.filter(
-    (e) => narrowKey === null || workingCopyOf(e.cwd, project)?.key === narrowKey
-  )
+  const { projectChats, scoped } = projectChatScope({ sessionIndex, project, pick })
   const deleteIndex = sessionChainIndex(projectChats)
 
   return foldEntries(sessionChainIndex(scoped))

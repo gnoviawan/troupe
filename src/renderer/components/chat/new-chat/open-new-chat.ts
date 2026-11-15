@@ -1,3 +1,4 @@
+import { PersistenceKeys } from '@shared/types/persistence.types'
 import { toast } from 'sonner'
 import { type LaunchCheckout, launchChat } from '@/components/agents/launcher/launch-chat'
 import {
@@ -9,6 +10,7 @@ import {
   restoredLauncherOptions
 } from '@/components/agents/pending-launcher-options'
 import type { SessionId } from '@/lib/acp-api'
+import { persistenceApi } from '@/lib/api'
 import { logFrontendError } from '@/lib/log-api'
 import { getActiveWorktreeForProject, getDefaultCwdForProject } from '@/lib/worktree-context'
 import {
@@ -56,14 +58,32 @@ function log(level: 'info' | 'warn' | 'error', message: string): void {
   void logFrontendError({ level, source: SOURCE, message })
 }
 
-/** A chat that has not started: no messages, no turn, still usable. */
+/**
+ * A chat that has not started: no messages, nothing queued for the agent, no
+ * turn, still usable. A message sent before the agent is ready waits in the
+ * queue, so a chat with a queued message is not empty.
+ */
 export function isEmptyStartChat(sessionId: SessionId): boolean {
   const state = useAcpStore.getState()
   const session = state.sessions[sessionId]
   if (!session) return false
   if (session.status === 'closed' || session.status === 'error') return false
   if (session.activeTurn || session.openTurnId) return false
+  if ((state.promptQueues[sessionId]?.length ?? 0) > 0) return false
   return (state.messages[sessionId]?.length ?? 0) === 0
+}
+
+/** The text of the messages waiting in a chat's queue. */
+function queuedText(sessionId: SessionId): string {
+  return (useAcpStore.getState().promptQueues[sessionId] ?? [])
+    .map((item) =>
+      (item.displayBlocks ?? item.blocks)
+        .map((block) => (block.type === 'text' ? (block.text ?? '') : ''))
+        .join('')
+        .trim()
+    )
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 /** The empty chat of `projectId` the pane shows now, if any. */
@@ -183,10 +203,11 @@ export function openNewChat(request: OpenNewChatRequest): Promise<OpenNewChatRes
     log('info', `New chat (reason=${request.reason}) focused the empty chat ${existing}`)
     return Promise.resolve({ kind: 'focused', sessionId: existing })
   }
-  const pending = inFlight.get(paneId)
+  const key = `${paneId}:${projectId}`
+  const pending = inFlight.get(key)
   if (pending) return pending
-  const run = start(paneId, projectId, request.reason).finally(() => inFlight.delete(paneId))
-  inFlight.set(paneId, run)
+  const run = start(paneId, projectId, request.reason).finally(() => inFlight.delete(key))
+  inFlight.set(key, run)
   return run
 }
 
@@ -221,6 +242,15 @@ async function start(
   rememberNewChatAgent(agent.configId)
 
   const picks = await savedPicks(agent.configId)
+  // The awaits above can outlive the pane or the project the user was in.
+  const now = useWorkspaceStore.getState()
+  if (
+    findPaneById(now.root, paneId)?.type !== 'leaf' ||
+    useProjectStore.getState().activeProjectId !== projectId
+  ) {
+    log('info', `New chat (reason=${reason}) skipped: its pane or project changed while it started`)
+    return { kind: 'skipped' }
+  }
   const cache = useAcpStore.getState().agentOptionsCache[agent.configId]
   const shown = newChatPlaceholderOptions(cache, picks)
   const dropped = (cache?.configOptions.length ?? 0) - shown.configOptions.length
@@ -250,14 +280,30 @@ async function start(
       if (err instanceof ChatLaunchCancelledError) return
       if (!isAuthRetriableSessionError(err)) return // the chat shows the error and Retry
       // A sign-in has no home in the chat: the launcher shows the agent's
-      // sign-in methods. The failed empty chat goes away under it.
-      log(
-        'info',
-        `New chat ${placeholderId} needs a sign-in to ${agent.configId}: opened the launcher`
-      )
-      useWorkspaceStore.getState().removeTab(agentChatTabId(placeholderId))
-      void discardEmptyChat(placeholderId)
-      useWorkspaceStore.getState().showAgentLauncher(paneId)
+      // sign-in methods. The failed empty chat goes away under it; a message
+      // that waited in its queue moves to the launcher's draft.
+      const waiting = queuedText(placeholderId)
+      // The launcher reads its draft when it mounts: write it first.
+      const keepDraft = waiting
+        ? persistenceApi
+            .write(PersistenceKeys.lastLaunchDraft(projectId), waiting)
+            .then(() => undefined)
+            .catch((writeErr: unknown) =>
+              log(
+                'warn',
+                `New chat ${placeholderId}: could not keep the queued message: ${writeErr instanceof Error ? writeErr.message : String(writeErr)}`
+              )
+            )
+        : Promise.resolve()
+      return keepDraft.then(() => {
+        log(
+          'info',
+          `New chat ${placeholderId} needs a sign-in to ${agent.configId}: opened the launcher${waiting ? ' with the queued message as its draft' : ''}`
+        )
+        useWorkspaceStore.getState().removeTab(agentChatTabId(placeholderId))
+        void discardEmptyChat(placeholderId)
+        useWorkspaceStore.getState().showAgentLauncher(paneId)
+      })
     })
   return { kind: 'opened', sessionId: placeholderId }
 }

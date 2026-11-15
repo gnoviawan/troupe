@@ -75,6 +75,7 @@ beforeEach(() => {
     agentOptionsCache: {},
     sessions: {},
     messages: {},
+    promptQueues: {},
     launchingSessionIds: {}
   } as never)
   resolveEntries.mockResolvedValue([entry('cfg-a'), entry('cfg-b')])
@@ -269,6 +270,71 @@ describe('openNewChat', () => {
     await vi.waitFor(() => expect(showAgentLauncher).toHaveBeenCalledWith('pane-1'))
     expect(removeTab).toHaveBeenCalledWith(agentChatTabId('launch-1'))
     await vi.waitFor(() => expect(deleteHistorySession).toHaveBeenCalledWith('launch-1'))
+  })
+
+  it('moves a message that waited in the queue into the launcher draft before it opens', async () => {
+    const showAgentLauncher = vi.spyOn(useWorkspaceStore.getState(), 'showAgentLauncher')
+    useAcpStore.setState({
+      deleteHistorySession: vi.fn(async () => {}),
+      closeSession: vi.fn(async () => {})
+    } as never)
+
+    await openNewChat({ reason: 'rail' })
+    useAcpStore.setState({
+      promptQueues: {
+        'launch-1': [{ id: 'q', blocks: [{ type: 'text', text: 'fix the build' }], createdAt: 1 }]
+      }
+    } as never)
+    started.reject(new Error('ACP_AUTH_REQUIRED: sign in'))
+
+    await vi.waitFor(() => expect(showAgentLauncher).toHaveBeenCalledWith('pane-1'))
+    expect(write).toHaveBeenCalledWith(PersistenceKeys.lastLaunchDraft('p1'), 'fix the build')
+    expect(write.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      showAgentLauncher.mock.invocationCallOrder[0]
+    )
+  })
+
+  it('a chat with a queued message is not an empty chat to focus', async () => {
+    const tabId = agentChatTabId('s-queued')
+    pane([{ type: 'agent-chat', id: tabId, sessionId: 's-queued' }], tabId)
+    useAcpStore.setState({
+      sessions: { 's-queued': { id: 's-queued', projectId: 'p1', status: 'active' } },
+      messages: { 's-queued': [] },
+      promptQueues: {
+        's-queued': [{ id: 'q', blocks: [{ type: 'text', text: 'hi' }], createdAt: 1 }]
+      }
+    } as never)
+
+    expect((await openNewChat({ reason: 'rail' })).kind).toBe('opened')
+  })
+
+  it('starts nothing when its pane closed while it resolved the agent', async () => {
+    let finish: (value: unknown) => void = () => undefined
+    resolveEntries.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      })
+    )
+    const run = openNewChat({ reason: 'rail' })
+    useWorkspaceStore.setState({
+      root: { type: 'leaf', id: 'pane-2', tabs: [], activeTabId: null }
+    } as never)
+    finish([entry('cfg-a'), entry('cfg-b')])
+
+    expect(await run).toEqual({ kind: 'skipped' })
+    expect(launchChat).not.toHaveBeenCalled()
+  })
+
+  it('keeps one start per pane and project, not per pane', async () => {
+    useProjectStore.setState({
+      projects: [
+        { id: 'p1', name: 'termul', path: '/work', isGitRepo: true },
+        { id: 'p2', name: 'other', path: '/other', isGitRepo: true }
+      ]
+    } as never)
+    const first = openNewChat({ reason: 'rail', projectId: 'p1' })
+    const second = openNewChat({ reason: 'rail', projectId: 'p2' })
+    expect(second).not.toBe(first)
   })
 
   it('leaves other start failures to the chat (error and Retry)', async () => {

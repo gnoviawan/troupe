@@ -17,7 +17,7 @@ import { type ChatStartPick, useChatStartPickStore } from '@/stores/chat-start-p
 import { useProjectStore } from '@/stores/project-store'
 import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
-import { discardEmptyChat, isEmptyStartChat, openNewChat } from './open-new-chat'
+import { discardEmptyChat, isEmptyStartChat } from './open-new-chat'
 
 const SOURCE = 'chat.sendFromChatStart'
 
@@ -116,44 +116,59 @@ function textOf(blocks: readonly ContentBlock[]): string {
     .trim()
 }
 
+/** What the first send of an empty chat did. */
+export type ChatStartSend =
+  /** The pick changes nothing: send as usual. */
+  | 'normal'
+  /** The chat starts again in the picked place with this message. */
+  | 'restarted'
+  /** The pick cannot apply: nothing was sent, the composer keeps its draft. */
+  | 'blocked'
+
 /**
  * Apply an empty chat's working-copy pick on its first send. The chat has no
  * history, so it starts again in the picked place through `launchChat` (the
  * launcher's path): an existing worktree or the current checkout starts the
  * session there; New worktree makes the worktree first while git's progress
  * streams into the timeline card. The new chat takes the old chat's tab in
- * place, with the message and the same agent and options; the old empty
- * session is closed once the new one started.
+ * place, with the message and the same agent and options.
  *
- * Returns false when the pick changes nothing: the caller sends as usual.
- * `onBlocked` gets the unsent text back when the pick cannot apply.
+ * The old empty chat stays until the new one started. When the new worktree
+ * fails, the tab goes back to it with the message text in its composer (and
+ * its pasted files, still its own); nothing opens over other work.
  */
 export function sendFromChatStart(args: {
   sessionId: SessionId
   blocks: ContentBlock[]
   displayBlocks?: ContentBlock[]
-  onBlocked: (text: string) => void
-}): boolean {
+}): ChatStartSend {
   const { sessionId, blocks } = args
   const displayBlocks = args.displayBlocks ?? blocks
   const pick = useChatStartPickStore.getState().picks[sessionId]
-  if (!pick || !isEmptyStartChat(sessionId)) return false
+  if (!pick) return 'normal'
+  if (!isEmptyStartChat(sessionId)) {
+    // The chat already started: the pick no longer applies.
+    useChatStartPickStore.getState().clearPick(sessionId)
+    return 'normal'
+  }
   const state = useAcpStore.getState()
   const session = state.sessions[sessionId]
   const project = useProjectStore.getState().projects.find((p) => p.id === session?.projectId)
-  if (!session || !project?.path) return false
+  if (!session || !project?.path) return 'normal'
   const target = chatStartTarget(session, pick, { ...project, path: project.path })
-  if (target.kind === 'stay') return false
+  if (target.kind === 'stay') {
+    useChatStartPickStore.getState().clearPick(sessionId)
+    return 'normal'
+  }
   if (target.kind === 'blocked') {
     toast.error(target.message)
-    args.onBlocked(textOf(displayBlocks))
     log('warn', `Empty chat ${sessionId}: the pick (${pick.isolationMode}) cannot apply`)
-    return true
+    return 'blocked'
   }
   const configId = chatConfigId(state, session)
   if (!configId) {
     log('warn', `Empty chat ${sessionId}: no agent config; sent in place`)
-    return false
+    return 'normal'
   }
 
   const projectId = session.projectId
@@ -162,7 +177,6 @@ export function sendFromChatStart(args: {
     agentChatTabId(sessionId)
   )?.id
   const { shown, pending } = shownOptions(state, session, configId)
-  let worktreeFailed = false
   const { placeholderId, started } = launchChat({
     configId,
     projectId,
@@ -173,37 +187,39 @@ export function sendFromChatStart(args: {
         ? { projectRoot: target.projectRoot, baseBranch: target.baseBranch }
         : undefined,
     placeholder: { ...shown, initialUserBlocks: displayBlocks },
-    // The new chat takes the old chat's tab (same mount, same place).
+    // The new chat takes the old chat's tab (same mount, same place)…
     onOpened: (id) => useWorkspaceStore.getState().remapAgentChatSession(sessionId, id, paneId),
+    // …and gives it back when it cannot start.
+    onRollback: (id) => useWorkspaceStore.getState().remapAgentChatSession(id, sessionId, paneId),
     beforeStart: async () => ({
       blocks,
       pending: hasPendingLauncherOptions(pending) ? pending : null
     }),
-    onWorktreeFailed: () => {
-      worktreeFailed = true
-      // The chat is gone with its placeholder: open a new empty one with the text.
+    onWorktreeFailed: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to create worktree')
       const text = textOf(displayBlocks)
-      void openNewChat({ paneId, projectId, reason: 'worktree-failed' }).then((result) => {
-        if (text && (result.kind === 'opened' || result.kind === 'focused')) {
-          seedComposerDraft(projectId, result.sessionId, text)
-        }
-      })
+      if (text) seedComposerDraft(projectId, sessionId, text)
+      log('warn', `Empty chat ${sessionId}: the new worktree failed; the chat stays as it was`)
     }
   })
   log(
     'info',
     `Empty chat ${sessionId} starts again as ${placeholderId} (${target.kind === 'move' ? 'moved to the picked folder' : `new worktree from ${target.baseBranch}`})`
   )
-  // Pasted files were staged for the old chat; they belong to the new one.
-  void started
-    .then(
-      (realId) => moveSessionTempFiles(sessionId, realId),
-      (err: unknown) => {
-        if (worktreeFailed)
-          toast.error(err instanceof Error ? err.message : 'Failed to create worktree')
-        else moveSessionTempFiles(sessionId, placeholderId)
+  void started.then(
+    (realId) => {
+      // Pasted files were staged for the old chat; they belong to the new one.
+      moveSessionTempFiles(sessionId, realId)
+      void discardEmptyChat(sessionId)
+    },
+    () => {
+      // A start failure after the worktree shows in the new chat with Retry;
+      // the old empty chat is no longer on screen.
+      const root = useWorkspaceStore.getState().root
+      if (!findPaneContainingTab(root, agentChatTabId(sessionId))) {
+        void discardEmptyChat(sessionId)
       }
-    )
-    .finally(() => void discardEmptyChat(sessionId))
-  return true
+    }
+  )
+  return 'restarted'
 }

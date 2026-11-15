@@ -1,13 +1,14 @@
-import type { LastSelectedAgent } from '@shared/types/persistence.types'
-import { PersistenceKeys } from '@shared/types/persistence.types'
 import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
+import {
+  readLastSelectedAgentId,
+  rememberLastSelectedAgent
+} from '@/lib/agents/last-selected-agent'
 import {
   pickDefaultConfiguredAgent,
   pickDefaultSupportedAgent,
   resolveSupportedAcpAgents,
   type SupportedAcpAgentEntry
 } from '@/lib/agents/supported-acp-agents'
-import { persistenceApi } from '@/lib/api'
 import { logFrontendError } from '@/lib/log-api'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { useAcpStore } from '@/stores/acp-store'
@@ -33,19 +34,6 @@ function warn(message: string, err: unknown): void {
   })
 }
 
-/** The last picked agent; when it cannot be read the default agent starts. */
-async function readLastSelectedAgentId(): Promise<string | null> {
-  try {
-    const result = await persistenceApi.read<unknown>(PersistenceKeys.lastSelectedAgent)
-    const saved = (result.success ? result.data : null) as Partial<LastSelectedAgent> | null
-    return saved?.mode === 'acp' && typeof saved.agentId === 'string' ? saved.agentId : null
-  } catch (err) {
-    warn('Could not read the last picked agent', err)
-    return null
-  }
-}
-
-/** The supported agents; when they cannot be resolved the launcher opens. */
 async function resolveEntries(
   configs: readonly StoredAgentConfig[]
 ): Promise<readonly SupportedAcpAgentEntry[]> {
@@ -118,8 +106,6 @@ export async function resolveNewChatAgent(): Promise<NewChatAgent> {
 
 /** Remember the agent a new chat started with, like a launcher pick. */
 export function rememberNewChatAgent(configId: string): void {
-  void persistenceApi
-    .write<LastSelectedAgent>(PersistenceKeys.lastSelectedAgent, { agentId: configId, mode: 'acp' })
-    .catch((err: unknown) => warn('Could not save the last picked agent', err))
+  rememberLastSelectedAgent(configId)
   useAcpStore.getState().setSelectedAgentConfigId(configId)
 }

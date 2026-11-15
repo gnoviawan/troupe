@@ -21,6 +21,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import { OUTSIDE_PROJECT_ROOT_REASON } from '@/lib/active-worktree'
+import { __resetLastSelectedAgentCache } from '@/lib/agents/last-selected-agent'
 import {
   buildSupportedAcpAgents,
   pickDefaultSupportedAgent,
@@ -38,7 +39,7 @@ import { useLoginTerminalSignInStore } from '@/stores/login-terminal-sign-in-sto
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import { useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { __resetLauncherSelectionCache, AgentLauncher } from './AgentLauncher'
+import { AgentLauncher } from './AgentLauncher'
 
 // jsdom omits `document.elementFromPoint`. Radix/floating-ui call it during
 // popover open/positioning; without a stub the agent/model pickers never open
@@ -837,7 +838,7 @@ function renderLauncher(): void {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.restoreAllMocks()
-  __resetLauncherSelectionCache()
+  __resetLastSelectedAgentCache()
   // Login terminals outlive the launcher; a test's unexited one must not
   // block the next test's sign-in.
   useLoginTerminalSignInStore.setState({ byAgent: {} })

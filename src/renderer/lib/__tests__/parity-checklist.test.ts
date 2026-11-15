@@ -3590,7 +3590,8 @@ describe('Sidebar V2 shell parity (tool strip, palette Chats, Projects menu)', (
 
   it('the palette Chats group reads the shared session index on every desktop-width surface', () => {
     const chats = read('CommandPaletteChats.tsx')
-    expect(chats).toMatch(/buildChatCards\(/)
+    // Every chat of the project (no worktree pick), from the session index.
+    expect(chats).toMatch(/useProjectChatCards\(project, null\)/)
     expect(chats).not.toMatch(/isTauriContext/)
     expect(read('CommandPalette.tsx')).toMatch(/<CommandPaletteChats project=\{chatsProject\}/)
     // The phone palette has no Chats group: the drawer search covers it.

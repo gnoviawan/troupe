@@ -1,15 +1,13 @@
 import { useCallback } from 'react'
 import { toast } from 'sonner'
+import { deleteConversation } from '@/components/chat/delete-conversation'
 import type { ProjectChatEntry } from '@/components/sidebar/project-chat-row'
 import { openerApi } from '@/lib/api'
 import { copyChatReference } from '@/lib/chat-reference'
 import { copyTextWithToast } from '@/lib/copy-text'
 import { logFrontendError } from '@/lib/log-api'
 import { openAgentChatPlaced } from '@/lib/open-agent-chat'
-import { conversationDeleteIds } from '@/lib/session-chain'
 import { openTerminalAtCwd } from '@/lib/terminal-spawn'
-import { useAcpStore } from '@/stores/acp-store'
-import { liveSwitchSources } from '@/stores/acp-store/shared-state'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 const LOG_SOURCE = 'shell-chat-row-menu'
@@ -31,8 +29,6 @@ export interface ChatRowMenuActions {
  * reference or id, and delete it.
  */
 export function useChatRowMenuActions(projectId: string): ChatRowMenuActions {
-  const deleteHistorySession = useAcpStore((s) => s.deleteHistorySession)
-
   const onOpenInSplit = useCallback((entry: ProjectChatEntry) => {
     // Read at call time: the active pane can change after the render.
     const { activePaneId } = useWorkspaceStore.getState()
@@ -67,8 +63,18 @@ export function useChatRowMenuActions(projectId: string): ChatRowMenuActions {
   const onOpenInFileExplorer = useCallback(
     async (cwd: string) => {
       const result = await openerApi.revealInFileManager(cwd)
+      if (result.success) return
       // The browser client has no file manager: copy the path instead.
-      if (!result.success) await onCopyPath(cwd)
+      if (result.code === 'WEB_UNSUPPORTED') {
+        await onCopyPath(cwd)
+        return
+      }
+      void logFrontendError({
+        level: 'warn',
+        source: LOG_SOURCE,
+        message: `[rail-chats] reveal in file manager failed (code=${result.code ?? 'UNKNOWN'})`
+      })
+      toast.error('Could not open the folder', { description: cwd })
     },
     [onCopyPath]
   )
@@ -86,26 +92,9 @@ export function useChatRowMenuActions(projectId: string): ChatRowMenuActions {
     })
   }, [])
 
-  // A folded row is one conversation. Membership is read at click time, not
-  // from the rendered `chainIds`: a switch that ends while the confirm is
-  // open adds a session, and an old list would leave it behind.
   const onDelete = useCallback(
-    (entry: ProjectChatEntry) => {
-      const { sessionIndex } = useAcpStore.getState()
-      for (const memberId of conversationDeleteIds(sessionIndex, entry.id, liveSwitchSources)) {
-        void deleteHistorySession(memberId).catch((error: unknown) => {
-          // Never the chat title or prompt text: the error message only.
-          const reason = error instanceof Error ? error.message : 'unknown error'
-          void logFrontendError({
-            level: 'warn',
-            source: LOG_SOURCE,
-            message: `[rail-chats] delete chat failed: ${reason}`
-          })
-          toast.error('Could not delete that chat. Try again.')
-        })
-      }
-    },
-    [deleteHistorySession]
+    (entry: ProjectChatEntry) => deleteConversation(entry.id, LOG_SOURCE),
+    []
   )
 
   return {

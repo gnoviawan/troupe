@@ -9,7 +9,7 @@ import { useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useWorktreeProgressStore } from '@/stores/worktree-progress-store'
 import type { Project } from '@/types/project'
 
-const LOG_SOURCE = 'shell-workspace-switcher'
+const LOG_SOURCE = 'shell-worktree-switcher'
 
 /** Windows `MAX_PATH` is 260; leave room for the files inside the worktree. */
 const MAX_TARGET_PATH = 240

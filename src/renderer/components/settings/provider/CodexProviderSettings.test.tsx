@@ -170,6 +170,26 @@ describe('CodexProviderSettings', () => {
     expect(screen.getByText('No — Personal stays default')).toBeInTheDocument()
   })
 
+  it('stays open while a sign-in runs: Escape and Cancel do not close it', async () => {
+    let finish: () => void = () => undefined
+    signInCodexAccount.mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+    )
+    render(<CodexProviderSettings />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Add account' }))
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Side' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign in with ChatGPT' }))
+    expect(await screen.findByText('Waiting for the sign-in…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    finish()
+    expect(await screen.findByText('Side is ready')).toBeInTheDocument()
+  })
+
   it('shows the failed step with Try again when the sign-in does not finish', async () => {
     signInCodexAccount.mockRejectedValue(new Error('The sign-in timed out.'))
     render(<CodexProviderSettings />)

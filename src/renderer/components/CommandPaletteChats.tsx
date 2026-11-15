@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import { ChatEntryIcon } from '@/components/chat/ChatHistoryEntryRow'
-import { buildChatCards, filterChatCards, modelLineOf } from '@/components/shell/chat-cards'
+import { filterChatCards, modelLineOf } from '@/components/shell/chat-cards'
 import { logShellEvent } from '@/components/shell/shell-log'
 import { useChatCardActions } from '@/components/shell/use-chat-card-actions'
+import { useProjectChatCards } from '@/components/shell/use-project-chats'
 import { CommandGroup, CommandItem } from '@/components/ui/command'
-import { useAcpStore } from '@/stores/acp-store'
 import type { Project } from '@/types/project'
 
 interface CommandPaletteChatsProps {
@@ -26,14 +26,8 @@ export function CommandPaletteChats({
   query,
   onDone
 }: CommandPaletteChatsProps): React.JSX.Element | null {
-  const sessionIndex = useAcpStore((s) => s.sessionIndex)
-  const agentConfigs = useAcpStore((s) => s.agentConfigs)
   const { onOpen } = useChatCardActions()
-
-  const cards = useMemo(() => {
-    const agentNames = new Map(agentConfigs.map((config) => [config.id, config.name]))
-    return buildChatCards({ sessionIndex, project, pick: null, agentNames })
-  }, [sessionIndex, project, agentConfigs])
+  const cards = useProjectChatCards(project, null)
 
   const matches = useMemo(() => filterChatCards(cards, query), [cards, query])
 
