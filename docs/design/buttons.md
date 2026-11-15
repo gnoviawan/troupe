@@ -26,6 +26,23 @@ A primary action is a `Button`. Do not paint `bg-primary-fill` on a raw `<button
 
 Only main buttons press: `default`, `composer`, `secondary`, `outline` and `destructive` squeeze to `scale(0.97)` over `150ms` on `cubic-bezier(0.23, 1, 0.32, 1)` (the `PRESS` constant in `button.tsx`), with no squeeze under reduced motion. Ghost and link buttons, icon buttons, rows, menu items, chips and tabs do not scale; they answer with their fill. There is no document-wide press rule.
 
+## Icon buttons and row actions
+
+None of these press-scale: they answer with a colour or fill change.
+
+```
+Where does the icon-only control sit?
+ ├── Chat messages, code blocks, tool calls (streamdown chrome) → IconActionButton (label required; size="sm" in dense chrome)
+ ├── A panel header or the Rail footer → PANEL_ICON_BUTTON_CLASS (28px) / railButtonClass (rail-button.tsx, 32px, keycap when active)
+ ├── At the end of a list row (…, settings, +) → a 20px quiet button (size-5, 12px glyph), shown on hover or focus
+ ├── A pill in the composer toolbar (model, mode) → ComposerPill
+ └── A toolbar elsewhere → Button size="icon-sm" or "icon-xs" variant="ghost"
+```
+
+- Every icon-only control has an `aria-label` and a tooltip (`RailTooltip` in the Rail, `Tooltip` elsewhere).
+- Row actions (the "…" or "+") are siblings of the row's own button, never nested in it. "…" opens the row's context menu (`openContextMenuFrom` in `lib/context-menu-key.ts`), so right-click, Shift+F10 and "…" show the same menu.
+- Bordered on/off pills use `pressedToggleClass` (`ui/panel-styles.ts`); a segmented track uses `SEGMENTED_TRACK_CLASS` with `segmentClass` (active = keycap).
+
 ## Correct
 
 ```tsx

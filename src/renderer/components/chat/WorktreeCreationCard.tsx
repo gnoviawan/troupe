@@ -188,7 +188,7 @@ export function WorktreeCreationCard({ progressId }: WorktreeCreationCardProps):
               <div
                 ref={logRef}
                 onScroll={handleLogScroll}
-                className="scroller-thin max-h-[160px] overflow-y-auto rounded-md bg-background/60 px-2 py-1.5 font-mono text-[11px] leading-relaxed text-muted-foreground"
+                className="scroller-thin max-h-[160px] overflow-y-auto rounded-md bg-background/60 px-2 py-1.5 font-mono text-2xs leading-relaxed text-muted-foreground"
               >
                 {op && op.dropped > 0 ? (
                   <div>

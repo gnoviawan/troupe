@@ -190,10 +190,8 @@ export function PermissionPrompt({
       {rejectOnCancel && (
         <p
           className={cn(
-            'mt-2 leading-tight',
-            isMobileShell
-              ? 'text-2xs text-muted-foreground'
-              : 'text-[11px] text-muted-foreground/70'
+            'mt-2 text-2xs leading-tight',
+            isMobileShell ? 'text-muted-foreground' : 'text-muted-foreground/70'
           )}
         >
           Choose an option to resume the agent. This request stays here until you respond.

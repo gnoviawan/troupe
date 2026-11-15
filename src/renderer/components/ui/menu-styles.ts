@@ -53,7 +53,7 @@ export const MENU_INDICATOR_CLASS = 'absolute left-2 flex h-3.5 w-3.5 items-cent
 export const MENU_LABEL_CLASS = 'label-panel px-2 pb-1 pt-2'
 
 /** Hairline between groups, edge to edge inside the 4px shell padding. */
-export const MENU_SEPARATOR_CLASS = '-mx-1 my-1 h-px bg-border'
+export const MENU_SEPARATOR_CLASS = '-mx-1 my-1 h-[0.5px] bg-border'
 
 /** Keyboard shortcut hint at the row end. */
 export const MENU_SHORTCUT_CLASS = 'ml-auto pl-4 text-2xs text-muted-foreground'

@@ -79,7 +79,7 @@ export function ChatStartHero({
       <TermulMark size={isMobileShell ? 32 : 56} className="text-secondary-foreground" />
       <Heading
         className={cn(
-          'break-words text-[22px] font-normal leading-7 tracking-[-0.015em] text-foreground',
+          'break-words text-hero font-normal leading-7 tracking-[-0.015em] text-foreground',
           isMobileShell && 'text-xl'
         )}
       >

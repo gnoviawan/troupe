@@ -212,7 +212,7 @@ export function ChoiceList({
             >
               <span className="fade-end min-w-0 flex-1 tabular-nums">{choice.name}</span>
               {choice.unavailable ? (
-                <span className="shrink-0 text-[10px] text-muted-foreground">Not available</span>
+                <span className="shrink-0 text-2xs text-muted-foreground">Not available</span>
               ) : null}
             </button>
           )

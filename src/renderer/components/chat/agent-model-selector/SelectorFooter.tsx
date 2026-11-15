@@ -102,9 +102,7 @@ function SelectTrack({
                 {rejected.has(option.value) ? (
                   <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                     <span className="truncate">{option.name}</span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      Not available
-                    </span>
+                    <span className="shrink-0 text-2xs text-muted-foreground">Not available</span>
                   </span>
                 ) : (
                   option.name

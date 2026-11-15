@@ -17,7 +17,7 @@ describe('ChatStartHero (shared by the launcher and the empty chat)', () => {
     render(<ChatStartHero projectLabel="termul-new" />)
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toHaveClass(
-      'text-[22px]',
+      'text-hero',
       'leading-7',
       'tracking-[-0.015em]',
       'font-normal',
