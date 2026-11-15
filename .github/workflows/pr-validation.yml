@@ -147,8 +147,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Keep this list aligned with the rust list in codeql.yml.
           # A change to this workflow must still run these jobs.
+          # CodeQL rust stays in its analyze matrix. Skipping that upload
+          # makes the CodeQL check fail with "1 configuration not found".
           is_rust_relevant() {
             case "$1" in
               src-tauri|src-tauri/*) return 0 ;;

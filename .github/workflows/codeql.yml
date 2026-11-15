@@ -19,107 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Job-level filter. Do not add on.pull_request.paths to this workflow.
-  # Push to dev, the Monday schedule, and workflow_dispatch still analyze
-  # Rust. A pull request that does not change Rust files skips Analyze (rust)
-  # only. The job is skipped, so the check is success, not Pending.
-  changes:
-    name: Detect Rust changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      rust: ${{ steps.filter.outputs.rust }}
-    steps:
-      - name: Checkout
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Detect Rust-relevant changes
-        id: filter
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-
-          # Push, schedule, and manual runs keep the full Rust analysis.
-          if [ "$EVENT_NAME" != "pull_request" ]; then
-            echo "Not a pull request. Rust analysis runs."
-            echo "rust=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Keep this list aligned with the rust list in pr-validation.yml.
-          # A change to this workflow or to the CodeQL config still analyzes Rust.
-          is_rust_relevant() {
-            case "$1" in
-              src-tauri|src-tauri/*) return 0 ;;
-              .cargo|.cargo/*) return 0 ;;
-              Cargo.toml|*/Cargo.toml|Cargo.lock|*/Cargo.lock) return 0 ;;
-              rust-toolchain|*/rust-toolchain) return 0 ;;
-              rust-toolchain.toml|*/rust-toolchain.toml) return 0 ;;
-              rustfmt.toml|*/rustfmt.toml|clippy.toml|*/clippy.toml) return 0 ;;
-              .github/workflows/codeql.yml) return 0 ;;
-              .github/codeql|.github/codeql/*) return 0 ;;
-              *) return 1 ;;
-            esac
-          }
-
-          if ! [[ "$BASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "Base SHA is missing or not 40 hex characters. Rust analysis runs."
-            echo "rust=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if ! git cat-file -e "${BASE_SHA}^{commit}"; then
-            echo "Base commit ${BASE_SHA} is not in this checkout. Rust analysis runs."
-            echo "rust=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          files="$(git diff --name-only --no-renames "$BASE_SHA" HEAD)"
-          rust=false
-          while IFS= read -r file; do
-            [ -n "$file" ] || continue
-            if is_rust_relevant "$file"; then
-              echo "rust path: $file"
-              rust=true
-            fi
-          done <<< "$files"
-          echo "Rust-relevant changes: $rust"
-          echo "rust=$rust" >> "$GITHUB_OUTPUT"
-
-  # Rust is its own job. A job `if` cannot read `matrix`, so a matrix
-  # condition cannot skip one language. A skipped job reports success.
-  analyze-rust:
-    name: Analyze (rust)
-    needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@5e316336eb4f107009e477d4bfbfff13d7250fae # v4
-        with:
-          languages: rust
-          queries: security-extended
-          build-mode: none
-          config-file: ./.github/codeql/codeql-config.yml
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@5e316336eb4f107009e477d4bfbfff13d7250fae # v4
-
+  # Rust stays in this matrix. The code scanning configuration on dev is
+  # `codeql.yml:analyze/build-mode:none/language:rust`. Moving rust to another
+  # job, or skipping the upload, makes the CodeQL check fail with
+  # "1 configuration not found". PR Validation still path-filters its Rust jobs.
   analyze:
     name: Analyze (${{ matrix.language }})
-    needs: changes
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
@@ -127,6 +32,8 @@ jobs:
       matrix:
         include:
           - language: javascript-typescript
+            build-mode: none
+          - language: rust
             build-mode: none
           - language: actions
             build-mode: none
