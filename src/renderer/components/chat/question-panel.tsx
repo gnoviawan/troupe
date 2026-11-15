@@ -314,9 +314,6 @@ export const QuestionOption = forwardRef<HTMLButtonElement, QuestionOptionProps>
         ref={ref}
         type="button"
         aria-pressed={selected}
-        // A full-width row scales too far under the document press rule; the
-        // fill and indicator already show the pick.
-        data-press-feedback="off"
         data-question-row=""
         className={cn(
           'flex min-h-9 w-full items-start gap-3 rounded-lg py-2 pl-2.5 pr-3 text-left transition-colors duration-150 ease-out pointer-coarse:min-h-11',

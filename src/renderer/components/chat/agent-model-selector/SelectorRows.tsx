@@ -17,7 +17,7 @@ import type { SelectorModelStatus } from './selector-source'
 import { pickerRowHeight } from './selector-tokens'
 
 export const ROW =
-  'group flex w-full items-center gap-2 rounded-md px-2 text-left text-xs text-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-foreground/[0.06] focus-visible:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-focus-ring enabled:active:scale-[0.96] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60'
+  'group flex w-full items-center gap-2 rounded-md px-2 text-left text-xs text-foreground transition-colors duration-150 ease-out hover:bg-foreground/[0.06] focus-visible:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-60'
 
 export function rowSize(touch: boolean): string {
   return touch ? 'min-h-11 py-2.5' : 'min-h-8 py-1.5'
@@ -70,7 +70,6 @@ export function ModelRow({
       data-selector-row=""
       aria-pressed={selected}
       disabled={disabled}
-      data-press-feedback="off"
       onClick={onPick}
       className={cn(ROW, rowSize(touch))}
     >
@@ -117,7 +116,6 @@ export function AgentRow({
       type="button"
       data-selector-row=""
       disabled={disabled}
-      data-press-feedback="off"
       data-testid={`selector-agent-${tab.configId}`}
       data-search-highlight={highlighted ? '' : undefined}
       onClick={onPick}

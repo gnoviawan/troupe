@@ -39,7 +39,6 @@ export function ComposerSendButton({
           <motion.button
             key="stop"
             type="button"
-            data-press-feedback="off"
             onClick={onCancel}
             title="Cancel turn"
             aria-label="Cancel turn"
@@ -59,7 +58,6 @@ export function ComposerSendButton({
           <motion.button
             key="send"
             type="button"
-            data-press-feedback="off"
             onClick={() => void onSubmit()}
             disabled={!canSend}
             title={busy ? 'Queue message' : (sendLabel ?? 'Send')}

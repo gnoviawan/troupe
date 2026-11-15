@@ -475,57 +475,6 @@
     font-synthesis-style: none;
   }
 
-  /* Press feedback for ALL pressable elements. Buttons must feel like the
-     UI heard the click. Subtle scale (0.96) + custom ease-out keeps it
-     snappy. Disabled buttons skip the press to avoid "dead element"
-     feedback. We scope by [data-press-feedback] for opt-out flexibility,
-     but default it on for buttons / role=button / summary. Triggers that
-     open a menu, popover or list skip it: the surface that opens is the
-     feedback, and a shrinking trigger under a growing menu reads as a jolt.
-     Switches skip it too: the thumb moving is the feedback. */
-  @media (hover: hover) and (pointer: fine) {
-    button:not(:disabled):not([data-press-feedback="off"]):not([aria-haspopup]):not(
-        [role="combobox"]
-      ):not([role="switch"]),
-    [role="button"]:not([aria-disabled="true"]):not([data-press-feedback="off"]):not(
-        [aria-haspopup]
-      ),
-    summary:not([data-press-feedback="off"]) {
-      /* Note: 'transition' here is shorthand and resets transition-property
-         on the element. Components that rely on tailwind's transition-colors
-         (e.g. hover:bg-primary-fill) may lose their colour transition on buttons
-         that match this selector. We accept that trade-off because press
-         feedback is the dominant interaction and per-component
-         transition-colors usually still wins by specificity / cascade order
-         (this rule is in @layer base, tailwind utilities are @layer
-         utilities and apply later). If a hover snap shows up, scope the
-         override per component or drop the shorthand here in favour of
-         transition-property: transform; transition-duration: 120ms;
-         transition-timing-function: var(--ease-out, ease-out); */
-      transition: transform var(--duration-quick, 150ms) var(--ease-out, ease-out);
-    }
-
-    button:not(:disabled):not([data-press-feedback="off"]):not([aria-haspopup]):not(
-        [role="combobox"]
-      ):not([role="switch"]):active,
-    [role="button"]:not([aria-disabled="true"]):not([data-press-feedback="off"]):not(
-        [aria-haspopup]
-      ):active,
-    summary:not([data-press-feedback="off"]):active {
-      transform: scale(0.96);
-    }
-  }
-
-  /* Honour user motion preference: drop the press transform but keep
-     functional state changes (colour, focus ring) intact. */
-  @media (prefers-reduced-motion: reduce) {
-    button:active,
-    [role="button"]:active,
-    summary:active {
-      transform: none;
-    }
-  }
-
   /* Native <select> dropdown items: WebKitGTK ignores parent styling on the
      popup menu, so set our theme tokens directly on <option>. */
   select option {

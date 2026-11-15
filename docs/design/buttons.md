@@ -24,7 +24,7 @@ One `default` per view. Two filled primary buttons means the screen has no hiera
 
 A primary action is a `Button`. Do not paint `bg-primary-fill` on a raw `<button>`. Text primary actions use `size="sm"` (h-9), including modal footers and empty states. A control beside a `text-xs` field uses `size="xs"`. Do not use `lg` for these actions. Mobile floors stay on `touch`.
 
-Press scale on `default` and `composer` is `scale(0.96)` for `150ms`. `Button`, `AlertDialogAction`, and the composer send/stop controls set `data-press-feedback="off"` on that chrome so the document `transform: scale(0.96)` rule does not stack a second press.
+Only main buttons press: `default`, `composer`, `secondary`, `outline` and `destructive` squeeze to `scale(0.97)` over `150ms` on `cubic-bezier(0.23, 1, 0.32, 1)` (the `PRESS` constant in `button.tsx`), with no squeeze under reduced motion. Ghost and link buttons, icon buttons, rows, menu items, chips and tabs do not scale; they answer with their fill. There is no document-wide press rule.
 
 ## Correct
 
