@@ -2,6 +2,7 @@ import { act, fireEvent, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCanvasStore } from '@/stores/canvas-store'
 import { resetShellLayoutStoreForTests, useShellLayoutStore } from '@/stores/shell-layout-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 import { DEFAULT_KEYBOARD_SHORTCUTS } from '@/types/settings'
 import { useWorkspaceKeyboard } from './use-workspace-keyboard'
 
@@ -26,6 +27,10 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/lib/log-api', () => ({ logFrontendError: mockLog }))
 vi.mock('sonner', () => ({ toast: { error: mockToastError } }))
 vi.mock('@/lib/platform', () => ({ isMac: false }))
+const { openNewChat } = vi.hoisted(() => ({
+  openNewChat: vi.fn(async () => ({ kind: 'skipped' as const }))
+}))
+vi.mock('@/components/chat/new-chat/open-new-chat', () => ({ openNewChat }))
 
 const CUSTOM_SIDEBAR_KEY = 'ctrl+alt+j'
 const CUSTOM_EXPLORER_KEY = 'ctrl+alt+k'
@@ -212,5 +217,27 @@ describe('useWorkspaceKeyboard save shortcut on a canvas tab', () => {
     press('s', { ctrlKey: true })
 
     expect(saveCanvas).toHaveBeenCalledWith('proj-1')
+  })
+})
+
+describe('useWorkspaceKeyboard new chat (Ctrl+T)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useWorkspaceStore.setState({ activePaneId: 'pane-1', agentLauncherPaneId: null } as never)
+  })
+
+  it('opens a new empty chat in the active pane', () => {
+    mountKeyboard()
+    press('t', { ctrlKey: true, code: 'KeyT' })
+    expect(openNewChat).toHaveBeenCalledWith({ paneId: 'pane-1', reason: 'shortcut' })
+    expect(useWorkspaceStore.getState().agentLauncherPaneId).toBeNull()
+  })
+
+  it('closes the launcher when its fallback covers the pane', () => {
+    useWorkspaceStore.setState({ agentLauncherPaneId: 'pane-1' } as never)
+    mountKeyboard()
+    press('t', { ctrlKey: true, code: 'KeyT' })
+    expect(openNewChat).not.toHaveBeenCalled()
+    expect(useWorkspaceStore.getState().agentLauncherPaneId).toBeNull()
   })
 })

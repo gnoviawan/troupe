@@ -1,7 +1,11 @@
 import { memo } from 'react'
+import { useProjectChatsHidden, useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useProjectDiffStat } from '../shell/ProjectDiffStat'
 import { useRailCollapsed } from '../shell/rail/rail-density'
 import { RailWorktreeChip, RailWorktreeSwitcher } from '../shell/rail/worktree-switcher'
+import { railChatsListId } from '../shell/rail-layout'
+import { logRailEvent } from '../shell/shell-log'
+import { useProjectChats } from '../shell/use-project-chats'
 import { ProjectIconItem } from './project-icon-item'
 import { ProjectItem, type ProjectItemProps } from './project-item'
 
@@ -28,6 +32,8 @@ export const RailProjectItem = memo(function RailProjectItem(
           renderContextMenu={props.renderContextMenu}
           diffStat={diffStat}
         />
+      ) : props.isActive ? (
+        <ActiveRailProjectItem {...props} diffStat={diffStat} />
       ) : (
         <ProjectItem {...props} diffStat={diffStat} />
       )}
@@ -35,3 +41,30 @@ export const RailProjectItem = memo(function RailProjectItem(
     </RailWorktreeSwitcher>
   )
 })
+
+/**
+ * The open project's row: it owns the chevron that collapses or expands its
+ * chat list (only when it has chats). A click on the row also toggles it.
+ */
+function ActiveRailProjectItem(props: ProjectItemProps): React.JSX.Element {
+  const { project, onClick } = props
+  const { cards } = useProjectChats(project)
+  const hidden = useProjectChatsHidden(project.id)
+  if (cards.length === 0) return <ProjectItem {...props} />
+  const toggle = (): void => {
+    logRailEvent(`${hidden ? 'expand' : 'collapse'} chats ${project.id}`)
+    useShellLayoutStore.getState().setProjectChatsHidden(project.id, !hidden)
+  }
+  return (
+    <ProjectItem
+      {...props}
+      chatsExpanded={!hidden}
+      chatsListId={railChatsListId(project.id)}
+      onToggleChats={toggle}
+      onClick={() => {
+        toggle()
+        onClick()
+      }}
+    />
+  )
+}

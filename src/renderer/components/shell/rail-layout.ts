@@ -30,3 +30,8 @@ export const RAIL_ROW_GAP = 1
 
 /** Hover intent delay of every Rail tooltip and hover panel. */
 export const RAIL_HOVER_OPEN_DELAY = 400
+
+/** Id of a project's Rail chat group, for the project row chevron's `aria-controls`. */
+export function railChatsListId(projectId: string): string {
+  return `rail-chats-${projectId}`
+}

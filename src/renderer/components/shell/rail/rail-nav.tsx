@@ -74,13 +74,18 @@ export const RailNavRow = forwardRef<HTMLButtonElement, RailNavRowProps>(functio
       )}
       aria-label={accessibleName}
       aria-pressed={pressed}
+      // Nav rows do not squeeze on press (the global button press scale).
+      data-press-feedback="off"
       aria-disabled={disabled || undefined}
       disabled={disabled}
       {...props}
     >
       <span
         data-rail-icon-column
-        className="inline-flex size-3.5 shrink-0 items-center justify-center [&_svg]:size-3.5"
+        className={cn(
+          'inline-flex size-3.5 shrink-0 items-center justify-center [&_svg]:size-3.5',
+          pressed ? 'text-foreground' : 'text-muted-foreground'
+        )}
       >
         {icon}
       </span>

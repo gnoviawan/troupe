@@ -30,6 +30,10 @@ const { mockNavigate, mockToastError, tauriRef, macRef, reconcilerSpy, mockLog }
 )
 
 vi.mock('sonner', () => ({ toast: { error: mockToastError } }))
+const { openNewChat } = vi.hoisted(() => ({
+  openNewChat: vi.fn(async () => ({ kind: 'skipped' as const }))
+}))
+vi.mock('@/components/chat/new-chat/open-new-chat', () => ({ openNewChat }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: mockLog }))
 
 vi.mock('@/lib/tauri-runtime', async () => {
@@ -192,12 +196,13 @@ describe('ShellRail', () => {
       useKeyboardShortcutsStore.getState().resetShortcut('commandPalette')
     })
 
-    it('opens the launcher from New chat and logs it once from the Rail', () => {
+    it('opens a new empty chat from New chat and logs it once from the Rail', () => {
       const showAgentLauncher = vi.fn()
       useWorkspaceStore.setState({ activePaneId: 'pane-1', showAgentLauncher })
       renderRail()
       fireEvent.click(screen.getByRole('button', { name: 'New chat' }))
-      expect(showAgentLauncher).toHaveBeenCalledWith('pane-1')
+      expect(openNewChat).toHaveBeenCalledWith({ reason: 'rail' })
+      expect(showAgentLauncher).not.toHaveBeenCalled()
       expect(mockLog).toHaveBeenCalledTimes(1)
       expect(mockLog).toHaveBeenCalledWith({
         level: 'info',
@@ -332,15 +337,20 @@ describe('ShellRail', () => {
       expect(tooltip.parentElement).toHaveAttribute('data-side', 'bottom')
     })
 
-    it('has an icon-only footer: Settings and Report a bug at the left, Theme and Shortcuts at the right', () => {
+    it('has an icon-only footer: four 32px buttons in one row at the left (Paper 2.2)', () => {
       renderRail()
       const settings = screen.getByRole('button', { name: 'Settings' })
-      expect(settings).toHaveClass('size-7')
+      expect(settings).toHaveClass('size-8')
       expect(settings.textContent).toBe('')
       expect(screen.queryByText('Settings')).not.toBeInTheDocument()
 
       const footer = settings.parentElement as HTMLElement
-      expect(footer).toHaveClass('pl-2.5')
+      expect(footer).toHaveClass('gap-0.5', 'pl-2.5', 'pr-1.5', 'pt-1', 'pb-2')
+      // No spacer pushes Theme and Shortcuts to the right.
+      expect(footer.querySelector('.flex-1')).toBeNull()
+      for (const button of within(footer).getAllByRole('button')) {
+        expect(button).toHaveClass('size-8')
+      }
       const names = within(footer)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label'))

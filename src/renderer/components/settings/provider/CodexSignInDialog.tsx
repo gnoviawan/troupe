@@ -1,20 +1,14 @@
 import type { CodexAccountView } from '@shared/types/codex-accounts.types'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Spinner } from '@/components/ui/spinner'
-import { CODEX_SIGN_IN_METHODS, signInCodexAccount } from '@/lib/codex-account-sign-in'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { signInCodexAccount } from '@/lib/codex-account-sign-in'
+import { accountErrorText } from './account-dialog-parts'
+import { CodexSignInStep } from './CodexSignInStep'
 
 /**
- * Pick a ChatGPT sign-in method, then run it. The host sign-in dialog shows
- * the page or the device code while authenticate waits.
+ * Sign in an existing Codex account: the "Sign in" step of the Add account
+ * dialog on its own. A failed sign-in shows its reason and lets the user pick
+ * a method again.
  */
 export function CodexSignInDialog({
   account,
@@ -25,56 +19,47 @@ export function CodexSignInDialog({
   onClose: () => void
   onSignedIn: (account: CodexAccountView) => Promise<void>
 }): React.JSX.Element {
-  const [busy, setBusy] = useState<string | null>(null)
+  return (
+    <Dialog open={account !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="gap-5 sm:max-w-[400px]">
+        {/* The content unmounts on close, so each open starts at the method pick. */}
+        {account && <CodexSignInFlow account={account} onClose={onClose} onSignedIn={onSignedIn} />}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CodexSignInFlow({
+  account,
+  onClose,
+  onSignedIn
+}: {
+  account: CodexAccountView
+  onClose: () => void
+  onSignedIn: (account: CodexAccountView) => Promise<void>
+}): React.JSX.Element {
+  const [method, setMethod] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const start = async (methodId: string): Promise<void> => {
-    if (!account) return
-    setBusy(methodId)
+    setMethod(methodId)
     setError(null)
     try {
       await signInCodexAccount(account.id, methodId)
       await onSignedIn(account)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(null)
+      setError(accountErrorText(err))
+      setMethod(null)
     }
   }
 
   return (
-    <Dialog
-      open={account !== null}
-      onOpenChange={(open) => {
-        if (!open && !busy) onClose()
-      }}
-    >
-      <DialogContent className="sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle className="text-sm">
-            {account ? `Sign in to ${account.name}` : 'Sign in'}
-          </DialogTitle>
-          <DialogDescription>
-            Codex accounts use a ChatGPT login. Sign in with the browser, or use a device code on
-            any other device.
-          </DialogDescription>
-        </DialogHeader>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        <DialogFooter className="gap-2 sm:flex-col sm:items-stretch">
-          {CODEX_SIGN_IN_METHODS.map((method) => (
-            <Button
-              key={method.id}
-              type="button"
-              variant={method.id === 'chat-gpt' ? 'default' : 'outline'}
-              disabled={busy !== null}
-              onClick={() => void start(method.id)}
-            >
-              {busy === method.id && <Spinner size={12} decorative />}
-              {method.label}
-            </Button>
-          ))}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <CodexSignInStep
+      accountName={account.name}
+      method={method}
+      error={error}
+      onPick={(methodId) => void start(methodId)}
+      onCancel={onClose}
+    />
   )
 }

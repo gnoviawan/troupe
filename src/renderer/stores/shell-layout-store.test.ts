@@ -319,7 +319,8 @@ describe('shell-layout-store', () => {
         sshSectionHeight: 200,
         gitHistoryDetailWidth: 400,
         lastColumnTabByProject: {},
-        worktreePickByProject: { p1: 'c:/repo/.termul/worktrees/feat' }
+        worktreePickByProject: { p1: 'c:/repo/.termul/worktrees/feat' },
+        chatsHiddenByProject: {}
       })
       expect(mockWriteDebounced).not.toHaveBeenCalled()
       const message = mockLog.mock.calls.map(([payload]) => payload.message).join('\n')
@@ -413,6 +414,17 @@ describe('shell-layout-store', () => {
       expect(state().worktreePickByProject).toEqual({})
     })
 
+    it('collapses and expands a project chat list, storing only the collapsed ones', () => {
+      state().setProjectChatsHidden('p1', true)
+      expect(state().chatsHiddenByProject).toEqual({ p1: true })
+      expect(mockWriteDebounced).toHaveBeenLastCalledWith(
+        PersistenceKeys.shellLayout,
+        expect.objectContaining({ chatsHiddenByProject: { p1: true } })
+      )
+      state().setProjectChatsHidden('p1', false)
+      expect(state().chatsHiddenByProject).toEqual({})
+    })
+
     it('logs a failed persist without throwing', async () => {
       mockWriteDebounced.mockResolvedValueOnce({ success: false, code: 'WRITE_ERROR' })
       state().setRailWidth(250)
@@ -429,7 +441,8 @@ describe('shell-layout-store', () => {
     it('drops map entries, editor state and retained chats', async () => {
       await hydrateWithRecord({
         lastColumnTabByProject: { p1: 'chats', p2: 'explorer' },
-        worktreePickByProject: { p1: 'c:/a', p2: 'c:/b' }
+        worktreePickByProject: { p1: 'c:/a', p2: 'c:/b' },
+        chatsHiddenByProject: { p1: true, p2: true }
       })
       useAgentChatLifetimeStore.setState({
         retainedByProject: { p1: ['s1'], p2: ['s2'] },
@@ -442,6 +455,7 @@ describe('shell-layout-store', () => {
 
       expect(state().lastColumnTabByProject).toEqual({ p2: 'explorer' })
       expect(state().worktreePickByProject).toEqual({ p2: 'c:/b' })
+      expect(state().chatsHiddenByProject).toEqual({ p2: true })
       expect(mockDelete).toHaveBeenCalledWith('workspace/p1')
       const lifetime = useAgentChatLifetimeStore.getState()
       expect(lifetime.retainedByProject).toEqual({ p2: ['s2'] })

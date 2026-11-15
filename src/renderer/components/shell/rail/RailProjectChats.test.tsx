@@ -12,6 +12,7 @@ import { RailDensityProvider } from './rail-density'
 const mocks = vi.hoisted(() => ({
   addAgentChatTab: vi.fn(),
   openHistorySession: vi.fn(),
+  deleteHistorySession: vi.fn(),
   logFrontendError: vi.fn(),
   paneDnd: {
     startChatDrag: vi.fn(),
@@ -46,6 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.paneDnd.dragPayload = null
   mocks.openHistorySession.mockResolvedValue(undefined)
+  mocks.deleteHistorySession.mockResolvedValue(undefined)
   resetShellLayoutStoreForTests()
   useShellLayoutStore.setState({ status: 'ready' })
   resetChatActivity()
@@ -53,7 +55,8 @@ beforeEach(() => {
     sessionIndex: [],
     sessions: {},
     agentConfigs: [],
-    openHistorySession: mocks.openHistorySession
+    openHistorySession: mocks.openHistorySession,
+    deleteHistorySession: mocks.deleteHistorySession
   })
   useWorkspaceStore.setState({
     activePaneId: 'pane-1',
@@ -63,7 +66,10 @@ beforeEach(() => {
 })
 
 const list = () => screen.getByRole('list', { name: 'Chats in Alpha' })
-const rows = () => within(list()).getAllByRole('button')
+const rows = () =>
+  within(list())
+    .getAllByRole('button')
+    .filter((button) => !button.getAttribute('aria-label')?.startsWith('More actions'))
 
 describe('RailProjectChats', () => {
   it('renders nothing without chats', () => {
@@ -87,6 +93,34 @@ describe('RailProjectChats', () => {
     ])
     fireEvent.click(screen.getByRole('button', { name: 'Show 2 more' }))
     expect(rows()).toHaveLength(7)
+  })
+
+  it('collapses the list on a 0fr grid row (inert, faded), and opens it again', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    useShellLayoutStore.getState().setProjectChatsHidden('p1', true)
+    const { container, rerender } = render(<RailProjectChats project={project} />)
+    const collapse = container.querySelector('[data-rail-chats-collapse]')
+    expect(collapse).toHaveAttribute('data-rail-chats-collapse', 'closed')
+    expect(collapse).toHaveAttribute('inert')
+    expect(collapse).toHaveClass('grid-rows-[0fr]', 'duration-150', 'motion-reduce:transition-none')
+    useShellLayoutStore.getState().setProjectChatsHidden('p1', false)
+    rerender(<RailProjectChats project={project} />)
+    expect(collapse).toHaveAttribute('data-rail-chats-collapse', 'open')
+    expect(collapse).not.toHaveAttribute('inert')
+    expect(collapse).toHaveClass('grid-rows-[1fr]', 'duration-200')
+    expect(list()).toBeInTheDocument()
+    expect(screen.getByTestId('rail-project-chats')).toHaveAttribute('id', 'rail-chats-p1')
+  })
+
+  it('does not draw a hidden list on the collapsed Rail', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    useShellLayoutStore.getState().setProjectChatsHidden('p1', true)
+    render(
+      <RailDensityProvider density="collapsed">
+        <RailProjectChats project={project} />
+      </RailDensityProvider>
+    )
+    expect(screen.queryByRole('list', { name: 'Chats in Alpha' })).not.toBeInTheDocument()
   })
 
   it('names each row with its status and shows the trail', () => {
@@ -171,6 +205,88 @@ describe('RailProjectChats', () => {
   })
 })
 
+describe('RailProjectChats row menu', () => {
+  it('opens the Paper chat row menu on right-click', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Chat a' }))
+    const menu = await screen.findByTestId('rail-chat-menu')
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent?.trim())
+    ).toEqual([
+      'Reload this chat',
+      'Open in split',
+      'Open terminal here',
+      'Open in file explorer',
+      'Copy path',
+      'Copy chat reference',
+      'Copy chat ID',
+      'Delete chat'
+    ])
+  })
+
+  it('opens the same menu from the row "…" button, which sits in place of the trail', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    const more = screen.getByRole('button', { name: 'More actions for Chat a' })
+    expect(more).toHaveAttribute('aria-haspopup', 'menu')
+    expect(more).toHaveClass('opacity-0', 'group-hover/rail-chat:opacity-100')
+    fireEvent.click(more)
+    const menu = await screen.findByTestId('rail-chat-menu')
+    expect(within(menu).getByRole('menuitem', { name: 'Delete chat' })).toBeInTheDocument()
+    expect(mocks.openHistorySession).not.toHaveBeenCalled()
+  })
+
+  it('opens the menu with Shift+F10 on the row', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Chat a' }), {
+      key: 'F10',
+      shiftKey: true
+    })
+    expect(await screen.findByTestId('rail-chat-menu')).toBeInTheDocument()
+  })
+
+  it('disables the folder items for a chat with no cwd', async () => {
+    useAcpStore.setState({ sessionIndex: [{ ...entry('a', 1), cwd: undefined } as never] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Chat a' }))
+    const menu = await screen.findByTestId('rail-chat-menu')
+    for (const name of ['Open terminal here', 'Open in file explorer', 'Copy path']) {
+      expect(within(menu).getByRole('menuitem', { name })).toHaveAttribute('data-disabled')
+    }
+  })
+
+  it('deletes the chat only after the confirm, and logs it from the Rail', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Chat a' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete chat' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('Delete “Chat a”? This action cannot be undone.')
+    expect(mocks.deleteHistorySession).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(mocks.deleteHistorySession).toHaveBeenCalledWith('a'))
+    expect(mocks.logFrontendError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('delete chat a') })
+    )
+  })
+
+  it('keeps the chat when the confirm is cancelled', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Chat a' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete chat' }))
+    fireEvent.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' })
+    )
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    expect(mocks.deleteHistorySession).not.toHaveBeenCalled()
+  })
+})
+
 describe('RailProjectChats on the collapsed Rail', () => {
   const renderCollapsed = () =>
     render(
@@ -189,6 +305,7 @@ describe('RailProjectChats on the collapsed Rail', () => {
     expect(row).not.toHaveClass('pl-8.75')
     expect(row).toHaveTextContent('')
     expect(row).not.toHaveAttribute('title')
+    expect(screen.queryByRole('button', { name: /^More actions/ })).not.toBeInTheDocument()
   })
 
   it('maps each live state to a status dot on the icon', () => {
@@ -225,7 +342,9 @@ describe('RailProjectChats on the collapsed Rail', () => {
     const panel = await peek()
     expect(panel).toHaveClass('w-60', 'rounded-[10px]', 'p-1', 'gap-px', 'outline-popover-edge')
     expect(panel).toHaveTextContent('Alpha')
-    const peekRows = within(panel).getAllByRole('button')
+    const peekRows = within(panel)
+      .getAllByRole('button')
+      .filter((button) => !button.getAttribute('aria-label')?.startsWith('More actions'))
     expect(peekRows.map((row) => row.textContent)).toEqual([
       expect.stringContaining('Chat a'),
       expect.stringContaining('Chat b')

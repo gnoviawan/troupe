@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from 'playwright/test'
 import { E2E_TOKEN } from './helpers'
-import { chatTab, openWorkspace, selectProject } from './ui'
+import { chatStartContextRow, chatTab, openWorkspace, selectProject, startNewChat } from './ui'
 
 /**
  * Shell-revamp journeys E2E on termul-server (story 30, CAP-18 / AD-15 / E6).
@@ -142,8 +142,9 @@ async function openRevampWorkspace(page: Page): Promise<void> {
 }
 
 /**
- * Start a NEW chat from the Rail's New chat row (the launcher opens
- * over the active pane). `workspace` drives the launcher's Workspace chip.
+ * Start a NEW chat from the Rail's New chat row (it opens an empty chat tab
+ * in the active pane). `workspace` drives the Workspace select of the empty
+ * chat's context row; the first send applies the pick.
  * Resolves once the chat tab exists.
  */
 async function launchRevampChat(
@@ -151,19 +152,10 @@ async function launchRevampChat(
   prompt: string,
   workspace?: 'Current checkout' | 'New worktree'
 ): Promise<void> {
-  const composer = page.locator('[data-composer-editor="true"][aria-label="Agent prompt"]').first()
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await page.getByRole('button', { name: 'New chat', exact: true }).first().click()
-    try {
-      await composer.waitFor({ state: 'visible', timeout: 5_000 })
-      break
-    } catch {
-      if (attempt === 2) throw new Error('Agent launcher composer never appeared')
-    }
-  }
+  const composer = await startNewChat(page)
   if (workspace) {
-    // The chip is interactive once the git probe marks the project as git.
-    const chip = page.getByRole('combobox', { name: 'Workspace' })
+    // The select is interactive once the git probe marks the project as git.
+    const chip = chatStartContextRow(page).getByRole('combobox', { name: 'Workspace' })
     await expect(chip).toBeVisible({ timeout: 15_000 })
     await chip.click()
     await page.getByRole('option', { name: workspace }).click()
@@ -171,19 +163,12 @@ async function launchRevampChat(
   }
   await composer.click()
   await page.keyboard.type(prompt)
+  await expect(composer).toHaveText(prompt)
   await page.keyboard.press('Enter')
-  const tab = chatTab(page, prompt)
-  try {
-    await tab.waitFor({ state: 'visible', timeout: 8_000 })
-  } catch {
-    // Enter can be swallowed while the launcher is still settling; the
-    // Send button is the deterministic path.
-    await page.getByRole('button', { name: 'Start agent chat' }).click()
-    await tab.waitFor({ state: 'visible' })
-  }
-  // Let the session settle (its row lands in the Rail, the launcher closes)
-  // before the next launch: a New chat click while the previous session is
-  // still being created is swallowed.
+  await expect(chatTab(page, prompt)).toBeVisible()
+  // Let the session settle (its row lands in the Rail) before the next New
+  // chat: while the first message is not in the chat, the chat is still
+  // empty and New chat focuses it again instead of a new chat.
   await expect(railChat(page, prompt)).toBeVisible()
   await expect(page.getByRole('dialog', { name: 'Agent launcher' })).toHaveCount(0)
 }
@@ -422,17 +407,14 @@ test('Journey 2: two fixes at once, one in a new worktree', async ({ page }) => 
   const before = new Set((await listWorktrees(page)).map((w) => w.path))
   let worktree: ListedWorktree | undefined
 
-  await test.step('1. Launcher Workspace chip: New worktree, then send', async () => {
-    await page.getByRole('button', { name: 'New chat', exact: true }).first().click()
-    const composer = page
-      .locator('[data-composer-editor="true"][aria-label="Agent prompt"]')
-      .first()
-    await composer.waitFor({ state: 'visible', timeout: 10_000 })
-    const chip = page.getByRole('combobox', { name: 'Workspace' })
+  await test.step('1. Empty chat Workspace select: New worktree, then send', async () => {
+    const composer = await startNewChat(page)
+    const row = chatStartContextRow(page)
+    const chip = row.getByRole('combobox', { name: 'Workspace' })
     await expect(chip).toBeVisible({ timeout: 15_000 })
     await chip.click()
     await page.getByRole('option', { name: 'New worktree' }).click()
-    await expect(page.getByRole('combobox', { name: 'Base branch' })).toContainText(/\S/)
+    await expect(row.getByRole('combobox', { name: 'Base branch' })).toContainText(/\S/)
     await composer.click()
     await page.keyboard.type(CHAT_WORKTREE)
     await page.keyboard.press('Enter')

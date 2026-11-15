@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { Locator, Page } from 'playwright/test'
 import { expect, request, test } from 'playwright/test'
 import { E2E_BASE_URL, E2E_TOKEN, storeKey, wsRequest } from './helpers'
+import { emptyChatComposer, sendFromEmptyChat } from './ui'
 
 /**
  * Mobile approval edge states E2E (spec-mobile-approval-edge-states): a
@@ -140,7 +141,7 @@ async function startFromLauncher(
   }
   const launcher = page.getByRole('textbox', { name: 'Agent prompt' })
   const start = page.getByRole('button', { name: 'Start agent chat' })
-  // On a launcher opened with "New chat", Start has been seen enabled and yet doing
+  // On the launcher, Start has been seen enabled and yet doing
   // nothing when pressed at once: the launcher stays up with the text in it. So the
   // press is part of the retried step, and a launcher that closed is the proof.
   await expect(async () => {
@@ -154,9 +155,9 @@ async function startFromLauncher(
 }
 
 /**
- * Start a chat on the mobile shell: from the empty pane (the first chat) or via
- * the header "New chat". Resolves once the header names the chat (its title is
- * the prompt text).
+ * Start a chat on the mobile shell: from the empty-pane launcher (the first
+ * chat), or via the header "New chat", which opens a new empty chat. Resolves
+ * once the header names the chat (its title is the prompt text).
  */
 async function startChat(
   page: Page,
@@ -166,8 +167,11 @@ async function startChat(
   if (options.viaNewChat) {
     await expectStreaming(page)
     await page.getByRole('button', { name: 'New chat', exact: true }).tap()
+    await expect(emptyChatComposer(page)).toBeVisible()
+    await sendFromEmptyChat(page, prompt, { tap: true })
+  } else {
+    await startFromLauncher(page, prompt)
   }
-  await startFromLauncher(page, prompt)
   await expect(page.getByRole('heading', { level: 1, name: prompt, exact: true })).toBeVisible()
 }
 

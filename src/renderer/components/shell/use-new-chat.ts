@@ -1,21 +1,18 @@
 import { useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useWorkspaceStore } from '@/stores/workspace-store'
+import { openNewChat } from '@/components/chat/new-chat/open-new-chat'
 
 /**
- * Opens the agent launcher in the active pane. The launcher overlay only
- * renders on the workspace route, so a child route goes back to `/` first
- * and the launcher opens on the next frame.
+ * The Rail's New chat: a new empty chat in the active pane (`openNewChat`).
+ * Chat tabs only render on the workspace route, so a child route goes back
+ * to `/` first and the chat opens on the next frame.
  */
 export function useNewChat(): () => void {
   const pathname = useLocation().pathname
   const navigate = useNavigate()
 
   return useCallback(() => {
-    const open = (): void => {
-      const paneId = useWorkspaceStore.getState().activePaneId
-      if (paneId) useWorkspaceStore.getState().showAgentLauncher(paneId)
-    }
+    const open = (): void => void openNewChat({ reason: 'rail' })
     if (pathname !== '/') {
       navigate('/')
       requestAnimationFrame(open)

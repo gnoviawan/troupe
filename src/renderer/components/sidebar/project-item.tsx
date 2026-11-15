@@ -1,6 +1,6 @@
 import type { GitDiffStat } from '@shared/types/ipc.types'
 import { type KeyboardEvent, memo, useEffect, useRef } from 'react'
-import { MoreHorizontal, Settings } from '@/components/icons'
+import { ChevronRight, MoreHorizontal, Settings } from '@/components/icons'
 import { ProjectIcon } from '@/components/ProjectIcon'
 import { RailTooltip } from '@/components/shell/rail-button'
 import { RAIL_ICON_BOX_CLASS, RAIL_ROW_INSET_CLASS } from '@/components/shell/rail-layout'
@@ -34,6 +34,15 @@ export interface ProjectItemProps {
   renderContextMenu?: (project: Project) => React.ReactNode
   /** Uncommitted line stat for the row (see `RailProjectItem`); nothing when null. */
   diffStat?: GitDiffStat | null
+  /**
+   * The open project's chat list under the row is shown. With
+   * `onToggleChats`, hover or focus turns the project icon into a chevron
+   * that collapses or expands it.
+   */
+  chatsExpanded?: boolean
+  onToggleChats?: () => void
+  /** Id of the chat list, for the chevron's `aria-controls`. */
+  chatsListId?: string
 }
 
 export const ProjectItem = memo(function ProjectItem({
@@ -51,7 +60,10 @@ export const ProjectItem = memo(function ProjectItem({
   onCancelRename,
   onSettingsClick,
   renderContextMenu,
-  diffStat: watchedDiffStat = null
+  diffStat: watchedDiffStat = null,
+  chatsExpanded = true,
+  onToggleChats,
+  chatsListId
 }: ProjectItemProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   // At rest the stat holds the right slot; hover or focus swaps it for the
@@ -116,7 +128,43 @@ export const ProjectItem = memo(function ProjectItem({
               data-rail-icon-column
               className={cn(RAIL_ICON_BOX_CLASS, 'pointer-events-none relative')}
             >
-              <ProjectIcon project={project} size={16} />
+              <span
+                className={cn(
+                  'inline-flex',
+                  onToggleChats && 'group-hover:invisible group-focus-within:invisible'
+                )}
+              >
+                <ProjectIcon project={project} size={16} />
+              </span>
+              {onToggleChats && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleChats()
+                  }}
+                  aria-expanded={chatsExpanded}
+                  aria-controls={chatsExpanded ? chatsListId : undefined}
+                  aria-label={`${chatsExpanded ? 'Hide' : 'Show'} chats in ${project.name}`}
+                  data-testid="project-chats-toggle"
+                  className={cn(
+                    'pointer-events-auto absolute inset-0 m-auto inline-flex size-5 items-center justify-center rounded text-muted-foreground',
+                    'invisible group-hover:visible group-focus-within:visible',
+                    'transition-colors duration-150 ease-out hover:bg-foreground/[0.06] hover:text-foreground',
+                    FOCUS_RING_CLASS
+                  )}
+                >
+                  {/* One chevron that turns: right when closed, down when open. */}
+                  <ChevronRight
+                    size={14}
+                    aria-hidden="true"
+                    className={cn(
+                      'transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none',
+                      chatsExpanded && 'rotate-90'
+                    )}
+                  />
+                </button>
+              )}
             </span>
 
             {isEditing ? (
@@ -151,7 +199,7 @@ export const ProjectItem = memo(function ProjectItem({
                     shows under the same conditions as the wash (hover and
                     focus-within). */}
                 <span
-                  className="pointer-events-auto absolute inset-y-0 right-0 hidden items-center gap-1 bg-gradient-to-l from-row-hover-solid from-60% to-transparent pl-6 group-hover:flex group-focus-within:flex"
+                  className="pointer-events-none absolute inset-y-0 right-0 hidden items-center gap-1 bg-gradient-to-l from-row-hover-solid from-60% to-transparent pl-6 group-hover:flex group-focus-within:flex [&>*]:pointer-events-auto"
                   data-testid="project-row-actions"
                 >
                   <RailTooltip label="More actions">

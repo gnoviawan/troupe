@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core'
-import { useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { ClaudeAccountChip } from '@/components/chat/claude-account/ClaudeAccountChip'
@@ -36,17 +36,23 @@ import { ModeChip } from './AgentHeader'
 import { AttachmentPreviewGroup } from './AttachmentPreviewGroup'
 import { AgentModelSelector } from './agent-model-selector/AgentModelSelector'
 import { useCurrentAgentConfigId } from './agent-model-selector/use-agent-switch'
-import { ChatContextStrip } from './ChatContextStrip'
 import { ComposerBeamShell } from './ComposerBeamShell'
 import { ContextUsageIndicator } from './ContextUsageIndicator'
 import { appOwnedTempPaths } from './chat-attachments'
 import {
-  extractFastModeOption,
   filterDuplicateModeConfigOptions,
   partitionConfigOptions,
-  resolveModelOption
+  resolveModelOption,
+  splitFastModeOption
 } from './chat-input-bar-config'
 import { CHAT_GUTTER_X, COMPOSER_CARD_CLASS, useComposerToolbarMode } from './chat-layout'
+import {
+  CHAT_START_COLUMN_CLASS,
+  CHAT_START_INPUT_MAX_HEIGHT,
+  CHAT_START_INPUT_MIN_HEIGHT,
+  CHAT_START_INPUT_ROW_CLASS
+} from './chat-start'
+import { useComposerMorph } from './chat-start-morph'
 import { ChatComposerEditor, focusComposerFromRowPress } from './composer/ChatComposerEditor'
 import { ComposerAddMenu } from './composer/ComposerAddMenu'
 import { ComposerAddSheet } from './composer/ComposerAddSheet'
@@ -162,6 +168,14 @@ interface ChatInputBarProps {
    * fires it. The chat panel uses it to resume a stopped chat early.
    */
   onDraftStart?: () => void
+  /**
+   * The chat has no messages yet: the composer takes the start screen's
+   * 680px width and input area (Paper "2.2 New chat"; the launcher uses the
+   * same values) and, on desktop, no padding: the start block places it
+   * (chat-start.tsx). A working chat is 768px wide. On the first send the
+   * composer moves to the dock (chat-start-morph.tsx).
+   */
+  startScreen?: boolean
 }
 
 const NO_CONFIG_OPTIONS: SessionConfigOption[] = []
@@ -197,7 +211,8 @@ export function ChatInputBar({
   onMoveQueued,
   onClearQueued,
   isVisible = true,
-  onDraftStart
+  onDraftStart,
+  startScreen = false
 }: ChatInputBarProps): React.JSX.Element {
   const accountRestarting = useCodexRestartingStore((state) => state.ids.includes(session.id))
   const disabled = composerDisabled || accountRestarting
@@ -207,14 +222,16 @@ export function ChatInputBar({
   const {
     model,
     thoughtLevel,
-    modelConfig,
+    modelConfig: allModelConfig,
     rest: genericConfigOptions
   } = partitionConfigOptions(usableConfigOptions)
   const { option: modelOption, source: modelSource } = resolveModelOption(model, session.models)
   const visibleGenericConfigOptions = filterDuplicateModeConfigOptions(genericConfigOptions, modes)
-  const { fastMode, rest: nonFastGenericOptions } = extractFastModeOption(
-    visibleGenericConfigOptions
-  )
+  const {
+    fastMode,
+    modelConfig,
+    rest: nonFastGenericOptions
+  } = splitFastModeOption(allModelConfig, visibleGenericConfigOptions)
   const { skills: availableSkills } = useAgentSkills(projectRoot ?? session.cwd)
   const sessionUsage = useSessionUsage(session.id)
   // Compact shows only when the agent lists `/compact`; it sends the command as a prompt.
@@ -262,6 +279,7 @@ export function ChatInputBar({
   })
   const { locked: sending, hold: holdComposer } = useComposerSendLock()
   const reduced = useReducedMotion() ?? false
+  const morph = useComposerMorph(startScreen, reduced)
   // Story 5.3: OSK awareness on mobile web. On Tauri desktop, the hook returns
   // a no-OSK default (no `visualViewport` thrash — desktop non-regression).
   const osk = useOskViewport()
@@ -584,13 +602,18 @@ export function ChatInputBar({
       ref={rootRef}
       className={cn(
         CHAT_GUTTER_X,
-        'pb-6 pt-3',
+        !(startScreen && !isMobileShell) && 'pb-6 pt-3',
         // The slash/mention menu overflows upward into the message list; lift
         // it above the list's jump-to-latest button (z-20).
         (slashOpen || mentionMenuOpen) && 'relative z-30'
       )}
     >
-      <div className="relative mx-auto w-full max-w-3xl">
+      <div
+        className={cn(
+          'relative mx-auto w-full',
+          startScreen ? CHAT_START_COLUMN_CLASS : 'max-w-3xl'
+        )}
+      >
         {statusRow}
         {slashOpen && (
           <SlashCommandMenu
@@ -609,202 +632,211 @@ export function ChatInputBar({
             inputRef={composerInputRef}
           />
         )}
-        <ComposerBeamShell busy={busy} reduced={reduced}>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: drop zone for attachments; the file picker button is the accessible path */}
-          <div
-            data-chat-composer="true"
-            // Mobile: a programmatic focus target so focus returns here, not to
-            // the editor (and the OSK), after an approval prompt resolves.
-            tabIndex={isMobileShell ? -1 : undefined}
-            className={cn(
-              'relative',
-              COMPOSER_CARD_CLASS,
-              dragActive && 'border-primary/70',
-              isMobileShell && 'outline-none'
-            )}
-            onDragEnter={dropProps.onDragEnter}
-            onDragLeave={dropProps.onDragLeave}
-            onDragOver={dropProps.onDragOver}
-            onDrop={dropProps.onDrop}
-          >
-            {dragActive && canDropPaste && (
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground backdrop-blur-sm">
-                <span className="flex items-center gap-2">
-                  <Paperclip size={16} /> Drop files to attach
-                </span>
-              </div>
-            )}
-            {notice}
-            {queue.length > 0 && onRemoveQueued && onSendQueuedNow && (
-              <PromptQueuePanel
-                items={queue}
-                onRemove={onRemoveQueued}
-                onSendNow={onSendQueuedNow}
-                onMove={onMoveQueued}
-                onClear={onClearQueued}
-                onEdit={disabled || sending || !draftHydrated ? undefined : editQueued}
-                defaultOpen={!isMobileShell}
-              />
-            )}
-            {permission && <PermissionPrompt permission={permission} isVisible={isVisible} />}
-            {!noticeShown && !controlsDisabled && (
-              <>
-                <ClaudeLimitWarning sessionId={session.id} />
-                <CodexLimitWarning sessionId={session.id} />
-              </>
-            )}
-            <AttachmentPreviewGroup
-              attachments={attachments}
-              onRemove={removeAttachment}
-              removeDisabled={disabled || sending}
-            />
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-only focus aid for the padding; the editor is the accessible target */}
+        <motion.div data-composer-morph="frame" className="relative z-10 w-full" {...morph.frame}>
+          <ComposerBeamShell busy={busy} reduced={reduced}>
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drop zone for attachments; the file picker button is the accessible path */}
             <div
-              data-composer-row
-              className="flex items-start gap-1 px-4 pb-1.5 pt-3.5"
-              onMouseDown={(event) => focusComposerFromRowPress(event, editorRef.current)}
+              data-chat-composer="true"
+              // Mobile: a programmatic focus target so focus returns here, not to
+              // the editor (and the OSK), after an approval prompt resolves.
+              tabIndex={isMobileShell ? -1 : undefined}
+              className={cn(
+                'relative',
+                COMPOSER_CARD_CLASS,
+                dragActive && 'border-primary/70',
+                isMobileShell && 'outline-none'
+              )}
+              onDragEnter={dropProps.onDragEnter}
+              onDragLeave={dropProps.onDragLeave}
+              onDragOver={dropProps.onDragOver}
+              onDrop={dropProps.onDrop}
             >
-              {/* Tiptap rich-text editor — the skill "pill" is a real inline
+              {dragActive && canDropPaste && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground backdrop-blur-sm">
+                  <span className="flex items-center gap-2">
+                    <Paperclip size={16} /> Drop files to attach
+                  </span>
+                </div>
+              )}
+              {notice}
+              {queue.length > 0 && onRemoveQueued && onSendQueuedNow && (
+                <PromptQueuePanel
+                  items={queue}
+                  onRemove={onRemoveQueued}
+                  onSendNow={onSendQueuedNow}
+                  onMove={onMoveQueued}
+                  onClear={onClearQueued}
+                  onEdit={disabled || sending || !draftHydrated ? undefined : editQueued}
+                  defaultOpen={!isMobileShell}
+                />
+              )}
+              {permission && <PermissionPrompt permission={permission} isVisible={isVisible} />}
+              {!noticeShown && !controlsDisabled && (
+                <>
+                  <ClaudeLimitWarning sessionId={session.id} />
+                  <CodexLimitWarning sessionId={session.id} />
+                </>
+              )}
+              <AttachmentPreviewGroup
+                attachments={attachments}
+                onRemove={removeAttachment}
+                removeDisabled={disabled || sending}
+              />
+              {/* Pointer-only focus aid for the padding; the editor is the accessible target. */}
+              <motion.div
+                data-composer-row
+                className={cn(
+                  'flex items-start',
+                  startScreen ? CHAT_START_INPUT_ROW_CLASS : 'gap-1 px-4 pb-1.5 pt-3.5'
+                )}
+                onMouseDown={(event) => focusComposerFromRowPress(event, editorRef.current)}
+                {...morph.content}
+              >
+                {/* Tiptap rich-text editor — the skill "pill" is a real inline
                   DOM node (a Tiptap `NodeView`), so the caret sits flush
                   against the pill's right edge by construction. No transparent
                   textarea + mirror overlay, no canvas padding, no overlay
                   scroll-sync. The `value` string (sentinel-token format) is
                   the shared model the wire builder + draft persistence +
                   timeline consume (byte-identical wire payload). */}
-              <SkillFilesProvider projectRoot={projectRoot ?? session.cwd}>
-                <ChatComposerEditor
-                  className="min-w-0 flex-1"
-                  value={value}
-                  onValueChange={handleValueChange}
-                  onCaretChange={mentions.update}
-                  onBeforeEditorKeyDown={handleKeyDown}
-                  onPasteAttachments={handleComposerPaste}
-                  getSkillPaths={() => skillPathsRef.current}
-                  editorRef={editorRef}
-                  inputRef={composerInputRef}
-                  disabled={disabled || sending}
-                  minHeight={26} /* 1 line: 16px × 1.625 */
-                  maxHeight={78} /* 3 lines: 3 × 26px, then scroll */
-                  placeholder={
-                    disabled
-                      ? disabledPlaceholder
-                      : hasCommandToken
-                        ? 'Add a message (optional)…'
-                        : 'Ask anything… (/ for commands, @ for files and chats)'
-                  }
-                />
-              </SkillFilesProvider>
-              {/* Context usage ring: top right, centered on the first line.
-                  The mobile row carries the ring in its toolbar instead. */}
-              {!isMobileShell && (
-                <ContextUsageIndicator
-                  usage={sessionUsage}
-                  messages={messages}
-                  className="-mr-2 -my-[3px]"
-                  onCompact={onCompact}
-                  compactSignals={compactSignals}
-                />
-              )}
-            </div>
-            <div
-              className="flex items-center justify-between gap-3 px-2 pb-2"
-              data-composer-toolbar={toolbarMode}
-            >
-              {isMobileShell ? (
-                <div
-                  className="flex min-w-0 flex-1 items-center gap-2"
-                  data-composer-toolbar-row="mobile"
-                >
-                  <ComposerAddSheet
-                    handle={composerAddHandle}
+                <SkillFilesProvider projectRoot={projectRoot ?? session.cwd}>
+                  <ChatComposerEditor
+                    className="min-w-0 flex-1"
+                    value={value}
+                    onValueChange={handleValueChange}
+                    onCaretChange={mentions.update}
+                    onBeforeEditorKeyDown={handleKeyDown}
+                    onPasteAttachments={handleComposerPaste}
+                    getSkillPaths={() => skillPathsRef.current}
+                    editorRef={editorRef}
+                    inputRef={composerInputRef}
                     disabled={disabled || sending}
-                    termulTools={termulTools}
-                    connectorsHost={connectorsHost}
-                    {...connectors}
+                    // Working chat: 1 line (16px × 1.625) up to 3 lines, then scroll.
+                    minHeight={startScreen ? CHAT_START_INPUT_MIN_HEIGHT : 26}
+                    maxHeight={startScreen ? CHAT_START_INPUT_MAX_HEIGHT : 78}
+                    placeholder={
+                      disabled
+                        ? disabledPlaceholder
+                        : hasCommandToken
+                          ? 'Add a message (optional)…'
+                          : 'Ask anything… (/ for commands, @ for files and chats)'
+                    }
                   />
-                  {modelSelector}
-                  <div className="flex-1" />
+                </SkillFilesProvider>
+                {/* Context usage ring: top right, centered on the first line.
+                  The mobile row carries the ring in its toolbar instead. */}
+                {!isMobileShell && (
                   <ContextUsageIndicator
                     usage={sessionUsage}
                     messages={messages}
+                    className="-mr-2 -my-[3px]"
                     onCompact={onCompact}
                     compactSignals={compactSignals}
                   />
-                  {sendButton}
-                </div>
-              ) : (
-                <>
-                  <div className="flex min-w-0 items-center gap-3">
-                    {/* While the composer is inert its rows are disabled, not
-                    hidden; connectors stay usable. Same as the launcher. */}
-                    <ComposerAddMenu
+                )}
+              </motion.div>
+              {/* The toolbar's two groups move on their own (`position`), so the
+                  right group keeps to the card's right edge while it grows. */}
+              <div
+                className="flex items-center justify-between gap-3 px-2 pb-2"
+                data-composer-toolbar={toolbarMode}
+              >
+                {isMobileShell ? (
+                  <div
+                    className="flex min-w-0 flex-1 items-center gap-2"
+                    data-composer-toolbar-row="mobile"
+                  >
+                    <ComposerAddSheet
                       handle={composerAddHandle}
                       disabled={disabled || sending}
-                      connectors={connectors}
-                      connectorsHost={connectorsHost}
                       termulTools={termulTools}
+                      connectorsHost={connectorsHost}
+                      {...connectors}
                     />
-                    <ClaudeAccountChip sessionId={session.id} />
-                    <CodexAccountChip sessionId={session.id} />
+                    {modelSelector}
+                    <div className="flex-1" />
+                    <ContextUsageIndicator
+                      usage={sessionUsage}
+                      messages={messages}
+                      onCompact={onCompact}
+                      compactSignals={compactSignals}
+                    />
+                    {sendButton}
                   </div>
-                  <div
-                    className={cn(
-                      // #859: no wrap in narrow mode — the chip rows scroll
-                      // horizontally instead of stacking to 3 lines.
-                      'flex min-w-0 items-center justify-end gap-2.5',
-                      toolbarMode === 'narrow' && 'flex-1'
-                    )}
-                  >
-                    {(() => {
-                      // Underlying availability conditions, not JSX-element
-                      // truthiness — a chip element is always truthy even when it
-                      // renders null internally (shared by both row layouts).
-                      const agentModesAvailable =
-                        session.modes != null && session.modes.availableModes.length > 0
-                      return toolbarMode === 'narrow' ? (
-                        (() => {
-                          // The agent control gates row 1 on the session's live
-                          // agent id (cheap, non-circular): the picker renders null
-                          // itself when the agent resolves to nothing, so row 1
-                          // never renders an empty container for it.
-                          const hasRow1 = agentModesAvailable || selectorMounted
-                          if (!hasRow1) return null
-                          return (
-                            <div className="flex min-w-0 flex-1 flex-col items-end gap-2">
-                              {/* #859: rows scroll horizontally instead of wrapping
+                ) : (
+                  <>
+                    <motion.div className="flex min-w-0 items-center gap-3" {...morph.content}>
+                      {/* While the composer is inert its rows are disabled, not
+                    hidden; connectors stay usable. Same as the launcher. */}
+                      <ComposerAddMenu
+                        handle={composerAddHandle}
+                        disabled={disabled || sending}
+                        connectors={connectors}
+                        connectorsHost={connectorsHost}
+                        termulTools={termulTools}
+                      />
+                      <ClaudeAccountChip sessionId={session.id} />
+                      <CodexAccountChip sessionId={session.id} />
+                    </motion.div>
+                    <motion.div
+                      {...morph.content}
+                      className={cn(
+                        // #859: no wrap in narrow mode — the chip rows scroll
+                        // horizontally instead of stacking to 3 lines.
+                        'flex min-w-0 items-center justify-end gap-2.5',
+                        toolbarMode === 'narrow' && 'flex-1'
+                      )}
+                    >
+                      {(() => {
+                        // Underlying availability conditions, not JSX-element
+                        // truthiness — a chip element is always truthy even when it
+                        // renders null internally (shared by both row layouts).
+                        const agentModesAvailable =
+                          session.modes != null && session.modes.availableModes.length > 0
+                        return toolbarMode === 'narrow' ? (
+                          (() => {
+                            // The agent control gates row 1 on the session's live
+                            // agent id (cheap, non-circular): the picker renders null
+                            // itself when the agent resolves to nothing, so row 1
+                            // never renders an empty container for it.
+                            const hasRow1 = agentModesAvailable || selectorMounted
+                            if (!hasRow1) return null
+                            return (
+                              <div className="flex min-w-0 flex-1 flex-col items-end gap-2">
+                                {/* #859: rows scroll horizontally instead of wrapping
                               to 2–3 lines on phones (the composer grew to
                               ~220px when every picker wrapped). Chips keep
                               their own height; no wrap → one row each. */}
-                              {hasRow1 && (
-                                <div
-                                  className="flex min-w-0 max-w-full items-center justify-end gap-2 overflow-x-auto scrollbar-hide"
-                                  data-composer-toolbar-row="1"
-                                >
-                                  {modelSelector}
-                                  {agentModeChip}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })()
-                      ) : agentModesAvailable || selectorMounted ? (
-                        <div
-                          className="flex min-w-0 flex-wrap items-center justify-end gap-2.5"
-                          data-composer-toolbar-row="single"
-                        >
-                          {modelSelector}
-                          {agentModeChip}
-                        </div>
-                      ) : null
-                    })()}
-                    {sendButton}
-                  </div>
-                </>
-              )}
+                                {hasRow1 && (
+                                  <div
+                                    className="flex min-w-0 max-w-full items-center justify-end gap-2 overflow-x-auto scrollbar-hide"
+                                    data-composer-toolbar-row="1"
+                                  >
+                                    {modelSelector}
+                                    {agentModeChip}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()
+                        ) : agentModesAvailable || selectorMounted ? (
+                          <div
+                            className="flex min-w-0 flex-wrap items-center justify-end gap-2.5"
+                            data-composer-toolbar-row="single"
+                          >
+                            {modelSelector}
+                            {agentModeChip}
+                          </div>
+                        ) : null
+                      })()}
+                      {sendButton}
+                    </motion.div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </ComposerBeamShell>
-        {!isMobileShell && <ChatContextStrip session={session} />}
+          </ComposerBeamShell>
+        </motion.div>
       </div>
     </div>
   )

@@ -21,9 +21,10 @@ interface SidePanelColumnProps {
 /**
  * Body of the right panel for a project: the view the tool strip picked
  * (Explorer, Changes or GitHub, remembered per project, Explorer by default)
- * under its Paper panel header. The Explorer draws that header itself
- * (`ExplorerHeader`), because its actions need the explorer's state. Mounted
- * through `ExplorerColumn`'s `sidePanel` slot, never in SSH mode.
+ * under its Paper panel header. The Explorer and Changes views draw that
+ * header themselves (`ExplorerHeader`, `ChangesPanel`), because their actions
+ * need the view's state. Mounted through `ExplorerColumn`'s `sidePanel` slot,
+ * never in SSH mode.
  */
 export function SidePanelColumn({ activeProject }: SidePanelColumnProps): React.JSX.Element {
   const projectId = activeProject.id
@@ -37,12 +38,7 @@ export function SidePanelColumn({ activeProject }: SidePanelColumnProps): React.
           <FileExplorer />
         </Suspense>
       )}
-      {selected === 'changes' && (
-        <>
-          <SidePanelHeader title="Changes" />
-          <ChangesPanel cwd={cwd} isVisible />
-        </>
-      )}
+      {selected === 'changes' && <ChangesPanel cwd={cwd} isVisible />}
       {selected === 'github' && (
         <>
           <SidePanelHeader title="GitHub" />

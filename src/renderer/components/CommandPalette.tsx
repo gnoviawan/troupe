@@ -48,7 +48,8 @@ interface CommandPaletteProps {
   onAddTerminal?: () => void
   terminalProfiles?: TerminalProfile[]
   onOpenTerminalProfile?: (profile: TerminalProfile) => void
-  onShowAgentLauncher?: () => void
+  /** A new empty chat in the active pane. */
+  onNewChat?: () => void
   onLaunchAgent?: () => void
   onSaveSnapshot?: () => void
   onNewBrowserTab?: () => void
@@ -115,7 +116,7 @@ export function CommandPalette({
   onAddTerminal,
   terminalProfiles,
   onOpenTerminalProfile,
-  onShowAgentLauncher,
+  onNewChat,
   onLaunchAgent,
   onSaveSnapshot,
   onNewBrowserTab,
@@ -182,17 +183,17 @@ export function CommandPalette({
             }
           ]
         : []),
-      ...(onShowAgentLauncher
+      ...(onNewChat
         ? [
             {
-              id: 'show-agent-launcher',
+              id: 'new-chat',
               category: 'workspace' as const,
               icon: <Bot aria-hidden="true" size={16} />,
-              label: 'Agent Launcher',
-              description: 'Show the agent launcher prompt in the active pane',
-              keywords: ['agent', 'ai', 'claude', 'codex', 'prompt', 'launcher'],
+              label: 'New chat',
+              description: 'Start a new chat in the active pane',
+              keywords: ['agent', 'ai', 'claude', 'codex', 'prompt', 'chat', 'new'],
               shortcut: getShortcutLabel?.('newTerminal'),
-              execute: onShowAgentLauncher
+              execute: onNewChat
             }
           ]
         : []),
@@ -366,7 +367,7 @@ export function CommandPalette({
       onAddTerminal,
       terminalProfiles,
       onOpenTerminalProfile,
-      onShowAgentLauncher,
+      onNewChat,
       onLaunchAgent,
       onSaveSnapshot,
       onNewBrowserTab,

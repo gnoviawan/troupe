@@ -60,6 +60,12 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }))
 
+const { mockReconcile } = vi.hoisted(() => ({ mockReconcile: vi.fn() }))
+
+vi.mock('@/lib/worktree-reconciler', () => ({
+  reconcileProjectWorktrees: mockReconcile
+}))
+
 const { gitApi } = gitApiModule as unknown as {
   gitApi: {
     getStatus: ReturnType<typeof vi.fn>
@@ -485,6 +491,49 @@ describe('git-status-store branch sync cross-store', () => {
 
     expect(useProjectStore.getState().projects[0].gitBranch).toBe('new-branch')
     expect(useTerminalStore.getState().terminals[0].gitBranch).toBe('new-branch')
+  })
+
+  it('re-lists the worktrees after a switch inside a listed worktree, and logs it', async () => {
+    vi.mocked(platform).mockReturnValue('macos')
+    mockReconcile.mockReset()
+    mockReconcile.mockResolvedValue('updated')
+    const wtPath = '/Users/Test/Project/.termul/worktrees/abcd1234'
+    useProjectStore.setState({
+      projects: [
+        {
+          id: 'proj-1',
+          path: '/Users/Test/Project',
+          gitBranch: 'main',
+          worktrees: [{ id: 'w1', name: 'abcd1234', branch: 'chat/abcd1234', path: wtPath }]
+        } as any
+      ]
+    })
+
+    await useGitStatusStore.getState().branchSwitch(wtPath, 'dev')
+
+    expect(mockReconcile).toHaveBeenCalledWith('proj-1')
+    // The project folder stays on its own branch.
+    expect(useProjectStore.getState().projects[0].gitBranch).toBe('main')
+    expect(mockLogFrontendError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'info',
+        source: 'git-status-store',
+        message: expect.stringContaining('branch switch in a worktree of project proj-1')
+      })
+    )
+  })
+
+  it('does not re-list worktrees after a switch in the project folder', async () => {
+    vi.mocked(platform).mockReturnValue('macos')
+    mockReconcile.mockReset()
+    useProjectStore.setState({
+      projects: [{ id: 'proj-1', path: '/Users/Test/Project', gitBranch: 'main' } as any]
+    })
+
+    await useGitStatusStore.getState().branchSwitch('/Users/Test/Project', 'dev')
+
+    expect(mockReconcile).not.toHaveBeenCalled()
+    expect(useProjectStore.getState().projects[0].gitBranch).toBe('dev')
   })
 
   it('preserves case sensitivity on non-Windows platforms', async () => {

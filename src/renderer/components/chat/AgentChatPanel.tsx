@@ -1,3 +1,4 @@
+import { useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
@@ -51,15 +52,16 @@ import { isAgentDeadError, sessionTurnBusy } from '@/stores/prompt-queue-orchest
 import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stores/workspace-store'
 import { AgentConnectionLamp } from './AgentConnectionLamp'
 import { AskUserQuestion } from './AskUserQuestion'
-import { AsciiGlow } from './ascii-glow/AsciiGlow'
 import { BrowserConsentCard } from './BrowserConsentCard'
+import { ChatEmptyState } from './ChatEmptyState'
 import { ChatErrorNotice } from './ChatErrorNotice'
 import { ChatInputBar } from './ChatInputBar'
 import { ChatMessageList } from './ChatMessageList'
+import { ChatStartContextRow } from './ChatStartContextRow'
 import { ChatStatusChips } from './ChatStatusChips'
 import { ChatStoppedNotice } from './ChatStoppedNotice'
 import { CHAT_GUTTER_X, COMPOSER_CARD_CLASS } from './chat-layout'
-import { ChatStarters } from './chat-start'
+import { ChatStartFooter, ChatStartGlow, ChatTimelineStage } from './chat-start-morph'
 import { buildTimeline, consolidateThoughtGroups, spliceReloadMarker } from './chat-timeline'
 import { ClaudeLimitNotice } from './claude-account/ClaudeLimitNotice'
 import { ClaudeSignInAction } from './claude-account/ClaudeSignInAction'
@@ -68,6 +70,8 @@ import { CodexLimitNotice } from './codex-account/CodexLimitNotice'
 import { isAtLimit as isAtCodexLimit, useCodexLimit } from './codex-account/use-codex-limit'
 import type { SelectionContextInsertRequest } from './composer/insert-selection-context'
 import { ElicitationPrompt } from './ElicitationPrompt'
+import { openNewChat } from './new-chat/open-new-chat'
+import { sendFromChatStart } from './new-chat/send-from-chat-start'
 import { PendingRestartBanner } from './PendingRestartBanner'
 import { PermissionPrompt } from './PermissionPrompt'
 import { PlanPanel } from './PlanPanel'
@@ -400,7 +404,7 @@ export function AgentChatPanel({
     useWorkspaceStore.getState().removeTab(agentChatTabId(sessionId))
   }, [session, hasHistoryEntry, isOpeningHistory, isLaunchingSession, sessionId])
 
-  // Composer seed (edit a message / pick a starter prompt) + dismissed-error tracking.
+  // Composer seed (edit a message) + dismissed-error tracking.
   const [seed, setSeed] = useState<{ text: string; nonce: number } | null>(null)
   const [dismissedError, setDismissedError] = useState<string | null>(null)
   // At the usage limit, the limit dock replaces the provider's quota error.
@@ -446,26 +450,36 @@ export function AgentChatPanel({
   // A send into a cleanly stopped chat starts the resume FIRST: the open marks
   // `openingHistoryIds` synchronously, so `runPromptTurn` queues the prompt
   // and the open dispatches it once the agent is back.
+  // An empty chat's first send applies its context-row pick (another folder
+  // or a new worktree): the chat starts again there with this message.
+  const sendFromStart = useCallback(
+    (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) =>
+      sendFromChatStart({ sessionId, blocks, displayBlocks, onBlocked: seedComposer }),
+    [sessionId, seedComposer]
+  )
+
   const handleSend = useCallback(
     (text: string) => {
+      if (sendFromStart([{ type: 'text', text }])) return
       startAutoResume()
       void sendPrompt(sessionId, text).catch((err) => {
         if (isAgentDeadError(err)) return
         toast.error('Could not send your message. Try again.')
       })
     },
-    [sendPrompt, sessionId, startAutoResume]
+    [sendPrompt, sessionId, startAutoResume, sendFromStart]
   )
 
   const handleSendBlocks = useCallback(
     (blocks: ContentBlock[], displayBlocks?: ContentBlock[]) => {
+      if (sendFromStart(blocks, displayBlocks)) return
       startAutoResume()
       void sendPromptBlocks(sessionId, blocks, { displayBlocks }).catch((err) => {
         if (isAgentDeadError(err)) return
         toast.error('Could not send your message. Try again.')
       })
     },
-    [sendPromptBlocks, sessionId, startAutoResume]
+    [sendPromptBlocks, sessionId, startAutoResume, sendFromStart]
   )
 
   const handleCancel = useCallback(() => {
@@ -731,6 +745,8 @@ export function AgentChatPanel({
   const showRunningIndicator = sessionTurnBusy(session ?? undefined)
   // Same rule as ChatMessageList's empty state.
   const isEmptyChat = timeline.length === 0 && !showRunningIndicator
+  // The first-send morph (chat-start-morph.tsx) switches at once under reduced motion.
+  const reducedMotion = useReducedMotion() ?? false
 
   // Story 5.3 (T2.1): the AgentChatPanel root doubles as the OSK-aware
   // container. We attach a ref so the OSK-open transition effect can locate
@@ -756,7 +772,7 @@ export function AgentChatPanel({
   // The mobile dock (prompts, or the composer)
   // reports its top edge so the toast stack clears it. The wrapper is a plain
   // box on the mobile shell and `display: contents` on desktop, so desktop
-  // layout (the starters' `flex-1`) is unchanged. The hook is also above the
+  // layout (the spacer's `flex-1`) is unchanged. The hook is also above the
   // early returns: the wrapper may mount long after the first render.
   const dockRef = useDockClearance(isMobileShell && isVisible)
   // Status chips (subagents, background commands, changes) above the
@@ -869,10 +885,16 @@ export function AgentChatPanel({
     !codexSignedOut && session.lastError && session.lastError !== dismissedError
       ? formatAcpAgentError(session.lastError)
       : null
+  const chatPaneId = (): string | undefined =>
+    findPaneContainingTab(useWorkspaceStore.getState().root, agentChatTabId(session.id))?.id
+  // A sign-in has no home in the chat: the launcher shows the agent's sign-in
+  // methods (the one state the launcher still covers).
   const openCodexSignIn = (): void => {
-    const workspace = useWorkspaceStore.getState()
-    const pane = findPaneContainingTab(workspace.root, agentChatTabId(session.id))
-    if (pane) workspace.showAgentLauncher(pane.id)
+    const paneId = chatPaneId()
+    if (paneId) useWorkspaceStore.getState().showAgentLauncher(paneId)
+  }
+  const startNewChat = (): void => {
+    void openNewChat({ paneId: chatPaneId(), projectId: session.projectId, reason: 'stopped-chat' })
   }
   // The composer dock shows one notice at a time: a stopped chat (with the
   // failed resume as its reason), else the usage limit, else a turn error.
@@ -913,7 +935,7 @@ export function AgentChatPanel({
         }
         resumeStoppedChat()
       }}
-      onNewChat={codexSignedOut ? undefined : openCodexSignIn}
+      onNewChat={codexSignedOut ? undefined : startNewChat}
       extraAction={codexSignedOut ? undefined : <ClaudeSignInAction sessionId={sessionId} />}
     />
   ) : atUsageLimit && !isClosed ? (
@@ -946,9 +968,7 @@ export function AgentChatPanel({
           : undefined
       }
     >
-      {/* Under the start screen only; -z-10 inside this isolated root keeps
-          it below the hero and the composer. */}
-      {isEmptyChat ? <AsciiGlow className="-z-10" /> : null}
+      <ChatStartGlow show={isEmptyChat} reduced={reducedMotion} />
       <PendingRestartBanner sessionId={sessionId} />
       {isClosed && isOpeningHistory && !isLaunchingSession && (
         <div
@@ -998,7 +1018,12 @@ export function AgentChatPanel({
         defaultCollapsed={isMobileShell}
         forceCollapsed={compactDock}
       />
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <ChatTimelineStage
+        isEmptyChat={isEmptyChat}
+        isMobileShell={isMobileShell}
+        reduced={reducedMotion}
+        hero={<ChatEmptyState sessionId={session.id} />}
+      >
         <SkillFilesProvider projectRoot={skillsProjectRoot}>
           <ChatMessageList
             items={timeline}
@@ -1010,7 +1035,7 @@ export function AgentChatPanel({
             onRetry={canOfferRetry ? handleRetry : undefined}
           />
         </SkillFilesProvider>
-      </div>
+      </ChatTimelineStage>
       <ReloadChatConfirmDialog sessionId={sessionId} />
       {showPromptReconcile && promptCommand && session.activeTurn && (
         // AD-6: the host has not yet confirmed the last prompt (the connection
@@ -1129,15 +1154,16 @@ export function AgentChatPanel({
             seedNonce={seed?.nonce}
             selectionContextInsert={contextInsert}
             isVisible={isVisible}
+            startScreen={isEmptyChat}
           />
-          {/* Empty chat: starters under the composer. With the hero above
-              (ChatEmptyState) both fill the free space, so the composer sits
-              in the middle. Mobile keeps the composer at the bottom. */}
-          {isEmptyChat && !isMobileShell ? (
-            <div className="flex min-h-0 flex-1 flex-col items-center px-6">
-              <ChatStarters onPick={seedComposer} />
-            </div>
-          ) : null}
+          {/* Empty chat (desktop): the context row and the bottom part of
+              the start block, the launcher's layout rule (chat-start.tsx).
+              Mobile keeps the composer alone at the bottom. */}
+          <ChatStartFooter
+            show={isEmptyChat && !isMobileShell}
+            reduced={reducedMotion}
+            row={<ChatStartContextRow session={composerSession ?? session} />}
+          />
         </div>
       )}
     </div>

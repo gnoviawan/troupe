@@ -46,6 +46,8 @@ export interface ShellLayoutRecord {
   lastColumnTabByProject: Record<string, ShellLastColumnTab>
   /** Normalized working-copy path (a key, not a cwd) per project. */
   worktreePickByProject: Record<string, string>
+  /** Projects whose chat list under the Rail row is collapsed (only `true` is stored). */
+  chatsHiddenByProject: Record<string, true>
 }
 
 export function defaultShellLayoutRecord(): ShellLayoutRecord {
@@ -60,7 +62,8 @@ export function defaultShellLayoutRecord(): ShellLayoutRecord {
     sshSectionHeight: SHELL_LAYOUT_BOUNDS.sshSectionHeight.default,
     gitHistoryDetailWidth: SHELL_LAYOUT_BOUNDS.gitHistoryDetailWidth.default,
     lastColumnTabByProject: {},
-    worktreePickByProject: {}
+    worktreePickByProject: {},
+    chatsHiddenByProject: {}
   }
 }
 
@@ -82,12 +85,16 @@ function isRecordObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function isTrue(value: unknown): value is true {
+  return value === true
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0
 }
 
 /** Keeps entries whose key is a safe non-empty string and whose value passes `accept`. */
-function sanitizeMap<T extends string>(
+function sanitizeMap<T extends string | true>(
   value: unknown,
   accept: (entry: unknown) => entry is T
 ): Record<string, T> {
@@ -121,6 +128,7 @@ export function sanitizeShellLayout(raw: unknown): ShellLayoutRecord {
       SHELL_LAYOUT_BOUNDS.gitHistoryDetailWidth
     ),
     lastColumnTabByProject: sanitizeMap(raw.lastColumnTabByProject, isShellLastColumnTab),
-    worktreePickByProject: sanitizeMap(raw.worktreePickByProject, isNonEmptyString)
+    worktreePickByProject: sanitizeMap(raw.worktreePickByProject, isNonEmptyString),
+    chatsHiddenByProject: sanitizeMap(raw.chatsHiddenByProject, isTrue)
   }
 }

@@ -1,4 +1,5 @@
 import { createContext, forwardRef, useContext, useMemo, useState } from 'react'
+import { MoreHorizontal } from '@/components/icons'
 import type { ProjectChatLiveState } from '@/components/sidebar/project-chat-row'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
@@ -106,6 +107,9 @@ export interface RailChatRowProps extends React.ComponentPropsWithoutRef<'button
  * Collapsed Rail: the same 30px row with only the agent icon, centred (radius
  * 6, hover 6% foreground). The open chat keeps its keycap.
  *
+ * Inside a {@link RailChatRowFrame}, the row keeps its hover fill while the
+ * pointer is on the frame's More button and while its menu is open.
+ *
  * To drag the row into a pane, pass `draggable` and the drag handlers, and
  * set `dragging` while the drag is in flight.
  */
@@ -126,12 +130,79 @@ export const RailChatRow = forwardRef<HTMLButtonElement, RailChatRowProps>(funct
         collapsed ? 'justify-center rounded-md px-0' : 'gap-2.25 rounded-lg pr-3 pl-8.75',
         'transition-[color,background-color,opacity,scale] duration-150 ease-out focus-visible:ring-inset motion-reduce:transition-none',
         FOCUS_RING_CLASS,
-        open ? 'keycap' : collapsed ? 'hover:bg-foreground/[0.06]' : 'hover:bg-row-hover',
+        open
+          ? 'keycap'
+          : collapsed
+            ? 'hover:bg-foreground/[0.06] group-data-[state=open]/rail-chat:bg-foreground/[0.06]'
+            : 'hover:bg-row-hover group-hover/rail-chat:bg-row-hover group-data-[state=open]/rail-chat:bg-row-hover',
         dragging && 'scale-[0.98] opacity-50 motion-reduce:scale-100',
         className
       )}
       {...props}
     />
+  )
+})
+
+/**
+ * Frame of one chat row with a menu: the row button and its More button are
+ * siblings (no button inside a button). Use it as the context menu trigger,
+ * so its `data-state` keeps the row filled while the menu is open.
+ */
+export const RailChatRowFrame = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>(
+  function RailChatRowFrame({ className, ...props }, ref) {
+    return <div ref={ref} className={cn('group/rail-chat relative', className)} {...props} />
+  }
+)
+
+/**
+ * The trail of a row with a More button: it gives way to the button while the
+ * row is hovered, focused or has its menu open. The status stays in the row's
+ * accessible name.
+ */
+export function RailChatTrailSlot({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'span'>): React.JSX.Element {
+  return (
+    <span
+      className={cn(
+        'flex shrink-0 items-center',
+        'group-hover/rail-chat:invisible group-focus-within/rail-chat:invisible group-data-[state=open]/rail-chat:invisible',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+/**
+ * "…" at the end of a chat row (20px, 8px from the right, so its glyph ends
+ * where the trail ends). Shown on hover, focus or while the menu is open;
+ * hidden on the collapsed Rail. A click opens the row's context menu at the
+ * button.
+ */
+export const RailChatRowMore = forwardRef<
+  HTMLButtonElement,
+  Omit<React.ComponentPropsWithoutRef<'button'>, 'children'>
+>(function RailChatRowMore({ className, ...props }, ref) {
+  const collapsed = useRailCollapsed()
+  if (collapsed) return null
+  return (
+    <button
+      ref={ref}
+      type="button"
+      aria-haspopup="menu"
+      className={cn(
+        'absolute top-1/2 right-2 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground',
+        'opacity-0 group-hover/rail-chat:opacity-100 group-focus-within/rail-chat:opacity-100 group-data-[state=open]/rail-chat:opacity-100 focus-visible:opacity-100',
+        'transition-[color,background-color,opacity] duration-150 ease-out hover:bg-foreground/[0.06] hover:text-foreground motion-reduce:transition-none',
+        FOCUS_RING_CLASS,
+        className
+      )}
+      {...props}
+    >
+      <MoreHorizontal size={12} aria-hidden="true" />
+    </button>
   )
 })
 

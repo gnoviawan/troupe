@@ -20,7 +20,6 @@ interface RailUtilityButtonsProps {
   onShortcutsOpenChange: (open: boolean) => void
   isThemePickerOpen: boolean
   onToggleThemePicker?: () => void
-  /** `sm` (28px) in the expanded footer row, `base` (32px) on the collapsed Rail. */
   size: RailButtonSize
   className?: string
 }
@@ -61,7 +60,7 @@ export function RailUtilityButtons({
     <div ref={buttonsRef} className={cn('flex shrink-0 items-center', className)}>
       <RailButton
         label="Color themes"
-        size={size}
+        size="base"
         aria-label="Color themes"
         pressed={onToggleThemePicker ? isThemePickerOpen : undefined}
         disabled={!onToggleThemePicker}
@@ -81,11 +80,11 @@ export function RailUtilityButtons({
 }
 
 /**
- * Rail footer. Expanded: one row of 28px icon buttons, Settings at the left
- * (centred on the Rail icon column, x = 24), then the Theme picker and
- * Shortcuts grouped at the right. Collapsed: the same buttons at 32px stack
- * upward from the bottom (column-reverse, 4px apart, 6px top and bottom), so
- * Settings keeps its place at the bottom.
+ * Rail footer (Paper 2.2 "Rail footer"). Expanded: one row of 32px icon
+ * buttons at the left, 2px apart: Settings, Report a bug, Theme picker,
+ * Shortcuts. Collapsed: the same buttons stack upward from the bottom
+ * (column-reverse, 4px apart, 6px top and bottom), so Settings keeps its
+ * place at the bottom.
  */
 export function RailFooter({
   isShortcutsOpen,
@@ -96,12 +95,8 @@ export function RailFooter({
   const collapsed = useRailCollapsed()
   const settingsView = useSettingsModalView()
   const settingsShortcut = useShortcutLabel('settings')
-  const size = collapsed ? 'base' : 'sm'
 
   return (
-    // Expanded: `pl-2.5` puts the 28px Settings button's center at x = 24
-    // (the icon column); `pr-1.5` lines Shortcuts up with the header's Rail
-    // toggle.
     <div
       className={cn(
         'flex shrink-0 items-center',
@@ -112,7 +107,7 @@ export function RailFooter({
       <RailButton
         label="Settings"
         shortcut={settingsShortcut}
-        size={size}
+        size="base"
         aria-label="Settings"
         pressed={settingsView === 'app'}
         onClick={() => useSettingsModalStore.getState().openApp()}
@@ -121,20 +116,18 @@ export function RailFooter({
       </RailButton>
       <RailButton
         label="Report a bug"
-        size={size}
+        size="base"
         aria-label="Report a bug"
         onClick={() => useReportBugStore.getState().openReport()}
       >
         <Bug size={16} />
       </RailButton>
-      {!collapsed && <div className="min-w-0 flex-1" />}
-
       <RailUtilityButtons
         isShortcutsOpen={isShortcutsOpen}
         onShortcutsOpenChange={onShortcutsOpenChange}
         isThemePickerOpen={isThemePickerOpen}
         onToggleThemePicker={onToggleThemePicker}
-        size={size}
+        size="base"
         className={collapsed ? 'flex-col-reverse gap-1' : 'gap-0.5'}
       />
     </div>

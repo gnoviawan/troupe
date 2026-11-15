@@ -1,10 +1,12 @@
 import { act, renderHook } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useNewChat } from './use-new-chat'
 
-const showAgentLauncher = vi.fn()
+const { openNewChat } = vi.hoisted(() => ({
+  openNewChat: vi.fn(async () => ({ kind: 'skipped' as const }))
+}))
+vi.mock('@/components/chat/new-chat/open-new-chat', () => ({ openNewChat }))
 
 function renderNewChat(path: string) {
   return renderHook(() => ({ newChat: useNewChat(), pathname: useLocation().pathname }), {
@@ -13,8 +15,7 @@ function renderNewChat(path: string) {
 }
 
 beforeEach(() => {
-  showAgentLauncher.mockReset()
-  useWorkspaceStore.setState({ activePaneId: 'pane-1', showAgentLauncher })
+  openNewChat.mockClear()
 })
 
 afterEach(() => {
@@ -22,27 +23,23 @@ afterEach(() => {
 })
 
 describe('useNewChat', () => {
-  it('opens the launcher in the active pane on the workspace route', () => {
+  it('opens a new empty chat from the Rail on the workspace route', () => {
     const { result } = renderNewChat('/')
     act(() => result.current.newChat())
-    expect(showAgentLauncher).toHaveBeenCalledWith('pane-1')
+    expect(openNewChat).toHaveBeenCalledWith({ reason: 'rail' })
   })
 
-  it('goes back to the workspace route first, then opens the launcher', () => {
+  it('goes back to the workspace route first, then opens the new chat', () => {
+    let frame: FrameRequestCallback | null = null
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      cb(0)
+      frame = cb
       return 0
     })
     const { result } = renderNewChat('/settings')
     act(() => result.current.newChat())
     expect(result.current.pathname).toBe('/')
-    expect(showAgentLauncher).toHaveBeenCalledWith('pane-1')
-  })
-
-  it('does nothing without an active pane', () => {
-    useWorkspaceStore.setState({ activePaneId: null } as never)
-    const { result } = renderNewChat('/')
-    act(() => result.current.newChat())
-    expect(showAgentLauncher).not.toHaveBeenCalled()
+    expect(openNewChat).not.toHaveBeenCalled()
+    act(() => frame?.(0))
+    expect(openNewChat).toHaveBeenCalledWith({ reason: 'rail' })
   })
 })

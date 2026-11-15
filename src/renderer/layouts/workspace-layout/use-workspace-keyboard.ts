@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
+import { openNewChat } from '@/components/chat/new-chat/open-new-chat'
 import { toggleRailVisibility } from '@/components/shell/use-rail-toggle'
 import { useUpdateAppSetting, useUpdatePanelVisibility } from '@/hooks/use-app-settings'
 import { getShortcutTargetContext } from '@/layouts/workspace-layout/shortcut-target'
@@ -264,21 +265,19 @@ export function useWorkspaceKeyboard({
         return
       }
 
-      // Ctrl+T: show the agent launcher prompt overlay in the active pane.
-      // The launcher is an overlay — existing tabs are preserved underneath.
-      // When the agent is launched, a new tab is added to the same pane.
+      // Ctrl+T: a new empty chat in the active pane (or focus the empty chat
+      // it already shows). When the launcher covers the pane (its fallback
+      // states), the shortcut closes it.
       if (matchesShortcut(e, getActiveKey('newTerminal'))) {
         if (!isWorkspaceRoute) return
         e.preventDefault()
         e.stopPropagation()
         const paneId = useWorkspaceStore.getState().activePaneId
         if (paneId) {
-          const current = useWorkspaceStore.getState().agentLauncherPaneId
-          // Toggle: if already showing on this pane, hide it; otherwise show it.
-          if (current === paneId) {
+          if (useWorkspaceStore.getState().agentLauncherPaneId === paneId) {
             useWorkspaceStore.getState().hideAgentLauncher()
           } else {
-            useWorkspaceStore.getState().showAgentLauncher(paneId)
+            void openNewChat({ paneId, reason: 'shortcut' })
           }
         }
         return

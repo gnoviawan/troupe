@@ -17,6 +17,7 @@ vi.mock('@/components/github/GithubPanel', () => ({
   )
 }))
 
+// The Changes view draws its own header (ChangesPanel.test covers it).
 vi.mock('./ChangesPanel', () => ({
   ChangesPanel: ({ cwd }: { cwd: string }) => <div data-testid="changes-panel" data-cwd={cwd} />
 }))
@@ -76,7 +77,7 @@ describe('SidePanelColumn', () => {
       worktreePickByProject: { p1: '/repo/.termul/worktrees/feature' }
     })
     render(<SidePanelColumn activeProject={makeProject()} />)
-    expect(screen.getByRole('heading', { name: 'Changes' })).toBeInTheDocument()
+    expect(screen.queryByTestId('side-panel-header')).toBeNull()
     expect(screen.getByTestId('changes-panel')).toHaveAttribute(
       'data-cwd',
       '/repo/.termul/worktrees/feature'
@@ -84,7 +85,7 @@ describe('SidePanelColumn', () => {
   })
 
   it('closes the panel from the header Close button', () => {
-    useShellLayoutStore.setState({ lastColumnTabByProject: { p1: 'changes' } })
+    useShellLayoutStore.setState({ lastColumnTabByProject: { p1: 'github' } })
     render(<SidePanelColumn activeProject={makeProject()} />)
     const close = screen.getByRole('button', { name: 'Close panel' })
     expect(close.getAttribute('title')).toMatch(/^Close panel \(.*B\)$/)
@@ -101,7 +102,7 @@ describe('SidePanelColumn', () => {
       showPanelOwner: 'pane'
     }
     const renderWith = (platform: TopRowPlatform, owner: TopRowRoles['controlsOwner'] = 'pane') => {
-      useShellLayoutStore.setState({ lastColumnTabByProject: { p1: 'changes' } })
+      useShellLayoutStore.setState({ lastColumnTabByProject: { p1: 'github' } })
       render(
         <TopRowProvider roles={{ ...roles, controlsOwner: owner }} platform={platform}>
           <SidePanelColumn activeProject={makeProject()} />

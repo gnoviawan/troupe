@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import type { Locator, Page, WebSocketRoute } from 'playwright/test'
 import { expect, request, test } from 'playwright/test'
 import { E2E_BASE_URL, E2E_TOKEN, storeKey, wsRequest } from './helpers'
+import { emptyChatComposer, sendFromEmptyChat } from './ui'
 
 /**
  * Mobile drawer E2E (spec-mobile-drawer-home, restyled by
@@ -185,14 +186,14 @@ async function bootFreshProject(
   return project
 }
 
-/** Start a NEW chat from the header button and wait for the shell to show it. */
+/**
+ * Start a NEW chat from the header button and wait for the shell to show it.
+ * New chat opens a new empty chat; its first message starts the chat.
+ */
 async function launchChat(page: Page, prompt: string): Promise<string> {
   await page.getByRole('button', { name: 'New chat', exact: true }).tap()
-  const composer = page.getByRole('textbox', { name: 'Agent prompt' })
-  await expect(composer).toBeVisible()
-  await composer.click()
-  await page.keyboard.type(prompt)
-  await page.keyboard.press('Enter')
+  await expect(emptyChatComposer(page)).toBeVisible()
+  await sendFromEmptyChat(page, prompt, { tap: true })
   // The chat's title is its first prompt (the server shortens a long one with
   // an ellipsis), and the header shows the active chat's title.
   const heading = page.getByRole('heading', {
@@ -916,19 +917,21 @@ test('Settings hands the drawer off: it closes and the settings dialog keeps foc
   await expect(menuButton(page)).not.toBeFocused()
 })
 
-test('New chat opens the launcher and Snapshots keeps the shell and its menu', async ({ page }) => {
+test('New chat opens an empty chat and Snapshots keeps the shell and its menu', async ({
+  page
+}) => {
   await bootFreshProject(page)
   const prompt = 'mike hand-off [DURATION:2]'
   await launchChat(page, prompt)
 
-  // New chat: from inside a chat (whose composer is not the launcher's) the
-  // drawer closes on the launcher's "Agent prompt" composer. No other dialog
-  // took focus, so it returns to the opener.
+  // New chat: from inside a chat the drawer closes on a new empty chat (no
+  // launcher). No dialog took focus, so it returns to the opener.
   let drawer = await openDrawer(page)
-  await expect(page.getByRole('textbox', { name: 'Agent prompt' })).toHaveCount(0)
+  await expect(emptyChatComposer(page)).toHaveCount(0)
   await drawer.getByRole('button', { name: 'New chat', exact: true }).tap()
   await expect(drawer).toBeHidden()
-  await expect(page.getByRole('textbox', { name: 'Agent prompt' })).toBeVisible()
+  await expect(emptyChatComposer(page)).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Agent prompt' })).toHaveCount(0)
   await expect(menuButton(page)).toBeFocused()
 
   // Snapshots: a route change inside the same shell, so ☰ and the drawer stay.

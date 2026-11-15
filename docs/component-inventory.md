@@ -71,8 +71,11 @@ Supporting these are shared layout, navigation, modal, and design-system compone
 - `chat/use-chat-history-entries.ts` — the chat history derivation both lists share: ADR 0002 scoping, query filter on the displayed title, settled-count announcement, lazy window, recency groups, open and delete (the caller names the delete log source)
 - `chat/chat-agent-prose.tsx` — markdown renderer for agent replies (`AgentProse`) with the Streamdown plugin set, external-link confirm modal, inline `termul-image` and `termul-file-path` renderers; split out of `ChatMessage.tsx` to keep it under the file-size limit
 - `chat/ChatInputBar.tsx` — composer with slash commands, `@`-file mentions, config/mode chips, and staged-attachment badges
+- `chat/new-chat/open-new-chat.ts` — `openNewChat`: the one way to start a chat (a new empty chat on the last picked agent and its saved options; focuses an empty chat the pane already shows; opens the launcher only when no agent can start or a sign-in is needed)
+- `chat/new-chat/send-from-chat-start.ts` — applies an empty chat's context-row pick (another folder or a new worktree) on its first send through `launchChat`
+- `chat/ChatStartContextRow.tsx` — the empty chat's context row: the launcher's interactive workspace and base-branch row in a git project (`use-chat-start-pick.ts`), else read-only
 - `chat/AttachmentPreviewGroup.tsx` — staged-attachment badges above the composer using AI Elements `Attachments` inline variant with hover-card image previews and click-to-open for path-backed refs
-- `chat/use-composer-attachments.ts` — hybrid transport hook (OS picker → `resource_link`, drag/paste → inline image or embedded text) shared by the chat input and the new-thread launcher
+- `chat/use-composer-attachments.ts` — hybrid transport hook (OS picker → `resource_link`, drag/paste → inline image or embedded text) shared by the chat input and the agent launcher (the fallback for no agent and sign-in)
 - `chat/chat-attachments.ts` — attachment helpers: MIME guessing, name humanization, ACP block mapping, and `pendingToAttachmentData`/`blockToAttachmentData` adapters into AI Elements `AttachmentData`
 - `ai-elements/attachments.tsx` — vendored [AI SDK Elements Attachments](https://elements.ai-sdk.dev/components/attachments) component (grid/inline/list variants) adapted to the repo's shadcn primitives and `ai` package types
 

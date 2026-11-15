@@ -1,6 +1,5 @@
 import type { LastSelectedAgent } from '@shared/types/persistence.types'
 import { PersistenceKeys } from '@shared/types/persistence.types'
-import type { BaseBranchInfo } from '@shared/types/worktree.types'
 import type { Editor } from '@tiptap/core'
 import { useIsPresent, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -30,6 +29,7 @@ import {
 import { LauncherStatusBanners } from '@/components/agents/launcher/status-banners'
 import { LauncherToolbar } from '@/components/agents/launcher/toolbar'
 import { useAgentSignIn } from '@/components/agents/launcher/use-agent-sign-in'
+import { useBaseBranchChoices } from '@/components/agents/launcher/use-base-branch-choices'
 import { useLaunchWorkspace } from '@/components/agents/launcher/use-launch-workspace'
 import { useLauncherExitAnim } from '@/components/agents/launcher/use-launcher-exit-anim'
 import { useLauncherSelectorSource } from '@/components/agents/launcher/use-launcher-selector-source'
@@ -49,14 +49,22 @@ import { AttachmentPreviewGroup } from '@/components/chat/AttachmentPreviewGroup
 import { AsciiGlow } from '@/components/chat/ascii-glow/AsciiGlow'
 import { appOwnedTempPaths, dedupeAttachmentBlocks } from '@/components/chat/chat-attachments'
 import {
-  extractFastModeOption,
   filterDuplicateModeConfigOptions,
   isUsableConfigOption,
   partitionConfigOptions,
-  resolveModelOption
+  resolveModelOption,
+  splitFastModeOption
 } from '@/components/chat/chat-input-bar-config'
 import { COMPOSER_CARD_CLASS, useComposerToolbarMode } from '@/components/chat/chat-layout'
-import { ChatStarters, ChatStartHero } from '@/components/chat/chat-start'
+import {
+  CHAT_START_COLUMN_CLASS,
+  CHAT_START_INPUT_MAX_HEIGHT,
+  CHAT_START_INPUT_MIN_HEIGHT,
+  CHAT_START_INPUT_ROW_CLASS,
+  CHAT_START_TOP_CLASS,
+  ChatStartBottomSpacer,
+  ChatStartHero
+} from '@/components/chat/chat-start'
 import {
   ChatComposerEditor,
   focusComposerFromRowPress
@@ -68,6 +76,7 @@ import {
 import { insertComposerTool } from '@/components/chat/composer/insert-pill'
 import { textWithAttachmentBlocks } from '@/components/chat/composer-send-blocks'
 import { FileMentionMenu } from '@/components/chat/FileMentionMenu'
+import { openNewChat } from '@/components/chat/new-chat/open-new-chat'
 import { SlashCommandMenu, type SlashMenuHandle } from '@/components/chat/SlashCommandMenu'
 import { SkillFilesProvider } from '@/components/chat/skill-file-links'
 import { useChatComposer } from '@/components/chat/use-chat-composer'
@@ -105,7 +114,6 @@ import { logFrontendError } from '@/lib/log-api'
 import { platform as osPlatform } from '@/lib/tauri-os'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { cn } from '@/lib/utils'
-import { worktreeApi } from '@/lib/worktree-api'
 import { getDefaultCwdForProject, getProjectRootPath } from '@/lib/worktree-context'
 import { READ_ONLY_SERVER_REASON } from '@/lib/write-gate'
 import {
@@ -281,11 +289,15 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   const workspace = useLaunchWorkspace(activeProject, useWorktreePick(activeProjectId ?? ''))
   const { isolationMode, setIsolationMode, existingWorktreeId } = workspace
   const [baseBranch, setBaseBranch] = useState<string | null>(null)
-  const [baseBranchInfo, setBaseBranchInfo] = useState<BaseBranchInfo | null>(null)
-  // Local branch names for the base-branch picker (CAP-2). Sourced from
-  // `worktreeApi.branches` so detached-HEAD users can pick any valid branch,
-  // not just the resolved default.
-  const [branches, setBranches] = useState<string[]>([])
+  // CAP-2 base-branch picker: default base, local branches, fallbacks.
+  const { baseBranchInfo, branches, baseOptions } = useBaseBranchChoices({
+    projectRoot,
+    canUseWorktree,
+    projectGitBranch,
+    isolationMode,
+    baseBranch,
+    setBaseBranch
+  })
   const [worktreeCreating, setWorktreeCreating] = useState(false)
   // New chat inside the exit window restores this exiting instance. When its
   // last launch already handed off to a chat tab, that launch can still hold
@@ -397,7 +409,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
             },
             onWorktreeFailed: () => {
               if (isCurrentRestart()) {
-                useWorkspaceStore.getState().showAgentLauncher(paneId)
+                void openNewChat({ paneId, projectId: activeProjectId, reason: 'worktree-failed' })
               }
             }
           }).started
@@ -573,7 +585,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   const {
     model,
     thoughtLevel,
-    modelConfig,
+    modelConfig: allModelConfig,
     rest: genericConfigOptions
   } = partitionConfigOptions(usableConfigOptions)
   const { option: modelOption, source: modelSource } = resolveModelOption(model, effectiveModels)
@@ -581,9 +593,11 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     genericConfigOptions,
     effectiveModes
   )
-  const { fastMode, rest: nonFastGenericOptions } = extractFastModeOption(
-    visibleGenericConfigOptions
-  )
+  const {
+    fastMode,
+    modelConfig,
+    rest: nonFastGenericOptions
+  } = splitFastModeOption(allModelConfig, visibleGenericConfigOptions)
   const modePreviewSession = useMemo((): AcpSession | null => {
     if (draftSession) return draftSession
     if (!effectiveModes) return null
@@ -989,56 +1003,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     }
   }, [acpConfigs, persistSelection, selectedConfigId, supportedAgents])
 
-  // CAP-2: resolve the origin-aware default base branch and local branch list
-  // once per desktop git project so the context-strip picker is ready when the
-  // user switches to worktree mode.
-  useEffect(() => {
-    if (!canUseWorktree || !projectRoot) return
-    let cancelled = false
-    void (async () => {
-      try {
-        const result = await worktreeApi.resolveBaseBranch(projectRoot)
-        if (cancelled) return
-        if (result.success && result.data) {
-          setBaseBranchInfo(result.data)
-          // Fetch local branches so the picker lists every valid option
-          // (detached-HEAD users can pick any branch).
-          const branchResult = await worktreeApi.branches(projectRoot)
-          if (cancelled) return
-          if (branchResult.success && branchResult.data) {
-            const local = branchResult.data.filter((b) => !b.isRemote).map((b) => b.name)
-            setBranches(local)
-          }
-        } else {
-          void logFrontendError({
-            level: 'warn',
-            source: 'agentLauncher.resolveBaseBranch',
-            message: `resolveBaseBranch failed: ${result.success ? '' : result.error}`
-          })
-        }
-      } catch (err) {
-        if (!cancelled) {
-          void logFrontendError({
-            level: 'warn',
-            source: 'agentLauncher.resolveBaseBranch',
-            message: `resolveBaseBranch threw: ${String(err)}`
-          })
-        }
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [canUseWorktree, projectRoot])
-
-  // CAP-2: entering worktree mode defaults the picker to the resolved base
-  // branch. Detached HEAD skips the auto-fill so the user must pick.
-  useEffect(() => {
-    if (isolationMode !== 'worktree' || baseBranch || !baseBranchInfo || baseBranchInfo.isDetached)
-      return
-    setBaseBranch(baseBranchInfo.defaultBase)
-  }, [isolationMode, baseBranch, baseBranchInfo])
-
   // Persist worktree isolation mode + base branch changes for the current
   // agent so the next chat starts with the same worktree preference. Only
   // persists when worktree mode is available (`canUseWorktree`) — a non-git
@@ -1051,18 +1015,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       baseBranch: isolationMode === 'worktree' ? baseBranch : null
     })
   }, [activeConfigId, isolationMode, baseBranch, canUseWorktree])
-
-  // Validate the restored `baseBranch` once the branch list loads. The restore
-  // effect (on `[activeConfigId]`) may set a persisted branch before
-  // `worktreeApi.branches` resolves. If the branch was deleted, fall back to
-  // the resolved default.
-  useEffect(() => {
-    if (isolationMode !== 'worktree' || !baseBranch || branches.length === 0) return
-    if (branches.includes(baseBranch)) return
-    if (baseBranchInfo?.defaultBase) {
-      setBaseBranch(baseBranchInfo.defaultBase)
-    }
-  }, [isolationMode, baseBranch, branches, baseBranchInfo])
 
   // Configs whose persist failed here. A failed save rolls `agentConfigs` back
   // to a new array, which re-runs the prewarm effect, so without this record a
@@ -1511,13 +1463,17 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         onWorktreeCreating: (creating) => {
           if (isCurrentLaunch()) setWorktreeCreating(creating)
         },
-        // Roll back to the launcher only when this launch is still current.
-        // launch-chat always rolls back the placeholder; a stale failure must
-        // not reopen the launcher over a newer chat.
+        // Fall back to a new empty chat only when this launch is still
+        // current. launch-chat always rolls back the placeholder; a stale
+        // failure must not open a chat over a newer one.
         onWorktreeFailed: () => {
           worktreeFailed = true
           if (isCurrentLaunch()) {
-            useWorkspaceStore.getState().showAgentLauncher(paneSnapshot)
+            void openNewChat({
+              paneId: paneSnapshot,
+              projectId: projectIdSnapshot,
+              reason: 'worktree-failed'
+            })
           }
         },
         beforeStart: async () => {
@@ -1643,27 +1599,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     !(isolationMode === 'worktree' && !baseBranch) &&
     !(isolationMode === 'existing' && !existingWorktreeId) &&
     !worktreeCreating
-  // Deduplicated base-branch options for the picker (CAP-2): current branch
-  // first (marked), then the resolved default, the project's reactive branch,
-  // then every local branch from `worktreeApi.branches` so detached-HEAD
-  // users can pick any valid branch. Exact-equality dedup prevents repeated
-  // SelectItem values (projectGitBranch clashing with currentBranch, etc.).
-  const baseOptions: { value: string; label: string }[] = (() => {
-    const seen = new Set<string>()
-    const out: { value: string; label: string }[] = []
-    const add = (value: string | undefined | null, isCurrent = false) => {
-      if (!value) return
-      if (seen.has(value)) return
-      seen.add(value)
-      out.push({ value, label: isCurrent ? `${value} (current)` : value })
-    }
-    add(baseBranchInfo?.currentBranch, true)
-    add(baseBranchInfo?.defaultBase)
-    add(projectGitBranch, true)
-    for (const b of branches) add(b)
-    return out
-  })()
-
   // Story 11 (QA F9): on the mobile web shell the centered launcher floats
   // mid-screen with dead space below — the composer is unreachable without a
   // stretch. Bottom-anchor the whole column (justify-end) so the composer box
@@ -1755,19 +1690,31 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
           stays pane-pinned at any scroll offset. */}
       <div
         className={cn(
-          'absolute inset-0 flex flex-col items-center justify-center overflow-x-hidden overflow-y-auto p-4 sm:p-8',
-          isMobileShell && 'justify-end pb-[max(1.5rem,env(safe-area-inset-bottom))]'
+          'absolute inset-0 flex flex-col items-center overflow-x-hidden overflow-y-auto',
+          // Desktop: the empty chat's start block rule (chat-start.tsx), so
+          // the hero and the composer sit at the same y in both surfaces.
+          isMobileShell ? 'justify-end p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]' : 'px-5'
         )}
         style={mobileBottomInset ? { paddingBottom: mobileBottomInset } : undefined}
       >
-        <ChatStartHero
-          isMobileShell={isMobileShell}
-          isExiting={isExiting}
-          reducedMotion={reducedMotion}
-          projectLabel={projectLabel}
-        />
+        {isMobileShell ? (
+          <ChatStartHero
+            isMobileShell
+            isExiting={isExiting}
+            reducedMotion={reducedMotion}
+            projectLabel={projectLabel}
+          />
+        ) : (
+          <div className={CHAT_START_TOP_CLASS}>
+            <ChatStartHero
+              isExiting={isExiting}
+              reducedMotion={reducedMotion}
+              projectLabel={projectLabel}
+            />
+          </div>
+        )}
 
-        <div ref={dockRef} className="flex min-w-0 w-full max-w-4xl flex-col gap-4">
+        <div ref={dockRef} className={cn('flex min-w-0 w-full flex-col', CHAT_START_COLUMN_CLASS)}>
           <div
             data-agent-launcher-composer-group="true"
             className={cn(
@@ -1853,12 +1800,12 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                 onRemove={removeAttachment}
                 removeDisabled={composerLocked}
               />
-              {/* Same inner rhythm as the chat composer card (ChatInputBar):
-                  editor row px-4 pb-1.5 pt-3.5, toolbar px-2 pb-2. */}
+              {/* Same input area as the empty chat's composer (chat-start.tsx);
+                  toolbar px-2 pb-2 like ChatInputBar. */}
               {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-only focus aid for the padding; the editor is the accessible target */}
               <div
                 data-composer-row
-                className="px-4 pb-1.5 pt-3.5"
+                className={cn('flex items-start', CHAT_START_INPUT_ROW_CLASS)}
                 onMouseDown={(event) => focusComposerFromRowPress(event, editorRef.current)}
               >
                 {/* Tiptap rich-text editor — the skill "pill" is a real inline
@@ -1878,8 +1825,9 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                     editorRef={editorRef}
                     inputRef={composerInputRef}
                     disabled={composerLocked}
-                    minHeight={76}
-                    maxHeight={160}
+                    className="min-w-0 flex-1"
+                    minHeight={CHAT_START_INPUT_MIN_HEIGHT}
+                    maxHeight={CHAT_START_INPUT_MAX_HEIGHT}
                     placeholder={
                       composerDisabled
                         ? 'Composer unavailable'
@@ -1947,19 +1895,8 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
               isGitRepo={projectIsGitRepo}
             />
           </div>
-          {/* Shared start screen (same starters as an empty chat). Mobile
-              keeps the composer at the bottom, so no starters there. */}
-          {!isMobileShell && (
-            <ChatStarters
-              isExiting={isExiting}
-              onPick={(text) => {
-                if (launchLocked) return
-                setPrompt(text)
-                editorRef.current?.commands.focus('end', { scrollIntoView: false })
-              }}
-            />
-          )}
         </div>
+        {isMobileShell ? null : <ChatStartBottomSpacer />}
       </div>
     </div>
   )

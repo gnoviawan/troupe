@@ -114,6 +114,19 @@ The Side panel Chats tab, its header Workspace switcher and the StatusBar are go
 - [x] Orphans removed: the `icon` variant of `ImportChatsButton`, `ProjectSwitcher`, `sidebar-search-field`.
 - [x] Chat drag: Rail chat rows (expanded rows, collapsed icons and the hover chat peek rows) drag onto a pane edge to split, or into a pane to open the chat there (`startChatDrag`, the same payload as the old Chats cards). The dragged row is 50% opacity and 98% scale, the same as a dragged tab (no scale and no transition with reduced motion). A click right after the drag does not open the chat. A drag from the peek closes the peek; the peek stays mounted (hidden) until the drag ends. Durable log: `[rail] drag chat <id>` (source `Rail`). Covered by `RailProjectChats.test.tsx` and the e2e Journey 1 split step.
 
+### New chat: one way to start a chat
+
+Decision (2026-11-15): a chat starts as a new EMPTY CHAT. The agent launcher overlay does not start chats from the entry points.
+
+- [x] Every entry point calls `openNewChat` (`components/chat/new-chat/open-new-chat.ts`): the Rail New chat row, Ctrl+T (shortcut `newTerminal`), the command palette "New chat", the phone header and drawer New chat, the stopped-chat New chat, the launcher's worktree failure and the GitHub hand-off with no agent.
+- [x] The chat tab opens at once on a launch placeholder (`launchChat`, the launcher's path) on the last picked agent (`agents/last-selected`) with its saved model, mode and option values (`lastComposerOptions`). The working copy is the Workspace-switcher pick, else the project root. A message typed before the session is ready waits in the queue. A start failure shows in the chat with Retry.
+- [x] When the active pane already shows an empty chat of the project, New chat focuses it.
+- [x] Web (#840 / #907): only a configured agent starts. A catalog agent that nobody configured never spawns.
+- [x] The empty chat's context row (frame 2.2, "New worktree ▾ · from dev ▾") is interactive in a git project: Current checkout, Existing worktree, New worktree and the base branch. Nothing moves while the user picks. The first send applies the pick (`sendFromChatStart`): Current checkout or an existing worktree starts the still-empty chat again in that folder; New worktree makes the worktree first, with the progress card in the timeline. The new chat keeps the tab, the message, the agent and the options. The pick is saved in `lastComposerOptions` (isolationMode, baseBranch) like the launcher saved it. A read-only server shows New worktree disabled with the reason.
+- [x] The launcher stays only as a fallback for states a chat cannot show: no agent can start (none configured, none installed, the last pick needs an install), and a sign-in (an auth failure at start, the Codex "Sign in" action, the Codex CLI logout). A pane with no tabs still shows the launcher as its content.
+- [x] Durable logs: source `chat.openNewChat` (each start with its reason, focus, fallback) and `chat.sendFromChatStart` (a pick applied on send).
+- [ ] Phone: the context row is desktop only, so a phone chat starts in the switcher pick and has no worktree pick.
+
 ## Open items
 
 - The collapsed rail shows a status dot on the agent icon (P2).
