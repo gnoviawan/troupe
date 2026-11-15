@@ -56,11 +56,12 @@ describe('QuickChatsGroup', () => {
   it('marks the open quick chat as the active row', () => {
     useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'new' } })
     renderGroup()
-    expect(screen.getByRole('button', { name: 'Newer notes' })).toHaveAttribute(
-      'aria-current',
-      'true'
-    )
-    expect(screen.getByRole('button', { name: 'Newer notes' })).toHaveClass('keycap')
+    const openRow = screen.getByRole('button', { name: 'Newer notes' })
+    expect(openRow).toHaveAttribute('aria-current', 'true')
+    expect(openRow).toHaveClass('keycap', 'px-3')
+    expect(openRow).not.toHaveClass('pl-8.75')
+    expect(openRow.querySelector('[data-rail-icon-column]')).toHaveClass('size-4')
+    expect(openRow.querySelector('[data-termul-icon="Chat"]')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Older notes' })).not.toHaveAttribute('aria-current')
   })
 

@@ -136,15 +136,12 @@ import {
   savedModelValues
 } from '@/stores/acp-store/composer-options'
 import { useActiveProject, useProjectStore } from '@/stores/project-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorktreePick } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 
 interface AgentLauncherProps {
   paneId: string
   className?: string
-  /** A chat with no project. The host creates the folder. */
-  quick?: boolean
 }
 
 /**
@@ -153,11 +150,7 @@ interface AgentLauncherProps {
  * a chat tab it morphs its composer onto the live ChatInputBar card, and when
  * dismissed without a launch it fades in place.
  */
-export function AgentLauncher({
-  paneId,
-  className,
-  quick = false
-}: AgentLauncherProps): React.JSX.Element {
+export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.JSX.Element {
   const [prompt, setPrompt] = useState('')
   const [selectedConfigId, setSelectedConfigId] = useState(() => cachedLastSelectedAgentId() ?? '')
   /**
@@ -1273,7 +1266,7 @@ export function AgentLauncher({
   }, [preparedSessionId, pendingOptions])
 
   const launch = useCallback(async () => {
-    if (!quick && (!activeProjectId || !projectRoot)) {
+    if (!activeProjectId || !projectRoot) {
       toast.error('No active project')
       return
     }
@@ -1347,32 +1340,6 @@ export function AgentLauncher({
       setPrompt('')
       if (isCurrentLaunch()) launchHandedOffRef.current = true
     }
-    if (quick) {
-      try {
-        const sessionId = await useAcpStore.getState().startQuickChat(configSnapshot.id)
-        useQuickChatStore.getState().openChat(sessionId)
-        const blocks = dedupeAttachmentBlocks([
-          ...textWithAttachmentBlocks(wireWithCommand, attachmentsSnapshot),
-          ...fileBlocks,
-          ...contextBlocks
-        ])
-        if (blocks.length > 0) {
-          const displayBlocks = dedupeAttachmentBlocks([
-            ...syncBlocks,
-            ...fileBlocks,
-            ...contextBlocks
-          ])
-          await useAcpStore.getState().sendPromptBlocks(sessionId, blocks, { displayBlocks })
-        }
-        resetComposer()
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to start quick chat')
-      } finally {
-        releaseLaunch()
-      }
-      return
-    }
-
     // CAP-3 ordering: the chat placeholder opens BEFORE the worktree prepare
     // (`launchChat`) so `git worktree add`'s stderr lines stream into the
     // in-timeline progress card while the checkout runs. The agent's cwd is
@@ -1536,7 +1503,6 @@ export function AgentLauncher({
   }, [
     activeProjectId,
     projectRoot,
-    quick,
     selectedConfig,
     selectedEntry?.status,
     acpConfigs,
@@ -1711,7 +1677,6 @@ export function AgentLauncher({
             isExiting={isExiting}
             reducedMotion={reducedMotion}
             projectLabel={projectLabel}
-            quick={quick}
           />
         ) : (
           <div className={CHAT_START_TOP_CLASS}>
@@ -1719,7 +1684,6 @@ export function AgentLauncher({
               isExiting={isExiting}
               reducedMotion={reducedMotion}
               projectLabel={projectLabel}
-              quick={quick}
             />
           </div>
         )}
@@ -1892,20 +1856,18 @@ export function AgentLauncher({
                 toolbarMode={toolbarMode}
               />
             </div>
-            {!quick && (
-              <LauncherContextStrip
-                workspace={workspace}
-                worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
-                baseBranch={baseBranch}
-                setBaseBranch={setBaseBranch}
-                baseBranchInfo={baseBranchInfo}
-                baseOptions={baseOptions}
-                interactive={projectIsGitRepo}
-                newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
-                gitBranch={projectGitBranch}
-                isGitRepo={projectIsGitRepo}
-              />
-            )}
+            <LauncherContextStrip
+              workspace={workspace}
+              worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
+              baseBranch={baseBranch}
+              setBaseBranch={setBaseBranch}
+              baseBranchInfo={baseBranchInfo}
+              baseOptions={baseOptions}
+              interactive={projectIsGitRepo}
+              newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
+              gitBranch={projectGitBranch}
+              isGitRepo={projectIsGitRepo}
+            />
           </div>
         </div>
         {isMobileShell ? null : <ChatStartBottomSpacer />}

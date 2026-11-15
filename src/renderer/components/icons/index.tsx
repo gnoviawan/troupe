@@ -18,6 +18,7 @@ import {
   Camera01Icon,
   CancelCircleIcon,
   CaseSensitiveIcon,
+  Chat01Icon,
   CheckIcon,
   CheckmarkCircle02Icon,
   ChevronDownIcon as ChevronDownIconData,
@@ -242,6 +243,7 @@ export const Brain = hugeIcon('Brain', BrainIcon)
 export const Bug = hugeIcon('Bug', Bug01Icon)
 export const Calendar = hugeIcon('Calendar', Calendar01Icon)
 export const Camera = hugeIcon('Camera', Camera01Icon)
+export const Chat = hugeIcon('Chat', Chat01Icon)
 export const CaseSensitive = hugeIcon('CaseSensitive', CaseSensitiveIcon)
 export const CheckCircle2 = hugeIcon('CheckCircle2', CheckmarkCircle02Icon)
 export const ChevronDown = hugeIcon('ChevronDown', ChevronDownIconData)

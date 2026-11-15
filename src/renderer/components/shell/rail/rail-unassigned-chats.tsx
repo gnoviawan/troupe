@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { ChatEntryIcon } from '@/components/chat/ChatHistoryEntryRow'
-import { ChevronDown, ChevronRight, MessageSquare } from '@/components/icons'
+import { Chat, ChevronDown, ChevronRight } from '@/components/icons'
 import { ChatRowTrail, type ProjectChatEntry } from '@/components/sidebar/project-chat-row'
 import { RailSectionHeader } from '@/components/sidebar/rail-section-header'
 import { FIELD_FOCUS_CLASS, FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
@@ -13,13 +12,13 @@ import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
 import { useAcpStore } from '@/stores/acp-store'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { RAIL_ICON_BOX_CLASS, RAIL_ROW_INSET_CLASS } from '../rail-layout'
 import { logRailEvent } from '../shell-log'
 import { type ChatRowMenuActions, useChatRowMenuActions } from '../use-chat-row-menu-actions'
 import { useChatLiveState } from '../use-project-chats'
 import { RailChatMenu } from './rail-chat-menu'
 import {
   RailChatGroup,
-  RailChatIcon,
   RailChatItem,
   RailChatList,
   RailChatRow,
@@ -138,7 +137,7 @@ function ChatList({
           </RailChatItem>
         ))}
       </RailChatList>
-      <RailShowMore />
+      <RailShowMore className={collapsed ? undefined : 'pl-9'} />
     </RailChatGroup>
   )
 }
@@ -175,6 +174,7 @@ function UnassignedChatRow({
           open={open}
           title={collapsed ? undefined : entry.title}
           aria-label={statusWord ? `${entry.title}, ${statusWord}` : entry.title}
+          className={collapsed ? undefined : RAIL_ROW_INSET_CLASS}
           onClick={() => onOpen(entry.id)}
           onKeyDown={(event) => {
             if (!isContextMenuKey(event)) return
@@ -182,14 +182,13 @@ function UnassignedChatRow({
             openContextMenuFrom(event.currentTarget)
           }}
         >
-          <RailChatIcon>
-            <ChatEntryIcon
-              agentId={entry.agentId}
-              agentConfigId={entry.agentConfigId}
-              agents={entry.agents}
-            />
+          <span
+            data-rail-icon-column
+            className={cn(RAIL_ICON_BOX_CLASS, 'relative text-muted-foreground')}
+          >
+            <Chat size={16} />
             {collapsed && <RailChatStatusDot state={liveState} />}
-          </RailChatIcon>
+          </span>
           <RailChatTitle>{entry.title}</RailChatTitle>
           {!collapsed && (
             <RailChatTrailSlot>
@@ -315,7 +314,7 @@ function UnassignedSection({
       </RailHoverPanelTrigger>
       <RailHoverPanelContent data-testid={`${testId}-peek`}>
         <RailDensityProvider density="expanded">
-          <RailHoverPanelProjectRow icon={<MessageSquare size={16} />} name={label} />
+          <RailHoverPanelProjectRow icon={<Chat size={16} />} name={label} />
           <ChatList {...listProps} peek />
         </RailDensityProvider>
       </RailHoverPanelContent>
