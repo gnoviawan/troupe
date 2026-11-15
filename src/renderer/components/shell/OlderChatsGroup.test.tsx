@@ -53,7 +53,12 @@ describe('OlderChatsGroup', () => {
     expect(screen.queryByRole('button', { name: 'A quick chat' })).not.toBeInTheDocument()
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: 'Notes from /tmp' })).toBeInTheDocument()
+    const row = screen.getByRole('button', { name: 'Notes from /tmp' })
+    expect(row).toBeInTheDocument()
+    expect(screen.getByTestId('older-chats-group')).toHaveClass('px-2')
+    expect(row).toHaveClass('px-3')
+    expect(row).not.toHaveClass('pl-8.75')
+    expect(row.querySelector('[data-rail-icon-column]')).toHaveAttribute('aria-hidden', 'true')
     expect(screen.queryByRole('button', { name: 'A quick chat' })).not.toBeInTheDocument()
   })
 

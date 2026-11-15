@@ -61,6 +61,7 @@ describe('QuickChatsGroup', () => {
     expect(openRow).toHaveClass('keycap', 'px-3')
     expect(openRow).not.toHaveClass('pl-8.75')
     expect(openRow.querySelector('[data-rail-icon-column]')).toHaveClass('size-4')
+    expect(openRow.querySelector('[data-rail-icon-column]')).toHaveAttribute('aria-hidden', 'true')
     expect(openRow.querySelector('[data-termul-icon="Chat"]')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Older notes' })).not.toHaveAttribute('aria-current')
   })

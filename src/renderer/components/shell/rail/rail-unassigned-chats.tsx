@@ -184,6 +184,7 @@ function UnassignedChatRow({
         >
           <span
             data-rail-icon-column
+            aria-hidden="true"
             className={cn(RAIL_ICON_BOX_CLASS, 'relative text-muted-foreground')}
           >
             <Chat size={16} />
@@ -217,6 +218,11 @@ interface SectionProps {
   readOnly?: boolean
   rename?: boolean
   testId: string
+  /**
+   * The section sits outside the project list's 8px inset. Add that inset
+   * here so the row's `px-3` icon lands on the same column as a project row.
+   */
+  edgeInset?: boolean
   deleteTitle: string
   deleteMessage: (title: string) => string
 }
@@ -233,6 +239,7 @@ function UnassignedSection({
   readOnly = false,
   rename = false,
   testId,
+  edgeInset = false,
   deleteTitle,
   deleteMessage
 }: SectionProps): React.JSX.Element | null {
@@ -322,7 +329,7 @@ function UnassignedSection({
   ) : null
 
   return (
-    <div className="flex shrink-0 flex-col" data-testid={testId}>
+    <div className={cn('flex shrink-0 flex-col', edgeInset && 'px-2')} data-testid={testId}>
       {startClosed ? (
         <button
           type="button"
@@ -410,6 +417,7 @@ export function OlderChatsGroup(): React.JSX.Element | null {
       chats={chats}
       startClosed
       readOnly
+      edgeInset
       testId="older-chats-group"
       deleteTitle="Delete older chat"
       deleteMessage={(title) =>
