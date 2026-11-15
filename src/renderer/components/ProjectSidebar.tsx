@@ -308,17 +308,6 @@ export function ProjectSidebar({
       ? projects.find((p) => p.id === colorPicker.targetId)
       : groups.find((g) => g.id === colorPicker?.targetId)
 
-  // Map each active project id to its position in the UNFILTERED active list.
-  // The badge reflects this position (not the filtered render index) so the
-  // number a user sees doesn't shift around as they type a search query.
-  const activeIndexById = useMemo(() => {
-    const map = new Map<string, number>()
-    activeProjects.forEach((p, i) => {
-      map.set(p.id, i)
-    })
-    return map
-  }, [activeProjects])
-
   // Groups in group order, then the ungrouped projects (both Rail densities).
   const { groups: visibleGroups, ungrouped: ungroupedActiveProjects } = useMemo(
     () => layoutRailProjects(projects, groups),
@@ -368,7 +357,6 @@ export function ProjectSidebar({
         moveProjectToGroup={moveProjectToGroup}
         renderGroupContextMenu={renderGroupContextMenu}
         ungroupedActiveProjects={ungroupedActiveProjects}
-        activeIndexById={activeIndexById}
         editingId={editingId}
         editName={editName}
         projectStatus={projectStatus}

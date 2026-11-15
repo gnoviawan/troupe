@@ -9,6 +9,7 @@ const project = { id: 'p1', name: 'Alpha', path: '/repo', color: 'blue' } as Pro
 function renderItem(props: Partial<ProjectItemProps> = {}) {
   const onClick = vi.fn()
   const onToggleChats = vi.fn()
+  const onNewChat = vi.fn()
   render(
     <TooltipProvider>
       <ProjectItem
@@ -19,6 +20,7 @@ function renderItem(props: Partial<ProjectItemProps> = {}) {
         status={{} as ProjectItemProps['status']}
         onOpenNeedsYou={vi.fn()}
         onClick={onClick}
+        onNewChat={onNewChat}
         onContextMenu={vi.fn()}
         onEditNameChange={vi.fn()}
         onSaveRename={vi.fn()}
@@ -30,7 +32,7 @@ function renderItem(props: Partial<ProjectItemProps> = {}) {
       />
     </TooltipProvider>
   )
-  return { onClick, onToggleChats }
+  return { onClick, onToggleChats, onNewChat }
 }
 
 describe('ProjectItem chat list chevron', () => {
@@ -61,5 +63,19 @@ describe('ProjectItem chat list chevron', () => {
   it('has no chevron without a chat list', () => {
     renderItem({ onToggleChats: undefined })
     expect(screen.queryByTestId('project-chats-toggle')).not.toBeInTheDocument()
+  })
+})
+
+describe('ProjectItem new chat button', () => {
+  it('shows "+" on the row, and it starts a chat without opening the row', () => {
+    const { onClick, onNewChat } = renderItem()
+    fireEvent.click(screen.getByRole('button', { name: 'New chat in Alpha' }))
+    expect(onNewChat).toHaveBeenCalledTimes(1)
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('has no "+" while renaming', () => {
+    renderItem({ isEditing: true })
+    expect(screen.queryByTestId('project-row-new-chat')).not.toBeInTheDocument()
   })
 })

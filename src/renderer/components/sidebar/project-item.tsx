@@ -1,11 +1,10 @@
 import type { GitDiffStat } from '@shared/types/ipc.types'
 import { type KeyboardEvent, memo, useEffect, useRef } from 'react'
-import { ChevronRight, MoreHorizontal, Settings } from '@/components/icons'
+import { ChevronRight, MoreHorizontal, Plus, Settings } from '@/components/icons'
 import { ProjectIcon } from '@/components/ProjectIcon'
 import { RailTooltip } from '@/components/shell/rail-button'
 import { RAIL_ICON_BOX_CLASS, RAIL_ROW_INSET_CLASS } from '@/components/shell/rail-layout'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import { Kbd } from '@/components/ui/kbd'
 import { FIELD_FOCUS_CLASS, FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { isContextMenuKey, openContextMenuFrom } from '@/lib/context-menu-key'
 import { cn } from '@/lib/utils'
@@ -22,10 +21,11 @@ export interface ProjectItemProps {
   isActive: boolean
   isEditing: boolean
   editName: string
-  shortcut?: string
   status: ProjectRowStatus
   onOpenNeedsYou: () => void
   onClick: () => void
+  /** Starts a new chat in this project (the row's "+"). */
+  onNewChat: () => void
   onContextMenu: (e: React.MouseEvent) => void
   onEditNameChange: (name: string) => void
   onSaveRename: () => void
@@ -50,10 +50,10 @@ export const ProjectItem = memo(function ProjectItem({
   isActive,
   isEditing,
   editName,
-  shortcut,
   status,
   onOpenNeedsYou,
   onClick,
+  onNewChat,
   onContextMenu,
   onEditNameChange,
   onSaveRename,
@@ -67,7 +67,7 @@ export const ProjectItem = memo(function ProjectItem({
 }: ProjectItemProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   // At rest the stat holds the right slot; hover or focus swaps it for the
-  // settings gear and shortcut chip. It yields to the rename input.
+  // settings gear. It yields to the rename input.
   const diffStat = isEditing ? null : watchedDiffStat
 
   // Focus input when editing starts
@@ -229,9 +229,6 @@ export const ProjectItem = memo(function ProjectItem({
                       <Settings size={12} />
                     </button>
                   </RailTooltip>
-                  {shortcut && (
-                    <Kbd className="inline-flex h-4.5 shrink-0 items-center px-1">{shortcut}</Kbd>
-                  )}
                 </span>
               </span>
             )}
@@ -246,6 +243,23 @@ export const ProjectItem = memo(function ProjectItem({
                 onOpenNeedsYou={onOpenNeedsYou}
               />
             </span>
+            {/* Always shown, unlike the hover actions. */}
+            {!isEditing && (
+              <RailTooltip label={`New chat in ${project.name}`}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onNewChat()
+                  }}
+                  className={cn(ROW_ACTION_CLASS, FOCUS_RING_CLASS)}
+                  aria-label={`New chat in ${project.name}`}
+                  data-testid="project-row-new-chat"
+                >
+                  <Plus size={12} aria-hidden="true" />
+                </button>
+              </RailTooltip>
+            )}
           </div>
         </ContextMenuTrigger>
         {renderContextMenu?.(project)}

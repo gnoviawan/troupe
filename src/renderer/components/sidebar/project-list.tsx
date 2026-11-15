@@ -1,8 +1,10 @@
 import { LayoutGroup, Reorder } from 'framer-motion'
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
+import { openNewChat } from '@/components/chat/new-chat/open-new-chat'
 import { ChevronDown, ChevronRight, FolderPlus } from '@/components/icons'
 import { useRailCollapsed } from '@/components/shell/rail/rail-density'
 import { RailTooltip } from '@/components/shell/rail-button'
+import { logRailEvent } from '@/components/shell/shell-log'
 import { CollapseExpandMotion } from '@/components/ui/collapse-expand-motion'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
@@ -39,7 +41,6 @@ export interface ProjectListProps {
 
   // Project rows
   ungroupedActiveProjects: Project[]
-  activeIndexById: ReadonlyMap<string, number>
   editingId: string | null
   editName: string
   projectStatus: (projectId: string) => ProjectRowStatus
@@ -94,7 +95,6 @@ export function ProjectList({
   moveProjectToGroup,
   renderGroupContextMenu,
   ungroupedActiveProjects,
-  activeIndexById,
   editingId,
   editName,
   projectStatus,
@@ -127,7 +127,6 @@ export function ProjectList({
   // Reorder's own zIndex apply, so neighbours never show through it.
   const { liftedId, lift, release, settle } = useDragLift()
   const renderProjectRow = (project: Project): React.JSX.Element => {
-    const shortcutIndex = activeIndexById.get(project.id) ?? -1
     return (
       <Reorder.Item
         key={project.id}
@@ -178,12 +177,17 @@ export function ProjectList({
           isActive={project.id === activeProjectId}
           isEditing={editingId === project.id}
           editName={editName}
-          shortcut={
-            shortcutIndex >= 0 && shortcutIndex < 9 ? `Ctrl+${shortcutIndex + 1}` : undefined
-          }
           status={projectStatus(project.id)}
           onOpenNeedsYou={() => openNeedsYou(project.id)}
           onClick={() => openProject(project.id)}
+          onNewChat={() => {
+            logRailEvent(`new chat in project ${project.id}`)
+            // Open the project first: its panes are the ones the chat goes to.
+            openProject(project.id)
+            requestAnimationFrame(
+              () => void openNewChat({ projectId: project.id, reason: 'project-row' })
+            )
+          }}
           onContextMenu={onRowContextMenu}
           renderContextMenu={renderProjectContextMenu}
           onEditNameChange={setEditName}

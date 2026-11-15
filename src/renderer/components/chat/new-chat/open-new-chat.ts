@@ -30,6 +30,7 @@ const SOURCE = 'chat.openNewChat'
 /** Why a new chat was asked for (logged with every start). */
 export type NewChatReason =
   | 'rail'
+  | 'project-row'
   | 'shortcut'
   | 'menu'
   | 'command-palette'
