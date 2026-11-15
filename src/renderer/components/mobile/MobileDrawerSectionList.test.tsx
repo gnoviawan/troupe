@@ -343,12 +343,12 @@ describe('MobileDrawerSectionList editors', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('gives the canvas row a label and the Edit2 icon', () => {
+  it('gives the canvas row a label and the Canvas icon', () => {
     seedAllTabTypes()
     renderList({ section: 'editors' })
 
     const row = screen.getByRole('button', { name: 'Plan.figcraft' })
-    expect(row.querySelector('svg[data-termul-icon="Edit2"]')).toBeInTheDocument()
+    expect(row.querySelector('svg[data-termul-icon="Canvas"]')).toBeInTheDocument()
   })
 
   it('hides the dirty dot from assistive tech and adds sr-only text', () => {
