@@ -165,14 +165,17 @@ export function ClaudeLimitNotice({ sessionId }: { sessionId: string }): React.J
     )
   } else if (chosen) {
     nextStep = (
-      <ChosenAccountActions
-        choices={choices}
-        chosen={chosen}
-        onChoose={(choice) => setChosenId(choice.account.id)}
-        exhaustedName={name}
-        reset={reset}
-        onSwitch={() => void switchTo(chosen)}
-      />
+      <>
+        {scheduledAt && <ScheduledResume sessionId={sessionId} at={scheduledAt} />}
+        <ChosenAccountActions
+          choices={choices}
+          chosen={chosen}
+          onChoose={(choice) => setChosenId(choice.account.id)}
+          exhaustedName={name}
+          reset={reset}
+          onSwitch={() => void switchTo(chosen)}
+        />
+      </>
     )
   } else if (scheduledAt) {
     nextStep = <ScheduledResume sessionId={sessionId} at={scheduledAt} />

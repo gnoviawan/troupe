@@ -64,6 +64,8 @@ import { buildTimeline, consolidateThoughtGroups, spliceReloadMarker } from './c
 import { ClaudeLimitNotice } from './claude-account/ClaudeLimitNotice'
 import { ClaudeSignInAction } from './claude-account/ClaudeSignInAction'
 import { isAtLimit, useClaudeLimit } from './claude-account/use-claude-limit'
+import { CodexLimitNotice } from './codex-account/CodexLimitNotice'
+import { isAtLimit as isAtCodexLimit, useCodexLimit } from './codex-account/use-codex-limit'
 import type { SelectionContextInsertRequest } from './composer/insert-selection-context'
 import { ElicitationPrompt } from './ElicitationPrompt'
 import { PendingRestartBanner } from './PendingRestartBanner'
@@ -403,7 +405,10 @@ export function AgentChatPanel({
   const [dismissedError, setDismissedError] = useState<string | null>(null)
   // At the usage limit, the limit dock replaces the provider's quota error.
   const claudeLimit = useClaudeLimit(sessionId)
-  const atClaudeLimit = claudeLimit !== null && isAtLimit(claudeLimit.limit)
+  const codexLimit = useCodexLimit(sessionId)
+  const atRetainedUsageLimit =
+    (claudeLimit !== null && isAtLimit(claudeLimit.limit)) ||
+    (codexLimit !== null && isAtCodexLimit(codexLimit.limit))
   const seedComposer = useCallback((text: string) => setSeed({ text, nonce: Date.now() }), [])
   const [contextInsert, setContextInsert] = useState<SelectionContextInsertRequest>()
   const addSelectionContext = useCallback(
@@ -766,7 +771,9 @@ export function AgentChatPanel({
         messages={messages}
         turnActive={session.activeTurn}
         onOpenGitChanges={(opener) =>
-          isMobileShell ? openGitSheet(session.cwd, opener) : openChangesTab(session.projectId)
+          isMobileShell
+            ? openGitSheet(session.cwd, opener)
+            : openChangesTab(session.projectId, session.cwd)
         }
         hidden={(isMobileShell && osk.isOskOpen) || showTransportOverlay}
         isVisible={isVisible}
@@ -855,6 +862,9 @@ export function AgentChatPanel({
       }
     : undefined
   const codexSignedOut = session.lastError === CODEX_CLI_SIGNED_OUT_MESSAGE
+  // A crashed chat keeps its error and Retry: the retained limit state may be
+  // older than the crash, so only a live chat lets the limit dock take over.
+  const atUsageLimit = atRetainedUsageLimit && session.status !== 'error'
   const activeError =
     !codexSignedOut && session.lastError && session.lastError !== dismissedError
       ? formatAcpAgentError(session.lastError)
@@ -875,7 +885,7 @@ export function AgentChatPanel({
     (hasHistoryEntry || codexSignedOut)
   const errorNotice = (
     <ChatErrorNotice
-      message={atClaudeLimit ? null : activeError}
+      message={atUsageLimit ? null : activeError}
       title={isClosed ? 'This chat stopped.' : undefined}
       code={session.lastErrorCode}
       data={session.lastErrorData}
@@ -906,8 +916,11 @@ export function AgentChatPanel({
       onNewChat={codexSignedOut ? undefined : openCodexSignIn}
       extraAction={codexSignedOut ? undefined : <ClaudeSignInAction sessionId={sessionId} />}
     />
-  ) : atClaudeLimit && !isClosed ? (
-    <ClaudeLimitNotice sessionId={sessionId} />
+  ) : atUsageLimit && !isClosed ? (
+    <>
+      <ClaudeLimitNotice sessionId={sessionId} />
+      <CodexLimitNotice sessionId={sessionId} />
+    </>
   ) : (
     errorNotice
   )
@@ -1043,7 +1056,7 @@ export function AgentChatPanel({
           <div className={CHAT_GUTTER_X}>
             <div className="mx-auto w-full max-w-3xl">{renderStatusChips('pt-3 pb-0')}</div>
           </div>
-          {activeError && !atClaudeLimit && (
+          {activeError && !atUsageLimit && (
             <div className={`${CHAT_GUTTER_X} pt-3`}>
               <div className={`mx-auto w-full max-w-3xl overflow-hidden ${COMPOSER_CARD_CLASS}`}>
                 {errorNotice}
@@ -1084,6 +1097,11 @@ export function AgentChatPanel({
             busy={sessionTurnBusy(session)}
             disabled={isClosed && !isResumableStop}
             notice={composerNotice}
+            noticeShown={
+              showStoppedNotice ||
+              (atUsageLimit && !isClosed) ||
+              (Boolean(activeError) && !atUsageLimit)
+            }
             statusRow={renderStatusChips()}
             disabledPlaceholder={
               showStoppedNotice && !codexSignedOut ? 'Resume the chat to send a message' : undefined

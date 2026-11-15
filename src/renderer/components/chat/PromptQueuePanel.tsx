@@ -228,8 +228,10 @@ export function PromptQueuePanel({
     (event: React.PointerEvent, queueId: string) => {
       if (event.button !== 0) return
       event.preventDefault()
-      const handle = event.currentTarget as HTMLElement
-      handle.setPointerCapture(event.pointerId)
+      // Capture on the list, which stays mounted while keyed rows reorder;
+      // moving the handle's row would release capture taken on the handle.
+      const captureTarget = listRef.current ?? (event.currentTarget as HTMLElement)
+      captureTarget.setPointerCapture(event.pointerId)
       setDragId(queueId)
       const onPointerMove = (moveEvent: PointerEvent) => {
         const rows = Array.from(listRef.current?.querySelectorAll('[data-queue-row]') ?? [])
@@ -244,14 +246,14 @@ export function PromptQueuePanel({
         if (to !== from) move(queueId, to)
       }
       const onPointerEnd = () => {
-        handle.removeEventListener('pointermove', onPointerMove)
-        handle.removeEventListener('pointerup', onPointerEnd)
-        handle.removeEventListener('pointercancel', onPointerEnd)
+        captureTarget.removeEventListener('pointermove', onPointerMove)
+        captureTarget.removeEventListener('pointerup', onPointerEnd)
+        captureTarget.removeEventListener('pointercancel', onPointerEnd)
         setDragId(null)
       }
-      handle.addEventListener('pointermove', onPointerMove)
-      handle.addEventListener('pointerup', onPointerEnd)
-      handle.addEventListener('pointercancel', onPointerEnd)
+      captureTarget.addEventListener('pointermove', onPointerMove)
+      captureTarget.addEventListener('pointerup', onPointerEnd)
+      captureTarget.addEventListener('pointercancel', onPointerEnd)
     },
     [move]
   )

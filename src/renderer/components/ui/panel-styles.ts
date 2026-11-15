@@ -38,7 +38,7 @@ export const FIELD_FOCUS_CLASS =
  * still reads as a field.
  */
 export const FIELD_SURFACE_CLASS =
-  'border border-border/60 bg-card not-disabled:hover:border-field-border disabled:border-border disabled:opacity-60'
+  'border border-border/60 bg-card not-disabled:not-focus-within:hover:border-field-border disabled:border-border disabled:opacity-60'
 
 /**
  * Focus for a field whose wrapper draws the edge, such as a search band: the

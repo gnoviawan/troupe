@@ -1,5 +1,6 @@
 import { logFrontendError } from '@/lib/log-api'
 import { type ShellLastColumnTab, useShellLayoutStore } from '@/stores/shell-layout-store'
+import { useSSHStore } from '@/stores/ssh-store'
 
 /** Frames to wait for the tool strip button to mount. */
 const FOCUS_FRAMES = 10
@@ -21,11 +22,14 @@ function focusStripButton(tab: ShellLastColumnTab): void {
 }
 
 /**
- * Shows Changes in the right panel and moves focus to the tool strip
- * Changes button. Used by "Review changes" in the chat.
+ * Shows Changes in the right panel for the chat's working copy and moves
+ * focus to the tool strip Changes button. Used by "Review changes" in the chat.
  */
-export function openChangesTab(projectId: string): void {
+export function openChangesTab(projectId: string, cwd: string): void {
+  // The SSH workspace replaces the project view, so leave it first.
+  useSSHStore.getState().selectProfile(null)
   const layout = useShellLayoutStore.getState()
+  layout.setWorktreePick(projectId, cwd)
   layout.setLastColumnTab(projectId, 'changes')
   layout.setSidePanelVisible(true)
   void logFrontendError({

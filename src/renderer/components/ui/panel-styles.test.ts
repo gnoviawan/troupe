@@ -44,7 +44,7 @@ describe('panel-styles', () => {
       expect.arrayContaining([
         'bg-card',
         'border-border/60',
-        'not-disabled:hover:border-field-border',
+        'not-disabled:not-focus-within:hover:border-field-border',
         'focus-visible:border-focus-ring'
       ])
     )

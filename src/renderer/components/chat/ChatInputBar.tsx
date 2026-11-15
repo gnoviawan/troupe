@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { ClaudeAccountChip } from '@/components/chat/claude-account/ClaudeAccountChip'
 import { ClaudeLimitWarning } from '@/components/chat/claude-account/ClaudeLimitWarning'
+import { CodexAccountChip } from '@/components/chat/codex-account/CodexAccountChip'
+import { CodexLimitWarning } from '@/components/chat/codex-account/CodexLimitWarning'
 import { Paperclip } from '@/components/icons'
 import { useAgentSkills } from '@/hooks/use-agent-skills'
 import { useAttachmentDropZone } from '@/hooks/use-attachment-drop-zone'
@@ -29,6 +31,7 @@ import {
   useSessionUsage
 } from '@/stores/acp-store'
 import type { OptionValues } from '@/stores/acp-store/composer-options'
+import { useCodexRestartingStore } from '@/stores/codex-account-restart'
 import { ModeChip } from './AgentHeader'
 import { AttachmentPreviewGroup } from './AttachmentPreviewGroup'
 import { AgentModelSelector } from './agent-model-selector/AgentModelSelector'
@@ -129,6 +132,12 @@ interface ChatInputBarProps {
    * limit). It replaces the near-limit warning while it shows.
    */
   notice?: React.ReactNode
+  /**
+   * Whether `notice` shows something now. A notice element can stay mounted
+   * while empty (to animate out), so its presence alone must not hide the
+   * limit warning. Defaults to `notice` being set.
+   */
+  noticeShown?: boolean
   /** Row above the card (the status chips); it sits above the queue too. */
   statusRow?: React.ReactNode
   /** Placeholder while `disabled` (default "Composer unavailable"). */
@@ -161,8 +170,8 @@ export function ChatInputBar({
   session,
   projectRoot,
   busy,
-  disabled,
-  controlsDisabled = disabled,
+  disabled: composerDisabled,
+  controlsDisabled = composerDisabled,
   imageCapable = false,
   embedCapable = false,
   onSend,
@@ -180,6 +189,7 @@ export function ChatInputBar({
   queue = [],
   permission,
   notice = null,
+  noticeShown = notice !== null,
   statusRow = null,
   disabledPlaceholder = 'Composer unavailable',
   onRemoveQueued,
@@ -189,6 +199,8 @@ export function ChatInputBar({
   isVisible = true,
   onDraftStart
 }: ChatInputBarProps): React.JSX.Element {
+  const accountRestarting = useCodexRestartingStore((state) => state.ids.includes(session.id))
+  const disabled = composerDisabled || accountRestarting
   const usableConfigOptions = configOptions.filter(
     (option) => option.type === 'boolean' || (option.options?.length ?? 0) > 0
   )
@@ -243,7 +255,7 @@ export function ChatInputBar({
   const agentIcon = useAgentIcon(session.agentId, glyphConfigId)
   const { connectors, host: connectorsHost } = useChatConnectors(session)
   const termulTools = useTermulTools(session.projectId)
-  const [value, setValue] = useComposerDraft({
+  const [value, setValue, draftHydrated] = useComposerDraft({
     projectId: session.projectId,
     sessionId: session.id,
     seedNonce
@@ -365,10 +377,13 @@ export function ChatInputBar({
 
     await holdComposer(async () => {
       const contexts = conversationContexts()
-      const send = buildComposerSend(
-        buildPromptParts(contexts ? await contexts : undefined),
-        attachments
-      )
+      const parts = buildPromptParts(contexts ? await contexts : undefined)
+      // A restart can begin while contexts resolve. The send callbacks swallow
+      // the rejection, so leaving here is what keeps the unsent draft.
+      if (useCodexRestartingStore.getState().ids.includes(session.id)) {
+        throw new Error('This chat is switching Codex accounts')
+      }
+      const send = buildComposerSend(parts, attachments)
       if (!send) return
       if (send.kind === 'text') onSend(send.text)
       else if (send.display) onSendBlocks(send.wire, send.display)
@@ -627,12 +642,17 @@ export function ChatInputBar({
                 onSendNow={onSendQueuedNow}
                 onMove={onMoveQueued}
                 onClear={onClearQueued}
-                onEdit={disabled ? undefined : editQueued}
+                onEdit={disabled || sending || !draftHydrated ? undefined : editQueued}
                 defaultOpen={!isMobileShell}
               />
             )}
             {permission && <PermissionPrompt permission={permission} isVisible={isVisible} />}
-            {!notice && !controlsDisabled && <ClaudeLimitWarning sessionId={session.id} />}
+            {!noticeShown && !controlsDisabled && (
+              <>
+                <ClaudeLimitWarning sessionId={session.id} />
+                <CodexLimitWarning sessionId={session.id} />
+              </>
+            )}
             <AttachmentPreviewGroup
               attachments={attachments}
               onRemove={removeAttachment}
@@ -725,6 +745,7 @@ export function ChatInputBar({
                       termulTools={termulTools}
                     />
                     <ClaudeAccountChip sessionId={session.id} />
+                    <CodexAccountChip sessionId={session.id} />
                   </div>
                   <div
                     className={cn(

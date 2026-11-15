@@ -1104,6 +1104,16 @@ describe('ChatInputBar Claude limit warning', () => {
     expect(prompt.compareDocumentPosition(warning) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('shows the warning when the notice slot holds an empty notice', () => {
+    renderInputBar({ notice: <div data-testid="empty-notice" />, noticeShown: false })
+    expect(screen.getByTestId('claude-limit-warning-stub')).toBeInTheDocument()
+  })
+
+  it('hides the warning while a notice shows', () => {
+    renderInputBar({ notice: <div data-testid="live-notice" />, noticeShown: true })
+    expect(screen.queryByTestId('claude-limit-warning-stub')).not.toBeInTheDocument()
+  })
+
   it('hides the warning while the chat is closed', () => {
     renderInputBar({ controlsDisabled: true })
     expect(screen.queryByTestId('claude-limit-warning-stub')).not.toBeInTheDocument()
