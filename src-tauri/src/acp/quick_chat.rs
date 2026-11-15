@@ -307,27 +307,36 @@ fn lock_existing_chat_dir(root: &Path, chat_id: &str) -> Result<PathBuf, String>
 }
 
 fn claims_quick_root(root: &Path, client_cwd: &str) -> bool {
-    let root_plain = host_spelling(&root.to_string_lossy());
-    let client_plain = host_spelling(client_cwd);
     // The raw spelling still names the root when a later `..` climbs out.
     // That climb must be a rejection, not an unrelated folder.
-    if raw_claims_root(&client_plain, &root_plain)
-        || path_is_inside(
-            &plain_lexical(client_cwd),
-            &plain_lexical(&root.to_string_lossy()),
-        )
-    {
+    if claims_against(root, client_cwd) {
         return true;
     }
-    // Create stores the canonical folder. A later resume or list that sends
-    // that spelling still names the chat when the configured root is a symlink.
+    // macOS canonicalizes `/var` to `/private/var`. Windows canonicalizes to
+    // `\\?\C:\…`. A climb written on that spelling must still claim the root
+    // even when the missing target cannot be canonicalized.
     let Ok(root_canonical) = std::fs::canonicalize(root) else {
         return false;
     };
+    if claims_against(&root_canonical, client_cwd)
+        || claims_against(&plain_path(&root_canonical), client_cwd)
+    {
+        return true;
+    }
     let Ok(client_canonical) = std::fs::canonicalize(client_cwd) else {
         return false;
     };
     path_is_inside(&plain_path(&client_canonical), &plain_path(&root_canonical))
+}
+
+fn claims_against(root: &Path, client_cwd: &str) -> bool {
+    let root_plain = host_spelling(&root.to_string_lossy());
+    let client_plain = host_spelling(client_cwd);
+    raw_claims_root(&client_plain, &root_plain)
+        || path_is_inside(
+            &plain_lexical(client_cwd),
+            &plain_lexical(&root.to_string_lossy()),
+        )
 }
 
 fn chat_id_from_client_path(root: &Path, client_cwd: &str) -> Result<String, String> {

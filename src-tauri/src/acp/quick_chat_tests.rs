@@ -282,6 +282,11 @@ fn resume_resolves_a_symlinked_root_the_same_way_create_does() {
         ListingDecision::Locked(path) => assert_eq!(path, resumed),
         other => panic!("the symlink spelling must lock to the same folder, got {other:?}"),
     }
+    let climb = format!("{resumed}/../../outside");
+    assert!(
+        matches!(listing_decision(&climb), ListingDecision::Rejected(_)),
+        "a climb on the canonical spelling must be rejected"
+    );
     remove_chat_dir(&chat_id).unwrap();
 }
 
