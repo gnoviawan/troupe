@@ -1,5 +1,5 @@
 import type { ShellInfo } from '@shared/types/ipc.types'
-import { Terminal } from '@/components/icons'
+import { ComputerTerminal } from '@/components/icons'
 import { logShellEvent } from '@/components/shell/shell-log'
 import {
   ContextMenu,
@@ -54,7 +54,7 @@ export function TerminalStripButton({
             event.preventDefault()
             openContextMenuFrom(event.currentTarget)
           }}
-          icon={<Terminal size={14} aria-hidden />}
+          icon={<ComputerTerminal size={14} aria-hidden />}
         />
       </ContextMenuTrigger>
       <ContextMenuContent className="w-52" aria-label="Shells">

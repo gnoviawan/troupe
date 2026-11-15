@@ -15,9 +15,12 @@ import {
   BrainIcon,
   Bug01Icon,
   Calendar01Icon,
+  CalendarClockIcon,
   Camera01Icon,
   CancelCircleIcon,
+  CanvasIcon,
   CaseSensitiveIcon,
+  ChatEdit01Icon,
   CheckIcon,
   CheckmarkCircle02Icon,
   ChevronDownIcon as ChevronDownIconData,
@@ -38,6 +41,7 @@ import {
   Clock01Icon,
   CodeIcon,
   Comment01Icon,
+  ComputerTerminal01Icon,
   CopyIcon,
   CopyXIcon,
   CpuIcon,
@@ -57,6 +61,7 @@ import {
   Files01Icon,
   FileTextIcon as FileTextIconData,
   Folder01Icon,
+  Folder02Icon,
   FolderEditIcon,
   FolderGit2Icon,
   FolderInputIcon,
@@ -66,6 +71,7 @@ import {
   FolderTreeIcon,
   GitBranchIcon,
   GitCommitHorizontalIcon,
+  Github01Icon,
   GithubIcon,
   GitMergeIcon,
   GitPullRequestClosedIcon,
@@ -127,6 +133,7 @@ import {
   SaveIcon,
   ScissorsIcon,
   Search01Icon,
+  SearchList01Icon,
   ServerIcon,
   Settings01Icon,
   ShieldAlertIcon,
@@ -399,3 +406,12 @@ export const Github = hugeIcon('Github', GithubIcon)
 export const GitPullRequest = hugeIcon('GitPullRequest', GitPullRequestIcon)
 export const GitPullRequestClosed = hugeIcon('GitPullRequestClosed', GitPullRequestClosedIcon)
 export const GitPullRequestDraft = hugeIcon('GitPullRequestDraft', GitPullRequestDraftIcon)
+
+// V2 rail nav and tool strip glyphs (Paper "Sidebar" and "Tool strip" frames).
+export const ChatEdit = hugeIcon('ChatEdit', ChatEdit01Icon)
+export const SearchList = hugeIcon('SearchList', SearchList01Icon)
+export const Canvas = hugeIcon('Canvas', CanvasIcon)
+export const CalendarClock = hugeIcon('CalendarClock', CalendarClockIcon)
+export const Folder2 = hugeIcon('Folder2', Folder02Icon)
+export const Github2 = hugeIcon('Github2', Github01Icon)
+export const ComputerTerminal = hugeIcon('ComputerTerminal', ComputerTerminal01Icon)
