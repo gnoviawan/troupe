@@ -49,6 +49,7 @@ import {
   Delete01Icon,
   DotIcon,
   Download01Icon,
+  Edit01Icon,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
@@ -115,8 +116,6 @@ import {
   PanelLeftOpenIcon,
   PanelRightIcon,
   PaperclipIcon as PaperclipIconData,
-  PencilEdit01Icon,
-  PencilIcon,
   PenTool01Icon,
   PinIcon,
   PlusIcon,
@@ -267,7 +266,7 @@ export const CopyX = hugeIcon('CopyX', CopyXIcon)
 export const Cpu = hugeIcon('Cpu', CpuIcon)
 export const Dot = hugeIcon('Dot', DotIcon)
 export const ExternalLink = hugeIcon('ExternalLink', ExternalLinkIcon)
-export const Edit2 = hugeIcon('Edit2', PencilEdit01Icon)
+export const Edit = hugeIcon('Edit', Edit01Icon)
 export const EyeOff = hugeIcon('EyeOff', EyeOffIcon)
 export const File = hugeIcon('File', File02Icon)
 export const FileCode = hugeIcon('FileCode', FileCodeIcon)
@@ -322,7 +321,6 @@ export const PanelLeftExpand = hugeIcon('PanelLeftExpand', PanelLeftCloseIcon)
 export const PanelRight = hugeIcon('PanelRight', PanelRightIcon)
 export const Paperclip = hugeIcon('Paperclip', PaperclipIconData)
 export const PenTool = hugeIcon('PenTool', PenTool01Icon)
-export const Pencil = hugeIcon('Pencil', PencilIcon)
 export const Pin = hugeIcon('Pin', PinIcon)
 export const RefreshCcw = hugeIcon('RefreshCcw', RefreshCcwIcon)
 export const RefreshCw = hugeIcon('RefreshCw', RefreshCwIcon)

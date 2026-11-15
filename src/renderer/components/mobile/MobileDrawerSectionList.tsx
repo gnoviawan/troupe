@@ -3,11 +3,11 @@ import { MaterialFileIcon } from '@/components/file-explorer/MaterialFileIcon'
 import { githubItemTabLabel } from '@/components/github/github-status'
 import {
   Canvas,
+  Edit,
   FileDiff,
   GitBranch,
   Github,
   Globe,
-  Pencil,
   TerminalSquare,
   X
 } from '@/components/icons'
@@ -355,7 +355,7 @@ export function MobileDrawerSectionList({
                         data-section-rename={tab.terminalId}
                         onClick={() => startRename(tab.terminalId, terminalName ?? 'Terminal')}
                       >
-                        <Pencil size={14} />
+                        <Edit size={14} />
                       </Button>
                     )
                   )}

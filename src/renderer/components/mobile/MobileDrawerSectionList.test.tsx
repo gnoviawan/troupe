@@ -339,7 +339,7 @@ describe('MobileDrawerSectionList editors', () => {
     expect(icon('types.d.ts')).toHaveAttribute('data-name', 'types.d.ts')
     expect(icon('Main.CS')).toHaveAttribute('data-name', 'Main.CS')
     expect(
-      screen.getByRole('group', { name: 'Editors' }).querySelector('svg[data-termul-icon="Pencil"]')
+      screen.getByRole('group', { name: 'Editors' }).querySelector('svg[data-termul-icon="Edit"]')
     ).not.toBeInTheDocument()
   })
 
