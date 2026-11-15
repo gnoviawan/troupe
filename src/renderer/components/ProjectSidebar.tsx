@@ -1,6 +1,7 @@
 import type { DetectedShells } from '@shared/types/ipc.types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { QuickChatsGroup } from '@/components/shell/QuickChatsGroup'
 import { PANEL_HEADER_CLASS, PANEL_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
 import { dialogApi, shellApi } from '@/lib/api'
 import { useProjectActions, useProjectStore } from '@/stores/project-store'
@@ -374,6 +375,8 @@ export function ProjectSidebar({
         onNewProject={onNewProject}
         onNewGroup={() => setNewGroupModal({})}
       />
+
+      <QuickChatsGroup />
 
       {/* SSH Connections - Resizable */}
       <SSHResizableSection

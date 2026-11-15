@@ -1,4 +1,4 @@
-import { Edit2, Search, Workflow } from '@/components/icons'
+import { Edit2, MessageSquarePlus, Search, Workflow } from '@/components/icons'
 import { ProjectSidebar } from '@/components/ProjectSidebar'
 import { RailFooter } from '@/components/shell/RailFooter'
 import { RailHeader } from '@/components/shell/RailHeader'
@@ -23,6 +23,8 @@ interface RailExpandedProps {
   onShortcutsOpenChange: (open: boolean) => void
   isThemePickerOpen: boolean
   onToggleThemePicker?: () => void
+  /** New chat: a project chat when a project is active, otherwise a quick chat. */
+  onNewChat: () => void
 }
 
 const NEED_PROJECT = 'Open a project first'
@@ -47,7 +49,8 @@ export function RailExpanded({
   isShortcutsOpen,
   onShortcutsOpenChange,
   isThemePickerOpen,
-  onToggleThemePicker
+  onToggleThemePicker,
+  onNewChat
 }: RailExpandedProps): React.JSX.Element {
   const { updateProject, deleteProject, archiveProject, restoreProject, reorderProjects } =
     useProjectActions()
@@ -58,6 +61,7 @@ export function RailExpanded({
       <RailHeader />
 
       <div className="flex shrink-0 flex-col gap-0.5 px-2 pt-2">
+        <RailRow label="New chat" icon={<MessageSquarePlus size={16} />} onClick={onNewChat} />
         <RailRow
           label="Search"
           chip={searchShortcut}

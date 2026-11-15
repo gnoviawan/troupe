@@ -2,7 +2,9 @@ import type { ShellInfo } from '@shared/types/ipc.types'
 import { motion } from 'framer-motion'
 import { lazy, Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
+import { AgentLauncher } from '@/components/agents/AgentLauncher'
 import { ChatRoute } from '@/components/ChatRoute'
+import { AgentChatPanel } from '@/components/chat/AgentChatPanel'
 import { FolderKanban } from '@/components/icons'
 import { StatusBar } from '@/components/StatusBar'
 import { useTopRow } from '@/components/shell/top-row-context'
@@ -13,6 +15,7 @@ import { useMobileActiveLeaf } from '@/hooks/use-mobile-active-leaf'
 import { ShellSkeleton } from '@/layouts/workspace-layout/ShellSkeleton'
 import type { SSHWorkspaceState } from '@/layouts/workspace-layout/use-ssh-workspace'
 import { useDefaultShell } from '@/stores/app-settings-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useTerminalActions } from '@/stores/terminal-store'
 import { useWorkspaceStore, type WorkspaceTab } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
@@ -70,6 +73,7 @@ export function WorkspaceMain({
   // Mobile shell only: a split synced from desktop collapses to the active
   // leaf (read-only; null on desktop so the desktop node is unchanged).
   const mobileActiveLeaf = useMobileActiveLeaf(isMobileWebShell)
+  const quickChat = useQuickChatStore((state) => state.view)
 
   return (
     <>
@@ -77,6 +81,14 @@ export function WorkspaceMain({
         <Suspense fallback={<ShellSkeleton />}>
           <SSHWorkspace topRow={sshTopRow} />
         </Suspense>
+      ) : quickChat.mode !== 'closed' ? (
+        <div className="relative flex h-full min-h-0 flex-1 flex-col" data-testid="quick-chat-main">
+          {quickChat.mode === 'launcher' ? (
+            <AgentLauncher paneId="quick-chat" quick />
+          ) : (
+            <AgentChatPanel sessionId={quickChat.sessionId} />
+          )}
+        </div>
       ) : projects.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 rounded-xl">
           <motion.div

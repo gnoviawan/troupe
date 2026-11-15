@@ -122,12 +122,15 @@ import {
   savedModelValues
 } from '@/stores/acp-store/composer-options'
 import { useActiveProject, useProjectStore } from '@/stores/project-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorktreePick } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 
 interface AgentLauncherProps {
   paneId: string
   className?: string
+  /** A chat with no project. The host creates the folder. */
+  quick?: boolean
 }
 
 /** Survives overlay unmount so the new-thread picker does not flash the default. */
@@ -144,7 +147,11 @@ export function __resetLauncherSelectionCache(): void {
  * a chat tab it morphs its composer onto the live ChatInputBar card, and when
  * dismissed without a launch it fades in place.
  */
-export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.JSX.Element {
+export function AgentLauncher({
+  paneId,
+  className,
+  quick = false
+}: AgentLauncherProps): React.JSX.Element {
   const [prompt, setPrompt] = useState('')
   const [selectedConfigId, setSelectedConfigId] = useState(() => cachedConfigId ?? '')
   /**
@@ -1335,7 +1342,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   }, [preparedSessionId, pendingOptions])
 
   const launch = useCallback(async () => {
-    if (!activeProjectId || !projectRoot) {
+    if (!quick && (!activeProjectId || !projectRoot)) {
       toast.error('No active project')
       return
     }
@@ -1378,7 +1385,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     const configSnapshot = selectedConfig
     const paneSnapshot = paneId
     const projectIdSnapshot = activeProjectId
-    const projectRootSnapshot = projectRoot
+    const projectRootSnapshot = projectRoot ?? ''
     const needsSave = !acpConfigs.some((config) => config.id === selectedConfig.id)
 
     // Build the wire text (skills framed by path under `# Agent Skills`, then
@@ -1399,6 +1406,41 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       return
     }
     const { wireWithCommand, displayWithCommand, fileBlocks, contextBlocks } = parts
+    const syncBlocks = textWithAttachmentBlocks(displayWithCommand, attachmentsSnapshot)
+    const resetComposer = (): void => {
+      useWorkspaceStore.getState().hideAgentLauncher()
+      setPendingOptions(emptyPendingLauncherOptions())
+      skillPathsRef.current = {}
+      clearAttachments(attachmentsSnapshot)
+      resetMentions()
+      setPrompt('')
+      if (isCurrentLaunch()) launchHandedOffRef.current = true
+    }
+    if (quick) {
+      try {
+        const sessionId = await useAcpStore.getState().startQuickChat(configSnapshot.id)
+        useQuickChatStore.getState().openChat(sessionId)
+        const blocks = dedupeAttachmentBlocks([
+          ...textWithAttachmentBlocks(wireWithCommand, attachmentsSnapshot),
+          ...fileBlocks,
+          ...contextBlocks
+        ])
+        if (blocks.length > 0) {
+          const displayBlocks = dedupeAttachmentBlocks([
+            ...syncBlocks,
+            ...fileBlocks,
+            ...contextBlocks
+          ])
+          await useAcpStore.getState().sendPromptBlocks(sessionId, blocks, { displayBlocks })
+        }
+        resetComposer()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to start quick chat')
+      } finally {
+        releaseLaunch()
+      }
+      return
+    }
 
     // CAP-3 ordering: the chat placeholder opens BEFORE the worktree prepare
     // (`launchChat`) so `git worktree add`'s stderr lines stream into the
@@ -1429,18 +1471,6 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     // Sync first-turn content so the chat can paint like a normal send. The
     // optimistic syncBlocks carry the DISPLAY (token) text so the timeline
     // renders inline chips; the real send dispatches the WIRE text.
-    const syncBlocks = textWithAttachmentBlocks(displayWithCommand, attachmentsSnapshot)
-
-    const resetComposer = (): void => {
-      useWorkspaceStore.getState().hideAgentLauncher()
-      setPendingOptions(emptyPendingLauncherOptions())
-      skillPathsRef.current = {}
-      clearAttachments(attachmentsSnapshot)
-      resetMentions()
-      setPrompt('')
-      if (isCurrentLaunch()) launchHandedOffRef.current = true
-    }
-
     // Runs once the checkout is ready: persist the picks, then build the wire
     // turn (path-framed skills, command-prefixed) so the agent receives paths,
     // not tokens.
@@ -1571,6 +1601,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   }, [
     activeProjectId,
     projectRoot,
+    quick,
     selectedConfig,
     selectedEntry?.status,
     acpConfigs,

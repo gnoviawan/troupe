@@ -86,6 +86,7 @@ function buildProps(overrides: Partial<ShellRailProps> = {}): ShellRailProps {
     onShortcutsOpenChange: vi.fn(),
     isThemePickerOpen: false,
     onToggleThemePicker: vi.fn(),
+    onNewChat: vi.fn(),
     ...overrides
   }
 }
@@ -159,6 +160,24 @@ describe('ShellRail', () => {
       // The collapsed-only controls are absent.
       expect(within(nav).queryByRole('button', { name: /Switch project/ })).not.toBeInTheDocument()
       expect(screen.getByTestId('shell-rail')).toHaveStyle({ width: '200px' })
+    })
+
+    it('puts New chat above Search and calls onNewChat with or without a project', () => {
+      const onNewChat = vi.fn()
+      const { rerenderRail } = renderRail({ onNewChat })
+      const nav = screen.getByRole('navigation', { name: 'Projects' })
+      const newChat = within(nav).getByRole('button', { name: 'New chat' })
+      const search = within(nav).getByRole('button', { name: 'Search' })
+      expect(
+        newChat.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy()
+      fireEvent.click(newChat)
+      expect(onNewChat).toHaveBeenCalledTimes(1)
+
+      onNewChat.mockClear()
+      rerenderRail({ projects: [], activeProject: undefined, activeProjectId: '', onNewChat })
+      fireEvent.click(screen.getByRole('button', { name: 'New chat' }))
+      expect(onNewChat).toHaveBeenCalledTimes(1)
     })
 
     it('shows the resolved command palette shortcut as a chip on the Search row', () => {
@@ -432,6 +451,7 @@ describe('ShellRail', () => {
         'Switch project (Alpha)',
         // Other open projects (not archived) follow the active one.
         'Open Beta',
+        'New chat',
         // The Side panel is shown, so it carries the Column tabs.
         'Search',
         'Open canvas',

@@ -156,6 +156,9 @@ pub struct NewSessionOutcome {
     pub models: Option<SessionModelState>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config_options: Option<Vec<SessionConfigOption>>,
+    /// Canonical quick-chat folder. Absent for a project chat.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cwd: Option<String>,
 }
 
 /// Trusted server-side context attached to durable session registration.
@@ -186,6 +189,9 @@ pub struct SessionCreationContext {
     /// How the host answers an ephemeral session's permission requests.
     /// `None` cancels every request.
     pub tool_allowlist: Option<crate::acp::session::ToolAllowlist>,
+    /// Set when this session is a quick chat. The value is the host-minted
+    /// folder id. The client does not choose it.
+    pub quick_chat_id: Option<String>,
 }
 
 /// Commands sent from Tauri command handlers to an agent's driver thread.
@@ -206,6 +212,7 @@ enum AcpCommand {
         additional_directories: Vec<PathBuf>,
         command_id: Option<String>,
         tool_allowlist: Option<crate::acp::session::ToolAllowlist>,
+        quick_chat_id: Option<String>,
         reply: oneshot::Sender<Result<NewSessionOutcome, String>>,
     },
     LoadSession {
@@ -1245,6 +1252,7 @@ impl AcpManager {
                 additional_directories,
                 command_id: context.command_id,
                 tool_allowlist: context.tool_allowlist,
+                quick_chat_id: context.quick_chat_id,
                 reply,
             })
             .await
@@ -2300,6 +2308,7 @@ impl AcpManager {
                             modes: None,
                             models: None,
                             config_options: None,
+                            cwd: None,
                         }));
                     }
                     AcpCommand::OwnsSession { session_id, reply } => {

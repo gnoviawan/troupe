@@ -585,3 +585,24 @@ fn find_by_path_matches_verbatim_and_plain_windows_spellings() {
     let expected = if cfg!(windows) { Some("p-plain") } else { None };
     assert_eq!(reg.find_by_path(r"\\?\C:\repo").as_deref(), expected);
 }
+
+/// A project rooted at the home directory must not claim a quick chat.
+#[test]
+fn find_by_path_does_not_bind_a_quick_chat_to_a_project() {
+    let Some(home) = crate::acp::quick_chat::home_dir() else {
+        return;
+    };
+    let reg = ProjectRegistry::new();
+    let home_path = home.to_string_lossy().to_string();
+    reg.set(vec![sample("home", Some(&home_path), false)], None);
+    let quick = home.join(".troupe").join("quick-chats").join("chat-1");
+    assert!(
+        reg.find_by_path(&quick.to_string_lossy()).is_none(),
+        "a quick chat folder is not a project"
+    );
+    let sibling = home.join("notes");
+    assert_eq!(
+        reg.find_by_path(&sibling.to_string_lossy()).as_deref(),
+        Some("home")
+    );
+}

@@ -1,4 +1,11 @@
-import { Bug, Edit2, Search, SlidersHorizontal, Workflow } from '@/components/icons'
+import {
+  Bug,
+  Edit2,
+  MessageSquarePlus,
+  Search,
+  SlidersHorizontal,
+  Workflow
+} from '@/components/icons'
 import { RailColumnIcons } from '@/components/shell/RailColumnIcons'
 import { RailUtilityButtons } from '@/components/shell/RailFooter'
 import { RailProjectStack } from '@/components/shell/RailProjectStack'
@@ -34,6 +41,7 @@ interface RailCollapsedProps {
   onShortcutsOpenChange: (open: boolean) => void
   isThemePickerOpen: boolean
   onToggleThemePicker?: () => void
+  onNewChat: () => void
 }
 
 const NEED_PROJECT = 'Open a project first'
@@ -131,7 +139,8 @@ export function RailCollapsed({
   isShortcutsOpen,
   onShortcutsOpenChange,
   isThemePickerOpen,
-  onToggleThemePicker
+  onToggleThemePicker,
+  onNewChat
 }: RailCollapsedProps): React.JSX.Element {
   const settingsView = useSettingsModalView()
   const platform = useTopRowPlatform()
@@ -191,6 +200,9 @@ export function RailCollapsed({
         )}
 
         <div className="flex flex-col items-center gap-1">
+          <RailButton label="New chat" aria-label="New chat" onClick={onNewChat}>
+            <MessageSquarePlus size={16} />
+          </RailButton>
           <RailButton
             label="Search"
             hint={searchShortcut}

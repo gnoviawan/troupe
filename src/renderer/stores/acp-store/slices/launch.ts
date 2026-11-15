@@ -247,6 +247,7 @@ type LaunchSliceState = Pick<
   | 'cancelPreparedChat'
   | 'prepareChat'
   | 'startChat'
+  | 'startQuickChat'
   | 'claimPreparedChat'
   | 'createLaunchPlaceholder'
   | 'discardLaunchPlaceholder'
@@ -461,6 +462,44 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
     })
     if (!agentId) throw new Error(`failed to spawn agent for config ${configId}`)
     return get().createSession(agentId, trimmedCwd, mcpServers, projectId, opts)
+  },
+
+  startQuickChat: async (configId) => {
+    const config = get().agentConfigs.find((item) => item.id === configId)
+    if (!config) throw new Error(`unknown agent config ${configId}`)
+    // The spawn key is not a project path, so no project env (and no
+    // per-project CODEX_HOME) is applied. The session cwd comes from the host.
+    const agentId = await ensureLiveAgent(get, set, configId, 'quick-chat', {
+      holder: 'chat'
+    })
+    if (!agentId) throw new Error(`failed to spawn agent for config ${configId}`)
+    const sessionId = await get().createSession(agentId, '', undefined, '', { kind: 'quick' })
+    const cwd = get().sessions[sessionId]?.cwd ?? ''
+    const now = Date.now()
+    set((state) => ({
+      sessionIndex: [
+        {
+          id: sessionId,
+          agentId,
+          agentConfigId: configId,
+          title: state.sessions[sessionId]?.title ?? 'Untitled Chat',
+          cwd,
+          projectId: '__unassigned__',
+          createdAt: now,
+          lastActivityAt: now,
+          messageCount: 0,
+          status: 'active' as const,
+          kind: 'quick' as const
+        },
+        ...state.sessionIndex.filter((entry) => entry.id !== sessionId)
+      ]
+    }))
+    void logFrontendError({
+      level: 'info',
+      source: 'acp-store.startQuickChat',
+      message: `Started quick chat ${sessionId} with ${configId}`
+    })
+    return sessionId
   },
 
   claimPreparedChat: (key, projectId) => {

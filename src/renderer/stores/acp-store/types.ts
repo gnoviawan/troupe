@@ -704,6 +704,8 @@ export interface AcpState {
       /** Worktree path + branch (CAP-3) — persisted onto the durable record. */
       worktreePath?: string
       worktreeBranch?: string
+      /** Host mints the folder. The client does not send a cwd. */
+      kind?: 'quick'
     }
   ) => Promise<SessionId>
   closeSession: (sessionId: SessionId) => Promise<void>
@@ -754,6 +756,11 @@ export interface AcpState {
     projectId: string,
     opts?: { worktreePath?: string; worktreeBranch?: string }
   ) => Promise<SessionId>
+  /**
+   * Start a quick chat. No project env is applied. The host creates the folder
+   * and the Codex Accounts account stays in effect.
+   */
+  startQuickChat: (configId: string) => Promise<SessionId>
   /**
    * Take ownership of a prepared session so launcher unmount cleanup cannot
    * reap it after the chat tab is already open. Promotes ephemeral pooled

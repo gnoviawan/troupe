@@ -30,6 +30,8 @@ export interface ShellRailProps {
   onShortcutsOpenChange: (open: boolean) => void
   isThemePickerOpen: boolean
   onToggleThemePicker?: () => void
+  /** New chat: a project chat when a project is active, otherwise a quick chat. */
+  onNewChat: () => void
 }
 
 /**
@@ -53,7 +55,8 @@ export function ShellRail({
   isShortcutsOpen,
   onShortcutsOpenChange,
   isThemePickerOpen,
-  onToggleThemePicker
+  onToggleThemePicker,
+  onNewChat
 }: ShellRailProps): React.JSX.Element {
   const reducedMotion = useReducedMotion() ?? false
   const expanded = useSidebarVisible()
@@ -102,6 +105,7 @@ export function ShellRail({
               onShortcutsOpenChange={onShortcutsOpenChange}
               isThemePickerOpen={isThemePickerOpen}
               onToggleThemePicker={onToggleThemePicker}
+              onNewChat={onNewChat}
             />
           ) : (
             <RailCollapsed
@@ -119,6 +123,7 @@ export function ShellRail({
               onShortcutsOpenChange={onShortcutsOpenChange}
               isThemePickerOpen={isThemePickerOpen}
               onToggleThemePicker={onToggleThemePicker}
+              onNewChat={onNewChat}
             />
           )}
         </div>

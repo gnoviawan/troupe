@@ -2,6 +2,7 @@ import type { ShellInfo } from '@shared/types/ipc.types'
 import { useCallback, useEffect } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { toast } from 'sonner'
+import { newChatKind } from '@/components/shell/open-new-chat'
 import { WORKTREE_EVENTS } from '@/hooks/use-worktree-shortcuts'
 import { getActiveWorkingCopy, reportUnresolvedWorkingCopy } from '@/lib/active-working-copy'
 import { launchAgentInPane } from '@/lib/agent-launch'
@@ -12,6 +13,7 @@ import { openTerminalFromProfile, spawnTerminalInPane } from '@/lib/terminal-spa
 import { getDefaultCwdForProject } from '@/lib/worktree-context'
 import { useDefaultShell } from '@/stores/app-settings-store'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
 import type { TerminalProfile } from '@/types/settings'
@@ -156,8 +158,12 @@ export function useTabOpeners({
   }, [])
 
   const handleOpenAgentChat = useCallback(() => {
-    if (!activeProject?.path) return
     const open = (): void => {
+      if (newChatKind(activeProject?.path ? activeProjectId : '') === 'quick') {
+        useQuickChatStore.getState().openLauncher()
+        return
+      }
+      useQuickChatStore.getState().close()
       const paneId = useWorkspaceStore.getState().activePaneId
       if (paneId) useWorkspaceStore.getState().showAgentLauncher(paneId)
     }
@@ -169,7 +175,7 @@ export function useTabOpeners({
     } else {
       open()
     }
-  }, [activeProject?.path, pathname, navigate])
+  }, [activeProject?.path, activeProjectId, pathname, navigate])
 
   const handleAddGitTab = useCallback(
     (paneId?: string) => {

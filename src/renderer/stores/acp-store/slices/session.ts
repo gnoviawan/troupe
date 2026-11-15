@@ -1748,6 +1748,7 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
           ...(projectId ? { projectId } : {}),
           ...(opts?.worktreePath ? { worktreePath: opts.worktreePath } : {}),
           ...(opts?.worktreeBranch ? { worktreeBranch: opts.worktreeBranch } : {}),
+          ...(opts?.kind === 'quick' ? { kind: 'quick' as const } : {}),
           additionalDirectories: additionalWorkspaceRoots(
             Boolean(
               get().agents[agentId]?.capabilities?.sessionCapabilities?.additionalDirectories
@@ -1800,8 +1801,8 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
             [sessionId]: {
               id: sessionId,
               agentId,
-              cwd,
-              projectId,
+              cwd: outcome.cwd || cwd,
+              projectId: opts?.kind === 'quick' ? '__unassigned__' : projectId,
               status: existing?.status === 'closed' ? 'closed' : 'active',
               title: existing?.title ?? null,
               activeTurn: existing?.activeTurn ?? false,

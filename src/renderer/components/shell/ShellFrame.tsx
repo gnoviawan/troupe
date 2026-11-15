@@ -20,6 +20,7 @@ import {
 } from '@/lib/top-row'
 import { isWorkspaceRoutePath } from '@/lib/workspace-route'
 import { useFileExplorerVisible } from '@/stores/file-explorer-store'
+import { useQuickChatOpen } from '@/stores/quick-chat-store'
 import { useSidebarVisible } from '@/stores/sidebar-store'
 import { useThemePickerOpen } from '@/stores/theme-picker-store'
 import { useFullscreenPaneId, usePaneRoot } from '@/stores/workspace-store'
@@ -116,6 +117,7 @@ export function ShellFrame({
   setIsCommandPaletteOpen,
   setIsNewProjectModalOpen,
   onSelectProject,
+  handleOpenAgentChat,
   handleToggleThemePicker,
   handleOpenCanvas,
   workspaceMain,
@@ -125,6 +127,7 @@ export function ShellFrame({
   const railExpanded = useSidebarVisible()
   const { activeSSHProfileId, handleSSHConnect, handleSelectSSHProfile } = ssh
 
+  const quickChatOpen = useQuickChatOpen()
   const paneRoot = usePaneRoot()
   const fullscreenPaneId = useFullscreenPaneId()
   const pathname = useLocation().pathname
@@ -173,6 +176,7 @@ export function ShellFrame({
             onShortcutsOpenChange={setIsShortcutMenuOpen}
             isThemePickerOpen={isThemePickerOpen}
             onToggleThemePicker={handleToggleThemePicker}
+            onNewChat={handleOpenAgentChat}
           />
 
           <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0 h-full">
@@ -191,13 +195,17 @@ export function ShellFrame({
                   {/* `ExplorerColumn` stays the outer shell (reveal motion,
                       visibility, SSH file browser); the Column tabs panel is
                       injected through its `sidePanel` slot. */}
-                  <ExplorerColumn
-                    activeProject={activeProject}
-                    ssh={ssh}
-                    sidePanel={
-                      activeProject ? <SidePanelColumn activeProject={activeProject} /> : undefined
-                    }
-                  />
+                  {!quickChatOpen && (
+                    <ExplorerColumn
+                      activeProject={activeProject}
+                      ssh={ssh}
+                      sidePanel={
+                        activeProject ? (
+                          <SidePanelColumn activeProject={activeProject} />
+                        ) : undefined
+                      }
+                    />
+                  )}
 
                   {/* Same top in every Rail and Side panel state. Under the
                       macOS traffic lights the top row pads its start instead

@@ -39,6 +39,7 @@ import {
   useProjects,
   useProjectsLoaded
 } from '@/stores/project-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useTerminals } from '@/stores/terminal-store'
 import { useActiveTab, useWorkspaceStore } from '@/stores/workspace-store'
 
@@ -107,6 +108,7 @@ export default function WorkspaceLayout(): React.JSX.Element {
   const handleSelectProject = useCallback(
     (id: string) => {
       selectProject(id)
+      useQuickChatStore.getState().close()
       ssh.selectSSHProfile(null) // Leave the SSH workspace when switching to a project
     },
     [selectProject, ssh.selectSSHProfile]
