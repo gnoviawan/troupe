@@ -150,6 +150,9 @@ jobs:
           # A change to this workflow must still run these jobs.
           # CodeQL rust stays in its analyze matrix. Skipping that upload
           # makes the CodeQL check fail with "1 configuration not found".
+          # scripts/canvas and the pin are inputs of Rust Checks.
+          # check-server-no-gui-libs.sh is an input of Standalone Server Build.
+          # build:web inputs are not listed. Those jobs embed the bundle only.
           is_rust_relevant() {
             case "$1" in
               src-tauri|src-tauri/*) return 0 ;;
@@ -159,6 +162,9 @@ jobs:
               rust-toolchain.toml|*/rust-toolchain.toml) return 0 ;;
               rustfmt.toml|*/rustfmt.toml|clippy.toml|*/clippy.toml) return 0 ;;
               .github/workflows/pr-validation.yml) return 0 ;;
+              canvas/figcraft.pin) return 0 ;;
+              scripts/canvas|scripts/canvas/*) return 0 ;;
+              scripts/check-server-no-gui-libs.sh) return 0 ;;
               *) return 1 ;;
             esac
           }
@@ -174,15 +180,17 @@ jobs:
             exit 0
           fi
 
-          files="$(git diff --name-only --no-renames "$BASE_SHA" HEAD)"
+          # -z plus quotePath=false keeps names that Git would otherwise quote.
+          # Read each NUL-terminated path from the stream. Do not store that
+          # output in a shell variable.
           rust=false
-          while IFS= read -r file; do
+          while IFS= read -r -d '' file; do
             [ -n "$file" ] || continue
             if is_rust_relevant "$file"; then
               echo "rust path: $file"
               rust=true
             fi
-          done <<< "$files"
+          done < <(git -c core.quotePath=false diff --name-only --no-renames -z "$BASE_SHA" HEAD)
           echo "Rust-relevant changes: $rust"
           echo "rust=$rust" >> "$GITHUB_OUTPUT"
 

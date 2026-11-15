@@ -86,13 +86,23 @@ jobs:
 
       # Full suite on Linux only. macOS and Windows run this script in the
       # nightly workflow. The script builds with `--features conformance`, so
-      # the Linux conformance step reuses those executables. macOS and Windows
-      # compile the conformance test in the next step.
+      # the Linux conformance step reuses those executables.
       - name: Cargo test
         if: runner.os == 'Linux'
         working-directory: src-tauri
         shell: bash
         run: bash ./tests/browser_conformance/run-rust-tests.sh
+
+      # The full suite no longer runs on Windows, so build-windows-tests.ps1
+      # does not run there. This builds only the conformance test, with the
+      # same features and the default test profile as the next step, and puts
+      # the Common-Controls v6 manifest beside that executable. Cargo then
+      # reuses the executable, so the sidecar stays next to the exe that runs.
+      - name: Install the Windows conformance manifest
+        if: runner.os == 'Windows'
+        working-directory: src-tauri
+        shell: pwsh
+        run: ./tests/browser_conformance/build-windows-tests.ps1 --features conformance --test browser_conformance
 
       - name: Browser conformance
         if: ${{ !cancelled() }}
