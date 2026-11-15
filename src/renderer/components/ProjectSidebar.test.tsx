@@ -117,7 +117,7 @@ describe('ProjectSidebar Context Menu', () => {
     fireEvent.contextMenu(projectItem)
 
     expect(screen.getByText('Rename')).toBeInTheDocument()
-    expect(screen.getByText('Change Color')).toBeInTheDocument()
+    expect(screen.getByText('Change color')).toBeInTheDocument()
     expect(screen.getByText('Archive')).toBeInTheDocument()
     expect(screen.getByText('Delete')).toBeInTheDocument()
   })
@@ -249,12 +249,12 @@ describe('ProjectSidebar Context Menu', () => {
     expect(onDeleteProject).not.toHaveBeenCalled()
   })
 
-  it('should open color picker when Change Color is clicked', async () => {
+  it('should open color picker when Change color is clicked', async () => {
     renderWithRouter()
 
     const projectItem = screen.getByText('Project One')
     fireEvent.contextMenu(projectItem)
-    fireEvent.click(screen.getByText('Change Color'))
+    fireEvent.click(screen.getByText('Change color'))
 
     await waitFor(() => {
       expect(screen.getByText('Select Color')).toBeInTheDocument()
@@ -290,9 +290,9 @@ describe('ProjectSidebar context menu open regression (F1/F2)', () => {
 
     fireEvent.contextMenu(screen.getByText('My Folder'))
 
-    expect(screen.getByText('Rename Group')).toBeInTheDocument()
-    expect(screen.getByText('Change Color')).toBeInTheDocument()
-    expect(screen.getByText('Delete Group (Keep Projects)')).toBeInTheDocument()
+    expect(screen.getByText('Rename group')).toBeInTheDocument()
+    expect(screen.getByText('Change color')).toBeInTheDocument()
+    expect(screen.getByText('Delete group (keep projects)')).toBeInTheDocument()
   })
 
   it('scrolls the Add Project submenu so projects below the window stay reachable', () => {
@@ -308,7 +308,7 @@ describe('ProjectSidebar context menu open regression (F1/F2)', () => {
     renderWithRouter({ projects })
 
     fireEvent.contextMenu(screen.getByText('My Folder'))
-    fireEvent.mouseEnter(screen.getByText('Add Project').closest('div')!)
+    fireEvent.mouseEnter(screen.getByText('Add project').closest('div')!)
 
     const submenu = screen.getByTestId('add-project-submenu')
     expect(submenu.style.maxHeight).toBe('var(--radix-popper-available-height, 70vh)')
@@ -317,7 +317,7 @@ describe('ProjectSidebar context menu open regression (F1/F2)', () => {
 
     const lastProject = screen.getByRole('menuitemcheckbox', { name: 'Project 24' })
     expect(submenu).toContainElement(lastProject)
-    expect(submenu).toContainElement(screen.getByText('Import Project...'))
+    expect(submenu).toContainElement(screen.getByText('Import project…'))
   })
 
   it('archived project menu opens on right-click', async () => {
@@ -622,7 +622,7 @@ describe('ProjectSidebar Default Shell Submenu', () => {
     fireEvent.contextMenu(projectItem)
 
     await waitFor(() => {
-      expect(screen.getByText('Default Shell')).toBeInTheDocument()
+      expect(screen.getByText('Default shell')).toBeInTheDocument()
     })
   })
 
@@ -639,7 +639,7 @@ describe('ProjectSidebar Default Shell Submenu', () => {
     fireEvent.contextMenu(projectItem)
 
     // Hover over Default Shell to show submenu
-    const shellMenuItem = await screen.findByText('Default Shell')
+    const shellMenuItem = await screen.findByText('Default shell')
     fireEvent.mouseEnter(shellMenuItem.closest('div')!)
 
     // Click on Zsh in submenu
@@ -695,14 +695,14 @@ describe('ProjectSidebar Activity Indicator', () => {
 })
 
 describe('ProjectSidebar Project Context Menu actions', () => {
-  it('keeps the New Worktree action on the project header context menu', async () => {
+  it('keeps the New worktree action on the project header context menu', async () => {
     const projectGit: Project[] = [
       { id: '1', name: 'Project One', color: 'blue', gitBranch: 'main', isGitRepo: true }
     ]
     renderWithRouter({ projects: projectGit, activeProjectId: '1' })
 
     fireEvent.contextMenu(screen.getByText('Project One'))
-    expect(screen.getByText('New Worktree')).toBeInTheDocument()
+    expect(screen.getByText('New worktree')).toBeInTheDocument()
   })
 })
 
@@ -1046,8 +1046,8 @@ describe('ProjectSidebar: Mono-style alignment and groups', () => {
 
     fireEvent.click(more)
 
-    expect(screen.getByText('Rename Group')).toBeInTheDocument()
-    expect(screen.getByText('Delete Group (Keep Projects)')).toBeInTheDocument()
+    expect(screen.getByText('Rename group')).toBeInTheDocument()
+    expect(screen.getByText('Delete group (keep projects)')).toBeInTheDocument()
   })
 
   it('opens the same group menu on right-click', () => {
@@ -1056,13 +1056,13 @@ describe('ProjectSidebar: Mono-style alignment and groups', () => {
 
     fireEvent.contextMenu(screen.getByText('My Folder'))
 
-    expect(screen.getByText('Rename Group')).toBeInTheDocument()
+    expect(screen.getByText('Rename group')).toBeInTheDocument()
   })
 
   function importProjectIntoGroup(): void {
     fireEvent.contextMenu(screen.getByText('My Folder'))
-    fireEvent.mouseEnter(screen.getByText('Add Project'))
-    fireEvent.click(screen.getByText('Import Project...'))
+    fireEvent.mouseEnter(screen.getByText('Add project'))
+    fireEvent.click(screen.getByText('Import project…'))
   }
 
   it('confirms an imported project with a sonner toast', async () => {
@@ -1100,7 +1100,7 @@ describe('ProjectSidebar: Mono-style alignment and groups', () => {
     renderWithRouter({ projects: railProjects.slice(0, 3) })
 
     fireEvent.click(screen.getByRole('button', { name: 'Group actions for My Folder' }))
-    fireEvent.click(screen.getByText('Rename Group'))
+    fireEvent.click(screen.getByText('Rename group'))
     const input = screen.getByRole('textbox', { name: 'Rename group My Folder' })
     fireEvent.change(input, { target: { value: 'Renamed' } })
     fireEvent.keyDown(input, { key: 'Enter' })

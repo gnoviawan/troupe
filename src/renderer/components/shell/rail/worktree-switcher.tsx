@@ -8,7 +8,7 @@ import {
   useState
 } from 'react'
 import { toast } from 'sonner'
-import { Check, GitBranch, Plus, Terminal } from '@/components/icons'
+import { GitBranch, Plus, Terminal } from '@/components/icons'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -45,6 +45,7 @@ import { logRailEvent } from './rail-log'
 const ROW_CLASS =
   'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 text-left text-xs text-foreground transition-colors duration-150 ease-out'
 const ROW_HIGHLIGHT_CLASS = 'bg-foreground/[0.06]'
+const ROW_PICKED_CLASS = 'bg-foreground/[0.1] hover:bg-foreground/[0.1]'
 
 interface RailWorktreeSwitcherState {
   /** Project whose switcher is open, or `null`. */
@@ -411,12 +412,11 @@ function WorkspaceRowView({
               disabled
                 ? 'cursor-not-allowed opacity-50'
                 : 'cursor-default hover:bg-foreground/[0.06]',
-              highlighted && !disabled && ROW_HIGHLIGHT_CLASS
+              highlighted && !disabled && ROW_HIGHLIGHT_CLASS,
+              // The picked row: one step above the highlight, no tick.
+              selected && ROW_PICKED_CLASS
             )}
           >
-            <span className="flex size-3.5 shrink-0 items-center justify-center">
-              {selected && <Check size={13} className="text-foreground" aria-hidden="true" />}
-            </span>
             <span className="min-w-0 flex-1 truncate">{row.label}</span>
             {disabled && <span className="sr-only">{OUTSIDE_PROJECT_ROOT_REASON}</span>}
             {showStatus && (
@@ -460,7 +460,7 @@ function WorkspaceRowView({
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem disabled={disabled} onSelect={onOpenTerminal}>
-          <Terminal className="mr-2 size-3.5" /> Open Terminal Here
+          <Terminal className="mr-2 size-3.5" /> Open terminal here
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

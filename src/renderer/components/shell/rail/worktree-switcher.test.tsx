@@ -399,11 +399,11 @@ describe('RailWorktreeSwitcher', () => {
       await waitFor(() => expect(mocks.openTerminal).toHaveBeenCalledWith('p1', 'E:/proj'))
     })
 
-    it('offers Open Terminal Here on the row context menu with the same behaviour', async () => {
+    it('offers Open terminal here on the row context menu with the same behaviour', async () => {
       renderSwitcher()
       await openSwitcher()
       fireEvent.contextMenu(options()[2])
-      fireEvent.click(await screen.findByRole('menuitem', { name: /Open Terminal Here/ }))
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Open terminal here/ }))
       await waitFor(() =>
         expect(mocks.openTerminal).toHaveBeenCalledWith('p1', 'E:\\proj\\.termul\\worktrees\\b')
       )

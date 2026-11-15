@@ -28,6 +28,13 @@ export const MENU_HIGHLIGHT_CLASS = 'focus:bg-foreground/[0.06] focus:text-foreg
 /** One row for every menu kind. Height 32, text 12, radius 8. */
 export const MENU_ITEM_CLASS = `relative flex min-h-8 cursor-default select-none items-center rounded-lg px-2 py-1.5 text-xs outline-none transition-colors duration-150 ease-out data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${MENU_HIGHLIGHT_CLASS}`
 
+/**
+ * Picked radio row: no tick. It keeps a fill one step stronger than the
+ * highlight, with full-ink text, also while it has the pointer.
+ */
+export const MENU_PICKED_CLASS =
+  'data-[state=checked]:bg-foreground/[0.1] data-[state=checked]:focus:bg-foreground/[0.1] data-[state=checked]:text-foreground'
+
 /** Sub-menu trigger stays highlighted while its sub-menu is open. */
 export const MENU_SUB_TRIGGER_OPEN_CLASS = 'data-[state=open]:bg-foreground/[0.06]'
 

@@ -58,9 +58,7 @@ export function TerminalStripButton({
         />
       </ContextMenuTrigger>
       <ContextMenuContent className="w-52" aria-label="Shells">
-        <ContextMenuLabel className="text-2xs font-medium text-muted-foreground">
-          New terminal with
-        </ContextMenuLabel>
+        <ContextMenuLabel>New terminal with</ContextMenuLabel>
         {loading ? (
           <ContextMenuItem disabled>Detecting shells…</ContextMenuItem>
         ) : sortedShells && sortedShells.length > 0 ? (
@@ -72,7 +70,6 @@ export function TerminalStripButton({
                 onNewTerminal(shell)
               }}
             >
-              <Terminal className="mr-2 size-3.5" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{shell.displayName}</span>
               {shell === defaultShell && (
                 <span className="ml-2 text-2xs text-muted-foreground">Default</span>

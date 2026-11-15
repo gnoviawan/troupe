@@ -81,13 +81,13 @@ export function ProjectContextMenuContent({
         <Edit2 className="mr-2 size-3.5" /> Rename
       </ContextMenuItem>
       <ContextMenuItem onSelect={() => onOpenColorPicker(project.id, 'project')}>
-        <Palette className="mr-2 size-3.5" /> Change Color
+        <Palette className="mr-2 size-3.5" /> Change color
       </ContextMenuItem>
 
       {availableShells && availableShells.available.length > 0 && (
         <ContextMenuSub>
           <ContextMenuSubTrigger>
-            <Terminal className="mr-2 size-3.5" /> Default Shell
+            <Terminal className="mr-2 size-3.5" /> Default shell
           </ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-48">
             <ContextMenuRadioGroup
@@ -108,7 +108,7 @@ export function ProjectContextMenuContent({
 
       <ContextMenuSub>
         <ContextMenuSubTrigger>
-          <Folder className="mr-2 size-3.5" /> Move to Group
+          <Folder className="mr-2 size-3.5" /> Move to group
         </ContextMenuSubTrigger>
         <ContextMenuSubContent className="w-48">
           <ContextMenuRadioGroup
@@ -117,7 +117,7 @@ export function ProjectContextMenuContent({
               moveProjectToGroup(project.id, targetGroupId === 'root' ? null : targetGroupId)
             }
           >
-            <ContextMenuRadioItem value="root">No Group (Root)</ContextMenuRadioItem>
+            <ContextMenuRadioItem value="root">No group (root)</ContextMenuRadioItem>
             {groups.map((g) => (
               <ContextMenuRadioItem key={g.id} value={g.id}>
                 {g.name}
@@ -126,7 +126,7 @@ export function ProjectContextMenuContent({
           </ContextMenuRadioGroup>
           <ContextMenuSeparator />
           <ContextMenuItem onSelect={() => onCreateGroupForProject(project.id)}>
-            <FolderPlus className="mr-2 size-3.5" /> Create New Group...
+            <FolderPlus className="mr-2 size-3.5" /> Create new group…
           </ContextMenuItem>
         </ContextMenuSubContent>
       </ContextMenuSub>
@@ -143,7 +143,7 @@ export function ProjectContextMenuContent({
           }}
         >
           <GitBranch className="mr-2 size-3.5" />{' '}
-          {isGitRepo ? 'New Worktree' : 'New Worktree (no git repo)'}
+          {isGitRepo ? 'New worktree' : 'New worktree (no git repo)'}
           {worktreeGated && <WriteGateReason />}
         </ContextMenuItem>
       </WriteGate>
