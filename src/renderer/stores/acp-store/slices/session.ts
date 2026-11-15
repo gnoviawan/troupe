@@ -932,7 +932,8 @@ async function openHistorySessionInner(
         createdAt: meta.createdAt,
         replaying: null,
         worktreePath: meta.worktreePath,
-        worktreeBranch: meta.worktreeBranch
+        worktreeBranch: meta.worktreeBranch,
+        kind: meta.kind
       }
     },
     messages: { ...s.messages, [id]: trimLiveWindow(installed.messages, id) },
@@ -1831,7 +1832,8 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
               createdAt: existing?.createdAt ?? Date.now(),
               replaying: null,
               worktreePath: opts?.worktreePath ?? existing?.worktreePath,
-              worktreeBranch: opts?.worktreeBranch ?? existing?.worktreeBranch
+              worktreeBranch: opts?.worktreeBranch ?? existing?.worktreeBranch,
+              kind: opts?.kind ?? existing?.kind
             }
           },
           messages: { ...s.messages, [sessionId]: s.messages[sessionId] ?? [] },

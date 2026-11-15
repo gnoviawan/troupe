@@ -3,7 +3,7 @@
 
 use super::*;
 use crate::web::project_registry::{
-    set_default_project, AddProject, ProjectCommandError, ProjectHost, UpdateProject,
+    AddProject, ProjectCommandError, ProjectHost, UpdateProject, set_default_project,
 };
 
 /// `create_session` → `AcpManager::new_session(agent_id, cwd, mcp_servers)`.
@@ -68,7 +68,7 @@ pub(super) async fn handle_create_session(
                 id,
                 WsErrorCode::Unsupported,
                 format!("malformed create_session payload (want agentId, cwd, mcpServers?): {e}"),
-            )
+            );
         }
     };
     let quick = parsed.kind.as_deref() == Some("quick");
@@ -111,6 +111,30 @@ pub(super) async fn handle_create_session(
             WsErrorCode::Unsupported,
             "create_session requires a non-empty `cwd`",
         );
+    }
+    // A project chat cannot start outside every registered project, and it
+    // cannot start inside the quick-chat root. Desktop IPC and `/ws` share
+    // this handler. An ephemeral warm session may use a host-chosen cwd that
+    // is not a project; it still cannot use the quick-chat root.
+    if !quick {
+        if crate::acp::quick_chat::is_quick_chat_path(&cwd) {
+            return WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                "that folder is reserved for quick chats",
+            );
+        }
+        if !parsed.ephemeral && registry.find_by_path(&cwd).is_none() {
+            warn!(
+                target: "termul::web::ws",
+                "create_session: cwd is outside every registered project"
+            );
+            return WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                "create_session cwd must be inside a registered project",
+            );
+        }
     }
     // The host stamps the owning project once, here: explicit registered id,
     // else the registry project owning `cwd`, else the unassigned sentinel.
@@ -429,7 +453,7 @@ pub(super) async fn handle_load_session(
                 id,
                 WsErrorCode::Unsupported,
                 format!("malformed load_session payload (want agentId, sessionId, cwd): {e}"),
-            )
+            );
         }
     };
     let cwd = match super::lifecycle::cwd_for_reopen(acp, &parsed.session_id.0, &parsed.cwd).await {

@@ -8,6 +8,13 @@ use crate::acp::session_persistence::{
     SessionKind, SessionPersistence, SessionRegistration, UNASSIGNED_PROJECT_ID,
 };
 
+/// A temp quick-chat root. The guard must stay alive for the whole test.
+fn temp_root(label: &str) -> (tempfile::TempDir, QuickChatRootGuard) {
+    let dir = tempfile::tempdir().unwrap_or_else(|_| panic!("temp root {label}"));
+    let guard = set_quick_chat_root_for_test(dir.path());
+    (dir, guard)
+}
+
 fn store_dir(label: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!(
         "termul-quick-{label}-{}-{}",
@@ -63,6 +70,7 @@ fn derive_rejects_a_climb_before_any_directory_is_created() {
 
 #[tokio::test]
 async fn the_host_creates_the_folder_stamps_kind_lists_resumes_and_deletes_it() {
+    let (_root, _guard) = temp_root("roundtrip-root");
     let (chat_id, dir) = prepare_new_chat_dir().expect("host creates the folder");
     assert!(dir.is_dir(), "the quick chat folder exists");
     assert_eq!(
@@ -123,6 +131,7 @@ async fn the_host_creates_the_folder_stamps_kind_lists_resumes_and_deletes_it() 
 
 #[tokio::test]
 async fn a_project_session_is_not_quick_and_cannot_take_a_quick_folder() {
+    let (_root, _guard) = temp_root("project-root");
     let store = store_dir("project");
     let cwd = store.join("cwd");
     fs::create_dir_all(&cwd).unwrap();
@@ -156,6 +165,7 @@ async fn a_project_session_is_not_quick_and_cannot_take_a_quick_folder() {
 
 #[test]
 fn listing_accepts_only_the_real_chat_folder() {
+    let (_root, _guard) = temp_root("listing-root");
     let (chat_id, dir) = prepare_new_chat_dir().unwrap();
     let locked = match listing_decision(&display_path(&dir)) {
         ListingDecision::Locked(path) => path,
@@ -184,6 +194,7 @@ fn listing_accepts_only_the_real_chat_folder() {
 #[cfg(unix)]
 #[test]
 fn a_symlink_escape_is_rejected() {
+    let (_root, _guard) = temp_root("symlink-root");
     let root = quick_chats_root().unwrap();
     fs::create_dir_all(&root).unwrap();
     let outside = tempfile::tempdir().unwrap();
@@ -212,6 +223,7 @@ fn a_symlink_escape_is_rejected() {
 #[cfg(windows)]
 #[test]
 fn a_verbatim_windows_folder_locks_and_its_climb_is_rejected() {
+    let (_root, _guard) = temp_root("verbatim-root");
     let (chat_id, dir) = prepare_new_chat_dir().unwrap();
     let verbatim = fs::canonicalize(&dir).unwrap();
     let spelling = verbatim.to_string_lossy().to_string();
@@ -233,6 +245,7 @@ fn a_verbatim_windows_folder_locks_and_its_climb_is_rejected() {
 
 #[test]
 fn a_windows_style_climb_is_rejected() {
+    let (_root, _guard) = temp_root("backslash-root");
     let (chat_id, dir) = prepare_new_chat_dir().unwrap();
     let climb = format!("{}\\..\\..\\outside", dir.display());
     // On Unix a backslash is not a separator, so the path usually does not
@@ -242,4 +255,77 @@ fn a_windows_style_climb_is_rejected() {
         "a backslash climb must not lock"
     );
     remove_chat_dir(&chat_id).unwrap();
+}
+
+/// Create stores the canonical folder. Resume (`cwd_for_quick_session`) and a
+/// list of that spelling must name the same folder when the root is a symlink.
+#[cfg(unix)]
+#[test]
+fn resume_resolves_a_symlinked_root_the_same_way_create_does() {
+    let real = tempfile::tempdir().unwrap();
+    let link_dir = tempfile::tempdir().unwrap();
+    let link = link_dir.path().join("quick-chats");
+    std::os::unix::fs::symlink(real.path(), &link).unwrap();
+    let _guard = set_quick_chat_root_for_test(&link);
+    let (chat_id, created) = prepare_new_chat_dir().unwrap();
+    let resumed = cwd_for_quick_session(&chat_id).unwrap();
+    assert_eq!(resumed, display_path(&created));
+    assert_eq!(
+        created,
+        fs::canonicalize(real.path().join(&chat_id)).unwrap()
+    );
+    match listing_decision(&resumed) {
+        ListingDecision::Locked(path) => assert_eq!(path, resumed),
+        other => panic!("the canonical spelling create stored must lock, got {other:?}"),
+    }
+    match listing_decision(&link.join(&chat_id).to_string_lossy()) {
+        ListingDecision::Locked(path) => assert_eq!(path, resumed),
+        other => panic!("the symlink spelling must lock to the same folder, got {other:?}"),
+    }
+    remove_chat_dir(&chat_id).unwrap();
+}
+
+#[tokio::test]
+async fn a_chat_whose_folder_was_replaced_by_a_file_still_deletes_the_record() {
+    let (_root, _guard) = temp_root("file-root");
+    let (chat_id, dir) = prepare_new_chat_dir().unwrap();
+    let store = store_dir("file-folder");
+    let persistence = SessionPersistence::open(store.join("store")).await.unwrap();
+    persistence
+        .register_quick_session(registration("sess-file", &dir), chat_id.clone())
+        .await
+        .unwrap();
+    fs::remove_dir(&dir).unwrap();
+    fs::write(&dir, "not a directory").unwrap();
+    let acp = crate::acp::AcpManager::new(vec![]);
+    acp.delete_persisted_session(&persistence, "sess-file")
+        .await
+        .unwrap();
+    assert!(
+        persistence.list_sessions().is_empty(),
+        "the record is deleted"
+    );
+    assert_eq!(fs::read_to_string(&dir).unwrap(), "not a directory");
+    let _ = fs::remove_file(&dir);
+    let _ = fs::remove_dir_all(store);
+}
+
+#[tokio::test]
+async fn deleting_an_older_unassigned_chat_keeps_its_original_folder() {
+    let store = store_dir("older");
+    let cwd = store.join("notes");
+    fs::create_dir_all(&cwd).unwrap();
+    fs::write(cwd.join("keep.txt"), "user data").unwrap();
+    let persistence = SessionPersistence::open(store.join("store")).await.unwrap();
+    persistence
+        .register_session(registration("sess-older", &cwd))
+        .await
+        .unwrap();
+    persistence.delete_session("sess-older").await.unwrap();
+    assert!(persistence.list_sessions().is_empty());
+    assert_eq!(
+        fs::read_to_string(cwd.join("keep.txt")).unwrap(),
+        "user data"
+    );
+    let _ = fs::remove_dir_all(store);
 }

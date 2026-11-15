@@ -39,8 +39,58 @@ pub fn home_dir() -> Option<PathBuf> {
 
 /// `~/.troupe/quick-chats`. The directory may not exist yet.
 pub fn quick_chats_root() -> Result<PathBuf, String> {
+    #[cfg(test)]
+    if let Some(path) = test_root::current() {
+        return Ok(path);
+    }
     let home = home_dir().ok_or_else(|| "quick chats need a home directory".to_string())?;
     Ok(home.join(TROUPE_DIR_NAME).join(QUICK_CHATS_DIR_NAME))
+}
+
+/// Tests set this so they do not write `~/.troupe/quick-chats` in the real home.
+#[cfg(test)]
+mod test_root {
+    use std::path::PathBuf;
+    use std::sync::Mutex;
+
+    static GATE: Mutex<()> = Mutex::new(());
+    static ROOT: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+    pub(super) fn current() -> Option<PathBuf> {
+        ROOT.lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
+    }
+
+    pub(super) fn lock(path: PathBuf) -> std::sync::MutexGuard<'static, ()> {
+        let gate = GATE.lock().unwrap_or_else(|error| error.into_inner());
+        *ROOT.lock().unwrap_or_else(|error| error.into_inner()) = Some(path);
+        gate
+    }
+
+    pub(super) fn clear() {
+        *ROOT.lock().unwrap_or_else(|error| error.into_inner()) = None;
+    }
+}
+
+/// Holds the process-wide test root until drop. Tests that create folders take one.
+#[cfg(test)]
+pub struct QuickChatRootGuard {
+    _gate: std::sync::MutexGuard<'static, ()>,
+}
+
+#[cfg(test)]
+pub fn set_quick_chat_root_for_test(path: impl Into<PathBuf>) -> QuickChatRootGuard {
+    QuickChatRootGuard {
+        _gate: test_root::lock(path.into()),
+    }
+}
+
+#[cfg(test)]
+impl Drop for QuickChatRootGuard {
+    fn drop(&mut self) {
+        test_root::clear();
+    }
 }
 
 /// A new folder id. It is a single path segment, so it cannot climb out of the root.
@@ -142,6 +192,15 @@ pub fn remove_chat_dir(chat_id: &str) -> Result<(), String> {
         })?;
         log::info!(
             "[quick-chat] folder symlink removed chat_id={}",
+            redact_session_id(chat_id)
+        );
+        return Ok(());
+    }
+    // A file (or anything that is not a directory) is left in place. The
+    // session record can still be deleted. `remove_dir_all` is not used here.
+    if !meta.is_dir() {
+        log::warn!(
+            "[quick-chat] folder is not a directory; leaving it chat_id={}",
             redact_session_id(chat_id)
         );
         return Ok(());
@@ -252,11 +311,23 @@ fn claims_quick_root(root: &Path, client_cwd: &str) -> bool {
     let client_plain = host_spelling(client_cwd);
     // The raw spelling still names the root when a later `..` climbs out.
     // That climb must be a rejection, not an unrelated folder.
-    raw_claims_root(&client_plain, &root_plain)
+    if raw_claims_root(&client_plain, &root_plain)
         || path_is_inside(
             &plain_lexical(client_cwd),
             &plain_lexical(&root.to_string_lossy()),
         )
+    {
+        return true;
+    }
+    // Create stores the canonical folder. A later resume or list that sends
+    // that spelling still names the chat when the configured root is a symlink.
+    let Ok(root_canonical) = std::fs::canonicalize(root) else {
+        return false;
+    };
+    let Ok(client_canonical) = std::fs::canonicalize(client_cwd) else {
+        return false;
+    };
+    path_is_inside(&plain_path(&client_canonical), &plain_path(&root_canonical))
 }
 
 fn chat_id_from_client_path(root: &Path, client_cwd: &str) -> Result<String, String> {
@@ -267,6 +338,13 @@ fn chat_id_from_client_path(root: &Path, client_cwd: &str) -> Result<String, Str
         .as_deref()
         .is_none_or(|parent| !same_path(parent, &root))
     {
+        // The lexical parent missed. The canonical folder (symlink resolved,
+        // the same spelling create stores) is still the chat.
+        if let Ok(canonical) = std::fs::canonicalize(client_cwd) {
+            if let Some(id) = chat_id_of_canonical(&canonical) {
+                return Ok(id);
+            }
+        }
         return Err("quick chat folder escapes its root".to_string());
     }
     let name = normalized

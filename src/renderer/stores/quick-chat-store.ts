@@ -4,12 +4,14 @@ import { create } from 'zustand'
 export type QuickChatView =
   | { mode: 'closed' }
   | { mode: 'launcher' }
-  | { mode: 'chat'; sessionId: string }
+  | { mode: 'chat'; sessionId: string; readOnly?: boolean }
 
 interface QuickChatState {
   view: QuickChatView
   openLauncher: () => void
   openChat: (sessionId: string) => void
+  /** An older no-project chat. History can be read. New prompts are refused. */
+  openOlderChat: (sessionId: string) => void
   close: () => void
 }
 
@@ -21,6 +23,7 @@ export const useQuickChatStore = create<QuickChatState>((set) => ({
   view: { mode: 'closed' },
   openLauncher: () => set({ view: { mode: 'launcher' } }),
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
+  openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
   close: () => set({ view: { mode: 'closed' } })
 }))
 

@@ -271,6 +271,11 @@ export interface AcpSession {
   worktreePath?: string
   worktreeBranch?: string
   /**
+   * `quick` for a chat with no project. Copied onto the live record so a
+   * later index projection cannot drop it. Absent on project chats.
+   */
+  kind?: 'quick'
+  /**
    * Correlation id into `useWorktreeProgressStore` for the in-timeline
    * worktree-creation progress card. Set on the launch placeholder before the
    * worktree create call and carried across the placeholder→real-session

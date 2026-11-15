@@ -164,7 +164,7 @@ describe('useChatHistoryEntries (Quick chats bucket)', () => {
     seedProjectStore([mockProject({ id: 'p1', name: 'Alpha', path: '/work' })], 'p1')
   })
 
-  it('lists quick chats after every recency group and hides legacy unassigned sessions', () => {
+  it('lists quick chats, then older no-project chats, after the recency groups', () => {
     const now = Date.now()
     useAcpStore.setState({
       sessionIndex: [
@@ -182,11 +182,14 @@ describe('useChatHistoryEntries (Quick chats bucket)', () => {
       'Today',
       'Yesterday',
       'Earlier',
-      'Quick chats'
+      'Quick chats',
+      'Older chats'
     ])
     const bucket = result.current.groups.find((g) => g.group === 'Quick chats')
     expect(bucket?.entries.map((e) => e.id)).toEqual(['quick'])
-    expect(result.current.mergedEntries.map((e) => e.id)).not.toContain('stray')
+    const older = result.current.groups.find((g) => g.group === 'Older chats')
+    expect(older?.entries.map((e) => e.id)).toEqual(['stray'])
+    expect(result.current.mergedEntries.map((e) => e.id)).toContain('stray')
     expect(result.current.mergedEntries.map((e) => e.id)).not.toContain('other')
   })
 })

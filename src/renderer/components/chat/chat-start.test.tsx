@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAcpStore } from '@/stores/acp-store'
 import { useProjectStore } from '@/stores/project-store'
 import { ChatEmptyState } from './ChatEmptyState'
-import { CHAT_STARTERS, ChatStarters, ChatStartHero } from './chat-start'
+import { CHAT_STARTERS, ChatStarters, ChatStartHero, QUICK_CHAT_STARTERS } from './chat-start'
 
 describe('ChatStartHero (shared by the launcher and the empty chat)', () => {
   it('shows the Troupe mark and the project question', () => {
@@ -27,6 +27,22 @@ describe('ChatStarters', () => {
     ).toEqual(['Explain this project', 'Find a bug', 'Write tests', 'Summarize changes'])
     fireEvent.click(within(group).getByRole('button', { name: 'Find a bug' }))
     expect(onPick).toHaveBeenCalledWith(CHAT_STARTERS[1].prompt)
+  })
+})
+
+describe('quick chat launcher copy', () => {
+  it('asks a neutral question and offers starters that do not name a project', () => {
+    render(<ChatStartHero projectLabel="this folder" quick />)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('What should we do?')
+    expect(screen.queryByText(/folder|project|workspace/i)).toBeNull()
+
+    render(<ChatStarters starters={QUICK_CHAT_STARTERS} onPick={vi.fn()} />)
+    const labels = screen
+      .getAllByRole('button')
+      .map((button) => button.textContent ?? '')
+      .join(' ')
+    expect(labels).not.toMatch(/project|folder|workspace|git/i)
+    expect(labels).toContain('Ask a question')
   })
 })
 

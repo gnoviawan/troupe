@@ -1410,6 +1410,7 @@ impl SessionPersistence {
             let previous = (metadata.title.clone(), metadata.title_source.clone());
             metadata.title = Some(title);
             metadata.title_source = Some(TitleSource::LocalAlias);
+            metadata.last_activity_at = now_millis();
             previous
         };
         drop(registration);

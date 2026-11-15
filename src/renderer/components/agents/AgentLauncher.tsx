@@ -55,7 +55,7 @@ import {
   resolveModelOption
 } from '@/components/chat/chat-input-bar-config'
 import { COMPOSER_CARD_CLASS, useComposerToolbarMode } from '@/components/chat/chat-layout'
-import { ChatStarters, ChatStartHero } from '@/components/chat/chat-start'
+import { ChatStarters, ChatStartHero, QUICK_CHAT_STARTERS } from '@/components/chat/chat-start'
 import {
   ChatComposerEditor,
   focusComposerFromRowPress
@@ -1794,6 +1794,7 @@ export function AgentLauncher({
           isExiting={isExiting}
           reducedMotion={reducedMotion}
           projectLabel={projectLabel}
+          quick={quick}
         />
 
         <div ref={dockRef} className="flex min-w-0 w-full max-w-4xl flex-col gap-4">
@@ -1963,24 +1964,27 @@ export function AgentLauncher({
                 toolbarMode={toolbarMode}
               />
             </div>
-            <LauncherContextStrip
-              workspace={workspace}
-              worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
-              baseBranch={baseBranch}
-              setBaseBranch={setBaseBranch}
-              baseBranchInfo={baseBranchInfo}
-              baseOptions={baseOptions}
-              interactive={projectIsGitRepo}
-              newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
-              gitBranch={projectGitBranch}
-              isGitRepo={projectIsGitRepo}
-            />
+            {!quick && (
+              <LauncherContextStrip
+                workspace={workspace}
+                worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
+                baseBranch={baseBranch}
+                setBaseBranch={setBaseBranch}
+                baseBranchInfo={baseBranchInfo}
+                baseOptions={baseOptions}
+                interactive={projectIsGitRepo}
+                newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
+                gitBranch={projectGitBranch}
+                isGitRepo={projectIsGitRepo}
+              />
+            )}
           </div>
           {/* Shared start screen (same starters as an empty chat). Mobile
               keeps the composer at the bottom, so no starters there. */}
           {!isMobileShell && (
             <ChatStarters
               isExiting={isExiting}
+              starters={quick ? QUICK_CHAT_STARTERS : undefined}
               onPick={(text) => {
                 if (launchLocked) return
                 setPrompt(text)

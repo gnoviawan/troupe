@@ -4069,6 +4069,21 @@ describe('AgentLauncher worktree isolation', () => {
 })
 
 describe('AgentLauncher placeholder', () => {
+  it('uses neutral copy for a quick chat and hides the workspace strip', async () => {
+    render(
+      <TooltipProvider>
+        <MemoryRouter>
+          <AgentLauncher paneId="quick-chat" quick />
+        </MemoryRouter>
+      </TooltipProvider>
+    )
+    await screen.findByLabelText('Agent prompt')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('What should we do?')
+    expect(screen.queryByText('Workspace:')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Explain this project' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ask a question' })).toBeInTheDocument()
+  })
+
   it('shows the shared starters under the composer and a pick fills the prompt', async () => {
     renderLauncher()
 

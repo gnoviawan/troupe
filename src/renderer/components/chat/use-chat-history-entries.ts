@@ -4,6 +4,8 @@ import {
   ACTIVE_GROUP,
   groupSessionsByRecency,
   type HistoryGroup,
+  OLDER_CHATS_GROUP,
+  olderChats,
   QUICK_CHATS_GROUP,
   quickSessions,
   type RecencyKey,
@@ -133,14 +135,18 @@ export function useChatHistoryEntries({
     () => new Set(quickSessions(sessionIndex).map((entry) => entry.id)),
     [sessionIndex]
   )
+  const olderIds = useMemo(
+    () => new Set(olderChats(sessionIndex).map((entry) => entry.id)),
+    [sessionIndex]
+  )
   const scopedIndex = useMemo(
     () => [
       ...scopeSessionIndex(sessionIndex, activeProjectId, activeCwd, worktreePaths).filter(
-        (entry) => !quickIds.has(entry.id)
+        (entry) => !quickIds.has(entry.id) && !olderIds.has(entry.id)
       ),
-      ...sessionIndex.filter((entry) => quickIds.has(entry.id))
+      ...sessionIndex.filter((entry) => quickIds.has(entry.id) || olderIds.has(entry.id))
     ],
-    [sessionIndex, activeProjectId, activeCwd, worktreePaths, quickIds]
+    [sessionIndex, activeProjectId, activeCwd, worktreePaths, quickIds, olderIds]
   )
 
   // Troupe-created sessions only. The host-owned `discovered` flag is `false`
@@ -268,14 +274,16 @@ export function useChatHistoryEntries({
   )
 
   const groups = useMemo(() => {
-    const assigned = windowed.filter((entry) => !quickIds.has(entry.id))
+    const assigned = windowed.filter((entry) => !quickIds.has(entry.id) && !olderIds.has(entry.id))
     const quick = windowed.filter((entry) => quickIds.has(entry.id))
+    const older = windowed.filter((entry) => olderIds.has(entry.id))
     const recency: { group: HistoryGroup; entries: ChatHistorySidebarEntry[] }[] =
       groupSessionsByRecency(assigned, Date.now(), timeKey)
     if (active.length > 0) recency.unshift({ group: ACTIVE_GROUP, entries: active })
     if (quick.length > 0) recency.push({ group: QUICK_CHATS_GROUP, entries: quick })
+    if (older.length > 0) recency.push({ group: OLDER_CHATS_GROUP, entries: older })
     return recency
-  }, [active, windowed, quickIds, timeKey])
+  }, [active, windowed, quickIds, olderIds, timeKey])
 
   // Grow the window when the bottom sentinel scrolls into view (lazy load).
   // `visibleCount` is intentionally in the deps so the observer re-arms after

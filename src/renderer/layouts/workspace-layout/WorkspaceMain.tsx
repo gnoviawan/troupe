@@ -14,6 +14,8 @@ import { ProjectTreeHost, useMountedProjectIds } from '@/components/workspace/Pr
 import { useMobileActiveLeaf } from '@/hooks/use-mobile-active-leaf'
 import { ShellSkeleton } from '@/layouts/workspace-layout/ShellSkeleton'
 import type { SSHWorkspaceState } from '@/layouts/workspace-layout/use-ssh-workspace'
+import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
+import { useAcpStore } from '@/stores/acp-store'
 import { useDefaultShell } from '@/stores/app-settings-store'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useTerminalActions } from '@/stores/terminal-store'
@@ -37,6 +39,23 @@ interface WorkspaceMainProps {
   handleCloseEditorTab: (filePath: string) => boolean
   handleCloseTabs: (targetTabs: WorkspaceTab[]) => void
   closingTerminalIds: string[]
+}
+
+/** Title of the open quick chat. The alias wins over the agent title when both exist. */
+function QuickChatHeader({ sessionId }: { sessionId: string }): React.JSX.Element {
+  const title = useAcpStore((state) => {
+    const indexed = state.sessionIndex.find((entry) => entry.id === sessionId)?.title
+    const live = state.sessions[sessionId]?.title
+    return indexed || live || UNTITLED_HOST_TITLE
+  })
+  return (
+    <header
+      className="flex h-11 shrink-0 items-center border-b border-border px-4"
+      data-testid="quick-chat-header"
+    >
+      <h1 className="min-w-0 truncate text-sm font-medium text-foreground">{title}</h1>
+    </header>
+  )
 }
 
 /** The workspace main area: SSH workspace, empty state, pane tree or routed child. */
@@ -86,7 +105,10 @@ export function WorkspaceMain({
           {quickChat.mode === 'launcher' ? (
             <AgentLauncher paneId="quick-chat" quick />
           ) : (
-            <AgentChatPanel sessionId={quickChat.sessionId} />
+            <>
+              <QuickChatHeader sessionId={quickChat.sessionId} />
+              <AgentChatPanel sessionId={quickChat.sessionId} />
+            </>
           )}
         </div>
       ) : projects.length === 0 ? (

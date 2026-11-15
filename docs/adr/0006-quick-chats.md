@@ -11,7 +11,7 @@ A quick chat is an agent chat with no project. The session still needs a working
 
 The existing unassigned-project sentinel (`__unassigned__`) means "no project could be resolved." Older sessions already carry it. Reusing it for quick chats would show those older sessions in the new list.
 
-The agent assigns the session id only after `session/new` returns. The process must already be running inside the quick-chat folder, so the folder name cannot be that session id. The host mints a folder id first.
+The agent assigns the session id only after `session/new` returns. The host mints a folder id first so the session cwd can be that folder. The adapter process itself keeps the server's cwd. Only the agent session cwd is the chat folder.
 
 ## Decision
 
@@ -25,6 +25,7 @@ The agent assigns the session id only after `session/new` returns. The process m
 
 ## Consequences
 
-- Legacy unassigned sessions stay out of Quick chats.
+- Legacy unassigned sessions stay out of Quick chats. They are listed under Older chats. A user can open one and read its history. New prompts are refused. Delete removes the session record and leaves the original folder in place.
 - A quick chat has no project environment, so a project's `CODEX_HOME` does not apply. The Codex Accounts account does.
 - The folder id and the agent session id are different. The index id remains the agent session id. The folder id is `quickChatId` on the host record.
+- The adapter process runs in the server cwd. The agent session cwd is the chat folder.

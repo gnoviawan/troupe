@@ -24,6 +24,7 @@ pub(super) async fn handle_delete_session(
     id: String,
     payload: &Value,
     relay: &Arc<WsRelaySink>,
+    acp: &Arc<AcpManager>,
     history_mode: HistoryMode,
 ) -> WsReply {
     if history_mode != HistoryMode::Server {
@@ -50,7 +51,10 @@ pub(super) async fn handle_delete_session(
             "persisted history is unavailable",
         );
     };
-    match persistence.delete_session(&parsed.session_id).await {
+    match acp
+        .delete_persisted_session(&persistence, &parsed.session_id)
+        .await
+    {
         Ok(()) => {
             relay.forget_session(&parsed.session_id).await;
             crate::web::watch::publish_chat_history(relay, &[parsed.session_id.as_str()]);

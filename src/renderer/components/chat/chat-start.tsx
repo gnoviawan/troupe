@@ -43,6 +43,30 @@ export const CHAT_STARTERS: ChatStarter[] = [
   }
 ]
 
+/** Starters for a chat with no project. They do not mention a folder or a checkout. */
+export const QUICK_CHAT_STARTERS: ChatStarter[] = [
+  {
+    icon: Sparkles,
+    label: 'Ask a question',
+    prompt: 'Help me think this through. Start by asking what I want to figure out.'
+  },
+  {
+    icon: Bug,
+    label: 'Think something through',
+    prompt: 'Help me reason about a problem. Ask one clarifying question first.'
+  },
+  {
+    icon: ListChecks,
+    label: 'Make a list',
+    prompt: 'Help me turn this into a short checklist.'
+  },
+  {
+    icon: FileText,
+    label: 'Draft a note',
+    prompt: 'Help me draft a short note from the points I give you.'
+  }
+]
+
 /**
  * The mark + project question. On the mobile web shell it shrinks so the
  * bottom-anchored composer stays above the fold; during a launcher exit it
@@ -53,7 +77,8 @@ export function ChatStartHero({
   headingLevel = 1,
   isMobileShell = false,
   isExiting = false,
-  reducedMotion = false
+  reducedMotion = false,
+  quick = false
 }: {
   projectLabel: string
   /** 1 in the launcher (the pane's main heading); 2 inside a chat tab. */
@@ -61,6 +86,8 @@ export function ChatStartHero({
   isMobileShell?: boolean
   isExiting?: boolean
   reducedMotion?: boolean
+  /** A chat with no project. The question does not name a folder. */
+  quick?: boolean
 }): React.JSX.Element {
   const Heading = headingLevel === 1 ? 'h1' : 'h2'
   return (
@@ -78,7 +105,7 @@ export function ChatStartHero({
           isMobileShell && 'text-xl'
         )}
       >
-        {`What should we do in ${projectLabel}?`}
+        {quick ? 'What should we do?' : `What should we do in ${projectLabel}?`}
       </Heading>
     </div>
   )
@@ -92,11 +119,13 @@ export function ChatStartHero({
 export function ChatStarters({
   onPick,
   isExiting = false,
-  className
+  className,
+  starters = CHAT_STARTERS
 }: {
   onPick: (prompt: string) => void
   isExiting?: boolean
   className?: string
+  starters?: readonly ChatStarter[]
 }): React.JSX.Element {
   const reduced = useReducedMotion() ?? false
   const enter = (i: number): Transition =>
@@ -113,7 +142,7 @@ export function ChatStarters({
         className
       )}
     >
-      {CHAT_STARTERS.map((starter, i) => (
+      {starters.map((starter, i) => (
         <motion.button
           key={starter.label}
           type="button"

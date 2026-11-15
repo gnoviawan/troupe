@@ -27,6 +27,9 @@ export function QuickChatsGroup(): React.JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const openId = useQuickChatStore((state) =>
+    state.view.mode === 'chat' ? state.view.sessionId : null
+  )
   const deleteTarget = chats.find((chat) => chat.id === deleteId) ?? null
 
   const saveRename = async (sessionId: string): Promise<void> => {
@@ -38,7 +41,13 @@ export function QuickChatsGroup(): React.JSX.Element {
       useAcpStore.setState((state) => ({
         sessionIndex: state.sessionIndex.map((entry) =>
           entry.id === sessionId ? { ...entry, title } : entry
-        )
+        ),
+        sessions: state.sessions[sessionId]
+          ? {
+              ...state.sessions,
+              [sessionId]: { ...state.sessions[sessionId], title }
+            }
+          : state.sessions
       }))
     } catch (error) {
       void logFrontendError({
@@ -67,6 +76,7 @@ export function QuickChatsGroup(): React.JSX.Element {
           <ul className="flex flex-col">
             {chats.map((chat) => {
               const title = chat.title || UNTITLED_HOST_TITLE
+              const isActive = openId === chat.id
               return (
                 <li key={chat.id} className="group/quick flex items-center pr-1">
                   {editingId === chat.id ? (
@@ -88,7 +98,12 @@ export function QuickChatsGroup(): React.JSX.Element {
                   ) : (
                     <button
                       type="button"
-                      className="flex h-8 min-w-0 flex-1 items-center rounded-lg text-left text-xs text-sidebar-foreground hover:bg-sidebar-accent"
+                      aria-current={isActive ? 'true' : undefined}
+                      data-active={isActive ? 'true' : undefined}
+                      className={cn(
+                        'flex h-8 min-w-0 flex-1 items-center rounded-lg text-left text-xs text-sidebar-foreground hover:bg-sidebar-accent',
+                        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      )}
                       onClick={() => {
                         useQuickChatStore.getState().openChat(chat.id)
                         void openHistorySession(chat.id)

@@ -44,6 +44,16 @@ describe('QuickChatsGroup', () => {
     })
   })
 
+  it('marks the open quick chat as the active row', () => {
+    useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'new' } })
+    render(<QuickChatsGroup />)
+    expect(screen.getByRole('button', { name: 'Newer notes' })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
+    expect(screen.getByRole('button', { name: 'Older notes' })).not.toHaveAttribute('aria-current')
+  })
+
   it('lists quick chats newest first and hides legacy unassigned sessions', () => {
     render(<QuickChatsGroup />)
     const titles = screen

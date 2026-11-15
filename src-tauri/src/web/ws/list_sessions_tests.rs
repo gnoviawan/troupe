@@ -394,6 +394,8 @@ fn list_sessions_with_access(
 /// A climb out of that folder is refused on both carriers.
 #[test]
 fn resolve_list_sessions_cwd_locks_the_quick_chat_root_on_both_carriers() {
+    let root = tempfile::tempdir().unwrap();
+    let _guard = crate::acp::quick_chat::set_quick_chat_root_for_test(root.path());
     let (chat_id, dir) = crate::acp::quick_chat::prepare_new_chat_dir().unwrap();
     let path = dir.to_string_lossy().to_string();
     let registry = ProjectRegistry::new();

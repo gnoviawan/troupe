@@ -1933,6 +1933,34 @@ impl AcpManager {
         self.stop_agent(agent_id, ExitIntent::Killed).await
     }
 
+    /// Delete a persisted session. A quick chat stops its agent first (the
+    /// adapter process and the child agent), then removes the folder, then
+    /// the record. A project chat only removes the record.
+    pub async fn delete_persisted_session(
+        &self,
+        persistence: &SessionPersistence,
+        session_id: &str,
+    ) -> Result<(), SessionPersistenceError> {
+        if let Ok(metadata) = persistence.metadata(session_id) {
+            if metadata.kind == crate::acp::session_persistence::SessionKind::Quick {
+                if let Some(agent_id) = metadata
+                    .runtime_agent_id
+                    .as_deref()
+                    .filter(|id| !id.is_empty())
+                {
+                    log::info!(
+                        "[quick-chat] stopping agent before delete session_id={}",
+                        crate::logging::redact_session_id(session_id)
+                    );
+                    // Unknown or already-stopped agents are success. The folder
+                    // is removed only after this returns.
+                    let _ = self.kill(&AgentId(agent_id.to_string())).await;
+                }
+            }
+        }
+        persistence.delete_session(session_id).await
+    }
+
     /// Stop an agent for the idle reaper: same teardown as [`Self::kill`], but
     /// announced with reason `reaped`.
     pub async fn reap_agent(&self, agent_id: &AgentId) -> Result<(), String> {
