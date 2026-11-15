@@ -11,7 +11,7 @@
  * record loads as is; a build that only knows version 1 reads version 2 as
  * newer and leaves it alone.
  *
- * Version 3 (Sidebar V2 P3) retired the `chats` view: chats live in the Rail,
+ * Version 3 (Sidebar V2) retired the `chats` view: chats live in the Rail,
  * and the right panel shows Explorer, Changes or GitHub. An older record is
  * upgraded by `upgradeShellLayoutRecord` (`shell-layout-migration.ts`).
  */

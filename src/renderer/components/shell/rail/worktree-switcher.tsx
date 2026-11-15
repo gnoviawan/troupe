@@ -39,8 +39,8 @@ import { useTerminalStore } from '@/stores/terminal-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { getAllLeafPanes } from '@/stores/workspace-store/tree'
 import type { Project } from '@/types/project'
+import { logRailEvent } from '../shell-log'
 import { useCreateWorktree } from '../use-create-worktree'
-import { logRailEvent } from './rail-log'
 
 const ROW_CLASS =
   'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 text-left text-xs text-foreground transition-colors duration-150 ease-out'

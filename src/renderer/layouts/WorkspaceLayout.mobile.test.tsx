@@ -256,7 +256,7 @@ vi.mock('@/components/CommandPalette', () => ({
   }) =>
     isOpen ? (
       <div data-palette-new-project={onNewProject ? 'wired' : 'absent'}>
-        <input placeholder="Search commands, projects, settings..." readOnly />
+        <input placeholder="Search commands, projects, settings…" readOnly />
         <button type="button" onClick={onOpenCommandHistory}>
           Open command history
         </button>
@@ -702,7 +702,7 @@ describe('WorkspaceLayout mobile branch', () => {
       await chooseTerminalItem('Command palette')
 
       expect(
-        await screen.findByPlaceholderText('Search commands, projects, settings...')
+        await screen.findByPlaceholderText('Search commands, projects, settings…')
       ).toBeInTheDocument()
     })
 
@@ -751,7 +751,7 @@ describe('WorkspaceLayout mobile branch', () => {
       // The palette still closes on select; the project sheet is where badges show.
       await waitFor(() =>
         expect(
-          screen.queryByPlaceholderText('Search commands, projects, settings...')
+          screen.queryByPlaceholderText('Search commands, projects, settings…')
         ).not.toBeInTheDocument()
       )
     })
@@ -768,12 +768,12 @@ describe('WorkspaceLayout mobile branch', () => {
     renderLayout()
 
     expect(
-      screen.queryByPlaceholderText('Search commands, projects, settings...')
+      screen.queryByPlaceholderText('Search commands, projects, settings…')
     ).not.toBeInTheDocument()
     // MobileChatShell is React.lazy — wait for the ⋯ button, then the row.
     await chooseMoreItem('Command palette')
     expect(
-      await screen.findByPlaceholderText('Search commands, projects, settings...')
+      await screen.findByPlaceholderText('Search commands, projects, settings…')
     ).toBeInTheDocument()
   })
 
@@ -1172,7 +1172,7 @@ describe('WorkspaceLayout mobile branch', () => {
 
       await chooseMoreItem('Command palette')
       expect(
-        await screen.findByPlaceholderText('Search commands, projects, settings...')
+        await screen.findByPlaceholderText('Search commands, projects, settings…')
       ).toBeInTheDocument()
 
       await waitForSentinelDepth(1)
@@ -1180,7 +1180,7 @@ describe('WorkspaceLayout mobile branch', () => {
 
       await waitFor(() =>
         expect(
-          screen.queryByPlaceholderText('Search commands, projects, settings...')
+          screen.queryByPlaceholderText('Search commands, projects, settings…')
         ).not.toBeInTheDocument()
       )
       expect(readOverlaySentinelDepth(window.history.state)).toBe(0)
@@ -1236,7 +1236,7 @@ describe('WorkspaceLayout mobile branch', () => {
         renderLayout()
 
         await chooseMoreItem('Command palette')
-        await screen.findByPlaceholderText('Search commands, projects, settings...')
+        await screen.findByPlaceholderText('Search commands, projects, settings…')
         await waitForSentinelDepth(1)
         const backSpy = vi.spyOn(window.history, 'back')
         const goSpy = vi.spyOn(window.history, 'go')
@@ -1246,7 +1246,7 @@ describe('WorkspaceLayout mobile branch', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Open command history' }))
         expect(await screen.findByText('command-history-modal')).toBeInTheDocument()
         expect(
-          screen.queryByPlaceholderText('Search commands, projects, settings...')
+          screen.queryByPlaceholderText('Search commands, projects, settings…')
         ).not.toBeInTheDocument()
         await settleOverlayBackStack()
 
@@ -1414,7 +1414,7 @@ describe('WorkspaceLayout mobile branch', () => {
       // The header no longer carries a palette icon; the palette lives in the header ⋯ sheet.
       await chooseMoreItem('Command palette')
       expect(
-        await screen.findByPlaceholderText('Search commands, projects, settings...')
+        await screen.findByPlaceholderText('Search commands, projects, settings…')
       ).toBeInTheDocument()
       expect(document.querySelector('[data-palette-new-project]')).toHaveAttribute(
         'data-palette-new-project',
@@ -1427,7 +1427,7 @@ describe('WorkspaceLayout mobile branch', () => {
       // Selecting it closes the palette, then opens the modal.
       await waitFor(() =>
         expect(
-          screen.queryByPlaceholderText('Search commands, projects, settings...')
+          screen.queryByPlaceholderText('Search commands, projects, settings…')
         ).not.toBeInTheDocument()
       )
       expect(await screen.findByTestId('new-project-modal-stub')).toBeInTheDocument()

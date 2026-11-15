@@ -569,8 +569,8 @@ export function CommandPalette({
                   ref={inputRef}
                   placeholder={
                     chatsProject
-                      ? 'Search commands, projects, chats…'
-                      : 'Search commands, projects, settings...'
+                      ? 'Search commands, projects, chats, settings…'
+                      : 'Search commands, projects, settings…'
                   }
                   value={query}
                   onValueChange={setQuery}

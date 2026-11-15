@@ -11,7 +11,7 @@ import type { Project } from '@/types/project'
 import { buildChatCards, type ChatCardData } from './chat-cards'
 
 /** Accessible status word of each live state; idle has none. */
-export const CHAT_STATUS_WORD: Record<ProjectChatLiveState, string | null> = {
+const CHAT_STATUS_WORD: Record<ProjectChatLiveState, string | null> = {
   'needs-you': 'Needs you',
   running: 'Running',
   done: 'New activity',
@@ -19,7 +19,7 @@ export const CHAT_STATUS_WORD: Record<ProjectChatLiveState, string | null> = {
 }
 
 /** Session id of the agent chat tab focused in the active pane, if any. */
-export function useOpenChatSessionId(): string | null {
+function useOpenChatSessionId(): string | null {
   return useWorkspaceStore((s) => {
     const pane = findPaneById(s.root, s.activePaneId)
     if (pane?.type !== 'leaf') return null
@@ -46,8 +46,9 @@ export interface ProjectChats {
 
 /**
  * Chats of one project for the Rail: the cards `buildChatCards` makes from
- * the session index, scoped by the project's worktree pick, plus the open chat id. Live state is per chat: read it with
- * {@link useChatLiveState} in each row.
+ * the session index, scoped by the project's worktree pick, plus the open
+ * chat id. Live state is per chat: read it with {@link useChatLiveState} in
+ * each row.
  */
 export function useProjectChats(project: Project): ProjectChats {
   const sessionIndex = useAcpStore((s) => s.sessionIndex)

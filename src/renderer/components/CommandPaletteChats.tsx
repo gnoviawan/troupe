@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { ChatEntryIcon } from '@/components/chat/ChatHistoryEntryRow'
 import { buildChatCards, filterChatCards, modelLineOf } from '@/components/shell/chat-cards'
-import { logRailEvent } from '@/components/shell/rail/rail-log'
+import { logShellEvent } from '@/components/shell/shell-log'
 import { useChatCardActions } from '@/components/shell/use-chat-card-actions'
 import { CommandGroup, CommandItem } from '@/components/ui/command'
 import { useAcpStore } from '@/stores/acp-store'
@@ -16,7 +16,7 @@ interface CommandPaletteChatsProps {
 }
 
 /**
- * Command palette "Chats" group (Sidebar V2 P4): every chat of the active
+ * Command palette "Chats" group (Sidebar V2): every chat of the active
  * project, whatever the worktree pick, matched by title, agent, branch or
  * model (`filterChatCards`). Picking one opens or focuses its tab. The
  * palette shows the group only while there is a query.
@@ -51,7 +51,7 @@ export function CommandPaletteChats({
             value={`chat:${entry.id}`}
             keywords={[entry.title, agentName ?? '', branch, modelLineOf(card)].filter(Boolean)}
             onSelect={() => {
-              logRailEvent(`palette open chat ${entry.id}`)
+              logShellEvent(`palette open chat ${entry.id}`)
               onDone()
               onOpen(entry)
             }}

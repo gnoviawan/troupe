@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 const titlebarNoDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 /** Three 40px buttons. */
-export const WINDOW_CONTROLS_WIDTH = 120
+const WINDOW_CONTROLS_WIDTH = 120
 
 /** What the controls take from the top row left of the tool strip. */
 export const WINDOW_CONTROLS_INSET_PX = WINDOW_CONTROLS_WIDTH - TOOL_STRIP_WIDTH

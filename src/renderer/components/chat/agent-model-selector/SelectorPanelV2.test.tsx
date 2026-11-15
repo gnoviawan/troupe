@@ -28,8 +28,7 @@ import {
   PICKER_ROW_NAME_PULL,
   PICKER_ROW_SELECTED,
   PICKER_ROW_SELECTED_BOX,
-  PICKER_STAR_MOTION,
-  PICKER_SURFACE
+  PICKER_STAR_MOTION
 } from './selector-tokens'
 
 // jsdom omits `document.elementFromPoint`; floating-ui calls it.
@@ -426,7 +425,7 @@ describe('SelectorPanelV2 sizes: flyout matches the list', () => {
     // Same radius as the panel; hugs its content with a 180px floor.
     // (The test id sits on the positioned shell; the surface is its animated child.)
     const surface = classes(flyout.firstElementChild)
-    expect(surface).toEqual(expect.arrayContaining([PICKER_SURFACE.radius, 'min-w-45']))
+    expect(surface).toEqual(expect.arrayContaining(['rounded-[10px]', 'min-w-45']))
     expect(surface).not.toContain('w-44')
   })
 })

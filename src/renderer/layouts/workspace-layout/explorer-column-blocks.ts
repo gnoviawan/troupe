@@ -2,8 +2,7 @@ import type { SSHWorkspaceState } from '@/layouts/workspace-layout/use-ssh-works
 import type { Project } from '@/types/project'
 
 /**
- * Whether the Side panel column shows its project block (the Side panel with
- * its tab bar).
+ * Whether the right panel shows its project body (`SidePanelColumn`).
  */
 function showsFileColumn({
   isExplorerVisible,

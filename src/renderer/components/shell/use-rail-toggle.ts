@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { useUpdatePanelVisibility } from '@/hooks/use-app-settings'
 import { useSidebarVisible } from '@/stores/sidebar-store'
-import { logRailEvent } from './rail/rail-log'
+import { logRailEvent } from './shell-log'
 
 /** Accessible name of every control that expands or collapses the Rail. */
 export const RAIL_TOGGLE_LABEL = 'Expand or collapse projects'

@@ -160,12 +160,11 @@ export default function WorkspaceLayout(): React.JSX.Element {
     closeGitSheet
   })
   const { handleNewBrowserTab, handleAddTerminal } = tabOpeners
-  // Tool strip: a new terminal / browser tab in the active pane on every click.
+  // Tool strip: a new terminal tab in the active pane.
   const handleNewTerminal = useCallback(
     (shell?: ShellInfo) => handleAddTerminal(undefined, shell),
     [handleAddTerminal]
   )
-  const handleNewActiveBrowserTab = useCallback(() => handleNewBrowserTab(), [handleNewBrowserTab])
 
   // Determine if we should show the terminal area (only on workspace dashboard)
   const isWorkspaceRoute = isWorkspaceRoutePath(location.pathname)
@@ -318,7 +317,7 @@ export default function WorkspaceLayout(): React.JSX.Element {
         handleOpenAgentChat={tabOpeners.handleOpenAgentChat}
         handleOpenCanvas={tabOpeners.handleOpenCanvas}
         handleNewTerminal={handleNewTerminal}
-        handleNewBrowserTab={handleNewActiveBrowserTab}
+        handleNewBrowserTab={handleNewBrowserTab}
         workspaceMain={workspaceMain}
         appModals={appModals}
       />

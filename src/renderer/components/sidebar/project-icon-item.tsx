@@ -27,8 +27,8 @@ export interface ProjectIconItemProps {
 
 /**
  * Project row of the collapsed Rail (Sidebar V2): the expanded row's 30px
- * with only the 16px project icon, centred (radius 6, hover 6% foreground,
- * the active project raised). Hover or keyboard focus opens the project card
+ * with only the 16px project icon, centred (radius 6, hover 6% foreground).
+ * Hover or keyboard focus opens the project card
  * (name + diff stat) at x = 52, on the row's y. Right-click opens the same
  * menu as the expanded row.
  */

@@ -249,7 +249,7 @@ vi.mock('@/components/CommandPalette', () => ({
         data-palette-new-project={onNewProject ? 'wired' : 'absent'}
         data-palette-shortcut-menu={onOpenShortcutMenu ? 'wired' : 'absent'}
       >
-        <input placeholder="Search commands, projects, settings..." readOnly />
+        <input placeholder="Search commands, projects, settings…" readOnly />
         <button
           type="button"
           onClick={() => {
@@ -708,9 +708,7 @@ describe('WorkspaceLayout desktop parity for the mobile shell fixes', () => {
 
     fireEvent.click(await screen.findByLabelText('Open projects'))
 
-    expect(
-      await screen.findByPlaceholderText('Search commands, projects, settings...')
-    ).toBeTruthy()
+    expect(await screen.findByPlaceholderText('Search commands, projects, settings…')).toBeTruthy()
     const palette = document.querySelector('[data-palette-shortcut-menu]')
     expect(palette).toHaveAttribute('data-palette-shortcut-menu', 'wired')
     expect(palette).toHaveAttribute('data-palette-new-project', 'absent')

@@ -47,7 +47,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * Upgrades a raw persisted record older than version 3 before it is
- * sanitized: a remembered `chats` view (retired in Sidebar V2 P3) becomes
+ * sanitized: a remembered `chats` view (retired in Sidebar V2) becomes
  * `explorer`, so the project keeps an entry instead of losing it to the
  * sanitizer. Visibility and width carry over unchanged. Newer or
  * non-object data is returned as is.

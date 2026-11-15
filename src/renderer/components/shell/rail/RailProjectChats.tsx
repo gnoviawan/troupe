@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import type { Project } from '@/types/project'
 import type { ChatCardData } from '../chat-cards'
 import { RAIL_HOVER_PANEL_PADDING, RAIL_PROJECT_ROW_HEIGHT, RAIL_ROW_GAP } from '../rail-layout'
+import { logRailEvent } from '../shell-log'
 import { useChatCardActions } from '../use-chat-card-actions'
 import { isOpenChatCard, useChatLiveState, useProjectChats } from '../use-project-chats'
 import {
@@ -26,7 +27,6 @@ import {
   RailHoverPanelProjectRow,
   RailHoverPanelTrigger
 } from './rail-hover-panel'
-import { logRailEvent } from './rail-log'
 import { RAIL_WORKTREE_CHIP_HEIGHT, RailWorktreeChip, usePickedWorktree } from './worktree-switcher'
 
 /**

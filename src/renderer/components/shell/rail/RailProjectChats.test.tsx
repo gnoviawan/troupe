@@ -7,7 +7,6 @@ import { resetShellLayoutStoreForTests, useShellLayoutStore } from '@/stores/she
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
 import { RailProjectChats } from './RailProjectChats'
-import { RAIL_CHAT_STATUS_DOT_CLASS } from './rail-chat-status'
 import { RailDensityProvider } from './rail-density'
 
 const mocks = vi.hoisted(() => ({
@@ -204,15 +203,6 @@ describe('RailProjectChats on the collapsed Rail', () => {
     expect(dot('Chat r, Running')).toHaveClass('bg-primary')
     expect(dot('Chat d, New activity')).toHaveClass('bg-foreground')
     expect(dot('Chat i')).toBeNull()
-  })
-
-  it('maps the live states in one table, idle without a dot', () => {
-    expect(RAIL_CHAT_STATUS_DOT_CLASS).toEqual({
-      'needs-you': 'bg-warning',
-      running: 'bg-primary',
-      done: 'bg-foreground',
-      idle: null
-    })
   })
 
   it('reads "···" for Show N more, with the words in its name', () => {

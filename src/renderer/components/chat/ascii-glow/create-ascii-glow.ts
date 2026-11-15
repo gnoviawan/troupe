@@ -25,13 +25,20 @@ export interface AsciiGlowOptions {
   onError: (error: Error) => void
 }
 
-/** The canvas's CSS `color` as linear-ish sRGB 0–1 (any CSS colour syntax). */
-function readInk(canvas: HTMLCanvasElement): [number, number, number] {
+/** The canvas's CSS `color` as sRGB 0–1 (any CSS colour syntax). */
+function readInk(
+  canvas: HTMLCanvasElement,
+  onError: (error: Error) => void
+): [number, number, number] {
   const probe = document.createElement('canvas')
   probe.width = 1
   probe.height = 1
   const context = probe.getContext('2d', { willReadFrequently: true })
-  if (!context) return [1, 1, 1]
+  if (!context) {
+    // The glow still draws, in white; the report says why the theme ink is missing.
+    onError(new Error('No 2D canvas context to read the glow ink; drawing it in white.'))
+    return [1, 1, 1]
+  }
   context.fillStyle = getComputedStyle(canvas).color
   context.fillRect(0, 0, 1, 1)
   const [r, g, b] = context.getImageData(0, 0, 1, 1).data
@@ -116,6 +123,7 @@ export async function createAsciiGlow(
     device.destroy()
     throw new Error('A WebGPU canvas context could not be made.')
   }
+  // A const binding keeps the narrowing inside the hoisted draw and destroy.
   const context: GPUCanvasContext = maybeContext
   const format = navigator.gpu.getPreferredCanvasFormat()
   context.configure({ device, format, alphaMode: 'premultiplied' })
@@ -179,7 +187,10 @@ export async function createAsciiGlow(
 
   let scene: GPUTexture | null = null
   let asciiBindGroup: GPUBindGroup | null = null
-  function sceneFor(width: number, height: number): { view: GPUTextureView; group: GPUBindGroup } {
+  function sceneFor(
+    width: number,
+    height: number
+  ): { view: GPUTextureView; group: GPUBindGroup; width: number; height: number } {
     const w = Math.max(1, Math.round(width * SCENE_SCALE))
     const h = Math.max(1, Math.round(height * SCENE_SCALE))
     if (!scene || !asciiBindGroup || scene.width !== w || scene.height !== h) {
@@ -200,10 +211,10 @@ export async function createAsciiGlow(
         ]
       })
     }
-    return { view: scene.createView(), group: asciiBindGroup }
+    return { view: scene.createView(), group: asciiBindGroup, width: w, height: h }
   }
 
-  let ink = readInk(canvas)
+  let ink = readInk(canvas, options.onError)
   let cssWidth = canvas.clientWidth
   let cssHeight = canvas.clientHeight
   let onScreen = true
@@ -237,8 +248,8 @@ export async function createAsciiGlow(
       ink[1],
       ink[2],
       options.opacity,
-      scene?.width ?? 1,
-      scene?.height ?? 1,
+      target.width,
+      target.height,
       0,
       0
     ])
@@ -296,13 +307,12 @@ export async function createAsciiGlow(
   }
 
   const resize = new ResizeObserver(([entry]) => {
-    if (!entry) return
     cssWidth = entry.contentRect.width
     cssHeight = entry.contentRect.height
     refresh()
   })
   const visibility = new IntersectionObserver(([entry]) => {
-    if (!entry || onScreen === entry.isIntersecting) return
+    if (onScreen === entry.isIntersecting) return
     onScreen = entry.isIntersecting
     refresh()
   })
@@ -329,7 +339,7 @@ export async function createAsciiGlow(
   return {
     refreshInk() {
       if (disposed) return
-      ink = readInk(canvas)
+      ink = readInk(canvas, options.onError)
       refresh()
     },
     destroy

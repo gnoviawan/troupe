@@ -53,8 +53,8 @@ export const DENSE_ROW = cn(
 export const denseRowSize = pickerRowHeight
 
 /**
- * A flyout's surface: the panel's radius, border and shadow, as wide as its
- * longest choice but never under 180px.
+ * A flyout's width: as wide as its longest choice but never under 180px. The
+ * `panel` surface gives it the panel's radius, edge and shadow.
  */
 const FLYOUT_SURFACE = 'min-w-45 max-w-64'
 
@@ -207,7 +207,7 @@ export function ChoiceList({
               data-option-choice=""
               title={choice.unavailable ? REJECTED_TITLE : choice.description}
               onClick={() => section.onPick(choice.value)}
-              // The picked choice: the selected fill, no tick (as in the menus).
+              // The picked choice takes the selected fill, as in the menus.
               className={cn(DENSE_ROW, denseRowSize(touch), selected && PICKER_ROW_SELECTED_BOX)}
             >
               <span className="fade-end min-w-0 flex-1 tabular-nums">{choice.name}</span>

@@ -128,7 +128,7 @@ describe('CommandPalette Chats group', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
     expect(mockLog).toHaveBeenCalledWith(
-      expect.objectContaining({ message: '[rail] palette open chat a' })
+      expect.objectContaining({ message: '[shell] palette open chat a' })
     )
   })
 

@@ -5,8 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 /**
  * Opens the agent launcher in the active pane. The launcher overlay only
  * renders on the workspace route, so a child route goes back to `/` first
- * and the launcher opens on the next frame. Shared by the Rail's New chat
- * row and the Side panel's New chat button.
+ * and the launcher opens on the next frame.
  */
 export function useNewChat(): () => void {
   const pathname = useLocation().pathname

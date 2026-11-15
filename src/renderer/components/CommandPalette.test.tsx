@@ -101,9 +101,7 @@ describe('CommandPalette', () => {
   it('renders a compact command-center layout with metadata, categories, shortcuts, and footer hints', () => {
     renderPalette()
 
-    expect(
-      screen.getByPlaceholderText('Search commands, projects, settings...')
-    ).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search commands, projects, settings…')).toBeInTheDocument()
     expect(screen.getByText('Workspace')).toBeInTheDocument()
     expect(screen.getByText('Navigation')).toBeInTheDocument()
     expect(screen.getByText('Projects')).toBeInTheDocument()
@@ -172,7 +170,7 @@ describe('CommandPalette', () => {
 
   it('searches settings, prefs, and history keywords', async () => {
     renderPalette()
-    const input = screen.getByPlaceholderText('Search commands, projects, settings...')
+    const input = screen.getByPlaceholderText('Search commands, projects, settings…')
 
     fireEvent.change(input, { target: { value: 'settings' } })
     await waitFor(() => {

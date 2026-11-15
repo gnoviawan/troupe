@@ -5,7 +5,7 @@ import { createContext, useContext } from 'react'
  * meta. `collapsed`: the same rows at the same heights, icon only, centred in
  * the 48px Rail. The Rail root provides it once; every Rail part reads it.
  */
-export type RailDensity = 'expanded' | 'collapsed'
+type RailDensity = 'expanded' | 'collapsed'
 
 const RailDensityContext = createContext<RailDensity>('expanded')
 
@@ -20,12 +20,7 @@ export function RailDensityProvider({
   return <RailDensityContext.Provider value={density}>{children}</RailDensityContext.Provider>
 }
 
-/** The Rail density. Outside a provider: `expanded`. */
-export function useRailDensity(): RailDensity {
-  return useContext(RailDensityContext)
-}
-
-/** True when the Rail draws icon-only rows. */
+/** True when the Rail draws icon-only rows. Outside a provider: false. */
 export function useRailCollapsed(): boolean {
-  return useRailDensity() === 'collapsed'
+  return useContext(RailDensityContext) === 'collapsed'
 }

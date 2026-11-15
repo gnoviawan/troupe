@@ -14,7 +14,7 @@ import {
  * 0.5px `popover-edge` outline and the two-step drop. Motion is the tooltip
  * motion (`animate-tooltip-in`), reduced-motion safe.
  */
-export const RAIL_HOVER_SURFACE_CLASS =
+const RAIL_HOVER_SURFACE_CLASS =
   'z-50 bg-popover text-popover-foreground outline-[0.5px] outline-solid outline-popover-edge shadow-rail-hover-panel animate-tooltip-in'
 
 /** Pause between the pointer leaving a trigger and the panel closing (to cross the 12px gap). */

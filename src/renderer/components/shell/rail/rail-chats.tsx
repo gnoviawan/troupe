@@ -2,16 +2,22 @@ import { createContext, forwardRef, useContext, useMemo, useState } from 'react'
 import type { ProjectChatLiveState } from '@/components/sidebar/project-chat-row'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
-import { RAIL_CHAT_STATUS_DOT_CLASS } from './rail-chat-status'
 import { useRailCollapsed } from './rail-density'
 
 /** Chats a Rail project shows before "Show N more". */
-export const RAIL_CHAT_LIMIT = 5
+const RAIL_CHAT_LIMIT = 5
+
+/** Fill of the collapsed Rail status dot per live state (Sidebar V2); idle has none. */
+const RAIL_CHAT_STATUS_DOT_CLASS: Record<ProjectChatLiveState, string | null> = {
+  'needs-you': 'bg-warning',
+  running: 'bg-primary',
+  done: 'bg-foreground',
+  idle: null
+}
 
 interface RailChatGroupContextValue {
   /** Every chat of the group, shown or not. */
   total: number
-  limit: number
   /** A row that stays visible past the limit (the open chat). */
   pinnedIndex: number | undefined
   expanded: boolean
@@ -29,10 +35,6 @@ function useRailChatGroup(part: string): RailChatGroupContextValue {
 export interface RailChatGroupProps extends React.ComponentPropsWithoutRef<'div'> {
   /** Number of chats in the group. */
   total: number
-  /** Chats shown while the group is not expanded. */
-  limit?: number
-  /** Start expanded (uncontrolled). */
-  defaultExpanded?: boolean
   /**
    * Index of a row that stays visible while the group is collapsed, even past
    * the limit: the open chat must never hide behind "Show N more".
@@ -47,21 +49,13 @@ export interface RailChatGroupProps extends React.ComponentPropsWithoutRef<'div'
  * `RailChatGroup > RailChatList > RailChatItem > RailChatRow`, then `RailShowMore`.
  */
 export const RailChatGroup = forwardRef<HTMLDivElement, RailChatGroupProps>(function RailChatGroup(
-  {
-    total,
-    limit = RAIL_CHAT_LIMIT,
-    defaultExpanded = false,
-    pinnedIndex,
-    className,
-    children,
-    ...props
-  },
+  { total, pinnedIndex, className, children, ...props },
   ref
 ) {
-  const [expanded, setExpanded] = useState(defaultExpanded)
+  const [expanded, setExpanded] = useState(false)
   const value = useMemo(
-    () => ({ total, limit, pinnedIndex, expanded, setExpanded }),
-    [total, limit, pinnedIndex, expanded]
+    () => ({ total, pinnedIndex, expanded, setExpanded }),
+    [total, pinnedIndex, expanded]
   )
   return (
     <RailChatGroupContext.Provider value={value}>
@@ -89,8 +83,8 @@ export const RailChatItem = forwardRef<HTMLLIElement, RailChatItemProps>(functio
   { index, ...props },
   ref
 ) {
-  const { expanded, limit, pinnedIndex } = useRailChatGroup('RailChatItem')
-  if (!expanded && index >= limit && index !== pinnedIndex) return null
+  const { expanded, pinnedIndex } = useRailChatGroup('RailChatItem')
+  if (!expanded && index >= RAIL_CHAT_LIMIT && index !== pinnedIndex) return null
   return <li ref={ref} {...props} />
 })
 
@@ -208,10 +202,10 @@ export const RailShowMore = forwardRef<
   HTMLButtonElement,
   Omit<React.ComponentPropsWithoutRef<'button'>, 'children'>
 >(function RailShowMore({ className, onClick, ...props }, ref) {
-  const { total, limit, pinnedIndex, expanded, setExpanded } = useRailChatGroup('RailShowMore')
+  const { total, pinnedIndex, expanded, setExpanded } = useRailChatGroup('RailShowMore')
   const collapsed = useRailCollapsed()
-  const pinnedPastLimit = pinnedIndex !== undefined && pinnedIndex >= limit ? 1 : 0
-  const hidden = total - limit - pinnedPastLimit
+  const pinnedPastLimit = pinnedIndex !== undefined && pinnedIndex >= RAIL_CHAT_LIMIT ? 1 : 0
+  const hidden = total - RAIL_CHAT_LIMIT - pinnedPastLimit
   if (hidden <= 0 && !expanded) return null
   const words = expanded ? 'Show less' : `Show ${hidden} more`
   return (

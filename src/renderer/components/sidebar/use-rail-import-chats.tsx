@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ImportChatsDialog } from '@/components/chat/ImportChatsDialog'
-import { logRailEvent } from '@/components/shell/rail/rail-log'
+import { logRailEvent } from '@/components/shell/shell-log'
 import { useColumnWorkingCopy } from '@/components/shell/use-column-working-copy'
 import type { Project } from '@/types/project'
 

@@ -83,8 +83,9 @@ export function getLeftmostTopEdgeLeafId(root: PaneNode): string | null {
 
 /**
  * The single place that decides who reserves room for the window controls
- * and who owns the top row start slot. A fullscreen pane is the whole tree. SSH and the fallback
- * bar carry no pane roles, so each renders the slot in its own bar.
+ * and who owns the top row start slot. A fullscreen pane is the whole tree.
+ * SSH and the fallback bar carry no pane roles, so each renders the slot in
+ * its own bar.
  */
 export function selectTopRowRoles({
   root,

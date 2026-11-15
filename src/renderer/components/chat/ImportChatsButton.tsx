@@ -3,14 +3,12 @@ import { Download } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { WriteGate } from '@/components/ui/write-gate'
 import { useServerAdmitsRemoteWrites } from '@/hooks/use-server-admits-remote-writes'
-import { cn } from '@/lib/utils'
 import { ImportChatsDialog } from './ImportChatsDialog'
 
 interface ImportChatsButtonProps {
   /** Working copy whose agent chats are offered. Empty hides the button. */
   cwd: string
   projectId: string
-  className?: string
 }
 
 /**
@@ -21,8 +19,7 @@ interface ImportChatsButtonProps {
  */
 export function ImportChatsButton({
   cwd,
-  projectId,
-  className
+  projectId
 }: ImportChatsButtonProps): React.JSX.Element | null {
   const [open, setOpen] = useState(false)
   const admitted = useServerAdmitsRemoteWrites()
@@ -36,7 +33,7 @@ export function ImportChatsButton({
           size="touch"
           onClick={() => setOpen(true)}
           disabled={!admitted}
-          className={cn('w-full justify-start gap-3 rounded-full px-4 text-base', className)}
+          className="w-full justify-start gap-3 rounded-full px-4 text-base"
         >
           <Download size={16} aria-hidden="true" />
           Import chats

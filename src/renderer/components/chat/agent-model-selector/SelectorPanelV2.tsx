@@ -183,7 +183,7 @@ function DenseModelRow({
   const levelOnEdit = level !== undefined
   // A pick moves Edit: in on the picked row, out (inert) on the old one.
   const { entering, exiting } = useEditMotion(editable ? { level } : null, reduced)
-  // With no check, the star's slot ends the row and the star sits flush
+  // With no check slot, the star's slot ends the row and the star sits flush
   // before Edit, at the row's own icon gap (3px glyph inset, Edit's 6px pad).
   const flush = favorite !== undefined && levelOnEdit
   // The star follows Edit on a pick (`StarFlip`).
@@ -196,7 +196,7 @@ function DenseModelRow({
       ? 'exiting'
       : 'none'
   // The selected row is filled like the rail's active tab, on its outermost box
-  // so the fill takes in the star, the check and Edit: the box around Edit (or
+  // so the fill takes in the star, the check slot and Edit: the box around Edit (or
   // a leaving one), else the star's box, else the row itself.
   const outer = editable ? 'edit' : exiting ? 'exiting' : favorite ? 'favorite' : 'row'
   const fillOn = (box: typeof outer): boolean => selected && outer === box
@@ -293,7 +293,7 @@ function DenseModelRow({
     )
     if (!favorite) return withTip
     // The star is the row button's sibling, laid over its reserved slot
-    // (right of the name, left of the check or flush with Edit), never nested in it.
+    // (right of the name, left of the check slot or flush with Edit), never nested in it.
     return (
       <div
         data-favorite-entry={favorite.entry}
@@ -370,7 +370,7 @@ function StarButton({
   /** The positioned box `StarFlip` moves; the button's own fades stay its own. */
   boxRef: React.RefObject<HTMLSpanElement>
   on: boolean
-  /** No check on the row: flush with its right edge, so with Edit. */
+  /** No check slot on the row: flush with its right edge, so with Edit. */
   flush: boolean
   touch: boolean
   disabled: boolean
@@ -381,7 +381,7 @@ function StarButton({
       ref={boxRef}
       data-star-box=""
       className={cn(
-        // Else right of it: the row's 8px padding, the 14px check, the 8px gap.
+        // Else right of it: the row's 8px padding, the 14px check slot, the 8px gap.
         'absolute inset-y-0 flex',
         flush ? 'right-0' : 'right-7.5'
       )}
@@ -525,7 +525,7 @@ function AgentTabStrip({
             // Icons keep their colour (brand or foreground); state reads from
             // the icon's opacity, as the active fill alone is too faint.
             'group/tab text-foreground',
-            !item.selected && (vertical ? 'hover:bg-foreground/5' : 'hover:bg-row-hover'),
+            !item.selected && (vertical ? 'hover:bg-foreground/5' : 'hover:bg-foreground/[0.06]'),
             ROW_FOCUS
           )}
         >
@@ -602,8 +602,8 @@ function revealChosenRow(list: HTMLElement): void {
 }
 
 /**
- * The footer's session option rows: the agent's other options, after the
- * active model's own ones when no active row holds them.
+ * The footer's session option rows: the agent's options other than the
+ * active model's own, which always open from its Edit.
  */
 function SessionOptions({
   sections,

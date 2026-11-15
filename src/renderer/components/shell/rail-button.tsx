@@ -5,13 +5,12 @@ import { useRailCollapsed } from './rail/rail-density'
 import { RailHoverTooltipContent } from './rail/rail-hover-panel'
 
 /**
- * `md` = 36px, `base` = 32px (the collapsed Rail footer), `sm` = 28px
- * (the expanded footer row and top-row toggles).
+ * `base` = 32px (the collapsed Rail footer), `sm` = 28px (the expanded footer
+ * row and top-row toggles).
  */
-export type RailButtonSize = 'md' | 'base' | 'sm'
+export type RailButtonSize = 'base' | 'sm'
 
 const RAIL_BUTTON_SIZE_CLASS: Record<RailButtonSize, string> = {
-  md: 'size-9',
   base: 'size-8',
   sm: 'size-7'
 }
@@ -21,7 +20,7 @@ const RAIL_BUTTON_SIZE_CLASS: Record<RailButtonSize, string> = {
  * open view takes the `.keycap` surface. Disabled icons sit at 40% with no
  * hover.
  */
-export function railButtonClass(active: boolean, size: RailButtonSize = 'md'): string {
+export function railButtonClass(active: boolean, size: RailButtonSize): string {
   return cn(
     QUIET_ICON_BUTTON_CLASS,
     'relative flex shrink-0 rounded-lg disabled:pointer-events-none disabled:opacity-40',
@@ -84,8 +83,7 @@ interface RailButtonProps {
   /** Sets `aria-pressed` and the keycap "you are here" surface. */
   pressed?: boolean
   badge?: React.ReactNode
-  /** Defaults to `md` (36px). */
-  size?: RailButtonSize
+  size: RailButtonSize
   /** Runs after the click stops propagating. */
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
   children: React.ReactNode
@@ -100,7 +98,7 @@ export function RailButton({
   disabled = false,
   pressed,
   badge,
-  size = 'md',
+  size,
   onClick,
   children
 }: RailButtonProps): React.JSX.Element {

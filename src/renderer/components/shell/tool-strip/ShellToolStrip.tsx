@@ -43,8 +43,8 @@ interface ShellToolStripProps {
  * (with the changed-file count) and GitHub, each showing the right panel on
  * that view, or hiding it when that view is already open; the open view is
  * raised. Bottom: a new Terminal tab (right-click: pick the shell) and a new
- * Browser tab on every click, and Remote access (desktop only; the web client shows its connection lamp
- * there instead).
+ * Browser tab on every click, and Remote access (desktop only; the web
+ * client shows its connection lamp there instead).
  */
 export function ShellToolStrip({
   activeProject,
