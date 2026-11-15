@@ -646,10 +646,11 @@ jobs:
 
   # Same suite the Linux conformance job runs (known-test-failures included).
   # It does not block publish: a test failure turns this workflow red and
-  # the nightly release still ships.
+  # the nightly release still ships. Checkout uses the literal branch dev.
+  # A ref from a job output is an untrusted checkout, and the Rust cache
+  # then fails the CodeQL check.
   cargo-test:
     name: Cargo test (${{ matrix.name }})
-    needs: prepare
     runs-on: ${{ matrix.os }}
     timeout-minutes: 75
     permissions:
@@ -674,7 +675,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ needs.prepare.outputs.commit_sha }}
+          ref: dev
           fetch-depth: 1
           persist-credentials: false
 
