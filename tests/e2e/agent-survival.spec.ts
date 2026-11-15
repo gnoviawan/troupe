@@ -231,7 +231,7 @@ test('three projects run concurrently with isolated transcripts', async ({ page 
   // its own pane tree mounted but hidden, so count only visible tabs: a leaked
   // tab would render another project's chat in the active project.
   const tabsTitled = (title: string) =>
-    page.locator(`[draggable="true"][aria-label^="${title}"]`).filter({ visible: true })
+    page.getByRole('tab', { name: new RegExp(`^${title}`) }).filter({ visible: true })
   await expect(tabsTitled(ISO_B)).toHaveCount(0)
   await selectProject(page, 'proj-b')
   await expect(chatTab(page, ISO_B)).toBeVisible()

@@ -100,7 +100,7 @@ test('a first send in New worktree mode creates the worktree and opens the chat 
     timeout: 30_000
   })
   // The chat tab appears (session created in the worktree cwd).
-  const tab = page.locator(`[draggable="true"][aria-label^="${PROMPT_W}"]`).first()
+  const tab = page.getByRole('tab', { name: new RegExp(`^${PROMPT_W}`) }).first()
   await expect(tab).toBeVisible({ timeout: 30_000 })
 
   // The fake agent streams chunks — the turn runs against the worktree cwd.

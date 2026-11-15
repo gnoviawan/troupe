@@ -169,9 +169,14 @@ export async function startNewChat(page: Page): Promise<Locator> {
  */
 export async function launchChat(page: Page, prompt: string): Promise<void> {
   const composer = await startNewChat(page)
-  await composer.click()
-  await page.keyboard.type(prompt)
-  await expect(composer).toHaveText(prompt)
+  // The empty chat can render again while it starts and drop the text, so
+  // enter it again until the composer shows the prompt.
+  await expect(async () => {
+    await composer.focus()
+    await page.keyboard.press('ControlOrMeta+A')
+    await page.keyboard.insertText(prompt)
+    await expect(composer).toHaveText(prompt, { timeout: 2_500 })
+  }).toPass({ timeout: 40_000 })
   await page.keyboard.press('Enter')
   // The chat tab's aria-label is the session title (= the first prompt text).
   await chatTab(page, prompt).waitFor({ state: 'visible' })
@@ -204,12 +209,12 @@ export async function sendFromEmptyChat(
 }
 
 /**
- * Wait for an agent-chat tab whose aria-label starts with `title`.
- * Scoped to the tab bar's draggable rows (`[draggable="true"]`) — the Rail
- * chat rows and chat surfaces reuse the same aria-label text.
+ * An agent-chat tab whose accessible name starts with `title`.
+ * The Rail chat rows are draggable too and reuse the same name, so the
+ * lookup is the tab role, which only the workspace tab bar uses.
  */
 export function chatTab(page: Page, title: string) {
-  return page.locator(`[draggable="true"][aria-label^="${cssEscape(title)}"]`).first()
+  return page.getByRole('tab', { name: new RegExp(`^${escapeRegExp(title)}`) }).first()
 }
 
 /**

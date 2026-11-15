@@ -568,7 +568,7 @@ test.describe('desktop browser', () => {
     await expect(heading).toBeVisible()
     // The tab chrome names the status beside the title.
     await expect(
-      page.locator(`[draggable="true"][aria-label="${prompt}, Needs you"]`).first()
+      page.getByRole('tab', { name: `${prompt}, Needs you`, exact: true }).first()
     ).toBeVisible()
     // So does its Rail chat row under the open project (the trail pill).
     await expect(
