@@ -4,9 +4,12 @@ import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { useAcpStore } from '@/stores/acp-store'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { OlderChatsGroup } from './OlderChatsGroup'
+import { RailDensityProvider } from './rail/rail-density'
 
 const openHistory = vi.fn()
 const deleteHistory = vi.fn()
+
+vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 
 function chat(id: string, title: string, createdAt: number, kind?: 'quick') {
   return mockSessionIndexEntry({
@@ -17,6 +20,14 @@ function chat(id: string, title: string, createdAt: number, kind?: 'quick') {
     cwd: kind === 'quick' ? `/home/me/.troupe/quick-chats/${id}` : '/tmp/notes',
     kind
   })
+}
+
+function renderGroup(): void {
+  render(
+    <RailDensityProvider density="expanded">
+      <OlderChatsGroup />
+    </RailDensityProvider>
+  )
 }
 
 describe('OlderChatsGroup', () => {
@@ -34,15 +45,21 @@ describe('OlderChatsGroup', () => {
     })
   })
 
-  it('lists legacy unassigned chats and not quick chats', () => {
-    render(<OlderChatsGroup />)
-    expect(screen.getByText('Older chats')).toBeInTheDocument()
+  it('starts collapsed and lists legacy unassigned chats, not quick chats', () => {
+    renderGroup()
+    const toggle = screen.getByRole('button', { name: 'Older chats' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('button', { name: 'Notes from /tmp' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'A quick chat' })).not.toBeInTheDocument()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('button', { name: 'Notes from /tmp' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'A quick chat' })).not.toBeInTheDocument()
   })
 
   it('opens the chat read-only', () => {
-    render(<OlderChatsGroup />)
+    renderGroup()
+    fireEvent.click(screen.getByRole('button', { name: 'Older chats' }))
     fireEvent.click(screen.getByRole('button', { name: 'Notes from /tmp' }))
     expect(useQuickChatStore.getState().view).toEqual({
       mode: 'chat',
@@ -52,12 +69,20 @@ describe('OlderChatsGroup', () => {
     expect(openHistory).toHaveBeenCalledWith('old')
   })
 
-  it('confirms delete of the record and does not mention the folder being deleted', () => {
-    render(<OlderChatsGroup />)
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Notes from /tmp' }))
+  it('confirms delete of the record and does not mention the folder being deleted', async () => {
+    renderGroup()
+    fireEvent.click(screen.getByRole('button', { name: 'Older chats' }))
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for Notes from /tmp' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Delete chat' }))
     expect(screen.getByText(/Files in the original folder are kept/)).toBeInTheDocument()
     expect(screen.queryByText(/folder are deleted/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(deleteHistory).toHaveBeenCalledWith('old')
+  })
+
+  it('hides the section when there are no older chats', () => {
+    useAcpStore.setState({ sessionIndex: [chat('quick', 'A quick chat', 20, 'quick')] })
+    renderGroup()
+    expect(screen.queryByTestId('older-chats-group')).not.toBeInTheDocument()
   })
 })

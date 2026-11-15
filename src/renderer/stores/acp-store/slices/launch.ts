@@ -519,7 +519,8 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
     initialUserBlocks,
     worktreePath,
     worktreeBranch,
-    worktreeProgressId
+    worktreeProgressId,
+    kind
   }) => {
     const sessionId = newId('launch')
     const blocks = initialUserBlocks ?? []
@@ -557,7 +558,8 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
           worktreePath,
           worktreeBranch,
           worktreeProgressId,
-          launchConfigId: configId
+          launchConfigId: configId,
+          ...(kind === 'quick' ? { kind: 'quick' as const } : {})
         }
       },
       messages: {
@@ -800,10 +802,14 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
           ? ([{ type: 'text', text: initialText }] as ContentBlock[])
           : null
     try {
-      const sessionId = await get().startChat(configId, cwd, mcpServers, projectId, {
-        worktreePath,
-        worktreeBranch
-      })
+      const quick = get().sessions[placeholderId]?.kind === 'quick'
+      // A quick chat's folder is host-derived. The client cwd is not sent.
+      const sessionId = quick
+        ? await get().startQuickChat(configId)
+        : await get().startChat(configId, cwd, mcpServers, projectId, {
+            worktreePath,
+            worktreeBranch
+          })
       launchedSessionId = sessionId
       // Cancellation tombstone: the failed chat was deleted from history
       // while startChat was in flight — the user revoked the launch. Tear
@@ -858,7 +864,8 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
                   : (placeholder.configOptions ?? []),
               worktreePath: real.worktreePath ?? placeholder.worktreePath,
               worktreeBranch: real.worktreeBranch ?? placeholder.worktreeBranch,
-              worktreeProgressId: real.worktreeProgressId ?? placeholder.worktreeProgressId
+              worktreeProgressId: real.worktreeProgressId ?? placeholder.worktreeProgressId,
+              kind: real.kind ?? placeholder.kind
             }
           }
           delete sessions[placeholderId]

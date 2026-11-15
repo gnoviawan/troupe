@@ -791,6 +791,8 @@ export interface AcpState {
     worktreeBranch?: string
     /** Links the in-timeline worktree-creation progress card to this chat. */
     worktreeProgressId?: string
+    /** A chat with no project. The host owns the folder. */
+    kind?: 'quick'
   }) => SessionId
   /** Drop a launch placeholder that will not be remapped (e.g. after fatal error). */
   discardLaunchPlaceholder: (sessionId: SessionId) => void

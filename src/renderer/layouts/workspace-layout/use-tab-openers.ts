@@ -2,7 +2,7 @@ import type { ShellInfo } from '@shared/types/ipc.types'
 import { useCallback, useEffect } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { toast } from 'sonner'
-import { newChatKind } from '@/components/shell/open-new-chat'
+import { openNewChatOnWorkspace } from '@/components/shell/use-new-chat'
 import { WORKTREE_EVENTS } from '@/hooks/use-worktree-shortcuts'
 import { getActiveWorkingCopy, reportUnresolvedWorkingCopy } from '@/lib/active-working-copy'
 import { launchAgentInPane } from '@/lib/agent-launch'
@@ -13,7 +13,6 @@ import { openTerminalFromProfile, spawnTerminalInPane } from '@/lib/terminal-spa
 import { getDefaultCwdForProject } from '@/lib/worktree-context'
 import { useDefaultShell } from '@/stores/app-settings-store'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
 import type { TerminalProfile } from '@/types/settings'
@@ -157,25 +156,11 @@ export function useTabOpeners({
     }
   }, [])
 
-  const handleOpenAgentChat = useCallback(() => {
-    const open = (): void => {
-      if (newChatKind(activeProject?.path ? activeProjectId : '') === 'quick') {
-        useQuickChatStore.getState().openLauncher()
-        return
-      }
-      useQuickChatStore.getState().close()
-      const paneId = useWorkspaceStore.getState().activePaneId
-      if (paneId) useWorkspaceStore.getState().showAgentLauncher(paneId)
-    }
-    // The launcher overlay only renders on the workspace route; navigate there
-    // first when invoked from a child route (e.g. preferences/settings).
-    if (pathname !== '/') {
-      navigate('/')
-      requestAnimationFrame(open)
-    } else {
-      open()
-    }
-  }, [activeProject?.path, activeProjectId, pathname, navigate])
+  // New chat (menus, the phone header and drawer). No project opens a quick chat.
+  const handleOpenAgentChat = useCallback(
+    () => openNewChatOnWorkspace(pathname, navigate, 'menu'),
+    [pathname, navigate]
+  )
 
   const handleAddGitTab = useCallback(
     (paneId?: string) => {

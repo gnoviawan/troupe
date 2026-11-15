@@ -1,3 +1,4 @@
+import type { ShellInfo } from '@shared/types/ipc.types'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CanvasMountLayer } from '@/components/canvas/CanvasMountLayer'
@@ -160,7 +161,12 @@ export default function WorkspaceLayout(): React.JSX.Element {
     gitSheetProjectId,
     closeGitSheet
   })
-  const { handleNewBrowserTab } = tabOpeners
+  const { handleNewBrowserTab, handleAddTerminal } = tabOpeners
+  // Tool strip: a new terminal tab in the active pane.
+  const handleNewTerminal = useCallback(
+    (shell?: ShellInfo) => handleAddTerminal(undefined, shell),
+    [handleAddTerminal]
+  )
 
   // Determine if we should show the terminal area (only on workspace dashboard)
   const isWorkspaceRoute = isWorkspaceRoutePath(location.pathname)
@@ -205,11 +211,8 @@ export default function WorkspaceLayout(): React.JSX.Element {
       isMobileWebShell={isMobileWebShell}
       isWorkspaceRoute={isWorkspaceRoute}
       projects={projects}
-      activeProject={activeProject}
       ssh={ssh}
       setIsNewProjectModalOpen={setIsNewProjectModalOpen}
-      handleAddTerminal={tabOpeners.handleAddTerminal}
-      handleNewBrowserTab={handleNewBrowserTab}
       handleCloseTerminal={terminalClose.handleCloseTerminal}
       handleCloseEditorTab={editorTabClose.handleCloseEditorTab}
       handleCloseTabs={bulkTabClose.handleCloseTabs}
@@ -313,8 +316,9 @@ export default function WorkspaceLayout(): React.JSX.Element {
         handleAddGitTab={tabOpeners.handleAddGitTab}
         handleAddGitHistoryTab={tabOpeners.handleAddGitHistoryTab}
         handleToggleThemePicker={handleToggleThemePicker}
-        handleOpenAgentChat={tabOpeners.handleOpenAgentChat}
         handleOpenCanvas={tabOpeners.handleOpenCanvas}
+        handleNewTerminal={handleNewTerminal}
+        handleNewBrowserTab={handleNewBrowserTab}
         workspaceMain={workspaceMain}
         appModals={appModals}
       />

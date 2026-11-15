@@ -1,9 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { useAcpStore } from '@/stores/acp-store'
 import { useProjectStore } from '@/stores/project-store'
 import { ChatEmptyState } from './ChatEmptyState'
-import { CHAT_STARTERS, ChatStarters, ChatStartHero, QUICK_CHAT_STARTERS } from './chat-start'
+import { ChatStartHero } from './chat-start'
 
 describe('ChatStartHero (shared by the launcher and the empty chat)', () => {
   it('shows the Troupe mark and the project question', () => {
@@ -12,37 +12,34 @@ describe('ChatStartHero (shared by the launcher and the empty chat)', () => {
       'What should we do in termul-new?'
     )
   })
-})
 
-describe('ChatStarters', () => {
-  it('lists the four starters as quiet chips and seeds the prompt on pick', () => {
-    const onPick = vi.fn()
-    render(<ChatStarters onPick={onPick} />)
+  it('uses the Paper type and spacing: 56px mark, 20px gap, 22/28 heading', () => {
+    render(<ChatStartHero projectLabel="termul-new" />)
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading).toHaveClass(
+      'text-hero',
+      'leading-7',
+      'tracking-[-0.015em]',
+      'font-normal',
+      'text-foreground'
+    )
+    const mark = screen.getByRole('img', { name: 'Troupe' })
+    expect(mark).toHaveAttribute('width', '56')
+    expect(heading.parentElement).toHaveClass('gap-5', 'mb-6')
+  })
 
-    const group = screen.getByRole('group', { name: 'Starters' })
-    expect(
-      within(group)
-        .getAllByRole('button')
-        .map((b) => b.textContent)
-    ).toEqual(['Explain this project', 'Find a bug', 'Write tests', 'Summarize changes'])
-    fireEvent.click(within(group).getByRole('button', { name: 'Find a bug' }))
-    expect(onPick).toHaveBeenCalledWith(CHAT_STARTERS[1].prompt)
+  it('keeps the smaller mobile hero', () => {
+    render(<ChatStartHero projectLabel="termul-new" isMobileShell />)
+    expect(screen.getByRole('img', { name: 'Troupe' })).toHaveAttribute('width', '32')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('text-xl')
   })
 })
 
-describe('quick chat launcher copy', () => {
-  it('asks a neutral question and offers starters that do not name a project', () => {
+describe('quick chat empty state copy', () => {
+  it('asks a neutral question and does not name a project', () => {
     render(<ChatStartHero projectLabel="this folder" quick />)
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('What should we do?')
     expect(screen.queryByText(/folder|project|workspace/i)).toBeNull()
-
-    render(<ChatStarters starters={QUICK_CHAT_STARTERS} onPick={vi.fn()} />)
-    const labels = screen
-      .getAllByRole('button')
-      .map((button) => button.textContent ?? '')
-      .join(' ')
-    expect(labels).not.toMatch(/project|folder|workspace|git/i)
-    expect(labels).toContain('Ask a question')
   })
 })
 
@@ -63,6 +60,14 @@ describe('ChatEmptyState', () => {
     )
     // No agent glyph tile and no starter cards: the starters live under the composer.
     expect(screen.queryByRole('group', { name: 'Starters' })).toBeNull()
+  })
+
+  it('asks a neutral question for a quick chat', () => {
+    useAcpStore.setState((s) => ({
+      sessions: { ...s.sessions, 's-quick': { id: 's-quick', kind: 'quick' } as never }
+    }))
+    render(<ChatEmptyState sessionId="s-quick" />)
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('What should we do?')
   })
 
   it('falls back to "this folder" without a project', () => {
