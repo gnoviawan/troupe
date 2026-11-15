@@ -64,14 +64,17 @@ pub fn chat_id_is_safe(id: &str) -> bool {
 ///
 /// Lexical only, so a missing folder still cannot be attributed to a project.
 /// `..` is collapsed first: a climb out of the root is not a quick-chat path.
+/// A Windows `\\?\` prefix is removed before the compare, so a canonical
+/// spelling and the plain root name the same folder.
 #[must_use]
 pub fn is_quick_chat_path(path: &str) -> bool {
     let Ok(root) = quick_chats_root() else {
         return false;
     };
-    let normalized = lexical_normalize(Path::new(path.trim()));
-    let root = lexical_normalize(&root);
-    normalized == root || normalized.starts_with(&root)
+    path_is_inside(
+        &plain_lexical(path),
+        &plain_lexical(&root.to_string_lossy()),
+    )
 }
 
 /// Create `~/.troupe/quick-chats/<id>` and return the id plus the canonical folder.
@@ -163,7 +166,10 @@ pub fn remove_chat_dir(chat_id: &str) -> Result<(), String> {
 pub fn chat_id_of_canonical(canonical_cwd: &Path) -> Option<String> {
     let root = quick_chats_root().ok()?;
     let root = std::fs::canonicalize(&root).ok()?;
-    if canonical_cwd.parent() != Some(root.as_path()) {
+    let inside = canonical_cwd
+        .parent()
+        .is_some_and(|parent| same_path(&plain_path(parent), &plain_path(&root)));
+    if !inside {
         return None;
     }
     let name = canonical_cwd.file_name()?.to_str()?;
@@ -232,27 +238,35 @@ fn lock_existing_chat_dir(root: &Path, chat_id: &str) -> Result<PathBuf, String>
     let root_canonical = std::fs::canonicalize(root).map_err(|_| {
         "quick chat folder must be an existing directory inside the quick chat root".to_string()
     })?;
-    if canonical.parent() != Some(root_canonical.as_path()) {
+    let inside = canonical
+        .parent()
+        .is_some_and(|parent| same_path(&plain_path(parent), &plain_path(&root_canonical)));
+    if !inside {
         return Err("quick chat folder escapes its root".to_string());
     }
     Ok(canonical)
 }
 
 fn claims_quick_root(root: &Path, client_cwd: &str) -> bool {
-    let root_display = display_path(&lexical_normalize(root));
-    let client_display = display_path(&lexical_normalize(Path::new(client_cwd)));
-    let root_slash = root_display.replace('\\', "/");
-    let client_slash = client_cwd.replace('\\', "/");
-    client_display == root_display
-        || client_display.starts_with(&(root_display.clone() + "/"))
-        || client_display.starts_with(&(root_display + "\\"))
-        || client_slash.starts_with(&(root_slash.clone() + "/"))
+    let root_plain = host_spelling(&root.to_string_lossy());
+    let client_plain = host_spelling(client_cwd);
+    // The raw spelling still names the root when a later `..` climbs out.
+    // That climb must be a rejection, not an unrelated folder.
+    raw_claims_root(&client_plain, &root_plain)
+        || path_is_inside(
+            &plain_lexical(client_cwd),
+            &plain_lexical(&root.to_string_lossy()),
+        )
 }
 
 fn chat_id_from_client_path(root: &Path, client_cwd: &str) -> Result<String, String> {
-    let normalized = lexical_normalize(Path::new(client_cwd));
-    let root = lexical_normalize(root);
-    if normalized.parent() != Some(root.as_path()) {
+    let normalized = plain_lexical(client_cwd);
+    let root = plain_lexical(&root.to_string_lossy());
+    let parent = normalized.parent().map(Path::to_path_buf);
+    if parent
+        .as_deref()
+        .is_none_or(|parent| !same_path(parent, &root))
+    {
         return Err("quick chat folder escapes its root".to_string());
     }
     let name = normalized
@@ -263,6 +277,60 @@ fn chat_id_from_client_path(root: &Path, client_cwd: &str) -> Result<String, Str
         return Err("quick chat id is not a single folder name".to_string());
     }
     Ok(name.to_string())
+}
+
+/// Drop a Windows `\\?\` prefix and use the host's separators.
+///
+/// `canonicalize` returns `\\?\C:\…`. `Path` keeps that prefix as its own
+/// component, so it does not compare equal to `C:\…` even when both name
+/// the same folder. On Unix the string is unchanged.
+fn host_spelling(path: &str) -> String {
+    crate::path_validation::client_path(path.trim())
+}
+
+fn plain_path(path: &Path) -> PathBuf {
+    PathBuf::from(host_spelling(&path.to_string_lossy()))
+}
+
+fn plain_lexical(path: &str) -> PathBuf {
+    let spelled = host_spelling(path);
+    lexical_normalize(Path::new(&spelled))
+}
+
+fn same_path(left: &Path, right: &Path) -> bool {
+    if cfg!(windows) {
+        path_key(left) == path_key(right)
+    } else {
+        left == right
+    }
+}
+
+fn path_is_inside(path: &Path, root: &Path) -> bool {
+    if cfg!(windows) {
+        let path = path_key(path);
+        let root = path_key(root).trim_end_matches('/').to_string();
+        path == root || path.starts_with(&(root + "/"))
+    } else {
+        path == root || path.starts_with(root)
+    }
+}
+
+fn path_key(path: &Path) -> String {
+    path.to_string_lossy()
+        .replace('\\', "/")
+        .to_ascii_lowercase()
+}
+
+/// `true` when `client` is `root` or a path written under it, before `..` is collapsed.
+fn raw_claims_root(client: &str, root: &str) -> bool {
+    let mut client = client.replace('\\', "/");
+    let mut root = root.replace('\\', "/");
+    if cfg!(windows) {
+        client = client.to_ascii_lowercase();
+        root = root.to_ascii_lowercase();
+    }
+    let root = root.trim_end_matches('/');
+    client == root || client.starts_with(&(root.to_string() + "/"))
 }
 
 fn lexical_normalize(path: &Path) -> PathBuf {

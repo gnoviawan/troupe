@@ -207,6 +207,30 @@ fn a_symlink_escape_is_rejected() {
     fs::remove_file(&link).unwrap();
 }
 
+/// `canonicalize` on Windows returns `\\?\C:\…`. That spelling must lock,
+/// and a climb written after it must be rejected.
+#[cfg(windows)]
+#[test]
+fn a_verbatim_windows_folder_locks_and_its_climb_is_rejected() {
+    let (chat_id, dir) = prepare_new_chat_dir().unwrap();
+    let verbatim = fs::canonicalize(&dir).unwrap();
+    let spelling = verbatim.to_string_lossy().to_string();
+    assert!(
+        spelling.starts_with(r"\\?\"),
+        "this test needs the verbatim prefix, got {spelling}"
+    );
+    match listing_decision(&spelling) {
+        ListingDecision::Locked(path) => assert_eq!(path, display_path(&dir)),
+        other => panic!("a verbatim folder must lock, got {other:?}"),
+    }
+    let climb = format!("{spelling}/../../outside");
+    assert!(
+        matches!(listing_decision(&climb), ListingDecision::Rejected(_)),
+        "a verbatim climb must be rejected"
+    );
+    remove_chat_dir(&chat_id).unwrap();
+}
+
 #[test]
 fn a_windows_style_climb_is_rejected() {
     let (chat_id, dir) = prepare_new_chat_dir().unwrap();
