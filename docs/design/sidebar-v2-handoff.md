@@ -110,11 +110,11 @@ The Side panel Chats tab, its header Workspace switcher and the StatusBar are go
 - [x] Phone drawer chat rows use the Rail live state (`useChatLiveState`) and the Rail trail (`ChatRowTrail`): one status per chat (Needs you, then Running, then New), the same as the desktop Rail. The rows keep their layout and the created time. `AgentChatStatusGlyphs` and `agentChatStatusSlots` are removed.
 - [x] Browser client (desktop width): the tool strip has no Remote access and no Browser button (browser tabs are native webviews; the palette command and the shortcut are gated the same way); it shows the connection lamp. Covered by `ShellToolStrip.test.tsx` and the parity checklist.
 - [x] Parity checklist: tool strip gating, the palette Chats group and the Projects menu Import item.
-- [x] E2E specs use the V2 UI: Rail chat rows (`rail-project-chats`), tool strip buttons, the command palette Chats group, tab drag for splits. Helpers in `tests/e2e/ui.ts`: `railChat`, `showAllRailChats`, `openRightPanelView`.
+- [x] E2E specs use the V2 UI: Rail chat rows (`rail-project-chats`), tool strip buttons, the command palette Chats group, Rail chat row drag for splits. Helpers in `tests/e2e/ui.ts`: `railChat`, `showAllRailChats`, `openRightPanelView`.
 - [x] Orphans removed: the `icon` variant of `ImportChatsButton`, `ProjectSwitcher`, `sidebar-search-field`.
+- [x] Chat drag: Rail chat rows (expanded rows, collapsed icons and the hover chat peek rows) drag onto a pane edge to split, or into a pane to open the chat there (`startChatDrag`, the same payload as the old Chats cards). The dragged row is 50% opacity and 98% scale, the same as a dragged tab (no scale and no transition with reduced motion). A click right after the drag does not open the chat. A drag from the peek closes the peek; the peek stays mounted (hidden) until the drag ends. Durable log: `[rail] drag chat <id>` (source `Rail`). Covered by `RailProjectChats.test.tsx` and the e2e Journey 1 split step.
 
 ## Open items
 
-- A chat can no longer be dragged onto a pane edge from the chat list (the Chats cards had it). The Rail chat rows are not draggable, and `startChatDrag` in `use-pane-dnd.tsx` has no caller. Decide: add drag to the Rail rows, or remove the chat drag path.
 - The collapsed rail shows a status dot on the agent icon (P2).
 - The design shows a dark theme only. Light-theme values come from the same tokens.

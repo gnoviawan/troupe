@@ -13,10 +13,15 @@ import { RailDensityProvider } from './rail-density'
 const mocks = vi.hoisted(() => ({
   addAgentChatTab: vi.fn(),
   openHistorySession: vi.fn(),
-  logFrontendError: vi.fn()
+  logFrontendError: vi.fn(),
+  paneDnd: {
+    startChatDrag: vi.fn(),
+    dragPayload: null as { type: 'chat'; sessionId: string } | null
+  }
 }))
 
 vi.mock('@/lib/log-api', () => ({ logFrontendError: mocks.logFrontendError }))
+vi.mock('@/hooks/use-pane-dnd', () => ({ usePaneDnd: () => mocks.paneDnd }))
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 const project = {
@@ -40,6 +45,7 @@ const entry = (id: string, lastActivityAt: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.paneDnd.dragPayload = null
   mocks.openHistorySession.mockResolvedValue(undefined)
   resetShellLayoutStoreForTests()
   useShellLayoutStore.setState({ status: 'ready' })
@@ -122,6 +128,47 @@ describe('RailProjectChats', () => {
       source: 'Rail',
       message: '[rail] open chat a'
     })
+  })
+
+  it('drags a row into a pane with the chat payload and logs it from the Rail', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    const row = screen.getByRole('button', { name: 'Chat a' })
+    expect(row).toHaveAttribute('draggable', 'true')
+    fireEvent.dragStart(row)
+    expect(mocks.paneDnd.startChatDrag).toHaveBeenCalledTimes(1)
+    expect(mocks.paneDnd.startChatDrag).toHaveBeenCalledWith('a', expect.anything())
+    expect(mocks.logFrontendError).toHaveBeenCalledWith({
+      level: 'info',
+      source: 'Rail',
+      message: '[rail] drag chat a'
+    })
+    expect(mocks.openHistorySession).not.toHaveBeenCalled()
+  })
+
+  it('does not open on the click right after a drag ends, then opens on the next click', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    const row = screen.getByRole('button', { name: 'Chat a' })
+    fireEvent.dragStart(row)
+    fireEvent.dragEnd(row)
+    fireEvent.click(row)
+    expect(mocks.openHistorySession).not.toHaveBeenCalled()
+    expect(mocks.addAgentChatTab).not.toHaveBeenCalled()
+    fireEvent.click(row)
+    expect(mocks.openHistorySession).toHaveBeenCalledWith('a')
+  })
+
+  it('dims the dragged row like a dragged tab, scale off with reduced motion', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 2), entry('b', 1)] })
+    mocks.paneDnd.dragPayload = { type: 'chat', sessionId: 'b' }
+    render(<RailProjectChats project={project} />)
+    const dragged = screen.getByRole('button', { name: 'Chat b' })
+    expect(dragged).toHaveAttribute('data-dragging')
+    expect(dragged).toHaveClass('opacity-50', 'scale-[0.98]', 'motion-reduce:scale-100')
+    const other = screen.getByRole('button', { name: 'Chat a' })
+    expect(other).not.toHaveAttribute('data-dragging')
+    expect(other).not.toHaveClass('opacity-50')
   })
 })
 
@@ -223,5 +270,36 @@ describe('RailProjectChats on the collapsed Rail', () => {
       message: '[rail] peek open chat b'
     })
     await waitFor(() => expect(screen.queryByTestId('rail-chat-peek')).toBeNull())
+  })
+
+  it('drags a collapsed Rail icon into a pane', () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    renderCollapsed()
+    const row = screen.getByRole('button', { name: 'Chat a' })
+    expect(row).toHaveAttribute('draggable', 'true')
+    fireEvent.dragStart(row)
+    expect(mocks.paneDnd.startChatDrag).toHaveBeenCalledWith('a', expect.anything())
+  })
+
+  it('hides the peek when a drag starts from it and unmounts it when the drag ends', async () => {
+    useAcpStore.setState({ sessionIndex: [entry('a', 2), entry('b', 1)] })
+    renderCollapsed()
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Chat a' }))
+    const panel = await peek()
+    const peekRow = within(panel).getByRole('button', { name: 'Chat b' })
+    fireEvent.dragStart(peekRow)
+    expect(mocks.paneDnd.startChatDrag).toHaveBeenCalledWith('b', expect.anything())
+    expect(mocks.logFrontendError).toHaveBeenCalledWith({
+      level: 'info',
+      source: 'Rail',
+      message: '[rail] peek drag chat b'
+    })
+    // Still mounted (it is the drag source) but closed and hidden.
+    await waitFor(() => expect(panel).toHaveAttribute('data-state', 'closed'))
+    expect(panel).toBeInTheDocument()
+    expect(panel).toHaveClass('data-[state=closed]:invisible')
+    fireEvent.dragEnd(peekRow)
+    await waitFor(() => expect(screen.queryByTestId('rail-chat-peek')).toBeNull())
+    expect(mocks.openHistorySession).not.toHaveBeenCalled()
   })
 })

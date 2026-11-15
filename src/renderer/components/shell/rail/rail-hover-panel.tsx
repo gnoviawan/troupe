@@ -40,7 +40,8 @@ export const RailHoverPanelTrigger = HoverCardPrimitive.Trigger
 /**
  * The panel: 240px, radius 10, 4px padding, 1px between rows. It opens at
  * x = 52 (Rail edge + 4) and, by default, 4px above its trigger so its first
- * row lines up with the trigger row. Rendered in a portal.
+ * row lines up with the trigger row. Rendered in a portal; `forceMount`
+ * keeps the portal and the panel mounted while closed.
  */
 export const RailHoverPanelContent = forwardRef<
   React.ElementRef<typeof HoverCardPrimitive.Content>,
@@ -52,14 +53,16 @@ export const RailHoverPanelContent = forwardRef<
     align = 'start',
     sideOffset = RAIL_HOVER_PANEL_SIDE_OFFSET,
     alignOffset = -RAIL_HOVER_PANEL_PADDING,
+    forceMount,
     ...props
   },
   ref
 ) {
   return (
-    <HoverCardPrimitive.Portal>
+    <HoverCardPrimitive.Portal forceMount={forceMount}>
       <HoverCardPrimitive.Content
         ref={ref}
+        forceMount={forceMount}
         side={side}
         align={align}
         sideOffset={sideOffset}

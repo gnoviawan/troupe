@@ -205,11 +205,11 @@ async function searchPaletteChats(page: Page, query: string): Promise<Locator> {
 }
 
 /**
- * Drag a chat tab onto one edge of a pane with the real mouse: the pane's
- * drop-zone overlay only exists while a drag is in flight, so the zone is
- * located after the drag has started.
+ * Drag a Rail chat row onto one edge of a pane with the real mouse: the
+ * pane's drop-zone overlay only exists while a drag is in flight, so the zone
+ * is located after the drag has started.
  */
-async function dragTabToPaneEdge(
+async function dragRailChatToPaneEdge(
   page: Page,
   card: Locator,
   pane: Locator,
@@ -220,7 +220,7 @@ async function dragTabToPaneEdge(
       ? 'div[class*="right-0"][class*="w-1/4"]'
       : 'div[class*="bottom-0"][class*="h-1/4"]'
   const cardBox = await card.boundingBox()
-  if (!cardBox) throw new Error('chat tab has no bounding box')
+  if (!cardBox) throw new Error('Rail chat row has no bounding box')
   const startX = cardBox.x + cardBox.width / 2
   const startY = cardBox.y + cardBox.height / 2
   await page.mouse.move(startX, startY)
@@ -293,12 +293,22 @@ test('Journey 1: three chats on one project, side by side, next to the diff', as
     await expect(page.getByPlaceholder('Search commands, projects, chats…')).toHaveCount(0)
   })
 
-  await test.step('3. Dragging a chat tab onto a pane edge splits the pane', async () => {
+  await test.step('3. Dragging a Rail chat row onto a pane edge splits the pane', async () => {
     await expect(paneContents(page)).toHaveCount(1)
-    await dragTabToPaneEdge(page, chatTab(page, CHAT_TWO), paneContents(page).first(), 'right')
+    await dragRailChatToPaneEdge(
+      page,
+      railChat(page, CHAT_TWO),
+      paneContents(page).first(),
+      'right'
+    )
     await expect(paneContents(page)).toHaveCount(2)
 
-    await dragTabToPaneEdge(page, chatTab(page, CHAT_THREE), paneContents(page).last(), 'bottom')
+    await dragRailChatToPaneEdge(
+      page,
+      railChat(page, CHAT_THREE),
+      paneContents(page).last(),
+      'bottom'
+    )
     await expect(paneContents(page)).toHaveCount(3)
 
     // Every chat keeps its own tab, in its own pane, and keeps running.

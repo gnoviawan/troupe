@@ -97,6 +97,11 @@ export const RailChatItem = forwardRef<HTMLLIElement, RailChatItemProps>(functio
 export interface RailChatRowProps extends React.ComponentPropsWithoutRef<'button'> {
   /** The chat is open in the active pane: keycap surface and `aria-current`. */
   open?: boolean
+  /**
+   * The row is the source of a drag in flight: 50% opacity and 98% scale, the
+   * same feedback as a dragged workspace tab (no scale with reduced motion).
+   */
+  dragging?: boolean
 }
 
 /**
@@ -106,9 +111,12 @@ export interface RailChatRowProps extends React.ComponentPropsWithoutRef<'button
  *
  * Collapsed Rail: the same 30px row with only the agent icon, centred (radius
  * 6, hover 6% foreground). The open chat keeps its keycap.
+ *
+ * To drag the row into a pane, pass `draggable` and the drag handlers, and
+ * set `dragging` while the drag is in flight.
  */
 export const RailChatRow = forwardRef<HTMLButtonElement, RailChatRowProps>(function RailChatRow(
-  { open = false, className, ...props },
+  { open = false, dragging = false, className, ...props },
   ref
 ) {
   const collapsed = useRailCollapsed()
@@ -118,12 +126,14 @@ export const RailChatRow = forwardRef<HTMLButtonElement, RailChatRowProps>(funct
       type="button"
       aria-current={open ? 'true' : undefined}
       data-open={open || undefined}
+      data-dragging={dragging || undefined}
       className={cn(
         'flex h-7.5 w-full min-w-0 items-center text-left text-xs',
         collapsed ? 'justify-center rounded-md px-0' : 'gap-2.25 rounded-lg pr-3 pl-8.75',
-        'transition-colors duration-150 ease-out focus-visible:ring-inset',
+        'transition-[color,background-color,opacity,scale] duration-150 ease-out focus-visible:ring-inset motion-reduce:transition-none',
         FOCUS_RING_CLASS,
         open ? 'keycap' : collapsed ? 'hover:bg-foreground/[0.06]' : 'hover:bg-row-hover',
+        dragging && 'scale-[0.98] opacity-50 motion-reduce:scale-100',
         className
       )}
       {...props}
