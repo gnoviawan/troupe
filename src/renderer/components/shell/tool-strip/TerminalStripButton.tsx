@@ -72,7 +72,7 @@ export function TerminalStripButton({
                 onNewTerminal(shell)
               }}
             >
-              <Terminal className="mr-2 h-4 w-4" aria-hidden />
+              <Terminal className="mr-2 size-3.5" aria-hidden />
               <span className="min-w-0 flex-1 truncate">{shell.displayName}</span>
               {shell === defaultShell && (
                 <span className="ml-2 text-2xs text-muted-foreground">Default</span>

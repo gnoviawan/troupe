@@ -460,7 +460,7 @@ function WorkspaceRowView({
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem disabled={disabled} onSelect={onOpenTerminal}>
-          <Terminal className="mr-2 h-4 w-4" /> Open Terminal Here
+          <Terminal className="mr-2 size-3.5" /> Open Terminal Here
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
