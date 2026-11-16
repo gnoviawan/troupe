@@ -1,6 +1,6 @@
 import { UNASSIGNED_PROJECT_ID } from '@shared/types/web-projects.types'
 import { logFrontendError } from '@/lib/log-api'
-import { navigateToChatSession } from '@/lib/router-navigate'
+import { isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
 import { closeQuickChatView, useQuickChatStore } from '@/stores/quick-chat-store'
@@ -23,25 +23,33 @@ export function noProjectChatKind(
   return projectId === UNASSIGNED_PROJECT_ID ? 'older' : null
 }
 
-/**
- * Show a no-project chat in the quick view and put it on the `#/c/<id>` route.
- * `replaceRoute` changes the current history entry in place (a launch
- * placeholder that became its session).
- */
-export function showNoProjectChat(
-  sessionId: string,
-  kind: NoProjectChat,
-  source: string,
-  replaceRoute = false
-): void {
+/** Show a no-project chat in the quick view and put it on the `#/c/<id>` route. */
+export function showNoProjectChat(sessionId: string, kind: NoProjectChat, source: string): void {
   const store = useQuickChatStore.getState()
   if (kind === 'older') store.openOlderChat(sessionId)
   else store.openChat(sessionId)
-  navigateToChatSession(sessionId, replaceRoute ? { replace: true } : undefined)
+  navigateToChatSession(sessionId)
   void logFrontendError({
     level: 'info',
     source,
     message: `Opened ${kind} chat ${sessionId} in the quick chat view`
+  })
+}
+
+/**
+ * The launch placeholder `from` on screen became session `to`. The view
+ * moves to `to` with the same panel (the typed text stays), and the route
+ * entry of the placeholder is replaced, so Back never lands on it.
+ */
+export function adoptQuickChat(from: string, to: string, source: string): void {
+  const view = useQuickChatStore.getState().view
+  if (view.mode !== 'chat' || view.sessionId !== from) return
+  useQuickChatStore.getState().adoptChat(from, to)
+  navigateToChatSession(to, isChatRouteCurrent(from) ? { replace: true } : undefined)
+  void logFrontendError({
+    level: 'info',
+    source,
+    message: `Quick chat ${from} started as ${to}`
   })
 }
 

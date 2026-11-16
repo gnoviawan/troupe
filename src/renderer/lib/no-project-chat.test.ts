@@ -9,6 +9,7 @@ import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { useAcpStore } from '@/stores/acp-store'
 import { isQuickChatLeaving, useQuickChatStore } from '@/stores/quick-chat-store'
 import {
+  adoptQuickChat,
   leaveQuickChatView,
   noProjectChatKind,
   openNoProjectChat,
@@ -92,5 +93,24 @@ describe('no-project-chat', () => {
     vi.runAllTimers()
     expect(navigate).not.toHaveBeenCalled()
     vi.useRealTimers()
+  })
+
+  it('moves the view to the started session and replaces the placeholder route', () => {
+    useQuickChatStore.getState().openChat('launch-1')
+    window.location.hash = '#/c/launch-1'
+    adoptQuickChat('launch-1', 'sess-1', 'test')
+    expect(useQuickChatStore.getState().view).toEqual({
+      mode: 'chat',
+      sessionId: 'sess-1',
+      panelKey: 'launch-1'
+    })
+    expect(navigate).toHaveBeenCalledWith('/c/sess-1', { replace: true })
+  })
+
+  it('ignores the start of a placeholder that is no longer on screen', () => {
+    useQuickChatStore.getState().openChat('sess-2')
+    adoptQuickChat('launch-1', 'sess-1', 'test')
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'sess-2' })
+    expect(navigate).not.toHaveBeenCalled()
   })
 })

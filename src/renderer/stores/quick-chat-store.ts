@@ -4,13 +4,28 @@ import { clearChatRoute } from '@/lib/router-navigate'
 /** What the main area shows for a quick chat. */
 export type QuickChatView =
   | { mode: 'closed' }
-  | { mode: 'chat'; sessionId: string; readOnly?: boolean }
+  | {
+      mode: 'chat'
+      sessionId: string
+      readOnly?: boolean
+      /**
+       * React key of the chat panel when it is not `sessionId`: a launch
+       * placeholder that became its session keeps the placeholder's key, so
+       * the text typed while the chat started stays in the composer.
+       */
+      panelKey?: string
+    }
 
 interface QuickChatState {
   view: QuickChatView
   openChat: (sessionId: string) => void
   /** An older no-project chat. History can be read. New prompts are refused. */
   openOlderChat: (sessionId: string) => void
+  /**
+   * The launch placeholder `from` became session `to`. Only when `from` is
+   * the chat on screen: the view moves to `to` and keeps its panel key.
+   */
+  adoptChat: (from: string, to: string) => void
   close: () => void
 }
 
@@ -23,6 +38,12 @@ export const useQuickChatStore = create<QuickChatState>((set) => ({
   view: { mode: 'closed' },
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
   openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
+  adoptChat: (from, to) =>
+    set((state) => {
+      const view = state.view
+      if (view.mode !== 'chat' || view.sessionId !== from) return state
+      return { view: { mode: 'chat', sessionId: to, panelKey: view.panelKey ?? from } }
+    }),
   close: () => set({ view: { mode: 'closed' } })
 }))
 
@@ -64,4 +85,9 @@ export function closeQuickChatView(): string | null {
     clearChatRoute(sessionId)
   }, 0)
   return sessionId
+}
+
+/** The React key of the open quick chat's panel. */
+export function quickChatPanelKey(view: Extract<QuickChatView, { mode: 'chat' }>): string {
+  return view.panelKey ?? view.sessionId
 }

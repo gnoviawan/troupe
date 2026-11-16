@@ -342,10 +342,11 @@ export function useChatHistoryEntries({
 
   const deleteEntry = useCallback(
     (id: string) => {
-      deleteConversation(id, logSource)
-      // A deleted quick chat must not stay on screen in the quick view.
+      const deletedIds = deleteConversation(id, logSource)
+      // A deleted quick chat (the row or any session folded into it) must not
+      // stay on screen in the quick view.
       const view = useQuickChatStore.getState().view
-      if (view.mode === 'chat' && view.sessionId === id) leaveQuickChatView(logSource)
+      if (view.mode === 'chat' && deletedIds.has(view.sessionId)) leaveQuickChatView(logSource)
     },
     [logSource]
   )

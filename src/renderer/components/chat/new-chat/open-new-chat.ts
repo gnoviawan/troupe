@@ -15,11 +15,11 @@ import type { SessionId } from '@/lib/acp-api'
 import { persistenceApi } from '@/lib/api'
 import { logFrontendError } from '@/lib/log-api'
 import {
+  adoptQuickChat,
   focusQuickChatComposer,
   leaveQuickChatView,
   showNoProjectChat
 } from '@/lib/no-project-chat'
-import { isChatRouteCurrent } from '@/lib/router-navigate'
 import { getActiveWorktreeForProject, getDefaultCwdForProject } from '@/lib/worktree-context'
 import {
   type AgentOptionsCacheEntry,
@@ -272,12 +272,7 @@ async function startQuick(reason: NewChatReason): Promise<OpenNewChatResult> {
       pending: hasPendingLauncherOptions(picks) ? picks : null,
       initialText: null,
       initialBlocks: null,
-      adoptSession: (from, to) => {
-        const current = useQuickChatStore.getState().view
-        if (current.mode === 'chat' && current.sessionId === from) {
-          showNoProjectChat(to, 'quick', SOURCE, isChatRouteCurrent(from))
-        }
-      }
+      adoptSession: (from, to) => adoptQuickChat(from, to, SOURCE)
     })
     .then((sessionId) => log('info', `Quick chat ${placeholderId} started as ${sessionId}`))
     .catch((err: unknown) => {

@@ -809,4 +809,42 @@ describe('ChatMessageList scroll ownership', () => {
     rerender(<ChatMessageList items={items} sessionId="session-2" showRunningIndicator={false} />)
     expect(scrollToEnd).toHaveBeenCalledTimes(2)
   })
+  it('follows a flush that trims the head and appends as many rows (count unchanged)', () => {
+    const scrollToEnd = vi.fn()
+    virtualizerOverride.current = windowedVirtualizer([], scrollToEnd)
+    const { rerender } = render(
+      <ChatMessageList items={items} sessionId="session-1" showRunningIndicator={false} />
+    )
+    expect(scrollToEnd).toHaveBeenCalledTimes(1)
+
+    const appended: TimelineItem = {
+      kind: 'message',
+      key: 'agent-next',
+      message: { ...(finalAgentItem as { message: object }).message, id: 'agent-next', seq: 5 }
+    } as TimelineItem
+    // The live window dropped `user-1` and gained `agent-next`: still 2 rows.
+    rerender(
+      <ChatMessageList
+        items={[finalAgentItem, appended]}
+        sessionId="session-1"
+        showRunningIndicator={false}
+      />
+    )
+    expect(scrollToEnd).toHaveBeenCalledTimes(2)
+
+    // A plain append (a new user row) grows the count: `followOnAppend` owns that case.
+    const grown: TimelineItem = {
+      ...userItem,
+      key: 'user-2',
+      message: { ...(userItem as { message: object }).message, id: 'user-2', seq: 6 }
+    } as TimelineItem
+    rerender(
+      <ChatMessageList
+        items={[finalAgentItem, appended, grown]}
+        sessionId="session-1"
+        showRunningIndicator={false}
+      />
+    )
+    expect(scrollToEnd).toHaveBeenCalledTimes(2)
+  })
 })

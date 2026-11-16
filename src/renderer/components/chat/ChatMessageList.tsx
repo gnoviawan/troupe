@@ -153,6 +153,21 @@ function VirtualizedTimeline({
     if (viewportEl) virtualizer.scrollToEnd()
   }, [sessionId, viewportEl, virtualizer])
 
+  // `followOnAppend` follows only when the count grows. A coalesced flush can
+  // append rows and trim the same number from the head of the live window
+  // (`trimLiveWindow`), so the count stays and the new tail would stay below
+  // the fold. Follow that case too, but only for a reader at the live edge;
+  // history browsing keeps its place. A session switch is the effect above.
+  const lastItemKey = groupedItems[groupedItems.length - 1]?.key
+  const tailRef = useRef({ sessionId, count: groupedItems.length, lastKey: lastItemKey })
+  useEffect(() => {
+    const before = tailRef.current
+    tailRef.current = { sessionId, count: groupedItems.length, lastKey: lastItemKey }
+    if (before.sessionId !== sessionId || !pinned) return
+    if (lastItemKey === before.lastKey || groupedItems.length > before.count) return
+    virtualizer.scrollToEnd()
+  }, [sessionId, groupedItems.length, lastItemKey, pinned, virtualizer])
+
   // A Background row in the status pill asks to show its card: bring the row
   // holding it into the virtual window; the card scrolls itself into place.
   const revealTarget = useToolCallRevealStore((s) =>

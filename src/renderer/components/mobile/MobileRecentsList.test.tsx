@@ -756,4 +756,69 @@ describe('MobileRecentsList quick chats', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(mockRenameQuickChat).toHaveBeenCalledWith('q1', 'Trip plan', 'Quick notes')
   })
+
+  it('keeps the heading + when the quick chats are outside the loaded window', () => {
+    useAcpStore.setState({
+      sessionIndex: [
+        ...Array.from({ length: 55 }, (_, i) =>
+          mockSessionIndexEntry({
+            id: `p${i}`,
+            title: `Project chat ${i}`,
+            projectId: 'p1',
+            cwd: '/work',
+            createdAt: 1000 + i
+          })
+        ),
+        mockSessionIndexEntry({
+          id: 'q-old',
+          title: 'Old quick chat',
+          projectId: '__unassigned__',
+          kind: 'quick',
+          createdAt: 1
+        })
+      ],
+      openHistorySession: mockOpenHistorySession,
+      deleteHistorySession: mockDeleteHistorySession
+    })
+    renderList()
+    expect(screen.queryByText('Old quick chat')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'New quick chat' })).toHaveLength(1)
+  })
+
+  it('starts a second rename from the title the first rename set', async () => {
+    mockRenameQuickChat.mockImplementation((id: string, title: string) => {
+      useAcpStore.setState((state) => ({
+        sessionIndex: state.sessionIndex.map((entry) =>
+          entry.id === id ? { ...entry, title } : entry
+        )
+      }))
+    })
+    useAcpStore.setState({
+      sessionIndex: [
+        mockSessionIndexEntry({
+          id: 'q1',
+          title: 'Quick notes',
+          projectId: '__unassigned__',
+          kind: 'quick'
+        })
+      ],
+      openHistorySession: mockOpenHistorySession,
+      deleteHistorySession: mockDeleteHistorySession
+    })
+    renderList()
+    fireEvent.contextMenu(screen.getByRole('button', { name: /^Quick notes/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Rename chat' }))
+    const first = screen.getByRole('textbox', { name: 'Rename Quick notes' })
+    fireEvent.change(first, { target: { value: 'Trip plan' } })
+    // Leaving the field commits the rename and keeps the sheet open.
+    fireEvent.blur(first)
+    expect(mockRenameQuickChat).toHaveBeenLastCalledWith('q1', 'Trip plan', 'Quick notes')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rename chat' }))
+    const second = screen.getByRole('textbox', { name: 'Rename Trip plan' })
+    expect(second).toHaveValue('Trip plan')
+    fireEvent.change(second, { target: { value: 'Trip plan v2' } })
+    fireEvent.keyDown(second, { key: 'Enter' })
+    expect(mockRenameQuickChat).toHaveBeenLastCalledWith('q1', 'Trip plan v2', 'Trip plan')
+  })
 })

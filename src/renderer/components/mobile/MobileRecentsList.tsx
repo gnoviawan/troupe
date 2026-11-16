@@ -380,7 +380,6 @@ export function MobileRecentsList({
     )
   )
   const quickIdSet = useMemo(() => new Set(quickIds), [quickIds])
-  const hasQuickChats = quickIds.length > 0
   const quickOpenId = useQuickChatStore((state) =>
     state.view.mode === 'chat' ? state.view.sessionId : null
   )
@@ -488,6 +487,15 @@ export function MobileRecentsList({
   )
 
   const [actionsTarget, setActionsTarget] = useState<ActionsTarget | null>(null)
+  // A quick chat's title now, not the one captured when the sheet opened: a
+  // rename in the sheet changes it while the sheet stays open. Other chats
+  // keep the title their row showed (an open chat's live title).
+  const indexedActionsTitle = useAcpStore((state) =>
+    actionsTarget && quickIdSet.has(actionsTarget.entryId)
+      ? state.sessionIndex.find((entry) => entry.id === actionsTarget.entryId)?.title
+      : undefined
+  )
+  const actionsTitle = indexedActionsTitle || actionsTarget?.title || ''
   const [actionsOpen, setActionsOpen] = useState(false)
   // The delete confirm, as the desktop History: `deleteTarget` outlives
   // `deleteOpen` so the description does not blank while it animates closed.
@@ -637,8 +645,11 @@ export function MobileRecentsList({
           )
         })
       )}
-      {/* No quick chat yet: keep the heading and its + so the phone can start one. */}
-      {!query.trim() && !hasQuickChats && quickHeading(`${baseId}-quick-chats-empty`)}
+      {/* No Quick chats group on screen (none yet, or none in the loaded
+          window): keep the heading and its + so the phone can start one. */}
+      {!query.trim() &&
+        !groups.some(({ group }) => group === QUICK_CHATS_GROUP) &&
+        quickHeading(`${baseId}-quick-chats-empty`)}
       {hasMore && (
         <div ref={sentinelRef} className="px-2 py-2">
           <button
@@ -660,19 +671,15 @@ export function MobileRecentsList({
       <MobileRecentsActionsSheet
         open={actionsOpen}
         onOpenChange={setActionsOpen}
-        title={actionsTarget?.title ?? ''}
+        title={actionsTitle}
         onCopyReference={() => {
           if (actionsTarget) {
-            void copyChatReference(
-              actionsTarget.entryId,
-              actionsTarget.title,
-              'MobileRecentsList.copy'
-            )
+            void copyChatReference(actionsTarget.entryId, actionsTitle, 'MobileRecentsList.copy')
           }
         }}
         onRename={
           actionsTarget && quickIdSet.has(actionsTarget.entryId)
-            ? (title) => renameQuickChat(actionsTarget.entryId, title, actionsTarget.title)
+            ? (title) => renameQuickChat(actionsTarget.entryId, title, actionsTitle)
             : undefined
         }
         onCloseChat={

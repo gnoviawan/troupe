@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Bug, Palette, SlidersHorizontal } from '@/components/icons'
 import { RailButton, type RailButtonSize, railButtonClass } from '@/components/shell/rail-button'
 import { useShortcutLabel } from '@/components/shell/use-shortcut-label'
@@ -97,12 +97,44 @@ export function RailFooter({
   const collapsed = useRailCollapsed()
   const settingsView = useSettingsModalView()
   const settingsShortcut = useShortcutLabel('settings')
+  const footerRef = useRef<HTMLDivElement>(null)
+  // Accessible name of the footer button that holds focus. The footer gets a
+  // new node per density (see `key` below), which drops the focused button.
+  const focusedLabelRef = useRef<string | null>(null)
+
+  // A density change (the `sidebarToggle` shortcut while a footer button has
+  // focus) puts focus back on the same button in the new node. Only when
+  // focus fell to the page; focus the user moved elsewhere stays there.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `collapsed` is the re-key trigger
+  useLayoutEffect(() => {
+    const label = focusedLabelRef.current
+    if (!label) return
+    const active = document.activeElement
+    if (active && active !== document.body) return
+    footerRef.current
+      ?.querySelector<HTMLElement>(`button[aria-label="${CSS.escape(label)}"]`)
+      ?.focus()
+  }, [collapsed])
 
   return (
     <div
+      ref={footerRef}
       // A new node per density, so the other layout fades in from
       // `@starting-style` instead of jumping from a row to a column.
       key={collapsed ? 'collapsed' : 'expanded'}
+      onFocus={(event) => {
+        focusedLabelRef.current = event.target.getAttribute('aria-label')
+      }}
+      onBlur={(event) => {
+        const footer = event.currentTarget
+        const next = event.relatedTarget
+        if (next instanceof Node && footer.contains(next)) return
+        // Wait a frame: a blur from the re-key itself (the node left the
+        // document) keeps the label; a real move of focus clears it.
+        requestAnimationFrame(() => {
+          if (footer.isConnected) focusedLabelRef.current = null
+        })
+      }}
       className={cn(
         'flex shrink-0 items-center',
         collapsed
