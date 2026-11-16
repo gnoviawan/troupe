@@ -705,8 +705,9 @@ describe('mobile composer: Add to chat sheet', () => {
     expect(
       within(sheet)
         .getAllByRole('button')
-        .map((button) => button.textContent?.trim())
+        .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim())
     ).toEqual([
+      // The grab handle: it closes the sheet (no ✕ in the header).
       'Close',
       'Camera',
       'Photos',

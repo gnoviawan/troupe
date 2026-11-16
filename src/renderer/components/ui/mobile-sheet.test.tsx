@@ -128,7 +128,8 @@ describe('MobileSheetContent', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Effort High' }))
     const back = within(sheet).getByRole('button', { name: 'Back' })
     expect(within(sheet).getByRole('heading', { name: 'Effort' })).toBeInTheDocument()
-    expect(within(sheet).queryByRole('button', { name: 'Close' })).toBeNull()
+    // Composer V2: no ✕ in the header; the grab handle (named Close) stays.
+    expect(within(sheet).getByRole('button', { name: 'Close' })).toHaveClass('h-[5px]', 'w-9')
     expect(within(sheet).getByRole('radio', { name: 'High' })).toHaveAttribute(
       'aria-checked',
       'true'

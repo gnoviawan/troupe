@@ -56,8 +56,9 @@ const SHEET_TITLE: Record<AddSheetView, string> = {
   connectors: 'Connectors'
 }
 
+/** Attach tiles (Paper "2.6d"): grouped-card surface, an 18px icon over a 15px label. */
 const TILE =
-  'flex h-24 flex-col items-center justify-center gap-2 rounded-2xl bg-foreground/[0.05] text-sm text-foreground transition-colors duration-150 ease-out enabled:active:bg-foreground/[0.1] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:text-disabled-foreground'
+  'flex h-[76px] flex-col items-center justify-center gap-2 rounded-xl bg-muted text-[15px] leading-5 text-foreground shadow-control transition-colors duration-150 ease-out enabled:active:bg-[color-mix(in_oklab,oklch(var(--muted)),oklch(var(--foreground))_10%)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:text-disabled-foreground'
 
 function AttachTile({
   icon,
