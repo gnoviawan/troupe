@@ -134,6 +134,10 @@ describe('MobileSheetContent', () => {
       'aria-checked',
       'true'
     )
+    // The picked choice: the 10% fill on the row, no tick.
+    const picked = within(sheet).getByRole('radio', { name: 'High' })
+    expect(picked.parentElement).toHaveClass('bg-foreground/10')
+    expect(picked.querySelector('[data-termul-icon="Check"]')).toBeNull()
     await waitFor(() => expect(back).toHaveFocus())
 
     fireEvent.click(back)

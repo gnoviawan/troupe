@@ -459,9 +459,7 @@ export function SheetRow(props: SheetRowProps): React.JSX.Element {
   )
   const layout = cn(
     'flex min-w-0 flex-1 items-center gap-3 py-2 pl-3.5 pr-2.5 text-left',
-    subtitle ? 'min-h-[60px]' : 'min-h-12',
-    // The picked choice: the 10% fill, no tick (Paper "2.6k").
-    check?.selected && 'bg-foreground/10'
+    subtitle ? 'min-h-[60px]' : 'min-h-12'
   )
   const pressed = check
     ? check.role === 'radio'
@@ -470,7 +468,12 @@ export function SheetRow(props: SheetRowProps): React.JSX.Element {
     : {}
   return (
     <div
-      className="relative flex min-w-0 items-stretch text-foreground"
+      className={cn(
+        'relative flex min-w-0 items-stretch text-foreground',
+        // The picked choice: the 10% fill across the whole row (its star or
+        // other aside too), no tick (Paper "2.6e"/"2.6k").
+        check?.selected && 'bg-foreground/10'
+      )}
       style={icon ? DIVIDER_AFTER_ICON : undefined}
     >
       {onSelect ? (
