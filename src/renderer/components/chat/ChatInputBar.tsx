@@ -39,7 +39,12 @@ import {
 } from './chat-input-bar-config'
 import {
   CHAT_GUTTER_X,
-  COMPOSER_CARD_CLASS,
+  COMPOSER_PHONE_CARD_CLASS,
+  COMPOSER_PHONE_GUTTER_X,
+  COMPOSER_PHONE_INPUT_MAX_HEIGHT,
+  COMPOSER_PHONE_INPUT_MIN_HEIGHT,
+  COMPOSER_PHONE_INPUT_ROW_CLASS,
+  COMPOSER_PHONE_PLACEHOLDER,
   COMPOSER_TRAY_CLASS,
   useComposerToolbarMode
 } from './chat-layout'
@@ -568,13 +573,14 @@ export function ChatInputBar({
       reduced={reduced}
       onCancel={onCancel}
       onSubmit={submit}
+      size={isMobileShell ? 'phone' : 'default'}
     />
   )
   return (
     <div
       ref={rootRef}
       className={cn(
-        CHAT_GUTTER_X,
+        isMobileShell ? COMPOSER_PHONE_GUTTER_X : CHAT_GUTTER_X,
         !(startScreen && !isMobileShell) && 'pb-6 pt-3',
         // The slash/mention menu overflows upward into the message list; lift
         // it above the list's jump-to-latest button (z-20).
@@ -605,7 +611,7 @@ export function ChatInputBar({
           />
         )}
         <motion.div data-composer-morph="frame" className="relative z-10 w-full" {...morph.frame}>
-          <ComposerBeamShell busy={busy} reduced={reduced} radius={isMobileShell ? 16 : 20}>
+          <ComposerBeamShell busy={busy} reduced={reduced} radius={20}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: drop zone for attachments; the file picker button is the accessible path */}
             <div
               data-chat-composer="true"
@@ -614,9 +620,9 @@ export function ChatInputBar({
               tabIndex={isMobileShell ? -1 : undefined}
               className={cn(
                 'relative',
-                // Desktop: Composer V2 tray (raised card + foot row). The phone
-                // keeps the single card until its compact composer lands.
-                isMobileShell ? COMPOSER_CARD_CLASS : COMPOSER_TRAY_CLASS,
+                // Desktop: Composer V2 tray (raised card + foot row). Phone:
+                // the compact card (Paper "2.6b"), no tray and no foot row.
+                isMobileShell ? COMPOSER_PHONE_CARD_CLASS : COMPOSER_TRAY_CLASS,
                 dragActive && 'border-primary/70',
                 isMobileShell && 'outline-none'
               )}
@@ -625,9 +631,7 @@ export function ChatInputBar({
               onDragOver={dropProps.onDragOver}
               onDrop={dropProps.onDrop}
             >
-              {dragActive && canDropPaste && (
-                <ComposerDropOverlay className={isMobileShell ? 'rounded-2xl' : 'rounded-[20px]'} />
-              )}
+              {dragActive && canDropPaste && <ComposerDropOverlay className="rounded-[20px]" />}
               <ComposerRaised raised={!isMobileShell}>
                 {notice}
                 {queue.length > 0 && onRemoveQueued && onSendQueuedNow && (
@@ -658,10 +662,10 @@ export function ChatInputBar({
                   data-composer-row
                   className={cn(
                     'flex items-start',
-                    startScreen
-                      ? CHAT_START_INPUT_ROW_CLASS
-                      : isMobileShell
-                        ? 'gap-1 px-4 pb-1.5 pt-3.5'
+                    isMobileShell
+                      ? COMPOSER_PHONE_INPUT_ROW_CLASS
+                      : startScreen
+                        ? CHAT_START_INPUT_ROW_CLASS
                         : 'gap-1 pb-2.5 pl-[18px] pr-2.5 pt-4'
                   )}
                   onMouseDown={(event) => focusComposerFromRowPress(event, editorRef.current)}
@@ -687,14 +691,28 @@ export function ChatInputBar({
                       inputRef={composerInputRef}
                       disabled={disabled || sending}
                       // Working chat: 1 line (16px × 1.625) up to 3 lines, then scroll.
-                      minHeight={startScreen ? CHAT_START_INPUT_MIN_HEIGHT : 26}
-                      maxHeight={startScreen ? CHAT_START_INPUT_MAX_HEIGHT : 78}
+                      minHeight={
+                        isMobileShell
+                          ? COMPOSER_PHONE_INPUT_MIN_HEIGHT
+                          : startScreen
+                            ? CHAT_START_INPUT_MIN_HEIGHT
+                            : 26
+                      }
+                      maxHeight={
+                        isMobileShell
+                          ? COMPOSER_PHONE_INPUT_MAX_HEIGHT
+                          : startScreen
+                            ? CHAT_START_INPUT_MAX_HEIGHT
+                            : 78
+                      }
                       placeholder={
                         disabled
                           ? disabledPlaceholder
                           : hasCommandToken
                             ? 'Add a message (optional)…'
-                            : 'Ask anything… (/ for commands, @ for files and chats)'
+                            : isMobileShell
+                              ? COMPOSER_PHONE_PLACEHOLDER
+                              : 'Ask anything… (/ for commands, @ for files and chats)'
                       }
                     />
                   </SkillFilesProvider>
@@ -713,12 +731,16 @@ export function ChatInputBar({
                 {/* The toolbar's two groups move on their own (`position`), so the
                   right group keeps to the card's right edge while it grows. */}
                 <div
-                  className="flex items-center justify-between gap-3 px-2 pb-2"
+                  className={cn(
+                    'flex items-center justify-between',
+                    // Phone (Paper "2.6b"): 4px left, 6px right, 6px bottom.
+                    isMobileShell ? 'pb-1.5 pl-1 pr-1.5' : 'gap-3 px-2 pb-2'
+                  )}
                   data-composer-toolbar={toolbarMode}
                 >
                   {isMobileShell ? (
                     <div
-                      className="flex min-w-0 flex-1 items-center gap-2"
+                      className="flex min-w-0 flex-1 items-center gap-1"
                       data-composer-toolbar-row="mobile"
                     >
                       <ComposerAddSheet
@@ -797,6 +819,11 @@ export function ChatInputBar({
             </div>
           </ComposerBeamShell>
         </motion.div>
+        {/* Phone, new chat only (Paper "2.6g"): the worktree strip under the
+            compact composer. A running chat shows its worktree in the header. */}
+        {isMobileShell && startScreen && worktree ? (
+          <div data-composer-phone-strip="true">{worktree}</div>
+        ) : null}
       </div>
     </div>
   )

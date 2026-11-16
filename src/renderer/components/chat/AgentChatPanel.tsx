@@ -1158,7 +1158,11 @@ export function AgentChatPanel({
             startScreen={isEmptyChat}
             worktree={
               quickChat ? null : isEmptyChat ? (
-                <ChatStartContextRow session={composerSession ?? session} inFootRow />
+                <ChatStartContextRow
+                  session={composerSession ?? session}
+                  inFootRow={!isMobileShell}
+                  phone={isMobileShell}
+                />
               ) : (
                 <ComposerWorktreeLabel session={composerSession ?? session} />
               )

@@ -14,6 +14,7 @@ import {
 } from '@/components/agents/launcher/constants'
 import { LauncherContextStrip } from '@/components/agents/launcher/context-strip'
 import { type LaunchCheckout, launchChat } from '@/components/agents/launcher/launch-chat'
+import { PHONE_CONTEXT_ROW_CLASS } from '@/components/agents/launcher/launcher-classes'
 import {
   LAUNCHER_DISMISS_MS,
   LAUNCHER_DOCK_SLIDE_MS,
@@ -55,7 +56,11 @@ import {
   splitFastModeOption
 } from '@/components/chat/chat-input-bar-config'
 import {
-  COMPOSER_CARD_CLASS,
+  COMPOSER_PHONE_CARD_CLASS,
+  COMPOSER_PHONE_INPUT_MAX_HEIGHT,
+  COMPOSER_PHONE_INPUT_MIN_HEIGHT,
+  COMPOSER_PHONE_INPUT_ROW_CLASS,
+  COMPOSER_PHONE_PLACEHOLDER,
   COMPOSER_TRAY_CLASS,
   useComposerToolbarMode
 } from '@/components/chat/chat-layout'
@@ -64,6 +69,7 @@ import {
   CHAT_START_INPUT_MAX_HEIGHT,
   CHAT_START_INPUT_MIN_HEIGHT,
   CHAT_START_INPUT_ROW_CLASS,
+  CHAT_START_PHONE_HERO_CLASS,
   CHAT_START_TOP_CLASS,
   ChatStartBottomSpacer,
   ChatStartHero
@@ -1699,12 +1705,14 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         style={mobileBottomInset ? { paddingBottom: mobileBottomInset } : undefined}
       >
         {isMobileShell ? (
-          <ChatStartHero
-            isMobileShell
-            isExiting={isExiting}
-            reducedMotion={reducedMotion}
-            projectLabel={projectLabel}
-          />
+          <div className={CHAT_START_PHONE_HERO_CLASS}>
+            <ChatStartHero
+              isMobileShell
+              isExiting={isExiting}
+              reducedMotion={reducedMotion}
+              projectLabel={projectLabel}
+            />
+          </div>
         ) : (
           <div className={CHAT_START_TOP_CLASS}>
             <ChatStartHero
@@ -1761,8 +1769,8 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
               className={cn(
                 'relative z-10',
                 // Desktop: Composer V2 tray (raised card + foot row), the
-                // same surface as the chat composer. The phone keeps the card.
-                isMobileShell ? COMPOSER_CARD_CLASS : COMPOSER_TRAY_CLASS,
+                // same surface as the chat composer. Phone: the compact card.
+                isMobileShell ? COMPOSER_PHONE_CARD_CLASS : COMPOSER_TRAY_CLASS,
                 dragActive && 'border-primary/70'
               )}
               onDragEnter={dropProps.onDragEnter}
@@ -1774,7 +1782,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                 <div
                   className={cn(
                     'pointer-events-none absolute inset-0 z-10 flex items-center justify-center border-2 border-dashed border-primary/60 bg-background/80 text-sm font-medium text-foreground backdrop-blur-sm',
-                    isMobileShell ? 'rounded-2xl' : 'rounded-[20px]'
+                    'rounded-[20px]'
                   )}
                 >
                   <span className="flex items-center gap-2">
@@ -1814,7 +1822,10 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-only focus aid for the padding; the editor is the accessible target */}
                 <div
                   data-composer-row
-                  className={cn('flex items-start', CHAT_START_INPUT_ROW_CLASS)}
+                  className={cn(
+                    'flex items-start',
+                    isMobileShell ? COMPOSER_PHONE_INPUT_ROW_CLASS : CHAT_START_INPUT_ROW_CLASS
+                  )}
                   onMouseDown={(event) => focusComposerFromRowPress(event, editorRef.current)}
                 >
                   {/* Tiptap rich-text editor — the skill "pill" is a real inline
@@ -1835,14 +1846,24 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                       inputRef={composerInputRef}
                       disabled={composerLocked}
                       className="min-w-0 flex-1"
-                      minHeight={CHAT_START_INPUT_MIN_HEIGHT}
-                      maxHeight={CHAT_START_INPUT_MAX_HEIGHT}
+                      minHeight={
+                        isMobileShell
+                          ? COMPOSER_PHONE_INPUT_MIN_HEIGHT
+                          : CHAT_START_INPUT_MIN_HEIGHT
+                      }
+                      maxHeight={
+                        isMobileShell
+                          ? COMPOSER_PHONE_INPUT_MAX_HEIGHT
+                          : CHAT_START_INPUT_MAX_HEIGHT
+                      }
                       placeholder={
                         composerDisabled
                           ? 'Composer unavailable'
                           : hasCommandToken
                             ? 'Add a message (optional)…'
-                            : 'Ask anything… (/ for commands, @ for files and chats)'
+                            : isMobileShell
+                              ? COMPOSER_PHONE_PLACEHOLDER
+                              : 'Ask anything… (/ for commands, @ for files and chats)'
                       }
                       ariaLabel="Agent prompt"
                       autoFocus
@@ -1916,7 +1937,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
                 />
               )}
             </div>
-            {isMobileShell ? contextStrip() : null}
+            {isMobileShell ? contextStrip(PHONE_CONTEXT_ROW_CLASS) : null}
           </div>
         </div>
         {isMobileShell ? null : <ChatStartBottomSpacer />}
