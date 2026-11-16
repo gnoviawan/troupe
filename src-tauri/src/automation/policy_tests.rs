@@ -153,3 +153,42 @@ fn an_agent_that_lists_other_reaches_every_launchable_mcp_server_in_settings_ord
         ]
     );
 }
+
+#[test]
+fn an_agent_scoped_to_mcp_servers_reaches_only_those_in_scope_order() {
+    let agent = |id: &str, scope: serde_json::Value| {
+        json!({ "op": "add_node", "node": { "id": id, "label": id, "spec": {
+            "kind": "agent", "agent_id": "claude", "prompt": "Triage",
+            "output_schema": { "type": "object" }, "timeout_ms": 60000,
+            "max_attempts": 1, "tools": ["other"], "mcp_servers": scope } } })
+    };
+    let a = apply(
+        &sample_automation(),
+        json!([
+            agent("scoped", json!(["srv-gh", "srv-old", "srv-gone"])),
+            agent("none", json!([]))
+        ]),
+    );
+    let mut tebar = server("srv-tebar", "Tebar");
+    tebar.aliases = vec!["srv-old".into()];
+    let servers = [tebar, server("srv-gh", "GitHub")];
+    let reach: Vec<(String, Vec<String>)> = run_policy(&a, 0, &servers)
+        .agents
+        .into_iter()
+        .map(|agent| {
+            let names = agent.mcp_servers.into_iter().map(|s| s.name).collect();
+            (agent.node_id.to_string(), names)
+        })
+        .collect();
+    assert_eq!(
+        reach,
+        vec![
+            ("extract".to_string(), vec![]),
+            (
+                "scoped".to_string(),
+                vec!["GitHub".to_string(), "Tebar".to_string()]
+            ),
+            ("none".to_string(), vec![]),
+        ]
+    );
+}

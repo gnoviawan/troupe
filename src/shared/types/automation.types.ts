@@ -59,6 +59,8 @@ export type NodeSpec =
       timeout_ms: number
       max_attempts: number
       tools: AgentTool[]
+      /** Server ids its session starts with when `tools` has `other`: null for every enabled server, [] for none. */
+      mcp_servers: string[] | null
     }
   | { kind: 'transform'; fields: NamedTemplate[] }
   | { kind: 'condition'; left: Template; op: ConditionOp; right: Template | null }

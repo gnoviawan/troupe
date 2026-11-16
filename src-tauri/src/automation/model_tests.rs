@@ -76,7 +76,10 @@ fn build_fixture() -> WireFixture {
                 { "id": "join", "label": "Join", "spec": { "kind": "merge", "mode": "any" } },
                 { "id": "pause", "label": "Pause", "spec": { "kind": "wait", "duration_ms": 3_600_000 } },
                 { "id": "gate", "label": "Ship it?", "spec": { "kind": "approval", "message": "Ship {{nodes.body.output.item}}?", "timeout_ms": 86_400_000 } },
-                { "id": "stop", "label": "Stop", "spec": { "kind": "fail", "message": "{{trigger.kind}}" } }
+                { "id": "stop", "label": "Stop", "spec": { "kind": "fail", "message": "{{trigger.kind}}" } },
+                { "id": "triage", "label": "Triage", "spec": { "kind": "agent", "agent_id": "claude",
+                    "prompt": "Triage", "output_schema": { "type": "object" }, "timeout_ms": 60000,
+                    "max_attempts": 1, "tools": ["other"], "mcp_servers": ["srv-github"] } }
             ],
             "edges": [
                 { "from": "trigger", "port": "out", "to": "each" },

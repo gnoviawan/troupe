@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serde_json::{json, Value};
 
-use super::registry::{attach_aliases, find_server, parse_registry, store_servers};
+use super::registry::{agent_servers, attach_aliases, find_server, parse_registry, store_servers};
 use super::{McpServerConfig, McpServerEntry};
 use crate::acp::mcp_probe::McpNameValuePair;
 use crate::web::mcp_registry::{ALIASES_KEY, STORE_KEY};
@@ -237,5 +237,35 @@ fn each_entry_becomes_the_session_server_a_chat_session_gets() {
             json!({ "type": "sse", "name": "Events", "url": "https://sse.example.com",
                     "headers": [] }),
         ]
+    );
+}
+
+#[test]
+fn an_agent_scope_picks_its_servers_in_its_order_once_each() {
+    let mut entries = parse_registry(&stored_list());
+    attach_aliases(
+        &mut entries,
+        &stored_list(),
+        &json!({ "old-files": "srv-1" }),
+    );
+    let picked = |scope: Option<&[String]>| -> Vec<&str> {
+        agent_servers(scope, &entries)
+            .into_iter()
+            .map(|s| s.server_id.as_str())
+            .collect()
+    };
+    let scope = |ids: &[&str]| -> Vec<String> { ids.iter().map(|id| id.to_string()).collect() };
+
+    assert_eq!(picked(None), vec!["srv-1", "srv-3"]);
+    assert_eq!(picked(Some(&scope(&[]))), Vec::<&str>::new());
+    assert_eq!(
+        picked(Some(&scope(&["srv-3", "old-files"]))),
+        vec!["srv-3", "srv-1"]
+    );
+    let repeated = scope(&["srv-1", "srv-9", "srv-2", "old-files", "srv-1"]);
+    assert_eq!(
+        picked(Some(&repeated)),
+        vec!["srv-1"],
+        "unknown and disabled ids drop; an alias of a picked server adds nothing"
     );
 }

@@ -162,7 +162,8 @@ function nodeSpec(v: unknown, p: string): NodeSpec {
         output_schema: obj(o.output_schema, `${p}.output_schema`) as JsonSchemaSubset,
         timeout_ms: num(o.timeout_ms, `${p}.timeout_ms`),
         max_attempts: num(o.max_attempts, `${p}.max_attempts`),
-        tools: agentTools(o.tools, `${p}.tools`)
+        tools: agentTools(o.tools, `${p}.tools`),
+        mcp_servers: nullable(o.mcp_servers, `${p}.mcp_servers`, (v, q) => arr(v, q, str))
       }
     case 'transform':
       return { kind: 'transform', fields: arr(o.fields, `${p}.fields`, namedTemplate) }

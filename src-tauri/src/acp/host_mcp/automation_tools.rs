@@ -78,7 +78,7 @@ pub const CAPABILITIES_DESCRIPTION: &str = "What an automation in this project c
 as {{secrets.NAME}} in http nodes only), and `calling_agent_id`, your own agent_id when it is \
 known, a good default for agent nodes, and `mcp_servers` [{server_id, name, transport, status, \
 error, tools: [{name, description, input_schema, output_schema}]}], the project's MCP servers \
-with their live tool lists, for mcp_tool nodes; an agent node that lists `other` starts with all of them. Returns JSON.";
+with their live tool lists, for mcp_tool nodes and for an agent node's mcp_servers. Returns JSON.";
 
 pub const LIST_DESCRIPTION: &str = "List this project's automations: id, name, revision, \
 approved_revision, enabled, trigger and node count. Returns JSON.";
@@ -139,7 +139,7 @@ An automation is a graph the Troupe host runs on a schedule or on demand, with n
 - Fetch data with http nodes, or call a tool of one of the project's MCP servers directly with an mcp_tool node. Agent nodes get no secrets and only the tools their tools list allows (none by default), so put the data they need in their prompt with {{nodes.<id>.output...}}.
 - An mcp_tool node uses the server's own credentials; never put a secret in its arguments. A tool that asks for user input (input_required) fails the step: runs cannot answer it, so pick tools that do not ask.
 - List an agent tool only when the task needs it. The host allows a listed tool kind when the agent asks and refuses the rest. The user sees the list on the approval card.
-- An agent that lists other starts with every enabled MCP server in Settings → MCP (automation_capabilities' mcp_servers), with the same credentials as a chat, OAuth sign-ins included. A server whose transport the agent does not support is skipped. The approval card names the servers. The untrusted-data rule below still applies. To call one known tool, prefer an mcp_tool node.
+- An agent that lists other starts with the enabled MCP servers in Settings → MCP (automation_capabilities' mcp_servers) that its mcp_servers names, with the same credentials as a chat, OAuth sign-ins included. Set mcp_servers to the server_ids the step needs and no others; null gives it every enabled server and [] none. A server whose transport the agent does not support is skipped. The approval card names the servers. The untrusted-data rule below still applies. To call one known tool, prefer an mcp_tool node.
 - Untrusted data is any http node's output, any mcp_tool node's result and the output of an agent that lists execute, fetch or other, and anything built from them. An agent whose prompt reads untrusted data may not list execute, fetch, other or edit.
 - An agent that lists fetch or other may not also list read, search or edit. execute may be listed with them: a command can already reach every file.
 - File tools work only inside the run's folder. The host refuses paths outside it, agent, editor and git config (.git, .github, .claude and similar), .mcp.json, .npmrc, .netrc and .env files.
@@ -153,7 +153,7 @@ An automation is a graph the Troupe host runs on a schedule or on demand, with n
 Node = {id, label, spec}. id matches ^[a-z][a-z0-9_]{0,31}$ and is not "trigger".
 
 - http: {kind:"http", method:"GET"|"POST"|"PUT"|"PATCH"|"DELETE", url, headers:[{name, value}], body?, allowed_hosts:[host]}. A literal url's host must be in allowed_hosts; a templated host needs a non-empty allowed_hosts. Output {status, headers, body}; body is parsed JSON when it can be.
-- agent: {kind:"agent", agent_id, model?, prompt, output_schema, timeout_ms (up to 900000), max_attempts (1 to 3), tools?:["read"|"search"|"edit"|"execute"|"fetch"|"other"]}. tools defaults to []. edit covers writing, deleting and moving files; execute runs commands; other covers the project's MCP servers and any other tool. Output: the JSON value.
+- agent: {kind:"agent", agent_id, model?, prompt, output_schema, timeout_ms (up to 900000), max_attempts (1 to 3), tools?:["read"|"search"|"edit"|"execute"|"fetch"|"other"], mcp_servers?:[server_id] | null}. tools defaults to []. edit covers writing, deleting and moving files; execute runs commands; other covers the project's MCP servers and any other tool. mcp_servers is allowed only with other: null (the default) starts the session with every enabled MCP server, a list with only those, [] with none. Output: the JSON value.
 - transform: {kind:"transform", fields:[{name, value}]}. Output: an object of the fields.
 - condition: {kind:"condition", left, op:"eq"|"ne"|"contains"|"gt"|"lt"|"exists", right?}. right is required unless op is exists. Output {result}.
 - fail: {kind:"fail", message}. Fails the run with the message.

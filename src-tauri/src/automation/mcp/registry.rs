@@ -75,6 +75,25 @@ pub fn find_server<'a>(servers: &'a [McpServerEntry], id: &str) -> Option<&'a Mc
         .or_else(|| servers.iter().find(|s| s.aliases.iter().any(|a| a == id)))
 }
 
+/// The servers an agent node that lists `other` starts with: every one when
+/// `scope` is `None`, else the ones its ids name (aliases included) in the
+/// scope's order, each once. An id that names no server is dropped.
+pub fn agent_servers<'a>(
+    scope: Option<&[String]>,
+    servers: &'a [McpServerEntry],
+) -> Vec<&'a McpServerEntry> {
+    let Some(ids) = scope else {
+        return servers.iter().collect();
+    };
+    let mut picked: Vec<&McpServerEntry> = Vec::new();
+    for server in ids.iter().filter_map(|id| find_server(servers, id)) {
+        if !picked.iter().any(|p| p.server_id == server.server_id) {
+            picked.push(server);
+        }
+    }
+    picked
+}
+
 #[derive(Deserialize)]
 struct StoredEntry {
     id: String,

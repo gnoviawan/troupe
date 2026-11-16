@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use chrono::{TimeZone, Utc};
 
 use super::graph;
-use super::mcp::{find_server, McpServerEntry};
+use super::mcp::{agent_servers, find_server, McpServerEntry};
 use super::model::{
     AgentMcpServer, AgentPolicy, AgentTool, Automation, McpToolPolicy, NodeHosts, NodeSecrets,
     NodeSpec, RunPolicy, Schedule, Trigger,
@@ -28,6 +28,7 @@ pub fn run_policy(automation: &Automation, now_ms: i64, servers: &[McpServerEntr
                 model,
                 timeout_ms,
                 tools,
+                mcp_servers,
                 ..
             } => agents.push(AgentPolicy {
                 node_id: node.id.clone(),
@@ -41,7 +42,7 @@ pub fn run_policy(automation: &Automation, now_ms: i64, servers: &[McpServerEntr
                     .into_iter()
                     .collect(),
                 mcp_servers: if tools.contains(&AgentTool::Other) {
-                    agent_mcp_servers(servers)
+                    agent_mcp_servers(mcp_servers.as_deref(), servers)
                 } else {
                     Vec::new()
                 },
@@ -91,11 +92,11 @@ pub fn run_policy(automation: &Automation, now_ms: i64, servers: &[McpServerEntr
     }
 }
 
-/// The servers an agent node's session gets: those with a usable launch
-/// config, as `engine::agent` passes them.
-fn agent_mcp_servers(servers: &[McpServerEntry]) -> Vec<AgentMcpServer> {
-    servers
-        .iter()
+/// The servers an agent node's session gets: those of its scope with a
+/// usable launch config, as `engine::agent` passes them.
+fn agent_mcp_servers(scope: Option<&[String]>, servers: &[McpServerEntry]) -> Vec<AgentMcpServer> {
+    agent_servers(scope, servers)
+        .into_iter()
         .filter(|server| server.acp_server().is_some())
         .map(|server| AgentMcpServer {
             server_id: server.server_id.clone(),

@@ -297,3 +297,44 @@ async fn an_automation_naming_a_server_by_id_and_alias_is_told_once_per_listing(
     );
     assert_eq!(fake.list_count(), 1);
 }
+
+/// An automation in `p1` whose one agent node lists `tools` and is scoped
+/// to `scope`.
+fn with_agent(service: &AutomationService, tools: Value, scope: Value) -> Automation {
+    let created = service.create("p1", "Triage").unwrap();
+    service
+        .apply_ops(
+            &created.id,
+            1,
+            &ops(json!([
+                { "op": "add_node", "node": { "id": "triage", "label": "Triage", "spec": {
+                    "kind": "agent", "agent_id": "claude", "prompt": "Triage",
+                    "output_schema": { "type": "object" }, "timeout_ms": 60000,
+                    "max_attempts": 1, "tools": tools, "mcp_servers": scope } } },
+                { "op": "connect", "edge": { "from": "trigger", "port": "out", "to": "triage" } }
+            ])),
+        )
+        .unwrap()
+        .automation
+}
+
+#[tokio::test]
+async fn the_policy_names_only_the_servers_an_agent_is_scoped_to() {
+    let service = service(FakeMcp::new());
+    let a = with_agent(&service, json!(["other"]), json!(["srv-2", "srv-old"]));
+    let policy = service.policy(&a.id).unwrap();
+    let reach: Vec<&str> = policy.agents[0]
+        .mcp_servers
+        .iter()
+        .map(|s| s.server_id.as_str())
+        .collect();
+    assert_eq!(reach, vec!["srv-2", "srv-1"]);
+    assert_eq!(
+        service.get(&a.id).unwrap().automation.graph.nodes[0].spec,
+        serde_json::from_value(json!({
+            "kind": "agent", "agent_id": "claude", "prompt": "Triage",
+            "output_schema": { "type": "object" }, "timeout_ms": 60000,
+            "max_attempts": 1, "tools": ["other"], "mcp_servers": ["srv-2", "srv-old"] }))
+        .unwrap()
+    );
+}

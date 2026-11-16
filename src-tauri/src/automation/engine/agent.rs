@@ -4,7 +4,8 @@
 //! `max_attempts`, all inside the node's `timeout_ms`. The session is always
 //! disposed. The host allows the tools on the node's list when the agent asks
 //! for them, and refuses the rest. A node that lists `other` also starts with
-//! the project's enabled MCP servers, as a chat session does.
+//! the enabled MCP servers its `mcp_servers` scope names (all of them when
+//! unset), as a chat session does.
 
 use std::time::Duration;
 
@@ -15,7 +16,7 @@ use tokio::time::Instant;
 use super::nodes::{render_text, NodeError, NodeScope};
 use crate::acp::oneshot::{OneShotError, OneShotRequest, OneShotSession};
 use crate::acp::session::ToolAllowlist;
-use crate::automation::mcp::McpServerEntry;
+use crate::automation::mcp::{agent_servers, McpServerEntry};
 use crate::automation::model::{AgentTool, JsonSchemaSubset, Template};
 use crate::automation::schema::{self, Schema};
 
@@ -27,6 +28,7 @@ pub(super) struct AgentSpec<'a> {
     pub timeout_ms: u64,
     pub max_attempts: u8,
     pub tools: &'a [AgentTool],
+    pub mcp_servers: Option<&'a [String]>,
 }
 
 pub(super) async fn run(scope: &NodeScope<'_>, spec: AgentSpec<'_>) -> Result<Value, NodeError> {
@@ -45,20 +47,24 @@ pub(super) async fn run(scope: &NodeScope<'_>, spec: AgentSpec<'_>) -> Result<Va
     );
     let deadline = Instant::now() + Duration::from_millis(spec.timeout_ms);
     let mcp_servers: Vec<_> = if spec.tools.contains(&AgentTool::Other) {
-        engine
-            .mcp()
-            .servers(scope.run.project_id)
-            .iter()
+        let servers = engine.mcp().servers(scope.run.project_id);
+        agent_servers(spec.mcp_servers, &servers)
+            .into_iter()
             .filter_map(McpServerEntry::acp_server)
             .collect()
     } else {
         Vec::new()
     };
     log::info!(
-        "[Automation] run {} step {}: agent session gets {} project MCP server(s)",
+        "[Automation] run {} step {}: agent session gets {} project MCP server(s) ({})",
         scope.run.run.id,
         scope.node_id,
-        mcp_servers.len()
+        mcp_servers.len(),
+        if spec.mcp_servers.is_some() {
+            "scoped"
+        } else {
+            "all enabled"
+        }
     );
     let request = OneShotRequest {
         config,

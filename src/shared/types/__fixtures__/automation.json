@@ -55,7 +55,8 @@
             },
             "timeout_ms": 120000,
             "max_attempts": 2,
-            "tools": ["search", "read", "search"]
+            "tools": ["search", "read", "search"],
+            "mcp_servers": null
           }
         },
         {
@@ -387,6 +388,23 @@
               "kind": "fail",
               "message": "{{trigger.kind}}"
             }
+          },
+          {
+            "id": "triage",
+            "label": "Triage",
+            "spec": {
+              "kind": "agent",
+              "agent_id": "claude",
+              "model": null,
+              "prompt": "Triage",
+              "output_schema": {
+                "type": "object"
+              },
+              "timeout_ms": 60000,
+              "max_attempts": 1,
+              "tools": ["other"],
+              "mcp_servers": ["srv-github"]
+            }
           }
         ],
         "edges": [
@@ -506,6 +524,23 @@
             "spec": {
               "kind": "fail",
               "message": "{{trigger.kind}}"
+            }
+          },
+          {
+            "id": "triage",
+            "label": "Triage",
+            "spec": {
+              "kind": "agent",
+              "agent_id": "claude",
+              "model": null,
+              "prompt": "Triage",
+              "output_schema": {
+                "type": "object"
+              },
+              "timeout_ms": 60000,
+              "max_attempts": 1,
+              "tools": ["other"],
+              "mcp_servers": ["srv-github"]
             }
           }
         ],
@@ -630,6 +665,23 @@
             "spec": {
               "kind": "fail",
               "message": "{{trigger.kind}}"
+            }
+          },
+          {
+            "id": "triage",
+            "label": "Triage",
+            "spec": {
+              "kind": "agent",
+              "agent_id": "claude",
+              "model": null,
+              "prompt": "Triage",
+              "output_schema": {
+                "type": "object"
+              },
+              "timeout_ms": 60000,
+              "max_attempts": 1,
+              "tools": ["other"],
+              "mcp_servers": ["srv-github"]
             }
           }
         ],
