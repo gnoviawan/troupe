@@ -25,7 +25,8 @@ import type { AcpState } from './types'
 const answering: Record<PendingPromptKind, Set<string>> = {
   permissions: new Set(),
   questions: new Set(),
-  elicitations: new Set()
+  elicitations: new Set(),
+  mcpInstalls: new Set()
 }
 
 export function noteAnswering(kind: PendingPromptKind, id: string): void {
@@ -42,7 +43,8 @@ type StoreSet = (fn: (state: AcpState) => Partial<AcpState>) => void
 const STORE_KEY = {
   permissions: 'pendingPermissions',
   questions: 'pendingQuestions',
-  elicitations: 'pendingElicitations'
+  elicitations: 'pendingElicitations',
+  mcpInstalls: 'pendingMcpInstalls'
 } as const satisfies Record<PendingPromptKind, keyof AcpState>
 
 /** Drop the session's stored requests of `kind` whose ids the host list leaves out. */
@@ -125,6 +127,16 @@ export function syncPendingPrompts(
       prompts.elicitations,
       (request) => request.requestId,
       (request) => get()._onElicitationRequest(request)
+    )
+  }
+  if (prompts.mcpInstalls) {
+    syncKind(
+      set,
+      sessionId,
+      'mcpInstalls',
+      prompts.mcpInstalls,
+      (request) => request.requestId,
+      (request) => get()._onMcpInstallRequest(request)
     )
   }
 }

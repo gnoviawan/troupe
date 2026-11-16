@@ -76,6 +76,7 @@ const syncPrompts = (sessionId: string, prompts: Partial<PendingPrompts>) =>
     permissions: null,
     questions: null,
     elicitations: null,
+    mcpInstalls: null,
     ...prompts
   })
 
