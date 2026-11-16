@@ -84,9 +84,10 @@ export function RailUtilityButtons({
  * Rail footer (Paper 2.2 "Rail footer"). Expanded: one row of 32px icon
  * buttons at the left, 2px apart: Settings, Report a bug, Theme picker,
  * Shortcuts. Collapsed: the same buttons stack upward from the bottom
- * (column-reverse, 4px apart, 6px top and bottom, 10px left like the
- * expanded row), so Settings keeps its place at the bottom left. The footer fades out while the Rail collapses and the
- * other layout fades in.
+ * (column-reverse, 4px apart, 6px top and bottom). Both start 12px from the
+ * Rail edge, so each 32px button is centred on the icon column (x = 28) and
+ * Settings keeps its place at the bottom left. The footer fades out while
+ * the Rail collapses and the other layout fades in.
  */
 export function RailFooter({
   isShortcutsOpen,
@@ -138,8 +139,8 @@ export function RailFooter({
       className={cn(
         'flex shrink-0 items-center',
         collapsed
-          ? 'flex-col-reverse items-start gap-1 py-1.5 pl-2.5'
-          : 'gap-0.5 pb-2 pl-2.5 pr-1.5 pt-1',
+          ? 'flex-col-reverse items-start gap-1 py-1.5 pl-3'
+          : 'gap-0.5 pb-2 pl-3 pr-1.5 pt-1',
         RAIL_BLOCK_FADE_CLASS
       )}
       data-testid="rail-footer"

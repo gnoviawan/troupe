@@ -6,10 +6,14 @@ import {
 import { QUIET_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
 
-/** Look of a section header's trailing icon button (same box as a group row's `…`). */
+/**
+ * Look of a section header's trailing icon button: the 20px box and 12px
+ * glyph of a row's own `+` and `…`, so a heading's button and the row
+ * actions under it share one right edge (x = 228 on the expanded Rail).
+ */
 export const RAIL_SECTION_BUTTON_CLASS = cn(
   QUIET_ICON_BUTTON_CLASS,
-  'size-5 cursor-pointer [&_svg]:size-3.5'
+  'size-5 cursor-pointer [&_svg]:size-3'
 )
 
 interface RailSectionHeaderProps {
@@ -23,8 +27,8 @@ interface RailSectionHeaderProps {
 /**
  * Small muted section label of the shell Rail project list ("Groups",
  * "Projects"): 40px with 12px on top, the label 18px from the Rail edge
- * (Sidebar V2), an icon button at the end. The row is not focusable; only
- * its button is.
+ * (Sidebar V2), an icon button at the end on the row actions' right edge.
+ * The row is not focusable; only its button is.
  *
  * Collapsed Rail: the same 40px row holds a 20×1 `border` divider (see
  * {@link RailSectionDivider}).
@@ -46,7 +50,9 @@ export function RailSectionHeader({
     <div
       data-testid={`rail-section-${label.toLowerCase()}`}
       className={cn(
-        'flex h-10 w-full select-none items-center justify-between gap-2 pt-3 pr-1.5 pl-2.5 whitespace-nowrap',
+        // 12px end padding: the button ends where a row's actions and times
+        // end (the row fill's 12px padding), right-aligned to that edge.
+        'flex h-10 w-full select-none items-center justify-between gap-2 pt-3 pr-3 pl-2.5 whitespace-nowrap',
         RAIL_BLOCK_FADE_CLASS,
         className
       )}

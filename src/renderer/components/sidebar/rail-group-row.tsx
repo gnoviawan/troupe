@@ -70,7 +70,7 @@ function RailGroupIconRow({
           data-group-id={group.id}
           data-testid={`rail-group-row-${group.id}`}
           className={cn(
-            'group flex h-8 cursor-pointer select-none items-center rounded-lg',
+            'group flex h-7.5 cursor-pointer select-none items-center rounded-lg',
             RAIL_COLLAPSED_ROW_CLASS,
             'transition-colors duration-150 ease-out',
             FOCUS_RING_CLASS,

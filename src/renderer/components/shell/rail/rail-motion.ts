@@ -98,8 +98,11 @@ export const RAIL_BLOCK_FADE_CLASS = [
 ].join(' ')
 
 /**
- * A row on the collapsed Rail: a 28px wide fill at x = 14..42 (6px past the
- * list's 8px inset), the icon centred in it. That puts a 16px icon at x = 20,
- * where the expanded row draws it, so the icon does not move on a toggle.
+ * A row on the collapsed Rail: a 30px wide fill at x = 13..43 (5px past the
+ * list's 8px inset). With the 30px row height it is a square, and the icon
+ * sits in its middle on the icon column (x = 28). That is where the expanded
+ * row draws the icon, so it does not move on a toggle, and the middle of the
+ * 56px collapsed Rail, so the column is symmetric (13px on each side).
+ * A row must sit in the list's 8px inset (`px-2`) to land there.
  */
-export const RAIL_COLLAPSED_ROW_CLASS = 'ml-1.5 w-7 justify-center px-0'
+export const RAIL_COLLAPSED_ROW_CLASS = 'ml-[5px] w-7.5 justify-center px-0'

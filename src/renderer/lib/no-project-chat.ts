@@ -1,4 +1,5 @@
 import { UNASSIGNED_PROJECT_ID } from '@shared/types/web-projects.types'
+import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { logFrontendError } from '@/lib/log-api'
 import { isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
@@ -103,4 +104,19 @@ export function focusQuickChatComposer(): void {
     if (frames < FOCUS_COMPOSER_MAX_FRAMES) requestAnimationFrame(tryFocus)
   }
   requestAnimationFrame(tryFocus)
+}
+
+/** The open quick chat's title (live, then index), or `undefined` when none is open. */
+export function useQuickChatTitle(): string | undefined {
+  const sessionId = useQuickChatStore((state) =>
+    state.view.mode === 'chat' ? state.view.sessionId : null
+  )
+  return useAcpStore((state) => {
+    if (!sessionId) return undefined
+    return (
+      state.sessions[sessionId]?.title ||
+      state.sessionIndex.find((entry) => entry.id === sessionId)?.title ||
+      UNTITLED_HOST_TITLE
+    )
+  })
 }

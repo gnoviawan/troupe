@@ -99,8 +99,8 @@ export const ProjectItem = memo(function ProjectItem({
             className={cn(
               'group relative flex h-7.5 w-full cursor-pointer select-none items-center text-left text-xs',
               // Paper 10X5: the open project is a plain row (only the open
-              // chat under it is raised), radius 6.
-              'rounded-md',
+              // chat under it is raised), radius 8 like every Rail row.
+              'rounded-lg',
               RAIL_ROW_INSET_CLASS,
               'transition-colors duration-150 ease-out',
               'hover:bg-row-hover focus-within:bg-row-hover'
@@ -119,7 +119,7 @@ export const ProjectItem = memo(function ProjectItem({
               }}
               tabIndex={isEditing ? -1 : undefined}
               className={cn(
-                'absolute inset-0 rounded-md focus-visible:ring-inset',
+                'absolute inset-0 rounded-lg focus-visible:ring-inset',
                 FOCUS_RING_CLASS
               )}
               aria-current={isActive ? 'page' : undefined}

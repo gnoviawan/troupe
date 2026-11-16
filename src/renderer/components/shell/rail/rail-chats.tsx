@@ -134,7 +134,7 @@ export const RailChatRow = forwardRef<HTMLButtonElement, RailChatRowProps>(funct
       className={cn(
         'flex h-7.5 min-w-0 items-center text-left text-xs whitespace-nowrap',
         collapsed
-          ? cn(RAIL_COLLAPSED_ROW_CLASS, 'rounded-md')
+          ? cn(RAIL_COLLAPSED_ROW_CLASS, 'rounded-lg')
           : 'w-full gap-2.25 rounded-lg pr-3 pl-8.75',
         'transition-[color,background-color,opacity,scale] duration-150 ease-out focus-visible:ring-inset motion-reduce:transition-none',
         FOCUS_RING_CLASS,
@@ -305,10 +305,11 @@ export const RailShowMore = forwardRef<
         collapsed ? (expanded ? 'Show fewer chats' : `Show ${hidden} more chats`) : undefined
       }
       className={cn(
-        'flex h-7 items-center text-xs text-muted-foreground',
+        // 30px like every Rail row, so the collapsed fill is the same square.
+        'flex h-7.5 items-center text-xs text-muted-foreground',
         !collapsed && 'w-full',
         collapsed
-          ? cn(RAIL_COLLAPSED_ROW_CLASS, 'rounded-md hover:bg-foreground/[0.06]')
+          ? cn(RAIL_COLLAPSED_ROW_CLASS, 'rounded-lg hover:bg-foreground/[0.06]')
           : 'rounded-lg pl-14 text-left whitespace-nowrap hover:bg-row-hover',
         'transition-colors duration-150 ease-out hover:text-foreground focus-visible:ring-inset',
         FOCUS_RING_CLASS,
