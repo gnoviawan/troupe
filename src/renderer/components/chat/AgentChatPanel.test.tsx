@@ -2325,7 +2325,7 @@ describe('AgentChatPanel first-send morph (start screen → working chat)', () =
     expect(lastComposerProps()).toMatchObject({ startScreen: true })
     // Composer V2: the worktree pick sits in the composer's foot row.
     expect(lastComposerProps()?.worktree).toMatchObject({ props: { inFootRow: true } })
-    expect(container.querySelector('[data-chat-start-spacer]')).toHaveClass('flex-[1_1_0px]')
+    expect(container.querySelector('[data-chat-start-spacer]')).toHaveClass('flex-[1_1_44px]')
     // The transcript mounts on the first send.
     expect(chatMessageListPropsRef.current).toBeNull()
   })

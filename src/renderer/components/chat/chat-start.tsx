@@ -10,11 +10,16 @@ import { cn } from '@/lib/utils'
  * 1. CHAT_START_TOP_CLASS: the region above the composer. Its basis is its
  *    content (the hero), and it takes half of the free space.
  * 2. The composer (card + context row), no padding above or below.
- * 3. ChatStartBottomSpacer: a zero basis that takes the other half.
+ * 3. ChatStartBottomSpacer: a 44px basis (the tab bar height) that takes
+ *    the other half.
  *
  * Equal growth from both bases centres the block, so the hero and the
- * composer sit at the same y in the launcher and in an empty chat. Desktop
- * only: on the mobile web shell the composer stays at the bottom.
+ * composer sit at the same y in the launcher and in an empty chat. The
+ * spacer's 44px basis moves the block 22px up: the pane starts under the
+ * 44px tab bar, so this centres the block in the app window, not in the
+ * pane (decided with the design owner, 2026-11-16). When the height is
+ * tight the spacer shrinks first, down to 0. Desktop only: on the mobile
+ * web shell the composer stays at the bottom.
  */
 export const CHAT_START_TOP_CLASS =
   'flex w-full min-w-0 flex-[1_1_auto] flex-col items-center justify-end'
@@ -25,7 +30,7 @@ export function ChatStartBottomSpacer(): React.JSX.Element {
     <div
       aria-hidden="true"
       data-chat-start-spacer="true"
-      className="min-h-0 w-full flex-[1_1_0px]"
+      className="min-h-0 w-full flex-[1_1_44px]"
     />
   )
 }

@@ -3314,7 +3314,7 @@ describe('AgentLauncher mobile empty-state overflow', () => {
     expect(top).toHaveClass('flex-[1_1_auto]', 'justify-end')
     expect(top).not.toHaveClass('pt-3')
     expect(launcherRoot.lastElementChild).toHaveAttribute('data-chat-start-spacer', 'true')
-    expect(launcherRoot.lastElementChild).toHaveClass('flex-[1_1_0px]')
+    expect(launcherRoot.lastElementChild).toHaveClass('flex-[1_1_44px]')
     // Hero div spans the content box; heading wraps instead of forcing width.
     expect(hero.className).toContain('w-full')
     expect(heading.className).toContain('break-words')
