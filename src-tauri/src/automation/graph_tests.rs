@@ -918,6 +918,29 @@ fn rule9_untrusted_data_reaches_an_agent_through_loop_items_and_merges() {
 }
 
 #[test]
+fn rule7_mcp_servers_need_the_other_tool() {
+    let scoped = |tools: serde_json::Value, scope: serde_json::Value| {
+        let mut spec = agent_spec("Summarize {{trigger.kind}}", tools);
+        spec["mcp_servers"] = scope;
+        set_spec(&sample_automation(), "extract", spec)
+    };
+    assert_eq!(
+        messages(&scoped(json!(["read"]), json!(["srv-1"]))),
+        vec![(
+            IssueCode::McpServersWithoutOther,
+            "extract".to_string(),
+            "mcp_servers takes effect only when tools lists other; list other or set mcp_servers to null".to_string()
+        )]
+    );
+    assert_eq!(
+        codes(&scoped(json!([]), json!([]))),
+        vec![at(IssueCode::McpServersWithoutOther, "extract")]
+    );
+    assert_eq!(codes(&scoped(json!(["other"]), json!(["srv-1"]))), vec![]);
+    assert_eq!(codes(&scoped(json!(["read"]), json!(null))), vec![]);
+}
+
+#[test]
 fn an_agent_mcp_scope_round_trips_through_add_and_update_ops() {
     let scope_of = |a: &Automation, id: &str| {
         let node = a.graph.nodes.iter().find(|n| n.id.as_str() == id).unwrap();

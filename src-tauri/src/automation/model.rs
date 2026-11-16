@@ -628,6 +628,7 @@ pub enum IssueCode {
     InvalidOutputSchema,
     AgentTimeoutOutOfRange,
     AgentMaxAttemptsOutOfRange,
+    McpServersWithoutOther,
     MissingConditionOperand,
     InvalidSchedule,
     UntrustedAgentOutboundTool,

@@ -151,6 +151,7 @@ export type IssueCode =
   | 'invalid_output_schema'
   | 'agent_timeout_out_of_range'
   | 'agent_max_attempts_out_of_range'
+  | 'mcp_servers_without_other'
   | 'missing_condition_operand'
   | 'invalid_schedule'
   | 'untrusted_agent_outbound_tool'

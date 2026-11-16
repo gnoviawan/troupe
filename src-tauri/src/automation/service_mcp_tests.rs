@@ -319,6 +319,43 @@ fn with_agent(service: &AutomationService, tools: Value, scope: Value) -> Automa
 }
 
 #[tokio::test]
+async fn an_agent_scope_id_that_names_no_enabled_server_points_at_capabilities() {
+    let service = service(FakeMcp::new());
+    let unknown_agent = (
+        IssueCode::UnknownAgent,
+        "agent \"claude\" is not known on this host; start it once in a chat".to_string(),
+    );
+
+    let scoped = with_agent(
+        &service,
+        json!(["other"]),
+        json!(["srv-old", "srv-9", "srv-2"]),
+    );
+    assert_eq!(
+        issues(&service, &scoped),
+        vec![
+            unknown_agent.clone(),
+            (
+                IssueCode::UnknownMcpServer,
+                "mcp_servers names \"srv-9\", which is not an enabled MCP server of this project; pick a server_id from automation_capabilities".to_string()
+            ),
+        ]
+    );
+
+    let without_other = with_agent(&service, json!([]), json!(["srv-9"]));
+    assert_eq!(
+        issues(&service, &without_other),
+        vec![
+            (
+                IssueCode::McpServersWithoutOther,
+                "mcp_servers takes effect only when tools lists other; list other or set mcp_servers to null".to_string()
+            ),
+            unknown_agent,
+        ]
+    );
+}
+
+#[tokio::test]
 async fn the_policy_names_only_the_servers_an_agent_is_scoped_to() {
     let service = service(FakeMcp::new());
     let a = with_agent(&service, json!(["other"]), json!(["srv-2", "srv-old"]));
