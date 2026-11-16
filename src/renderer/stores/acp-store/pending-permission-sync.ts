@@ -57,10 +57,14 @@ function dropUnlisted(
   const key = STORE_KEY[kind]
   let dropped = 0
   set((state) => {
-    const stored: Record<string, { sessionId: string }> = state[key] ?? {}
-    const stale = Object.keys(stored).filter(
-      (id) => stored[id].sessionId === sessionId && !listed.has(id)
-    )
+    const stored: Record<string, { sessionId: string; result?: unknown }> = state[key] ?? {}
+    const stale = Object.keys(stored).filter((id) => {
+      const entry = stored[id]
+      if (entry.sessionId !== sessionId || listed.has(id)) return false
+      // A finished install card keeps its next steps until the user dismisses it.
+      if (kind === 'mcpInstalls' && entry.result != null) return false
+      return true
+    })
     if (stale.length === 0) return {}
     dropped = stale.length
     const next = { ...stored }

@@ -87,6 +87,29 @@ describe('readPendingPrompts', () => {
     })
   })
 
+  it('reads a pending MCP install of this session and skips a malformed one', () => {
+    const card = {
+      agentId: 'a1',
+      sessionId: SID,
+      requestId: 'mcp-1',
+      name: 'echo',
+      title: 'echo',
+      transport: 'stdio',
+      form: { title: 'echo', fields: [] },
+      consent: null,
+      planId: 'plan-1',
+      launchDigest: 'sha256:abc'
+    }
+    const reply = {
+      pendingMcpInstalls: [
+        card,
+        { ...card, requestId: 'mcp-other', sessionId: 'other' },
+        { requestId: 'mcp-bad' }
+      ]
+    }
+    expect(readPendingPrompts(SID, reply).mcpInstalls).toEqual([card])
+  })
+
   it('reads an empty list as authoritative and an absent one as no list', () => {
     expect(readPendingPrompts(SID, { pendingPermissions: [], pendingElicitations: [] })).toEqual({
       permissions: [],
@@ -152,6 +175,37 @@ describe('PendingPromptCoverage', () => {
       coverage.covers(SID, replay('permission_request', request('perm-1'))),
       'a listed approval is restored by the list, never by replay'
     ).toBe(true)
+  })
+
+  it('covers a replayed install card the list left out and lets a listed one through', () => {
+    const coverage = new PendingPromptCoverage()
+    const card = {
+      agentId: 'a1',
+      sessionId: SID,
+      requestId: 'mcp-live',
+      name: 'echo',
+      title: 'echo',
+      transport: 'stdio' as const,
+      form: {
+        source: { kind: 'import' as const, json: '{}', server: 'echo' },
+        choice: null,
+        title: 'echo',
+        fields: []
+      },
+      consent: null,
+      planId: 'plan-1',
+      launchDigest: 'sha256:abc'
+    }
+    coverage.note(SID, 5, { ...NO_LISTS, mcpInstalls: [card] })
+    expect(coverage.covers(SID, { type: 'mcp_install_request', seq: 4, payload: card })).toBe(false)
+    expect(
+      coverage.covers(SID, {
+        type: 'mcp_install_request',
+        seq: 4,
+        payload: { ...card, requestId: 'mcp-done' }
+      })
+    ).toBe(true)
+    expect(coverage.covers(SID, { type: 'mcp_install_request', seq: 6, payload: card })).toBe(false)
   })
 })
 
