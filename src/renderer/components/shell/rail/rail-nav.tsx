@@ -41,15 +41,14 @@ export interface RailNavRowProps
 
 /**
  * One nav row: 30px like every Rail row, 12px inline padding, 14px icon in
- * the 16px icon box, 8px to the label, 12/16
- * medium `secondary-foreground`. The label fades at its end instead of an
+ * the 16px icon box, 8px to the label, 12/16 medium `secondary-foreground`. The label fades at its end instead of an
  * ellipsis. The tooltip on the right carries the name, the shortcut and the
  * hint. A disabled row keeps its tooltip through a wrapper span.
  *
  * Collapsed Rail: the same 30px row with only the icon in a 30px square fill
  * on the icon column (the icon keeps its expanded x); hover takes a 6%
- * foreground fill (radius 8, as every Rail row) and the tooltip is the hover panel tooltip
- * (label + shortcut keycap) at x = 60. The label fades out before it leaves
+ * foreground fill (radius 8, as every Rail row) and the tooltip is the hover
+ * panel tooltip (label + shortcut keycap) at x = 60. The label fades out before it leaves
  * and fades in when the Rail expands.
  */
 export const RailNavRow = forwardRef<HTMLButtonElement, RailNavRowProps>(function RailNavRow(

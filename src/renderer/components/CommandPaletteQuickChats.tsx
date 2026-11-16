@@ -1,11 +1,9 @@
 import { useMemo } from 'react'
-import { toast } from 'sonner'
 import { ChatEntryIcon } from '@/components/chat/ChatHistoryEntryRow'
 import { logShellEvent } from '@/components/shell/shell-log'
 import { CommandGroup, CommandItem } from '@/components/ui/command'
 import { quickSessions, UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
-import { logFrontendError } from '@/lib/log-api'
-import { showNoProjectChat } from '@/lib/no-project-chat'
+import { openNoProjectHistoryChat } from '@/lib/no-project-chat'
 import { useAcpStore } from '@/stores/acp-store'
 
 /** At most this many quick chats in the palette. The Rail lists all of them. */
@@ -56,18 +54,7 @@ export function CommandPaletteQuickChats({
             onSelect={() => {
               logShellEvent(`palette open quick chat ${entry.id}`)
               onDone()
-              showNoProjectChat(entry.id, 'quick', 'palette.quick-chats')
-              void useAcpStore
-                .getState()
-                .openHistorySession(entry.id)
-                .catch((error: unknown) => {
-                  void logFrontendError({
-                    level: 'warn',
-                    source: 'palette.quick-chats',
-                    message: `Could not open quick chat ${entry.id}: ${error instanceof Error ? error.message : String(error)}`
-                  })
-                  toast.error('Could not open that chat. Try again.')
-                })
+              openNoProjectHistoryChat(entry.id, 'quick', 'palette.quick-chats')
             }}
             className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 data-[selected='true']:bg-foreground/[0.06] data-[selected=true]:text-foreground"
           >

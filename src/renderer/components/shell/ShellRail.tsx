@@ -33,7 +33,7 @@ export interface ShellRailProps {
 
 /**
  * Shell frame Rail (shell revamp CAP-1): expanded (persisted width 180-360) or
- * collapsed to 48px of icons, following `railExpanded`. Both states draw one
+ * collapsed to 56px of icons, following `railExpanded`. Both states draw one
  * `RailBody`; the density context switches its rows to icon-only, 1:1 with
  * the expanded rows (Sidebar V2).
  *

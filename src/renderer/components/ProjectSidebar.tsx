@@ -28,8 +28,6 @@ import type { ColorPickerState, ProjectSidebarProps } from './sidebar/types'
 import { useProjectRail } from './sidebar/use-project-rail'
 import { useRailImportChats } from './sidebar/use-rail-import-chats'
 
-/** Projects header icon button: the panel button plus a 14px glyph. */
-
 /**
  * The shell Rail's Projects section: header with one `+` menu, search, the
  * project list (diff stat on each row, no chat lists) and the SSH section. The

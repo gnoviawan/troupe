@@ -109,9 +109,9 @@ export interface RailChatRowProps extends React.ComponentPropsWithoutRef<'button
  * name), 12px right, 9px gaps. Compose {@link RailChatIcon},
  * {@link RailChatTitle} and a trail (for example `ChatRowTrail`) inside.
  *
- * Collapsed Rail: the same 30px row with only the agent icon, in a 28px fill
- * on the icon column (radius 6, hover 6% foreground). The open chat keeps its
- * keycap.
+ * Collapsed Rail: the same 30px row with only the agent icon, in a 30px square
+ * fill on the icon column (radius 8, hover 6% foreground). The open chat keeps
+ * its keycap.
  *
  * Inside a {@link RailChatRowFrame}, the row keeps its hover fill while the
  * pointer is on the frame's More button and while its menu is open.

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
  *
  * - `collapsing`: the width shrinks (200ms) while the rows keep their expanded
  *   layout and every expanded-only part fades out (150ms) before it goes to
- *   `display: none`. The icons stay at x = 20 and do not move.
+ *   `display: none`. The icons stay at x = 28 and do not move.
  * - `settling`: the rows switch to the collapsed layout; collapsed-only parts
  *   (dividers, status dots, the stacked footer) fade in (150ms).
  * - `expanding`: the rows switch to the expanded layout at once; labels and

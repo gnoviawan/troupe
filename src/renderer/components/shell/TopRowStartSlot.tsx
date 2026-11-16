@@ -16,7 +16,8 @@ export function useTopRowStartSlotVisible(): boolean {
  * bar, the SSH header or the fallback bar, see `showPanelOwner`). With the
  * Rail collapsed it holds the expand-Rail toggle; under the macOS traffic
  * lights it pads its start by `mainStartInsetPx` (16px past the 56px Rail,
- * so the toggle lands at x = 72 as in Paper 2.3). Renders nothing when neither applies.
+ * so the toggle lands at x = 72 as in Paper 2.3). Renders nothing when
+ * neither applies.
  */
 export function TopRowStartSlot(): React.JSX.Element | null {
   const topRow = useTopRow()

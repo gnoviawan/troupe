@@ -52,6 +52,11 @@ export function useQuickChatOpen(): boolean {
   return useQuickChatStore((state) => state.view.mode !== 'closed')
 }
 
+/** The session id of the open quick chat, or `null`. */
+export function useQuickChatSessionId(): string | null {
+  return useQuickChatStore((state) => (state.view.mode === 'chat' ? state.view.sessionId : null))
+}
+
 /** The quick chat whose view just closed, until its route is settled. */
 let leavingSessionId: string | null = null
 

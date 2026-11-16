@@ -11,7 +11,7 @@ import { useChatLiveState } from '@/components/shell/use-project-chats'
 import { ChatRowTrail, type ProjectChatLiveState } from '@/components/sidebar/project-chat-row'
 import { Button } from '@/components/ui/button'
 import { useMobileTabActions } from '@/hooks/use-mobile-tab-actions'
-import { QUICK_CHATS_GROUP } from '@/lib/acp-history-persistence'
+import { QUICK_CHATS_GROUP, quickSessions } from '@/lib/acp-history-persistence'
 import { copyChatReference } from '@/lib/chat-reference'
 import { logFrontendError } from '@/lib/log-api'
 import { renameQuickChat } from '@/lib/quick-chat-rename'
@@ -19,7 +19,7 @@ import { formatChatCreatedTime } from '@/lib/relative-time'
 import { cn } from '@/lib/utils'
 import { useAcpStore } from '@/stores/acp-store'
 import { useActiveProject } from '@/stores/project-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { useQuickChatSessionId } from '@/stores/quick-chat-store'
 import { MobileRecentsActionsSheet } from './MobileRecentsActionsSheet'
 
 /** How long a touch must hold still before it opens the row actions (iOS fires no `contextmenu`). */
@@ -375,14 +375,10 @@ export function MobileRecentsList({
   const baseId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const quickIds = useAcpStore(
-    useShallow((state) =>
-      state.sessionIndex.filter((entry) => entry.kind === 'quick').map((entry) => entry.id)
-    )
+    useShallow((state) => quickSessions(state.sessionIndex).map((entry) => entry.id))
   )
   const quickIdSet = useMemo(() => new Set(quickIds), [quickIds])
-  const quickOpenId = useQuickChatStore((state) =>
-    state.view.mode === 'chat' ? state.view.sessionId : null
-  )
+  const quickOpenId = useQuickChatSessionId()
   // The phone's way to start a quick chat (the desktop Rail has its `+`).
   const newQuickChat = (): void => {
     onNavigate()

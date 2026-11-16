@@ -5,7 +5,7 @@ import { resolveMobileActiveLeaf } from '@/hooks/use-mobile-active-leaf'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
 import { startChatActivitySync } from '@/lib/chat-activity-sync'
 import { useChatActivityStore } from '@/stores/chat-activity-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { useQuickChatSessionId } from '@/stores/quick-chat-store'
 import { getAllLeafPanes, useWorkspaceStore } from '@/stores/workspace-store'
 import type { LeafNode, PaneNode } from '@/types/workspace.types'
 
@@ -61,9 +61,7 @@ export function useShellUnreadTracker(): void {
   const paneSessionIds = useWorkspaceStore(
     useShallow((state) => activeChatSessionIds(state.root, state.activePaneId, mobile))
   )
-  const quickSessionId = useQuickChatStore((state) =>
-    state.view.mode === 'chat' ? state.view.sessionId : null
-  )
+  const quickSessionId = useQuickChatSessionId()
   const activeSessionIds = useMemo(
     () => viewingSessionIds(quickSessionId, paneSessionIds),
     [quickSessionId, paneSessionIds]

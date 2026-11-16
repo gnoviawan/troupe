@@ -1,10 +1,15 @@
 import { UNASSIGNED_PROJECT_ID } from '@shared/types/web-projects.types'
+import { toast } from 'sonner'
 import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { logFrontendError } from '@/lib/log-api'
 import { isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
-import { closeQuickChatView, useQuickChatStore } from '@/stores/quick-chat-store'
+import {
+  closeQuickChatView,
+  useQuickChatSessionId,
+  useQuickChatStore
+} from '@/stores/quick-chat-store'
 
 /**
  * A chat with no project: `quick` (ADR-0006) or `older` (a legacy
@@ -52,6 +57,29 @@ export function adoptQuickChat(from: string, to: string, source: string): void {
     source,
     message: `Quick chat ${from} started as ${to}`
   })
+}
+
+/**
+ * Show a no-project chat from a list (Rail, palette) and load its history.
+ * A failed load gets a toast.
+ */
+export function openNoProjectHistoryChat(
+  sessionId: string,
+  kind: NoProjectChat,
+  source: string
+): void {
+  showNoProjectChat(sessionId, kind, source)
+  void useAcpStore
+    .getState()
+    .openHistorySession(sessionId)
+    .catch((error: unknown) => {
+      void logFrontendError({
+        level: 'warn',
+        source,
+        message: `Could not open ${kind} chat ${sessionId}: ${error instanceof Error ? error.message : String(error)}`
+      })
+      toast.error('Could not open that chat. Try again.')
+    })
 }
 
 /**
@@ -108,9 +136,7 @@ export function focusQuickChatComposer(): void {
 
 /** The open quick chat's title (live, then index), or `undefined` when none is open. */
 export function useQuickChatTitle(): string | undefined {
-  const sessionId = useQuickChatStore((state) =>
-    state.view.mode === 'chat' ? state.view.sessionId : null
-  )
+  const sessionId = useQuickChatSessionId()
   return useAcpStore((state) => {
     if (!sessionId) return undefined
     return (

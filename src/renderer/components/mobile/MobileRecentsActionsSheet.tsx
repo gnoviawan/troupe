@@ -33,7 +33,8 @@ interface MobileRecentsActionsSheetProps {
 /**
  * The Recents row actions, opened by a long-press (`contextmenu`) or the row's
  * keyboard-reachable actions button: Rename for a quick chat, Copy chat
- * reference for every chat, Close for an open chat, Delete for a history chat. Recents rows carry no trailing icons of their own.
+ * reference for every chat, Close for an open chat, Delete for a history
+ * chat. Recents rows carry no trailing icons of their own.
  */
 export function MobileRecentsActionsSheet({
   open,

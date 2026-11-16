@@ -45,9 +45,8 @@ export function RailGroupRow(props: RailGroupRowProps): React.JSX.Element {
 /**
  * Group row of the collapsed Rail (Sidebar V2): the expanded row's height
  * with only the folder icon (the chevron on hover or focus, always when the
- * group is open), in a 28px fill on the icon column, so the icon keeps its
- * expanded x. A click folds the group; right-click opens its
- * menu. The name is the button's accessible name.
+ * group is open), in a 30px square fill on the icon column, so the icon
+ * keeps its expanded x. A click folds the group; right-click opens its menu. The name is the button's accessible name.
  */
 function RailGroupIconRow({
   group,

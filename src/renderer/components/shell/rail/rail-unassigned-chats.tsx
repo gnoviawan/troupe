@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { openNewQuickChat } from '@/components/chat/new-chat/open-new-chat'
 import { Chat, ChevronDown, ChevronRight, Plus } from '@/components/icons'
@@ -13,8 +12,7 @@ import { FIELD_FOCUS_CLASS, FOCUS_RING_CLASS } from '@/components/ui/panel-style
 import type { SessionIndexEntry } from '@/lib/acp-history-persistence'
 import { olderChats, quickSessions, UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { isContextMenuKey, openContextMenuFrom } from '@/lib/context-menu-key'
-import { logFrontendError } from '@/lib/log-api'
-import { leaveQuickChatView, showNoProjectChat } from '@/lib/no-project-chat'
+import { leaveQuickChatView, openNoProjectHistoryChat } from '@/lib/no-project-chat'
 import { renameQuickChat } from '@/lib/quick-chat-rename'
 import { cn } from '@/lib/utils'
 import { useAcpStore } from '@/stores/acp-store'
@@ -280,18 +278,7 @@ function UnassignedSection({
 
   const onOpen = (id: string): void => {
     logRailEvent(`open ${readOnly ? 'older' : 'quick'} chat ${id}`)
-    showNoProjectChat(id, readOnly ? 'older' : 'quick', 'rail.no-project-chats')
-    void useAcpStore
-      .getState()
-      .openHistorySession(id)
-      .catch((error: unknown) => {
-        void logFrontendError({
-          level: 'warn',
-          source: 'rail.no-project-chats',
-          message: `Could not open chat ${id}: ${error instanceof Error ? error.message : String(error)}`
-        })
-        toast.error('Could not open that chat. Try again.')
-      })
+    openNoProjectHistoryChat(id, readOnly ? 'older' : 'quick', 'rail.no-project-chats')
   }
 
   const saveRename = (sessionId: string): void => {

@@ -30,7 +30,7 @@ import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { githubItemKey, useGithubStore } from '@/stores/github-store'
 import { useOverlayRegistration } from '@/stores/overlay-stack-store'
 import { useActiveProject, useProjectStore } from '@/stores/project-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { useQuickChatSessionId } from '@/stores/quick-chat-store'
 import { useShellAnnouncerStore } from '@/stores/shell-announcer-store'
 import { useTerminalStore } from '@/stores/terminal-store'
 import { getAllLeafPanes, useWorkspaceStore } from '@/stores/workspace-store'
@@ -183,9 +183,7 @@ export function MobileChatShell({
   })
   // An open quick chat covers the pane tree: the header, the drawer and the
   // ⋯ sheet describe it, not the hidden project tab under it.
-  const quickSessionId = useQuickChatStore((s) =>
-    s.view.mode === 'chat' ? s.view.sessionId : null
-  )
+  const quickSessionId = useQuickChatSessionId()
   const activeTab = quickSessionId ? null : paneTab
 
   // Active terminal — subscribe to the terminal store directly (not via
