@@ -241,3 +241,60 @@ describe('MobileSheetContent', () => {
     expect(pushed.style.opacity).toBe('0')
   })
 })
+
+describe('MobileSheetContent drag to dismiss (gestures)', () => {
+  function dragHandle(sheet: HTMLElement, dy: number, steps = 4): void {
+    const handle = within(sheet).getByRole('button', { name: 'Close' })
+    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientY: 100 })
+    for (let i = 1; i <= steps; i += 1) {
+      fireEvent.pointerMove(window, { pointerId: 1, clientY: 100 + (dy * i) / steps })
+    }
+    fireEvent.pointerUp(window, { pointerId: 1, clientY: 100 + dy })
+  }
+
+  it('follows the finger, then closes from where it was let go past the threshold', async () => {
+    render(<Harness />)
+    const sheet = openSheet()
+    const handle = within(sheet).getByRole('button', { name: 'Close' })
+    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientY: 100 })
+    fireEvent.pointerMove(window, { pointerId: 1, clientY: 180 })
+    expect(sheet.style.transform).toBe('translate3d(0, 80px, 0)')
+    fireEvent.pointerUp(window, { pointerId: 1, clientY: 180 })
+    expect(sheet).toHaveAttribute('data-drag-dismissed')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('treats a press that barely moves as a tap, and the handle tap closes', async () => {
+    render(<Harness />)
+    const sheet = openSheet()
+    dragHandle(sheet, 2, 1)
+    expect(sheet.style.transform).toBe('')
+    expect(sheet).not.toHaveAttribute('data-drag-dismissed')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('resists an upward pull and snaps back on release', () => {
+    render(<Harness />)
+    const sheet = openSheet()
+    const handle = within(sheet).getByRole('button', { name: 'Close' })
+    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientY: 300 })
+    fireEvent.pointerMove(window, { pointerId: 1, clientY: 200 })
+    expect(sheet.style.transform).toBe('translate3d(0, -20px, 0)')
+    fireEvent.pointerUp(window, { pointerId: 1, clientY: 200 })
+    expect(sheet.style.transform).toBe('')
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('does not let the drag end click Back', () => {
+    render(<Harness />)
+    const sheet = openSheet()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Effort High' }))
+    const back = within(sheet).getByRole('button', { name: 'Back' })
+    fireEvent.pointerDown(back, { pointerId: 2, button: 0, clientY: 300 })
+    fireEvent.pointerMove(window, { pointerId: 2, clientY: 290 })
+    fireEvent.pointerUp(window, { pointerId: 2, clientY: 290 })
+    fireEvent.click(back)
+    expect(within(sheet).getByRole('heading', { name: 'Effort' })).toBeInTheDocument()
+  })
+})

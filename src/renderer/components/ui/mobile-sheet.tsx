@@ -1,6 +1,5 @@
 import {
   AnimatePresence,
-  animate,
   motion,
   type Transition,
   useIsPresent,
@@ -155,6 +154,168 @@ function TitleText({ children }: { children: string }): React.JSX.Element {
   )
 }
 
+/** iOS sheet curve (Vaul): very steep start, gentle settle. */
+const SHEET_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)'
+/** A drag that does not dismiss snaps back fast; a dismiss leaves fast too. */
+const SHEET_SETTLE_MS = 200
+/** Movement before a press becomes a drag, so taps on Back and the handle stay taps. */
+const DRAG_SLOP_PX = 4
+/** Release speed that dismisses on its own (px/ms, a flick). */
+const DISMISS_VELOCITY = 0.11
+/** Upward pull past the top: the sheet follows a fifth of the finger. */
+const RUBBER_BAND = 0.2
+
+/** The backdrop rendered just before a sheet's content (`data-sheet-overlay`). */
+function overlayOf(content: HTMLElement): HTMLElement | null {
+  const prev = content.previousElementSibling
+  return prev instanceof HTMLElement && prev.hasAttribute('data-sheet-overlay') ? prev : null
+}
+
+/** Move the sheet to `y` and fade the backdrop by how far it is from home. */
+function placeSheet(content: HTMLElement, y: number, height: number, transition: string): void {
+  content.style.transition = transition
+  content.style.transform = y === 0 ? '' : `translate3d(0, ${y}px, 0)`
+  const overlay = overlayOf(content)
+  if (overlay) {
+    overlay.style.transition = transition.replace('transform', 'opacity')
+    const progress = Math.min(1, Math.max(0, y / (height || 1)))
+    overlay.style.opacity = y <= 0 ? '' : String(1 - progress)
+  }
+}
+
+/**
+ * Drag-to-dismiss for a phone bottom sheet (gestures, apple-design): while
+ * the finger is down the sheet follows it 1:1 (a fifth of it upward, past
+ * the top) and the backdrop fades with the drag; on release a pull past
+ * min(64px, 15% of the sheet) or a downward flick closes the sheet from where
+ * it is, else it snaps back. Only the handle and header start a drag, so the
+ * list keeps its own scroll. Reduced motion: the sheet still tracks the
+ * finger (the user makes that motion), then settles without travel.
+ */
+function useSheetDrag(
+  contentRef: React.RefObject<HTMLDivElement>,
+  closeRef: React.RefObject<HTMLButtonElement>,
+  reduced: boolean
+): {
+  onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void
+  onClickCapture: (event: React.MouseEvent<HTMLDivElement>) => void
+} {
+  const drag = useRef<{
+    id: number
+    startY: number
+    y: number
+    lastY: number
+    lastT: number
+    velocity: number
+    dragging: boolean
+    height: number
+  } | null>(null)
+  // A drag ends with a click on whatever the finger lifted over: swallow it.
+  const swallowClick = useRef(false)
+
+  const onMove = useCallback(
+    (event: PointerEvent) => {
+      const state = drag.current
+      const content = contentRef.current
+      if (!state || !content || event.pointerId !== state.id) return
+      const dy = event.clientY - state.startY
+      if (!state.dragging) {
+        if (Math.abs(dy) < DRAG_SLOP_PX) return
+        state.dragging = true
+        state.height = content.offsetHeight
+        // The animation must not fight the finger.
+        content.style.animation = 'none'
+        ;(event.target as Element | null)?.setPointerCapture?.(event.pointerId)
+      }
+      const now = event.timeStamp
+      const dt = Math.max(1, now - state.lastT)
+      state.velocity = (event.clientY - state.lastY) / dt
+      state.lastY = event.clientY
+      state.lastT = now
+      state.y = dy >= 0 ? dy : dy * RUBBER_BAND
+      placeSheet(content, state.y, state.height, 'none')
+    },
+    [contentRef]
+  )
+
+  const onUp = useCallback(
+    (event: PointerEvent) => {
+      const state = drag.current
+      const content = contentRef.current
+      if (!state || event.pointerId !== state.id) return
+      drag.current = null
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (!state.dragging || !content) return
+      swallowClick.current = true
+      const threshold = Math.min(64, state.height * 0.15)
+      const dismiss =
+        event.type !== 'pointercancel' &&
+        (state.y > threshold || (state.velocity > DISMISS_VELOCITY && state.y > 0))
+      const settle = reduced ? 'none' : `transform ${SHEET_SETTLE_MS}ms ${SHEET_EASE}`
+      if (!dismiss) {
+        placeSheet(content, 0, state.height, settle)
+        return
+      }
+      // Leave from where the finger let go: no exit keyframe restarting at 0.
+      content.setAttribute('data-drag-dismissed', '')
+      const overlay = overlayOf(content)
+      if (overlay) overlay.style.animation = 'none'
+      // Our own close click must pass the swallow above.
+      const close = (): void => {
+        swallowClick.current = false
+        closeRef.current?.click()
+      }
+      if (reduced) {
+        close()
+        return
+      }
+      placeSheet(content, state.height, state.height, settle)
+      window.setTimeout(close, SHEET_SETTLE_MS)
+    },
+    [contentRef, closeRef, onMove, reduced]
+  )
+
+  useEffect(
+    () => () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    },
+    [onMove, onUp]
+  )
+
+  const onPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0 || drag.current) return
+      drag.current = {
+        id: event.pointerId,
+        startY: event.clientY,
+        y: 0,
+        lastY: event.clientY,
+        lastT: event.timeStamp,
+        velocity: 0,
+        dragging: false,
+        height: 0
+      }
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointercancel', onUp)
+    },
+    [onMove, onUp]
+  )
+
+  const onClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!swallowClick.current) return
+    swallowClick.current = false
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
+
+  return { onPointerDown, onClickCapture }
+}
+
 interface MobileSheetContentProps
   extends Omit<ComponentPropsWithoutRef<typeof SheetContent>, 'side' | 'title' | 'closeButton'> {
   title: string
@@ -188,6 +349,8 @@ export function MobileSheetContent({
   const backRef = useRef<HTMLButtonElement>(null)
   const reduced = useReducedMotion() ?? false
   const direction = useDirection(path)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const sheetDrag = useSheetDrag(contentRef, closeRef, reduced)
 
   // Composer V2 (decided with the design owner, 2026-11-16): a pushed view
   // keeps the root view's height, so the sheet does not jump while the user
@@ -243,38 +406,52 @@ export function MobileSheetContent({
       closeButton={false}
       className={cn(
         'flex max-h-[85dvh] flex-col gap-0 overflow-hidden rounded-t-[14px] border-t-[0.5px] border-border bg-popover p-0 shadow-[0_-4px_16px_#00000066]',
+        // The iOS sheet (gestures): up on the steep Vaul curve, down faster.
+        // A drag-dismissed sheet already left the screen: no exit keyframe.
+        'data-[state=open]:duration-500 data-[state=closed]:duration-200 data-[state=open]:ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)] data-[drag-dismissed]:animate-none!',
         className
       )}
+      overlayClassName="data-[state=open]:duration-500 data-[state=closed]:duration-200 data-[state=open]:ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:ease-[cubic-bezier(0.32,0.72,0,1)]"
       {...props}
     >
       {/* The grab handle closes the sheet (tap, or the drag the sheet already
           has): a tactile 36x5 bar with a 44px tap area. Root views have no ✕;
           a pushed view keeps ← Back (Paper "2.6e"). */}
-      <div className="flex h-7 shrink-0 items-center justify-center">
-        <SheetClose
-          aria-label="Close"
-          className="relative h-[5px] w-9 rounded-full bg-muted shadow-control after:absolute after:-inset-x-4 after:-inset-y-[19.5px] after:content-[''] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
-        />
-      </div>
-      <div className="grid h-11 shrink-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center px-2">
-        {nav && depth > 0 ? (
-          <button
-            ref={backRef}
-            type="button"
-            aria-label="Back"
-            className={HEADER_BUTTON}
-            onClick={nav.pop}
-          >
-            <ArrowLeft size={18} aria-hidden="true" />
-          </button>
-        ) : (
-          <span aria-hidden="true" />
-        )}
-        <SheetTitle className="grid grid-cols-[minmax(0,1fr)] text-center text-base font-medium leading-6">
-          <AnimatePresence initial={false}>
-            <TitleText key={key}>{title}</TitleText>
-          </AnimatePresence>
-        </SheetTitle>
+      {/* Handle and header: the drag area (touch-action none, so the browser
+          leaves the vertical pan to the sheet). Pointer only: the handle
+          (Close) and Escape are the keyboard and screen-reader ways out. */}
+      <div
+        className="shrink-0 touch-none select-none"
+        onPointerDown={sheetDrag.onPointerDown}
+        onClickCapture={sheetDrag.onClickCapture}
+      >
+        <div className="flex h-7 shrink-0 items-center justify-center">
+          <SheetClose
+            ref={closeRef}
+            aria-label="Close"
+            className="relative h-[5px] w-9 rounded-full bg-muted shadow-control after:absolute after:-inset-x-4 after:-inset-y-[19.5px] after:content-[''] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
+          />
+        </div>
+        <div className="grid h-11 shrink-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center px-2">
+          {nav && depth > 0 ? (
+            <button
+              ref={backRef}
+              type="button"
+              aria-label="Back"
+              className={HEADER_BUTTON}
+              onClick={nav.pop}
+            >
+              <ArrowLeft size={18} aria-hidden="true" />
+            </button>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          <SheetTitle className="grid grid-cols-[minmax(0,1fr)] text-center text-base font-medium leading-6">
+            <AnimatePresence initial={false}>
+              <TitleText key={key}>{title}</TitleText>
+            </AnimatePresence>
+          </SheetTitle>
+        </div>
       </div>
       <div ref={viewportCallbackRef} className="relative flex min-h-0 flex-col overflow-hidden">
         <AnimatePresence initial={false} mode="popLayout" custom={direction}>
