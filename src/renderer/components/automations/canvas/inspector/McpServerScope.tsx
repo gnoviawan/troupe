@@ -38,6 +38,7 @@ export function McpServerScope({
         id={`${id}-all`}
         label="All enabled servers"
         on={scope === null}
+        disabled={!loaded}
         onChange={(on) => commit(on ? null : servers.map((server) => server.id))}
       />
       {scope !== null &&
@@ -63,11 +64,13 @@ function ScopeSwitch({
   id,
   label,
   on,
+  disabled,
   onChange
 }: {
   id: string
   label: string
   on: boolean
+  disabled?: boolean
   onChange: (on: boolean) => void
 }): React.JSX.Element {
   return (
@@ -78,7 +81,7 @@ function ScopeSwitch({
       >
         {label}
       </Label>
-      <Switch id={id} checked={on} onCheckedChange={onChange} />
+      <Switch id={id} checked={on} disabled={disabled} onCheckedChange={onChange} />
     </div>
   )
 }

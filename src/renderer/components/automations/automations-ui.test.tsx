@@ -206,7 +206,7 @@ describe('RunPolicyCard', () => {
     )
     expect(rows.map((row) => row.textContent)).toEqual([
       'Extract · claude (sonnet) · times out after 2 min · tools: read files, search',
-      'triage · claude · times out after 1 min · tools: MCP and other tools · MCP servers: Tebar, GitHub'
+      'triage · claude · times out after 1 min · tools: MCP and other tools · MCP servers offered: Tebar, GitHub'
     ])
   })
 

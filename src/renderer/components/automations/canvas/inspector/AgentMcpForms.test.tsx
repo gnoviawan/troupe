@@ -471,6 +471,15 @@ describe('AgentForm', () => {
       expect(switchOf(panel, 'github')).not.toBeChecked()
     })
 
+    it('keeps All on and disabled until the MCP server list loads', () => {
+      useAcpStore.setState({ mcpServers: [], mcpServersLoaded: false })
+      open(graphWith({ prompt: trusted, tools: ['other'], mcp_servers: null }))
+      const panel = inspect('extract', 'Extract')
+
+      expect(switchOf(panel, 'All enabled servers')).toBeChecked()
+      expect(switchOf(panel, 'All enabled servers')).toBeDisabled()
+    })
+
     it('keeps a listed server that is not configured as a row that turns off', async () => {
       open(graphWith({ prompt: trusted, tools: ['other'], mcp_servers: ['gone', 'fs'] }))
       const panel = inspect('extract', 'Extract')

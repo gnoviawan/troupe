@@ -155,7 +155,7 @@ export function RunPolicyCard({
 function agentMcpLabel(servers: readonly AgentMcpServer[]): string {
   return servers.length === 0
     ? 'no MCP servers'
-    : `MCP servers: ${servers.map((server) => server.name).join(', ')}`
+    : `MCP servers offered: ${servers.map((server) => server.name).join(', ')}`
 }
 
 function PolicyRow({
