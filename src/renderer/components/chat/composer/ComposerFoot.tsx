@@ -1,5 +1,5 @@
 import { Fragment, useRef } from 'react'
-import { Folder, FolderGit2, RefreshCw, Settings2 } from '@/components/icons'
+import { ChevronDown, Folder, FolderGit2, RefreshCw, Settings2 } from '@/components/icons'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import { COMPOSER_RAISED_CLASS } from '../chat-layout'
 import type { McpServerListProps } from '../McpServerList'
+import { ConnectorLogo, connectorBrand, SAMPLE_CONNECTOR_BRANDS } from './connector-logos'
 import { type ConnectorsHost, connectorsMenuModel } from './connectors-menu-model'
 
 const NOTE = 'px-2 py-1.5 text-xs text-muted-foreground'
@@ -121,12 +122,14 @@ function openConnectorSettings(): void {
   useSettingsModalStore.getState().openApp('mcp-servers')
 }
 
-/** First letter of a connector name, the tile shown until real logos land. */
+/** First letter of a connector name, the tile for a server with no known logo. */
 function connectorInitial(name: string): string {
   return Array.from(name.trim())[0]?.toUpperCase() ?? '?'
 }
 
 function ConnectorTile({ name, size }: { name: string; size: 14 | 16 }): React.JSX.Element {
+  const brand = connectorBrand(name)
+  if (brand) return <ConnectorLogo brand={brand} size={size} />
   return (
     <span
       aria-hidden="true"
@@ -168,7 +171,10 @@ export function ComposerConnectorsButton({
         <button
           type="button"
           aria-label={`Connectors, ${model.onCount} on`}
-          className="relative flex h-7 shrink-0 items-center gap-2.5 rounded-lg px-1.5 text-xs text-muted-foreground transition-colors duration-150 ease-out after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[''] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring data-[state=open]:text-foreground"
+          // Same box and hover as the worktree pick on its left
+          // (ROW_TRIGGER_CLASS): 24px, radius 6, `muted` fill on hover and
+          // while open; the hit area grows 8px up and down (40px).
+          className="group/connectors relative flex h-6 shrink-0 items-center gap-2.5 rounded-md px-2 text-xs text-muted-foreground transition-colors duration-150 ease-out after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 data-[state=open]:bg-muted data-[state=open]:text-foreground"
         >
           Connectors
           {logos.length > 0 ? (
@@ -180,7 +186,20 @@ export function ComposerConnectorsButton({
                 <span className="tabular-nums">+{onRows.length - logos.length}</span>
               ) : null}
             </span>
-          ) : null}
+          ) : (
+            // No server is on: sample app logos, decoration only, so the
+            // button reads as "connect apps" (Paper "Connect apps" reference).
+            <span data-connector-samples="true" className="flex items-center gap-1.5">
+              {SAMPLE_CONNECTOR_BRANDS.map((brand) => (
+                <ConnectorLogo key={brand} brand={brand} size={14} />
+              ))}
+            </span>
+          )}
+          <ChevronDown
+            size={12}
+            aria-hidden="true"
+            className="-ml-1 shrink-0 text-muted-foreground transition-transform duration-150 ease-out group-data-[state=open]/connectors:rotate-180 motion-reduce:transition-none"
+          />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

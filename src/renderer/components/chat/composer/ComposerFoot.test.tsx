@@ -49,10 +49,26 @@ describe('ComposerConnectorsButton (Composer V2 foot row)', () => {
   })
   afterEach(() => cleanup())
 
-  it('names the on count and shows a tile for each server that is on', () => {
+  it('shows a logo for a known server and a letter tile for the rest', () => {
     renderButton('chat-current')
     const button = screen.getByRole('button', { name: 'Connectors, 2 on' })
-    expect(button.textContent).toBe('ConnectorsGL')
+    expect(button.querySelector('[data-connector-logo="github"]')).not.toBeNull()
+    expect(button.textContent).toBe('ConnectorsL')
+    expect(button.querySelector('[data-connector-samples]')).toBeNull()
+  })
+
+  it('shows sample app logos, hidden from assistive tech, while no server is on', () => {
+    renderButton('chat-current', { servers: [{ id: 'gh', name: 'GitHub', enabled: false }] })
+    const button = screen.getByRole('button', { name: 'Connectors, 0 on' })
+    const samples = button.querySelector('[data-connector-samples="true"]') as HTMLElement
+    expect(
+      Array.from(samples.querySelectorAll('[data-connector-logo]')).map((logo) =>
+        logo.getAttribute('data-connector-logo')
+      )
+    ).toEqual(['gmail', 'github', 'notion'])
+    for (const logo of samples.querySelectorAll('[data-connector-logo]')) {
+      expect(logo).toHaveAttribute('aria-hidden', 'true')
+    }
   })
 
   it('sums up the servers past the third logo', () => {
@@ -114,7 +130,9 @@ describe('ComposerConnectorsButton (Composer V2 foot row)', () => {
 
   it('shows an empty registry with a way to add one', async () => {
     renderButton('chat-current', { servers: [] })
-    expect(screen.getByRole('button', { name: 'Connectors, 0 on' }).textContent).toBe('Connectors')
+    const button = screen.getByRole('button', { name: 'Connectors, 0 on' })
+    expect(button.textContent).toBe('Connectors')
+    expect(button.querySelector('[data-connector-samples]')).not.toBeNull()
     await openConnectors()
     expect(screen.getByText('No connectors yet')).toBeInTheDocument()
     expect(screen.queryByText('This chat still uses the previous servers.')).toBeNull()
