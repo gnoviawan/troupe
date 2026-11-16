@@ -207,3 +207,35 @@ fn the_stored_aliases_follow_the_stored_list() {
     assert_eq!(aliases_of(&servers("p1")), vec![("srv-3", vec![])]);
     assert!(find_server(&servers("p1"), "old-files").is_none());
 }
+
+#[test]
+fn each_entry_becomes_the_session_server_a_chat_session_gets() {
+    let entries = parse_registry(&json!([
+        { "id": "a", "name": "Files", "command": "npx", "args": ["-y", "fs"],
+          "env": [{ "name": "TOKEN", "value": "t-123" }] },
+        { "id": "b", "type": "stdio", "name": "Bare", "command": "fs-mcp" },
+        { "id": "c", "type": "http", "name": "Remote", "url": "https://mcp.example.com",
+          "headers": [{ "name": "X-Key", "value": "k-1" }] },
+        { "id": "d", "type": "sse", "name": "Events", "url": "https://sse.example.com" },
+        { "id": "e", "name": "No command" },
+        { "id": "f", "type": "http", "name": "No url" },
+        { "id": "g", "type": "ws", "name": "Unknown", "url": "wss://x" }
+    ]));
+    let servers: Vec<Value> = entries
+        .iter()
+        .filter_map(McpServerEntry::acp_server)
+        .map(|server| serde_json::to_value(server).unwrap())
+        .collect();
+    assert_eq!(
+        servers,
+        vec![
+            json!({ "name": "Files", "command": "npx", "args": ["-y", "fs"],
+                    "env": [{ "name": "TOKEN", "value": "t-123" }] }),
+            json!({ "name": "Bare", "command": "fs-mcp", "args": [], "env": [] }),
+            json!({ "type": "http", "name": "Remote", "url": "https://mcp.example.com",
+                    "headers": [{ "name": "X-Key", "value": "k-1" }] }),
+            json!({ "type": "sse", "name": "Events", "url": "https://sse.example.com",
+                    "headers": [] }),
+        ]
+    );
+}

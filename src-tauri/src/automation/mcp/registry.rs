@@ -1,10 +1,14 @@
-//! The MCP servers as `mcp_tool` nodes see them: the host's one list in its
-//! web store (see `web::mcp_registry`), the same for every project, with the
-//! ids the one-time import dropped as aliases of the server it kept.
+//! The MCP servers as `mcp_tool` nodes and agent nodes that list `other` see
+//! them: the host's one list in its web store (see `web::mcp_registry`), the
+//! same for every project, with the ids the one-time import dropped as
+//! aliases of the server it kept.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use agent_client_protocol::schema::v1::{
+    EnvVariable, HttpHeader, McpServer, McpServerHttp, McpServerSse, McpServerStdio,
+};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -24,6 +28,42 @@ pub struct McpServerEntry {
     pub name: String,
     pub config: McpServerConfig,
     pub aliases: Vec<String>,
+}
+
+impl McpServerEntry {
+    /// The server as an agent's `session/new` takes it, the same shape a chat
+    /// session gets. `None` for a stdio entry without a command, an http or
+    /// sse entry without a url, or an unknown transport.
+    pub fn acp_server(&self) -> Option<McpServer> {
+        let config = &self.config;
+        let headers = || {
+            config
+                .headers
+                .iter()
+                .map(|h| HttpHeader::new(&h.name, &h.value))
+                .collect()
+        };
+        match config.r#type.as_deref() {
+            None | Some("stdio") => Some(McpServer::Stdio(
+                McpServerStdio::new(&self.name, config.command.as_deref()?)
+                    .args(config.args.clone())
+                    .env(
+                        config
+                            .env
+                            .iter()
+                            .map(|e| EnvVariable::new(&e.name, &e.value))
+                            .collect(),
+                    ),
+            )),
+            Some("http") => Some(McpServer::Http(
+                McpServerHttp::new(&self.name, config.url.as_deref()?).headers(headers()),
+            )),
+            Some("sse") => Some(McpServer::Sse(
+                McpServerSse::new(&self.name, config.url.as_deref()?).headers(headers()),
+            )),
+            Some(_) => None,
+        }
+    }
 }
 
 /// The server a node's `server_id` names: the entry with that id, else the
