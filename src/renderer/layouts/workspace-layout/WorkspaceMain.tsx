@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ProjectSwitchIndicator } from '@/components/workspace/ProjectSwitchIndicator'
 import { ProjectTreeHost, useMountedProjectIds } from '@/components/workspace/ProjectTreeHost'
 import { useMobileActiveLeaf } from '@/hooks/use-mobile-active-leaf'
+import { useQuickChatPanelKey } from '@/hooks/use-quick-chat-panel-key'
 import { ShellSkeleton } from '@/layouts/workspace-layout/ShellSkeleton'
 import type { SSHWorkspaceState } from '@/layouts/workspace-layout/use-ssh-workspace'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
@@ -72,10 +73,8 @@ export function WorkspaceMain({
         <Suspense fallback={<ShellSkeleton />}>
           <SSHWorkspace topRow={sshTopRow} />
         </Suspense>
-      ) : quickChat.mode === 'chat' ? (
-        <div className="relative flex h-full min-h-0 flex-1 flex-col" data-testid="quick-chat-main">
-          <AgentChatPanel sessionId={quickChat.sessionId} />
-        </div>
+      ) : isWorkspaceRoute && quickChat.mode === 'chat' ? (
+        <QuickChatMain sessionId={quickChat.sessionId} />
       ) : projects.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center bg-background px-6">
           <motion.div
@@ -131,5 +130,15 @@ export function WorkspaceMain({
         </>
       )}
     </>
+  )
+}
+
+/** The open quick chat. A new chat remounts the panel, so no draft carries over. */
+function QuickChatMain({ sessionId }: { sessionId: string }): React.JSX.Element {
+  const panelKey = useQuickChatPanelKey(sessionId)
+  return (
+    <div className="relative flex h-full min-h-0 flex-1 flex-col" data-testid="quick-chat-main">
+      <AgentChatPanel key={panelKey} sessionId={sessionId} />
+    </div>
   )
 }

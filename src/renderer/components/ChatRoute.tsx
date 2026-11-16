@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { logFrontendError } from '@/lib/log-api'
+import { openNoProjectChat } from '@/lib/no-project-chat'
 import { openAgentChatInOwnProject } from '@/lib/open-agent-chat'
 import { isChatRouteCurrent } from '@/lib/router-navigate'
 import { clearChatClosedOnRoute, isChatClosedOnRoute } from '@/lib/web-tab-session'
@@ -85,6 +86,9 @@ import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stor
  * here. Returns whether the route was handed to the owner project.
  */
 function openRouteInOwnerProject(sessionId: string): boolean {
+  // A quick or older chat has no project: the quick view shows it (reload,
+  // Back, a copied `#/c/<id>` link). The caller still loads a closed session.
+  if (openNoProjectChat(sessionId, 'ChatRoute')) return true
   const acp = useAcpStore.getState()
   const owner = sessionProjectId(acp, sessionId)
   const activeProjectId = useProjectStore.getState().activeProjectId

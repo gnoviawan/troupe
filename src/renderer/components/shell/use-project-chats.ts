@@ -5,6 +5,7 @@ import {
   useAgentChatStatusSignals
 } from '@/components/workspace/tabs/agent-chat-status'
 import { useAcpStore } from '@/stores/acp-store'
+import { useQuickChatOpen } from '@/stores/quick-chat-store'
 import { useShellLayoutStore } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
@@ -18,14 +19,20 @@ const CHAT_STATUS_WORD: Record<ProjectChatLiveState, string | null> = {
   idle: null
 }
 
-/** Session id of the agent chat tab focused in the active pane, if any. */
+/**
+ * Session id of the agent chat tab focused in the active pane, if any. `null`
+ * while a quick chat is open: it covers the pane tree, so no project chat is
+ * on screen.
+ */
 function useOpenChatSessionId(): string | null {
-  return useWorkspaceStore((s) => {
+  const quickOpen = useQuickChatOpen()
+  const paneChat = useWorkspaceStore((s) => {
     const pane = findPaneById(s.root, s.activePaneId)
     if (pane?.type !== 'leaf') return null
     const tab = pane.tabs.find((t) => t.id === pane.activeTabId)
     return tab?.type === 'agent-chat' ? tab.sessionId : null
   })
+  return quickOpen ? null : paneChat
 }
 
 /**
