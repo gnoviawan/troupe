@@ -298,3 +298,40 @@ describe('MobileSheetContent drag to dismiss (gestures)', () => {
     expect(within(sheet).getByRole('heading', { name: 'Effort' })).toBeInTheDocument()
   })
 })
+
+describe('MobileSheetContent drag release', () => {
+  function pointer(type: string, clientY: number, timeStamp: number): Event {
+    const event = new MouseEvent(type, { bubbles: true, clientY, button: 0 })
+    Object.defineProperty(event, 'pointerId', { value: 3 })
+    Object.defineProperty(event, 'timeStamp', { value: timeStamp })
+    return event
+  }
+
+  it('does not treat a hold before release as a flick', () => {
+    // A 400px sheet: the distance threshold is 60px.
+    const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(400)
+    render(<Harness />)
+    const sheet = openSheet()
+    const handle = within(sheet).getByRole('button', { name: 'Close' })
+    fireEvent(handle, pointer('pointerdown', 100, 0))
+    fireEvent(window, pointer('pointermove', 105, 10))
+    fireEvent(window, pointer('pointermove', 110, 20))
+    // Held still for a second, then lifted: 10px is under the threshold.
+    fireEvent(window, pointer('pointerup', 110, 1020))
+    expect(sheet).not.toHaveAttribute('data-drag-dismissed')
+    height.mockRestore()
+  })
+
+  it('still dismisses a quick flick under the distance threshold', () => {
+    const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(400)
+    render(<Harness />)
+    const sheet = openSheet()
+    const handle = within(sheet).getByRole('button', { name: 'Close' })
+    fireEvent(handle, pointer('pointerdown', 100, 0))
+    fireEvent(window, pointer('pointermove', 105, 10))
+    fireEvent(window, pointer('pointermove', 110, 20))
+    fireEvent(window, pointer('pointerup', 110, 30))
+    expect(sheet).toHaveAttribute('data-drag-dismissed')
+    height.mockRestore()
+  })
+})

@@ -134,8 +134,9 @@ function ConnectorTile({ name, size }: { name: string; size: 14 | 16 }): React.J
     <span
       aria-hidden="true"
       className={cn(
-        'flex shrink-0 select-none items-center justify-center rounded bg-muted font-semibold text-muted-foreground',
-        size === 14 ? 'size-3.5 text-[9px] leading-[10px]' : 'size-4 text-[10px] leading-[10px]'
+        // 12px is the type floor (docs/design/typography.md), even in a tile.
+        'flex shrink-0 select-none items-center justify-center rounded bg-muted text-xs font-semibold leading-none text-muted-foreground',
+        size === 14 ? 'size-3.5' : 'size-4'
       )}
     >
       {connectorInitial(name)}

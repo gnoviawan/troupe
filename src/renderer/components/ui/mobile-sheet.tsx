@@ -162,6 +162,8 @@ const SHEET_SETTLE_MS = 200
 const DRAG_SLOP_PX = 4
 /** Release speed that dismisses on its own (px/ms, a flick). */
 const DISMISS_VELOCITY = 0.11
+/** A move sample older than this at release is a hold, not a flick. */
+const STALE_VELOCITY_MS = 100
 /** Upward pull past the top: the sheet follows a fifth of the finger. */
 const RUBBER_BAND = 0.2
 
@@ -249,10 +251,13 @@ function useSheetDrag(
       window.removeEventListener('pointercancel', onUp)
       if (!state.dragging || !content) return
       swallowClick.current = true
+      // A finger that stopped before lifting has no speed left: a sample
+      // older than 100ms is not a flick (CodeRabbit on #1868).
+      const velocity = event.timeStamp - state.lastT > STALE_VELOCITY_MS ? 0 : state.velocity
       const threshold = Math.min(64, state.height * 0.15)
       const dismiss =
         event.type !== 'pointercancel' &&
-        (state.y > threshold || (state.velocity > DISMISS_VELOCITY && state.y > 0))
+        (state.y > threshold || (velocity > DISMISS_VELOCITY && state.y > 0))
       const settle = reduced ? 'none' : `transform ${SHEET_SETTLE_MS}ms ${SHEET_EASE}`
       if (!dismiss) {
         placeSheet(content, 0, state.height, settle)
@@ -383,7 +388,10 @@ export function MobileSheetContent({
       // The root height comes from the observer while the root showed: by now
       // the DOM already holds the pushed view.
       const root = rootHeightRef.current
-      viewport.style.minHeight = path.length > 0 && root !== null ? `${root}px` : ''
+      // Capped by the space the sheet has (85dvh minus the 72px handle and
+      // header), so a rotation that shrinks the screen never clips the list.
+      viewport.style.minHeight =
+        path.length > 0 && root !== null ? `min(${root}px, calc(85dvh - 4.5rem))` : ''
     }
 
     if (path.length > previous.length) {
