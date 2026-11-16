@@ -1,9 +1,9 @@
 import { UNASSIGNED_PROJECT_ID } from '@shared/types/web-projects.types'
 import { logFrontendError } from '@/lib/log-api'
-import { clearChatRoute, navigateToChatSession } from '@/lib/router-navigate'
+import { navigateToChatSession } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { closeQuickChatView, useQuickChatStore } from '@/stores/quick-chat-store'
 
 /**
  * A chat with no project: `quick` (ADR-0006) or `older` (a legacy
@@ -63,27 +63,36 @@ export function openNoProjectChat(sessionId: string, source: string): boolean {
  * project change is not visible. A no-op when the view is closed.
  */
 export function leaveQuickChatView(source: string): void {
-  const view = useQuickChatStore.getState().view
-  if (view.mode === 'closed') return
-  useQuickChatStore.getState().close()
-  clearChatRoute(view.sessionId)
+  const sessionId = closeQuickChatView()
+  if (!sessionId) return
   void logFrontendError({
     level: 'info',
     source,
-    message: `Closed the quick chat view (${view.sessionId}) for a project view`
+    message: `Closed the quick chat view (${sessionId}) for a project view`
   })
 }
 
+/** Frames {@link focusQuickChatComposer} waits for the composer to mount. */
+const FOCUS_COMPOSER_MAX_FRAMES = 30
+
 /**
- * Put focus in the open quick chat's composer on the next frame. The
- * composer focuses itself only when it mounts, so `+` on the empty quick chat
- * that is already on screen needs this.
+ * Put focus in the open quick chat's composer. It waits a few frames for a
+ * new chat's composer to mount. The composer focuses itself only on mount
+ * in some layouts, so `+` (a new chat, or the empty one already on screen)
+ * needs this.
  */
 export function focusQuickChatComposer(): void {
-  requestAnimationFrame(() => {
+  let frames = 0
+  const tryFocus = (): void => {
     const editor = document.querySelector<HTMLElement>(
       '[data-testid="quick-chat-main"] [contenteditable="true"]'
     )
-    editor?.focus()
-  })
+    if (editor) {
+      editor.focus()
+      return
+    }
+    frames += 1
+    if (frames < FOCUS_COMPOSER_MAX_FRAMES) requestAnimationFrame(tryFocus)
+  }
+  requestAnimationFrame(tryFocus)
 }

@@ -7,7 +7,7 @@ vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 import { setRouterNavigate } from '@/lib/router-navigate'
 import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { useAcpStore } from '@/stores/acp-store'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { isQuickChatLeaving, useQuickChatStore } from '@/stores/quick-chat-store'
 import {
   leaveQuickChatView,
   noProjectChatKind,
@@ -57,11 +57,40 @@ describe('no-project-chat', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('closes the quick view and leaves its chat route', () => {
+  it('closes the quick view at once and leaves its route on the next task', () => {
+    vi.useFakeTimers()
     useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'q' } })
     window.location.hash = '#/c/q'
     leaveQuickChatView('test')
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    expect(isQuickChatLeaving('q')).toBe(true)
+    expect(navigate).not.toHaveBeenCalled()
+    vi.runAllTimers()
     expect(navigate).toHaveBeenCalledWith('/')
+    expect(isQuickChatLeaving('q')).toBe(false)
+    vi.useRealTimers()
+  })
+
+  it('adds no history entry when the caller already changed the route', () => {
+    vi.useFakeTimers()
+    useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'q' } })
+    window.location.hash = '#/c/q'
+    leaveQuickChatView('test')
+    // The caller's own navigation (Alt+T, a project pick) lands first.
+    window.location.hash = '#/c/new-project-chat'
+    vi.runAllTimers()
+    expect(navigate).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('keeps the route when the same quick chat opens again before it settles', () => {
+    vi.useFakeTimers()
+    useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'q' } })
+    window.location.hash = '#/c/q'
+    leaveQuickChatView('test')
+    useQuickChatStore.setState({ view: { mode: 'chat', sessionId: 'q' } })
+    vi.runAllTimers()
+    expect(navigate).not.toHaveBeenCalled()
+    vi.useRealTimers()
   })
 })

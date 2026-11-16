@@ -529,11 +529,14 @@ export function MobileChatShell({
         subtitle={subtitle.text}
         onCloseAutoFocus={onMoreSheetCloseAutoFocus}
         onItemChosen={() => setSheetFocusDestination('header-more-sheet', titleRef.current)}
-        onOpenGitChanges={openGitChangesFromSheet}
-        onOpenFiles={openFilesFromSheet}
+        // A quick chat has no project: no Git, Files, terminal or project settings.
+        onOpenGitChanges={quickSessionId ? undefined : openGitChangesFromSheet}
+        onOpenFiles={quickSessionId ? undefined : openFilesFromSheet}
         onOpenCommandPalette={openCommandPalette}
-        onNewTerminal={newTerminal}
-        onOpenProjectSettings={handOffToModal('header-more-sheet', openProjectSettings)}
+        onNewTerminal={quickSessionId ? undefined : newTerminal}
+        onOpenProjectSettings={
+          quickSessionId ? undefined : handOffToModal('header-more-sheet', openProjectSettings)
+        }
         onReportBug={handOffToModal('header-more-sheet', onReportBug)}
         onCloseChat={chatOnScreen ? closeActiveChat : undefined}
         onReloadChat={chatOnScreen ? chatReload.reload : undefined}

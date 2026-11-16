@@ -14,7 +14,7 @@ import { clearChatRoute } from '@/lib/router-navigate'
 import { randomUUID } from '@/lib/uuid'
 import type { EnvVariable, Project, ProjectColor, ProjectGroup, Worktree } from '@/types/project'
 import { useProjectBusyStore } from './project-busy-store'
-import { useQuickChatStore } from './quick-chat-store'
+import { closeQuickChatView } from './quick-chat-store'
 
 /** How long a new project may take to come back through the `projects` watch before it is selected anyway. */
 const LISTED_TIMEOUT_MS = 5000
@@ -142,14 +142,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const prev = get().activeProjectId
     // A quick chat covers the project tree. Selecting a project (also the
     // active one, and also from the palette or a notification) shows it.
-    const quick = useQuickChatStore.getState().view
-    if (quick.mode !== 'closed') {
-      useQuickChatStore.getState().close()
-      clearChatRoute(quick.sessionId)
+    const quickSessionId = closeQuickChatView()
+    if (quickSessionId) {
       void logFrontendError({
         level: 'info',
         source: 'project-store.selectProject',
-        message: `Closed the quick chat view (${quick.sessionId}) for project ${id}`
+        message: `Closed the quick chat view (${quickSessionId}) for project ${id}`
       })
     }
     set((state) => ({
@@ -158,7 +156,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }))
     if (prev !== id) {
       writeActiveProject(id)
-      clearChatRoute()
+      // The quick chat's route settles in `closeQuickChatView`. Clearing it
+      // here too would add a second history entry.
+      if (!quickSessionId) clearChatRoute()
     }
   },
 

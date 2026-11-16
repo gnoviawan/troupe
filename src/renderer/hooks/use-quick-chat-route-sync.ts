@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { leaveQuickChatView, openNoProjectChat } from '@/lib/no-project-chat'
+import { isWorkspaceRoutePath, useWorkspaceRouteStore } from '@/lib/workspace-route'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 
 /** The session id of a `/c/<id>` path, or `null`. */
@@ -10,7 +11,8 @@ function routeSessionId(pathname: string): string | null {
 /**
  * Keep the quick chat view and the route in step when the route changes
  * without a click on the view itself (browser Back/Forward, a typed URL, a
- * routed page such as Snapshots).
+ * routed page such as Snapshots). It also publishes whether the route is a
+ * workspace route ({@link useWorkspaceRouteStore}).
  *
  * While the quick view is open, `ChatRoute` is not mounted, so nothing else
  * answers a route change. This hook runs on a pathname change only. It reads
@@ -18,6 +20,9 @@ function routeSessionId(pathname: string): string | null {
  * the route, so the route then names the open chat and nothing happens.
  */
 export function useQuickChatRouteSync(pathname: string): void {
+  useEffect(() => {
+    useWorkspaceRouteStore.setState({ onWorkspaceRoute: isWorkspaceRoutePath(pathname) })
+  }, [pathname])
   useEffect(() => {
     const view = useQuickChatStore.getState().view
     if (view.mode === 'closed') return

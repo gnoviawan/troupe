@@ -256,6 +256,7 @@ async function startQuick(reason: NewChatReason): Promise<OpenNewChatResult> {
     kind: 'quick'
   })
   showNoProjectChat(placeholderId, 'quick', SOURCE)
+  focusQuickChatComposer()
   const workspace = useWorkspaceStore.getState()
   if (workspace.agentLauncherPaneId) workspace.hideAgentLauncher()
   log(
