@@ -60,7 +60,7 @@ export function launcherMcpListProps({
   mcpProbeError,
   mcpTools,
   loadMcpTools
-}: LauncherMcpInput): Omit<McpServerListProps, 'listClassName'> {
+}: LauncherMcpInput): McpServerListProps {
   return {
     count: mcpCount,
     servers: mcpServers,

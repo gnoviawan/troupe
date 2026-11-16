@@ -13,8 +13,9 @@ import type { TermulToolId } from '@/lib/composer/termul-tools'
 import type { BrowserPickOptions } from '@/lib/composer-attachments-io'
 import { logFrontendError } from '@/lib/log-api'
 import { useOverlayRegistration } from '@/stores/overlay-stack-store'
-import { McpServerList, type McpServerListProps } from '../McpServerList'
+import type { McpServerListProps } from '../McpServerList'
 import { TERMUL_TOOL_ICONS } from '../ToolChip'
+import { ConnectorsSheetView, connectorsNeedingAttention } from './ConnectorsSheetView'
 import { type ConnectorsHost, connectorsMenuModel } from './connectors-menu-model'
 import type { TermulToolRow } from './use-termul-tools'
 
@@ -39,7 +40,7 @@ export interface ComposerAddHandle {
   insertTool: (id: TermulToolId) => boolean
 }
 
-interface ComposerAddSheetProps extends Omit<McpServerListProps, 'listClassName'> {
+interface ComposerAddSheetProps extends McpServerListProps {
   handle: ComposerAddHandle
   /** Session closed: the editor is unavailable. */
   disabled: boolean
@@ -79,10 +80,27 @@ function AttachTile({
   )
 }
 
-function connectorsSummary(servers: McpServerListProps['servers']): string {
+/** The Connectors row subtitle (Paper "2.6d"): "6 of 11 on · 2 need attention". */
+function connectorsSummary(
+  servers: McpServerListProps['servers'],
+  probeStatus: McpServerListProps['probeStatus']
+): ReactNode {
   if (servers.length === 0) return 'None added'
   const { onCount } = connectorsMenuModel(servers, undefined, 'launcher')
-  return `${onCount} of ${servers.length} on`
+  const attention = connectorsNeedingAttention(servers, probeStatus)
+  return (
+    <>
+      {`${onCount} of ${servers.length} on`}
+      {attention > 0 ? (
+        <>
+          {' · '}
+          <span className="text-destructive">
+            {attention === 1 ? '1 needs attention' : `${attention} need attention`}
+          </span>
+        </>
+      ) : null}
+    </>
+  )
 }
 
 export function ComposerAddSheet({
@@ -92,7 +110,6 @@ export function ComposerAddSheet({
   connectorsHost,
   ...mcp
 }: ComposerAddSheetProps): React.JSX.Element {
-  const { footnote } = connectorsMenuModel(mcp.servers, mcp.probeStatus, connectorsHost)
   const [open, setOpen] = useState(false)
   // Set while a Mention/Commands tap hands focus to the editor, so the sheet's
   // own focus restore (back to +) does not steal it again.
@@ -183,16 +200,7 @@ export function ComposerAddSheet({
             })}
           </SheetGroup>
         ) : nav.top === 'connectors' ? (
-          <div className="rounded-2xl bg-foreground/[0.05] px-4 py-3 text-xs">
-            {/* The sheet scrolls itself, so lift the popover's nested 300px scroller.
-                `max-h-fit` rather than `max-h-none`: tailwind-merge 2.x does not know
-                `max-h-none`, so it would leave `max-h-[300px]` in place. */}
-            <McpServerList
-              {...mcp}
-              footnote={footnote}
-              listClassName="max-h-fit overflow-visible pr-0"
-            />
-          </div>
+          <ConnectorsSheetView {...mcp} host={connectorsHost} />
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2">
@@ -252,7 +260,7 @@ export function ComposerAddSheet({
                   </SheetIconWell>
                 }
                 title="Connectors"
-                subtitle={connectorsSummary(mcp.servers)}
+                subtitle={connectorsSummary(mcp.servers, mcp.probeStatus)}
                 accessory="chevron"
                 subview="connectors"
                 onSelect={() => nav.push('connectors')}
