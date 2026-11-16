@@ -1763,6 +1763,13 @@ describe('phone Select model sheet', () => {
     const providers = openProviders()
     fireEvent.click(within(providers).getByRole('button', { name: 'Claude Agent' }))
     expect(within(sheet()).getByText('Could not load Claude Agent models.')).toBeInTheDocument()
+    // Composer V2 (Paper 2.6i·2): one card in the list's place, the provider
+    // row says "Not loaded", and the way back to the chat's own agent.
+    expect(within(sheet()).getByRole('alert')).toHaveTextContent(
+      'Could not load Claude Agent models.'
+    )
+    expect(within(sheet()).getByRole('button', { name: /Not loaded/ })).toBeInTheDocument()
+    expect(within(sheet()).getByRole('button', { name: /^Use / })).toBeInTheDocument()
 
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Sign in to Claude Agent' }))
     const setup = screen.getByRole('dialog', { name: 'Claude Agent' })
