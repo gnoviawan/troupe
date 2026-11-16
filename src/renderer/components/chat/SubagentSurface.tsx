@@ -28,23 +28,29 @@ const DOCK_EXIT_MS = 150
 const DOCK_CLASS = 'h-full w-[clamp(20rem,38%,30rem)] shrink-0 border-l border-border bg-card'
 
 /**
- * The docked panel on its way out: out of the layout at once (the chat takes
- * the width back), then a fade and a 12px slide to the right, held at the end
- * until it unmounts. Opacity only under reduced motion.
+ * The docked panel. It stays the same element through its exit, so the panel
+ * inside keeps its state and scroll and does not mount again. Open: one
+ * entrance, a fade and a 12px slide from the right. Exiting: out of the
+ * layout at once (the chat takes the width back), then a fade and a 12px
+ * slide to the right, held at the end until it unmounts. Opacity only under
+ * reduced motion.
  */
-function ExitingDock({
-  children,
-  onDone
+function DockedAside({
+  exiting,
+  onExited,
+  children
 }: {
+  exiting: boolean
+  onExited: () => void
   children: ReactNode
-  onDone: () => void
 }): React.JSX.Element {
   const ref = useRef<HTMLElement>(null)
   const reduced = useReducedMotion() ?? false
   useLayoutEffect(() => {
+    if (!exiting) return
     const el = ref.current
     if (!el || typeof el.animate !== 'function') {
-      onDone()
+      onExited()
       return
     }
     const animation = el.animate(
@@ -54,18 +60,23 @@ function ExitingDock({
       ],
       { duration: DOCK_EXIT_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' }
     )
-    animation.onfinish = onDone
+    animation.onfinish = onExited
     return () => {
       animation.onfinish = null
       animation.cancel()
     }
-  }, [onDone, reduced])
+  }, [exiting, onExited, reduced])
   return (
     <aside
       ref={ref}
-      aria-hidden="true"
-      {...{ inert: '' }}
-      className={`${DOCK_CLASS} pointer-events-none absolute inset-y-0 right-0`}
+      aria-label={exiting ? undefined : 'Subagent'}
+      aria-hidden={exiting ? 'true' : undefined}
+      {...(exiting ? { inert: '' } : {})}
+      className={
+        exiting
+          ? `${DOCK_CLASS} pointer-events-none absolute inset-y-0 right-0`
+          : `${DOCK_CLASS} animate-in fade-in-0 duration-200 ease-[var(--ease-out)] motion-safe:slide-in-from-right-3`
+      }
     >
       {children}
     </aside>
@@ -132,29 +143,40 @@ export function SubagentSurfaceProvider({
   // Back, the arrows and close show the next subagent with no morph.
   const [morph, setMorph] = useState<{ id: string; rect: DOMRect } | null>(null)
 
+  // The last docked panel. A pointer close (Close, Back to chat, Back from the
+  // last subagent) keeps it on screen for its exit, set in the same update as
+  // the close so it never unmounts. A keyboard close, a session switch or a
+  // hidden tab just empties the panel.
+  const lastDocked = useRef<ReactNode>(null)
+  const [exiting, setExiting] = useState<ReactNode>(null)
   const open = useCallback<SubagentSurface['open']>((id, siblings, options) => {
+    setExiting(null)
     setMorph(options?.origin ? { id, rect: options.origin } : null)
     setStack((prev) =>
       options?.nested && prev.length > 0 ? [...prev, { id, siblings }] : [{ id, siblings }]
     )
   }, [])
-  // Set by the user's close (Close, Back to chat, Back from the last
-  // subagent): only that plays the exit. A session switch or a hidden tab
-  // just empties the panel.
-  const exitArmed = useRef(false)
   const close = useCallback(() => {
-    exitArmed.current = true
     setMorph(null)
     setStack([])
   }, [])
-  const back = useCallback(() => {
-    setMorph(null)
-    setStack((prev) => {
-      // Back from the last subagent closes the panel: that close animates.
-      if (prev.length <= 1) exitArmed.current = true
-      return prev.slice(0, -1)
-    })
-  }, [])
+  const dismiss = useCallback(
+    (keyboard: boolean) => {
+      if (!keyboard) setExiting(lastDocked.current)
+      close()
+    },
+    [close]
+  )
+  const depth = stack.length
+  const back = useCallback(
+    (keyboard: boolean) => {
+      // Back from the last subagent closes the panel.
+      if (!keyboard && depth <= 1) setExiting(lastDocked.current)
+      setMorph(null)
+      setStack((prev) => prev.slice(0, -1))
+    },
+    [depth]
+  )
   const step = useCallback((delta: -1 | 1) => {
     setMorph(null)
     setStack((prev) => {
@@ -214,7 +236,7 @@ export function SubagentSurfaceProvider({
         parentTurn={parentTurn}
         position={{ index: Math.max(0, index), total: Math.max(1, top.siblings.length) }}
         onBack={back}
-        onClose={close}
+        onClose={dismiss}
         onStep={step}
         morphFrom={morph?.id === toolCall.toolCallId ? morph.rect : null}
         renderTitle={
@@ -231,21 +253,8 @@ export function SubagentSurfaceProvider({
   }
 
   const dockedNode = docked && panel ? panel(false) : null
-  // The last docked panel, kept for its exit after a close.
-  const lastDocked = useRef<ReactNode>(null)
-  const [exiting, setExiting] = useState<ReactNode>(null)
-  const isDockedOpen = dockedNode !== null
-  useLayoutEffect(() => {
-    if (isDockedOpen) {
-      setExiting(null)
-      exitArmed.current = false
-      return
-    }
-    if (exitArmed.current && lastDocked.current) setExiting(lastDocked.current)
-    exitArmed.current = false
-  }, [isDockedOpen])
   useEffect(() => {
-    if (dockedNode) lastDocked.current = dockedNode
+    lastDocked.current = dockedNode
   })
   const endExit = useCallback(() => setExiting(null), [])
 
@@ -253,15 +262,10 @@ export function SubagentSurfaceProvider({
     <SubagentSurfaceContext.Provider value={value}>
       <div ref={rootRef} className="relative flex h-full min-w-0">
         <div className="h-full min-w-0 flex-1">{children}</div>
-        {dockedNode ? (
-          <aside
-            aria-label="Subagent"
-            className={`${DOCK_CLASS} animate-in fade-in-0 duration-200 ease-[var(--ease-out)] motion-safe:slide-in-from-right-3`}
-          >
-            {dockedNode}
-          </aside>
-        ) : (
-          exiting && <ExitingDock onDone={endExit}>{exiting}</ExitingDock>
+        {(dockedNode ?? exiting) && (
+          <DockedAside exiting={dockedNode === null} onExited={endExit}>
+            {dockedNode ?? exiting}
+          </DockedAside>
         )}
       </div>
       {!docked && (

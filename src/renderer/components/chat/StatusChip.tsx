@@ -181,8 +181,10 @@ const SEGMENT_CLASS = cn(
   'hover:bg-rail-segment-hover active:bg-rail-segment-active',
   'data-[state=open]:bg-rail-segment-active data-[state=open]:shadow-[inset_0_0_0_0.5px_var(--rail-edge)]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-  // 28px segment, 44px touch target.
-  "after:absolute after:-inset-y-px after:inset-x-0 after:content-[''] pointer-coarse:after:-inset-y-2",
+  // 28px segment. On touch screens an 8px margin above and below gives each
+  // segment its own 44px slot, and the hit area fills that slot only, so the
+  // targets of adjacent segments do not overlap.
+  "after:absolute after:-inset-y-px after:inset-x-0 after:content-[''] pointer-coarse:my-2 pointer-coarse:after:-inset-y-2",
   // Three-character count ("99+"): tighter lanes so the mark stays in the rail.
   'data-[capped=true]:px-0.5'
 )

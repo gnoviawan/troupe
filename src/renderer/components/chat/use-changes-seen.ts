@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { normalizePath } from '@/lib/working-copy'
+import { useColumnWorkingCopy } from '@/components/shell/use-column-working-copy'
+import { normalizePath, workingCopyOf } from '@/lib/working-copy'
 import { useChangesSeenStore } from '@/stores/changes-seen-store'
 import { useGitSheetStore } from '@/stores/git-sheet-store'
+import { useProjectStore } from '@/stores/project-store'
 import { useLastColumnTab, useSidePanelVisible } from '@/stores/shell-layout-store'
 import type { ChangedFile } from './use-chat-changed-files'
 
@@ -15,15 +17,27 @@ export function changesFingerprint(files: readonly ChangedFile[]): string {
 
 /**
  * True while the Git view shows this folder's changes: the desktop Changes
- * tab in a visible side panel, or the phone Git sheet opened on `cwd`.
+ * tab of a visible side panel on the active project, showing the working copy
+ * that holds `cwd`, or the phone Git sheet opened on `cwd`.
  */
 function useGitViewShowing(projectId: string | null, cwd: string): boolean {
+  const project = useProjectStore((state) =>
+    projectId !== null && state.activeProjectId === projectId
+      ? state.projects.find((p) => p.id === projectId)
+      : undefined
+  )
+  const { cwd: columnCwd } = useColumnWorkingCopy(project)
   const lastTab = useLastColumnTab(projectId ?? '')
   const sidePanelVisible = useSidePanelVisible()
   const sheetOnCwd = useGitSheetStore(
     (state) => state.open && state.cwd !== '' && normalizePath(state.cwd) === normalizePath(cwd)
   )
-  return (projectId !== null && lastTab === 'changes' && sidePanelVisible) || sheetOnCwd
+  const columnShowsCwd =
+    project !== undefined &&
+    lastTab === 'changes' &&
+    sidePanelVisible &&
+    workingCopyOf(cwd, project)?.key === normalizePath(columnCwd)
+  return columnShowsCwd || sheetOnCwd
 }
 
 /**

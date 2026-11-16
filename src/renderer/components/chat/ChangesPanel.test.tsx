@@ -217,6 +217,34 @@ describe('ChangesPanel discard', () => {
     )
   })
 
+  it('a chat in a subfolder discards from the repository root and refreshes its folder', async () => {
+    const sub = `${CWD}/packages/app`
+    const files = [
+      { path: `${CWD}/top.ts`, status: 'modified' as const, added: 1, removed: 0 },
+      { path: `${sub}/inner.ts`, status: 'untracked' as const, added: 2, removed: 0 }
+    ]
+    renderPanel({ cwd: sub, changes: changes(files) })
+    fireEvent.click(discardAll())
+    fireEvent.click(screen.getByRole('button', { name: 'Discard 2 files' }))
+    await waitFor(() => expect(discardFiles).toHaveBeenCalledTimes(1))
+    expect(discardFiles).toHaveBeenCalledWith(CWD, ['top.ts', 'packages/app/inner.ts'])
+    await waitFor(() => expect(refreshStatus).toHaveBeenCalledWith(sub))
+  })
+
+  it('a turn that starts while the confirm is open disables the confirm', () => {
+    const { rerender, props } = renderPanel()
+    fireEvent.click(discardAll())
+    rerender(
+      <TooltipProvider delayDuration={0}>
+        <ChangesPanel {...props} turnActive />
+      </TooltipProvider>
+    )
+    const confirm = screen.getByRole('button', { name: 'Discard 2 files' })
+    expect(confirm).toBeDisabled()
+    fireEvent.click(confirm)
+    expect(discardFiles).not.toHaveBeenCalled()
+  })
+
   it('shows a spinner and "Discarding…" with both buttons disabled while it runs', async () => {
     let finish: () => void = () => {}
     discardFiles.mockImplementation(() => new Promise<void>((resolve) => (finish = resolve)))
@@ -238,6 +266,7 @@ describe('ChangesPanel discard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Discard 2 files' }))
     expect(await screen.findByText('Could not read Git status.')).toBeInTheDocument()
     expect(screen.getByText('index.lock exists')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('index.lock exists')
     expect(screen.queryByText(/Discard changes in/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(refreshStatus).toHaveBeenCalledWith(CWD)

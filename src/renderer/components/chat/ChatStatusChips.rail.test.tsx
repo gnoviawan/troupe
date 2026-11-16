@@ -329,6 +329,9 @@ describe('StatusRailSegment', () => {
     // Fixed width, content centred: the mark slot takes no room when empty.
     expect(button.className).toContain('justify-center')
     expect(button.className).toContain('w-full')
+    // Touch: a 44px slot per segment (28px + 8px margins), hit area inside it.
+    expect(button.className).toContain('pointer-coarse:my-2')
+    expect(button.className).toContain('pointer-coarse:after:-inset-y-2')
     expect(button.querySelector('.tabular-nums')?.className).toContain('text-foreground')
     expect(button.querySelector('[data-mark="spinner"]')).not.toBeNull()
   })

@@ -237,8 +237,9 @@ export interface SubagentPanelProps {
   parentTurn: ParentTurn
   /** Place in the list the panel opened from. */
   position: { index: number; total: number }
-  onBack: () => void
-  onClose: () => void
+  /** `keyboard`: the close came from a key (Esc, or Enter/Space on a button) and plays no exit. */
+  onBack: (keyboard: boolean) => void
+  onClose: (keyboard: boolean) => void
   /** Step to the previous (-1) or next (+1) sibling. */
   onStep: (delta: -1 | 1) => void
   /** Renders the title (a sheet needs its own accessible title element). */
@@ -319,7 +320,7 @@ export function SubagentPanel({
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation()
-          onClose()
+          onClose(true)
         } else if (
           position.total > 1 &&
           (event.key === 'ArrowUp' || event.key === 'ArrowDown') &&
@@ -331,14 +332,14 @@ export function SubagentPanel({
       }}
     >
       <div className="flex items-center gap-1 px-1.5 pt-1.5">
-        <IconActionButton label="Back" onClick={onBack}>
+        <IconActionButton label="Back" onClick={(event) => onBack(event.detail === 0)}>
           <ArrowLeft />
         </IconActionButton>
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground tabular-nums">
           Subagent of this chat
           {position.total > 1 && ` · ${position.index + 1} of ${position.total}`}
         </span>
-        <IconActionButton label="Close" onClick={onClose}>
+        <IconActionButton label="Close" onClick={(event) => onClose(event.detail === 0)}>
           <X />
         </IconActionButton>
       </div>
@@ -384,7 +385,12 @@ export function SubagentPanel({
       <div className="flex items-center gap-2 border-t border-border px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-xs text-muted-foreground">
         <Clock size={14} className="shrink-0" aria-hidden="true" />
         <span className="min-w-0 flex-1">Runs on its own — you can't message a subagent.</span>
-        <Button type="button" variant="ghost" size="xs" onClick={onClose}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={(event) => onClose(event.detail === 0)}
+        >
           Back to chat
         </Button>
       </div>

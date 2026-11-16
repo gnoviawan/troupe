@@ -487,10 +487,14 @@ describe('opening the subagent panel', () => {
   it('closes the docked panel with a fade and a slide out, then removes it', () => {
     renderChat({ toolCalls: [dispatch('a', { title: 'Audit auth flow' }), dispatch('b')] })
     fireEvent.click(row(/^Audit auth flow/), { detail: 1 })
+    const shown = panel()
     animate.mockClear()
-    fireEvent.click(within(panel()).getByRole('button', { name: 'Back to chat' }))
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Back to chat' }), { detail: 1 })
 
-    // The live panel is gone at once; a copy fades out over the chat.
+    // The panel leaves the layout at once and fades out over the chat. It is
+    // the same element: no second mount, so no second avatar morph.
+    expect(screen.getByTestId('subagent-panel')).toBe(shown)
+    expect(morphCalls()).toHaveLength(0)
     expect(screen.queryByRole('complementary', { name: 'Subagent' })).toBeNull()
     const exitCall = animate.mock.calls.findIndex(
       (call) => (call as unknown as [Keyframe[]])[0]?.[1]?.opacity === 0
@@ -508,6 +512,26 @@ describe('opening the subagent panel', () => {
 
     act(() => animate.mock.results[exitCall].value.onfinish?.())
     expect(leaving).not.toBeInTheDocument()
+  })
+
+  it('closes at once from the keyboard: Esc, and Enter or Space on Close or Back', () => {
+    renderChat({ toolCalls: [dispatch('a', { title: 'Audit auth flow' })] })
+    const exits = () =>
+      animate.mock.calls.filter((call) => (call as unknown as [Keyframe[]])[0]?.[1]?.opacity === 0)
+
+    fireEvent.click(row(/^Audit auth flow/), { detail: 1 })
+    fireEvent.keyDown(panel(), { key: 'Escape' })
+    expect(screen.queryByTestId('subagent-panel')).toBeNull()
+
+    fireEvent.click(row(/^Audit auth flow/), { detail: 1 })
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Close' }), { detail: 0 })
+    expect(screen.queryByTestId('subagent-panel')).toBeNull()
+
+    fireEvent.click(row(/^Audit auth flow/), { detail: 1 })
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Back' }), { detail: 0 })
+    expect(screen.queryByTestId('subagent-panel')).toBeNull()
+
+    expect(exits()).toHaveLength(0)
   })
 
   it('does not play the exit when the chat empties the panel itself', () => {

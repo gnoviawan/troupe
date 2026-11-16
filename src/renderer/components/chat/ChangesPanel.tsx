@@ -41,16 +41,13 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-/** `fullPath` relative to `base`, or null when it sits outside it. */
-function relativeTo(fullPath: string, base: string): string | null {
-  const root = base.replace(/\\/g, '/').replace(/\/+$/, '')
-  const prefix = `${root}/`
-  return root && fullPath.startsWith(prefix) ? fullPath.slice(prefix.length) : null
-}
-
-/** The path `git_discard_file` takes: relative to the folder it runs in. */
-function discardPath(file: ChangedFile, cwd: string, rowBase: string): string {
-  return relativeTo(file.path, cwd) ?? relativeTo(file.path, rowBase) ?? file.path
+/**
+ * `fullPath` relative to the repository root, the folder the discard runs in.
+ * A path relative to a subfolder would resolve against the wrong directory.
+ */
+function repoRelative(fullPath: string, root: string): string {
+  const prefix = `${root.replace(/\\/g, '/').replace(/\/+$/, '')}/`
+  return fullPath.startsWith(prefix) ? fullPath.slice(prefix.length) : fullPath
 }
 
 function LineCounts({ added, removed }: { added: number; removed: number }): React.JSX.Element {
@@ -182,7 +179,7 @@ export function ChangesPanel({
 
   const admitted = useServerAdmitsRemoteWrites()
   const projects = useProjectStore((state) => state.projects)
-  const writable = admitted && !isGitWriteBlocked(cwd, projects)
+  const writable = admitted && !isGitWriteBlocked(rowBase, projects)
 
   const [phase, setPhase] = useState<'idle' | 'confirm' | 'running'>('idle')
   const [discardError, setDiscardError] = useState<string | null>(null)
@@ -236,27 +233,35 @@ export function ChangesPanel({
   }, [phase])
 
   const discardAll = useCallback(async () => {
+    if (turnActive) return
     setPhase('running')
-    const paths = files.map((file) => discardPath(file, cwd, rowBase))
+    const paths = files.map((file) => repoRelative(file.path, rowBase))
     void logFrontendError({
       level: 'info',
-      message: `ChangesPanel: discarding ${paths.length} files in ${cwd}`,
+      message: `ChangesPanel: discarding ${paths.length} files in ${rowBase}`,
       source: 'ChangesPanel'
     })
     try {
-      await useGitStatusStore.getState().discardFiles(cwd, paths)
+      await useGitStatusStore.getState().discardFiles(rowBase, paths)
       if (mounted.current) setDiscardError(null)
     } catch (error) {
       void logFrontendError({
         level: 'warn',
-        message: `ChangesPanel: discard failed in ${cwd}: ${errorText(error)}`,
+        message: `ChangesPanel: discard failed in ${rowBase}: ${errorText(error)}`,
         source: 'ChangesPanel'
       })
       if (mounted.current) setDiscardError(errorText(error))
     } finally {
+      // discardFiles refreshes the repository root; the chat reads its own folder.
+      if (normalizePath(rowBase) !== key) {
+        void useGitStatusStore
+          .getState()
+          .refreshStatus(cwd)
+          .catch(() => {})
+      }
       if (mounted.current) setPhase('idle')
     }
-  }, [files, cwd, rowBase])
+  }, [files, cwd, key, rowBase, turnActive])
 
   const retry = useCallback(() => {
     setDiscardError(null)
@@ -344,7 +349,7 @@ export function ChangesPanel({
       )}
 
       {errorMessage !== undefined && (
-        <div className="flex flex-col items-start gap-1 px-2.5 py-2">
+        <div role="alert" className="flex flex-col items-start gap-1 px-2.5 py-2">
           <p className="text-xs text-destructive">Could not read Git status.</p>
           <p className="break-words text-xs text-muted-foreground">{errorMessage}</p>
           <Button type="button" variant="secondary" size="xs" className="mt-1" onClick={retry}>
@@ -390,7 +395,7 @@ export function ChangesPanel({
                 type="button"
                 variant="destructive"
                 size="xs"
-                disabled={phase === 'running'}
+                disabled={phase === 'running' || turnActive}
                 onClick={() => void discardAll()}
               >
                 {phase === 'running' ? (
