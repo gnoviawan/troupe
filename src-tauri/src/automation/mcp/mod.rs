@@ -1,9 +1,10 @@
 //! What `mcp_tool` nodes call: the project's configured MCP servers, the
 //! client seam, and the live `tools/list` cache that validation and runs
 //! share. A server's credentials (env and header values, OAuth tokens) live
-//! only in its [`McpServerConfig`], which never leaves this module and the
-//! engine; every wire view carries the server id, name, transport and tool
-//! schemas only.
+//! only in its [`McpServerConfig`], which leaves this module and the engine
+//! only as the `session/new` servers of an agent node that lists `other`;
+//! every wire view carries the server id, name, transport and tool schemas
+//! only.
 
 mod arguments;
 mod client;

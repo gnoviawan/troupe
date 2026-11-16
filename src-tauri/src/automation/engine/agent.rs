@@ -3,7 +3,8 @@
 //! re-prompted in the same session with the validation errors, up to
 //! `max_attempts`, all inside the node's `timeout_ms`. The session is always
 //! disposed. The host allows the tools on the node's list when the agent asks
-//! for them, and refuses the rest.
+//! for them, and refuses the rest. A node that lists `other` also starts with
+//! the project's enabled MCP servers, as a chat session does.
 
 use std::time::Duration;
 
@@ -14,6 +15,7 @@ use tokio::time::Instant;
 use super::nodes::{render_text, NodeError, NodeScope};
 use crate::acp::oneshot::{OneShotError, OneShotRequest, OneShotSession};
 use crate::acp::session::ToolAllowlist;
+use crate::automation::mcp::McpServerEntry;
 use crate::automation::model::{AgentTool, JsonSchemaSubset, Template};
 use crate::automation::schema::{self, Schema};
 
@@ -42,12 +44,29 @@ pub(super) async fn run(scope: &NodeScope<'_>, spec: AgentSpec<'_>) -> Result<Va
         spec.output_schema.0
     );
     let deadline = Instant::now() + Duration::from_millis(spec.timeout_ms);
+    let mcp_servers: Vec<_> = if spec.tools.contains(&AgentTool::Other) {
+        engine
+            .mcp()
+            .servers(scope.run.project_id)
+            .iter()
+            .filter_map(McpServerEntry::acp_server)
+            .collect()
+    } else {
+        Vec::new()
+    };
+    log::info!(
+        "[Automation] run {} step {}: agent session gets {} project MCP server(s)",
+        scope.run.run.id,
+        scope.node_id,
+        mcp_servers.len()
+    );
     let request = OneShotRequest {
         config,
         cwd: scope.run.cwd.to_string_lossy().into_owned(),
         model: spec.model.map(str::to_string),
         project_id: Some(scope.run.project_id.to_string()),
         tools: allowlist(spec.tools),
+        mcp_servers,
     };
     let started = tokio::select! {
         started = tokio::time::timeout_at(deadline, OneShotSession::start(&engine.acp, request)) => started,
