@@ -2064,7 +2064,7 @@ describe('AgentLauncher ACP new thread', () => {
       fireEvent.click(within(sheet).getByRole('button', { name: /Connectors/ }))
       fireEvent.click(
         await within(screen.getByRole('dialog', { name: 'Connectors' })).findByRole('switch', {
-          name: /Disable Files/i
+          name: 'Files'
         })
       )
 

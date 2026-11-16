@@ -705,8 +705,9 @@ describe('mobile composer: Add to chat sheet', () => {
     expect(
       within(sheet)
         .getAllByRole('button')
-        .map((button) => button.textContent?.trim())
+        .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim())
     ).toEqual([
+      // The grab handle: it closes the sheet (no ✕ in the header).
       'Close',
       'Camera',
       'Photos',
@@ -1014,7 +1015,7 @@ describe('mobile composer: closed session', () => {
       expect(within(sheet).getByRole('button', { name })).toBeDisabled()
     }
     fireEvent.click(within(sheet).getByRole('button', { name: 'Connectors' }))
-    expect(within(sheet).getByRole('switch', { name: 'Disable github' })).toBeEnabled()
+    expect(within(sheet).getByRole('switch', { name: 'github' })).toBeEnabled()
   })
 })
 
@@ -1025,45 +1026,48 @@ describe('mobile composer: Connectors in the sheet', () => {
     return screen.getByRole('dialog', { name: 'Connectors' })
   }
 
-  it('summarises how many servers are on, then lists each with its status and a switch', () => {
+  it('groups servers: Needs attention with an action and no switch, then On and Off (Paper 2.6n)', () => {
     mockMcp.servers = [
       { id: 'github', type: 'stdio', name: 'github', enabled: true },
-      { id: 'playwright', type: 'stdio', name: 'playwright', enabled: false }
+      { id: 'playwright', type: 'stdio', name: 'playwright', enabled: false },
+      { id: 'cua', type: 'stdio', name: 'cua', enabled: true },
+      { id: 'linear', type: 'stdio', name: 'linear', enabled: true }
     ]
-    mockMcp.probeStatus = { github: 'connected', playwright: 'disconnected' }
+    mockMcp.probeStatus = { github: 'connected', cua: 'disconnected', linear: 'authRequired' }
     renderBar()
     expect(
       within(openSheet()).getByRole('button', { name: 'Connectors' })
-    ).toHaveAccessibleDescription('1 of 2 on')
+    ).toHaveAccessibleDescription('3 of 4 on · 2 need attention')
     fireEvent.click(screen.getByRole('button', { name: 'Connectors' }))
     const sheet = screen.getByRole('dialog', { name: 'Connectors' })
 
-    expect(within(sheet).getByText('2 attached to this session.')).toBeInTheDocument()
-    expect(within(sheet).getByText('Connected')).toBeInTheDocument()
-    expect(within(sheet).getByRole('switch', { name: 'Disable github' })).toBeInTheDocument()
-    expect(within(sheet).getByRole('switch', { name: 'Enable playwright' })).toBeInTheDocument()
+    expect(within(sheet).getByText('3 of 4 on. Fix a connector to turn it on.')).toBeInTheDocument()
+    const attention = within(sheet).getByRole('group', { name: 'Needs attention' })
+    expect(within(attention).getByRole('button', { name: 'Reconnect cua' })).toBeInTheDocument()
+    expect(within(attention).getByRole('button', { name: 'Sign in to linear' })).toBeInTheDocument()
+    expect(within(attention).queryByRole('switch')).toBeNull()
     expect(
-      within(sheet).getByText('This chat still uses the previous servers.')
-    ).toBeInTheDocument()
-    expect(within(sheet).getByRole('button', { name: 'Reload this chat' })).toBeInTheDocument()
-    // The sheet scrolls, so the list drops the popover's nested 300px scroller.
-    const list = within(sheet).getAllByRole('list')[0]
-    expect(list).not.toHaveClass('max-h-[300px]')
-    expect(list).not.toHaveClass('overflow-y-auto')
+      within(within(sheet).getByRole('group', { name: 'On' })).getByRole('switch', {
+        name: 'github'
+      })
+    ).toBeChecked()
+    expect(
+      within(within(sheet).getByRole('group', { name: 'Off' })).getByRole('switch', {
+        name: 'playwright'
+      })
+    ).not.toBeChecked()
   })
 
-  it("counts the chat's own servers over the project list", () => {
-    mockMcp.servers = [
-      { id: 'github', type: 'stdio', name: 'github', enabled: true },
-      { id: 'playwright', type: 'stdio', name: 'playwright', enabled: true }
-    ]
-    renderBar({ session: { ...session(), mcpServerCount: 1 } })
+  it('Reconnect probes the server again', () => {
+    mockMcp.servers = [{ id: 'cua', type: 'stdio', name: 'cua', enabled: true }]
+    mockMcp.probeStatus = { cua: 'disconnected' }
+    renderBar()
     const sheet = openMcp()
-    expect(within(sheet).getByText('1 attached to this session.')).toBeInTheDocument()
-    expect(within(sheet).queryByText('2 attached to this session.')).not.toBeInTheDocument()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Reconnect cua' }))
+    expect(mockLoadMcpTools).toHaveBeenCalledWith('cua')
   })
 
-  it('says none are added or attached when the project has no servers', () => {
+  it('says none are added when the project has no servers', () => {
     mockMcp.servers = []
     renderBar()
     expect(
@@ -1071,8 +1075,11 @@ describe('mobile composer: Connectors in the sheet', () => {
     ).toHaveAccessibleDescription('None added')
     fireEvent.click(screen.getByRole('button', { name: 'Connectors' }))
     const sheet = screen.getByRole('dialog', { name: 'Connectors' })
-    expect(within(sheet).getByText('No servers attached yet.')).toBeInTheDocument()
-    expect(within(sheet).queryByRole('list')).not.toBeInTheDocument()
+    expect(
+      within(sheet).getByText('No connectors yet. Add one in the MCP settings.')
+    ).toBeInTheDocument()
+    expect(within(sheet).queryByRole('switch')).toBeNull()
+    expect(within(sheet).getByRole('button', { name: 'Manage MCP servers' })).toBeInTheDocument()
   })
 
   it('Back, Escape and system back return to Add to chat with focus on the Connectors row', async () => {
@@ -1105,7 +1112,7 @@ describe('mobile composer: Connectors in the sheet', () => {
     renderBar()
     const sheet = openMcp()
 
-    fireEvent.click(within(sheet).getByRole('switch', { name: 'Disable github' }))
+    fireEvent.click(within(sheet).getByRole('switch', { name: 'github' }))
 
     expect(mockSetMcpServerEnabled).toHaveBeenCalledWith('github', false)
   })
@@ -1116,7 +1123,7 @@ describe('mobile composer: Connectors in the sheet', () => {
     renderBar()
     const sheet = openMcp()
 
-    fireEvent.click(within(sheet).getByRole('switch', { name: 'Disable github' }))
+    fireEvent.click(within(sheet).getByRole('switch', { name: 'github' }))
 
     await waitFor(() =>
       expect(mockToastError).toHaveBeenCalledWith(
@@ -1125,14 +1132,16 @@ describe('mobile composer: Connectors in the sheet', () => {
     )
   })
 
-  it('shows the empty line, with no rows and no footnote, when none are attached', () => {
+  it('keeps Reload for a stale chat with no servers left, and no next-chat note', () => {
     renderBar()
     const sheet = openMcp()
 
     expect(within(sheet).getByRole('heading', { name: 'Connectors' })).toBeInTheDocument()
-    expect(within(sheet).getByText('No servers attached yet.')).toBeInTheDocument()
-    expect(within(sheet).queryByRole('listitem')).not.toBeInTheDocument()
-    expect(within(sheet).getByRole('button', { name: 'Reload this chat' })).toBeInTheDocument()
-    expect(within(sheet).queryByText('Takes effect on the next chat.')).not.toBeInTheDocument()
+    expect(
+      within(sheet).getByText('No connectors yet. Add one in the MCP settings.')
+    ).toBeInTheDocument()
+    expect(within(sheet).queryByRole('switch')).toBeNull()
+    expect(within(sheet).getByRole('button', { name: /Reload this chat/ })).toBeInTheDocument()
+    expect(within(sheet).queryByText(/Changes apply to the next chat/)).not.toBeInTheDocument()
   })
 })

@@ -154,7 +154,7 @@ export function ComposerConnectorsButton({
   connectorsHost,
   onClosed
 }: {
-  connectors: Omit<McpServerListProps, 'listClassName'>
+  connectors: McpServerListProps
   connectorsHost: ConnectorsHost
   /** Focus goes back here when the menu closes on its own (Escape). */
   onClosed?: () => void
