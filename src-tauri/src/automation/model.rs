@@ -775,6 +775,16 @@ pub struct AgentPolicy {
     pub timeout_ms: u64,
     /// Sorted and deduplicated; empty means no tools.
     pub tools: Vec<AgentTool>,
+    /// The enabled MCP servers its session starts with, in Settings order;
+    /// empty unless `tools` has `other`. The agent skips a server whose
+    /// transport it does not support.
+    pub mcp_servers: Vec<AgentMcpServer>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct AgentMcpServer {
+    pub server_id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]

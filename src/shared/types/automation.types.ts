@@ -229,7 +229,12 @@ export type AgentPolicy = {
   timeout_ms: number
   /** Sorted and deduplicated; empty means no tools. */
   tools: AgentTool[]
+  /** The enabled MCP servers its session starts with, in Settings order; empty unless `tools` has `other`. */
+  mcp_servers: AgentMcpServer[]
 }
+
+/** An MCP server an agent node's session starts with. */
+export type AgentMcpServer = { server_id: string; name: string }
 
 /** An `mcp_tool` node; `server_name` is null when the server is not configured. */
 export type McpToolPolicy = {

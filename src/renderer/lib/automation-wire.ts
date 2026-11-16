@@ -6,6 +6,7 @@
  */
 
 import type {
+  AgentMcpServer,
   AgentPolicy,
   AgentTool,
   ApplyOpsResult,
@@ -296,7 +297,16 @@ function agentPolicy(v: unknown, p: string): AgentPolicy {
     agent_id: str(o.agent_id, `${p}.agent_id`),
     model: nullable(o.model, `${p}.model`, str),
     timeout_ms: num(o.timeout_ms, `${p}.timeout_ms`),
-    tools: agentTools(o.tools, `${p}.tools`)
+    tools: agentTools(o.tools, `${p}.tools`),
+    mcp_servers: arr(o.mcp_servers, `${p}.mcp_servers`, agentMcpServer)
+  }
+}
+
+function agentMcpServer(v: unknown, p: string): AgentMcpServer {
+  const o = obj(v, p)
+  return {
+    server_id: str(o.server_id, `${p}.server_id`),
+    name: str(o.name, `${p}.name`)
   }
 }
 

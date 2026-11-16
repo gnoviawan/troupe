@@ -210,12 +210,19 @@ fn build_fixture() -> WireFixture {
                 "kind": "mcp_tool", "server_id": "srv-github", "tool": "list_issues",
                 "arguments": [{ "name": "state", "value": "open" }], "timeout_ms": 30000 } } },
             { "op": "add_node", "node": { "id": "ping", "label": "Ping", "spec": {
-                "kind": "mcp_tool", "server_id": "srv-removed", "tool": "ping" } } }
+                "kind": "mcp_tool", "server_id": "srv-removed", "tool": "ping" } } },
+            { "op": "add_node", "node": { "id": "triage", "label": "Triage", "spec": {
+                "kind": "agent", "agent_id": "claude", "prompt": "Triage the issues",
+                "output_schema": { "type": "object" }, "timeout_ms": 60000,
+                "max_attempts": 1, "tools": ["other"] } } }
         ]),
     );
-    let server_name = |id: &str| (id == "srv-github").then(|| "GitHub".to_string());
+    let servers = [
+        super::mcp::test_support::server("srv-tebar", "Tebar"),
+        super::mcp::test_support::server("srv-github", "GitHub"),
+    ];
     WireFixture {
-        run_policy: run_policy(&with_tools, 1_772_798_400_000, &server_name),
+        run_policy: run_policy(&with_tools, 1_772_798_400_000, &servers),
         apply_ops_result: ApplyOpsResult {
             issues: validate(&fresh),
             automation: fresh,

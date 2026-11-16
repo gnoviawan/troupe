@@ -72,6 +72,8 @@ export function RunPolicyCard({
                     {agent.model ? ` (${agent.model})` : ''}
                     {` · times out after ${formatDuration(agent.timeout_ms)}`}
                     {` · ${agentToolsLabel(agent.tools)}`}
+                    {agent.mcp_servers.length > 0 &&
+                      ` · MCP servers: ${agent.mcp_servers.map((server) => server.name).join(', ')}`}
                   </span>
                 </li>
               ))}

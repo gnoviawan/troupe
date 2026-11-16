@@ -14,13 +14,13 @@ use super::agents::{self, AgentRegistry, KnownAgent};
 use super::engine::{Engine, EngineDeps, HttpConfig, ProjectRoots, SystemClock};
 use super::graph::{self, OpError};
 use super::mcp::{
-    find_server, literal_argument, Literal, Lookup, McpFailure, McpServerEntry, ProjectMcpServers,
-    RmcpClient, ToolSchema,
+    literal_argument, Literal, Lookup, McpFailure, McpServerEntry, ProjectMcpServers, RmcpClient,
+    ToolSchema,
 };
 use super::model::{
-    ApplyOpsResult, Automation, AutomationChanged, AutomationId, Issue, IssueCode, Layout,
-    NamedTemplate, NodeId, NodeKind, NodeSpec, Op, Run, RunId, RunPolicy, RunTrigger, Schedule,
-    Step,
+    AgentTool, ApplyOpsResult, Automation, AutomationChanged, AutomationId, Issue, IssueCode,
+    Layout, NamedTemplate, NodeId, NodeKind, NodeSpec, Op, Run, RunId, RunPolicy, RunTrigger,
+    Schedule, Step,
 };
 use super::policy;
 use super::schedule;
@@ -470,17 +470,17 @@ impl AutomationService {
     }
 
     fn policy_with(&self, automation: &Automation, servers: &[McpServerEntry]) -> RunPolicy {
-        let server_name = |id: &str| find_server(servers, id).map(|s| s.name.clone());
-        policy::run_policy(automation, self.engine.now_ms(), &server_name)
+        policy::run_policy(automation, self.engine.now_ms(), servers)
     }
 
-    /// The project's MCP servers, read only when a node calls one.
+    /// The project's MCP servers, read only when a node calls one or an
+    /// agent node may use them.
     fn mcp_servers(&self, automation: &Automation) -> Vec<McpServerEntry> {
-        let calls_mcp = automation
-            .graph
-            .nodes
-            .iter()
-            .any(|n| matches!(n.spec, NodeSpec::McpTool { .. }));
+        let calls_mcp = automation.graph.nodes.iter().any(|n| match &n.spec {
+            NodeSpec::McpTool { .. } => true,
+            NodeSpec::Agent { tools, .. } => tools.contains(&AgentTool::Other),
+            _ => false,
+        });
         if calls_mcp {
             self.engine.mcp().servers(&automation.project_id)
         } else {

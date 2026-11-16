@@ -532,7 +532,19 @@ const typed: Unbranded<WireFixture> = {
         agent_id: 'claude',
         model: 'sonnet',
         timeout_ms: 120000,
-        tools: ['read', 'search']
+        tools: ['read', 'search'],
+        mcp_servers: []
+      },
+      {
+        node_id: 'triage',
+        agent_id: 'claude',
+        model: null,
+        timeout_ms: 60000,
+        tools: ['other'],
+        mcp_servers: [
+          { server_id: 'srv-tebar', name: 'Tebar' },
+          { server_id: 'srv-github', name: 'GitHub' }
+        ]
       }
     ],
     secrets: [

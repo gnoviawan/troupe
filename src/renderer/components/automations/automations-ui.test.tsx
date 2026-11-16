@@ -190,6 +190,26 @@ describe('RunPolicyCard', () => {
     ])
   })
 
+  it('names the MCP servers an agent with MCP and other tools can reach', () => {
+    render(
+      <RunPolicyCard
+        automation={fixtureAutomation}
+        policy={fixturePolicy}
+        issues={[]}
+        approving={false}
+        onApprove={() => {}}
+      />
+    )
+
+    const rows = within(screen.getByText('Agents').parentElement as HTMLElement).getAllByRole(
+      'listitem'
+    )
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Extract · claude (sonnet) · times out after 2 min · tools: read files, search',
+      'triage · claude · times out after 1 min · tools: MCP and other tools · MCP servers: Tebar, GitHub'
+    ])
+  })
+
   it('shows no MCP tools row when no node calls one', () => {
     render(
       <RunPolicyCard
