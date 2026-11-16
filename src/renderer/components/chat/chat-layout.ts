@@ -135,6 +135,21 @@ export const COMPOSER_SURFACE_CLASS =
 export const COMPOSER_CARD_CLASS = `${COMPOSER_SURFACE_CLASS} shadow-composer`
 
 /**
+ * Composer V2 tray (Paper "Composer V2 · States", desktop): the `card` fill
+ * with a 0.5px `border` edge and radius 20. It holds the raised composer card
+ * (6px inset on the top and the sides) and the 40px foot row under it.
+ */
+export const COMPOSER_TRAY_CLASS =
+  'flex flex-col rounded-[20px] border-[0.5px] border-border bg-card px-1.5 pt-1.5 transition-[border-color]'
+
+/**
+ * Composer V2 raised card inside the tray: the `popover` fill, radius 14
+ * (tray radius 20 − 6px inset) and the control edge and drop
+ * (`--shadow-control`: 0.5px `--popover-edge` + a 1px drop).
+ */
+export const COMPOSER_RAISED_CLASS = 'rounded-[14px] bg-popover shadow-control'
+
+/**
  * Prompt panel (AskUserQuestion, ElicitationPrompt) that replaces the
  * composer: the composer surface, raised over the transcript.
  * Per-theme lift: `--prompt-panel-shadow`.

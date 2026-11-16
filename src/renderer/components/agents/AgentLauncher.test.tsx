@@ -1796,14 +1796,11 @@ describe('AgentLauncher ACP new thread', () => {
       expect(mockRetargetWarmPool).toHaveBeenCalledWith(defaultAgent.configId, '/work', 'p1')
     )
 
-    // Open + > Connectors and toggle the "Files" server off.
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Add to chat' }), {
+    // Open the foot row's Connectors menu and toggle the "Files" server off.
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^Connectors/ }), {
       button: 0,
       ctrlKey: false
     })
-    const connectors = await screen.findByRole('menuitem', { name: /Connectors/ })
-    act(() => connectors.focus())
-    fireEvent.keyDown(connectors, { key: 'ArrowRight' })
     fireEvent.click(await screen.findByRole('menuitemcheckbox', { name: 'Files' }))
 
     // The toggle persists to the registry, then cancels + re-prepares so the
@@ -3505,17 +3502,20 @@ describe('AgentLauncher worktree isolation', () => {
     }
   })
 
-  it('renders worktree controls in a separate context strip below the composer', () => {
+  it('renders worktree controls in the foot row, under the raised card (Composer V2)', () => {
     renderLauncher()
-    const composer = document.querySelector('[data-agent-launcher-composer="true"]')
+    const tray = document.querySelector('[data-agent-launcher-composer="true"]')
+    const raised = tray?.querySelector('[data-composer-raised="true"]')
+    const foot = tray?.querySelector('[data-composer-foot-row="true"]')
     const contextStrip = document.querySelector('[data-agent-launcher-context-strip="true"]')
 
-    expect(composer).toBeInTheDocument()
-    expect(contextStrip).toBeInTheDocument()
-    expect(composer).not.toContainElement(contextStrip)
-    expect(composer?.compareDocumentPosition(contextStrip as Node)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    )
+    expect(raised).toBeInTheDocument()
+    expect(foot).toContainElement(contextStrip as HTMLElement)
+    expect(raised).not.toContainElement(contextStrip as HTMLElement)
+    expect(contextStrip).toHaveClass('pl-0', 'pt-0')
+    expect(
+      within(foot as HTMLElement).getByRole('button', { name: /^Connectors/ })
+    ).toBeInTheDocument()
   })
 
   it('shows the isolation selector when gitBranch is null (CAP-1)', () => {
