@@ -8,7 +8,7 @@ import { getAgentById } from '@/lib/agents/custom-agents'
 import { cn } from '@/lib/utils'
 import { AgentProse } from './chat-agent-prose'
 import { SubagentGroup } from './SubagentGroup'
-import { SubagentAvatar, SubagentStatusLabel } from './SubagentRow'
+import { isSubagentWaiting, SubagentAvatar, SubagentStatusLabel } from './SubagentRow'
 import {
   formatTokens,
   type SubagentStatus,
@@ -243,6 +243,40 @@ export interface SubagentPanelProps {
   onStep: (delta: -1 | 1) => void
   /** Renders the title (a sheet needs its own accessible title element). */
   renderTitle?: (title: string) => ReactNode
+  /** Where the clicked row's avatar was: the header avatar grows out of it. */
+  morphFrom?: DOMRect | null
+}
+
+/** The avatar's travel from the row into the header: the eye follows it across. */
+const AVATAR_MORPH_MS = 340
+
+/**
+ * Shared-element morph (FLIP) of the header avatar: it starts on the row's
+ * avatar and settles in place, with transform only. No morph under reduced
+ * motion or before layout (jsdom). Unmount cancels it.
+ */
+function useAvatarMorph(
+  ref: React.RefObject<HTMLElement | null>,
+  from: DOMRect | null | undefined,
+  reduced: boolean
+): void {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || !from || reduced || typeof el.animate !== 'function') return
+    const to = el.getBoundingClientRect()
+    if (to.width === 0 || from.width === 0) return
+    const dx = from.left + from.width / 2 - (to.left + to.width / 2)
+    const dy = from.top + from.height / 2 - (to.top + to.height / 2)
+    const scale = from.width / to.width
+    const animation = el.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
+        { transform: 'translate(0, 0) scale(1)' }
+      ],
+      { duration: AVATAR_MORPH_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }
+    )
+    return () => animation.cancel()
+  }, [ref, from, reduced])
 }
 
 /**
@@ -258,8 +292,11 @@ export function SubagentPanel({
   onBack,
   onClose,
   onStep,
-  renderTitle
+  renderTitle,
+  morphFrom
 }: SubagentPanelProps): React.JSX.Element {
+  const avatarRef = useRef<HTMLSpanElement>(null)
+  useAvatarMorph(avatarRef, morphFrom, useReducedMotion() ?? false)
   const { agentId } = useSubagentSurface()
   const childCalls = useSubagentChildCalls(toolCall.toolCallId)
   const record = toolCall.subagent
@@ -306,7 +343,9 @@ export function SubagentPanel({
         </IconActionButton>
       </div>
       <div className="flex items-center gap-3 border-b border-border px-4 pb-3">
-        <SubagentAvatar status={status} />
+        <span ref={avatarRef} data-subagent-morph="" className="relative z-10 inline-flex shrink-0">
+          <SubagentAvatar status={status} waiting={isSubagentWaiting(toolCall, status)} />
+        </span>
         <div className="flex min-w-0 flex-1 flex-col">
           {renderTitle ? (
             renderTitle(title)
