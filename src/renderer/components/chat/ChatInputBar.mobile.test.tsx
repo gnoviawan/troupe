@@ -506,8 +506,12 @@ describe('mobile composer: one-row toolbar', () => {
   })
 
   it('shows a non-default mode icon on the pill and none for the first mode', () => {
+    // Composer V2 phone chip: agent glyph + chevron, plus the mode icon when
+    // the mode is not the first one.
     const { unmount } = renderBar()
-    expect(screen.getByRole('button', { name: PILL_NAME }).querySelectorAll('svg')).toHaveLength(1)
+    const defaultPill = screen.getByRole('button', { name: PILL_NAME })
+    expect(defaultPill.querySelectorAll('svg')).toHaveLength(2)
+    expect(defaultPill.querySelector('[data-termul-icon="ChevronDown"]')).not.toBeNull()
     unmount()
 
     renderBar({
@@ -524,7 +528,7 @@ describe('mobile composer: one-row toolbar', () => {
     const pill = screen.getByRole('button', {
       name: 'Opus 5.5. Plan mode. Switch agent. Currently Claude Code'
     })
-    expect(pill.querySelectorAll('svg')).toHaveLength(2)
+    expect(pill.querySelectorAll('svg')).toHaveLength(3)
   })
 
   it('hides the context ring when usage is missing, bootstrap-only or under 1%', () => {
@@ -582,6 +586,40 @@ describe('mobile composer: one-row toolbar', () => {
 function stableMarkup(html: string): string {
   return html.replace(/:r[0-9a-z]+:/g, ':id:').replace(/radix-[:\w-]+/g, 'radix-id')
 }
+
+describe('Composer V2 phone compact (Paper 2.6b)', () => {
+  it('is one popover card: no tray, no foot row, 36px buttons', () => {
+    const { container } = renderBar()
+    const card = container.querySelector('[data-chat-composer="true"]') as HTMLElement
+    expect(card).toHaveClass('rounded-[20px]', 'bg-popover', 'shadow-control')
+    expect(card.querySelector('[data-composer-raised]')).toBeNull()
+    expect(container.querySelector('[data-composer-foot-row]')).toBeNull()
+    expect(container.firstElementChild).toHaveClass('px-4')
+    expect(plusButton()).toHaveClass('size-9')
+    expect(screen.getByRole('button', { name: 'Send message' }).parentElement).toHaveClass('size-9')
+    expect(screen.getByRole('button', { name: PILL_NAME })).toHaveClass('h-9')
+    const row = container.querySelector('[data-composer-row]') as HTMLElement
+    expect(row).toHaveClass('pl-4', 'pr-3.5', 'pt-[11px]', 'pb-0.5')
+    expect(row.querySelector('[data-placeholder]')).toHaveAttribute(
+      'data-placeholder',
+      'Ask anything…'
+    )
+  })
+
+  it('shows the worktree strip under the card on a new chat only', () => {
+    const strip = <span data-testid="strip">Current checkout · dev</span>
+    const { unmount } = renderBar({ startScreen: true, worktree: strip })
+    const wrap = document.querySelector('[data-composer-phone-strip="true"]')
+    expect(wrap).toContainElement(screen.getByTestId('strip'))
+    expect(document.querySelector('[data-chat-composer="true"]')).not.toContainElement(
+      screen.getByTestId('strip')
+    )
+    unmount()
+
+    renderBar({ startScreen: false, worktree: strip })
+    expect(screen.queryByTestId('strip')).toBeNull()
+  })
+})
 
 describe('desktop composer markup', () => {
   it('keeps the desktop composer card unchanged', () => {

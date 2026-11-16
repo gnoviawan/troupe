@@ -3,7 +3,10 @@ import {
   ContextRowWorkspace,
   LauncherContextStrip
 } from '@/components/agents/launcher/context-strip'
-import { CONTEXT_ROW_CLASS } from '@/components/agents/launcher/launcher-classes'
+import {
+  CONTEXT_ROW_CLASS,
+  PHONE_CONTEXT_ROW_CLASS
+} from '@/components/agents/launcher/launcher-classes'
 import { useChatStartPick } from '@/components/chat/new-chat/use-chat-start-pick'
 import { useChatIsolationContext } from '@/hooks/use-chat-isolation-context'
 import { cn } from '@/lib/utils'
@@ -28,11 +31,14 @@ const FOOT_ROW_CLASS = 'pl-0 pt-0'
  */
 export function ChatStartContextRow({
   session,
-  inFootRow = false
+  inFootRow = false,
+  phone = false
 }: {
   session: Pick<AcpSession, 'id' | 'projectId' | 'cwd' | 'worktreePath' | 'worktreeBranch'>
   /** Composer V2: the row sits in the composer's foot row (no top inset). */
   inFootRow?: boolean
+  /** Phone: the 40px worktree strip under the compact composer (Paper "2.6g"). */
+  phone?: boolean
 }): React.JSX.Element | null {
   const { projectId, cwd, worktreePath, worktreeBranch } = session
   const { isWorktree, isolationModeTitle, isolationBranch, isDetachedHead } =
@@ -65,7 +71,7 @@ export function ChatStartContextRow({
         newWorktreeDisabledReason={start.serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
         gitBranch={project?.gitBranch ?? null}
         isGitRepo
-        className={inFootRow ? FOOT_ROW_CLASS : undefined}
+        className={inFootRow ? FOOT_ROW_CLASS : phone ? PHONE_CONTEXT_ROW_CLASS : undefined}
       />
     )
   }
@@ -73,7 +79,11 @@ export function ChatStartContextRow({
   return (
     <div
       data-chat-start-context-row="true"
-      className={cn(CONTEXT_ROW_CLASS, inFootRow && FOOT_ROW_CLASS)}
+      className={cn(
+        CONTEXT_ROW_CLASS,
+        inFootRow && FOOT_ROW_CLASS,
+        phone && PHONE_CONTEXT_ROW_CLASS
+      )}
     >
       <ContextRowWorkspace
         isWorktree={isWorktree}

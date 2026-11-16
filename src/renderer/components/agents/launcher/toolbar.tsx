@@ -251,16 +251,18 @@ export function LauncherToolbar({
       onCancel={noop}
       onSubmit={launch}
       sendLabel="Start agent chat"
+      size={isMobileShell ? 'phone' : 'default'}
     />
   )
 
   if (isMobileShell) {
     return (
+      // Composer V2 phone (Paper "2.6b"): 4px left, 6px right, 6px bottom.
       <div
-        className="flex items-center justify-between gap-3 px-2 pb-2"
+        className="flex items-center justify-between pb-1.5 pl-1 pr-1.5"
         data-composer-toolbar={toolbarMode}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2" data-composer-toolbar-row="mobile">
+        <div className="flex min-w-0 flex-1 items-center gap-1" data-composer-toolbar-row="mobile">
           <ComposerAddSheet
             handle={addHandle}
             disabled={!addHandle.canPick}

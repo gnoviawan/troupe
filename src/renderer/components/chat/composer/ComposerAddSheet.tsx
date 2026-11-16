@@ -142,10 +142,12 @@ export function ComposerAddSheet({
         <button
           type="button"
           aria-label="Add to chat"
-          className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-foreground/[0.06] text-foreground transition-colors duration-150 ease-out after:absolute after:-inset-0.5 after:content-[''] hover:bg-foreground/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring"
+          // Composer V2 phone (Paper "2.6b"): a 36px ghost button, 20px icon,
+          // 44px hit area.
+          className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors duration-150 ease-out after:absolute after:-inset-1 after:content-[''] hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-focus-ring active:bg-foreground/[0.06]"
           onClick={handle.blurEditor}
         >
-          <Plus size={18} />
+          <Plus size={20} />
         </button>
       </SheetTrigger>
       <MobileSheetContent

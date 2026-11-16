@@ -868,6 +868,17 @@
   mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
 }
 
+/* `fade-end` for a label whose box hugs its text (a centred title, a label
+   next to a chevron): the fade shows only while the text overflows. The
+   `useOverflowFade` hook sets `data-overflowing` on the element. */
+@utility fade-end-overflow {
+  overflow: hidden;
+  white-space: nowrap;
+  &[data-overflowing] {
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+  }
+}
+
 /* ------------------------------------------------------------
  * Uppercase label scale.
  *
