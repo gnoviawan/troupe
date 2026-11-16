@@ -69,6 +69,7 @@ import {
   CHAT_START_INPUT_MAX_HEIGHT,
   CHAT_START_INPUT_MIN_HEIGHT,
   CHAT_START_INPUT_ROW_CLASS,
+  CHAT_START_PHONE_HERO_CLASS,
   CHAT_START_TOP_CLASS,
   ChatStartBottomSpacer,
   ChatStartHero
@@ -1704,12 +1705,14 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         style={mobileBottomInset ? { paddingBottom: mobileBottomInset } : undefined}
       >
         {isMobileShell ? (
-          <ChatStartHero
-            isMobileShell
-            isExiting={isExiting}
-            reducedMotion={reducedMotion}
-            projectLabel={projectLabel}
-          />
+          <div className={CHAT_START_PHONE_HERO_CLASS}>
+            <ChatStartHero
+              isMobileShell
+              isExiting={isExiting}
+              reducedMotion={reducedMotion}
+              projectLabel={projectLabel}
+            />
+          </div>
         ) : (
           <div className={CHAT_START_TOP_CLASS}>
             <ChatStartHero
