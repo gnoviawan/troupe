@@ -451,6 +451,16 @@ export function MobileModelSheet(props: MobileModelSheetProps): React.JSX.Elemen
     body = (
       <>
         {providerRow}
+        {/* Composer V2 (Paper "2.6e"): the options sit right under Provider,
+            above the search and the model list, so Effort and Mode stay in
+            reach however long the list is. */}
+        {state.ownFooter && !state.searching ? (
+          <OptionsCard
+            options={options}
+            disabled={disabled}
+            onOpen={(id) => nav.push({ kind: 'option', id })}
+          />
+        ) : null}
         {state.searching || allTabs.length > 1 || modelCount > SEARCH_THRESHOLD ? (
           <SheetSearchField
             value={state.query}
@@ -460,13 +470,6 @@ export function MobileModelSheet(props: MobileModelSheetProps): React.JSX.Elemen
           />
         ) : null}
         {list}
-        {state.ownFooter && !state.searching ? (
-          <OptionsCard
-            options={options}
-            disabled={disabled}
-            onOpen={(id) => nav.push({ kind: 'option', id })}
-          />
-        ) : null}
         {state.otherHintTab ? (
           <p className="px-3 text-xs text-muted-foreground">
             {`Choose a model to set the options for ${state.otherHintTab.name}.`}
