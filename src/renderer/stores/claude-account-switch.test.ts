@@ -22,10 +22,24 @@ import {
   CLAUDE_AGENT_CONFIG_ID,
   isClaudeSession,
   restartClaudeSession,
+  switchChatClaudeAccount,
   switchProjectClaudeAccount
 } from './claude-account-switch'
 
-const { api } = vi.hoisted(() => ({ api: { setProjectAccount: vi.fn() } }))
+const { api } = vi.hoisted(() => ({
+  api: { setProjectAccount: vi.fn(), setChatAccount: vi.fn(), list: vi.fn() }
+}))
+
+const accounts = (chatAccounts: Record<string, string> = {}) => ({
+  accounts: [
+    { id: 'default', name: 'Default', builtin: true, signedIn: true },
+    { id: 'work', name: 'Work', builtin: false, signedIn: true }
+  ],
+  defaultAccountId: 'default',
+  projectAccounts: {},
+  chatAccounts,
+  autoSwitch: true
+})
 vi.mock('@/lib/claude-accounts-api', () => ({ claudeAccountsApi: api }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 vi.mock('@/lib/acp-api', async (importActual) => ({
@@ -101,6 +115,8 @@ beforeEach(() => {
     }))
   })
   api.setProjectAccount.mockResolvedValue(true)
+  api.setChatAccount.mockResolvedValue(true)
+  api.list.mockResolvedValue(accounts())
   useAcpStore.setState({
     ...FRESH,
     killAgent,
@@ -525,5 +541,65 @@ describe('a switch the host refuses', () => {
     expect(killAgent).not.toHaveBeenCalled()
     expect(retryCrashedSession).not.toHaveBeenCalled()
     expect(useAcpStore.getState().sessions).toBe(before)
+  })
+})
+
+describe('a chat with its own account', () => {
+  it('restarts nothing when the chat account changed elsewhere first', async () => {
+    const before = useAcpStore.getState().sessions
+    api.setChatAccount.mockResolvedValue(false)
+    await expect(
+      switchChatClaudeAccount('c1', 'office', 'work', { expectedAccountId: 'default' })
+    ).resolves.toBeNull()
+    expect(api.setChatAccount).toHaveBeenCalledWith('office', 'c1', 'work', {
+      expectedAccountId: 'default'
+    })
+    expect(killAgent).not.toHaveBeenCalled()
+    expect(retryCrashedSession).not.toHaveBeenCalled()
+    expect(useAcpStore.getState().sessions).toBe(before)
+  })
+
+  it('restarts only that chat on its new account', async () => {
+    await expect(switchChatClaudeAccount('c1', 'office', 'work')).resolves.toBe(true)
+    expect(api.setProjectAccount).not.toHaveBeenCalled()
+    expect(killAgent.mock.calls).toEqual([['agent-c1']])
+    expect(retryCrashedSession.mock.calls).toEqual([['c1', { resend: false }]])
+  })
+
+  it('closes only its session when other chats run on the same agent', async () => {
+    const closeSession = vi.spyOn(acpApi, 'closeSession').mockResolvedValue(undefined)
+    useAcpStore.setState((s) => ({
+      sessions: {
+        ...s.sessions,
+        c1: { ...s.sessions.c1, agentId: 'agent-shared' },
+        c2: { ...s.sessions.c2, agentId: 'agent-shared' }
+      }
+    }))
+    await expect(switchChatClaudeAccount('c1', 'office', null)).resolves.toBe(true)
+    expect(closeSession).toHaveBeenCalledWith('agent-shared', 'c1')
+    expect(killAgent).not.toHaveBeenCalled()
+    expect(retryCrashedSession.mock.calls).toEqual([['c1', { resend: false }]])
+    closeSession.mockRestore()
+  })
+
+  it('is left alone when its project account changes', async () => {
+    api.list.mockResolvedValue(accounts({ c1: 'work' }))
+    await expect(
+      applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
+    ).resolves.toEqual(['c2'])
+    expect(retryCrashedSession.mock.calls.map(([id]) => id)).toEqual(['c2'])
+    expect(killAgent.mock.calls).toEqual([['agent-c2']])
+  })
+
+  it('follows its project when its own account no longer exists', async () => {
+    api.list.mockResolvedValue(accounts({ c1: 'gone' }))
+    await applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
+    expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
+  })
+
+  it('restarts every chat of the project when the accounts cannot be listed', async () => {
+    api.list.mockRejectedValue(new Error('offline'))
+    await applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
+    expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
   })
 })
