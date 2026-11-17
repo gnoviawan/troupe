@@ -479,7 +479,7 @@ describe('claude account switch when the new account cannot resume the session',
   it('continues the chat in a new session that keeps the transcript and gets a summary', async () => {
     failReopenWith(new AcpTransportError('not_found', 'Resource not found: {"uri": "c1"}'))
 
-    await restartClaudeSession('c1')
+    await expect(restartClaudeSession('c1')).resolves.toBe(true)
 
     const state = useAcpStore.getState()
     expect([...getAgentChatSessionIdsInAllTrees(useWorkspaceStore.getState())]).toEqual(['s-new'])

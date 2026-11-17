@@ -151,7 +151,10 @@ function keyAgentToChat(sessionId: string): void {
  * The new session runs the chat's Account and keeps it as its own, and with
  * it the agent, so a reopen of the new session finds that agent.
  */
-async function continueInNewSession(sessionId: string, notice: string | undefined): Promise<void> {
+async function continueInNewSession(
+  sessionId: string,
+  notice: string | undefined
+): Promise<string | null> {
   void logFrontendError({
     level: 'warn',
     source: 'claudeAccountSwitch.handoff',
@@ -168,7 +171,8 @@ async function continueInNewSession(sessionId: string, notice: string | undefine
     displayBlocks: blocks,
     accountChatId: reuseScopeFor(sessionId, ownAccount)
   })
-  if (!newSessionId || !ownAccount || !old?.projectId) return
+  if (!newSessionId) return null
+  if (!ownAccount || !old?.projectId) return newSessionId
   const kept = await claudeAccountsApi
     .setChatAccount(old.projectId, newSessionId, ownAccount)
     .catch((error) => (error instanceof Error ? error.message : String(error)))
@@ -178,7 +182,7 @@ async function continueInNewSession(sessionId: string, notice: string | undefine
       source: 'claudeAccountSwitch.handoff',
       message: `Chat ${newSessionId} could not keep account ${ownAccount}: ${kept === false ? 'the host did not apply it' : kept}`
     })
-    return
+    return newSessionId
   }
   moveChatAgentKey(sessionId, newSessionId, old.cwd, old.projectId)
   void logFrontendError({
@@ -186,6 +190,7 @@ async function continueInNewSession(sessionId: string, notice: string | undefine
     source: 'claudeAccountSwitch.handoff',
     message: `Chat ${newSessionId} keeps account ${ownAccount} and the agent of chat ${sessionId}`
   })
+  return newSessionId
 }
 
 /**
@@ -270,12 +275,14 @@ export async function restartClaudeSession(
         .catch(() => undefined)
     }
     let handedOff = false
+    let continuedId = sessionId
     try {
       await useAcpStore.getState().retryCrashedSession(sessionId, { resend: false })
     } catch (error) {
       const stopped = useAcpStore.getState().sessions[sessionId]?.status === 'closed'
       if (!stopped || !resumeMissesSession(error)) throw error
-      await continueInNewSession(sessionId, options.notice)
+      const newSessionId = await continueInNewSession(sessionId, options.notice)
+      if (newSessionId) continuedId = newSessionId
       handedOff = true
     } finally {
       if (shared) reloadInFlight.delete(sessionId)
@@ -286,7 +293,7 @@ export async function restartClaudeSession(
       const { rateLimit: _cleared, ...rest } = usage
       return { sessionUsage: { ...s.sessionUsage, [sessionId]: rest } }
     })
-    const active = useAcpStore.getState().sessions[sessionId]?.status === 'active'
+    const active = useAcpStore.getState().sessions[continuedId]?.status === 'active'
     if (active && options.notice && !handedOff) {
       await useAcpStore.getState().sendPrompt(sessionId, options.notice)
     }
