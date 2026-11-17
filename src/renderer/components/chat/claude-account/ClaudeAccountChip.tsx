@@ -26,7 +26,13 @@ import {
   usageTone
 } from '@/lib/claude-usage-format'
 import { cn } from '@/lib/utils'
-import { switchChatClaudeAccount, switchProjectClaudeAccount } from '@/stores/claude-account-switch'
+import {
+  type ChatSwitchToast,
+  chatSwitchToast,
+  showChatSwitchToast,
+  switchChatClaudeAccount,
+  switchProjectClaudeAccount
+} from '@/stores/claude-account-switch'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import { useChatClaudeAccount } from './use-chat-claude-account'
 import {
@@ -57,9 +63,11 @@ interface AccountScope {
   chatOnly: boolean
   /** The note shown when the pick is the choice already made. */
   unchanged: string
-  /** Apply the choice and resolve the success message. */
-  /** Resolves the toast to show, or `null` when nothing changed. */
-  choose: (accountId: string | null, next: ClaudeAccountView | undefined) => Promise<string | null>
+  /** Apply the choice; resolves the toast to show, or `null` when nothing changed. */
+  choose: (
+    accountId: string | null,
+    next: ClaudeAccountView | undefined
+  ) => Promise<ChatSwitchToast | null>
 }
 
 /**
@@ -92,10 +100,7 @@ export function ClaudeAccountChip({ sessionId }: { sessionId: string }): React.J
             },
             accountId
           )
-          if (moved === 'unchanged') return null
-          if (moved === 'lost') return 'The account of this chat already changed'
-          if (accountId === null) return 'This chat follows the project again'
-          return next ? `This chat now uses ${next.name}` : 'Account changed'
+          return chatSwitchToast(moved, accountId === null ? null : (next?.name ?? accountId))
         }
       }}
     />
@@ -127,7 +132,10 @@ export function ProjectClaudeAccountChip({
           : 'This project already follows the default account',
         choose: async (accountId, next) => {
           await switchProjectClaudeAccount(projectId, accountId)
-          return next ? `This project now uses ${next.name}` : 'Account changed'
+          return {
+            kind: 'success',
+            title: next ? `This project now uses ${next.name}` : 'Account changed'
+          }
         }
       }}
     />
@@ -169,9 +177,9 @@ function AccountChip({
         : snapshot?.accounts.find((a) => a.id === accountId)
     setSwitching(true)
     try {
-      const message = await scope.choose(accountId, next)
+      const result = await scope.choose(accountId, next)
       await ctx.accounts.reload()
-      if (message) toast.success(message)
+      showChatSwitchToast(result)
     } catch (err) {
       toastAccountChoiceError(err, 'Could not switch the account')
       void ctx.accounts.reload()

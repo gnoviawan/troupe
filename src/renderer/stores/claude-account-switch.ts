@@ -287,13 +287,16 @@ export async function restartClaudeSession(
     } finally {
       if (shared) reloadInFlight.delete(sessionId)
     }
-    useAcpStore.setState((s) => {
-      const usage = s.sessionUsage[sessionId]
-      if (!usage?.rateLimit) return {}
-      const { rateLimit: _cleared, ...rest } = usage
-      return { sessionUsage: { ...s.sessionUsage, [sessionId]: rest } }
-    })
     const active = useAcpStore.getState().sessions[continuedId]?.status === 'active'
+    // A chat that did not come back keeps its limit card, so the person can retry.
+    if (active) {
+      useAcpStore.setState((s) => {
+        const usage = s.sessionUsage[sessionId]
+        if (!usage?.rateLimit) return {}
+        const { rateLimit: _cleared, ...rest } = usage
+        return { sessionUsage: { ...s.sessionUsage, [sessionId]: rest } }
+      })
+    }
     if (active && options.notice && !handedOff) {
       await useAcpStore.getState().sendPrompt(sessionId, options.notice)
     }
@@ -469,6 +472,57 @@ export async function switchProjectClaudeAccount(
  * turn).
  */
 export type ChatAccountSwitch = 'unchanged' | 'kept' | 'lost' | 'restarted' | 'failed' | 'pending'
+
+export interface ChatSwitchToast {
+  kind: 'success' | 'info' | 'error'
+  title: string
+  description?: string
+}
+
+/**
+ * The toast for what a chat account choice did. `target` names the Account
+ * picked, or is `null` when the chat follows its Project again. Only a choice
+ * the chat now runs on reads as done; a busy chat says when it moves.
+ */
+export function chatSwitchToast(
+  outcome: ChatAccountSwitch,
+  target: string | null
+): ChatSwitchToast | null {
+  const now =
+    target === null ? 'This chat follows the project again' : `This chat now uses ${target}`
+  const to = target ?? 'the project account'
+  switch (outcome) {
+    case 'unchanged':
+      return null
+    case 'kept':
+    case 'restarted':
+      return { kind: 'success', title: now }
+    case 'lost':
+      return {
+        kind: 'info',
+        title: 'The account of this chat already changed',
+        description: 'Troupe or another device switched it first.'
+      }
+    case 'pending':
+      return {
+        kind: 'info',
+        title: `This chat moves to ${to} when its reply ends`
+      }
+    case 'failed':
+      return {
+        kind: 'error',
+        title: `Could not restart this chat on ${to}`,
+        description: 'Send a message to continue.'
+      }
+  }
+}
+
+export function showChatSwitchToast(t: ChatSwitchToast | null): void {
+  if (!t) return
+  const show = t.kind === 'success' ? toast.success : t.kind === 'info' ? toast.info : toast.error
+  if (t.description) show(t.title, { description: t.description })
+  else show(t.title)
+}
 
 /**
  * Choose a chat's own Account on the host (`null`: follow its Project again),

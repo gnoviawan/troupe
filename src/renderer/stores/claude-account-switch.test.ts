@@ -178,6 +178,16 @@ describe('claude account switch', () => {
     expect(useAcpStore.getState().sessionUsage.c1?.rateLimit).toBeUndefined()
   })
 
+  it('keeps the limit of a chat that did not come back, so it can be retried', async () => {
+    retryCrashedSession.mockImplementation(async (id: string) => {
+      useAcpStore.setState((s) => ({
+        sessions: { ...s.sessions, [id]: { ...s.sessions[id], status: 'closed' } }
+      }))
+    })
+    await expect(restartClaudeSession('c1')).resolves.toBe(false)
+    expect(useAcpStore.getState().sessionUsage.c1?.rateLimit?.status).toBe('rejected')
+  })
+
   it('leaves a chat of another agent alone', async () => {
     await expect(restartClaudeSession('other')).resolves.toBe(false)
     expect(killAgent).not.toHaveBeenCalled()

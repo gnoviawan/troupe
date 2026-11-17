@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AcpTransportError } from '@/lib/acp-transport/types'
 import { useAcpStore } from '@/stores/acp-store'
 import { FRESH } from '@/stores/acp-store/testkit'
+import { useAgentChatLifetimeStore } from '@/stores/agent-chat-lifetime-store'
 import { UsageCard } from '../agent-model-selector/mobile/MobileUsageCard'
 import { ClaudeAccountChip } from './ClaudeAccountChip'
 import { ClaudeLimitNotice } from './ClaudeLimitNotice'
@@ -123,6 +124,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useClaudeResumeAt.setState({}, true)
+  useAgentChatLifetimeStore.setState({ retainedByProject: {} })
 })
 
 describe('ClaudeLimitNotice', () => {
@@ -170,7 +172,7 @@ describe('ClaudeLimitNotice', () => {
       )
     )
     expect(switcher.switchProjectClaudeAccount).not.toHaveBeenCalled()
-    expect(toast.success).toHaveBeenCalledWith('Switched to Work')
+    expect(toast.success).toHaveBeenCalledWith('This chat now uses Work')
   })
 
   it('leaves a chat the host already moved, and says so', async () => {
@@ -181,6 +183,19 @@ describe('ClaudeLimitNotice', () => {
     await waitFor(() =>
       expect(toast.info).toHaveBeenCalledWith('The account of this chat already changed', {
         description: 'Troupe or another device switched it first.'
+      })
+    )
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it('keeps the card and says the switch failed when the chat did not restart', async () => {
+    switcher.switchChatClaudeAccount.mockResolvedValue('failed')
+    seed(limit('rejected', 100))
+    render(<ClaudeLimitNotice sessionId="s1" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Switch and continue' }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Could not restart this chat on Work', {
+        description: 'Send a message to continue.'
       })
     )
     expect(toast.success).not.toHaveBeenCalled()
@@ -414,6 +429,38 @@ describe('ClaudeAccountChip', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('This chat now uses Work'))
   })
 
+  it('says a busy chat moves when its reply ends, not that it moved', async () => {
+    switcher.switchChatClaudeAccount.mockResolvedValue('pending')
+    seed()
+    render(<ClaudeAccountChip sessionId="s1" />)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: /Claude account: Personal/ }), {
+      button: 0,
+      ctrlKey: false
+    })
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Work/ }))
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith('This chat moves to Work when its reply ends')
+    )
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it('says the pick failed when the chat did not restart', async () => {
+    switcher.switchChatClaudeAccount.mockResolvedValue('failed')
+    seed()
+    render(<ClaudeAccountChip sessionId="s1" />)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: /Claude account: Personal/ }), {
+      button: 0,
+      ctrlKey: false
+    })
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Work/ }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Could not restart this chat on Work', {
+        description: 'Send a message to continue.'
+      })
+    )
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
   it('shows a chat that runs its own account and returns it to the project', async () => {
     api.list.mockResolvedValue({
       accounts: [
@@ -431,7 +478,10 @@ describe('ClaudeAccountChip', () => {
     )
     switcher.switchChatClaudeAccount.mockImplementation(actual.switchChatClaudeAccount)
     seed()
-    useAcpStore.setState({ killAgent: vi.fn(async () => undefined) } as never)
+    // The chat is open here, and the restart reopens it on its new agent.
+    useAgentChatLifetimeStore.setState({ retainedByProject: { office: ['s1'] } })
+    const retryCrashedSession = vi.fn(async () => undefined)
+    useAcpStore.setState({ killAgent: vi.fn(async () => undefined), retryCrashedSession } as never)
     render(<ClaudeAccountChip sessionId="s1" />)
 
     const chip = await screen.findByRole('button', {
@@ -454,6 +504,7 @@ describe('ClaudeAccountChip', () => {
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith('This chat follows the project again')
     )
+    expect(retryCrashedSession).toHaveBeenCalledWith('s1', { resend: false })
   })
 
   it('pins a chat that follows its project to the account it runs, without a restart', async () => {

@@ -1,11 +1,15 @@
 import type { ClaudeRateLimit } from '@shared/types/claude-accounts.types'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { create } from 'zustand'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
 import { formatUsageReset } from '@/lib/claude-usage-format'
-import { chatSwitchNotice, switchChatClaudeAccount } from '@/stores/claude-account-switch'
+import {
+  chatSwitchNotice,
+  chatSwitchToast,
+  showChatSwitchToast,
+  switchChatClaudeAccount
+} from '@/stores/claude-account-switch'
 import { useClaudeResumeAt } from './limit-actions'
 import { type ChatClaudeAccount, useChatClaudeAccount } from './use-chat-claude-account'
 import type { AccountChoice } from './use-project-claude-account'
@@ -95,13 +99,7 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
           : {}
       )
       await reloadAccounts()
-      if (moved === 'lost') {
-        toast.info('The account of this chat already changed', {
-          description: 'Troupe or another device switched it first.'
-        })
-        return
-      }
-      toast.success(`Switched to ${target.account.name}`)
+      showChatSwitchToast(chatSwitchToast(moved, target.account.name))
     } catch (err) {
       toastAccountChoiceError(err, 'Could not switch')
       void reloadAccounts()
