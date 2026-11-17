@@ -12,6 +12,8 @@ type Quote = "'" | '"' | "$'" | null
 // Unquoted characters the shell would split, expand or treat as syntax.
 const UNQUOTED_SPECIAL = /[\s'"\\$`&;|<>()*?[!{}]/g
 const DOUBLE_QUOTED_SPECIAL = /["\\$`]/g
+// `~/`, `~user/`, `~+/`, `~-/`: characters that need no quoting before the slash.
+const TILDE_PREFIX = /^~[\w.+-]*\//
 
 export function parseCompletionOutput(
   draft: string,
@@ -20,7 +22,7 @@ export function parseCompletionOutput(
 ): CompletionOutputRow[] {
   const { from, to, quote } = lastWordRange(draft, cursor)
   // A typed unquoted `~` asks the completer for tilde prefixes (`~/`, `~user`).
-  const tilde = draft[from] === '~' && from < to
+  const typed = draft.slice(from, to)
   const seen = new Set<string>()
   const rows: CompletionOutputRow[] = []
   for (const raw of output.split('\n')) {
@@ -29,7 +31,7 @@ export function parseCompletionOutput(
     const text = decodeHexLine(line)
     if (text === null || containsDisallowedControls(text) || seen.has(text)) continue
     seen.add(text)
-    const insert = quoteCandidate(text, quote, tilde)
+    const insert = quoteCandidate(text, quote, typed)
     rows.push(insert === text ? { text, from, to } : { text, from, to, insert })
   }
   return rows
@@ -96,20 +98,28 @@ export function wordContinuesPastCursor(draft: string, cursor: number): boolean 
  * return); spell them for the quoting open at the cursor. A directory keeps its
  * quote open so the path can be continued.
  */
-function quoteCandidate(text: string, quote: Quote, tilde: boolean): string {
+function quoteCandidate(text: string, quote: Quote, typed: string): string {
+  const tilde = typed.startsWith('~')
   const close = text.endsWith('/') ? '' : (quote?.slice(-1) ?? '')
-  if (quote === "'") return `'${text.replace(/'/g, "'\\''")}${close}`
-  if (quote === "$'") return `$'${text.replace(/[\\']/g, '\\$&')}${close}`
-  if (quote === '"') {
-    // History expansion sees `!` inside double quotes, and a backslash before
-    // it stays in the word there, so step out of the quotes to escape it.
-    const body = text.replace(DOUBLE_QUOTED_SPECIAL, '\\$&').replace(/!/g, '"\\!"')
-    return `"${body}${close}`
+  if (quote) {
+    // Bash expands a tilde prefix only while it is unquoted, so one the user
+    // typed before the quote (`~/"Doc`) stays outside it.
+    const prefix = TILDE_PREFIX.exec(text)?.[0] ?? ''
+    const home = prefix && typed.startsWith(prefix) ? prefix : ''
+    return `${home}${quote}${quoteBody(text.slice(home.length), quote)}${close}`
   }
   // A leading `~` stays a tilde prefix only when the user typed one; a bare
   // `~` candidate is always a file named `~`, never the home directory.
   const literalTilde = text === '~' || !tilde ? /^[#~]/ : /^#/
   return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(literalTilde, '\\$&')
+}
+
+function quoteBody(text: string, quote: "'" | '"' | "$'"): string {
+  if (quote === "'") return text.replace(/'/g, "'\\''")
+  if (quote === "$'") return text.replace(/[\\']/g, '\\$&')
+  // History expansion sees `!` inside double quotes, and a backslash before
+  // it stays in the word there, so step out of the quotes to escape it.
+  return text.replace(DOUBLE_QUOTED_SPECIAL, '\\$&').replace(/!/g, '"\\!"')
 }
 
 export function containsDisallowedControls(text: string): boolean {

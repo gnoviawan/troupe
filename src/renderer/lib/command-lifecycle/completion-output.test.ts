@@ -135,6 +135,21 @@ it('a literal leading tilde is escaped, a tilde prefix being completed is not', 
   expect(spell("cat '", '~')).toBe("'~'")
 })
 
+// Bash expands a tilde prefix only while it is unquoted.
+it('a typed tilde prefix stays outside the quotes', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  expect(spell('cat ~/"Doc', '~/Documents/')).toBe('~/"Documents/')
+  expect(spell('cat ~/"my f', '~/my file.txt')).toBe('~/"my file.txt"')
+  expect(spell('cat ~root/"Doc', '~root/Doc $x')).toBe('~root/"Doc \\$x"')
+  expect(spell('cat ~/"Doc', '~/')).toBe('~/"')
+  expect(spell("cat ~/'my f", "~/my file's")).toBe("~/'my file'\\''s'")
+  expect(spell("cat ~/$'my f", "~/my file's")).toBe("~/$'my file\\'s'")
+  // A tilde the user quoted is literal, so the candidate stays fully quoted.
+  expect(spell('cat ~"/Doc', '~/Documents/')).toBe('"~/Documents/')
+  expect(spell('cat "~/Doc', '~/Documents/')).toBe('"~/Documents/')
+})
+
 // In $'...' a backslash escapes the next character, including a quote.
 it('ansi-c quotes keep an escaped quote and the space after it in the word', () => {
   const draft = "cat $'a\\' b'"
