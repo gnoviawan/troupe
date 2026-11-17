@@ -93,15 +93,17 @@ describe('useAcpHistory chat-history watch', () => {
     expect(unsubscribe).toHaveBeenCalledTimes(1)
   })
 
-  it('on desktop refetches on a delta and never installs the host state', async () => {
+  it('on desktop refetches on a full state and on a delta, and never installs the host state', async () => {
     runtime.tauri = true
     renderHook(() => useAcpHistory())
     await waitFor(() => expect(loadSessionIndex).toHaveBeenCalledTimes(1))
 
+    // A reconnect or a missed delta arrives as one full state, with no delta after it.
     handlers().onState([summary])
     expect(applySessionIndexSnapshot).not.toHaveBeenCalled()
+    expect(loadSessionIndex).toHaveBeenCalledTimes(2)
 
     handlers().onDelta()
-    expect(loadSessionIndex).toHaveBeenCalledTimes(2)
+    expect(loadSessionIndex).toHaveBeenCalledTimes(3)
   })
 })

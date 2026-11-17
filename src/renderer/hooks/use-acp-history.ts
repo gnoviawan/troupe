@@ -35,12 +35,24 @@ export function useAcpHistory(): void {
       })
     })()
 
+    const refetch = (source: string): void => {
+      void loadSessionIndex().catch((err) => {
+        void logFrontendError({
+          level: 'warn',
+          source,
+          message: `ACP history index refresh failed: ${String(err)}`
+        })
+      })
+    }
     const refetchOnly = isTauriContext()
     const unsubscribe = getAcpTransport().watches?.subscribe<PersistedSessionSummary[], unknown>(
       'chat_history',
       {
         onState: (summaries) => {
-          if (refetchOnly || !Array.isArray(summaries)) return
+          // Desktop reads its index from its own store, so a full state (first
+          // subscribe, a reconnect, a missed delta) is a cue to read it again.
+          if (refetchOnly) return refetch('useAcpHistory.chatHistoryState')
+          if (!Array.isArray(summaries)) return
           void applySessionIndexSnapshot(summaries.map(fromPersistedSessionSummary)).catch(
             (err) => {
               void logFrontendError({
@@ -51,15 +63,7 @@ export function useAcpHistory(): void {
             }
           )
         },
-        onDelta: () => {
-          void loadSessionIndex().catch((err) => {
-            void logFrontendError({
-              level: 'warn',
-              source: 'useAcpHistory.chatHistoryChanged',
-              message: `ACP history index refresh failed: ${String(err)}`
-            })
-          })
-        }
+        onDelta: () => refetch('useAcpHistory.chatHistoryChanged')
       }
     )
     return () => {
