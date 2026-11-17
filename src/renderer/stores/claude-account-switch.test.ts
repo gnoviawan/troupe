@@ -568,6 +568,20 @@ describe('claude account switch when the new account cannot resume the session',
       spawn.mockRestore()
     })
 
+    it('binds the new session to the chat account when the first read of the accounts fails', async () => {
+      api.list
+        .mockRejectedValueOnce(new Error('socket closed'))
+        .mockResolvedValue(accounts({ c1: 'work' }))
+
+      await restartClaudeSession('c1')
+
+      expect(api.setChatAccount.mock.calls).toEqual([['office', 's-new', 'work']])
+      expect(useAcpStore.getState().configToLiveAgent).toEqual({
+        [chatKey('s-new')]: 'agent-new',
+        [projectKey]: 'agent-project'
+      })
+    })
+
     it('keeps the agent with the old chat when the new session cannot keep the account', async () => {
       api.setChatAccount.mockResolvedValue(false)
 

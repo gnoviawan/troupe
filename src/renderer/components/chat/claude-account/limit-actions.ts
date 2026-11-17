@@ -8,6 +8,7 @@ import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, reuseScopeFor } from '@/stores/acp-reuse-keys'
 import { useAcpStore } from '@/stores/acp-store'
+import { readOwnChatAccount } from '@/stores/acp-store/chat-reuse-scope'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
 export const useClaudeResumeAt = create<Record<string, number>>(() => ({}))
@@ -47,12 +48,10 @@ function followAgent(e: FollowEvent): 'followed' | 'waiting' | 'stale' {
       session.projectId,
       e.sessionId
     )
-    // A switch gives the chat its own Account. A resume keeps its Account, so
-    // the chat keeps a key of its own only when the replaced agent had one.
-    const ownKey =
-      e.action === 'switched'
-        ? reuseScopeFor(e.sessionId, e.to.id) !== undefined
-        : s.configToLiveAgent[chatKey] === e.fromAgentId
+    // The chat keeps a key of its own when the replaced agent had one. A chat
+    // that gains its own Account in this move is keyed once the host says so
+    // (`keyToChatIfOwnAccount`): a restart onto the Project's Account gives none.
+    const ownKey = s.configToLiveAgent[chatKey] === e.fromAgentId
     return {
       sessions: {
         ...s.sessions,
@@ -86,7 +85,24 @@ function dropPending(sessionId: string): void {
   }
 }
 
+/** Key the host's new agent to the chat when the chat now runs its own Account. */
+async function keyToChatIfOwnAccount(e: FollowEvent): Promise<void> {
+  if (reuseScopeFor(e.sessionId, await readOwnChatAccount(e.sessionId)) === undefined) return
+  useAcpStore.setState((s) => {
+    const session = s.sessions[e.sessionId]
+    if (session?.agentId !== e.newAgentId) return {}
+    const chatKey = agentReuseKey(
+      CLAUDE_AGENT_CONFIG_ID,
+      session.cwd,
+      session.projectId,
+      e.sessionId
+    )
+    return { configToLiveAgent: { ...s.configToLiveAgent, [chatKey]: e.newAgentId } }
+  })
+}
+
 function followed(e: FollowEvent): void {
+  if (e.action === 'switched') void keyToChatIfOwnAccount(e)
   void logFrontendError({
     level: 'info',
     source: 'claudeLimit.follow',

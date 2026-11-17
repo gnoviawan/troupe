@@ -172,15 +172,17 @@ async function continueInNewSession(
     accountChatId: reuseScopeFor(sessionId, ownAccount)
   })
   if (!newSessionId) return null
-  if (!ownAccount || !old?.projectId) return newSessionId
+  // An unreadable list spawned on the chat's key; read it again to bind the new session.
+  const account = ownAccount === undefined ? await readOwnChatAccount(sessionId) : ownAccount
+  if (!account || !old?.projectId) return newSessionId
   const kept = await claudeAccountsApi
-    .setChatAccount(old.projectId, newSessionId, ownAccount)
+    .setChatAccount(old.projectId, newSessionId, account)
     .catch((error) => (error instanceof Error ? error.message : String(error)))
   if (kept !== true) {
     void logFrontendError({
       level: 'warn',
       source: 'claudeAccountSwitch.handoff',
-      message: `Chat ${newSessionId} could not keep account ${ownAccount}: ${kept === false ? 'the host did not apply it' : kept}`
+      message: `Chat ${newSessionId} could not keep account ${account}: ${kept === false ? 'the host did not apply it' : kept}`
     })
     return newSessionId
   }
@@ -188,7 +190,7 @@ async function continueInNewSession(
   void logFrontendError({
     level: 'info',
     source: 'claudeAccountSwitch.handoff',
-    message: `Chat ${newSessionId} keeps account ${ownAccount} and the agent of chat ${sessionId}`
+    message: `Chat ${newSessionId} keeps account ${account} and the agent of chat ${sessionId}`
   })
   return newSessionId
 }
