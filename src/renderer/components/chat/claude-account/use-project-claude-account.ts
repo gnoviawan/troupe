@@ -35,9 +35,27 @@ const choice = (
   window: primaryUsageWindow(usage[account.id])
 })
 
-/** The Account a Project uses: its own choice, else the Default Account. */
-export const projectAccountId = (snapshot: ClaudeAccountsSnapshot, projectId: string): string =>
-  snapshot.projectAccounts[projectId] ?? snapshot.defaultAccountId
+/** The chat's own Account, when its entry names an Account the host still has. */
+export function ownChatAccountId(
+  snapshot: ClaudeAccountsSnapshot,
+  sessionId: string
+): string | null {
+  const id = snapshot.chatAccounts[sessionId]
+  return id !== undefined && snapshot.accounts.some((a) => a.id === id) ? id : null
+}
+
+/**
+ * The Account a chat or Project uses, resolved like the host: the chat's own
+ * choice, else its Project's, else the Default Account.
+ */
+export const claudeAccountFor = (
+  snapshot: ClaudeAccountsSnapshot,
+  projectId: string,
+  sessionId?: string
+): string =>
+  (sessionId ? ownChatAccountId(snapshot, sessionId) : null) ??
+  snapshot.projectAccounts[projectId] ??
+  snapshot.defaultAccountId
 
 /** Signed-in Accounts other than `currentId` with room left, least used first. */
 export function rankAlternatives(
@@ -62,7 +80,7 @@ export function useProjectClaudeAccount(projectId: string | null): ProjectClaude
   if (!projectId || !snapshot) return null
 
   const defaultAccount = snapshot.accounts.find((a) => a.id === snapshot.defaultAccountId) ?? null
-  const currentId = projectAccountId(snapshot, projectId)
+  const currentId = claudeAccountFor(snapshot, projectId)
   const currentAccount = snapshot.accounts.find((a) => a.id === currentId)
   if (!currentAccount) return null
 
