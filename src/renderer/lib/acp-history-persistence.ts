@@ -119,10 +119,6 @@ export interface SessionIndexEntry {
    * before the host stamped the field still fold.
    */
   continuedFrom?: string
-  /**
-   * Session id of the chat whose agent started this one with the host's
-   * `start_chat` tool. Host-written only. Absent on every other chat.
-   */
   startedBy?: string
   /**
    * `quick` for a chat with no project. Absent on project chats and on

@@ -31,7 +31,6 @@ export interface ChatHistorySidebarEntry {
    * resurface as standalone rows. Absent on standalone chats.
    */
   chainIds?: string[]
-  /** "Started by <parent title>" for a chat another chat's agent started; absent otherwise. */
   startedByLabel?: string
   cwd?: string
   lastActivityAt: number

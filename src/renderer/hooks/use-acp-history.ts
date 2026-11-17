@@ -10,12 +10,6 @@ import { useAcpStore } from '@/stores/acp-store'
  * Load the persisted chat-history index once at app mount. Payloads load lazily
  * when a chat is opened. The v2 wipe migration runs first (idempotent) so the
  * pre-`projectId` records are cleared before the index is read (ADR 0002).
- *
- * Also watches the host's `chat_history` index. The watch sends the full index
- * on every (re)subscribe (first connect, reconnect, a missed delta) and a
- * `{ changed }` delta on each change, which the sidebar answers by refetching.
- * Desktop only refetches: its index comes from the desktop history store, so
- * installing the watch's full state there could replace it.
  */
 export function useAcpHistory(): void {
   const loadSessionIndex = useAcpStore((s) => s.loadSessionIndex)
@@ -41,12 +35,12 @@ export function useAcpHistory(): void {
       })
     })()
 
-    const desktop = isTauriContext()
+    const refetchOnly = isTauriContext()
     const unsubscribe = getAcpTransport().watches?.subscribe<PersistedSessionSummary[], unknown>(
       'chat_history',
       {
         onState: (summaries) => {
-          if (desktop || !Array.isArray(summaries)) return
+          if (refetchOnly || !Array.isArray(summaries)) return
           void applySessionIndexSnapshot(summaries.map(fromPersistedSessionSummary)).catch(
             (err) => {
               void logFrontendError({

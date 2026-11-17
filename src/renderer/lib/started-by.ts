@@ -1,9 +1,5 @@
 import type { SessionIndexEntry } from '@/lib/acp-history-persistence'
 
-/**
- * Resolves an entry's `startedBy` to the "Started by <parent title>" label.
- * `undefined` when the entry has no parent or the index does not hold it.
- */
 export function startedByLabeler(
   index: readonly SessionIndexEntry[]
 ): (entry: Pick<SessionIndexEntry, 'startedBy'>) => string | undefined {

@@ -1096,8 +1096,6 @@ async function openHistorySessionInner(
     // spawning — otherwise every reload spawns a duplicate agent and resumes
     // on it while the original keeps running. A live turn also adopts on
     // desktop (#882): spawning would race the owner the guard is protecting.
-    // So does a desktop chat whose agent this store does not hold: a chat the
-    // host started (`start_chat`) runs on an agent no renderer spawned.
     const storeHoldsAgent = get().agentStatus[meta.agentId] === 'connected'
     const { adopted, listingTrusted, working, backgroundCommands } = await adoptHostOwnedAgent(
       set,

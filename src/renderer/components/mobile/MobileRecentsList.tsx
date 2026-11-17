@@ -27,7 +27,6 @@ const LONG_PRESS_MS = 500
 /** A touch that moves further than this (px) is a scroll, not a long-press. */
 const LONG_PRESS_SLOP_PX = 10
 
-/** The row's accessible name: title, parent chat, status, then the created time, when known. */
 function rowAriaLabel(
   title: string,
   startedByLabel: string | undefined,
@@ -165,7 +164,6 @@ function RecentsStatus({
 interface RowShellProps {
   entryId: string
   title: string
-  /** Quiet second line under the title ("Started by <parent title>"). */
   subtitle?: string
   isActive: boolean
   ariaLabel: string
