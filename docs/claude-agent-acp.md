@@ -183,6 +183,28 @@ waits for the move and then finds it on the new agent. The launch recipe stays
 in memory only, and the host forgets it when the chat closes or its agent stops,
 unless the chat waits for a scheduled resume.
 
+### Worker chats
+
+An agent can start worker chats with the `start_chat` host tool
+(`src-tauri/src/acp/worker_chats/`). The host builds the worker from the
+caller's launch recipe: the same agent config, Project, folder, MCP list and
+additional folders. A caller with no recipe is refused. When the caller is a
+managed Claude chat on an Account, `account: "auto"` (the default) takes the
+signed-in Account with the most room by the same ranking a chat at its limit
+moves by, and skips the Accounts the supervisor saw reach a limit. The host
+starts the worker's agent on that Account, then writes it as the worker's own
+Account before the first message, so the supervisor moves the worker alone
+when it reaches a limit. When no Account has room, or the caller runs on
+credentials no Account switch changes, the worker follows its Project and the
+tool result says why. The worker starts in the caller's current mode, so a
+caller that allowed its tools does not leave a worker waiting on a permission
+prompt with no client to answer it.
+
+`send_to_chat` reaches only chats the caller started (`startedBy` in the
+session metadata). It refuses while the worker answers its last message, and
+when no live agent holds the worker. A worker cannot start workers, and one
+caller may have six running.
+
 `remove` signs the Claude CLI out of that Account, deletes its folder (never
 the shared folder), and moves its Projects back to the Default Account. The
 built-in Account cannot be removed. On Windows, directory entries (such as
