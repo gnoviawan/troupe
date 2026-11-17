@@ -94,15 +94,33 @@ impl TurnClock {
     }
 }
 
+/// Accounts that reached a limit, until their reset. The supervisor marks
+/// them; a new chat's Account pick reads them. A cached usage read can still
+/// show room for an Account that just reached its limit.
+#[derive(Default)]
+pub(crate) struct LimitedAccounts(parking_lot::Mutex<HashMap<String, SystemTime>>);
+
+impl LimitedAccounts {
+    fn mark(&self, account_id: &str, until: SystemTime) {
+        self.0.lock().insert(account_id.to_string(), until);
+    }
+
+    fn snapshot(&self) -> HashMap<String, SystemTime> {
+        self.0.lock().clone()
+    }
+}
+
 #[derive(Clone)]
 pub struct ClaudeLimitHandle {
     tx: mpsc::UnboundedSender<Input>,
     clock: Arc<TurnClock>,
+    limited: Arc<LimitedAccounts>,
 }
 
 pub struct ClaudeLimitInbox {
     rx: mpsc::UnboundedReceiver<Input>,
     clock: Arc<TurnClock>,
+    limited: Arc<LimitedAccounts>,
 }
 
 impl ClaudeLimitHandle {
@@ -110,12 +128,14 @@ impl ClaudeLimitHandle {
     pub fn channel() -> (Self, ClaudeLimitInbox) {
         let (tx, rx) = mpsc::unbounded_channel();
         let clock = Arc::new(TurnClock::default());
+        let limited = Arc::new(LimitedAccounts::default());
         (
             Self {
                 tx,
                 clock: Arc::clone(&clock),
+                limited: Arc::clone(&limited),
             },
-            ClaudeLimitInbox { rx, clock },
+            ClaudeLimitInbox { rx, clock, limited },
         )
     }
 
@@ -161,6 +181,25 @@ impl ClaudeLimitHandle {
             deleted,
         });
     }
+}
+
+/// The signed-in Account with the most room for a new chat: the ranking a
+/// chat at its limit moves by, over every Account, skipping the ones the
+/// supervisor saw reach a limit that has not reset. `None` when none has
+/// room.
+pub async fn roomiest_account(acp: &AcpManager) -> Result<Option<String>, String> {
+    let claude = acp.claude_agent();
+    let snapshot = claude.profile_list().await?;
+    let usage = claude.accounts_usage(true).await.unwrap_or_else(|error| {
+        log::warn!("[claude-limit] usage read for a new chat failed: {error}");
+        Vec::new()
+    });
+    let ranked = decide::rank_alternatives(&decide::candidates(&snapshot, &usage, None));
+    let limited = acp
+        .claude_limit()
+        .map(|handle| handle.limited.snapshot())
+        .unwrap_or_default();
+    Ok(decide::first_with_room(&ranked, &limited, SystemTime::now()).cloned())
 }
 
 struct LimitSignalSink {
@@ -214,13 +253,14 @@ pub fn start(
         .state_dir()
         .map(|dir| dir.join(SCHEDULE_FILE));
     acp.set_claude_limit(handle);
-    let ClaudeLimitInbox { rx, clock } = inbox;
+    let ClaudeLimitInbox { rx, clock, limited } = inbox;
     let supervisor = supervisor::Supervisor::new(
         Arc::clone(acp),
         Arc::clone(relay),
         schedule::Schedule::load(path),
         RESUME_GRACE,
         clock,
+        limited,
     );
     runtime.spawn(supervisor.run(rx));
     log::info!("[claude-limit] supervisor started");

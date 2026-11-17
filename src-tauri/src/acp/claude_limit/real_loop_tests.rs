@@ -119,6 +119,7 @@ impl Host {
                 schedule,
                 Duration::ZERO,
                 inbox.clock,
+                inbox.limited,
             )
             .run(inbox.rx),
         );
@@ -583,6 +584,7 @@ async fn a_resume_due_after_a_restart_marks_the_chat_for_its_client() {
             Schedule::load(Some(path.clone())),
             Duration::ZERO,
             inbox.clock,
+            inbox.limited,
         )
         .run(inbox.rx),
     );
