@@ -698,7 +698,8 @@ export function _handoffOnlyTurnIdsForTesting(): ReadonlySet<string> {
  * `ensureLiveAgent`/`prepareChat` for that config, cwd, and Project reuses it.
  *
  * Desktop skips the lookup by default (`isTauriContext()`): the desktop store
- * already owns its agents in memory. A reload while a turn is still running
+ * already owns its agents in memory. A reload while a turn is still running,
+ * or a reopen whose agent the store does not hold (a chat the host started),
  * passes `{ allowDesktop: true }` so both transports adopt the owner instead
  * of spawning a second process onto the same session. `adopted` is `null`
  * when no live agent owns the session (fresh chat, owner already stopped),
