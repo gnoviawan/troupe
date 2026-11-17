@@ -11,10 +11,11 @@ import { useAcpStore } from '@/stores/acp-store'
  * when a chat is opened. The v2 wipe migration runs first (idempotent) so the
  * pre-`projectId` records are cleared before the index is read (ADR 0002).
  *
- * Web/remote: also watches the host's `chat_history` index. The watch sends
- * the full index on every (re)subscribe (first connect, reconnect, a missed
- * delta) and a `{ changed }` delta on each change, which the sidebar answers by
- * refetching. Desktop has no WS connection — the subscription is a no-op there.
+ * Also watches the host's `chat_history` index. The watch sends the full index
+ * on every (re)subscribe (first connect, reconnect, a missed delta) and a
+ * `{ changed }` delta on each change, which the sidebar answers by refetching.
+ * Desktop only refetches: its index comes from the desktop history store, so
+ * installing the watch's full state there could replace it.
  */
 export function useAcpHistory(): void {
   const loadSessionIndex = useAcpStore((s) => s.loadSessionIndex)
@@ -40,14 +41,12 @@ export function useAcpHistory(): void {
       })
     })()
 
-    // Web/remote: the `chat_history` watch rebuilds the index from the host's
-    // full state and refetches on a delta. Desktop never receives it.
-    if (isTauriContext()) return
+    const desktop = isTauriContext()
     const unsubscribe = getAcpTransport().watches?.subscribe<PersistedSessionSummary[], unknown>(
       'chat_history',
       {
         onState: (summaries) => {
-          if (!Array.isArray(summaries)) return
+          if (desktop || !Array.isArray(summaries)) return
           void applySessionIndexSnapshot(summaries.map(fromPersistedSessionSummary)).catch(
             (err) => {
               void logFrontendError({
