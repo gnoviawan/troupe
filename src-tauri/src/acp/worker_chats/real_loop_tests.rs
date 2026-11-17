@@ -13,6 +13,7 @@ use crate::acp::claude_limit::real_loop_tests::{
 use crate::acp::claude_limit::{switch_notice, AccountRef};
 use crate::acp::config::SessionId;
 use crate::acp::host_mcp::read_chat::{chat_from_records, render_page, Names};
+use crate::web::project_registry::ProjectRegistry;
 
 const UNIQUE_IDS: [(&str, &str); 1] = [("MOCK_SESSION_IDS", "unique")];
 
@@ -287,5 +288,85 @@ async fn a_worker_chat_at_its_limit_moves_to_the_next_account_with_room() {
     );
     let snapshot = host.acp.claude_agent().accounts_snapshot().await.unwrap();
     assert_eq!(snapshot.chat_profiles.get(&child.0), Some(&work.id));
+    kill_all(&host).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_worker_chat_whose_project_is_archived_while_it_starts_is_stopped() {
+    let Some((host, chats)) =
+        start_host(&[("default", 90.0), ("Work", 50.0), ("Spare", 10.0)]).await
+    else {
+        return;
+    };
+    let cwd = host.cwd();
+    let registry = ProjectRegistry::with_roots_for_test(&[(PROJECT, std::path::Path::new(&cwd))]);
+    chats.set_registry_for_test(Arc::clone(&registry));
+    let OpenChat {
+        agent_id: caller_agent,
+        session_id: caller,
+    } = host
+        .open_chat_with(&[UNIQUE_IDS[0], ("MOCK_SESSION_NEW_DELAY", "2")])
+        .await;
+
+    let starting = {
+        let (chats, request) = (Arc::clone(&chats), request(&caller, "Troupe worker: late"));
+        tokio::spawn(async move { chats.start(request).await })
+    };
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(30);
+    while host.acp.list_agents().len() < 2 {
+        assert!(tokio::time::Instant::now() < deadline, "the worker agent never started");
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    }
+    let mut project = registry
+        .snapshot()
+        .projects
+        .into_iter()
+        .find(|project| project.id == PROJECT)
+        .unwrap();
+    project.is_archived = true;
+    registry.upsert(project);
+
+    assert_eq!(starting.await.unwrap(), Err(WorkerChatError::ProjectBusy));
+    assert_eq!(host.acp.list_agents(), vec![caller_agent]);
+    kill_all(&host).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_worker_whose_agent_still_runs_a_turn_is_busy_for_send_to_chat() {
+    let Some((host, chats)) =
+        start_host(&[("default", 90.0), ("Work", 50.0), ("Spare", 10.0)]).await
+    else {
+        return;
+    };
+    let OpenChat {
+        session_id: caller, ..
+    } = host.open_chat_with(&UNIQUE_IDS).await;
+    let child = SessionId(
+        chats
+            .start(request(&caller, "Troupe worker: first task"))
+            .await
+            .unwrap()
+            .chat_id,
+    );
+    turn_ended(&host, &child, 1).await;
+    let child_agent = host.acp.launch_recipe(&child).unwrap().agent_id;
+    let _unclaimed_turn = host
+        .acp
+        .start_prompt(
+            &child_agent,
+            child.clone(),
+            vec![agent_client_protocol::schema::v1::ContentBlock::Text(
+                agent_client_protocol::schema::v1::TextContent::new("hang"),
+            )],
+            None,
+            None,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        chats.send(caller.clone(), child.clone(), "pid".to_string()).await,
+        Err(WorkerChatError::Busy(child.0.clone()))
+    );
     kill_all(&host).await;
 }

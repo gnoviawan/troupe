@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 use serde::Serialize;
 
 use crate::acp::claude_agent::{ClaudeLaunchAuth, LaunchChat};
+use crate::acp::claude_limit::decide::{self, Candidate};
 use crate::acp::claude_limit::{roomiest_account, AccountRef, CLAUDE_CONFIG_ID};
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::manager::{LaunchRecipe, SessionCreationContext};
@@ -21,6 +22,7 @@ use crate::logging::redact_session_id;
 use crate::web::prompt_turn::{
     accept_prompt_turn, complete_prompt_turn, PromptAdmission, PromptTurnError, PromptTurnRequest,
 };
+use crate::web::project_registry::ProjectRegistry;
 use crate::web::WsRelaySink;
 
 /// Worker chats one caller may have running at once.
@@ -76,6 +78,7 @@ pub enum WorkerChatError {
     ProjectBusy,
     CapReached,
     UnknownAccount(String),
+    AccountNotReady(String),
     /// The chat does not exist or another chat started it.
     NotYourChat(String),
     Busy(String),
@@ -95,6 +98,7 @@ impl WorkerChatError {
             Self::ProjectBusy => "project_busy",
             Self::CapReached => "too_many_chats",
             Self::UnknownAccount(_) => "unknown_account",
+            Self::AccountNotReady(_) => "account_not_ready",
             Self::NotYourChat(_) => "not_your_chat",
             Self::Busy(_) => "busy",
             Self::Stopped(_) => "stopped",
@@ -121,8 +125,12 @@ impl WorkerChatError {
                  with send_to_chat."
             ),
             Self::UnknownAccount(id) => format!(
-                "No Claude account with ID {id} is signed in to Troupe. Pass \"auto\" to use the \
-                 account with the most room."
+                "Troupe has no Claude account with ID {id}. Pass \"auto\" to use the account \
+                 with the most room."
+            ),
+            Self::AccountNotReady(id) => format!(
+                "The Claude account with ID {id} is not signed in. Pass \"auto\" to use the \
+                 account with the most room, or ask the user to sign in to it."
             ),
             Self::NotYourChat(id) => format!(
                 "Chat {id} was not started by this chat. send_to_chat only reaches chats this \
@@ -154,10 +162,92 @@ struct Children {
     by_parent: HashMap<SessionId, Vec<Slot>>,
 }
 
+/// Why a worker chat follows its Project's Account.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FollowReason {
+    /// The caller runs on credentials no Account switch changes.
+    Unmanaged,
+    /// The user turned automatic account switching off.
+    AutoSwitchOff,
+    NoRoom,
+}
+
+impl FollowReason {
+    fn note(self) -> &'static str {
+        match self {
+            Self::Unmanaged => "This chat does not run on a Claude account Troupe manages, so the \
+                new chat uses its project's agent setup and `account` was ignored.",
+            Self::AutoSwitchOff => {
+                "Automatic account switching is off, so this chat uses the project's account."
+            }
+            Self::NoRoom => "No signed-in Claude account has room now, so the new chat uses its \
+                project's account.",
+        }
+    }
+}
+
 /// Where a new worker chat's agent gets its Claude Account.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum AccountPick {
+    Pinned(String),
+    FollowsProject(FollowReason),
+}
+
+/// The Account of a new worker chat. `managed`: the caller is a managed
+/// Claude chat on an Account. `auto_switch`: the user's consent to run chats
+/// on other Accounts. `roomiest`: the ranked pick over `candidates`.
+pub(crate) fn pick_account(
+    managed: bool,
+    auto_switch: bool,
+    choice: &AccountChoice,
+    candidates: &[Candidate],
+    roomiest: Option<&str>,
+) -> Result<AccountPick, WorkerChatError> {
+    if !managed {
+        return Ok(AccountPick::FollowsProject(FollowReason::Unmanaged));
+    }
+    if !auto_switch {
+        return Ok(AccountPick::FollowsProject(FollowReason::AutoSwitchOff));
+    }
+    match choice {
+        AccountChoice::Auto => Ok(roomiest.map_or(
+            AccountPick::FollowsProject(FollowReason::NoRoom),
+            |id| AccountPick::Pinned(id.to_string()),
+        )),
+        AccountChoice::Account(id) => match candidates.iter().find(|c| c.account_id == *id) {
+            None => Err(WorkerChatError::UnknownAccount(id.clone())),
+            Some(candidate) if !candidate.ready => {
+                Err(WorkerChatError::AccountNotReady(id.clone()))
+            }
+            Some(_) => Ok(AccountPick::Pinned(id.clone())),
+        },
+    }
+}
+
+/// A worker chat's Account, named.
 enum ChildAccount {
     Pinned(AccountRef),
-    FollowsProject { note: Option<String> },
+    FollowsProject(FollowReason),
+}
+
+/// One worker chat of a caller, as `list_started_chats` shows it.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListedChat {
+    pub chat_id: String,
+    pub title: Option<String>,
+    pub status: ChatStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChatStatus {
+    /// Answering a message.
+    Working,
+    /// Waiting for a message.
+    Idle,
+    /// No live agent holds it.
+    Stopped,
 }
 
 pub struct WorkerChats {
@@ -165,6 +255,8 @@ pub struct WorkerChats {
     relay: Arc<WsRelaySink>,
     runtime: tokio::runtime::Handle,
     children: Mutex<Children>,
+    /// Test seam; the installed registry otherwise.
+    registry: std::sync::OnceLock<Arc<ProjectRegistry>>,
 }
 
 /// Install the worker-chat service on `acp`'s host tools.
@@ -178,6 +270,7 @@ pub fn install(
         relay: Arc::clone(relay),
         runtime: runtime.clone(),
         children: Mutex::new(Children::default()),
+        registry: std::sync::OnceLock::new(),
     });
     acp.set_worker_chats(Arc::clone(&chats));
     chats
@@ -208,6 +301,55 @@ impl WorkerChats {
             .map_err(|_| WorkerChatError::Failed("sending the message stopped unexpectedly".to_string()))?
     }
 
+    /// The worker chats `caller` started, newest first.
+    pub async fn list(self: &Arc<Self>, caller: SessionId) -> Result<Vec<ListedChat>, WorkerChatError> {
+        let this = Arc::clone(self);
+        self.runtime
+            .spawn(async move { this.list_here(&caller).await })
+            .await
+            .map_err(|_| WorkerChatError::Failed("listing the chats stopped unexpectedly".to_string()))?
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_registry_for_test(&self, registry: Arc<ProjectRegistry>) {
+        let _ = self.registry.set(registry);
+    }
+
+    fn registry(&self) -> Option<Arc<ProjectRegistry>> {
+        self.registry
+            .get()
+            .cloned()
+            .or_else(crate::web::project_registry::installed)
+    }
+
+    async fn list_here(&self, caller: &SessionId) -> Result<Vec<ListedChat>, WorkerChatError> {
+        let acp = self.acp.upgrade().ok_or(WorkerChatError::Unavailable)?;
+        let persistence = acp.persistence().ok_or(WorkerChatError::Unavailable)?;
+        let mut entries: Vec<_> = persistence
+            .list_sessions()
+            .into_iter()
+            .filter(|entry| entry.started_by.as_deref() == Some(caller.0.as_str()))
+            .collect();
+        entries.sort_by_key(|entry| std::cmp::Reverse(entry.created_at));
+        let mut listed = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let chat = SessionId(entry.session_id.clone());
+            let status = match live_owner(&acp, &chat).await {
+                None => ChatStatus::Stopped,
+                Some(agent) if acp.is_turn_active(&agent, chat).await.unwrap_or(false) => {
+                    ChatStatus::Working
+                }
+                Some(_) => ChatStatus::Idle,
+            };
+            listed.push(ListedChat {
+                chat_id: entry.session_id,
+                title: entry.title,
+                status,
+            });
+        }
+        Ok(listed)
+    }
+
     async fn start_here(&self, request: StartChatRequest) -> Result<StartedChat, WorkerChatError> {
         let acp = self.acp.upgrade().ok_or(WorkerChatError::Unavailable)?;
         let persistence = acp.persistence().ok_or(WorkerChatError::Unavailable)?;
@@ -225,19 +367,23 @@ impl WorkerChats {
             return Err(WorkerChatError::QuickChat);
         }
         let project_id = recipe.launch.project_id.clone();
-        if project_id.as_deref().is_some_and(|project| {
-            crate::web::project_registry::installed()
-                .is_some_and(|registry| registry.is_removing(project))
-        }) {
-            return Err(WorkerChatError::ProjectBusy);
-        }
+        let registry = self.registry();
+        let was_active = match (&registry, project_id.as_deref()) {
+            (Some(registry), Some(project)) => {
+                if registry.is_removing(project) {
+                    return Err(WorkerChatError::ProjectBusy);
+                }
+                registry.is_active(project)
+            }
+            _ => false,
+        };
         let slot = self.reserve(&acp, &request.caller)?;
         let account = child_account(&acp, &recipe, &request.account).await?;
         let chat = match &account {
             ChildAccount::Pinned(account) => LaunchChat::New {
                 account_id: account.id.clone(),
             },
-            ChildAccount::FollowsProject { .. } => LaunchChat::None,
+            ChildAccount::FollowsProject(_) => LaunchChat::None,
         };
         let agent_id = acp
             .spawn_with_command_id(
@@ -262,6 +408,8 @@ impl WorkerChats {
                 SessionCreationContext {
                     project_id: project_id.clone(),
                     additional_directories: recipe.additional_directories.clone(),
+                    worktree_path: metadata.worktree_path.clone(),
+                    worktree_branch: metadata.worktree_branch.clone(),
                     started_by: Some(request.caller.0.clone()),
                     ..SessionCreationContext::default()
                 },
@@ -278,6 +426,29 @@ impl WorkerChats {
             }
         };
         let child = created.session_id.clone();
+        if let (Some(registry), Some(project)) = (&registry, project_id.as_deref()) {
+            if registry.project_left_while_starting(project, was_active) {
+                log::warn!("[worker-chats] chat {caller}: the project was removed while a worker chat started; stopping it");
+                acp.stop_project_sessions(&agent_id, std::slice::from_ref(&child.0))
+                    .await;
+                let _ = acp.kill(&agent_id).await;
+                return Err(WorkerChatError::ProjectBusy);
+            }
+        }
+        let recorded_parent = persistence
+            .metadata(&child.0)
+            .ok()
+            .and_then(|metadata| metadata.started_by);
+        if recorded_parent.as_deref() != Some(request.caller.0.as_str()) {
+            log::warn!(
+                "[worker-chats] chat {caller}: the new chat {} is not recorded as its worker; stopping it",
+                redact_session_id(&child.0)
+            );
+            let _ = acp.kill(&agent_id).await;
+            return Err(WorkerChatError::Failed(
+                "The new chat could not be recorded as this chat's worker.".to_string(),
+            ));
+        }
         let mut note = None;
         let account = match account {
             ChildAccount::Pinned(account) => {
@@ -304,8 +475,8 @@ impl WorkerChats {
                 }
                 Some(account)
             }
-            ChildAccount::FollowsProject { note: why } => {
-                note = why;
+            ChildAccount::FollowsProject(reason) => {
+                note = Some(reason.note().to_string());
                 None
             }
         };
@@ -413,6 +584,11 @@ impl WorkerChats {
                 Err(match error {
                     PromptTurnError::Busy { .. } => WorkerChatError::Busy(session_id.0.clone()),
                     PromptTurnError::NotOwned => WorkerChatError::Stopped(session_id.0.clone()),
+                    PromptTurnError::Failed(reason)
+                        if reason.starts_with("ACP_TURN_IN_PROGRESS") =>
+                    {
+                        WorkerChatError::Busy(session_id.0.clone())
+                    }
                     PromptTurnError::Failed(reason) => WorkerChatError::Failed(reason),
                 })
             }
@@ -425,14 +601,11 @@ impl WorkerChats {
         children.next += 1;
         let id = children.next;
         let slots = children.by_parent.entry(parent.clone()).or_default();
-        let live = slots
-            .iter()
-            .filter(|slot| match slot {
-                Slot::Starting(_) => true,
-                Slot::Started(child) => is_live(acp, child),
-            })
-            .count();
-        if live >= MAX_LIVE_CHILDREN {
+        slots.retain(|slot| match slot {
+            Slot::Starting(_) => true,
+            Slot::Started(child) => is_live(acp, child),
+        });
+        if slots.len() >= MAX_LIVE_CHILDREN {
             log::info!(
                 "[worker-chats] chat {} is at its {MAX_LIVE_CHILDREN} worker chats",
                 redact_session_id(&parent.0)
@@ -502,8 +675,7 @@ async fn live_owner(acp: &AcpManager, chat: &SessionId) -> Option<AgentId> {
     None
 }
 
-/// A managed Claude caller on an Account gets the chosen Account; any other
-/// caller's worker follows its Project.
+/// Read what [`pick_account`] needs and name the Account it picks.
 async fn child_account(
     acp: &AcpManager,
     recipe: &LaunchRecipe,
@@ -511,45 +683,43 @@ async fn child_account(
 ) -> Result<ChildAccount, WorkerChatError> {
     let managed = recipe.launch.config.config_id.as_deref() == Some(CLAUDE_CONFIG_ID)
         && matches!(recipe.launch.claude, ClaudeLaunchAuth::Account(_));
-    if !managed {
-        return Ok(ChildAccount::FollowsProject {
-            note: Some(
-                "This chat does not run on a Claude account Troupe manages, so the new chat uses \
-                 its project's agent setup and `account` was ignored."
-                    .to_string(),
-            ),
-        });
-    }
-    let snapshot = acp
-        .claude_agent()
-        .profile_list()
-        .await
-        .map_err(WorkerChatError::Failed)?;
-    let id = match choice {
-        AccountChoice::Auto => match roomiest_account(acp, &snapshot).await {
-            Some(id) => id,
-            None => {
-                return Ok(ChildAccount::FollowsProject {
-                    note: Some(
-                        "No signed-in Claude account has room now, so the new chat uses its \
-                         project's account."
-                            .to_string(),
-                    ),
-                })
-            }
-        },
-        AccountChoice::Account(id) => id.clone(),
+    let snapshot = if managed {
+        Some(
+            acp.claude_agent()
+                .profile_list()
+                .await
+                .map_err(WorkerChatError::Failed)?,
+        )
+    } else {
+        None
     };
-    let Some(account) = snapshot.profiles.iter().find(|account| account.id == id) else {
-        return Err(WorkerChatError::UnknownAccount(id));
+    let auto_switch = snapshot.as_ref().is_some_and(|snapshot| snapshot.auto_switch);
+    let candidates = match &snapshot {
+        Some(snapshot) if auto_switch => {
+            let usage = acp
+                .claude_agent()
+                .accounts_usage(true)
+                .await
+                .unwrap_or_else(|error| {
+                    log::warn!("[worker-chats] usage read failed: {error}");
+                    Vec::new()
+                });
+            decide::candidates(snapshot, &usage, None)
+        }
+        _ => Vec::new(),
     };
-    if matches!(choice, AccountChoice::Account(_)) && account.signed_in != Some(true) {
-        return Err(WorkerChatError::UnknownAccount(id));
+    let roomiest = roomiest_account(acp, &candidates);
+    match pick_account(managed, auto_switch, choice, &candidates, roomiest.as_deref())? {
+        AccountPick::FollowsProject(reason) => Ok(ChildAccount::FollowsProject(reason)),
+        AccountPick::Pinned(id) => {
+            let name = snapshot
+                .iter()
+                .flat_map(|snapshot| &snapshot.profiles)
+                .find(|account| account.id == id)
+                .map_or_else(|| id.clone(), |account| account.name.clone());
+            Ok(ChildAccount::Pinned(AccountRef { id, name }))
+        }
     }
-    Ok(ChildAccount::Pinned(AccountRef {
-        id,
-        name: account.name.clone(),
-    }))
 }
 
 /// Start the worker in the mode its caller runs in now, so a caller that
@@ -573,9 +743,9 @@ async fn inherit_mode(
     {
         return;
     }
-    if let Err(error) = acp.set_mode(agent_id, child.clone(), mode).await {
+    if acp.set_mode(agent_id, child.clone(), mode).await.is_err() {
         log::warn!(
-            "[worker-chats] worker chat {} kept its own mode: {error}",
+            "[worker-chats] worker chat {} kept its own mode",
             redact_session_id(&child.0)
         );
     }
@@ -584,3 +754,7 @@ async fn inherit_mode(
 #[cfg(test)]
 #[path = "real_loop_tests.rs"]
 mod real_loop_tests;
+
+#[cfg(test)]
+#[path = "tests.rs"]
+mod tests;

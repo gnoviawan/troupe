@@ -66,6 +66,7 @@ for line in sys.stdin:
                                   "sessionCapabilities": {"close": {}, "resume": {}}},
             "authMethods": []}})
     elif method == "session/new":
+        time.sleep(float(os.environ.get("MOCK_SESSION_NEW_DELAY", "0")))
         sessions += 1
         ids = os.environ.get("MOCK_SESSION_IDS")
         sid = str(uuid.uuid4()) if ids == "unique" else "mock-%d" % sessions if ids == "1" else "mock-1"

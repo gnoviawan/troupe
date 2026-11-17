@@ -183,7 +183,7 @@ impl Host {
             .agent_id
     }
 
-    fn cwd(&self) -> String {
+    pub(crate) fn cwd(&self) -> String {
         self.dir.path().to_string_lossy().to_string()
     }
 
