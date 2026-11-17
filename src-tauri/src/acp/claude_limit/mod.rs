@@ -12,6 +12,7 @@ use serde::Serialize;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::acp::claude_accounts::usage::ClaudeRateLimit;
+use crate::acp::claude_accounts::ClaudeAccountsSnapshot;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::events::{EVENT_AGENT_DISCONNECTED, EVENT_USAGE_UPDATE};
 use crate::acp::AcpManager;
@@ -183,23 +184,28 @@ impl ClaudeLimitHandle {
     }
 }
 
-/// The signed-in Account with the most room for a new chat: the ranking a
+/// The Account of `snapshot` with the most room for a new chat: the ranking a
 /// chat at its limit moves by, over every Account, skipping the ones the
 /// supervisor saw reach a limit that has not reset. `None` when none has
 /// room.
-pub async fn roomiest_account(acp: &AcpManager) -> Result<Option<String>, String> {
-    let claude = acp.claude_agent();
-    let snapshot = claude.profile_list().await?;
-    let usage = claude.accounts_usage(true).await.unwrap_or_else(|error| {
-        log::warn!("[claude-limit] usage read for a new chat failed: {error}");
-        Vec::new()
-    });
-    let ranked = decide::rank_alternatives(&decide::candidates(&snapshot, &usage, None));
+pub async fn roomiest_account(
+    acp: &AcpManager,
+    snapshot: &ClaudeAccountsSnapshot,
+) -> Option<String> {
+    let usage = acp
+        .claude_agent()
+        .accounts_usage(true)
+        .await
+        .unwrap_or_else(|error| {
+            log::warn!("[claude-limit] usage read for a new chat failed: {error}");
+            Vec::new()
+        });
+    let ranked = decide::rank_alternatives(&decide::candidates(snapshot, &usage, None));
     let limited = acp
         .claude_limit()
         .map(|handle| handle.limited.snapshot())
         .unwrap_or_default();
-    Ok(decide::first_with_room(&ranked, &limited, SystemTime::now()).cloned())
+    decide::first_with_room(&ranked, &limited, SystemTime::now()).cloned()
 }
 
 struct LimitSignalSink {
@@ -341,4 +347,4 @@ pub fn resume_notice(account: &str, window: &str, reset: &str) -> String {
 
 #[cfg(test)]
 #[path = "real_loop_tests.rs"]
-mod real_loop_tests;
+pub(crate) mod real_loop_tests;

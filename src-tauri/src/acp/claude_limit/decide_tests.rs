@@ -63,7 +63,8 @@ fn ranking_keeps_ready_accounts_with_room_least_used_first() {
 fn a_new_chat_takes_the_first_ranked_account_that_has_not_reached_a_limit() {
     const NOW: u64 = 1_000;
     let ranked: Vec<String> = ["spare", "work", "home"].map(String::from).to_vec();
-    let cases: [(&str, Vec<(&str, u64)>, Option<&str>); 4] = [
+    type Case<'a> = (&'a str, Vec<(&'a str, u64)>, Option<&'a str>);
+    let cases: [Case<'_>; 4] = [
         ("nothing limited", vec![], Some("spare")),
         ("the roomiest one is limited", vec![("spare", NOW + 60)], Some("work")),
         ("a limit that reset counts as room", vec![("spare", NOW)], Some("spare")),

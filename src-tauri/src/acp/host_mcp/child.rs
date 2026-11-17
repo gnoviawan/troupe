@@ -40,6 +40,7 @@ use crate::acp::host_mcp::{
 mod automation;
 mod mcp_install;
 mod read_chat;
+mod worker_chats;
 
 /// Env-derived configuration for the child. Extracted so the arg parser is
 /// unit-testable without touching `std::env`.
@@ -138,6 +139,7 @@ impl TermulPlanServer {
         let mut tool_router = Self::tool_router()
             + Self::automation_tool_router()
             + Self::read_chat_tool_router()
+            + Self::worker_chats_tool_router()
             + Self::mcp_install_tool_router();
         for tool in canvas_tools::tools() {
             tool_router.add_route(canvas_route(tool));
