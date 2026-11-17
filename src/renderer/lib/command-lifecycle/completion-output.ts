@@ -6,8 +6,11 @@ export interface CompletionOutputRow {
   insert?: string
 }
 
-/** `$'` is ANSI-C quoting, where a backslash escapes the next character. */
-type Quote = "'" | '"' | "$'" | null
+/**
+ * `$'` is ANSI-C quoting, where a backslash escapes the next character; `$"`
+ * is bash locale quoting, which bash dequotes like double quotes.
+ */
+type Quote = "'" | '"' | "$'" | '$"' | null
 
 // Unquoted characters the shell would split, expand or treat as syntax.
 const UNQUOTED_SPECIAL = /[\s'"\\$`&;|<>()*?[!{}]/g
@@ -31,7 +34,7 @@ export function parseCompletionOutput(
     const text = decodeHexLine(line)
     if (text === null || containsDisallowedControls(text) || seen.has(text)) continue
     seen.add(text)
-    const insert = quoteCandidate(text, quote, typed)
+    const insert = continueTyped(text, quote, typed) ?? quoteCandidate(text, quote, typed)
     rows.push(insert === text ? { text, from, to } : { text, from, to, insert })
   }
   return rows
@@ -60,10 +63,10 @@ function wordAtCursor(draft: string, point: number): WordAtCursor {
     } else if (char === '\\') {
       escaped = i + 1 >= point
       i += 1
-    } else if (quote === '"') {
+    } else if (quote === '"' || quote === '$"') {
       if (char === '"') quote = null
-    } else if (char === '$' && draft[i + 1] === "'") {
-      quote = "$'"
+    } else if (char === '$' && (draft[i + 1] === "'" || draft[i + 1] === '"')) {
+      quote = draft[i + 1] === "'" ? "$'" : '$"'
       i += 1
     } else if (char === "'" || char === '"') {
       quote = char
@@ -114,7 +117,101 @@ function quoteCandidate(text: string, quote: Quote, typed: string): string {
   return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(literalTilde, '\\$&')
 }
 
-function quoteBody(text: string, quote: "'" | '"' | "$'"): string {
+/** What a typed word means to the shell, and how its spelling may go on. */
+interface TypedWord {
+  /** The word without its quoting, as the host scripts dequote it. */
+  value: string
+  /** The spelling ends in `$`, which would read the tail as a parameter name. */
+  dollar: boolean
+  /** The spelling ends in an unquoted backslash that escapes the tail's first character. */
+  backslash: boolean
+}
+
+// Unquoted characters that make the typed word syntax rather than a literal.
+const UNQUOTED_SYNTAX = /[`&;|<>()*?[!]/
+
+/**
+ * Read the typed word as a literal, or return null when it is not one, or when
+ * no tail could follow it verbatim: bash and zsh history-expand a `!` unless a
+ * blank, `=` or `(` follows it, and zsh drops a `!"` pair.
+ */
+function readTypedWord(typed: string): TypedWord | null {
+  let value = ''
+  let quote: Quote = null
+  let dollar = false
+  let braces = ''
+  for (let i = 0; i < typed.length; i++) {
+    const char = typed[i]
+    const next = typed[i + 1]
+    dollar = false
+    if (quote === "'") {
+      if (char === "'") quote = null
+      else value += char
+    } else if (quote === "$'") {
+      if (char === "'") quote = null
+      else if (char !== '\\') value += char
+      // Other ANSI-C escapes decode to different characters; leave them to the full spelling.
+      else if (next !== undefined && /['"\\?]/.test(next)) value += typed[++i]
+      else return null
+    } else if (quote === '"' || quote === '$"') {
+      if (char === '"') quote = null
+      else if (char === '`' || char === '!' || (char === '\\' && next === undefined)) return null
+      else if (char === '\\' && /[$`"\\]/.test(next)) value += typed[++i]
+      else if (char === '$' && next !== undefined) return null
+      else {
+        dollar = char === '$'
+        value += char
+      }
+    } else if (char === '\\') {
+      if (next === undefined) return { value, dollar, backslash: true }
+      value += typed[++i]
+    } else if (char === '$' && (next === "'" || next === '"')) {
+      quote = next === "'" ? "$'" : '$"'
+      i += 1
+    } else if (char === "'" || char === '"') {
+      quote = char
+    } else if (UNQUOTED_SYNTAX.test(char) || (char === '#' && i === 0)) {
+      return null
+    } else if (char === '$' && next !== undefined) {
+      return null
+    } else {
+      dollar = char === '$'
+      if (char === '{' || char === '}') braces += char
+      value += char
+    }
+  }
+  // An unescaped `{` and `}` in one word may already be a brace expansion.
+  if (braces.includes('{') && braces.includes('}')) return null
+  return { value, dollar, backslash: false }
+}
+
+/**
+ * Keep the typed spelling verbatim and spell only the untyped tail, so the
+ * insert starts with the draft (ghost text, Right Arrow). Null when the typed
+ * word cannot be continued that way and must be spelled in full.
+ */
+function continueTyped(text: string, quote: Quote, typed: string): string | null {
+  if (typed === '' || (text === '~' && typed.startsWith('~'))) return null
+  const word = readTypedWord(typed)
+  if (!word || !text.startsWith(word.value)) return null
+  const tail = text.slice(word.value.length)
+  if (quote) {
+    const close = text.endsWith('/') ? '' : quote.slice(-1)
+    // `"a$""b"` keeps the `$` literal in bash and zsh.
+    const junction = word.dollar && tail ? '""' : ''
+    return `${typed}${junction}${quoteBody(tail, quote)}${close}`
+  }
+  if (word.backslash) {
+    return tail ? `${typed}${tail[0]}${tail.slice(1).replace(UNQUOTED_SPECIAL, '\\$&')}` : null
+  }
+  const spelled = tail.replace(UNQUOTED_SPECIAL, '\\$&')
+  // `$\b` is a literal `$` and `b`; a bare `$b` would expand.
+  return word.dollar && tail && !spelled.startsWith('\\')
+    ? `${typed}\\${spelled}`
+    : `${typed}${spelled}`
+}
+
+function quoteBody(text: string, quote: Exclude<Quote, null>): string {
   if (quote === "'") return text.replace(/'/g, "'\\''")
   if (quote === "$'") return text.replace(/[\\']/g, '\\$&')
   // History expansion sees `!` inside double quotes, and a backslash before

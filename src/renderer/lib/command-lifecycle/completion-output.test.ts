@@ -50,7 +50,8 @@ it('candidates take the shell spelling of the word being completed (#1879)', () 
   expect(spell('cat ')).toEqual(['dir\\ with\\ space/', 'file\\ one.txt', 'plain'])
   expect(spell('cat "di')).toEqual(['"dir with space/', '"file one.txt"', '"plain"'])
   expect(spell("cat 'di")).toEqual(["'dir with space/", "'file one.txt'", "'plain'"])
-  expect(spell('cat "dir"\\ w')).toEqual(['dir\\ with\\ space/', 'file\\ one.txt', 'plain'])
+  // The typed `"dir"\ ` stays as typed; candidates it does not start are spelled in full.
+  expect(spell('cat "dir"\\ w')).toEqual(['"dir"\\ with\\ space/', 'file\\ one.txt', 'plain'])
   expect(parseCompletionOutput('cat "plain', 10, hexLine('plain'))[0]).toEqual({
     text: 'plain',
     insert: '"plain"',
@@ -145,8 +146,8 @@ it('a typed tilde prefix stays outside the quotes', () => {
   expect(spell('cat ~/"Doc', '~/')).toBe('~/"')
   expect(spell("cat ~/'my f", "~/my file's")).toBe("~/'my file'\\''s'")
   expect(spell("cat ~/$'my f", "~/my file's")).toBe("~/$'my file\\'s'")
-  // A tilde the user quoted is literal, so the candidate stays fully quoted.
-  expect(spell('cat ~"/Doc', '~/Documents/')).toBe('"~/Documents/')
+  // A tilde the user quoted is literal, and the typed spelling is kept.
+  expect(spell('cat ~"/Doc', '~/Documents/')).toBe('~"/Documents/')
   expect(spell('cat "~/Doc', '~/Documents/')).toBe('"~/Documents/')
 })
 
@@ -164,4 +165,51 @@ it('ansi-c quotes keep an escaped quote and the space after it in the word', () 
     to: open.length
   })
   expect(parseCompletionOutput("cat $'d", 7, hexLine('d\\ir/'))[0]?.insert).toBe("$'d\\\\ir/")
+})
+
+// Ghost text and Right Arrow only work when the insert starts with the draft.
+it('an insert keeps the typed spelling and quotes only the completed tail', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  expect(spell('cat "dir"\\ w', 'dir with space/')).toBe('"dir"\\ with\\ space/')
+  expect(spell('cat ~"/Doc', '~/Documents/')).toBe('~"/Documents/')
+  expect(spell("cat 'a'b", 'ab c')).toBe("'a'b\\ c")
+  expect(spell('cat report{', 'report{a,b}.txt')).toBe('report{a,b\\}.txt')
+  expect(spell('cat {a,', '{a,b}')).toBe('{a,b\\}')
+  expect(spell('cat a#', 'a#b c')).toBe('a#b\\ c')
+  expect(spell('cat "a\\$', 'a$b c')).toBe('"a\\$b c"')
+  expect(spell("cat $'a\\\\", 'a\\b c')).toBe("$'a\\\\b c'")
+  // A trailing `$` would expand the tail as a name, so its first character is escaped.
+  expect(spell('cat a$', 'a$b.txt')).toBe('a$\\b.txt')
+  expect(spell('cat a$', 'a$&b')).toBe('a$\\&b')
+  expect(spell('cat "a$', 'a$b c')).toBe('"a$""b c"')
+  // A trailing unquoted backslash already escapes the tail's first character.
+  expect(spell('cat a\\', 'a b')).toBe('a\\ b')
+})
+
+// These typed spellings cannot be continued verbatim, so the word is respelled.
+it('a typed word that the tail would turn into syntax is respelled', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  // bash and zsh history-expand `!` before any character but a blank, `=` or `(`.
+  expect(spell('cat hello!', 'hello!world.txt')).toBe('hello\\!world.txt')
+  expect(spell('cat "hello!', 'hello!world.txt')).toBe('"hello"\\!"world.txt"')
+  expect(spell('cat a&', 'a&b')).toBe('a\\&b')
+  expect(spell('cat a*', 'a*b')).toBe('a\\*b')
+  expect(spell('cat a$b', 'a$bc')).toBe('a\\$bc')
+  expect(spell('cat {a}', '{a}b')).toBe('\\{a\\}b')
+})
+
+// bash dequotes `$"..."` like double quotes; its `$` is part of the spelling.
+it('a locale-quoted word keeps its dollar', () => {
+  const draft = 'cat $"dir w'
+  expect(parseCompletionOutput(draft, draft.length, hexLine('dir with space'))[0]).toEqual({
+    text: 'dir with space',
+    insert: '$"dir with space"',
+    from: 4,
+    to: draft.length
+  })
+  expect(wordContinuesPastCursor('cat $"a b"', 7)).toBe(true)
+  // A candidate that does not continue the typed word still keeps the quote form.
+  expect(parseCompletionOutput('cat $"x', 7, hexLine('y z'))[0]?.insert).toBe('$"y z"')
 })

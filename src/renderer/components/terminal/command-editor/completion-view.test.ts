@@ -89,6 +89,23 @@ it('an unquoted path with spaces is inserted escaped (#1879)', async () => {
   expect(view.state.doc.toString()).toBe('cat dir\\ with\\ space')
 })
 
+it.each([
+  ['cat a$', 'a$b.txt', '\\b.txt'],
+  ['cat "dir"\\ w', 'dir with space', 'ith\\ space'],
+  ['cat $"dir w', 'dir with space', 'ith space"']
+])('%s ghosts the tail of its typed spelling', async (draft, text, ghost) => {
+  const view = createEditor(parseCompletionOutput(draft, draft.length, hexLine(text)), () => {})
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: draft },
+    selection: { anchor: draft.length }
+  })
+  await openCompletion(view)
+
+  expect(ghostText(view.state)).toBe(ghost)
+  expect(acceptHighlighted(view)).toBe(true)
+  expect(view.state.doc.toString()).toBe(draft + ghost)
+})
+
 afterAll(() => {
   geometryMethods.forEach((name, index) => {
     const original = originalGeometry[index]
