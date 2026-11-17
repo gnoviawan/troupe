@@ -6,10 +6,11 @@ export interface CompletionOutputRow {
   insert?: string
 }
 
-type Quote = "'" | '"' | null
+/** `$'` is ANSI-C quoting, where a backslash escapes the next character. */
+type Quote = "'" | '"' | "$'" | null
 
 // Unquoted characters the shell would split, expand or treat as syntax.
-const UNQUOTED_SPECIAL = /[\s'"\\$`&;|<>()*?[!]/g
+const UNQUOTED_SPECIAL = /[\s'"\\$`&;|<>()*?[!{}]/g
 const DOUBLE_QUOTED_SPECIAL = /["\\$`]/g
 
 export function parseCompletionOutput(
@@ -18,6 +19,8 @@ export function parseCompletionOutput(
   output: string
 ): CompletionOutputRow[] {
   const { from, to, quote } = lastWordRange(draft, cursor)
+  // A typed unquoted `~` asks the completer for tilde prefixes (`~/`, `~user`).
+  const tilde = draft[from] === '~' && from < to
   const seen = new Set<string>()
   const rows: CompletionOutputRow[] = []
   for (const raw of output.split('\n')) {
@@ -26,7 +29,7 @@ export function parseCompletionOutput(
     const text = decodeHexLine(line)
     if (text === null || containsDisallowedControls(text) || seen.has(text)) continue
     seen.add(text)
-    const insert = quoteCandidate(text, quote)
+    const insert = quoteCandidate(text, quote, tilde)
     rows.push(insert === text ? { text, from, to } : { text, from, to, insert })
   }
   return rows
@@ -49,11 +52,17 @@ function wordAtCursor(draft: string, point: number): WordAtCursor {
     const char = draft[i]
     if (quote === "'") {
       if (char === "'") quote = null
+    } else if (quote === "$'") {
+      if (char === "'") quote = null
+      else if (char === '\\') i += 1
     } else if (char === '\\') {
       escaped = i + 1 >= point
       i += 1
     } else if (quote === '"') {
       if (char === '"') quote = null
+    } else if (char === '$' && draft[i + 1] === "'") {
+      quote = "$'"
+      i += 1
     } else if (char === "'" || char === '"') {
       quote = char
     } else if (/\s/.test(char)) {
@@ -87,16 +96,20 @@ export function wordContinuesPastCursor(draft: string, cursor: number): boolean 
  * return); spell them for the quoting open at the cursor. A directory keeps its
  * quote open so the path can be continued.
  */
-function quoteCandidate(text: string, quote: Quote): string {
-  const close = text.endsWith('/') ? '' : (quote ?? '')
+function quoteCandidate(text: string, quote: Quote, tilde: boolean): string {
+  const close = text.endsWith('/') ? '' : (quote?.slice(-1) ?? '')
   if (quote === "'") return `'${text.replace(/'/g, "'\\''")}${close}`
+  if (quote === "$'") return `$'${text.replace(/[\\']/g, '\\$&')}${close}`
   if (quote === '"') {
     // History expansion sees `!` inside double quotes, and a backslash before
     // it stays in the word there, so step out of the quotes to escape it.
     const body = text.replace(DOUBLE_QUOTED_SPECIAL, '\\$&').replace(/!/g, '"\\!"')
     return `"${body}${close}`
   }
-  return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(/^#/, '\\#')
+  // A leading `~` stays a tilde prefix only when the user typed one; a bare
+  // `~` candidate is always a file named `~`, never the home directory.
+  const literalTilde = text === '~' || !tilde ? /^[#~]/ : /^#/
+  return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(literalTilde, '\\$&')
 }
 
 export function containsDisallowedControls(text: string): boolean {

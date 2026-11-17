@@ -34,6 +34,7 @@ fn project() -> tempfile::TempDir {
     std::fs::create_dir(dir.path().join("dir with space")).unwrap();
     std::fs::create_dir(dir.path().join("dirb")).unwrap();
     std::fs::write(dir.path().join("file one.txt"), "").unwrap();
+    std::fs::write(dir.path().join("it's here.txt"), "").unwrap();
     dir
 }
 
@@ -117,5 +118,26 @@ fn bash_completion_package_completes_names_and_spaced_paths() {
         }
         let rows = candidates(&shell, dir.path(), "", "cat \"file o");
         assert_eq!(rows, ["file one.txt"], "{shell:?}");
+    }
+}
+
+/// `$'...'` decodes its backslash escapes and `$"..."` quotes like `"..."`.
+#[test]
+fn ansi_c_and_locale_quoted_words_reach_completers_decoded() {
+    let dir = project();
+    let probe = "_termul_test_files() { local IFS=$'\\n'; COMPREPLY=($(compgen -f -- \"$2\")); }\n\
+                 complete -F _termul_test_files cat";
+    for shell in shells() {
+        for (draft, expected) in [
+            ("cat $'dir w", "dir with space"),
+            ("cat $\"dir w", "dir with space"),
+            ("cat $'dir\\x20w", "dir with space"),
+            ("cat $'fi'le\\ o", "file one.txt"),
+            ("cat $'it\\'s h", "it's here.txt"),
+            ("cat $'it\\'s'\\ h", "it's here.txt"),
+        ] {
+            let rows = candidates(&shell, dir.path(), probe, draft);
+            assert_eq!(rows, [expected], "{shell:?}: {draft}");
+        }
     }
 }

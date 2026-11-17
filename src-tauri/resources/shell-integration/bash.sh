@@ -306,11 +306,11 @@ __termul_tokenize() {
         elif [ "$quote" = single ]; then
             word=$word$char
             [ "$char" != "'" ] || quote=
-        elif [ "$quote" = double ]; then
+        elif [ "$quote" = double ] || [ "$quote" = ansi ]; then
             word=$word$char
-            case "$char" in
-                '"') quote= ;;
-                \\) escaped=1 ;;
+            case "$quote$char" in
+                double'"' | ansi"'") quote= ;;
+                *\\) escaped=1 ;;
             esac
         else
             case "$char" in
@@ -319,6 +319,7 @@ __termul_tokenize() {
                     word= trailing=1
                     continue
                     ;;
+                '$') [ "${draft:i+1:1}" != "'" ] || { quote=ansi; char="\$'"; i=$((i + 1)); } ;;
                 "'") quote=single ;;
                 '"') quote=double ;;
                 \\) escaped=1 ;;
@@ -333,13 +334,23 @@ __termul_tokenize() {
 }
 
 # Remove quoting from one raw word, as readline does for the word it completes.
+# `$'...'` escapes are decoded by printf, whose format escapes match them.
 __termul_dequote() {
-    local raw=$1 char quote= i
+    local raw=$1 char quote= ansi= i
     REPLY=
     for ((i=0; i<${#raw}; i++)); do
         char=${raw:i:1}
-        if [ "$quote" = single ]; then
+        if [ "$quote" = ansi ] && [ "$char" != "'" ]; then
+            [ "$char" != \\ ] || { i=$((i + 1)); char=$char${raw:i:1}; }
+            ansi=$ansi$char
+        elif [ "$quote" = ansi ]; then
+            printf -v char -- "${ansi//%/%%}"
+            REPLY=$REPLY$char ansi= quote=
+        elif [ "$quote" = single ]; then
             [ "$char" = "'" ] && quote= || REPLY=$REPLY$char
+        elif [ -z "$quote" ] && [ "$char" = '$' ] && [[ ${raw:i+1:1} == [\'\"] ]]; then
+            [ "${raw:i+1:1}" = "'" ] && quote=ansi || quote=double
+            i=$((i + 1))
         elif [ "$char" = \\ ] && { [ -z "$quote" ] || [[ ${raw:i+1:1} == [\$\`\"\\] ]]; }; then
             i=$((i + 1))
             REPLY=$REPLY${raw:i:1}
@@ -353,6 +364,10 @@ __termul_dequote() {
             REPLY=$REPLY$char
         fi
     done
+    if [ "$quote" = ansi ]; then
+        printf -v char -- "${ansi//%/%%}"
+        REPLY=$REPLY$char
+    fi
 }
 
 # Completion runs in a subshell: user completers cannot change shell state.

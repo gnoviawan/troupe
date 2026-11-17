@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { parseCompletionOutput } from './completion-output'
+import { parseCompletionOutput, wordContinuesPastCursor } from './completion-output'
 
 function hexLine(text: string): string {
   return Array.from(new TextEncoder().encode(text), (byte) =>
@@ -109,4 +109,44 @@ it('a double-quoted candidate breaks out of the quotes for !', () => {
   expect(parseCompletionOutput("cat 'hel", 8, hexLine('hello!world.txt'))[0]?.insert).toBe(
     "'hello!world.txt'"
   )
+})
+
+it('braces in an unquoted candidate are escaped against brace expansion', () => {
+  const rows = parseCompletionOutput(
+    'cat ',
+    4,
+    [hexLine('report{a,b}.txt'), hexLine('{x}')].join('\n')
+  )
+  expect(rows.map((row) => row.insert)).toEqual(['report\\{a,b\\}.txt', '\\{x\\}'])
+})
+
+// A leading `~` is a tilde prefix only when the user is completing one.
+it('a literal leading tilde is escaped, a tilde prefix being completed is not', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  expect(spell('cat ', '~')).toBe('\\~')
+  expect(spell('cat ', '~backup')).toBe('\\~backup')
+  expect(spell('cat \\~b', '~backup')).toBe('\\~backup')
+  expect(spell('cat ~', '~')).toBe('\\~')
+  expect(spell('cat ~', '~backup')).toBe('~backup')
+  expect(spell('cd ~/Doc', '~/Documents/')).toBe('~/Documents/')
+  expect(spell('cd ~ro', '~root/')).toBe('~root/')
+  expect(spell('cat a', 'a~b')).toBe('a~b')
+  expect(spell("cat '", '~')).toBe("'~'")
+})
+
+// In $'...' a backslash escapes the next character, including a quote.
+it('ansi-c quotes keep an escaped quote and the space after it in the word', () => {
+  const draft = "cat $'a\\' b'"
+  expect(wordContinuesPastCursor(draft, draft.indexOf(' b'))).toBe(true)
+  expect(wordContinuesPastCursor("cat $'a' b", 8)).toBe(false)
+  expect(wordContinuesPastCursor("cat \\$'a\\' b", 10)).toBe(false)
+  const open = "cat $'a\\' b"
+  expect(parseCompletionOutput(open, open.length, hexLine("a' bc"))[0]).toEqual({
+    text: "a' bc",
+    insert: "$'a\\' bc'",
+    from: 4,
+    to: open.length
+  })
+  expect(parseCompletionOutput("cat $'d", 7, hexLine('d\\ir/'))[0]?.insert).toBe("$'d\\\\ir/")
 })

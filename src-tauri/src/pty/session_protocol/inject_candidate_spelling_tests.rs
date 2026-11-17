@@ -1,7 +1,8 @@
 #![cfg(not(target_os = "windows"))]
 //! Both host scripts send raw words; the client spells them for the quote open
-//! at the cursor (#1879). zsh's compsys quotes `-Q` matches, bash's compgen
-//! does not, so the zsh capture must unquote them.
+//! at the cursor (#1879). zsh's compsys quotes matches (compadd quotes them
+//! unless `-Q` says they are quoted already), bash's compgen does not, so the
+//! zsh capture must unquote them.
 
 use super::frame::Frame;
 use super::inject_test_support::{bash_supports_integration, on_path, LiveShell};
@@ -74,5 +75,30 @@ fn candidates_are_raw_words_in_every_shell_and_quote() {
                 "{shell:?}: {draft}"
             );
         }
+    }
+}
+
+/// Without `-Q`, `compadd -A` stores the match quoted for the open quote.
+#[test]
+fn zsh_unquotes_matches_added_without_q() {
+    let Some(zsh) = on_path("zsh") else {
+        return;
+    };
+    let mut live = LiveShell::spawn(&zsh);
+    live.handshake();
+    live.read_until_idle();
+    live.write(b"_spelled() { compadd -- 'my file' 'x$y' 'a\\b'; }; compdef _spelled spelledcmd\r");
+    live.frames_until_prompt();
+    for draft in [
+        "spelledcmd ",
+        "spelledcmd \"",
+        "spelledcmd '",
+        "spelledcmd $'",
+    ] {
+        assert_eq!(
+            candidates(&mut live, draft),
+            ["a\\b", "my file", "x$y"],
+            "{draft}"
+        );
     }
 }

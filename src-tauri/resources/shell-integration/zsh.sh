@@ -207,7 +207,7 @@ __termul_capture() {
         local __termul_flags __termul_flag __termul_value __termul_match
         local __termul_ordering __termul_order_fields __termul_valid_order __termul_have_order=0
         local __termul_prefix=$IPREFIX __termul_suffix=$ISUFFIX
-        local result __termul_quoted=0 __termul_head __termul_tail REPLY
+        local result __termul_head __termul_tail REPLY
         __termul_args=("$@")
         # Mirror bin_compadd's per-character walk, including both forms of '-'.
         while (( $# )) && [[ $1 = -* ]]; do
@@ -261,8 +261,7 @@ __termul_capture() {
                             fi
                         fi
                         ;;
-                    Q) __termul_quoted=1 ;;
-                    [qCfeakn12l]) ;;
+                    [qQCfeakn12l]) ;;
                     *) break 2 ;; # Let the builtin reject an unknown option.
                 esac
             done
@@ -270,17 +269,15 @@ __termul_capture() {
         builtin compadd -A captured "${__termul_args[@]}"
         result=$?
         # -A omits insertion affixes: restore zsh's seven fields in their word order.
-        # Affixes are command-line text; matches are quoted only under -Q.
+        # Affixes and matches are command-line text: compadd quotes matches
+        # unless -Q says the caller already did.
         __termul_unquote "$__termul_prefix${__termul_affixes[i]}${__termul_affixes[P]}${__termul_affixes[p]}"
         __termul_head=$REPLY
         __termul_unquote "${__termul_affixes[s]}${__termul_affixes[S]}${__termul_affixes[I]}$__termul_suffix"
         __termul_tail=$REPLY
         for __termul_match in "${captured[@]}"; do
-            if ((__termul_quoted)); then
-                __termul_unquote "$__termul_match"
-                __termul_match=$REPLY
-            fi
-            __termul_matches+=("$__termul_head$__termul_match$__termul_tail")
+            __termul_unquote "$__termul_match"
+            __termul_matches+=("$__termul_head$REPLY$__termul_tail")
         done
         return $result
     }
