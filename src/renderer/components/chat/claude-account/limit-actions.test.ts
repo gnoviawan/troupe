@@ -122,16 +122,16 @@ describe('applyClaudeLimitAction', () => {
     )
   })
 
-  it('keeps a chat the host restarted onto its project account on project keys only', async () => {
+  it('makes the new agent the project agent when the host restarted a chat that follows its project', async () => {
     api.list.mockResolvedValue(accounts({}))
     const projectKey = agentReuseKey('acp-registry:claude-acp', '/work', 'office')
     seed('old', ['new'])
     useAcpStore.setState({ configToLiveAgent: { [projectKey]: 'old' } })
     applyClaudeLimitAction(switched)
-    await vi.waitFor(() => expect(api.list).toHaveBeenCalled())
-    await Promise.resolve()
+    await vi.waitFor(() =>
+      expect(useAcpStore.getState().configToLiveAgent).toEqual({ [projectKey]: 'new' })
+    )
     expect(useAcpStore.getState().sessions.s1.agentId).toBe('new')
-    expect(useAcpStore.getState().configToLiveAgent).toEqual({ [projectKey]: 'old' })
   })
 
   it('keeps a resumed chat that follows its project on project keys only', () => {

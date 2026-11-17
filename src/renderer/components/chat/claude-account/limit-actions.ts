@@ -7,7 +7,7 @@ import { ACP_EVENTS, onAcpEvent } from '@/lib/acp-api'
 import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, reuseScopeFor } from '@/stores/acp-reuse-keys'
-import { useAcpStore } from '@/stores/acp-store'
+import { renewAgentCredentials, useAcpStore } from '@/stores/acp-store'
 import { readOwnChatAccount } from '@/stores/acp-store/chat-reuse-scope'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
@@ -85,24 +85,28 @@ function dropPending(sessionId: string): void {
   }
 }
 
-/** Key the host's new agent to the chat when the chat now runs its own Account. */
-async function keyToChatIfOwnAccount(e: FollowEvent): Promise<void> {
-  if (reuseScopeFor(e.sessionId, await readOwnChatAccount(e.sessionId)) === undefined) return
-  useAcpStore.setState((s) => {
-    const session = s.sessions[e.sessionId]
-    if (session?.agentId !== e.newAgentId) return {}
-    const chatKey = agentReuseKey(
-      CLAUDE_AGENT_CONFIG_ID,
-      session.cwd,
-      session.projectId,
-      e.sessionId
-    )
-    return { configToLiveAgent: { ...s.configToLiveAgent, [chatKey]: e.newAgentId } }
-  })
+/**
+ * Register the agent a host switch moved the chat to. A chat on its own
+ * Account gets it under its chat key. A chat that follows its Project was
+ * restarted because its agent ran an older Account than the Project's, so the
+ * Project's launch is renewed (the old process is never reused) and the new
+ * agent becomes the Project's.
+ */
+async function keyFollowedAgent(e: FollowEvent): Promise<void> {
+  const chatScope = reuseScopeFor(e.sessionId, await readOwnChatAccount(e.sessionId))
+  const session = useAcpStore.getState().sessions[e.sessionId]
+  if (session?.agentId !== e.newAgentId) return
+  if (chatScope === undefined && session.projectId) {
+    renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, session.projectId)
+  }
+  const key = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, session.cwd, session.projectId, chatScope)
+  useAcpStore.setState((s) => ({
+    configToLiveAgent: { ...s.configToLiveAgent, [key]: e.newAgentId }
+  }))
 }
 
 function followed(e: FollowEvent): void {
-  if (e.action === 'switched') void keyToChatIfOwnAccount(e)
+  if (e.action === 'switched') void keyFollowedAgent(e)
   void logFrontendError({
     level: 'info',
     source: 'claudeLimit.follow',
