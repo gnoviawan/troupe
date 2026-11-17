@@ -187,6 +187,17 @@ __termul_history() {
     return 0
 }
 
+# Undo the quoting compsys applies for the quote open at the cursor, so the
+# client receives raw words from zsh as it does from bash's compgen.
+__termul_unquote() {
+    case ${compstate[quote]-} in
+        "'") REPLY=${(Q)${:-"'$1'"}} ;;
+        '"') REPLY=${(Q)${:-"\"$1\""}} ;;
+        "\$'") REPLY=${(Q)${:-"\$'$1'"}} ;;
+        *) REPLY=${(Q)1} ;;
+    esac
+}
+
 # This widget runs in a real ZLE compsys context, capturing filtered compadd matches.
 __termul_capture() {
     local old_compadd=${functions[compadd]-} had_compadd=${+functions[compadd]}
@@ -196,7 +207,7 @@ __termul_capture() {
         local __termul_flags __termul_flag __termul_value __termul_match
         local __termul_ordering __termul_order_fields __termul_valid_order __termul_have_order=0
         local __termul_prefix=$IPREFIX __termul_suffix=$ISUFFIX
-        local result
+        local result __termul_quoted=0 __termul_head __termul_tail REPLY
         __termul_args=("$@")
         # Mirror bin_compadd's per-character walk, including both forms of '-'.
         while (( $# )) && [[ $1 = -* ]]; do
@@ -250,7 +261,8 @@ __termul_capture() {
                             fi
                         fi
                         ;;
-                    [qQCfeakn12l]) ;;
+                    Q) __termul_quoted=1 ;;
+                    [qCfeakn12l]) ;;
                     *) break 2 ;; # Let the builtin reject an unknown option.
                 esac
             done
@@ -258,8 +270,17 @@ __termul_capture() {
         builtin compadd -A captured "${__termul_args[@]}"
         result=$?
         # -A omits insertion affixes: restore zsh's seven fields in their word order.
+        # Affixes are command-line text; matches are quoted only under -Q.
+        __termul_unquote "$__termul_prefix${__termul_affixes[i]}${__termul_affixes[P]}${__termul_affixes[p]}"
+        __termul_head=$REPLY
+        __termul_unquote "${__termul_affixes[s]}${__termul_affixes[S]}${__termul_affixes[I]}$__termul_suffix"
+        __termul_tail=$REPLY
         for __termul_match in "${captured[@]}"; do
-            __termul_matches+=("$__termul_prefix${__termul_affixes[i]}${__termul_affixes[P]}${__termul_affixes[p]}$__termul_match${__termul_affixes[s]}${__termul_affixes[S]}${__termul_affixes[I]}$__termul_suffix")
+            if ((__termul_quoted)); then
+                __termul_unquote "$__termul_match"
+                __termul_match=$REPLY
+            fi
+            __termul_matches+=("$__termul_head$__termul_match$__termul_tail")
         done
         return $result
     }
@@ -448,7 +469,7 @@ __termul_bootstrap || {
     unset __termul_saved_prompt __termul_saved_rprompt
     unset __termul_user_command __termul_last_status
     unset __termul_prompt_generation __termul_initialized __termul_generator __termul_prompt_suppressed
-    unfunction __termul_{complete,decode_draft,history,capture,line_init,prompt,budget_completion,run_completer,completion_output,emit_completion,restore_prompt,clear_line,preexec,frame,json_escape,bootstrap,save_bindings,restore_bindings,restore_map,bind_clear_line,bind_restore_prompt}
+    unfunction __termul_{complete,decode_draft,history,unquote,capture,line_init,prompt,budget_completion,run_completer,completion_output,emit_completion,restore_prompt,clear_line,preexec,frame,json_escape,bootstrap,save_bindings,restore_bindings,restore_map,bind_clear_line,bind_restore_prompt}
     return 0
 }
 unset __termul_old_0 __termul_old_1 __termul_old_2

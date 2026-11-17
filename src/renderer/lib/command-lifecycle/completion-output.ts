@@ -32,16 +32,25 @@ export function parseCompletionOutput(
   return rows
 }
 
+interface WordAtCursor {
+  from: number
+  /** Quote still open at the cursor. */
+  quote: Quote
+  /** The cursor sits right after an unquoted backslash, splitting an escape. */
+  escaped: boolean
+}
+
 /** The word ends at the cursor and starts after unquoted, unescaped whitespace. */
-function lastWordRange(draft: string, cursor: number): { from: number; to: number; quote: Quote } {
-  const point = Math.max(0, Math.min(cursor, draft.length))
+function wordAtCursor(draft: string, point: number): WordAtCursor {
   let from = 0
   let quote: Quote = null
+  let escaped = false
   for (let i = 0; i < point; i++) {
     const char = draft[i]
     if (quote === "'") {
       if (char === "'") quote = null
     } else if (char === '\\') {
+      escaped = i + 1 >= point
       i += 1
     } else if (quote === '"') {
       if (char === '"') quote = null
@@ -51,19 +60,42 @@ function lastWordRange(draft: string, cursor: number): { from: number; to: numbe
       from = i + 1
     }
   }
+  return { from, quote, escaped }
+}
+
+function lastWordRange(draft: string, cursor: number): { from: number; to: number; quote: Quote } {
+  const point = Math.max(0, Math.min(cursor, draft.length))
+  const { from, quote } = wordAtCursor(draft, point)
   return { from, to: point, quote }
 }
 
 /**
- * Candidates are plain words; spell them for the quoting open at the cursor.
- * A directory keeps its quote open so the path can be continued.
+ * True when the shell word at the cursor goes on past it: the next character is
+ * not whitespace, or it is whitespace that an open quote or a backslash keeps
+ * inside the word. A candidate would replace only the part before the cursor.
+ */
+export function wordContinuesPastCursor(draft: string, cursor: number): boolean {
+  const next = draft[cursor]
+  if (next === undefined || cursor < 0) return false
+  if (!/\s/.test(next)) return true
+  const { quote, escaped } = wordAtCursor(draft, cursor)
+  return quote !== null || escaped
+}
+
+/**
+ * Candidates are raw words (both host scripts unquote what their completers
+ * return); spell them for the quoting open at the cursor. A directory keeps its
+ * quote open so the path can be continued.
  */
 function quoteCandidate(text: string, quote: Quote): string {
   const close = text.endsWith('/') ? '' : (quote ?? '')
   if (quote === "'") return `'${text.replace(/'/g, "'\\''")}${close}`
-  if (quote === '"') return `"${text.replace(DOUBLE_QUOTED_SPECIAL, '\\$&')}${close}`
-  // zsh compsys may hand over words it already escaped.
-  if (/\\./.test(text)) return text
+  if (quote === '"') {
+    // History expansion sees `!` inside double quotes, and a backslash before
+    // it stays in the word there, so step out of the quotes to escape it.
+    const body = text.replace(DOUBLE_QUOTED_SPECIAL, '\\$&').replace(/!/g, '"\\!"')
+    return `"${body}${close}`
+  }
   return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(/^#/, '\\#')
 }
 

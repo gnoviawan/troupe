@@ -549,6 +549,36 @@ it('completion runs inside a quote but not inside a word', async () => {
   }
 })
 
+it('a quoted or escaped space after the cursor is still inside the word', () => {
+  vi.useFakeTimers()
+  const request = (draft: string, cursor: number) => {
+    const logs: CompletionLogEvent[] = []
+    const host = createFakeHost()
+    const scheduler = new CompletionScheduler({
+      host,
+      createRequestId: () => 'A',
+      settings: { automaticCompletionRefresh: true },
+      log: (event) => logs.push(event)
+    })
+    scheduler.requestCompletion(context({ draft, cursor }), false)
+    return { requests: host.requests.length, logs: logs.map((event) => event.detail) }
+  }
+
+  // Accepting would replace only `"dir` and leave ` with space"` behind.
+  for (const [draft, cursor] of [
+    ['cat "dir with space"', 'cat "dir'.length],
+    ["cat 'dir with space'", "cat 'dir".length],
+    ['cat dir\\ with', 'cat dir\\'.length]
+  ] as const) {
+    expect(request(draft, cursor), draft).toEqual({
+      requests: 0,
+      logs: ['reason=inside_word']
+    })
+  }
+  expect(request('cat "a b" c', 'cat "a b"'.length).requests).toBe(1)
+  expect(request('cat a\\\\ c', 'cat a\\\\'.length).requests).toBe(1)
+})
+
 it('idle typing with blank draft skips completion', async () => {
   vi.useFakeTimers()
   const host = createFakeHost()

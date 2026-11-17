@@ -4,6 +4,7 @@ import type {
   TerminalApi
 } from '@shared/types/ipc.types'
 import type { AppSettings } from '@/types/settings'
+import { wordContinuesPastCursor } from './completion-output'
 import type { InputMode, SessionPhase } from './transition'
 
 /** Host completion timeout (1500) + host drain bound (2000) + 500ms margin. */
@@ -63,9 +64,7 @@ function contextMatches(left: CompletionContext, right: CompletionContext): bool
 
 /** Quoted words complete too; only a cursor inside a word is skipped. */
 function completionSkipReason(draft: string, cursor: number): 'inside_word' | null {
-  const next = draft[cursor]
-  if (next !== undefined && !/\s/.test(next)) return 'inside_word'
-  return null
+  return wordContinuesPastCursor(draft, cursor) ? 'inside_word' : null
 }
 
 function completionFieldsMatch(active: InFlight, completion: CompletionReplyFields): boolean {

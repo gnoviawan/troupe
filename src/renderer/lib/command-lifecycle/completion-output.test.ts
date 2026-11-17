@@ -69,27 +69,44 @@ it('the word being completed may contain quoted or escaped spaces (#1879)', () =
   expect(parseCompletionOutput("ls 'x y' dir", 12, output)[0]).toMatchObject({ from: 9, to: 12 })
 })
 
-it('shell syntax in candidates is escaped, already escaped words are kept', () => {
+it('shell syntax in candidates is escaped', () => {
   const rows = parseCompletionOutput(
     'x ',
     2,
-    [
-      hexLine("it's"),
-      hexLine('a&b'),
-      hexLine('#tag'),
-      hexLine('--color=auto'),
-      hexLine('a\\ b')
-    ].join('\n')
+    [hexLine("it's"), hexLine('a&b'), hexLine('#tag'), hexLine('--color=auto')].join('\n')
   )
   expect(rows.map((row) => row.insert ?? row.text)).toEqual([
     "it\\'s",
     'a\\&b',
     '\\#tag',
-    '--color=auto',
-    'a\\ b'
+    '--color=auto'
   ])
   const quoted = parseCompletionOutput('x "', 3, [hexLine('a"$b'), hexLine("it's")].join('\n'))
   expect(quoted.map((row) => row.insert)).toEqual(['"a\\"\\$b"', '"it\'s"'])
   const single = parseCompletionOutput("x '", 3, hexLine("it's"))
   expect(single[0]?.insert).toBe("'it'\\''s'")
+})
+
+// Both host scripts send raw words (bash compgen; zsh capture unquotes -Q matches).
+it('a backslash in a candidate is a literal character and is escaped', () => {
+  const rows = parseCompletionOutput(
+    'cat ',
+    4,
+    [hexLine('a\\b.txt'), hexLine('my file\\b.txt'), hexLine('a\\ b')].join('\n')
+  )
+  expect(rows.map((row) => row.insert)).toEqual(['a\\\\b.txt', 'my\\ file\\\\b.txt', 'a\\\\\\ b'])
+  expect(parseCompletionOutput('cat "', 5, hexLine('a\\b.txt'))[0]?.insert).toBe('"a\\\\b.txt"')
+})
+
+// Bash history-expands `!` inside double quotes; a backslash there stays literal.
+it('a double-quoted candidate breaks out of the quotes for !', () => {
+  const spell = (output: string) => parseCompletionOutput('cat "hel', 8, hexLine(output))[0]?.insert
+  expect(spell('hello!world.txt')).toBe('"hello"\\!"world.txt"')
+  expect(spell('hello!/')).toBe('"hello"\\!"/')
+  expect(parseCompletionOutput('cat hel', 7, hexLine('hello!world.txt'))[0]?.insert).toBe(
+    'hello\\!world.txt'
+  )
+  expect(parseCompletionOutput("cat 'hel", 8, hexLine('hello!world.txt'))[0]?.insert).toBe(
+    "'hello!world.txt'"
+  )
 })
