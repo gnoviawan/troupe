@@ -36,6 +36,8 @@ mod gate_test_support;
 #[cfg(test)]
 mod gate_tests;
 #[cfg(test)]
+mod inject_bash_candidates_tests;
+#[cfg(test)]
 mod inject_completion_tests;
 #[cfg(test)]
 mod inject_test_support;

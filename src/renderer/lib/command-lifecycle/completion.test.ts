@@ -498,15 +498,15 @@ it('NotStarted leaves the draft', async () => {
   expect(host.requests[1]?.request.requestId).toBe('B')
 })
 
-it('no completion inside a quote or a word', async () => {
+it('completion runs inside a quote but not inside a word', async () => {
   vi.useFakeTimers()
   const clock = {
     setTimeout: (handler: () => void, ms: number) => setTimeout(handler, ms),
     clearTimeout: (id: unknown) => clearTimeout(id as ReturnType<typeof setTimeout>)
   }
   const quoted = context({
-    draft: 'echo "a b',
-    cursor: 'echo "a b'.length,
+    draft: 'cat "dir w',
+    cursor: 'cat "dir w'.length,
     bufferRevision: 1
   })
 
@@ -519,12 +519,9 @@ it('no completion inside a quote or a word', async () => {
       clock
     })
 
-    scheduler.updateContext(quoted)
-    await vi.advanceTimersByTimeAsync(100)
-    expect(host.requests).toHaveLength(0)
-
     scheduler.requestCompletion(quoted, false)
-    expect(host.requests).toHaveLength(0)
+    expect(host.requests).toHaveLength(1)
+    expect(host.requests[0]?.request.draft).toBe('cat "dir w')
   }
 
   {
