@@ -1,7 +1,7 @@
 /**
  * Claude Accounts facade (ADR-0004).
  *
- * Every surface lists the Accounts, chooses the Default or a Project Account,
+ * Every surface lists the Accounts, chooses the Default, a Project or a chat Account,
  * turns automatic switching on or off, adds, renames and removes an Account and
  * stops a sign-in through the ACP transport (`/ws`, over the Tauri Channel on
  * desktop).
@@ -15,7 +15,8 @@
 import type {
   ClaudeAccount,
   ClaudeAccountsSnapshot,
-  ClaudeAccountUsage
+  ClaudeAccountUsage,
+  RemovedClaudeAccount
 } from '@shared/types/claude-accounts.types'
 import { WS_ERROR_CODES } from '@shared/types/web-protocol.types'
 import { invoke } from '@tauri-apps/api/core'
@@ -104,6 +105,26 @@ export const claudeAccountsApi = {
       getAcpTransport().setProjectClaudeAccount(projectId, accountId, options.expectedAccountId)
     ),
 
+  /**
+   * The chat's own Account; `null` makes it follow its Project again.
+   * `expectedAccountId` applies the choice only while the chat resolves to
+   * that Account. Resolves whether the choice applied.
+   */
+  setChatAccount: (
+    projectId: string,
+    sessionId: string,
+    accountId: string | null,
+    options: { expectedAccountId?: string } = {}
+  ): Promise<boolean> =>
+    logged('setChatAccount', () =>
+      getAcpTransport().setChatClaudeAccount(
+        projectId,
+        sessionId,
+        accountId,
+        options.expectedAccountId
+      )
+    ),
+
   /** Host-wide: continue a chat at its Account's limit on the Account with the most room. */
   setAutoSwitch: (enabled: boolean): Promise<void> =>
     logged('setAutoSwitch', () => getAcpTransport().setClaudeAutoSwitch(enabled)),
@@ -157,7 +178,7 @@ export const claudeAccountsApi = {
   rename: (accountId: string, name: string): Promise<void> =>
     logged('rename', () => getAcpTransport().renameClaudeAccount(accountId, name)),
 
-  /** Resolves to the ids of the Projects that moved to the Default Account. */
-  remove: (accountId: string): Promise<string[]> =>
+  /** Resolves to the Projects and chats that moved off the removed Account. */
+  remove: (accountId: string): Promise<RemovedClaudeAccount> =>
     logged('remove', () => getAcpTransport().removeClaudeAccount(accountId))
 }

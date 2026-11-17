@@ -19,22 +19,42 @@ fn resolve_path_returns_a_string_and_known_source() {
 }
 
 #[test]
-fn find_in_system_dirs_returns_first_existing_file() {
+fn find_system_cloudflared_returns_first_existing_file() {
     let first = tempfile::tempdir().unwrap();
     let second = tempfile::tempdir().unwrap();
     std::fs::write(second.path().join("cloudflared"), b"").unwrap();
-    let dirs = [first.path().to_str().unwrap(), second.path().to_str().unwrap()];
+    let dirs = [
+        first.path().to_str().unwrap(),
+        second.path().to_str().unwrap(),
+    ];
     assert_eq!(
-        find_in_system_dirs(&dirs, "cloudflared"),
+        find_system_cloudflared(&dirs),
         Some(second.path().join("cloudflared"))
     );
 }
 
 #[test]
-fn find_in_system_dirs_returns_none_when_missing() {
+fn find_system_cloudflared_returns_none_when_missing() {
     let empty = tempfile::tempdir().unwrap();
     let dirs = [empty.path().to_str().unwrap()];
-    assert_eq!(find_in_system_dirs(&dirs, "cloudflared"), None);
+    assert_eq!(find_system_cloudflared(&dirs), None);
+}
+
+#[test]
+fn find_system_cloudflared_ignores_the_per_target_sidecar_name() {
+    // Homebrew installs plain `cloudflared`; a file named like the sidecar
+    // (e.g. `cloudflared-aarch64-apple-darwin`) is not a system install.
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join(cloudflared_sidecar_name()), b"").unwrap();
+    let dirs = [dir.path().to_str().unwrap()];
+    if cloudflared_sidecar_name() != SYSTEM_BINARY_NAME {
+        assert_eq!(find_system_cloudflared(&dirs), None);
+    }
+    std::fs::write(dir.path().join(SYSTEM_BINARY_NAME), b"").unwrap();
+    assert_eq!(
+        find_system_cloudflared(&dirs),
+        Some(dir.path().join(SYSTEM_BINARY_NAME))
+    );
 }
 
 #[test]

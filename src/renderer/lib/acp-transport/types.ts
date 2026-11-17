@@ -9,7 +9,8 @@ import type { AcpCatalog } from '@shared/types/acp-catalog.types'
 import type {
   ClaudeAccount,
   ClaudeAccountsSnapshot,
-  ClaudeAccountUsage
+  ClaudeAccountUsage,
+  RemovedClaudeAccount
 } from '@shared/types/claude-accounts.types'
 import type {
   CodexAccount,
@@ -285,6 +286,18 @@ export interface AcpTransport {
     accountId: string | null,
     expectedAccountId?: string
   ): Promise<boolean>
+  /**
+   * The chat's own Account; `null` makes the chat follow its Project again.
+   * With `expectedAccountId` the host applies the choice only while the chat
+   * resolves to that Account (chat, then Project, then Default). Resolves
+   * whether the choice applied.
+   */
+  setChatClaudeAccount(
+    projectId: string,
+    sessionId: string,
+    accountId: string | null,
+    expectedAccountId?: string
+  ): Promise<boolean>
   setClaudeAutoSwitch(enabled: boolean): Promise<void>
   /** The host continues the chat at `at` (epoch ms) after its limit resets; `null` cancels. */
   setClaudeResume(sessionId: string, at: number | null): Promise<void>
@@ -295,7 +308,7 @@ export interface AcpTransport {
    * Remove an Account and resolve the ids of the Projects that moved to the
    * Default Account; `[]` when it was already gone.
    */
-  removeClaudeAccount(accountId: string): Promise<string[]>
+  removeClaudeAccount(accountId: string): Promise<RemovedClaudeAccount>
   /**
    * Start a link sign-in for one Account and resolve the Claude sign-in link.
    * A sign-in already running for the Account stops.
@@ -350,11 +363,15 @@ export interface AcpTransport {
     config: AgentConfig,
     options?: CommandCallOptions
   ): Promise<SpawnAgentResult>
-  /** `projectId` selects the Claude Account of a managed Claude agent. */
+  /**
+   * `projectId` selects the Claude Account of a managed Claude agent;
+   * `sessionId`, the existing chat the agent opens, selects that chat's own.
+   */
   spawnAgent(
     config: AgentConfig,
     options?: CommandCallOptions,
-    projectId?: string | null
+    projectId?: string | null,
+    sessionId?: string | null
   ): Promise<SpawnAgentResult>
   killAgent(agentId: AgentId): Promise<void>
   listAgents(): Promise<AgentId[]>

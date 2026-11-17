@@ -5,6 +5,7 @@
 //! The sign-in link and the code are never logged.
 
 use super::*;
+use crate::acp::claude_accounts::RemovedAccount;
 use crate::acp::{LinkCodeError, SignInCheck};
 
 #[derive(Debug, Deserialize)]
@@ -21,6 +22,19 @@ pub(super) struct SetProjectClaudeAccountPayload {
     #[serde(default)]
     account_id: Option<String>,
     /// Apply only while the Project still uses this Account.
+    #[serde(default)]
+    expected_account_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct SetChatClaudeAccountPayload {
+    project_id: String,
+    session_id: String,
+    /// `null` makes the chat follow its Project again.
+    #[serde(default)]
+    account_id: Option<String>,
+    /// Apply only while the chat still runs on this Account.
     #[serde(default)]
     expected_account_id: Option<String>,
 }
@@ -131,6 +145,51 @@ pub(super) async fn handle_set_project_claude_account(
                 account = parsed.account_id.as_deref().unwrap_or("default"),
                 applied,
                 "project Claude account set over ws"
+            );
+            WsReply::ok(id, Some(json!({ "applied": applied })))
+        }
+        Err(error) => choice_refused(id, error),
+    }
+}
+
+/// `set_chat_claude_account { projectId, sessionId, accountId | null,
+/// expectedAccountId? }` → `{ applied }`; `applied` is `false` when the chat
+/// no longer runs on `expectedAccountId`.
+pub(super) async fn handle_set_chat_claude_account(
+    id: String,
+    payload: &Value,
+    acp: &Arc<AcpManager>,
+) -> WsReply {
+    let parsed: SetChatClaudeAccountPayload = match serde_json::from_value(payload.clone()) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            return WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                format!(
+                "malformed set_chat_claude_account payload (want projectId, sessionId, accountId): {error}"
+            ),
+            )
+        }
+    };
+    match acp
+        .claude_agent()
+        .set_chat_account(
+            &parsed.project_id,
+            &parsed.session_id,
+            parsed.account_id.as_deref(),
+            parsed.expected_account_id.as_deref(),
+            SignInCheck::Required,
+        )
+        .await
+    {
+        Ok(applied) => {
+            info!(
+                project = %parsed.project_id,
+                session = %crate::logging::redact_session_id(&parsed.session_id),
+                account = parsed.account_id.as_deref().unwrap_or("project"),
+                applied,
+                "chat Claude account set over ws"
             );
             WsReply::ok(id, Some(json!({ "applied": applied })))
         }
@@ -303,9 +362,10 @@ pub(super) async fn handle_rename_claude_account(
     }
 }
 
-/// `remove_claude_account { accountId }` → `{ movedProjectIds }`, the Projects
-/// that moved to the Default Account. The built-in Account is refused. An
-/// Account that is already gone answers `{ movedProjectIds: [] }`, so a repeat
+/// `remove_claude_account { accountId }` → `{ movedProjectIds, movedChatIds }`,
+/// the Projects that moved to the Default Account and the chats that had the
+/// Account as their own and now follow their Project. The built-in Account is
+/// refused. An Account that is already gone answers empty lists, so a repeat
 /// (a second click, another client) converges instead of failing.
 pub(super) async fn handle_remove_claude_account(
     id: String,
@@ -325,13 +385,18 @@ pub(super) async fn handle_remove_claude_account(
     let account = parsed.account_id;
     let service = acp.claude_agent();
     match service.remove_account(&account).await {
-        Ok(moved) => {
-            info!(account = %account, moved = moved.len(), "Claude account removed over ws");
-            WsReply::ok(id, Some(json!({ "movedProjectIds": moved })))
+        Ok(removed) => {
+            info!(
+                account = %account,
+                moved_projects = removed.moved_project_ids.len(),
+                moved_chats = removed.moved_chat_ids.len(),
+                "Claude account removed over ws"
+            );
+            WsReply::ok(id, Some(json!(removed)))
         }
         Err(_) if matches!(service.has_account(&account), Ok(false)) => {
             info!(account = %account, "Claude account already removed");
-            WsReply::ok(id, Some(json!({ "movedProjectIds": [] })))
+            WsReply::ok(id, Some(json!(RemovedAccount::default())))
         }
         Err(error) => {
             warn!(account = %account, error = %error, "remove_claude_account failed");
