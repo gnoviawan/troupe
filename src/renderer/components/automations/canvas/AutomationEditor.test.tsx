@@ -539,6 +539,25 @@ describe('AutomationEditor', () => {
     expect(document.activeElement).toBe(undo)
   })
 
+  it('leaves focus alone when a toolbar button turns disabled after the user left it', async () => {
+    open()
+    const editor = screen.getByTestId('automation-editor')
+    const tools = within(screen.getByRole('toolbar', { name: 'Canvas tools' }))
+    fireEvent.click(handle('check', 'true'))
+    fireEvent.click(handle('shape', 'in'))
+    const undo = tools.getByRole('button', { name: 'Undo' })
+    undo.focus()
+    // The user clicks somewhere outside the editor that takes no focus.
+    act(() => undo.blur())
+    await act(() => Promise.resolve())
+    expect(document.activeElement).toBe(document.body)
+
+    // A later update disables the button the user already left.
+    fireEvent.keyDown(editor, { key: 'z', ctrlKey: true })
+    expect(undo).toBeDisabled()
+    expect(document.activeElement).toBe(document.body)
+  })
+
   it('Enter on a menu row adds that row; Enter in the search field adds the top match', () => {
     open()
     fireEvent.click(screen.getByRole('button', { name: 'Add a step' }))

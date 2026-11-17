@@ -32,7 +32,17 @@ export function useFocusFallback(root: RefObject<HTMLElement | null>): {
     },
     // Focus moving to another element is the user's; a removed or disabled element moves it nowhere.
     onBlur: (event) => {
-      if (event.relatedTarget) last.current = null
+      if (event.relatedTarget) {
+        last.current = null
+        return
+      }
+      // With no next element, the user may have left for a spot that takes no focus. Judge once
+      // the current task settles: an engine can fire blur before it detaches or disables the element.
+      const element = event.target as HTMLElement
+      queueMicrotask(() => {
+        if (last.current !== element) return
+        if (element.isConnected && !element.matches(':disabled')) last.current = null
+      })
     }
   }
 }
