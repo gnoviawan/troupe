@@ -200,6 +200,37 @@ it('a typed word that the tail would turn into syntax is respelled', () => {
   expect(spell('cat {a}', '{a}b')).toBe('\\{a\\}b')
 })
 
+// zsh's EQUALS option expands an unquoted leading `=` to a command path.
+it('a literal leading equals sign is escaped', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  expect(spell('cat ', '=echo')).toBe('\\=echo')
+  expect(spell('cat =ec', '=echo')).toBe('\\=echo')
+  expect(spell('cat \\=ec', '=echo')).toBe('\\=echo')
+  expect(spell("cat '=ec", '=echo')).toBe("'=echo'")
+  expect(spell('cat a', 'a=b')).toBe('a=b')
+})
+
+// The typed `$'...'` escapes stay as typed; only the tail is spelled.
+it('ansi-c escapes in the typed word are decoded and kept', () => {
+  const spell = (draft: string, text: string) =>
+    parseCompletionOutput(draft, draft.length, hexLine(text))[0]?.insert ?? text
+  expect(spell("cat $'dir\\x20w", 'dir with space')).toBe("$'dir\\x20with space'")
+  expect(spell("cat $'dir\\040w", 'dir with space/')).toBe("$'dir\\040with space/")
+  expect(spell("cat $'dir\\u0020w", 'dir with space')).toBe("$'dir\\u0020with space'")
+  expect(spell("cat $'caf\\U000000e9", 'café menu')).toBe("$'caf\\U000000e9 menu'")
+  expect(spell("cat $'caf\\xc3\\xa9", 'café menu')).toBe("$'caf\\xc3\\xa9 menu'")
+  expect(spell("cat $'caf\\303\\251'\\ m", 'café menu')).toBe("$'caf\\303\\251'\\ menu")
+  // A short numeric escape would swallow a digit from the tail, so the quote is reopened.
+  expect(spell("cat $'\\41", '!7')).toBe("$'\\41'$'7'")
+  expect(spell("cat $'\\u3b1", 'αb')).toBe("$'\\u3b1'$'b'")
+  expect(spell("cat $'\\u3b1", 'αz')).toBe("$'\\u3b1z'")
+  // Escapes that are not literal text, or a split UTF-8 sequence, are respelled.
+  expect(spell("cat $'a\\q", 'a\\qb')).toBe("$'a\\\\qb'")
+  expect(spell("cat $'a\\x", 'a\\xb')).toBe("$'a\\\\xb'")
+  expect(spell("cat $'caf\\xc3", 'café')).toBe("$'café'")
+})
+
 // bash dequotes `$"..."` like double quotes; its `$` is part of the spelling.
 it('a locale-quoted word keeps its dollar', () => {
   const draft = 'cat $"dir w'

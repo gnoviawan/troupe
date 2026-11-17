@@ -72,6 +72,25 @@ fn command_names_complete_even_when_a_loader_claims_the_word() {
     }
 }
 
+/// `compgen -c` reads a whole glob pattern in its word as a pattern and offers
+/// nothing, so escaped `[`, `*` and `?` in a command name match literally.
+#[test]
+fn command_names_with_glob_characters_match_as_a_literal_prefix() {
+    let dir = project();
+    let aliases = "alias 'tq[1]x=:' 'tq1x=:' 'tq*y=:' 'tqzy=:' 'tq?w=:'";
+    for shell in shells() {
+        for (draft, expected) in [
+            ("tq\\[1\\]", vec!["tq[1]x"]),
+            ("'tq[1]", vec!["tq[1]x"]),
+            ("tq\\*", vec!["tq*y"]),
+            ("tq\\?", vec!["tq?w"]),
+        ] {
+            let rows = candidates(&shell, dir.path(), aliases, draft);
+            assert_eq!(rows, expected, "{shell:?}: {draft}");
+        }
+    }
+}
+
 /// Completers see the dequoted word, as readline hands it to them.
 #[test]
 fn quoted_and_escaped_words_reach_completers_dequoted() {

@@ -112,9 +112,10 @@ function quoteCandidate(text: string, quote: Quote, typed: string): string {
     return `${home}${quote}${quoteBody(text.slice(home.length), quote)}${close}`
   }
   // A leading `~` stays a tilde prefix only when the user typed one; a bare
-  // `~` candidate is always a file named `~`, never the home directory.
-  const literalTilde = text === '~' || !tilde ? /^[#~]/ : /^#/
-  return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(literalTilde, '\\$&')
+  // `~` candidate is always a file named `~`, never the home directory. zsh
+  // expands a leading `=` to a command path (EQUALS); `\=` is plain in bash.
+  const leading = text === '~' || !tilde ? /^[#~=]/ : /^[#=]/
+  return text.replace(UNQUOTED_SPECIAL, '\\$&').replace(leading, '\\$&')
 }
 
 /** What a typed word means to the shell, and how its spelling may go on. */
@@ -125,10 +126,14 @@ interface TypedWord {
   dollar: boolean
   /** The spelling ends in an unquoted backslash that escapes the tail's first character. */
   backslash: boolean
+  /** Digits that would extend a short numeric escape ending an open `$'...'`. */
+  digits: RegExp | null
 }
 
 // Unquoted characters that make the typed word syntax rather than a literal.
+// A leading `#` starts a comment and zsh expands a leading `=` (EQUALS).
 const UNQUOTED_SYNTAX = /[`&;|<>()*?[!]/
+const UNQUOTED_LEADING_SYNTAX = /[#=]/
 
 /**
  * Read the typed word as a literal, or return null when it is not one, or when
@@ -139,6 +144,7 @@ function readTypedWord(typed: string): TypedWord | null {
   let value = ''
   let quote: Quote = null
   let dollar = false
+  let digits: RegExp | null = null
   let braces = ''
   for (let i = 0; i < typed.length; i++) {
     const char = typed[i]
@@ -147,12 +153,6 @@ function readTypedWord(typed: string): TypedWord | null {
     if (quote === "'") {
       if (char === "'") quote = null
       else value += char
-    } else if (quote === "$'") {
-      if (char === "'") quote = null
-      else if (char !== '\\') value += char
-      // Other ANSI-C escapes decode to different characters; leave them to the full spelling.
-      else if (next !== undefined && /['"\\?]/.test(next)) value += typed[++i]
-      else return null
     } else if (quote === '"' || quote === '$"') {
       if (char === '"') quote = null
       else if (char === '`' || char === '!' || (char === '\\' && next === undefined)) return null
@@ -163,14 +163,20 @@ function readTypedWord(typed: string): TypedWord | null {
         value += char
       }
     } else if (char === '\\') {
-      if (next === undefined) return { value, dollar, backslash: true }
+      if (next === undefined) return { value, dollar, backslash: true, digits }
       value += typed[++i]
-    } else if (char === '$' && (next === "'" || next === '"')) {
-      quote = next === "'" ? "$'" : '$"'
+    } else if (char === '$' && next === "'") {
+      const ansi = readAnsiC(typed, i + 2)
+      if (!ansi) return null
+      value += ansi.value
+      digits = ansi.digits
+      i = ansi.end
+    } else if (char === '$' && next === '"') {
+      quote = '$"'
       i += 1
     } else if (char === "'" || char === '"') {
       quote = char
-    } else if (UNQUOTED_SYNTAX.test(char) || (char === '#' && i === 0)) {
+    } else if (UNQUOTED_SYNTAX.test(char) || (i === 0 && UNQUOTED_LEADING_SYNTAX.test(char))) {
       return null
     } else if (char === '$' && next !== undefined) {
       return null
@@ -182,7 +188,75 @@ function readTypedWord(typed: string): TypedWord | null {
   }
   // An unescaped `{` and `}` in one word may already be a brace expansion.
   if (braces.includes('{') && braces.includes('}')) return null
-  return { value, dollar, backslash: false }
+  return { value, dollar, backslash: false, digits }
+}
+
+interface NumericEscape {
+  digit: RegExp
+  max: number
+  base: number
+  /** Encodes a code point as UTF-8; otherwise the value is one byte. */
+  unicode: boolean
+}
+
+const OCTAL_ESCAPE: NumericEscape = { digit: /[0-7]/, max: 3, base: 8, unicode: false }
+const NUMERIC_ESCAPES: Record<string, NumericEscape> = {
+  x: { digit: /[0-9a-fA-F]/, max: 2, base: 16, unicode: false },
+  u: { digit: /[0-9a-fA-F]/, max: 4, base: 16, unicode: true },
+  U: { digit: /[0-9a-fA-F]/, max: 8, base: 16, unicode: true }
+}
+
+interface AnsiCText {
+  value: string
+  /** Index of the closing quote, or of the last character when it is still open. */
+  end: number
+  digits: RegExp | null
+}
+
+/**
+ * Decode `$'...'` from `start` (just after the `$'`) as bash does. Null for
+ * escapes that are not literal text (`\n`, `\cX`, an unknown `\q` that keeps
+ * its backslash) and for bytes that do not decode as UTF-8.
+ */
+function readAnsiC(typed: string, start: number): AnsiCText | null {
+  const encoder = new TextEncoder()
+  const bytes: number[] = []
+  let digits: RegExp | null = null
+  let i = start
+  for (; i < typed.length; i++) {
+    digits = null
+    const char = String.fromCodePoint(typed.codePointAt(i) ?? 0)
+    if (char === "'") break
+    if (char !== '\\') {
+      bytes.push(...encoder.encode(char))
+      i += char.length - 1
+      continue
+    }
+    const kind = typed[++i]
+    if (kind === undefined) return null
+    if (/['"\\?]/.test(kind)) {
+      bytes.push(kind.charCodeAt(0))
+      continue
+    }
+    const octal = OCTAL_ESCAPE.digit.test(kind)
+    const numeric = octal ? OCTAL_ESCAPE : NUMERIC_ESCAPES[kind]
+    if (!numeric) return null
+    let number = octal ? kind : ''
+    while (number.length < numeric.max && numeric.digit.test(typed[i + 1] ?? ''))
+      number += typed[++i]
+    if (!number) return null
+    const code = Number.parseInt(number, numeric.base)
+    if (!numeric.unicode) bytes.push(code & 0xff)
+    else if (code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) return null
+    else bytes.push(...encoder.encode(String.fromCodePoint(code)))
+    if (number.length < numeric.max) digits = numeric.digit
+  }
+  try {
+    const value = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes))
+    return { value, end: Math.min(i, typed.length - 1), digits }
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -197,8 +271,10 @@ function continueTyped(text: string, quote: Quote, typed: string): string | null
   const tail = text.slice(word.value.length)
   if (quote) {
     const close = text.endsWith('/') ? '' : quote.slice(-1)
-    // `"a$""b"` keeps the `$` literal in bash and zsh.
-    const junction = word.dollar && tail ? '""' : ''
+    // `"a$""b"` keeps the `$` literal in bash and zsh; `$'\41'$'7'` keeps the
+    // `7` out of the octal escape.
+    const junction =
+      word.dollar && tail ? '""' : word.digits?.test(tail[0] ?? '') ? `'${quote}` : ''
     return `${typed}${junction}${quoteBody(tail, quote)}${close}`
   }
   if (word.backslash) {

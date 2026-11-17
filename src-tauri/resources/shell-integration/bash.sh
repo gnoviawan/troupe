@@ -383,7 +383,16 @@ __termul_candidates() {
     # bash-completion's loader claims every unknown word with `_minimal`, so the
     # command position must be answered before any -F completer is looked up.
     if ((COMP_CWORD == 0)); then
-        compgen -c -- "$word"
+        # compgen -c reads a glob pattern in its word (`a[1]`, `a*`) as one and
+        # offers nothing; ask for the literal stem and keep literal prefix matches.
+        prefix=${word%%[][*?(\\]*}
+        if [ "$prefix" = "$word" ]; then
+            compgen -c -- "$word"
+        else
+            compgen -c -- "$prefix" | while IFS= read -r candidate; do
+                [[ $candidate != "$word"* ]] || printf '%s\n' "$candidate"
+            done
+        fi
         return
     fi
     command=${COMP_WORDS[0]}
