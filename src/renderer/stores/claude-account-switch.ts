@@ -300,7 +300,21 @@ export async function restartClaudeSession(
       })
     }
     if (active && options.notice && !handedOff) {
-      await useAcpStore.getState().sendPrompt(sessionId, options.notice)
+      // The chat already runs on its new Account; only the notice failed.
+      await useAcpStore
+        .getState()
+        .sendPrompt(sessionId, options.notice)
+        .catch((error: unknown) => {
+          void logFrontendError({
+            level: 'warn',
+            source: 'claudeAccountSwitch.restart',
+            message: `Chat ${sessionId} restarted, but its continuation notice failed: ${error instanceof Error ? error.message : String(error)}`
+          })
+          toast.warning('The chat moved to the new account', {
+            description:
+              'The message asking it to continue was not sent. Send a message to continue.'
+          })
+        })
     }
     return active
   } catch (error) {

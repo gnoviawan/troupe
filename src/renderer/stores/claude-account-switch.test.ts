@@ -188,6 +188,17 @@ describe('claude account switch', () => {
     expect(useAcpStore.getState().sessionUsage.c1?.rateLimit?.status).toBe('rejected')
   })
 
+  it('counts a restart as done when only its continuation notice fails to send', async () => {
+    sendPrompt.mockRejectedValueOnce(new Error('socket closed'))
+    await expect(restartClaudeSession('c1', { notice: 'go on' })).resolves.toBe(true)
+    expect(useAcpStore.getState().sessionUsage.c1?.rateLimit).toBeUndefined()
+    expect(vi.mocked(logFrontendError)).toHaveBeenCalledWith({
+      level: 'warn',
+      source: 'claudeAccountSwitch.restart',
+      message: 'Chat c1 restarted, but its continuation notice failed: socket closed'
+    })
+  })
+
   it('leaves a chat of another agent alone', async () => {
     await expect(restartClaudeSession('other')).resolves.toBe(false)
     expect(killAgent).not.toHaveBeenCalled()

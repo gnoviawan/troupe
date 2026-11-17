@@ -896,6 +896,22 @@ export function runsCurrentLaunch(
 }
 
 /**
+ * Record that `agentId`, started by the host, runs the launch a new chat of
+ * `configId` in `cwd` would get now, so a later credential renewal retires it
+ * instead of counting it as current.
+ */
+export function recordCurrentLaunch(
+  state: Pick<AcpState, 'agentConfigs'>,
+  agentId: AgentId,
+  configId: string,
+  cwd: string,
+  projectId?: string | null
+): void {
+  const launch = currentLaunch(state, configId, cwd.trim(), projectId)
+  if (launch) liveAgentSignatures.set(agentId, launch.signature)
+}
+
+/**
  * Return a connected agent process for `configId + cwd`, spawning at most one
  * in-flight process per reuse key. Registers `inFlightWarms` synchronously so
  * concurrent `prewarmAgent`, `prepareChat`, and `startChat` cannot race a

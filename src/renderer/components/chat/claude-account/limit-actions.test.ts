@@ -2,7 +2,7 @@ import type { ClaudeRateLimit } from '@shared/types/claude-accounts.types'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { agentReuseKey } from '@/stores/acp-reuse-keys'
-import { useAcpStore } from '@/stores/acp-store'
+import { renewAgentCredentials, runsCurrentLaunch, useAcpStore } from '@/stores/acp-store'
 import { FRESH } from '@/stores/acp-store/testkit'
 import { applyClaudeLimitAction, FOLLOW_WAIT_MS, useClaudeResumeAt } from './limit-actions'
 
@@ -132,6 +132,33 @@ describe('applyClaudeLimitAction', () => {
       expect(useAcpStore.getState().configToLiveAgent).toEqual({ [projectKey]: 'new' })
     )
     expect(useAcpStore.getState().sessions.s1.agentId).toBe('new')
+  })
+
+  it('retires the host agent of a chat that follows its project when the project account changes later', async () => {
+    api.list.mockResolvedValue(accounts({}))
+    const projectKey = agentReuseKey('acp-registry:claude-acp', '/work', 'office')
+    seed('old', ['new'])
+    useAcpStore.setState({
+      agentConfigs: [
+        {
+          id: 'acp-registry:claude-acp',
+          name: 'Claude Agent',
+          command: 'claude',
+          args: [],
+          env: {}
+        }
+      ],
+      configToLiveAgent: { [projectKey]: 'old' }
+    } as never)
+    applyClaudeLimitAction(switched)
+    await vi.waitFor(() =>
+      expect(useAcpStore.getState().configToLiveAgent).toEqual({ [projectKey]: 'new' })
+    )
+    const current = () =>
+      runsCurrentLaunch(useAcpStore.getState(), 'new', 'acp-registry:claude-acp', '/work', 'office')
+    expect(current()).toBe(true)
+    renewAgentCredentials('acp-registry:claude-acp', 'office')
+    expect(current()).toBe(false)
   })
 
   it('keeps a resumed chat that follows its project on project keys only', () => {

@@ -9,6 +9,7 @@ import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, reuseScopeFor } from '@/stores/acp-reuse-keys'
 import { renewAgentCredentials, useAcpStore } from '@/stores/acp-store'
 import { readOwnChatAccount } from '@/stores/acp-store/chat-reuse-scope'
+import { recordCurrentLaunch } from '@/stores/acp-store/shared-state'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
 export const useClaudeResumeAt = create<Record<string, number>>(() => ({}))
@@ -99,6 +100,14 @@ async function keyFollowedAgent(e: FollowEvent): Promise<void> {
   if (chatScope === undefined && session.projectId) {
     renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, session.projectId)
   }
+  // A later Project account change must retire this agent like any other.
+  recordCurrentLaunch(
+    useAcpStore.getState(),
+    e.newAgentId,
+    CLAUDE_AGENT_CONFIG_ID,
+    session.cwd,
+    session.projectId
+  )
   const key = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, session.cwd, session.projectId, chatScope)
   useAcpStore.setState((s) => ({
     configToLiveAgent: { ...s.configToLiveAgent, [key]: e.newAgentId }
