@@ -99,9 +99,9 @@ export function MobileShellHeader({
   titleRef
 }: MobileShellHeaderProps): React.JSX.Element {
   const narrow = useNarrowViewport()
-  // The title fills the column (centred text), so `fade-end` never reaches a
-  // short title. The subtitle hugs its text next to the chevron: it fades
-  // only while it is cut.
+  // The title fills the column, so `fade-end` never reaches a short title.
+  // The subtitle hugs its text next to the chevron: it fades only while it
+  // is cut.
   const subtitleTextRef = useRef<HTMLSpanElement>(null)
   useOverflowFade(subtitleTextRef, subtitleText)
   const hasAttention = attentionCount > 0
@@ -137,21 +137,23 @@ export function MobileShellHeader({
       </Button>
 
       <div
-        className="relative flex min-w-0 flex-1 flex-col items-center justify-center self-stretch"
+        className="relative flex min-w-0 flex-1 flex-col items-start justify-center self-stretch"
         data-mobile-header-title=""
       >
+        {/* The title and the subtitle share one left edge, so the subtitle
+            has no side padding. */}
         <h1
           ref={titleRef}
           id="mobile-shell-title"
           tabIndex={-1}
-          className="fade-end pointer-events-none w-full text-center text-[15px] font-medium leading-5 text-foreground focus:outline-none"
+          className="fade-end pointer-events-none w-full text-left text-[15px] font-medium leading-5 text-foreground focus:outline-none"
         >
           {title}
         </h1>
         {isTauriContext() ? (
           <span
             ref={subtitleTextRef}
-            className="fade-end-overflow max-w-full px-1 text-sm leading-[18px] text-muted-foreground"
+            className="fade-end-overflow max-w-full text-sm leading-[18px] text-muted-foreground"
           >
             {subtitleText}
           </span>
@@ -160,7 +162,7 @@ export function MobileShellHeader({
             ref={subtitleRef}
             type="button"
             variant="ghost"
-            className="h-auto max-w-full min-w-0 gap-1 px-1 py-0 text-sm font-normal leading-[18px] text-muted-foreground after:absolute after:inset-0 after:content-[''] [&_svg]:size-3"
+            className="h-auto max-w-full min-w-0 gap-1 px-0 py-0 text-sm font-normal leading-[18px] text-muted-foreground after:absolute after:inset-0 after:content-[''] [&_svg]:size-3"
             aria-label={subtitleLabel}
             aria-haspopup="dialog"
             aria-expanded={projectSheetOpen}

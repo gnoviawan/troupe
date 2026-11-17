@@ -113,8 +113,8 @@ describe('MobileShellHeader', () => {
       expect(heading.id).toBe('mobile-shell-title')
       expect(heading).toHaveAttribute('tabindex', '-1')
       expect(heading.className).toContain('pointer-events-none')
-      // Paper 2.6b: 15/20, a long title fades at the end (full-width, centred).
-      expect(heading).toHaveClass('fade-end', 'w-full', 'text-center', 'text-[15px]', 'leading-5')
+      // Paper 2.6b: 15/20, a long title fades at the end (full-width, left aligned).
+      expect(heading).toHaveClass('fade-end', 'w-full', 'text-left', 'text-[15px]', 'leading-5')
       expect(heading.className).not.toContain('truncate')
       expect(refs.title.current).toBe(heading)
 

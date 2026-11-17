@@ -462,6 +462,9 @@
   }
 
   html {
+    /* Same fill as body: Safari on iOS reads the html background for the
+       area behind its bars. */
+    background-color: oklch(var(--background));
     /* Crisp font rendering on Linux/Wayland (sub-pixel AA off by default) */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -837,6 +840,15 @@
     --text-xs--line-height: calc(24 / 15);
     --text-sm: 0.9375rem;
     --text-sm--line-height: calc(24 / 15);
+  }
+
+  /* Safari on iOS evens out every line of a `text-wrap: pretty` paragraph,
+     so reply lines break well before the right padding and the column
+     looks inset on the right. On a phone the lines fill to the padding,
+     so both sides look the same. Unlayered, so it wins over `.chat-prose`. */
+  .chat-prose,
+  .chat-streamdown {
+    text-wrap: wrap;
   }
 }
 

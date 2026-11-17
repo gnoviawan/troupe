@@ -97,13 +97,13 @@ const SECTION_NAV: ReadonlyArray<{
 const FOOTER_ICON_CLASS = 'h-11 min-w-11 flex-1 rounded-lg'
 
 /**
- * The footer's primary pill (New chat / New terminal / Browse files): a
- * compact 36px pill at the row's end, its ::after hit-slop keeping the
+ * The footer's primary button (New chat / New terminal / Browse files): a
+ * compact 36px button at the row's end, its ::after hit-slop keeping the
  * tappable area at 44px. On a narrow drawer (or enlarged text) it is what
  * gives way: it shrinks and truncates its label, the icons keep 44px.
  */
-const FOOTER_PILL_CLASS =
-  "relative ml-1 min-w-0 gap-1.5 rounded-full px-3.5 text-sm after:absolute after:-inset-1 after:content-['']"
+const FOOTER_PRIMARY_CLASS =
+  "relative ml-1 min-w-0 gap-1.5 px-3.5 text-sm after:absolute after:-inset-1 after:content-['']"
 
 /** The list's accessible name per section; on screen the selected section tab marks the list. */
 const SECTION_HEADINGS: Record<MobileSection, string> = {
@@ -555,7 +555,7 @@ export function MobileShellDrawer({
               <Button
                 type="button"
                 size="sm"
-                className={FOOTER_PILL_CLASS}
+                className={FOOTER_PRIMARY_CLASS}
                 disabled={primaryAction.disabled}
                 onClick={primaryAction.onClick}
               >

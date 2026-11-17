@@ -385,7 +385,7 @@ export function MobileFileExplorer({
           // The row answers a press (a touch has no hover): the fill shows while
           // the open button is held, and the 16px inset puts the icon in the
           // phone gutter.
-          <div className="mx-1 flex h-11 items-center gap-2 rounded-md px-3 transition-colors duration-150 ease-out has-[[data-row-open]:active]:bg-accent">
+          <div className="mx-1 flex h-11 items-center gap-2 rounded-md px-3 transition-colors duration-150 ease-out has-[[data-row-open]:active]:bg-row-hover">
             <button
               type="button"
               data-row-open=""

@@ -70,6 +70,22 @@ export function MobileWorkspaceShell({
           `viewport-fit=cover` the webview extends under the notch; the shell
           root pads by the top inset so the header's 44px buttons clear
           the cutout. Evaluates to 0 on non-notch devices (no extra padding). */}
+      {/* Safari on iOS blurs the page under its bars unless a fixed strip
+          with a solid fill touches that edge; then it extends the strip's
+          fill instead. Without the top strip the blur lands on the header.
+          Safari needs at least 5px of a strip to be visible. Both strips
+          stay inside the shell's top and bottom padding, so they cover no
+          content. Source: joshpuckett.me/seamless-mobile-safari. */}
+      <div
+        aria-hidden="true"
+        data-safari-edge="top"
+        className="pointer-events-none fixed inset-x-0 top-0 z-40 h-[max(5px,env(safe-area-inset-top))] bg-background"
+      />
+      <div
+        aria-hidden="true"
+        data-safari-edge="bottom"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-[max(5px,env(safe-area-inset-bottom))] bg-background"
+      />
       <Suspense fallback={<ShellSkeleton />}>
         <MobileChatShell
           onNewChat={handleOpenAgentChat}

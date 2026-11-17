@@ -19,9 +19,10 @@ const SHEET_ROW_BASE_CLASS_NAME =
 /**
  * A bottom-sheet action row: the `MobileFileExplorer` pattern at the 44px
  * touch floor. A touch has no hover, so the press (`active:`) shows the same
- * fill the pointer hover shows.
+ * fill the pointer hover shows: the desktop chat list's neutral `row-hover`.
+ * `bg-accent` is the blue brand colour, not a row fill.
  */
-export const SHEET_ROW_CLASS_NAME = `${SHEET_ROW_BASE_CLASS_NAME} hover:bg-accent active:bg-accent`
+export const SHEET_ROW_CLASS_NAME = `${SHEET_ROW_BASE_CLASS_NAME} hover:bg-row-hover active:bg-row-hover`
 
 /** The destructive row (Close chat, Delete): red label, red-tinted hover and press. */
 export const SHEET_DESTRUCTIVE_ROW_CLASS_NAME = `${SHEET_ROW_BASE_CLASS_NAME} text-destructive hover:bg-destructive/10 active:bg-destructive/10`
