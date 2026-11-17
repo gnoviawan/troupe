@@ -89,6 +89,15 @@ describe('translucent Rail', () => {
     expect(root.hasAttribute(TRANSLUCENT_RAIL_ATTR)).toBe(false)
   })
 
+  it('resets the window theme on off when only the material failed', async () => {
+    nativeWindow.setEffects.mockRejectedValueOnce(new Error('no effects'))
+    await expect(applyTranslucentRail(true, 'dark')).rejects.toThrow('no effects')
+
+    await applyTranslucentRail(false, 'dark')
+    expect(nativeWindow.clearEffects).not.toHaveBeenCalled()
+    expect(nativeWindow.setTheme).toHaveBeenLastCalledWith(null)
+  })
+
   it('syncs the saved setting and logs a failure', async () => {
     nativeWindow.setEffects.mockRejectedValueOnce(new Error('no effects'))
     loadSettings(true)

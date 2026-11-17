@@ -190,16 +190,22 @@ export const ProjectItem = memo(function ProjectItem({
                 )}
               >
                 {/* Fills the row and fades its last 24px instead of an ellipsis.
-                    On hover and focus it fades out before the actions. */}
+                    Without a diff stat, the actions cover its end on hover and
+                    focus, so it fades out before them. */}
                 <span
-                  className="fade-end min-w-0 flex-1 font-medium text-secondary-foreground transition-colors duration-150 ease-out group-hover:text-foreground group-hover:fade-before-row-actions group-focus-within:fade-before-row-actions"
+                  className={cn(
+                    'fade-end min-w-0 flex-1 font-medium text-secondary-foreground transition-colors duration-150 ease-out group-hover:text-foreground',
+                    !diffStat &&
+                      'group-hover:fade-before-row-actions group-focus-within:fade-before-row-actions'
+                  )}
                   title={project.name}
                 >
                   {project.name}
                 </span>
-                {/* The actions take its place on hover (it keeps its width). */}
+                {/* At least as wide as the actions (44px), so they take its
+                    place on hover and never cover the name. */}
                 {diffStat && (
-                  <span className="flex shrink-0 group-hover:invisible group-focus-within:invisible">
+                  <span className="flex min-w-11 shrink-0 justify-end group-hover:invisible group-focus-within:invisible">
                     <ProjectDiffStat stat={diffStat} />
                   </span>
                 )}

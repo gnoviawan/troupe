@@ -856,6 +856,12 @@ describe('ProjectSidebar rail rows', () => {
     expect(actions).toHaveClass('absolute', 'hidden', 'group-hover:flex', 'group-focus-within:flex')
     expect(actions).toContainElement(within(row).getByLabelText('Settings for Project Two'))
     expect(actions.parentElement).toContainElement(stat)
+    // The stat slot is at least as wide as the actions, so they cover only
+    // the stat and the name needs no hover fade.
+    expect(stat.parentElement).toHaveClass('min-w-11', 'justify-end', 'group-hover:invisible')
+    expect(within(row).getByTitle('Project Two')).not.toHaveClass(
+      'group-hover:fade-before-row-actions'
+    )
   })
 
   it('shows one side only for a one-sided stat and nothing for a clean tree', () => {

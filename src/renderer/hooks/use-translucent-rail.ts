@@ -20,6 +20,9 @@ export function isTranslucentRailSupported(): boolean {
   return isTauriContext() && isMac
 }
 
+// Tracked apart: `setTheme` can succeed while `setEffects` then fails, and
+// the theme override applies to the whole app, so off must still undo it.
+let themeApplied = false
 let effectsApplied = false
 let queue: Promise<void> = Promise.resolve()
 
@@ -41,6 +44,7 @@ export function applyTranslucentRail(
     const window = getCurrentWindow()
     if (enabled) {
       await window.setTheme(appearance)
+      themeApplied = true
       await window.setEffects({
         effects: [Effect.Sidebar],
         state: EffectState.FollowsWindowActiveState
@@ -50,10 +54,14 @@ export function applyTranslucentRail(
       return
     }
     root.removeAttribute(TRANSLUCENT_RAIL_ATTR)
-    if (!effectsApplied) return
-    await window.clearEffects()
-    await window.setTheme(null)
-    effectsApplied = false
+    if (effectsApplied) {
+      await window.clearEffects()
+      effectsApplied = false
+    }
+    if (themeApplied) {
+      await window.setTheme(null)
+      themeApplied = false
+    }
   })
   queue = update.catch(() => {})
   return update
