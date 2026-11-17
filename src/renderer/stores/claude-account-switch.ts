@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import { runningBackgroundCommands } from '@/components/chat/background-commands'
 import { ownChatAccountId } from '@/components/chat/claude-account/use-project-claude-account'
 import { runningBackgroundSubagents } from '@/components/chat/subagent-strip'
-import { acpApi } from '@/lib/acp-api'
+import { acpApi, type ContentBlock } from '@/lib/acp-api'
 import { resumeMissesSession } from '@/lib/acp-resume-policy'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
 import { logFrontendError } from '@/lib/log-api'
@@ -23,7 +23,6 @@ import {
   BACKGROUND_SUBAGENTS_BLOCK_REASON,
   historyOpenInFlight,
   isBackgroundWorkBlock,
-  lastOwnUserPromptBlocks,
   renewAgentCredentials,
   runsCurrentLaunch,
   switchBlockedReason,
@@ -124,22 +123,32 @@ function waitUntilIdle(sessionId: string, ignoreBackground: boolean): Promise<bo
  * may not share `projects`): continue the chat in a new session that starts
  * from a summary, the same handoff as an agent switch (ADR-0004 fallback).
  */
-async function continueInNewSession(sessionId: string, resend: boolean): Promise<void> {
+async function continueInNewSession(sessionId: string, notice: string | undefined): Promise<void> {
   void logFrontendError({
     level: 'warn',
     source: 'claudeAccountSwitch.handoff',
-    message: `The account cannot resume chat ${sessionId}; continuing in a new session (resend=${resend})`
+    message: `The account cannot resume chat ${sessionId}; continuing in a new session (notice=${notice !== undefined})`
   })
   toast.info('This account could not resume the chat', {
     description: 'The chat continues in a new session that starts from a summary.'
   })
-  const store = useAcpStore.getState()
-  const blocks = resend ? lastOwnUserPromptBlocks(store.messages[sessionId] ?? []) : null
-  await store.switchAgent(
-    sessionId,
-    CLAUDE_AGENT_CONFIG_ID,
-    blocks ? { wireBlocks: blocks, displayBlocks: blocks } : undefined
-  )
+  const blocks: ContentBlock[] | null = notice ? [{ type: 'text', text: notice }] : null
+  await useAcpStore
+    .getState()
+    .switchAgent(
+      sessionId,
+      CLAUDE_AGENT_CONFIG_ID,
+      blocks ? { wireBlocks: blocks, displayBlocks: blocks } : undefined
+    )
+}
+
+/**
+ * The prompt a chat that a person moved off an Account at its limit continues
+ * with, worded like the host's own switch notice. Sending the last prompt
+ * again would make the agent answer it twice.
+ */
+export function chatSwitchNotice(from: string, to: string, window: string): string {
+  return `You moved this chat from Claude account ${from} to ${to} because ${from} reached its ${window} limit. Continue the task you were working on. Subagents and background commands that were running before the switch were stopped; restart the ones that are still needed.`
 }
 
 /** Chats with a restart already running or waiting, so a second switch does not stack. */
@@ -147,13 +156,13 @@ const restarting = new Set<string>()
 
 /**
  * Restart one Claude chat on the Account it resolves to now (its own, else its
- * Project's) and resume the same session. `resend` sends the last user prompt
- * again; `cancelTurn` stops a turn that is still held (a usage limit can keep
- * a turn open until reset).
+ * Project's) and resume the same session. `notice` is sent as a new prompt
+ * once the chat runs again; `cancelTurn` stops a turn that is still held (a
+ * usage limit can keep a turn open until reset).
  */
 export async function restartClaudeSession(
   sessionId: string,
-  options: { resend?: boolean; cancelTurn?: boolean } = {}
+  options: { notice?: string; cancelTurn?: boolean } = {}
 ): Promise<boolean> {
   if (restarting.has(sessionId)) return false
   restarting.add(sessionId)
@@ -199,7 +208,7 @@ export async function restartClaudeSession(
     void logFrontendError({
       level: 'info',
       source: 'claudeAccountSwitch.restart',
-      message: `Restarting chat ${sessionId} on its account (resend=${Boolean(options.resend)}, shared agent=${shared})`
+      message: `Restarting chat ${sessionId} on its account (notice=${options.notice !== undefined}, shared agent=${shared})`
     })
     // Release the old process first so a web reopen cannot adopt it. Other
     // chats on a shared process may run another Account, so it keeps running
@@ -214,13 +223,14 @@ export async function restartClaudeSession(
         .killAgent(oldAgentId)
         .catch(() => undefined)
     }
-    const resend = options.resend ?? false
+    let handedOff = false
     try {
-      await useAcpStore.getState().retryCrashedSession(sessionId, { resend })
+      await useAcpStore.getState().retryCrashedSession(sessionId, { resend: false })
     } catch (error) {
       const stopped = useAcpStore.getState().sessions[sessionId]?.status === 'closed'
       if (!stopped || !resumeMissesSession(error)) throw error
-      await continueInNewSession(sessionId, resend)
+      await continueInNewSession(sessionId, options.notice)
+      handedOff = true
     } finally {
       if (shared) reloadInFlight.delete(sessionId)
     }
@@ -230,7 +240,11 @@ export async function restartClaudeSession(
       const { rateLimit: _cleared, ...rest } = usage
       return { sessionUsage: { ...s.sessionUsage, [sessionId]: rest } }
     })
-    return useAcpStore.getState().sessions[sessionId]?.status === 'active'
+    const active = useAcpStore.getState().sessions[sessionId]?.status === 'active'
+    if (active && options.notice && !handedOff) {
+      await useAcpStore.getState().sendPrompt(sessionId, options.notice)
+    }
+    return active
   } catch (error) {
     void logFrontendError({
       level: 'warn',
@@ -280,18 +294,16 @@ async function restartAfterReopen(sessionId: string, projectId: string): Promise
  * Restart every open Claude chat of a Project after its Account changed: a
  * chat with a tab, or one kept for its Project while that Project is off
  * screen. A chat with its own Account keeps running, and so does its agent.
- * `continueSessionIds` are the chats that hit a limit: their held turns are
- * cancelled and their last prompts are sent again. Other busy chats restart in the
- * background when their turn ends. An unopened chat (a warm-pool seed, or a
+ * Busy chats restart in the background when their turn ends. An unopened chat (a warm-pool seed, or a
  * chat whose tab was closed) is not reopened; its agent stops, after the
  * running turn if there is one, unless an open chat shares it. The Project's
  * Claude warm sessions are prepared again on the new Account. Resolves when
- * the idle chats restarted, with the `continueSessionIds` that did continue.
+ * the idle chats restarted.
  */
 export async function applyProjectClaudeAccount(
   projectId: string,
-  options: { continueSessionIds?: readonly string[]; credentialsRenewed?: boolean } = {}
-): Promise<string[]> {
+  options: { credentialsRenewed?: boolean } = {}
+): Promise<void> {
   if (!options.credentialsRenewed) renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, projectId)
   const ownAccount = await chatsWithOwnAccount(projectId)
   const state = useAcpStore.getState()
@@ -321,7 +333,6 @@ export async function applyProjectClaudeAccount(
     message: `Project ${projectId} account changed; leaving ${projectChats.length - chats.length} chats with their own account, restarting ${open.length} open Claude chats, stopping ${idleAgents.size} agents of unopened chats now (${unopened.filter((s) => warm.has(s.id)).length} warm-pool) and ${busy.length} after their turn, preparing ${rewarmCwds.size} warm sessions again`
   })
   const now: Promise<unknown>[] = []
-  const continued: string[] = []
   for (const agentId of idleAgents) now.push(stopOldAgent(agentId, 'chat not open'))
   for (const { id, agentId } of busy) {
     void logFrontendError({
@@ -340,20 +351,10 @@ export async function applyProjectClaudeAccount(
       .prepareChat(CLAUDE_AGENT_CONFIG_ID, cwd, undefined, projectId, { silent: true })
   }
   for (const { id } of open) {
-    if (options.continueSessionIds?.includes(id)) {
-      now.push(
-        restartClaudeSession(id, { resend: true, cancelTurn: true }).then((ok) => {
-          if (ok) continued.push(id)
-        })
-      )
-    } else if (switchBlockedReason(state, id) === null) {
-      now.push(restartClaudeSession(id))
-    } else {
-      void restartClaudeSession(id)
-    }
+    if (switchBlockedReason(state, id) === null) now.push(restartClaudeSession(id))
+    else void restartClaudeSession(id)
   }
   await Promise.all(now)
-  return continued
 }
 
 /**
@@ -362,43 +363,48 @@ export async function applyProjectClaudeAccount(
  * host write, so a chat started during the switch never lands on the old
  * Account. With `expectedAccountId` the host applies the choice only while
  * the Project still uses that Account; when another client switched first,
- * nothing restarts and this resolves `null`. Otherwise it resolves with the
- * `continueSessionIds` that did continue.
+ * nothing restarts and this resolves `false`.
  */
 export async function switchProjectClaudeAccount(
   projectId: string,
   accountId: string | null,
-  options: { continueSessionIds?: readonly string[]; expectedAccountId?: string } = {}
-): Promise<string[] | null> {
+  options: { expectedAccountId?: string } = {}
+): Promise<boolean> {
   renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, projectId)
   const applied = await claudeAccountsApi.setProjectAccount(projectId, accountId, {
     expectedAccountId: options.expectedAccountId
   })
-  if (!applied) return null
-  return applyProjectClaudeAccount(projectId, {
-    continueSessionIds: options.continueSessionIds,
-    credentialsRenewed: true
-  })
+  if (!applied) return false
+  await applyProjectClaudeAccount(projectId, { credentialsRenewed: true })
+  return true
 }
+
+/**
+ * What a chat account choice did: `unchanged` (the chat already runs that
+ * Account; nothing written), `kept` (the choice changed but resolves to the
+ * Account the chat runs, so it keeps its agent), `lost` (another client or
+ * the host moved the chat first; nothing restarted), `restarted` or
+ * `failed` (the restart ran), or `pending` (a busy chat restarts after its
+ * turn).
+ */
+export type ChatAccountSwitch = 'unchanged' | 'kept' | 'lost' | 'restarted' | 'failed' | 'pending'
 
 /**
  * Choose a chat's own Account on the host (`null`: follow its Project again),
  * then restart only that chat on it. Its Project and other chats keep their
- * Account. With `expectedAccountId` the host applies the choice only while
- * the chat still resolves to that Account; when another client or the host
- * switched first, nothing restarts and this resolves `null`. `continueTurn`
- * cancels a held turn and sends the last prompt again. Resolves whether the
- * chat continued; a busy chat restarts after its turn, unawaited, and
- * resolves `false`.
+ * Account. The host applies the choice only while the chat still runs on
+ * `chat.runsOn`. With `notice`, a held turn is cancelled and the chat
+ * continues with that prompt.
  */
 export async function switchChatClaudeAccount(
-  sessionId: string,
-  projectId: string,
+  chat: { sessionId: string; projectId: string; runsOn: string; projectAccountId: string },
   accountId: string | null,
-  options: { expectedAccountId?: string; continueTurn?: boolean } = {}
-): Promise<boolean | null> {
+  options: { notice?: string } = {}
+): Promise<ChatAccountSwitch> {
+  const { sessionId, projectId, runsOn } = chat
+  if (accountId === runsOn) return 'unchanged'
   const applied = await claudeAccountsApi.setChatAccount(projectId, sessionId, accountId, {
-    expectedAccountId: options.expectedAccountId
+    expectedAccountId: runsOn
   })
   if (!applied) {
     void logFrontendError({
@@ -406,8 +412,9 @@ export async function switchChatClaudeAccount(
       source: 'claudeAccountSwitch.chat',
       message: `Chat ${sessionId} account changed elsewhere first; not restarting it`
     })
-    return null
+    return 'lost'
   }
+  if ((accountId ?? chat.projectAccountId) === runsOn) return 'kept'
   void logFrontendError({
     level: 'info',
     source: 'claudeAccountSwitch.chat',
@@ -416,9 +423,11 @@ export async function switchChatClaudeAccount(
   const idle = switchBlockedReason(useAcpStore.getState(), sessionId) === null
   const restart = restartClaudeSession(
     sessionId,
-    options.continueTurn ? { resend: true, cancelTurn: true } : {}
+    options.notice ? { notice: options.notice, cancelTurn: true } : {}
   )
-  if (options.continueTurn || idle) return restart
-  void restart
-  return false
+  if (!options.notice && !idle) {
+    void restart
+    return 'pending'
+  }
+  return (await restart) ? 'restarted' : 'failed'
 }

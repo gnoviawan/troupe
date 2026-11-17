@@ -5,7 +5,7 @@ import { create } from 'zustand'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
 import { formatUsageReset } from '@/lib/claude-usage-format'
-import { switchChatClaudeAccount } from '@/stores/claude-account-switch'
+import { chatSwitchNotice, switchChatClaudeAccount } from '@/stores/claude-account-switch'
 import { useClaudeResumeAt } from './limit-actions'
 import { type ChatClaudeAccount, useChatClaudeAccount } from './use-chat-claude-account'
 import type { AccountChoice } from './use-project-claude-account'
@@ -78,18 +78,23 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
   const projectId = ctx.projectId
   // The compare-and-set expects the Account the chat resolves to, which may be its own.
   const currentId = ctx.current.account.id
+  const currentName = ctx.current.account.name
+  const projectAccountId = ctx.projectAccount.id
   const reloadAccounts = ctx.accounts.reload
   async function switchTo(target: AccountChoice): Promise<void> {
     if (useClaudeSwitchingStore.getState()[sessionId]) return
     setSwitchingTo(sessionId, target.account.name)
     if (resumeAt !== null) void claudeAccountsApi.setResume(sessionId, null).catch(() => undefined)
     try {
-      const continued = await switchChatClaudeAccount(sessionId, projectId, target.account.id, {
-        expectedAccountId: currentId,
-        continueTurn: limit.status === 'rejected'
-      })
+      const moved = await switchChatClaudeAccount(
+        { sessionId, projectId, runsOn: currentId, projectAccountId },
+        target.account.id,
+        limit.status === 'rejected'
+          ? { notice: chatSwitchNotice(currentName, target.account.name, windowName(limit)) }
+          : {}
+      )
       await reloadAccounts()
-      if (continued === null) {
+      if (moved === 'lost') {
         toast.info('The account of this chat already changed', {
           description: 'Troupe or another device switched it first.'
         })

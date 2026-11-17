@@ -66,7 +66,16 @@ const { host, openTabs } = vi.hoisted(() => ({
   }
 }))
 vi.mock('@/lib/claude-accounts-api', () => ({
-  claudeAccountsApi: { setProjectAccount: host.setProjectAccount }
+  claudeAccountsApi: {
+    setProjectAccount: host.setProjectAccount,
+    list: async () => ({
+      accounts: [],
+      defaultAccountId: 'personal',
+      projectAccounts: { office: host.projectAccount },
+      chatAccounts: {},
+      autoSwitch: true
+    })
+  }
 }))
 
 import type { ChatMessage } from '@/lib/acp-api'

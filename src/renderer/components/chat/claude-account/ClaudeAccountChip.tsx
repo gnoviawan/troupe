@@ -56,7 +56,8 @@ interface AccountScope {
   /** The chat runs its own Account, not its Project's. */
   chatOnly: boolean
   /** Apply the choice and resolve the success message. */
-  choose: (accountId: string | null, next: ClaudeAccountView | undefined) => Promise<string>
+  /** Resolves the toast to show, or `null` when nothing changed. */
+  choose: (accountId: string | null, next: ClaudeAccountView | undefined) => Promise<string | null>
 }
 
 /**
@@ -76,7 +77,17 @@ export function ClaudeAccountChip({ sessionId }: { sessionId: string }): React.J
         chosenId: ctx.ownAccount ? ctx.current.account.id : null,
         chatOnly: ctx.ownAccount,
         choose: async (accountId, next) => {
-          await switchChatClaudeAccount(sessionId, ctx.projectId, accountId)
+          const moved = await switchChatClaudeAccount(
+            {
+              sessionId,
+              projectId: ctx.projectId,
+              runsOn: ctx.current.account.id,
+              projectAccountId: ctx.projectAccount.id
+            },
+            accountId
+          )
+          if (moved === 'unchanged') return null
+          if (moved === 'lost') return 'The account of this chat already changed'
           if (accountId === null) return 'This chat follows the project again'
           return next ? `This chat now uses ${next.name}` : 'Account changed'
         }
@@ -148,7 +159,7 @@ function AccountChip({
     try {
       const message = await scope.choose(accountId, next)
       await ctx.accounts.reload()
-      toast.success(message)
+      if (message) toast.success(message)
     } catch (err) {
       toastAccountChoiceError(err, 'Could not switch the account')
       void ctx.accounts.reload()

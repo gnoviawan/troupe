@@ -117,7 +117,7 @@ beforeEach(() => {
   })
   api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 40)])
   switcher.switchProjectClaudeAccount.mockResolvedValue(undefined)
-  switcher.switchChatClaudeAccount.mockResolvedValue(true)
+  switcher.switchChatClaudeAccount.mockResolvedValue('restarted')
   api.setResume.mockResolvedValue(undefined)
 })
 
@@ -154,17 +154,21 @@ describe('ClaudeLimitNotice', () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Switch and continue' }))
     await waitFor(() =>
-      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith('s1', 'office', 'ab12', {
-        expectedAccountId: 'default',
-        continueTurn: true
-      })
+      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
+        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        'ab12',
+        {
+          notice:
+            'You moved this chat from Claude account Personal to Work because Personal reached its 5-hour limit. Continue the task you were working on. Subagents and background commands that were running before the switch were stopped; restart the ones that are still needed.'
+        }
+      )
     )
     expect(switcher.switchProjectClaudeAccount).not.toHaveBeenCalled()
     expect(toast.success).toHaveBeenCalledWith('Switched to Work')
   })
 
   it('leaves a chat the host already moved, and says so', async () => {
-    switcher.switchChatClaudeAccount.mockResolvedValue(null)
+    switcher.switchChatClaudeAccount.mockResolvedValue('lost')
     seed(limit('rejected', 100))
     render(<ClaudeLimitNotice sessionId="s1" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Switch and continue' }))
@@ -261,10 +265,11 @@ describe('ClaudeLimitWarning', () => {
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: /work/i }))
     await waitFor(() =>
-      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith('s1', 'office', 'ab12', {
-        expectedAccountId: 'default',
-        continueTurn: false
-      })
+      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
+        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        'ab12',
+        {}
+      )
     )
   })
 
@@ -382,7 +387,10 @@ describe('ClaudeAccountChip', () => {
     expect(ticked(follow)).toBe(true)
     fireEvent.click(screen.getByRole('menuitem', { name: /Work/ }))
     await waitFor(() =>
-      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith('s1', 'office', 'ab12')
+      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
+        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        'ab12'
+      )
     )
     expect(switcher.switchProjectClaudeAccount).not.toHaveBeenCalled()
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('This chat now uses Work'))
@@ -422,12 +430,27 @@ describe('ClaudeAccountChip', () => {
     fireEvent.click(follow)
     await waitFor(() =>
       expect(api.setChatAccount).toHaveBeenCalledWith('office', 's1', null, {
-        expectedAccountId: undefined
+        expectedAccountId: 'cd34'
       })
     )
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith('This chat follows the project again')
     )
+  })
+
+  it('writes nothing when the account picked is the one the chat already runs', async () => {
+    const actual = await vi.importActual<typeof import('@/stores/claude-account-switch')>(
+      '@/stores/claude-account-switch'
+    )
+    switcher.switchChatClaudeAccount.mockImplementation(actual.switchChatClaudeAccount)
+    seed()
+    render(<ClaudeAccountChip sessionId="s1" />)
+    await openMenu()
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Personal/ }))
+    await waitFor(() => expect(switcher.switchChatClaudeAccount).toHaveBeenCalledTimes(1))
+    await expect(switcher.switchChatClaudeAccount.mock.results[0]?.value).resolves.toBe('unchanged')
+    expect(api.setChatAccount).not.toHaveBeenCalled()
+    expect(toast.success).not.toHaveBeenCalled()
   })
 
   it('adds a weekly window only once it nears its limit', async () => {
@@ -520,7 +543,10 @@ describe('ClaudeAccountChip', () => {
     fireEvent.click(work)
     fireEvent.click(screen.getByRole('menuitem', { name: /Side/ }))
     await waitFor(() =>
-      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith('s1', 'office', 'cd34')
+      expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
+        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        'cd34'
+      )
     )
     expect(switcher.switchChatClaudeAccount).toHaveBeenCalledTimes(1)
   })

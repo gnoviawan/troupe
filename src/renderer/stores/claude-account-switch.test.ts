@@ -20,6 +20,7 @@ import {
 import {
   applyProjectClaudeAccount,
   CLAUDE_AGENT_CONFIG_ID,
+  chatSwitchNotice,
   isClaudeSession,
   restartClaudeSession,
   switchChatClaudeAccount,
@@ -51,6 +52,7 @@ const realKillAgent = useAcpStore.getState().killAgent
 const killAgent = vi.fn()
 const retryCrashedSession = vi.fn()
 const cancelPrompt = vi.fn()
+const sendPrompt = vi.fn()
 
 const session = (id: string, o: { projectId?: string; agentId?: string; busy?: boolean } = {}) => ({
   id,
@@ -109,6 +111,7 @@ beforeEach(() => {
   openChatTabs(['c1', 'c2', 'other', 'elsewhere'])
   killAgent.mockResolvedValue(undefined)
   retryCrashedSession.mockResolvedValue(undefined)
+  sendPrompt.mockResolvedValue(undefined)
   cancelPrompt.mockImplementation(async (id: string) => {
     useAcpStore.setState((s) => ({
       sessions: { ...s.sessions, [id]: { ...s.sessions[id], activeTurn: false, openTurnId: null } }
@@ -122,6 +125,7 @@ beforeEach(() => {
     killAgent,
     retryCrashedSession,
     cancelPrompt,
+    sendPrompt,
     sessions: {
       c1: session('c1'),
       c2: session('c2', { busy: true }),
@@ -228,10 +232,11 @@ describe('claude account switch', () => {
     })
 
     it('does not wait for it when continuing after a limit', async () => {
-      await expect(restartClaudeSession('c1', { resend: true, cancelTurn: true })).resolves.toBe(
+      await expect(restartClaudeSession('c1', { notice: 'go on', cancelTurn: true })).resolves.toBe(
         true
       )
-      expect(retryCrashedSession).toHaveBeenCalledWith('c1', { resend: true })
+      expect(retryCrashedSession).toHaveBeenCalledWith('c1', { resend: false })
+      expect(sendPrompt.mock.calls).toEqual([['c1', 'go on']])
     })
   })
 
@@ -284,31 +289,32 @@ describe('claude account switch', () => {
 
     it('does not wait for it when continuing after a limit, like a subagent', async () => {
       setCommands('running')
-      await expect(restartClaudeSession('c1', { resend: true, cancelTurn: true })).resolves.toBe(
+      await expect(restartClaudeSession('c1', { notice: 'go on', cancelTurn: true })).resolves.toBe(
         true
       )
       expect(killAgent).toHaveBeenCalledWith('agent-c1')
     })
   })
 
-  it('cancels a held turn and resends when continuing after a limit', async () => {
-    await restartClaudeSession('c2', { resend: true, cancelTurn: true })
+  it('cancels a held turn and continues with the notice, never the last prompt again', async () => {
+    await restartClaudeSession('c2', {
+      notice: chatSwitchNotice('Work', 'Spare', '5-hour'),
+      cancelTurn: true
+    })
     expect(cancelPrompt).toHaveBeenCalledWith('c2')
-    expect(retryCrashedSession).toHaveBeenCalledWith('c2', { resend: true })
+    expect(retryCrashedSession.mock.calls).toEqual([['c2', { resend: false }]])
+    expect(sendPrompt.mock.calls).toEqual([
+      [
+        'c2',
+        'You moved this chat from Claude account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on. Subagents and background commands that were running before the switch were stopped; restart the ones that are still needed.'
+      ]
+    ])
   })
 
-  it('restarts only the Claude chats of the project, continuing the one that hit the limit', async () => {
-    await expect(
-      applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
-    ).resolves.toEqual(['c2'])
-    const restarted = retryCrashedSession.mock.calls.map(([id, o]) => [id, o.resend])
-    expect(restarted).toEqual(
-      expect.arrayContaining([
-        ['c1', false],
-        ['c2', true]
-      ])
-    )
-    expect(restarted).toHaveLength(2)
+  it('restarts only the idle Claude chats of the project now', async () => {
+    await applyProjectClaudeAccount('office')
+    expect(retryCrashedSession.mock.calls).toEqual([['c1', { resend: false }]])
+    expect(sendPrompt).not.toHaveBeenCalled()
   })
 
   it('does not reopen a busy chat whose tab closed while it waited', async () => {
@@ -322,7 +328,7 @@ describe('claude account switch', () => {
   })
 
   it('saves the project account on the host before restarting', async () => {
-    await expect(switchProjectClaudeAccount('office', 'ab12')).resolves.toEqual([])
+    await expect(switchProjectClaudeAccount('office', 'ab12')).resolves.toBe(true)
     expect(api.setProjectAccount).toHaveBeenCalledWith('office', 'ab12', {
       expectedAccountId: undefined
     })
@@ -483,16 +489,17 @@ describe('claude account switch when the new account cannot resume the session',
     expect(state.configToLiveAgent[liveKey]).toBe('agent-new')
   })
 
-  it('sends the held prompt again in the new session when continuing after a limit', async () => {
+  it('sends the notice in the new session when continuing after a limit', async () => {
     failReopenWith(new AcpTransportError('not_found', 'Resource not found: {"uri": "c1"}'))
 
-    await restartClaudeSession('c1', { resend: true })
+    await restartClaudeSession('c1', { notice: 'go on' })
 
-    expect(retryCrashedSession).toHaveBeenCalledWith('c1', { resend: true })
+    expect(retryCrashedSession).toHaveBeenCalledWith('c1', { resend: false })
     const [, sessionId, wire, , display] = vi.mocked(acpApi.sendPromptBlocks).mock.calls[0]
     expect(sessionId).toBe('s-new')
-    expect(wire.slice(1)).toEqual([{ type: 'text', text: 'fix the login bug' }])
-    expect(display).toEqual([{ type: 'text', text: 'fix the login bug' }])
+    expect(wire.slice(1)).toEqual([{ type: 'text', text: 'go on' }])
+    expect(display).toEqual([{ type: 'text', text: 'go on' }])
+    expect(sendPrompt).not.toHaveBeenCalled()
   })
 
   it('keeps the chat stopped when the reopen fails for another reason', async () => {
@@ -530,11 +537,8 @@ describe('a switch the host refuses', () => {
     const before = useAcpStore.getState().sessions
     api.setProjectAccount.mockResolvedValue(false)
     await expect(
-      switchProjectClaudeAccount('office', 'ab12', {
-        continueSessionIds: ['c1'],
-        expectedAccountId: 'default'
-      })
-    ).resolves.toBeNull()
+      switchProjectClaudeAccount('office', 'ab12', { expectedAccountId: 'default' })
+    ).resolves.toBe(false)
     expect(api.setProjectAccount).toHaveBeenCalledWith('office', 'ab12', {
       expectedAccountId: 'default'
     })
@@ -545,12 +549,17 @@ describe('a switch the host refuses', () => {
 })
 
 describe('a chat with its own account', () => {
+  const c1 = {
+    sessionId: 'c1',
+    projectId: 'office',
+    runsOn: 'default',
+    projectAccountId: 'default'
+  }
+
   it('restarts nothing when the chat account changed elsewhere first', async () => {
     const before = useAcpStore.getState().sessions
     api.setChatAccount.mockResolvedValue(false)
-    await expect(
-      switchChatClaudeAccount('c1', 'office', 'work', { expectedAccountId: 'default' })
-    ).resolves.toBeNull()
+    await expect(switchChatClaudeAccount(c1, 'work')).resolves.toBe('lost')
     expect(api.setChatAccount).toHaveBeenCalledWith('office', 'c1', 'work', {
       expectedAccountId: 'default'
     })
@@ -559,11 +568,39 @@ describe('a chat with its own account', () => {
     expect(useAcpStore.getState().sessions).toBe(before)
   })
 
+  it('writes and restarts nothing when the chat already runs the account picked', async () => {
+    await expect(switchChatClaudeAccount(c1, 'default')).resolves.toBe('unchanged')
+    expect(api.setChatAccount).not.toHaveBeenCalled()
+    expect(killAgent).not.toHaveBeenCalled()
+    expect(retryCrashedSession).not.toHaveBeenCalled()
+  })
+
+  it('keeps its agent when following the project lands on the account it runs', async () => {
+    await expect(
+      switchChatClaudeAccount({ ...c1, runsOn: 'work', projectAccountId: 'work' }, null)
+    ).resolves.toBe('kept')
+    expect(api.setChatAccount).toHaveBeenCalledWith('office', 'c1', null, {
+      expectedAccountId: 'work'
+    })
+    expect(killAgent).not.toHaveBeenCalled()
+    expect(retryCrashedSession).not.toHaveBeenCalled()
+  })
+
   it('restarts only that chat on its new account', async () => {
-    await expect(switchChatClaudeAccount('c1', 'office', 'work')).resolves.toBe(true)
+    await expect(switchChatClaudeAccount(c1, 'work')).resolves.toBe('restarted')
     expect(api.setProjectAccount).not.toHaveBeenCalled()
     expect(killAgent.mock.calls).toEqual([['agent-c1']])
     expect(retryCrashedSession.mock.calls).toEqual([['c1', { resend: false }]])
+    expect(sendPrompt).not.toHaveBeenCalled()
+  })
+
+  it('continues a chat at its limit with the notice', async () => {
+    await expect(
+      switchChatClaudeAccount({ ...c1, sessionId: 'c2' }, 'work', { notice: 'go on' })
+    ).resolves.toBe('restarted')
+    expect(cancelPrompt).toHaveBeenCalledWith('c2')
+    expect(retryCrashedSession.mock.calls).toEqual([['c2', { resend: false }]])
+    expect(sendPrompt.mock.calls).toEqual([['c2', 'go on']])
   })
 
   it('closes only its session when other chats run on the same agent', async () => {
@@ -575,31 +612,39 @@ describe('a chat with its own account', () => {
         c2: { ...s.sessions.c2, agentId: 'agent-shared' }
       }
     }))
-    await expect(switchChatClaudeAccount('c1', 'office', null)).resolves.toBe(true)
+    await expect(switchChatClaudeAccount({ ...c1, runsOn: 'work' }, null)).resolves.toBe(
+      'restarted'
+    )
     expect(closeSession).toHaveBeenCalledWith('agent-shared', 'c1')
     expect(killAgent).not.toHaveBeenCalled()
     expect(retryCrashedSession.mock.calls).toEqual([['c1', { resend: false }]])
     closeSession.mockRestore()
   })
 
-  it('is left alone when its project account changes', async () => {
-    api.list.mockResolvedValue(accounts({ c1: 'work' }))
-    await expect(
-      applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
-    ).resolves.toEqual(['c2'])
-    expect(retryCrashedSession.mock.calls.map(([id]) => id)).toEqual(['c2'])
-    expect(killAgent.mock.calls).toEqual([['agent-c2']])
-  })
+  describe('when its project account changes', () => {
+    beforeEach(() => {
+      useAcpStore.setState((s) => ({
+        sessions: { ...s.sessions, c2: { ...s.sessions.c2, activeTurn: false, openTurnId: null } }
+      }))
+    })
 
-  it('follows its project when its own account no longer exists', async () => {
-    api.list.mockResolvedValue(accounts({ c1: 'gone' }))
-    await applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
-    expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
-  })
+    it('is left alone', async () => {
+      api.list.mockResolvedValue(accounts({ c1: 'work' }))
+      await applyProjectClaudeAccount('office')
+      expect(retryCrashedSession.mock.calls.map(([id]) => id)).toEqual(['c2'])
+      expect(killAgent.mock.calls).toEqual([['agent-c2']])
+    })
 
-  it('restarts every chat of the project when the accounts cannot be listed', async () => {
-    api.list.mockRejectedValue(new Error('offline'))
-    await applyProjectClaudeAccount('office', { continueSessionIds: ['c2'] })
-    expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
+    it('follows its project when its own account no longer exists', async () => {
+      api.list.mockResolvedValue(accounts({ c1: 'gone' }))
+      await applyProjectClaudeAccount('office')
+      expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
+    })
+
+    it('restarts every chat of the project when the accounts cannot be listed', async () => {
+      api.list.mockRejectedValue(new Error('offline'))
+      await applyProjectClaudeAccount('office')
+      expect(retryCrashedSession.mock.calls.map(([id]) => id).sort()).toEqual(['c1', 'c2'])
+    })
   })
 })
