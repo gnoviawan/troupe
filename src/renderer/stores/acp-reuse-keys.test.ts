@@ -4,7 +4,8 @@ import {
   configIdFromReuseKey,
   detachedReuseKey,
   isDetachedReuseKey,
-  parseReuseKey
+  parseReuseKey,
+  reuseScopeFor
 } from './acp-reuse-keys'
 
 describe('agentReuseKey / configIdFromReuseKey', () => {
@@ -125,5 +126,16 @@ describe('parseReuseKey', () => {
   it('omits the chat segment when the chat id is blank', () => {
     expect(agentReuseKey('cfg-1', '/work', 'p1', ' ')).toBe('cfg-1\0/work\0project\0p1')
     expect(agentReuseKey('cfg-1', '/work', 'p1', null)).toBe('cfg-1\0/work\0project\0p1')
+  })
+})
+
+describe('reuseScopeFor', () => {
+  it('keys a chat on its own account to the chat, and one that follows its project to none', () => {
+    expect(reuseScopeFor('s1', 'work')).toBe('s1')
+    expect(reuseScopeFor('s1', null)).toBeUndefined()
+  })
+
+  it('keys a chat whose account could not be read to the chat', () => {
+    expect(reuseScopeFor('s1', undefined)).toBe('s1')
   })
 })

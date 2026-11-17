@@ -3,10 +3,11 @@
  *
  * A canonical key is `configId\0cwd`, followed by two optional marker pairs:
  * `\0project\0projectId` for a Project-scoped key and `\0chat\0chatId` for
- * an agent opened for one existing chat (see {@link agentReuseKey}). A chat key
- * is live, not detached, but a new chat or warm session never looks it up
- * because those build their key without a chat. The markers keep these keys
- * distinct from a detached key, which appends one more segment, the agent id
+ * an agent opened for one existing chat that runs its own Claude Account (see
+ * {@link agentReuseKey}). A chat key is live, not detached, but a new chat or
+ * warm session never looks it up because those build their key without a chat.
+ * The markers keep these keys distinct from a detached key, which appends one
+ * more segment, the agent id
  * (`configId\0cwd[\0project\0projectId][\0chat\0chatId]\0agentId`), to keep
  * a superseded agent process resolvable for live chat history, model changes,
  * and cleanup, while guaranteeing the key is NEVER reused for a new chat
@@ -43,9 +44,9 @@ const CHAT_SEGMENT = 'chat'
  * project after an account switch, so a process spawned on the old home is
  * not reused.
  *
- * `chatId` names the existing chat the agent was opened for. That agent
- * belongs to the chat (a chat may run its own Claude Account), so no other
- * chat or warm session reuses it.
+ * `chatId` names the existing chat the agent was opened for when that chat
+ * runs its own Claude Account ({@link reuseScopeFor}). That agent belongs to
+ * the chat, so no other chat or warm session reuses it.
  */
 export function agentReuseKey(
   configId: string,
@@ -59,6 +60,22 @@ export function agentReuseKey(
   const chat = chatId?.trim() ?? ''
   if (chat.length > 0) key += `${NUL}${CHAT_SEGMENT}${NUL}${chat}`
   return key
+}
+
+/**
+ * The chat id an agent opened for existing chat `sessionId` is keyed to. A
+ * chat that runs its own Claude Account gets a process of its own (its id);
+ * a chat that follows its Project runs the Project's Account, so it shares
+ * the Project's agents like a new chat (none). `ownAccountId` is the chat's
+ * own Account, `null` when it follows its Project, and `undefined` when the
+ * Accounts could not be read: that chat also gets its own process, so it
+ * never runs on another Account.
+ */
+export function reuseScopeFor(
+  sessionId: string,
+  ownAccountId: string | null | undefined
+): string | undefined {
+  return ownAccountId === null ? undefined : sessionId
 }
 
 /** Recover the `configId` from an {@link agentReuseKey} (split on first NUL). */

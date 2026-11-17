@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { claudeAccountFor } from '@/components/chat/claude-account/use-project-claude-account'
 import { acpApi } from '@/lib/acp-api'
 import { AcpTransportError } from '@/lib/acp-transport'
+import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { logFrontendError } from '@/lib/log-api'
 import { endedState, subagentToolCall } from '@/lib/test-utils/subagent'
 import { agentReuseKey } from '@/stores/acp-reuse-keys'
@@ -10,6 +11,8 @@ import {
   _resetEphemeralSessionIdsForTesting,
   useAcpStore
 } from '@/stores/acp-store'
+import { readReuseScope } from '@/stores/acp-store/chat-reuse-scope'
+import { ensureLiveAgent } from '@/stores/acp-store/shared-state'
 import { FRESH } from '@/stores/acp-store/testkit'
 import { useAgentChatLifetimeStore } from '@/stores/agent-chat-lifetime-store'
 import {
@@ -21,7 +24,6 @@ import {
 import {
   applyProjectClaudeAccount,
   applyRemovedClaudeAccount,
-  CLAUDE_AGENT_CONFIG_ID,
   chatSwitchNotice,
   isClaudeSession,
   restartClaudeSession,
@@ -418,8 +420,9 @@ describe('claude account switch with chats that have no open tab', () => {
 })
 
 describe('claude account switch when the new account cannot resume the session', () => {
-  // The failed reopen spawned the chat's own agent on the chat's Account.
-  const liveKey = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, '/work', 'office', 'c1')
+  // The failed reopen left its agent under the project key: c1 follows its project.
+  const projectKey = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, '/work', 'office')
+  const chatKey = (id: string) => agentReuseKey(CLAUDE_AGENT_CONFIG_ID, '/work', 'office', id)
 
   function failReopenWith(error: Error): void {
     retryCrashedSession.mockImplementation(async (id: string) => {
@@ -446,7 +449,7 @@ describe('claude account switch when the new account cannot resume the session',
       agentConfigs: [
         { id: CLAUDE_AGENT_CONFIG_ID, name: 'Claude Agent', command: 'claude', args: [], env: {} }
       ],
-      configToLiveAgent: { [liveKey]: 'agent-new' },
+      configToLiveAgent: { [projectKey]: 'agent-new' },
       agents: { 'agent-new': { id: 'agent-new', capabilities: {} } as never },
       agentStatus: { 'agent-new': 'connected' },
       messages: {
@@ -489,7 +492,7 @@ describe('claude account switch when the new account cannot resume the session',
     expect([agentId, sessionId]).toEqual(['agent-new', 's-new'])
     expect(wire).toContain('fix the login bug')
     expect(wire).toContain('Fixed in auth.ts')
-    expect(state.configToLiveAgent[liveKey]).toBe('agent-new')
+    expect(state.configToLiveAgent).toEqual({ [projectKey]: 'agent-new' })
   })
 
   it('sends the notice in the new session when continuing after a limit', async () => {
@@ -505,20 +508,66 @@ describe('claude account switch when the new account cannot resume the session',
     expect(sendPrompt).not.toHaveBeenCalled()
   })
 
-  it('continues on the agent of the chat account and keeps that account for the new session', async () => {
-    api.list.mockResolvedValue(accounts({ c1: 'work' }))
-    useAcpStore.setState((s) => ({
-      configToLiveAgent: {
-        ...s.configToLiveAgent,
-        [agentReuseKey(CLAUDE_AGENT_CONFIG_ID, '/work', 'office')]: 'agent-project'
-      }
-    }))
-    failReopenWith(new AcpTransportError('not_found', 'Resource not found: {"uri": "c1"}'))
+  describe('of a chat on its own account', () => {
+    beforeEach(() => {
+      api.list.mockResolvedValue(accounts({ c1: 'work' }))
+      // The failed reopen spawned the chat's own agent on the chat's Account.
+      useAcpStore.setState({
+        configToLiveAgent: { [chatKey('c1')]: 'agent-new', [projectKey]: 'agent-project' }
+      })
+      failReopenWith(new AcpTransportError('not_found', 'Resource not found: {"uri": "c1"}'))
+    })
 
-    await restartClaudeSession('c1')
+    it('continues on the agent of the chat account and keeps that account for the new session', async () => {
+      await restartClaudeSession('c1')
 
-    expect(vi.mocked(acpApi.sendPrompt).mock.calls[0]?.slice(0, 2)).toEqual(['agent-new', 's-new'])
-    expect(api.setChatAccount.mock.calls).toEqual([['office', 's-new', 'work']])
+      expect(vi.mocked(acpApi.sendPrompt).mock.calls[0]?.slice(0, 2)).toEqual([
+        'agent-new',
+        's-new'
+      ])
+      expect(api.setChatAccount.mock.calls).toEqual([['office', 's-new', 'work']])
+    })
+
+    it('hands its agent to the new session, so reopening that session finds the same agent', async () => {
+      const spawn = vi.spyOn(acpApi, 'spawnAgent')
+
+      await restartClaudeSession('c1')
+
+      expect(useAcpStore.getState().configToLiveAgent).toEqual({
+        [chatKey('s-new')]: 'agent-new',
+        [projectKey]: 'agent-project'
+      })
+      api.list.mockResolvedValue(accounts({ c1: 'work', 's-new': 'work' }))
+      useAcpStore.setState((s) => ({
+        sessions: { ...s.sessions, 's-new': { ...s.sessions['s-new'], status: 'closed' } }
+      }))
+      await expect(
+        ensureLiveAgent(
+          useAcpStore.getState,
+          useAcpStore.setState,
+          CLAUDE_AGENT_CONFIG_ID,
+          '/work',
+          {
+            projectId: 'office',
+            sessionId: await readReuseScope(CLAUDE_AGENT_CONFIG_ID, 's-new'),
+            holder: 'chat'
+          }
+        )
+      ).resolves.toBe('agent-new')
+      expect(spawn).not.toHaveBeenCalled()
+      spawn.mockRestore()
+    })
+
+    it('keeps the agent with the old chat when the new session cannot keep the account', async () => {
+      api.setChatAccount.mockResolvedValue(false)
+
+      await restartClaudeSession('c1')
+
+      expect(useAcpStore.getState().configToLiveAgent).toEqual({
+        [chatKey('c1')]: 'agent-new',
+        [projectKey]: 'agent-project'
+      })
+    })
   })
 
   it('writes no account for the new session of a chat that follows its project', async () => {
@@ -613,6 +662,10 @@ describe('a chat with its own account', () => {
     ])
     expect(killAgent).not.toHaveBeenCalled()
     expect(retryCrashedSession).not.toHaveBeenCalled()
+    // A reopen of the pinned chat looks its own key up and finds its agent.
+    expect(useAcpStore.getState().configToLiveAgent).toEqual({
+      [agentReuseKey(CLAUDE_AGENT_CONFIG_ID, '/work', 'office', 'c1')]: 'agent-c1'
+    })
   })
 
   it('reports a pin as lost when the host moved the chat first', async () => {

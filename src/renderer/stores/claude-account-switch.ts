@@ -16,8 +16,10 @@ import { ownChatAccountId } from '@/components/chat/claude-account/use-project-c
 import { runningBackgroundSubagents } from '@/components/chat/subagent-strip'
 import { acpApi, type ContentBlock } from '@/lib/acp-api'
 import { resumeMissesSession } from '@/lib/acp-resume-policy'
+import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
 import { logFrontendError } from '@/lib/log-api'
+import { agentReuseKey, reuseScopeFor } from '@/stores/acp-reuse-keys'
 import {
   type AcpState,
   BACKGROUND_COMMANDS_BLOCK_REASON,
@@ -29,12 +31,10 @@ import {
   switchBlockedReason,
   useAcpStore
 } from '@/stores/acp-store'
+import { readOwnChatAccount } from '@/stores/acp-store/chat-reuse-scope'
 import { liveSiblingCount, reloadInFlight } from '@/stores/acp-store/reload-guard'
 import { useAgentChatLifetimeStore } from '@/stores/agent-chat-lifetime-store'
 import { getAgentChatSessionIdsInAllTrees, useWorkspaceStore } from '@/stores/workspace-store'
-
-/** Config id of the host-managed Claude ACP agent. */
-export const CLAUDE_AGENT_CONFIG_ID = 'acp-registry:claude-acp'
 
 /** The agent config of a chat: the live reuse-key map first, then the session index. */
 export function sessionAgentConfigId(state: AcpState, sessionId: string): string | null {
@@ -119,20 +119,37 @@ function waitUntilIdle(sessionId: string, ignoreBackground: boolean): Promise<bo
   })
 }
 
-/** The chat's own Account; `null` when it follows its Project or the host cannot list them. */
-async function readOwnChatAccount(sessionId: string): Promise<string | null> {
-  try {
-    return ownChatAccountId(await claudeAccountsApi.list(), sessionId)
-  } catch {
-    return null
-  }
+/** Register the agent keyed to chat `from` under chat `to` instead. */
+function moveChatAgentKey(from: string, to: string, cwd: string, projectId: string): void {
+  const fromKey = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, cwd, projectId, from)
+  const toKey = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, cwd, projectId, to)
+  useAcpStore.setState((s) => {
+    const agentId = s.configToLiveAgent[fromKey]
+    if (!agentId) return {}
+    const { [fromKey]: _moved, ...rest } = s.configToLiveAgent
+    return { configToLiveAgent: { ...rest, [toKey]: agentId } }
+  })
+}
+
+/**
+ * A chat that now runs its own Account keeps its agent: register that agent
+ * under the chat's key, so a reopen of the chat finds it.
+ */
+function keyAgentToChat(sessionId: string): void {
+  const session = useAcpStore.getState().sessions[sessionId]
+  if (!session?.agentId) return
+  const key = agentReuseKey(CLAUDE_AGENT_CONFIG_ID, session.cwd, session.projectId, sessionId)
+  useAcpStore.setState((s) => ({
+    configToLiveAgent: { ...s.configToLiveAgent, [key]: session.agentId }
+  }))
 }
 
 /**
  * The new Account has no copy of the session (on Windows its config directory
  * may not share `projects`): continue the chat in a new session that starts
  * from a summary, the same handoff as an agent switch (ADR-0004 fallback).
- * The new session runs the chat's Account and keeps it as its own.
+ * The new session runs the chat's Account and keeps it as its own, and with
+ * it the agent, so a reopen of the new session finds that agent.
  */
 async function continueInNewSession(sessionId: string, notice: string | undefined): Promise<void> {
   void logFrontendError({
@@ -143,31 +160,32 @@ async function continueInNewSession(sessionId: string, notice: string | undefine
   toast.info('This account could not resume the chat', {
     description: 'The chat continues in a new session that starts from a summary.'
   })
-  const projectId = useAcpStore.getState().sessions[sessionId]?.projectId
+  const old = useAcpStore.getState().sessions[sessionId]
   const ownAccount = await readOwnChatAccount(sessionId)
   const blocks: ContentBlock[] = notice ? [{ type: 'text', text: notice }] : []
   const newSessionId = await useAcpStore.getState().switchAgent(sessionId, CLAUDE_AGENT_CONFIG_ID, {
     wireBlocks: blocks,
     displayBlocks: blocks,
-    accountChatId: sessionId
+    accountChatId: reuseScopeFor(sessionId, ownAccount)
   })
-  if (!newSessionId || !ownAccount || !projectId) return
-  await claudeAccountsApi
-    .setChatAccount(projectId, newSessionId, ownAccount)
-    .then(() =>
-      logFrontendError({
-        level: 'info',
-        source: 'claudeAccountSwitch.handoff',
-        message: `Chat ${newSessionId} keeps account ${ownAccount} of chat ${sessionId}`
-      })
-    )
-    .catch((error) =>
-      logFrontendError({
-        level: 'warn',
-        source: 'claudeAccountSwitch.handoff',
-        message: `Chat ${newSessionId} could not keep account ${ownAccount}: ${error instanceof Error ? error.message : String(error)}`
-      })
-    )
+  if (!newSessionId || !ownAccount || !old?.projectId) return
+  const kept = await claudeAccountsApi
+    .setChatAccount(old.projectId, newSessionId, ownAccount)
+    .catch((error) => (error instanceof Error ? error.message : String(error)))
+  if (kept !== true) {
+    void logFrontendError({
+      level: 'warn',
+      source: 'claudeAccountSwitch.handoff',
+      message: `Chat ${newSessionId} could not keep account ${ownAccount}: ${kept === false ? 'the host did not apply it' : kept}`
+    })
+    return
+  }
+  moveChatAgentKey(sessionId, newSessionId, old.cwd, old.projectId)
+  void logFrontendError({
+    level: 'info',
+    source: 'claudeAccountSwitch.handoff',
+    message: `Chat ${newSessionId} keeps account ${ownAccount} and the agent of chat ${sessionId}`
+  })
 }
 
 /**
@@ -478,7 +496,10 @@ export async function switchChatClaudeAccount(
     })
     return 'lost'
   }
-  if ((accountId ?? chat.projectAccountId) === runsOn) return 'kept'
+  if ((accountId ?? chat.projectAccountId) === runsOn) {
+    if (reuseScopeFor(sessionId, accountId)) keyAgentToChat(sessionId)
+    return 'kept'
+  }
   void logFrontendError({
     level: 'info',
     source: 'claudeAccountSwitch.chat',

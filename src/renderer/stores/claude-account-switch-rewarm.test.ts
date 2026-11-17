@@ -82,6 +82,7 @@ import type { ChatMessage } from '@/lib/acp-api'
 import { _clearPayloadCacheForTesting, type SessionPayload } from '@/lib/acp-history-persistence'
 import type { AcpTransport } from '@/lib/acp-transport'
 import { _resetAcpTransportForTests, _setAcpTransportForTests } from '@/lib/acp-transport'
+import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import {
   _resetAcpAuthForTesting,
   _resetEphemeralSessionIdsForTesting,
@@ -96,7 +97,7 @@ import {
 import { _resetDefiniteSpawnRejectionsForTesting } from '@/stores/acp-store/shared-state'
 import { FRESH } from '@/stores/acp-store/testkit'
 import { useProjectStore } from '@/stores/project-store'
-import { CLAUDE_AGENT_CONFIG_ID, switchProjectClaudeAccount } from './claude-account-switch'
+import { switchProjectClaudeAccount } from './claude-account-switch'
 
 const KEY = prepareChatKey(CLAUDE_AGENT_CONFIG_ID, '/work', undefined)
 const CHAT = 'c1'

@@ -4,10 +4,10 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { reloadClaudeAccounts } from '@/hooks/use-claude-accounts'
 import { ACP_EVENTS, onAcpEvent } from '@/lib/acp-api'
+import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { logFrontendError } from '@/lib/log-api'
-import { agentReuseKey } from '@/stores/acp-reuse-keys'
+import { agentReuseKey, reuseScopeFor } from '@/stores/acp-reuse-keys'
 import { useAcpStore } from '@/stores/acp-store'
-import { CLAUDE_AGENT_CONFIG_ID } from '@/stores/claude-account-switch'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
 export const useClaudeResumeAt = create<Record<string, number>>(() => ({}))
@@ -22,8 +22,9 @@ function setResumeAt(sessionId: string, at: number | null): void {
 type FollowEvent = Extract<ClaudeLimitActionEvent, { action: 'switched' | 'resumed' }>
 
 /**
- * Point the chat at the agent the host moved it to, and register that agent
- * under the chat's reuse key so a reopen finds it, not the replaced one.
+ * Point the chat at the agent the host moved it to. A chat on its own Account
+ * gets that agent under its reuse key, so a reopen finds it, not the replaced
+ * one.
  * `waiting` when the chat still runs on the replaced agent but this client
  * has not seen the new one connect yet (that status arrives on its own
  * channel).
@@ -46,12 +47,18 @@ function followAgent(e: FollowEvent): 'followed' | 'waiting' | 'stale' {
       session.projectId,
       e.sessionId
     )
+    // A switch gives the chat its own Account. A resume keeps its Account, so
+    // the chat keeps a key of its own only when the replaced agent had one.
+    const ownKey =
+      e.action === 'switched'
+        ? reuseScopeFor(e.sessionId, e.to.id) !== undefined
+        : s.configToLiveAgent[chatKey] === e.fromAgentId
     return {
       sessions: {
         ...s.sessions,
         [e.sessionId]: { ...session, agentId: e.newAgentId, status: 'active' }
       },
-      configToLiveAgent: { ...s.configToLiveAgent, [chatKey]: e.newAgentId },
+      ...(ownKey ? { configToLiveAgent: { ...s.configToLiveAgent, [chatKey]: e.newAgentId } } : {}),
       sessionUsage
     }
   })
