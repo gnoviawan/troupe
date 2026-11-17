@@ -10,11 +10,31 @@ fn resolve_path_returns_a_string_and_known_source() {
     let (path, source) = resolve_cloudflared_path();
     assert!(!path.is_empty());
     // "env" only with the env var set; "sidecar" when a bundled file is
-    // found; "path" is the bare-name fallback (dev/CI without the binary).
+    // found; "system" for a Homebrew-style dir; "path" is the bare-name
+    // fallback (dev/CI without the binary).
     assert!(
-        matches!(source.as_str(), "env" | "sidecar" | "path"),
+        matches!(source.as_str(), "env" | "sidecar" | "system" | "path"),
         "unexpected source: {source}"
     );
+}
+
+#[test]
+fn find_in_system_dirs_returns_first_existing_file() {
+    let first = tempfile::tempdir().unwrap();
+    let second = tempfile::tempdir().unwrap();
+    std::fs::write(second.path().join("cloudflared"), b"").unwrap();
+    let dirs = [first.path().to_str().unwrap(), second.path().to_str().unwrap()];
+    assert_eq!(
+        find_in_system_dirs(&dirs, "cloudflared"),
+        Some(second.path().join("cloudflared"))
+    );
+}
+
+#[test]
+fn find_in_system_dirs_returns_none_when_missing() {
+    let empty = tempfile::tempdir().unwrap();
+    let dirs = [empty.path().to_str().unwrap()];
+    assert_eq!(find_in_system_dirs(&dirs, "cloudflared"), None);
 }
 
 #[test]

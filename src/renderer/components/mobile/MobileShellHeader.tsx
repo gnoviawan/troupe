@@ -114,7 +114,8 @@ export function MobileShellHeader({
   const moreSheetId = isTerminal ? MOBILE_TERMINAL_ACTIONS_SHEET_ID : MOBILE_HEADER_MORE_SHEET_ID
 
   return (
-    <header className="flex min-h-14 shrink-0 items-center gap-1 border-b border-border/60 px-2">
+    // Side padding grows to the notch inset on a landscape phone.
+    <header className="flex min-h-14 shrink-0 items-center gap-1 border-b border-border/60 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))]">
       <Button
         ref={menuButtonRef}
         type="button"
@@ -179,7 +180,9 @@ export function MobileShellHeader({
           type="button"
           variant="ghost"
           size="xs"
-          className="relative mx-1 h-auto min-h-7 rounded-full bg-warning/20 px-2 text-xs font-semibold tabular-nums text-warning hover:bg-warning/30 hover:text-warning after:absolute after:-inset-2 after:content-['']"
+          // 28px pill, 44px tall hit area. The 6px side slop stops 2px short of
+          // the neighbours' boxes (mx-1 + gap-1 = 8px), so hit areas never overlap.
+          className="relative mx-1 h-auto min-h-7 rounded-full bg-warning/20 px-2 text-xs font-semibold tabular-nums text-warning hover:bg-warning/30 hover:text-warning active:bg-warning/30 active:text-warning after:absolute after:-inset-x-1.5 after:-inset-y-2 after:content-['']"
           aria-label={pillLabel}
           aria-expanded={drawerOpen}
           aria-controls={drawerOpen ? DRAWER_ID : undefined}

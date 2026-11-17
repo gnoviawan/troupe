@@ -131,7 +131,24 @@ pub fn resolve_cloudflared_path() -> (String, String) {
     if let Some(found) = candidates.into_iter().find(|p| p.exists() && p.is_file()) {
         return (found.to_string_lossy().to_string(), "sidecar".to_string());
     }
+    // A GUI launch (Dock/Finder) does not inherit the shell PATH, so a Homebrew
+    // install is not visible through the bare name. Check the usual dirs first.
+    if let Some(found) = find_in_system_dirs(SYSTEM_INSTALL_DIRS, binary) {
+        return (found.to_string_lossy().to_string(), "system".to_string());
+    }
     ("cloudflared".to_string(), "path".to_string())
+}
+
+/// Usual install dirs that a GUI-launched app does not have on its `PATH`:
+/// Homebrew (Apple Silicon, Intel) and Linux/manual installs.
+const SYSTEM_INSTALL_DIRS: &[&str] = &["/opt/homebrew/bin", "/usr/local/bin"];
+
+/// First `<dir>/<binary>` that is an existing file. Split out so tests can use
+/// temp dirs.
+fn find_in_system_dirs(dirs: &[&str], binary: &str) -> Option<PathBuf> {
+    dirs.iter()
+        .map(|dir| PathBuf::from(dir).join(binary))
+        .find(|p| p.is_file())
 }
 
 /// Cached resolved path (first call wins; mirrors `detect_rg_path`).

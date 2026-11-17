@@ -232,7 +232,10 @@ describe('MobileShellHeader', () => {
       expect(pill.className).toContain('bg-warning/20')
       expect(pill.className).toContain('text-warning')
       expect(pill.className).toContain('tabular-nums')
-      expect(pill.className).toContain("after:absolute after:-inset-2 after:content-['']")
+      // 44px tall hit area; the side slop stays clear of the neighbours.
+      expect(pill.className).toContain(
+        "after:absolute after:-inset-x-1.5 after:-inset-y-2 after:content-['']"
+      )
       const dot = pill.querySelector('span[aria-hidden="true"]')
       expect(dot?.className).toContain('size-2')
       expect(dot?.className).toContain('bg-warning')

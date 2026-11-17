@@ -339,7 +339,8 @@ export function MobileShellDrawer({
         ref={contentRef}
         side="left"
         id="mobile-shell-drawer"
-        className="flex w-full max-w-none flex-col gap-0 border-r-0 p-0 pt-[env(safe-area-inset-top)] sm:max-w-none [&>button:last-child]:mt-[env(safe-area-inset-top)]"
+        // The side insets keep rows clear of the notch on a landscape phone.
+        className="flex w-full max-w-none flex-col gap-0 border-r-0 p-0 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] sm:max-w-none [&>button:last-child]:mt-[env(safe-area-inset-top)]"
         onEscapeKeyDown={(event) => {
           // Radix hears Escape on the document before the rename field does and
           // would dismiss the drawer. Inside a row's rename field the key only
@@ -416,7 +417,7 @@ export function MobileShellDrawer({
                     'flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                     isCurrent
                       ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      : 'text-muted-foreground hover:text-foreground active:bg-foreground/[0.06] active:text-foreground'
                   )}
                 >
                   <span className="relative flex">
