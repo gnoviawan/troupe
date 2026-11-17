@@ -4,8 +4,7 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { ACP_EVENTS, onAcpEvent } from '@/lib/acp-api'
 import { logFrontendError } from '@/lib/log-api'
-import { renewAgentCredentials, useAcpStore } from '@/stores/acp-store'
-import { CLAUDE_AGENT_CONFIG_ID } from '@/stores/claude-account-switch'
+import { useAcpStore } from '@/stores/acp-store'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
 export const useClaudeResumeAt = create<Record<string, number>>(() => ({}))
@@ -75,7 +74,6 @@ function followed(e: FollowEvent): void {
     message: `Chat ${e.sessionId} follows host agent ${e.newAgentId} (${e.action})`
   })
   if (e.action === 'switched') {
-    renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, e.projectId)
     toast.success(`${e.from.name} reached its limit. Continued on ${e.to.name}.`)
   }
 }
