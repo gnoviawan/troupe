@@ -3,8 +3,8 @@
  * Account changes, each open Claude chat of that Project that follows it
  * restarts on a fresh agent process (which the host starts with the new
  * Account) and resumes the same session. A chat with its own Account restarts
- * only when that Account changes. Idle chats restart at once; busy chats after their turn ends.
- * A chat stopped by a usage limit can cancel its held turn and send the last
+ * only when that Account changes. Idle chats restart at once; busy chats after
+ * their turn ends. A chat stopped by a usage limit can cancel its held turn and send the last
  * prompt again on the new Account. When the new Account cannot resume the
  * session, the chat continues in a new session with a summary handoff.
  */
@@ -147,8 +147,9 @@ const restarting = new Set<string>()
 
 /**
  * Restart one Claude chat on the Account it resolves to now (its own, else its
- * Project's) and resume the same session. `resend` sends the last user prompt again; `cancelTurn` stops a
- * turn that is still held (a usage limit can keep a turn open until reset).
+ * Project's) and resume the same session. `resend` sends the last user prompt
+ * again; `cancelTurn` stops a turn that is still held (a usage limit can keep
+ * a turn open until reset).
  */
 export async function restartClaudeSession(
   sessionId: string,
@@ -200,11 +201,10 @@ export async function restartClaudeSession(
       source: 'claudeAccountSwitch.restart',
       message: `Restarting chat ${sessionId} on its account (resend=${Boolean(options.resend)}, shared agent=${shared})`
     })
-    // Release the old process first so a web reopen cannot adopt it and the
-    // reopen spawns with the new Account. Stopping it also drops its reuse
-    // key. Other chats on it may run another Account, so a shared process
-    // keeps running and only closes this chat's session; the reload guard
-    // keeps that close from cancelling the reopen.
+    // Release the old process first so a web reopen cannot adopt it. Other
+    // chats on a shared process may run another Account, so it keeps running
+    // and only this chat's session closes; the reload guard keeps that close
+    // from cancelling the reopen.
     if (shared) {
       reloadInFlight.add(sessionId)
       await acpApi.closeSession(oldAgentId, sessionId).catch(() => undefined)
@@ -279,8 +279,9 @@ async function restartAfterReopen(sessionId: string, projectId: string): Promise
 /**
  * Restart every open Claude chat of a Project after its Account changed: a
  * chat with a tab, or one kept for its Project while that Project is off
- * screen. A chat with its own Account keeps running, and so does its agent. `continueSessionIds` are the chats that hit a limit: their held
- * turns are cancelled and their last prompts are sent again. Other busy chats restart in the
+ * screen. A chat with its own Account keeps running, and so does its agent.
+ * `continueSessionIds` are the chats that hit a limit: their held turns are
+ * cancelled and their last prompts are sent again. Other busy chats restart in the
  * background when their turn ends. An unopened chat (a warm-pool seed, or a
  * chat whose tab was closed) is not reopened; its agent stops, after the
  * running turn if there is one, unless an open chat shares it. The Project's

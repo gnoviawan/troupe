@@ -17,12 +17,12 @@ export interface AccountChoice {
 export interface ProjectClaudeAccount {
   accounts: ClaudeAccountsState
   projectId: string
-  /** The Account the Project uses now. */
+  /** The Account in use now: the chat's for a chat context, else the Project's. */
   current: AccountChoice
   defaultAccount: ClaudeAccountView | null
   /** `true` when the Project chose an Account (not "Follow default"). */
   explicit: boolean
-  /** Signed-in Accounts with room left, least used first. */
+  /** Signed-in Accounts other than `current` with room left, least used first. */
   alternatives: AccountChoice[]
 }
 
@@ -71,16 +71,19 @@ export function rankAlternatives(
 }
 
 /**
- * The Claude Account context of one Project, before or without a chat.
- * `null` for no Project (nothing is read) and while the Account list loads.
+ * The Claude Account context of a Project, or of one of its chats when
+ * `sessionId` is given. `null` while the Account list loads.
  */
-export function useProjectClaudeAccount(projectId: string | null): ProjectClaudeAccount | null {
-  const accounts = useClaudeAccounts({ enabled: Boolean(projectId) })
+export function claudeAccountContext(
+  accounts: ClaudeAccountsState,
+  projectId: string,
+  sessionId?: string
+): ProjectClaudeAccount | null {
   const { snapshot, usage } = accounts
-  if (!projectId || !snapshot) return null
+  if (!snapshot) return null
 
   const defaultAccount = snapshot.accounts.find((a) => a.id === snapshot.defaultAccountId) ?? null
-  const currentId = claudeAccountFor(snapshot, projectId)
+  const currentId = claudeAccountFor(snapshot, projectId, sessionId)
   const currentAccount = snapshot.accounts.find((a) => a.id === currentId)
   if (!currentAccount) return null
 
@@ -92,4 +95,13 @@ export function useProjectClaudeAccount(projectId: string | null): ProjectClaude
     explicit: Boolean(snapshot.projectAccounts[projectId]),
     alternatives: rankAlternatives(snapshot, usage, currentAccount.id)
   }
+}
+
+/**
+ * The Claude Account context of one Project, before or without a chat.
+ * `null` for no Project (nothing is read) and while the Account list loads.
+ */
+export function useProjectClaudeAccount(projectId: string | null): ProjectClaudeAccount | null {
+  const accounts = useClaudeAccounts({ enabled: Boolean(projectId) })
+  return projectId ? claudeAccountContext(accounts, projectId) : null
 }

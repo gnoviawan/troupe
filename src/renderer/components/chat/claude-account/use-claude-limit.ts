@@ -5,7 +5,7 @@ import { create } from 'zustand'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
 import { formatUsageReset } from '@/lib/claude-usage-format'
-import { switchProjectClaudeAccount } from '@/stores/claude-account-switch'
+import { switchChatClaudeAccount } from '@/stores/claude-account-switch'
 import { useClaudeResumeAt } from './limit-actions'
 import { type ChatClaudeAccount, useChatClaudeAccount } from './use-chat-claude-account'
 import type { AccountChoice } from './use-project-claude-account'
@@ -76,6 +76,7 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
   if (dismissed.has(key)) return null
 
   const projectId = ctx.projectId
+  // The compare-and-set expects the Account the chat resolves to, which may be its own.
   const currentId = ctx.current.account.id
   const reloadAccounts = ctx.accounts.reload
   async function switchTo(target: AccountChoice): Promise<void> {
@@ -83,13 +84,13 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
     setSwitchingTo(sessionId, target.account.name)
     if (resumeAt !== null) void claudeAccountsApi.setResume(sessionId, null).catch(() => undefined)
     try {
-      const continued = await switchProjectClaudeAccount(projectId, target.account.id, {
-        continueSessionIds: limit.status === 'rejected' ? [sessionId] : undefined,
-        expectedAccountId: currentId
+      const continued = await switchChatClaudeAccount(sessionId, projectId, target.account.id, {
+        expectedAccountId: currentId,
+        continueTurn: limit.status === 'rejected'
       })
       await reloadAccounts()
       if (continued === null) {
-        toast.info('The account of this project already changed', {
+        toast.info('The account of this chat already changed', {
           description: 'Troupe or another device switched it first.'
         })
         return
