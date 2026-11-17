@@ -69,8 +69,8 @@ interface RailProjectChatRowProps extends React.ComponentPropsWithoutRef<'button
  * collapsed Rail the trail gives way to a status dot on the icon; the status
  * stays in the accessible name. A chat another chat's agent started names its
  * parent in the tooltip and the accessible name, not on a second line: the
- * peek rows must keep the y of the collapsed Rail icons. Drag the row onto a pane edge to split, or
- * into a pane to open the chat there. Right-click, Shift+F10 or the "…"
+ * peek rows must keep the y of the collapsed Rail icons. Drag the row onto a
+ * pane edge to split, or into a pane to open the chat there. Right-click, Shift+F10 or the "…"
  * button (shown on hover, in place of the trail) opens the chat row menu.
  */
 function RailProjectChatRow({
