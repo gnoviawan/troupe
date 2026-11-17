@@ -661,10 +661,14 @@ export interface AcpState {
   degradedRecoverySessions: Record<SessionId, true>
 
   // Actions — lifecycle
-  /** `projectId` selects the Claude Account of a managed Claude agent. */
+  /**
+   * `projectId` selects the Claude Account of a managed Claude agent;
+   * `sessionId`, the existing chat the agent opens, selects that chat's own.
+   */
   spawnAgent: (
     config: Parameters<typeof acpApi.spawnAgent>[0],
-    projectId?: string | null
+    projectId?: string | null,
+    sessionId?: string | null
   ) => Promise<AgentId>
   killAgent: (agentId: AgentId) => Promise<void>
   /**

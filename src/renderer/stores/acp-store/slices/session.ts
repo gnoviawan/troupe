@@ -1177,6 +1177,7 @@ async function openHistorySessionInner(
         silentSpawnFailure: true,
         surfaceDefiniteRejection: true,
         projectId: meta.projectId ?? undefined,
+        sessionId: id,
         holder: 'chat'
       })
     } catch (err) {

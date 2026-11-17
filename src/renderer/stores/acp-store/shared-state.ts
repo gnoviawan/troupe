@@ -689,10 +689,10 @@ export function _handoffOnlyTurnIdsForTesting(): ReadonlySet<string> {
  * the session on it while the original still streams.
  *
  * Adoption seeds the store's agent presence (`agents` + `agentStatus`) from
- * the summary's capabilities and registers the reuse key
- * (`agentReuseKey(configId, cwd, projectId)`) → host agent id, so every later
- * `ensureLiveAgent`/`prepareChat` for that config, cwd, and Project reuses the
- * host process.
+ * the summary's capabilities and registers the chat's reuse key
+ * (`agentReuseKey(configId, cwd, projectId, sessionId)`) → host agent id, so a
+ * later reopen of this chat reuses the host process. The owner may run the
+ * chat's own Claude Account, so no other chat or warm session reuses it.
  *
  * Desktop skips the lookup by default (`isTauriContext()`): the desktop store
  * already owns its agents in memory. A reload while a turn is still running
@@ -756,7 +756,7 @@ export async function adoptHostOwnedAgent(
     message: `Reusing host agent ${match.id} that owns session ${sessionId} instead of spawning a duplicate`
   })
   const projectId = resolveSpawnProject(trimmedCwd, options?.projectId)?.id ?? ''
-  const reuseKey = agentReuseKey(configId, trimmedCwd, projectId || undefined)
+  const reuseKey = agentReuseKey(configId, trimmedCwd, projectId || undefined, sessionId)
   set((s) => ({
     agents: {
       ...s.agents,
@@ -807,6 +807,12 @@ export type EnsureLiveAgentOptions = {
    * agent. Without it, the Project whose folder holds `cwd` is used.
    */
   projectId?: string
+  /**
+   * The existing chat the agent is spawned to open. The agent belongs to that
+   * chat (its reuse key names it) and the host starts it with the chat's own
+   * Claude Account.
+   */
+  sessionId?: string
   /** What the caller puts on the agent; omit for helpers (commit message, prewarm) that may share one. */
   holder?: AgentHolder
 }
@@ -837,7 +843,8 @@ function currentLaunch(
   state: Pick<AcpState, 'agentConfigs'>,
   configId: string,
   cwd: string,
-  projectId?: string | null
+  projectId?: string | null,
+  sessionId?: string
 ): {
   config: AcpState['agentConfigs'][number]
   project: Pick<Project, 'id' | 'envVars'> | null
@@ -858,7 +865,7 @@ function currentLaunch(
     config,
     project,
     projectId: resolvedProjectId,
-    reuseKey: agentReuseKey(configId, cwd, resolvedProjectId || undefined),
+    reuseKey: agentReuseKey(configId, cwd, resolvedProjectId || undefined, sessionId),
     env,
     signature: spawnSignature(config, env, configId, resolvedProjectId)
   }
@@ -896,7 +903,7 @@ export function ensureLiveAgent(
 ): Promise<AgentId | null> {
   const trimmedCwd = cwd.trim()
   if (trimmedCwd.length === 0) return Promise.resolve(null)
-  const launch = currentLaunch(get(), configId, trimmedCwd, options.projectId)
+  const launch = currentLaunch(get(), configId, trimmedCwd, options.projectId, options.sessionId)
   if (!launch) return Promise.resolve(null)
   const { config, project, projectId, reuseKey, env, signature } = launch
   const currentAgentId = get().configToLiveAgent[reuseKey]
@@ -995,7 +1002,8 @@ export function ensureLiveAgent(
           env,
           allowTerminal: config.allowTerminal
         },
-        projectId || undefined
+        projectId || undefined,
+        options.sessionId
       )
       definiteSpawnRejections.delete(reuseKey)
       if (get().agentConfigs.some((c) => c.id === configId)) {

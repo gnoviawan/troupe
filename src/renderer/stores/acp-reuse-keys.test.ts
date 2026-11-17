@@ -86,4 +86,44 @@ describe('parseReuseKey', () => {
     expect(agentReuseKey('cfg-1', '/work', '  ')).toBe('cfg-1\0/work')
     expect(agentReuseKey('cfg-1', '/work', null)).toBe('cfg-1\0/work')
   })
+
+  it('puts a chat after the project and keeps that key live, not detached', () => {
+    const key = agentReuseKey('cfg-1', '/work', 'p1', 's1')
+    expect(key).toBe('cfg-1\0/work\0project\0p1\0chat\0s1')
+    expect(isDetachedReuseKey(key)).toBe(false)
+    expect(parseReuseKey(key)).toEqual({
+      configId: 'cfg-1',
+      cwd: '/work',
+      projectId: 'p1',
+      chatId: 's1'
+    })
+    const detached = detachedReuseKey(key, 'agent-9')
+    expect(detached).toBe('cfg-1\0/work\0project\0p1\0chat\0s1\0agent-9')
+    expect(isDetachedReuseKey(detached)).toBe(true)
+    expect(parseReuseKey(detached)).toEqual({
+      configId: 'cfg-1',
+      cwd: '/work',
+      projectId: 'p1',
+      chatId: 's1',
+      detachedAgentId: 'agent-9'
+    })
+  })
+
+  it('reads a chat key without a project', () => {
+    const key = agentReuseKey('cfg-1', '/work', null, 's1')
+    expect(key).toBe('cfg-1\0/work\0chat\0s1')
+    expect(isDetachedReuseKey(key)).toBe(false)
+    expect(parseReuseKey(key)).toEqual({ configId: 'cfg-1', cwd: '/work', chatId: 's1' })
+    expect(parseReuseKey(detachedReuseKey(key, 'agent-9'))).toEqual({
+      configId: 'cfg-1',
+      cwd: '/work',
+      chatId: 's1',
+      detachedAgentId: 'agent-9'
+    })
+  })
+
+  it('omits the chat segment when the chat id is blank', () => {
+    expect(agentReuseKey('cfg-1', '/work', 'p1', ' ')).toBe('cfg-1\0/work\0project\0p1')
+    expect(agentReuseKey('cfg-1', '/work', 'p1', null)).toBe('cfg-1\0/work\0project\0p1')
+  })
 })
