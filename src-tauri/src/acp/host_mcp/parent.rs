@@ -675,6 +675,7 @@ impl HostPlanServer {
             FrameKind::ReadChat => self.read_chat(&real_session_id, req.read_chat).await,
             FrameKind::StartChat => self.start_chat(&real_session_id, req.start_chat).await,
             FrameKind::SendToChat => self.send_to_chat(&real_session_id, req.send_to_chat).await,
+            FrameKind::ListStartedChats => self.list_started_chats(&real_session_id).await,
             FrameKind::AskUser => {
                 let Some(input) = req.ask else {
                     return FrameReply::err("ask_user frame needs a question");

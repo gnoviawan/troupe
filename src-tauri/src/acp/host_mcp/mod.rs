@@ -90,8 +90,9 @@ list of your own. In the first turn, once the user's intent is clear, call `set_
 once with a short title and a kebab-case `branch` slug. When you need a decision or missing \
 details from the user, ask with the `ask_user` tool or your client's own question tool, not in \
 plain text. When the user gives you a Troupe chat ID or a copied chat reference, read that chat \
-with the `read_chat` tool. To run a task in a parallel chat on the Claude account with the most \
-room, call `start_chat`, then follow it with `read_chat` and `send_to_chat`. To install an MCP server from a link, a registry name, or \
+with the `read_chat` tool. To run a task in a parallel chat (a managed Claude chat goes on \
+the account with the most room), call `start_chat`, then use `read_chat` and `send_to_chat`. \
+To install an MCP server from a link, a registry name, or \
 JSON, read it with your own tools and call `mcp_install`. The user approves on a card in the chat.";
 
 /// The context budget Claude Code gives a server's `instructions`: it keeps
@@ -207,6 +208,8 @@ pub enum FrameKind {
     StartChat,
     /// `send_to_chat`: a follow-up to one of the caller's worker chats.
     SendToChat,
+    /// `list_started_chats`: the caller's worker chats and their status.
+    ListStartedChats,
 }
 
 /// One option the agent offers in an `ask_user` question.

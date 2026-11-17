@@ -64,6 +64,16 @@ impl HostPlanServer {
             Err(error) => refusal(&error),
         }
     }
+
+    pub(super) async fn list_started_chats(&self, caller: &str) -> FrameReply {
+        let Some(chats) = self.worker_chats.get() else {
+            return refusal(&WorkerChatError::Unavailable);
+        };
+        match chats.list(SessionId(caller.to_string())).await {
+            Ok(listed) => FrameReply::ok_with(json!({ "chats": listed })),
+            Err(error) => refusal(&error),
+        }
+    }
 }
 
 /// A refused call: the wire code, and `{code, message}` as the tool text.

@@ -7,7 +7,8 @@ use rmcp::{tool, tool_router};
 
 use super::TermulPlanServer;
 use crate::acp::host_mcp::worker_chats::{
-    SendToChatInput, StartChatInput, SEND_TO_CHAT_DESCRIPTION, START_CHAT_DESCRIPTION,
+    SendToChatInput, StartChatInput, LIST_STARTED_CHATS_DESCRIPTION, SEND_TO_CHAT_DESCRIPTION,
+    START_CHAT_DESCRIPTION, START_CHAT_LATE,
 };
 use crate::acp::host_mcp::{FrameKind, FrameRequest};
 
@@ -28,7 +29,8 @@ impl TermulPlanServer {
             start_chat: Some(input),
             ..self.frame(FrameKind::StartChat)
         };
-        self.text_call("start_chat", request, START_ROUND_TRIP).await
+        self.text_call_or("start_chat", request, START_ROUND_TRIP, START_CHAT_LATE)
+            .await
     }
 
     #[tool(
@@ -42,5 +44,16 @@ impl TermulPlanServer {
             ..self.frame(FrameKind::SendToChat)
         };
         self.text_call("send_to_chat", request, SEND_ROUND_TRIP).await
+    }
+
+    #[tool(
+        name = "list_started_chats",
+        description = LIST_STARTED_CHATS_DESCRIPTION,
+        annotations(read_only_hint = true, open_world_hint = false)
+    )]
+    async fn list_started_chats(&self) -> CallToolResult {
+        let request = self.frame(FrameKind::ListStartedChats);
+        self.text_call("list_started_chats", request, SEND_ROUND_TRIP)
+            .await
     }
 }
