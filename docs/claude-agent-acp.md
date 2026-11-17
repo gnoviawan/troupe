@@ -102,7 +102,11 @@ ids only.
 The account picker in a chat (`set_chat_claude_account`) moves only that chat:
 it restarts on a new agent with the chosen Account and resumes the same
 session. Other chats of the Project, including chats on the same agent, keep
-running. "Follow project" removes the chat's own choice. A chat that is opened
+running. "Follow project" removes the chat's own choice. Choosing the Account
+the chat already runs on changes nothing. When a person moves a chat at its
+limit from the limit card, its held turn is cancelled and the chat continues
+with a short notice, worded like the host's, instead of the last prompt sent
+again. A chat that is opened
 again starts its agent with the chat id (`spawn_agent` `sessionId`), so the
 host starts it on the chat's Account. Such an agent belongs to that chat: the
 renderer registers it under a reuse key with the chat id, and no other chat or
