@@ -155,7 +155,13 @@ describe('ClaudeLimitNotice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Switch and continue' }))
     await waitFor(() =>
       expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
-        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        {
+          sessionId: 's1',
+          projectId: 'office',
+          runsOn: 'default',
+          ownAccountId: null,
+          projectAccountId: 'default'
+        },
         'ab12',
         {
           notice:
@@ -266,7 +272,13 @@ describe('ClaudeLimitWarning', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: /work/i }))
     await waitFor(() =>
       expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
-        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        {
+          sessionId: 's1',
+          projectId: 'office',
+          runsOn: 'default',
+          ownAccountId: null,
+          projectAccountId: 'default'
+        },
         'ab12',
         {}
       )
@@ -388,7 +400,13 @@ describe('ClaudeAccountChip', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /Work/ }))
     await waitFor(() =>
       expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
-        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        {
+          sessionId: 's1',
+          projectId: 'office',
+          runsOn: 'default',
+          ownAccountId: null,
+          projectAccountId: 'default'
+        },
         'ab12'
       )
     )
@@ -438,18 +456,69 @@ describe('ClaudeAccountChip', () => {
     )
   })
 
-  it('writes nothing when the account picked is the one the chat already runs', async () => {
+  it('pins a chat that follows its project to the account it runs, without a restart', async () => {
+    api.setChatAccount.mockResolvedValue(true)
+    const killAgent = vi.fn(async () => undefined)
     const actual = await vi.importActual<typeof import('@/stores/claude-account-switch')>(
       '@/stores/claude-account-switch'
     )
     switcher.switchChatClaudeAccount.mockImplementation(actual.switchChatClaudeAccount)
     seed()
+    useAcpStore.setState({ killAgent } as never)
     render(<ClaudeAccountChip sessionId="s1" />)
     await openMenu()
     fireEvent.click(screen.getByRole('menuitem', { name: /^Personal/ }))
-    await waitFor(() => expect(switcher.switchChatClaudeAccount).toHaveBeenCalledTimes(1))
-    await expect(switcher.switchChatClaudeAccount.mock.results[0]?.value).resolves.toBe('unchanged')
-    expect(api.setChatAccount).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(api.setChatAccount).toHaveBeenCalledWith('office', 's1', 'default', {
+        expectedAccountId: 'default'
+      })
+    )
+    await expect(switcher.switchChatClaudeAccount.mock.results[0]?.value).resolves.toBe('kept')
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('This chat now uses Personal'))
+    expect(killAgent).not.toHaveBeenCalled()
+  })
+
+  it('reads the accounts again when the host moves the chat to another account', async () => {
+    seed()
+    render(<ClaudeAccountChip sessionId="s1" />)
+    await screen.findByRole('button', { name: /^Claude account: Personal/ })
+    api.list.mockResolvedValue({
+      accounts: [
+        { id: 'default', name: 'Personal', builtin: true, signedIn: true },
+        { id: 'ab12', name: 'Work', builtin: false, signedIn: true },
+        { id: 'cd34', name: 'Side', builtin: false, signedIn: true }
+      ],
+      defaultAccountId: 'default',
+      projectAccounts: {},
+      chatAccounts: { s1: 'cd34' }
+    })
+    act(() =>
+      applyClaudeLimitAction({
+        sessionId: 's1',
+        projectId: 'office',
+        action: 'switched',
+        from: { id: 'default', name: 'Personal' },
+        to: { id: 'cd34', name: 'Side' },
+        fromAgentId: 'a1',
+        newAgentId: 'a2'
+      })
+    )
+    expect(
+      await screen.findByRole('button', {
+        name: 'Claude account for this chat only: Side, 5-hour 40% used. Change account'
+      })
+    ).toBeInTheDocument()
+  })
+
+  it('says so when the pick is the choice the chat already has', async () => {
+    seed()
+    render(<ClaudeAccountChip sessionId="s1" />)
+    await openMenu()
+    fireEvent.click(screen.getByRole('menuitem', { name: /Follow project/ }))
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith('This chat already follows the project')
+    )
+    expect(switcher.switchChatClaudeAccount).not.toHaveBeenCalled()
     expect(toast.success).not.toHaveBeenCalled()
   })
 
@@ -544,7 +613,13 @@ describe('ClaudeAccountChip', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /Side/ }))
     await waitFor(() =>
       expect(switcher.switchChatClaudeAccount).toHaveBeenCalledWith(
-        { sessionId: 's1', projectId: 'office', runsOn: 'default', projectAccountId: 'default' },
+        {
+          sessionId: 's1',
+          projectId: 'office',
+          runsOn: 'default',
+          ownAccountId: null,
+          projectAccountId: 'default'
+        },
         'cd34'
       )
     )

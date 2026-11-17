@@ -2,9 +2,12 @@ import type { ClaudeLimitActionEvent } from '@shared/types/claude-accounts.types
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { create } from 'zustand'
+import { reloadClaudeAccounts } from '@/hooks/use-claude-accounts'
 import { ACP_EVENTS, onAcpEvent } from '@/lib/acp-api'
 import { logFrontendError } from '@/lib/log-api'
+import { agentReuseKey } from '@/stores/acp-reuse-keys'
 import { useAcpStore } from '@/stores/acp-store'
+import { CLAUDE_AGENT_CONFIG_ID } from '@/stores/claude-account-switch'
 
 /** When the host continues each chat after its limit resets, epoch ms. */
 export const useClaudeResumeAt = create<Record<string, number>>(() => ({}))
@@ -19,9 +22,11 @@ function setResumeAt(sessionId: string, at: number | null): void {
 type FollowEvent = Extract<ClaudeLimitActionEvent, { action: 'switched' | 'resumed' }>
 
 /**
- * Point the chat at the agent the host moved it to. `waiting` when the chat
- * still runs on the replaced agent but this client has not seen the new one
- * connect yet (that status arrives on its own channel).
+ * Point the chat at the agent the host moved it to, and register that agent
+ * under the chat's reuse key so a reopen finds it, not the replaced one.
+ * `waiting` when the chat still runs on the replaced agent but this client
+ * has not seen the new one connect yet (that status arrives on its own
+ * channel).
  */
 function followAgent(e: FollowEvent): 'followed' | 'waiting' | 'stale' {
   const state = useAcpStore.getState()
@@ -35,11 +40,18 @@ function followAgent(e: FollowEvent): 'followed' | 'waiting' | 'stale' {
       const { rateLimit: _cleared, ...rest } = usage
       sessionUsage = { ...s.sessionUsage, [e.sessionId]: rest }
     }
+    const chatKey = agentReuseKey(
+      CLAUDE_AGENT_CONFIG_ID,
+      session.cwd,
+      session.projectId,
+      e.sessionId
+    )
     return {
       sessions: {
         ...s.sessions,
         [e.sessionId]: { ...session, agentId: e.newAgentId, status: 'active' }
       },
+      configToLiveAgent: { ...s.configToLiveAgent, [chatKey]: e.newAgentId },
       sessionUsage
     }
   })
@@ -132,6 +144,11 @@ export function applyClaudeLimitAction(e: ClaudeLimitActionEvent, eventSeq?: num
       return
     }
     case 'switched':
+      setResumeAt(e.sessionId, null)
+      // The host gave the chat its own Account; lists read before show the old one.
+      reloadClaudeAccounts()
+      follow(e)
+      return
     case 'resumed':
       setResumeAt(e.sessionId, null)
       follow(e)

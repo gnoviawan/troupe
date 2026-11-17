@@ -9,6 +9,7 @@
  * session, the chat continues in a new session with a summary handoff.
  */
 
+import type { RemovedClaudeAccount } from '@shared/types/claude-accounts.types'
 import { toast } from 'sonner'
 import { runningBackgroundCommands } from '@/components/chat/background-commands'
 import { ownChatAccountId } from '@/components/chat/claude-account/use-project-claude-account'
@@ -118,10 +119,20 @@ function waitUntilIdle(sessionId: string, ignoreBackground: boolean): Promise<bo
   })
 }
 
+/** The chat's own Account; `null` when it follows its Project or the host cannot list them. */
+async function readOwnChatAccount(sessionId: string): Promise<string | null> {
+  try {
+    return ownChatAccountId(await claudeAccountsApi.list(), sessionId)
+  } catch {
+    return null
+  }
+}
+
 /**
  * The new Account has no copy of the session (on Windows its config directory
  * may not share `projects`): continue the chat in a new session that starts
  * from a summary, the same handoff as an agent switch (ADR-0004 fallback).
+ * The new session runs the chat's Account and keeps it as its own.
  */
 async function continueInNewSession(sessionId: string, notice: string | undefined): Promise<void> {
   void logFrontendError({
@@ -132,13 +143,30 @@ async function continueInNewSession(sessionId: string, notice: string | undefine
   toast.info('This account could not resume the chat', {
     description: 'The chat continues in a new session that starts from a summary.'
   })
-  const blocks: ContentBlock[] | null = notice ? [{ type: 'text', text: notice }] : null
-  await useAcpStore
-    .getState()
-    .switchAgent(
-      sessionId,
-      CLAUDE_AGENT_CONFIG_ID,
-      blocks ? { wireBlocks: blocks, displayBlocks: blocks } : undefined
+  const projectId = useAcpStore.getState().sessions[sessionId]?.projectId
+  const ownAccount = await readOwnChatAccount(sessionId)
+  const blocks: ContentBlock[] = notice ? [{ type: 'text', text: notice }] : []
+  const newSessionId = await useAcpStore.getState().switchAgent(sessionId, CLAUDE_AGENT_CONFIG_ID, {
+    wireBlocks: blocks,
+    displayBlocks: blocks,
+    accountChatId: sessionId
+  })
+  if (!newSessionId || !ownAccount || !projectId) return
+  await claudeAccountsApi
+    .setChatAccount(projectId, newSessionId, ownAccount)
+    .then(() =>
+      logFrontendError({
+        level: 'info',
+        source: 'claudeAccountSwitch.handoff',
+        message: `Chat ${newSessionId} keeps account ${ownAccount} of chat ${sessionId}`
+      })
+    )
+    .catch((error) =>
+      logFrontendError({
+        level: 'warn',
+        source: 'claudeAccountSwitch.handoff',
+        message: `Chat ${newSessionId} could not keep account ${ownAccount}: ${error instanceof Error ? error.message : String(error)}`
+      })
     )
 }
 
@@ -358,6 +386,34 @@ export async function applyProjectClaudeAccount(
 }
 
 /**
+ * Restart the chats an Account removal moved: the open Claude chats of each
+ * moved Project that follow it (`followerProjectIds` adds Projects that
+ * followed a removed Default Account), and each chat that had the removed
+ * Account as its own. Each runs the Account it resolves to now.
+ */
+export async function applyRemovedClaudeAccount(
+  removed: RemovedClaudeAccount,
+  followerProjectIds: readonly string[] = []
+): Promise<void> {
+  const projects = new Set([...removed.movedProjectIds, ...followerProjectIds])
+  const sessions = useAcpStore.getState().sessions
+  // A chat of a moved Project restarts with its Project.
+  const chats = removed.movedChatIds.filter((id) => {
+    const projectId = sessions[id]?.projectId
+    return projectId !== undefined && !projects.has(projectId)
+  })
+  void logFrontendError({
+    level: 'info',
+    source: 'claudeAccountSwitch.remove',
+    message: `Claude account removed; restarting chats of ${projects.size} projects and ${chats.length} of ${removed.movedChatIds.length} chats that ran it as their own`
+  })
+  await Promise.all([
+    ...[...projects].map((projectId) => applyProjectClaudeAccount(projectId)),
+    ...chats.map((id) => restartClaudeSession(id))
+  ])
+}
+
+/**
  * Choose a Project's Account on the host, then restart its Claude chats on it.
  * Agents already spawned for the Project stop taking new chats before the
  * host write, so a chat started during the switch never lands on the old
@@ -380,8 +436,8 @@ export async function switchProjectClaudeAccount(
 }
 
 /**
- * What a chat account choice did: `unchanged` (the chat already runs that
- * Account; nothing written), `kept` (the choice changed but resolves to the
+ * What a chat account choice did: `unchanged` (the chat already has that
+ * choice; nothing written), `kept` (the choice changed but resolves to the
  * Account the chat runs, so it keeps its agent), `lost` (another client or
  * the host moved the chat first; nothing restarted), `restarted` or
  * `failed` (the restart ran), or `pending` (a busy chat restarts after its
@@ -392,17 +448,25 @@ export type ChatAccountSwitch = 'unchanged' | 'kept' | 'lost' | 'restarted' | 'f
 /**
  * Choose a chat's own Account on the host (`null`: follow its Project again),
  * then restart only that chat on it. Its Project and other chats keep their
- * Account. The host applies the choice only while the chat still runs on
- * `chat.runsOn`. With `notice`, a held turn is cancelled and the chat
- * continues with that prompt.
+ * Account. Pinning a chat to the Account it already runs writes the choice
+ * and keeps its agent. The host applies the choice only while the chat still
+ * runs on `chat.runsOn`. With `notice`, a held turn is cancelled and the
+ * chat continues with that prompt.
  */
 export async function switchChatClaudeAccount(
-  chat: { sessionId: string; projectId: string; runsOn: string; projectAccountId: string },
+  chat: {
+    sessionId: string
+    projectId: string
+    runsOn: string
+    /** The chat's own Account; `null` while it follows its Project. */
+    ownAccountId: string | null
+    projectAccountId: string
+  },
   accountId: string | null,
   options: { notice?: string } = {}
 ): Promise<ChatAccountSwitch> {
   const { sessionId, projectId, runsOn } = chat
-  if (accountId === runsOn) return 'unchanged'
+  if (accountId === chat.ownAccountId) return 'unchanged'
   const applied = await claudeAccountsApi.setChatAccount(projectId, sessionId, accountId, {
     expectedAccountId: runsOn
   })

@@ -1,6 +1,7 @@
 import type { ClaudeRateLimit } from '@shared/types/claude-accounts.types'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { agentReuseKey } from '@/stores/acp-reuse-keys'
 import { useAcpStore } from '@/stores/acp-store'
 import { FRESH } from '@/stores/acp-store/testkit'
 import { applyClaudeLimitAction, FOLLOW_WAIT_MS, useClaudeResumeAt } from './limit-actions'
@@ -80,6 +81,18 @@ describe('applyClaudeLimitAction', () => {
       source: 'reported'
     })
     expect(toast.success).toHaveBeenCalledWith('Work reached its limit. Continued on Side.')
+  })
+
+  it('registers the new agent under the chat key so a reopen does not reuse the old one', () => {
+    const chatKey = agentReuseKey('acp-registry:claude-acp', '/work', 'office', 's1')
+    const projectKey = agentReuseKey('acp-registry:claude-acp', '/work', 'office')
+    seed('old', ['new'])
+    useAcpStore.setState({ configToLiveAgent: { [chatKey]: 'old', [projectKey]: 'old' } })
+    applyClaudeLimitAction(switched)
+    expect(useAcpStore.getState().configToLiveAgent).toEqual({
+      [chatKey]: 'new',
+      [projectKey]: 'old'
+    })
   })
 
   it('leaves a chat alone when a replayed event names an agent it no longer runs on', () => {

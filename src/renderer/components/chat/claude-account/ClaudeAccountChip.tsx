@@ -55,6 +55,8 @@ interface AccountScope {
   chosenId: string | null
   /** The chat runs its own Account, not its Project's. */
   chatOnly: boolean
+  /** The note shown when the pick is the choice already made. */
+  unchanged: string
   /** Apply the choice and resolve the success message. */
   /** Resolves the toast to show, or `null` when nothing changed. */
   choose: (accountId: string | null, next: ClaudeAccountView | undefined) => Promise<string | null>
@@ -76,12 +78,16 @@ export function ClaudeAccountChip({ sessionId }: { sessionId: string }): React.J
         follow: { label: 'Follow project', account: ctx.projectAccount },
         chosenId: ctx.ownAccount ? ctx.current.account.id : null,
         chatOnly: ctx.ownAccount,
+        unchanged: ctx.ownAccount
+          ? `This chat already uses ${ctx.current.account.name}`
+          : 'This chat already follows the project',
         choose: async (accountId, next) => {
           const moved = await switchChatClaudeAccount(
             {
               sessionId,
               projectId: ctx.projectId,
               runsOn: ctx.current.account.id,
+              ownAccountId: ctx.ownAccount ? ctx.current.account.id : null,
               projectAccountId: ctx.projectAccount.id
             },
             accountId
@@ -116,6 +122,9 @@ export function ProjectClaudeAccountChip({
         follow: { label: 'Follow default', account: ctx.defaultAccount },
         chosenId: ctx.explicit ? ctx.current.account.id : null,
         chatOnly: false,
+        unchanged: ctx.explicit
+          ? `This project already uses ${ctx.current.account.name}`
+          : 'This project already follows the default account',
         choose: async (accountId, next) => {
           await switchProjectClaudeAccount(projectId, accountId)
           return next ? `This project now uses ${next.name}` : 'Account changed'
@@ -150,7 +159,10 @@ function AccountChip({
   const snapshot = ctx.accounts.snapshot
 
   const choose = async (accountId: string | null): Promise<void> => {
-    if (accountId === scope.chosenId) return
+    if (accountId === scope.chosenId) {
+      toast.info(scope.unchanged)
+      return
+    }
     const next =
       accountId === null
         ? (scope.follow.account ?? undefined)

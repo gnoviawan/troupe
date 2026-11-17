@@ -80,6 +80,7 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
   const currentId = ctx.current.account.id
   const currentName = ctx.current.account.name
   const projectAccountId = ctx.projectAccount.id
+  const ownAccountId = ctx.ownAccount ? currentId : null
   const reloadAccounts = ctx.accounts.reload
   async function switchTo(target: AccountChoice): Promise<void> {
     if (useClaudeSwitchingStore.getState()[sessionId]) return
@@ -87,7 +88,7 @@ export function useClaudeLimit(sessionId: string): ClaudeLimit | null {
     if (resumeAt !== null) void claudeAccountsApi.setResume(sessionId, null).catch(() => undefined)
     try {
       const moved = await switchChatClaudeAccount(
-        { sessionId, projectId, runsOn: currentId, projectAccountId },
+        { sessionId, projectId, runsOn: currentId, ownAccountId, projectAccountId },
         target.account.id,
         limit.status === 'rejected'
           ? { notice: chatSwitchNotice(currentName, target.account.name, windowName(limit)) }
