@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { resetChatActivity, seedChatActivity } from '@/lib/test-utils/chat-activity'
 import { useAcpStore } from '@/stores/acp-store'
+import { useProjectStore } from '@/stores/project-store'
 import { resetShellLayoutStoreForTests, useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
@@ -43,8 +44,12 @@ const entry = (id: string, lastActivityAt: number) =>
     lastActivityAt
   })
 
+const realSelectProject = useProjectStore.getState().selectProject
+
 beforeEach(() => {
   vi.clearAllMocks()
+  // The rows belong to p1, the open project, unless a test switches it.
+  useProjectStore.setState({ activeProjectId: 'p1', selectProject: realSelectProject })
   mocks.paneDnd.dragPayload = null
   mocks.openHistorySession.mockResolvedValue(undefined)
   mocks.deleteHistorySession.mockResolvedValue(undefined)
@@ -161,6 +166,18 @@ describe('RailProjectChats', () => {
       source: 'Rail',
       message: '[rail] open chat a'
     })
+  })
+
+  it("switches to the chat's project first when another project is open", () => {
+    const selectProject = vi.fn()
+    useProjectStore.setState({ activeProjectId: 'p2', selectProject } as never)
+    useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
+    render(<RailProjectChats project={project} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Chat a' }))
+    expect(mocks.openHistorySession).toHaveBeenCalledWith('a')
+    expect(selectProject).toHaveBeenCalledWith('p1')
+    // The tab goes into p1's own tree after the switch, not into p2's panes.
+    expect(mocks.addAgentChatTab).not.toHaveBeenCalled()
   })
 
   it('drags a row into a pane with the chat payload and logs it from the Rail', () => {

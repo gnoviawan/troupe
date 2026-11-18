@@ -51,6 +51,7 @@ export type NewChatReason =
   | 'project-row'
   | 'shortcut'
   | 'menu'
+  | 'new-tab-menu'
   | 'command-palette'
   | 'stopped-chat'
   | 'github-handoff'

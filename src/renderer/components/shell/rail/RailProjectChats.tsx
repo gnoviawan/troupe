@@ -195,6 +195,8 @@ function RailChatCollapse({
 
 interface RailProjectChatsProps {
   project: Project
+  /** This is the open project (its list carries `data-open-project`). */
+  isOpenProject?: boolean
   /** Inside the chat peek: rows take the 6% hover fill of the hover panel. */
   peek?: boolean
   /** Peek only: the chat whose Rail icon the pointer is on (hover fill). */
@@ -215,9 +217,11 @@ interface RailProjectChatsProps {
 }
 
 /**
- * The active project's chats in the Rail (Sidebar V2): the chat cards scoped
+ * A project's chats in the Rail (Sidebar V2), under its row whether or not
+ * it is the open project: the chat cards scoped
  * by the worktree pick, newest first; the first five, then
- * "Show N more". A click opens or focuses the chat; a drag onto a pane edge
+ * "Show N more". A click opens or focuses the chat (a chat of another
+ * project switches to that project first); a drag onto a pane edge
  * splits the pane, a drag into a pane opens the chat there.
  *
  * Collapsed Rail: one agent icon per chat at the same y, "···" for "Show N
@@ -226,6 +230,7 @@ interface RailProjectChatsProps {
  */
 export function RailProjectChats({
   project,
+  isOpenProject = false,
   peek = false,
   highlightedChatId = null,
   onChatOpened,
@@ -314,6 +319,8 @@ export function RailProjectChats({
       total={cards.length}
       pinnedIndex={openIndex === -1 ? undefined : openIndex}
       data-testid={peek ? 'rail-chat-peek-chats' : 'rail-project-chats'}
+      // Marks the open project's list (every project lists its chats).
+      data-open-project={(isOpenProject && !peek) || undefined}
       // The chat icons sit right of the icon column, so the list fades out
       // as one block and fades back in on the other density.
       className={peek ? undefined : RAIL_BLOCK_FADE_CLASS}
