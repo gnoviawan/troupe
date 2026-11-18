@@ -56,6 +56,11 @@ interface RailProjectChatRowProps extends React.ComponentPropsWithoutRef<'button
   card: ChatCardData
   open: boolean
   dragging: boolean
+  /**
+   * Only the open project's chats drag into a pane: a pane takes no chat of
+   * another project, so its drop zones must not light up for one.
+   */
+  canDrag: boolean
   onOpenChat: (entry: ProjectChatEntry) => void
   onDragChat: (entry: ProjectChatEntry, event: React.DragEvent) => void
   onDragChatEnd: () => void
@@ -75,6 +80,7 @@ function RailProjectChatRow({
   card,
   open,
   dragging,
+  canDrag,
   onOpenChat,
   onDragChat,
   onDragChatEnd,
@@ -98,15 +104,23 @@ function RailProjectChatRow({
         <RailChatRow
           open={open}
           dragging={dragging}
-          draggable
-          onDragStart={(event) => {
-            dragEndedAt.current = null
-            onDragChat(entry, event)
-          }}
-          onDragEnd={() => {
-            dragEndedAt.current = performance.now()
-            onDragChatEnd()
-          }}
+          draggable={canDrag}
+          onDragStart={
+            canDrag
+              ? (event) => {
+                  dragEndedAt.current = null
+                  onDragChat(entry, event)
+                }
+              : undefined
+          }
+          onDragEnd={
+            canDrag
+              ? () => {
+                  dragEndedAt.current = performance.now()
+                  onDragChatEnd()
+                }
+              : undefined
+          }
           onClick={() => {
             const endedAt = dragEndedAt.current
             dragEndedAt.current = null
@@ -195,7 +209,10 @@ function RailChatCollapse({
 
 interface RailProjectChatsProps {
   project: Project
-  /** This is the open project (its list carries `data-open-project`). */
+  /**
+   * This is the open project: its list carries `data-open-project`, and only
+   * its rows drag into a pane.
+   */
   isOpenProject?: boolean
   /** Inside the chat peek: rows take the 6% hover fill of the hover panel. */
   peek?: boolean
@@ -334,6 +351,7 @@ export function RailProjectChats({
                 card={card}
                 open={isOpenChatCard(card, openChatId)}
                 dragging={id === draggedChatId}
+                canDrag={isOpenProject}
                 onOpenChat={openChat}
                 onDragChat={dragChat}
                 onDragChatEnd={endDragChat}
@@ -386,6 +404,7 @@ export function RailProjectChats({
             <RailWorktreeChip project={project} collapsed={false} />
             <RailProjectChats
               project={project}
+              isOpenProject={isOpenProject}
               peek
               highlightedChatId={hoveredChatId}
               onChatOpened={closePeek}
