@@ -27,9 +27,15 @@ const LONG_PRESS_MS = 500
 /** A touch that moves further than this (px) is a scroll, not a long-press. */
 const LONG_PRESS_SLOP_PX = 10
 
-/** The row's accessible name: title, then status, then the created time, when known. */
-function rowAriaLabel(title: string, statusText: string | null | undefined, time: string): string {
-  return [title, statusText, time ? `created ${time}` : ''].filter(Boolean).join(', ')
+function rowAriaLabel(
+  title: string,
+  startedByLabel: string | undefined,
+  statusText: string | null | undefined,
+  time: string
+): string {
+  return [title, startedByLabel, statusText, time ? `created ${time}` : '']
+    .filter(Boolean)
+    .join(', ')
 }
 
 /** Claude-style row: borderless 16px label, the active row a full-width pill. */
@@ -163,6 +169,7 @@ function RecentsStatus({
 interface RowShellProps {
   entryId: string
   title: string
+  subtitle?: string
   isActive: boolean
   ariaLabel: string
   disabled?: boolean
@@ -178,6 +185,7 @@ interface RowShellProps {
 function RecentsRowShell({
   entryId,
   title,
+  subtitle,
   isActive,
   ariaLabel,
   disabled,
@@ -204,7 +212,14 @@ function RecentsRowShell({
         }}
       >
         <span className="inline-flex shrink-0 items-center">{icon}</span>
-        <span className="min-w-0 flex-1 truncate">{title}</span>
+        {subtitle ? (
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate">{title}</span>
+            <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate">{title}</span>
+        )}
         {status ? <span className="flex shrink-0 items-center gap-1">{status}</span> : null}
         {time ? (
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{time}</span>
@@ -264,8 +279,9 @@ function OpenRecentsRow({
     <RecentsRowShell
       entryId={entry.id}
       title={title}
+      subtitle={entry.startedByLabel}
       isActive={isActive}
-      ariaLabel={rowAriaLabel(title, statusWord, time)}
+      ariaLabel={rowAriaLabel(title, entry.startedByLabel, statusWord, time)}
       icon={
         <ChatEntryIcon
           agentId={signals.session?.agentId ?? indexAgentId ?? entry.agentId}
@@ -313,8 +329,9 @@ function HistoryRecentsRow({
     <RecentsRowShell
       entryId={entry.id}
       title={entry.title}
+      subtitle={entry.startedByLabel}
       isActive={isActive}
-      ariaLabel={rowAriaLabel(entry.title, statusText, time)}
+      ariaLabel={rowAriaLabel(entry.title, entry.startedByLabel, statusText, time)}
       disabled={entry.discovered && !entry.canOpen}
       icon={
         <ChatEntryIcon
