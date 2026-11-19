@@ -102,7 +102,7 @@ export function FeatureTour({ tabs }: { tabs: TourTab[] }) {
                       key={tab.id}
                       value={tab.id}
                       className={cn(
-                        'relative z-10 flex h-11 shrink-0 cursor-pointer items-center gap-2 overflow-clip rounded-lg pr-3.5 pl-3 text-[15px] leading-5 font-medium tracking-[-0.01em] outline-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring md:h-9 md:text-[13px]',
+                        'relative z-10 flex h-11 shrink-0 cursor-pointer items-center gap-2 overflow-clip rounded-lg pr-3.5 pl-3 text-[15px] leading-5 font-medium tracking-[-0.01em] outline-hidden focus-ring select-none transition-colors duration-150 md:h-9 md:text-[13px]',
                         selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
@@ -144,10 +144,10 @@ export function FeatureTour({ tabs }: { tabs: TourTab[] }) {
               <TabsPanel
                 key={tab.id}
                 value={tab.id}
-                className="tour-panel col-start-1 row-start-1 flex flex-col gap-6 outline-none xl:flex-row xl:gap-10"
+                className="tour-panel col-start-1 row-start-1 flex flex-col gap-6 rounded-xl outline-hidden focus-ring xl:flex-row xl:gap-10"
               >
                 <TourCopy tab={tab} step={index === state.tab ? step : 0} />
-                {index === state.tab ? <TourStage tab={tab} step={step as TourStep} /> : null}
+                {index === state.tab ? <TourStage tab={tab} step={step as TourStep} running={running} /> : null}
               </TabsPanel>
             ))}
           </div>
@@ -171,7 +171,7 @@ function TourCopy({ tab, step }: { tab: TourTab; step: number }) {
             <li key={caption} aria-current={current ? 'step' : undefined} className="relative flex gap-3 py-2.5 pl-4">
               <span
                 className={cn(
-                  'w-5 shrink-0 font-mono text-[13px] leading-[22px] md:text-xs md:leading-5',
+                  'w-5 shrink-0 font-mono text-sm leading-[22px] md:text-xs md:leading-5',
                   current ? 'text-primary' : 'text-muted-foreground',
                 )}
               >
@@ -201,12 +201,14 @@ function TourCopy({ tab, step }: { tab: TourTab; step: number }) {
  * The photo stage (888×640) with the app window (900×640 at 40,40).
  * Phone: a 330px full-bleed crop that keeps `mobileFocus` at its top-left.
  */
-function TourStage({ tab, step }: { tab: TourTab; step: TourStep }) {
+function TourStage({ tab, step, running }: { tab: TourTab; step: TourStep; running: boolean }) {
   const { Scene } = tab;
   return (
     <div
       aria-hidden="true"
-      className="relative -mx-6 h-[330px] overflow-clip border-y-[0.5px] border-border md:mx-0 md:h-[640px] md:border-0 xl:w-[888px] xl:shrink-0"
+      // Loops in the scenes (spinners, shine) stop while the tour is paused or off screen.
+      data-running={running}
+      className="tour-stage relative -mx-6 h-[330px] overflow-clip border-y-[0.5px] border-border md:mx-0 md:h-[640px] md:border-0 xl:w-[888px] xl:shrink-0"
       style={{ '--fx': `${-tab.mobileFocus.x}px`, '--fy': `${-tab.mobileFocus.y}px` } as CSSProperties}
     >
       <Stage

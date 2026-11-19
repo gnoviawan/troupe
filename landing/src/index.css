@@ -131,6 +131,30 @@
   }
 
   /* Paper wraps text normally; keep the same breaks as the design. */
+
+  /* No double-tap-zoom wait on controls. */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role='button'],
+  [role='tab'] {
+    touch-action: manipulation;
+  }
+}
+
+/*
+ * Keyboard focus ring for controls. Pair it with `outline-hidden` (never
+ * `outline-none`): in Tailwind 4, `outline-none` sets --tw-outline-style to
+ * none, which also hides the `focus-visible:outline-*` utilities. A
+ * :focus-visible rule here is more specific than `outline-hidden`, so it wins.
+ */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {

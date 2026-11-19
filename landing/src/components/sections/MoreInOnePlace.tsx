@@ -58,7 +58,7 @@ export function MoreInOnePlace() {
           </h2>
           <a
             href={DOCS_URL}
-            className="self-start rounded-sm text-base leading-[22px] font-medium text-primary transition-colors duration-150 hover:text-foreground md:self-auto md:text-[15px]"
+            className="inline-flex min-h-11 items-center self-start rounded-sm text-base leading-[22px] font-medium text-primary transition-colors duration-150 hover:text-foreground md:min-h-0 md:self-auto md:text-[15px]"
           >
             Read the docs <span aria-hidden="true">→</span>
           </a>

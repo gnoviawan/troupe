@@ -36,8 +36,7 @@ export function buttonClassName({
   className?: string;
 } = {}): string {
   return cn(
-    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium tracking-[-0.01em] outline-none',
-    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium tracking-[-0.01em] outline-hidden focus-ring',
     'disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
     VARIANT[variant],
     SIZE[size],

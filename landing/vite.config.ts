@@ -26,6 +26,36 @@ function releaseVersionPlugin(): Plugin {
 }
 
 /**
+ * Preloads the Latin Inter file. Without it the browser finds the font only
+ * after it has parsed the CSS, and the text swaps from the fallback later.
+ * The file name has a content hash, so it is read from the client bundle.
+ */
+function fontPreloadPlugin(): Plugin {
+  return {
+    name: 'troupe-font-preload',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const font = Object.values(ctx.bundle ?? {}).find(
+          (file) => file.type === 'asset' && /inter-latin-opsz-normal-[\w-]+\.woff2$/.test(file.fileName),
+        )
+        if (!font) return html
+        return {
+          html,
+          tags: [
+            {
+              tag: 'link',
+              attrs: { rel: 'preload', href: `/${font.fileName}`, as: 'font', type: 'font/woff2', crossorigin: '' },
+              injectTo: 'head',
+            },
+          ],
+        }
+      },
+    },
+  }
+}
+
+/**
  * Local dev and preview have no Pages Functions. Read the public testimonial
  * list and avatars from production so the section looks real locally.
  * GET only: a form POST in dev must never reach the live database.
@@ -52,5 +82,6 @@ export default defineConfig({
     tailwindcss(),
     reactSsg(),
     releaseVersionPlugin(),
+    fontPreloadPlugin(),
   ],
 })

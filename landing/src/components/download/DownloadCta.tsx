@@ -36,7 +36,7 @@ export function DownloadCta({
             {compact ? null : (
               <ChevronIcon
                 size={14}
-                className="-mr-3 -ml-0.5 opacity-85 transition-transform duration-150 ease-(--ease-out) in-aria-expanded:rotate-180"
+                className="-mr-3 -ml-0.5 opacity-85 transition-transform duration-150 ease-(--ease-out) in-aria-expanded:rotate-180 motion-reduce:transition-none"
               />
             )}
           </DownloadMenu.Trigger>

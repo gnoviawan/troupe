@@ -59,7 +59,7 @@ export function Footer() {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="flex min-h-10 items-center text-[15px] text-muted-foreground transition-colors duration-150 hover:text-foreground md:min-h-0 md:py-[5px] md:text-sm md:leading-5"
+                      className="flex min-h-11 items-center text-[15px] text-muted-foreground transition-colors duration-150 hover:text-foreground md:min-h-0 md:py-[5px] md:text-sm md:leading-5"
                     >
                       {link.label}
                     </a>
@@ -82,11 +82,11 @@ export function Footer() {
 function LegalLinks() {
   return (
     <span className="flex gap-3">
-      <Link to="/privacy" className="hover:text-foreground">
+      <Link to="/privacy" className="inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">
         Privacy
       </Link>
-      <span aria-hidden="true">·</span>
-      <Link to="/terms" className="hover:text-foreground">
+      <span aria-hidden="true" className="inline-flex items-center">·</span>
+      <Link to="/terms" className="inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">
         Terms
       </Link>
     </span>

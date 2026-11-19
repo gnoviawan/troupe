@@ -1,9 +1,9 @@
-import { useSeoMeta } from '@unhead/react';
+import { usePageMeta } from '../lib/page-meta';
 
 import { buttonClassName } from '../components/ui/Button';
 
 export function NotFoundPage() {
-  useSeoMeta({
+  usePageMeta({
     title: 'Page not found — Troupe',
     description: 'The page you are looking for does not exist.',
     robots: 'noindex,nofollow',

@@ -73,7 +73,8 @@ function Content({ children, className }: { children: ReactNode; className?: str
       <DrawerBackdrop className="fixed inset-0 z-50 bg-black/60" />
       <DrawerContent
         className={cn(
-          'flex w-full flex-col gap-5 rounded-t-2xl bg-popover px-5 pt-2 pb-[max(34px,env(safe-area-inset-bottom))] text-foreground shadow-[0_0_0_0.5px_var(--color-popover-edge),0_-8px_32px_rgb(0_0_0/0.5)] outline-none',
+          // Max height + scroll: on a landscape phone the sheet is taller than the screen.
+          'flex max-h-[calc(100dvh-12px)] w-full flex-col gap-5 overflow-y-auto overscroll-contain rounded-t-2xl bg-popover px-5 pt-2 pb-[max(34px,env(safe-area-inset-bottom))] text-foreground shadow-[0_0_0_0.5px_var(--color-popover-edge),0_-8px_32px_rgb(0_0_0/0.5)] outline-none',
           className,
         )}
       >
@@ -101,7 +102,7 @@ function Header({
       </div>
       <DrawerClose
         aria-label="Close"
-        className="-mt-2 -mr-2.5 flex size-11 shrink-0 items-center justify-center rounded-full outline-none"
+        className="-mt-2 -mr-2.5 flex size-11 shrink-0 items-center justify-center rounded-full outline-hidden focus-ring"
       >
         <span className="flex size-[30px] items-center justify-center rounded-full bg-muted text-muted-foreground">
           <CloseIcon />
@@ -133,7 +134,7 @@ function ChannelPicker() {
           <SegmentedControlItem
             key={item.id}
             value={item.id}
-            className="flex h-[52px] flex-1 flex-col items-start justify-center gap-px rounded-lg px-3 text-left outline-none"
+            className="flex h-[52px] flex-1 flex-col items-start justify-center gap-px rounded-lg px-3 text-left outline-hidden focus-ring"
           >
             <span className={cn('text-[15px] leading-5 font-medium', channel === item.id ? 'text-foreground' : 'text-muted-foreground')}>
               {item.title}
@@ -164,13 +165,13 @@ function Actions() {
   // Read during render (no effect), so the sheet opens with its final buttons
   // instead of growing a frame later. The server snapshot is false.
   const canShare = useSyncExternalStore(subscribeNever, hasShareSheet, noShareSheet);
-  const [copied, setCopied] = useState(false);
+  const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   useEffect(() => {
-    if (!copied) return;
-    const timer = window.setTimeout(() => setCopied(false), 2000);
+    if (copy === 'idle') return;
+    const timer = window.setTimeout(() => setCopy('idle'), 2000);
     return () => window.clearTimeout(timer);
-  }, [copied]);
+  }, [copy]);
 
   const url = shareUrl(channel);
 
@@ -191,11 +192,16 @@ function Actions() {
         size="touch"
         variant={canShare ? 'secondary' : 'primary'}
         onClick={() => {
-          void navigator.clipboard?.writeText(url).then(() => setCopied(true));
+          // Show the tick at once; take it back if the clipboard refuses.
+          setCopy('copied');
+          const write = navigator.clipboard?.writeText(url) ?? Promise.reject(new Error('No clipboard'));
+          write.catch(() => setCopy('failed'));
         }}
       >
-        {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
-        <span aria-live="polite">{copied ? 'Link copied' : 'Copy link'}</span>
+        {copy === 'copied' ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+        <span aria-live="polite">
+          {copy === 'copied' ? 'Link copied' : copy === 'failed' ? 'Copy failed' : 'Copy link'}
+        </span>
       </Button>
     </div>
   );

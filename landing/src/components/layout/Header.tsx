@@ -44,7 +44,7 @@ export function Header() {
           <Menu>
             <MenuTrigger
               aria-label="Open menu"
-              className="flex size-11 items-center justify-center rounded-[10px] text-foreground outline-none"
+              className="flex size-11 items-center justify-center rounded-[10px] text-foreground outline-hidden focus-ring select-none"
             >
               <MenuIcon />
             </MenuTrigger>

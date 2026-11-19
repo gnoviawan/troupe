@@ -42,7 +42,7 @@ function Question({ children }: { children: ReactNode }) {
   return (
     <AccordionHeader className="m-0">
       {/* Open: 12px between question and answer (Paper), so the bottom padding shrinks with the panel. */}
-      <AccordionTrigger className="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left text-base leading-6 font-medium text-foreground transition-[padding] duration-250 ease-(--ease-out) outline-none group-data-open:pb-3 md:py-6 md:text-[17px] md:group-data-open:pb-3 motion-reduce:transition-none">
+      <AccordionTrigger className="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left text-base leading-6 font-medium text-foreground transition-[padding] duration-250 ease-(--ease-out) outline-hidden focus-ring select-none group-data-open:pb-3 md:py-6 md:text-[17px] md:group-data-open:pb-3 motion-reduce:transition-none">
         <span>{children}</span>
         <span aria-hidden="true" className="relative size-6 shrink-0 text-muted-foreground">
           <span className="absolute top-1/2 left-1/2 h-[1.5px] w-3 -translate-1/2 rounded-full bg-current" />

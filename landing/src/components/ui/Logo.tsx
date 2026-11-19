@@ -14,7 +14,8 @@ export function Logo({ className, size = 20 }: LogoProps) {
     <Link
       to="/"
       aria-label="Troupe home"
-      className={cn('flex items-center gap-2 rounded-md text-foreground', className)}
+      // 11px padding above and below, cancelled by the same negative margin: a 44px hit area, same layout.
+      className={cn('-my-[11px] flex items-center gap-2 rounded-md py-[11px] text-foreground', className)}
     >
       <TroupeMark size={size} />
       <span className="text-[16px] leading-[22px] font-semibold tracking-[-0.01em]">Troupe</span>

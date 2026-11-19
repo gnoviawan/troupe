@@ -59,6 +59,11 @@
   transition: none;
 }
 
+/* Scene loops (spinners, the browser shine) wait while the tour is stopped. */
+.tour-stage[data-running="false"] * {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tour-indicator {
     transition: none;

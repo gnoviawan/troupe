@@ -11,6 +11,8 @@ type SectionHeaderProps = {
   titleClassName?: string;
   descriptionClassName?: string;
   titleId?: string;
+  /** Heading level. Use "h1" when this is the page's main title. */
+  as?: 'h1' | 'h2';
 };
 
 /** Section title block for the testimonial pages. Static: no entrance motion. */
@@ -23,6 +25,7 @@ export function SectionHeader({
   titleClassName,
   descriptionClassName,
   titleId,
+  as: Heading = 'h2',
 }: SectionHeaderProps) {
   return (
     <div className={cn(align === 'center' && 'mx-auto text-center', className)}>
@@ -36,12 +39,12 @@ export function SectionHeader({
           {eyebrow}
         </div>
       ) : null}
-      <h2
+      <Heading
         id={titleId}
         className={cn('mb-4 text-[32px] leading-10 font-medium tracking-[-0.02em] text-foreground md:text-[40px] md:leading-[48px]', titleClassName)}
       >
         {title}
-      </h2>
+      </Heading>
       {description ? (
         <p className={cn('max-w-xl text-base leading-6 text-muted-foreground', align === 'center' && 'mx-auto', descriptionClassName)}>
           {description}
