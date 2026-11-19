@@ -5,7 +5,7 @@ import { Container } from './Container';
 export function FaqSection() {
   return (
     <section aria-labelledby="faq-title">
-      <Container className="flex flex-col gap-5 pt-[88px] pb-24 md:flex-row md:items-start md:justify-between md:gap-10 md:pt-10 md:pb-40">
+      <Container className="flex flex-col gap-5 pt-[88px] pb-24 md:flex-row md:items-start md:justify-between md:gap-10 md:pt-40 md:pb-40">
         <h2
           id="faq-title"
           className="text-[28px] leading-[34px] font-medium tracking-[-0.02em] text-foreground md:w-[320px] md:shrink-0 md:text-2xl md:leading-8"
