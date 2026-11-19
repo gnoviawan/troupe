@@ -2,6 +2,10 @@
 
 The root `AGENTS.md` excludes `landing/`. Follow this file for work in `landing/`.
 
+## Design system
+
+UI rules (tokens, which component and variant to use, motion, phone, meta) are in [`DESIGN.md`](./DESIGN.md) and [`docs/design/`](./docs/design/). Read `DESIGN.md` before you add or change any UI.
+
 ## Current work
 
 The landing redesign plan is in [`docs/pocket/spec/2026-11-19-landing-redesign/plan.md`](../docs/pocket/spec/2026-11-19-landing-redesign/plan.md). Read it before you change any page, section or component.
