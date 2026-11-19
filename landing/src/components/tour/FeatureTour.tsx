@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react';
+import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { Tabs, TabsIndicator, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
 
 import { Stage } from '@/components/app-ui/Window';
@@ -199,7 +199,7 @@ function TourCopy({ tab, step }: { tab: TourTab; step: number }) {
 
 /**
  * The photo stage (888×640) with the app window (900×640 at 40,40).
- * Phone: a 330px full-bleed crop that keeps `mobileFocus` at its top-left.
+ * Phone: the whole stage, scaled down to the screen width (`.shot-fit`, index.css).
  */
 function TourStage({ tab, step, running }: { tab: TourTab; step: TourStep; running: boolean }) {
   const { Scene } = tab;
@@ -208,12 +208,11 @@ function TourStage({ tab, step, running }: { tab: TourTab; step: TourStep; runni
       aria-hidden="true"
       // Loops in the scenes (spinners, shine) stop while the tour is paused or off screen.
       data-running={running}
-      className="tour-stage relative -mx-6 h-[330px] overflow-clip border-y-[0.5px] border-border md:mx-0 md:h-[640px] md:border-0 xl:w-[888px] xl:shrink-0"
-      style={{ '--fx': `${-tab.mobileFocus.x}px`, '--fy': `${-tab.mobileFocus.y}px` } as CSSProperties}
+      className="tour-stage @container relative aspect-[888/640] overflow-clip rounded-xl border-[0.5px] border-hairline md:aspect-auto md:h-[640px] md:rounded-none md:border-0 xl:w-[888px] xl:shrink-0"
     >
       <Stage
         background={tab.background}
-        className="absolute top-(--fy) left-(--fx) h-[640px] w-[888px] rounded-2xl border-[0.5px] border-hairline shadow-[0_1px_2px_#00000080,0_3px_4px_-2px_#00000080] md:static md:w-full"
+        className="shot-fit absolute top-0 left-0 h-[640px] w-[888px] [--shot-w:888px] md:static md:w-full md:rounded-2xl md:border-[0.5px] md:border-hairline md:shadow-[0_1px_2px_#00000080,0_3px_4px_-2px_#00000080]"
       >
         {tab.frame === 'none' ? (
           <div data-step={step} className="absolute inset-0">

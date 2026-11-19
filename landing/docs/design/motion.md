@@ -17,6 +17,7 @@ Should it move?
 | Press (primary, secondary button) | 150ms | `--ease-out` | `scale: .97` on `:active` (the `.press` class in `Button`) |
 | Hover, row highlight | 150ms | `--ease-out` | colour only |
 | Menu open / close | 150ms / 120ms | `--ease-out` | opacity + `scale` from .97, origin at the middle of the trigger |
+| Phone menu icon (☰ ↔ ✕) | 400ms | `cubic-bezier(0.19, 1, 0.22, 1)` | 3 lines: outer lines `translate` + `rotate` 45°, middle line `scale` x to 0 + opacity, driven by the trigger's `aria-expanded` (`MenuIcon`). No transition with reduced motion |
 | Tour tab panel | 200ms in, 150ms out | `--ease-out` | opacity (cross-fade in one grid cell) |
 | Tour tab pill | 300ms | `--ease-in-out` | `translate` + width (UI SDK `--active-tab-*`) |
 | Tour progress | one tab (8.8s) | linear | `scale` x |

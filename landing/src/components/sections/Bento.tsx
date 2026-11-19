@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { Composer } from '@/components/app-ui/Composer';
 import { AppWindow, Stage, type ShotBackground } from '@/components/app-ui/Window';
@@ -30,14 +30,14 @@ export function Bento() {
             <ShotPicture
               name="bento-agents"
               alt="The model menu in the composer lists Claude Code, Codex, Gemini CLI, OpenCode and Cursor with their models."
-              mobileHeight={300}
+              width={815}
             />
           </Tile>
           <Tile title="Keep going from your phone" description="Open your chats in any browser, on any device.">
             <ShotPicture
               name="bento-phone"
               alt="A Troupe chat open in a phone browser, with a compact composer."
-              mobileHeight={320}
+              width={415}
             />
           </Tile>
         </div>
@@ -47,10 +47,7 @@ export function Bento() {
             title="A troupe of agents working for you"
             description="Subagents and worker chats, live, on the account with the most room."
           >
-            <div aria-hidden="true" className="px-4 pb-4 md:hidden">
-              <SubagentList compact />
-            </div>
-            <DesktopShot background="green" height={451}>
+            <DesktopShot background="green" width={616} height={451}>
               <AppWindow className="top-10 left-10 h-[700px] w-[900px]">
                 <div className="flex w-[575px] flex-col gap-4 px-8 pt-8 pb-9 text-sm">
                   <div className="flex justify-end">
@@ -71,10 +68,7 @@ export function Bento() {
             title="Every chat on its own branch"
             description="Fresh git worktrees, diffs and a real terminal next to the chat."
           >
-            <div aria-hidden="true" className="flex justify-center px-4 pt-1 pb-6 md:hidden">
-              <WorktreeMenu className="w-[310px]" />
-            </div>
-            <DesktopShot background="dusk" height={451}>
+            <DesktopShot background="dusk" width={616} height={451}>
               <AppWindow className="top-10 left-10 h-[700px] w-[900px]">
                 <Composer className="absolute top-[133.5px] left-[83.25px]">
                   <WorktreeMenu className="absolute bottom-[42px] left-2" />
@@ -89,10 +83,7 @@ export function Bento() {
           title="Give agents more tools"
           description="Turn MCP servers on per chat from the composer. Your tracker, database and design files, one click away."
         >
-          <div aria-hidden="true" className="flex justify-center px-4 pt-1 pb-6 md:hidden">
-            <ConnectorsMenu className="w-[310px]" />
-          </div>
-          <DesktopShot background="pastel" height={400} className="md:border-t-0 md:border-l-[0.5px]">
+          <DesktopShot background="pastel" width={848} height={400} className="md:border-t-0 md:border-l-[0.5px]">
             <AppWindow className="top-10 left-10 h-[700px] w-[900px]">
               <Composer className="absolute top-[173.5px] left-[23.25px]">
                 <ConnectorsMenu className="absolute top-[-139.5px] left-[372px]" />
@@ -139,47 +130,61 @@ function Tile({
   );
 }
 
-/** Desktop only: the photo stage with a code-built window. */
+/**
+ * The photo stage with a code-built window. `width` × `height` is the shot's
+ * size in the widest layout. Phone: that whole shot, scaled to the tile width
+ * (`.shot-fit`, index.css). From 768px: full size, filling the tile.
+ */
 function DesktopShot({
   background,
+  width,
   height,
   className,
   children,
 }: {
   background: ShotBackground;
+  width: number;
   height: number;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <Stage
+    <div
       aria-hidden="true"
-      background={background}
-      className={cn('hidden grow border-t-[0.5px] border-border md:block', className)}
-      style={{ minHeight: height }}
+      className={cn(
+        '@container relative min-w-0 grow overflow-clip border-t-[0.5px] border-border aspect-(--shot-ratio) md:flex md:aspect-auto md:flex-col',
+        className,
+      )}
+      style={{ '--shot-w': `${width}px`, '--shot-h': `${height}px`, '--shot-ratio': `${width} / ${height}` } as CSSProperties}
     >
-      {children}
-    </Stage>
+      <Stage
+        background={background}
+        className="shot-fit absolute top-0 left-0 h-(--shot-h) w-(--shot-w) md:static md:h-auto md:min-h-(--shot-h) md:w-full md:grow"
+      >
+        {children}
+      </Stage>
+    </div>
   );
 }
 
-/** A static window shot (WebP): the desktop crop from 768px, the phone crop below. */
-function ShotPicture({ name, alt, mobileHeight }: { name: string; alt: string; mobileHeight: number }) {
+/**
+ * A static window shot (WebP, 491px tall).
+ * Phone: the whole shot, scaled to the tile width. From 768px: 491px tall,
+ * cropped from the top-left when the tile is narrower than the shot.
+ */
+function ShotPicture({ name, alt, width }: { name: string; alt: string; width: number }) {
   return (
-    <picture className="block grow overflow-clip border-t-[0.5px] border-border bg-window">
-      <source
-        media="(min-width: 768px)"
-        srcSet={`/media/${name}-desktop.webp 1x, /media/${name}-desktop@2x.webp 2x`}
-      />
+    <div className="grow overflow-clip border-t-[0.5px] border-border bg-window">
       <img
-        src={`/media/${name}-mobile.webp`}
-        srcSet={`/media/${name}-mobile.webp 1x, /media/${name}-mobile@2x.webp 2x`}
+        src={`/media/${name}-desktop.webp`}
+        srcSet={`/media/${name}-desktop.webp 1x, /media/${name}-desktop@2x.webp 2x`}
         alt={alt}
+        width={width}
+        height={491}
         loading="lazy"
         decoding="async"
-        style={{ height: mobileHeight }}
-        className="w-full object-cover object-left-top md:!h-[491px]"
+        className="h-auto w-full md:h-[491px] md:object-cover md:object-left-top"
       />
-    </picture>
+    </div>
   );
 }

@@ -21,8 +21,8 @@ const SUBAGENTS: Subagent[] = [
   { agent: 'claude-code', title: 'Review every page', chip: 'Explore', detail: 'Checked 14 pages · no issues', status: 'done', time: '1m' },
 ];
 
-/** The live subagent card from a chat. `compact` hides the type chips (phone). */
-export function SubagentList({ compact = false, className }: { compact?: boolean; className?: string }) {
+/** The live subagent card from a chat. */
+export function SubagentList({ className }: { className?: string }) {
   return (
     <ul className={cn('flex flex-col rounded-xl border-[0.5px] border-border bg-card shadow-card', className)}>
       {SUBAGENTS.map((item) => (
@@ -39,11 +39,9 @@ export function SubagentList({ compact = false, className }: { compact?: boolean
           <span className="flex min-w-0 grow basis-0 flex-col">
             <span className="flex items-center gap-2">
               <span className="text-sm leading-5 font-medium text-foreground">{item.title}</span>
-              {compact ? null : (
-                <span className="rounded-[5px] border-[0.5px] border-chip-edge px-1.5 text-[11px] leading-[18px] text-muted-foreground">
-                  {item.chip}
-                </span>
-              )}
+              <span className="rounded-[5px] border-[0.5px] border-chip-edge px-1.5 text-[11px] leading-[18px] text-muted-foreground">
+                {item.chip}
+              </span>
             </span>
             <span className="text-xs leading-4 text-muted-foreground">{item.detail}</span>
           </span>

@@ -27,11 +27,6 @@ export type TourTab = {
   footer?: ReactNode;
   background: TourBackground;
   /**
-   * Phone crop: the stage point (x, y in px of the 888×640 stage) that sits at
-   * the top-left of the 330px phone crop, so the key part of the UI stays in view.
-   */
-  mobileFocus: { x: number; y: number };
-  /**
    * 'window' (default): the host draws the 900×640 app window at 40,40 and the
    * Scene fills it. 'none': the host draws no window; the Scene covers the
    * whole 888×640 stage and draws its own window or device.

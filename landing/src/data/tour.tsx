@@ -23,7 +23,6 @@ export const TOUR_TABS: TourTab[] = [
     steps: ['Near the limit', 'Limit reached, draft kept', 'Switching to Personal', 'Continued on Personal'],
     footer: <AccountsFooter />,
     background: 'dusk',
-    mobileFocus: { x: 170, y: 252 },
     Scene: AccountsScene,
   },
   {
@@ -35,9 +34,6 @@ export const TOUR_TABS: TourTab[] = [
       'Troupe Canvas is a full design editor in a tab. The agent builds frames and layers with its canvas tools, and you can change all of it after.',
     steps: ['An empty page', 'The agent adds a frame', 'Layers appear one by one', 'It selects the button'],
     background: 'green',
-    // The 342×330 phone crop puts the 300×218 "Home" frame in the middle with
-    // 21px on each side, so the frame and the selection show.
-    mobileFocus: { x: 296, y: 128 },
     Scene: CanvasScene,
   },
   {
@@ -49,9 +45,6 @@ export const TOUR_TABS: TourTab[] = [
       'Troupe notices the work you ask for again and again. You approve exactly what the automation may do, then it runs on its own schedule.',
     steps: ['Troupe spots a repeat', 'You review what it may do', 'It runs at 9:00 on its own', 'Done, every weekday'],
     background: 'green',
-    // The left column of the main panel (title, state pill, Enabled switch, run
-    // policy or run history) and the "Fetch open PRs" step with the moving dot.
-    mobileFocus: { x: 336, y: 88 },
     Scene: AutomationScene,
   },
   {
@@ -63,9 +56,6 @@ export const TOUR_TABS: TourTab[] = [
       'The agent opens your app in a visible tab beside the chat, clicks through it and sees what breaks. Passwords, uploads and new sites ask you first.',
     steps: ['The agent reaches for the browser', 'A visible tab beside the chat', 'You stay in control', 'Fixed and checked again'],
     background: 'pastel',
-    // The whole chat pane from the tool rows down: the tool rows, the consent
-    // card and the screenshot reply stay in view.
-    mobileFocus: { x: 44, y: 180 },
     Scene: BrowserScene,
   },
   {
@@ -77,9 +67,6 @@ export const TOUR_TABS: TourTab[] = [
       'Turn on remote access and scan the QR. The same live chats open on your phone, on any network. Approve a command from anywhere.',
     steps: ['One switch on the desktop', 'Scan the QR', 'The same chat, on your phone', 'Approve from anywhere'],
     background: 'orange',
-    // The phone with the "Approval needed" card: the last step and the
-    // reduced-motion still. The QR popover is only partly in view.
-    mobileFocus: { x: 266, y: 250 },
     frame: 'none',
     Scene: RemoteScene,
   },

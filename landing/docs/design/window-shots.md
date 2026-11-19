@@ -5,8 +5,10 @@ The page shows real Troupe UI. Two ways to show it:
 ```
 Does the UI move, reflow on a phone, or need sharp text at any size?
  ├── Yes → code it with app-ui parts (tour scenes, bento menus and lists, card illustrations)
- └── No → a WebP exported from Paper at 1x and 2x, desktop and phone crops, in <picture> (hero shot, bento Agents and Phone tiles)
+ └── No → a WebP exported from Paper at 1x and 2x (hero shot, bento Agents and Phone tiles)
 ```
+
+Every shot looks the same on a phone as on desktop, scaled down: the hero and bento images scale to their box width (`HeroShot`, `ShotPicture`), and code-built stages (`DesktopShot` in `Bento.tsx`, `TourStage`) keep their widest-layout size and scale with `.shot-fit` (`index.css`: an `@container` box with the shot's aspect ratio, and `--shot-w` on the scaled child). Never add a phone crop or a phone-only layout for a shot; the photo background must show on a phone too.
 
 ## The photo stage
 
@@ -25,11 +27,11 @@ The photos are `public/media/bg-*.webp` (licensed for this use). For a section b
 
 ## Feature tour (`src/components/tour/`)
 
-- A tab is a `TourTab` (`tour/types.ts`) in `src/data/tour.tsx`: copy (title, description, 4 steps, optional footer) from the Paper frames "Feature tour · All states (full stage)", a `background`, a `mobileFocus` (stage px of the 342×330 phone crop's top-left), an optional `frame: 'none'`, and a `Scene`.
+- A tab is a `TourTab` (`tour/types.ts`) in `src/data/tour.tsx`: copy (title, description, 4 steps, optional footer) from the Paper frames "Feature tour · All states (full stage)", a `background`, an optional `frame: 'none'`, and a `Scene`.
 - A tab file in `tour/tabs/` exports only components (its `Scene`, and helpers like `AccountsFooter`). The tab data lives in `src/data/tour.tsx`, so Fast Refresh keeps state.
 - A `Scene({ step })` renders all 4 keyframes at once and switches parts with CSS on `data-step` (0–3). No timers or JS animation in a scene.
 - Step 4 is the reduced-motion still: it must match Paper 4/4 exactly.
-- Pick `mobileFocus` so the crop shows the key UI of the last step.
+- On a phone the whole 888×640 stage scales down to the screen width (`.shot-fit` in `index.css`, CSS only). Never crop it or add a phone-only layout: a scene must read as a whole picture at about 0.4× (342px wide on a 390px phone).
 
 ## Card illustrations (`src/components/illustrations/`)
 

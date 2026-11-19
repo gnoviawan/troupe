@@ -76,10 +76,40 @@ export function CheckIcon(props: IconProps) {
   );
 }
 
+/*
+ * Three lines that morph into an X while the trigger around it has
+ * aria-expanded="true". Each outer line turns 45° about its own middle and
+ * moves to the centre; the middle line shrinks to the centre point. CSS only,
+ * so it follows the menu state with no React state. Translate and rotate
+ * lengths are in the 14×14 viewBox units.
+ */
+const MORPH_LINE =
+  'transition-[translate,rotate,scale,opacity] duration-400 ease-[cubic-bezier(0.19,1,0.22,1)] motion-reduce:transition-none';
+
 export function MenuIcon(props: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" {...base({ size: 20, ...props })}>
-      <path d="M4 8h16M4 16h16" />
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" {...base({ size: 20, ...props })}>
+      <line
+        x1={2}
+        y1={3.5}
+        x2={12}
+        y2={3.5}
+        className={`${MORPH_LINE} origin-[7px_3.5px] in-aria-expanded:translate-y-[3.5px] in-aria-expanded:rotate-45`}
+      />
+      <line
+        x1={2}
+        y1={7}
+        x2={12}
+        y2={7}
+        className={`${MORPH_LINE} origin-[7px_7px] in-aria-expanded:scale-x-0 in-aria-expanded:opacity-0`}
+      />
+      <line
+        x1={2}
+        y1={10.5}
+        x2={12}
+        y2={10.5}
+        className={`${MORPH_LINE} origin-[7px_10.5px] in-aria-expanded:-translate-y-[3.5px] in-aria-expanded:-rotate-45`}
+      />
     </svg>
   );
 }

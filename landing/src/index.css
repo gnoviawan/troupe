@@ -182,6 +182,19 @@
     background-position: 0 0, 0 0, 0 0, center;
   }
 
+  /*
+   * Phone: scale a fixed-size window shot (--shot-w wide) down to the width of
+   * its `@container` box. tan(atan2(width, --shot-w)) is width ÷ --shot-w as a
+   * plain number, so it needs no JavaScript and the prerendered page does not
+   * jump. From 768px the shot shows at full size.
+   */
+  @media (width < 48rem) {
+    .shot-fit {
+      transform-origin: top left;
+      scale: tan(atan2(100cqw, var(--shot-w)));
+    }
+  }
+
   .scrollbar-none {
     scrollbar-width: none;
   }
