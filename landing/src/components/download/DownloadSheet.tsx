@@ -73,15 +73,22 @@ function Content({ children, className }: { children: ReactNode; className?: str
       <DrawerBackdrop className="fixed inset-0 z-50 bg-black/60" />
       <DrawerContent
         className={cn(
-          // Max height + scroll: on a landscape phone the sheet is taller than the screen.
-          'flex max-h-[calc(100dvh-12px)] w-full flex-col gap-5 overflow-y-auto overscroll-contain rounded-t-2xl bg-popover px-5 pt-2 pb-[max(34px,env(safe-area-inset-bottom))] text-foreground shadow-[0_0_0_0.5px_var(--color-popover-edge),0_-8px_32px_rgb(0_0_0/0.5)] outline-none',
+          // No overflow on the sheet itself. On a touch screen the drawer moves by
+          // scrolling its full-screen viewport; a scroll box here (worse with
+          // overscroll-contain) keeps the swipe, so the sheet can't be dragged.
+          'flex max-h-[calc(100dvh-12px)] w-full flex-col rounded-t-2xl bg-popover pt-2 text-foreground shadow-[0_0_0_0.5px_var(--color-popover-edge),0_-8px_32px_rgb(0_0_0/0.5)] outline-none',
           className,
         )}
       >
-        <div aria-hidden="true" className="flex justify-center pt-0.5">
+        <div aria-hidden="true" className="flex shrink-0 justify-center pt-0.5 pb-3">
           <span className="h-[5px] w-9 rounded-full bg-[#4a4b4d]" />
         </div>
-        {children}
+        {/* Scrolls only on a landscape phone, where the sheet is taller than the screen.
+            No overscroll-contain: at its top (or when it can't scroll) the swipe goes on
+            to the drawer and drags the sheet down. pt-2 keeps the close button's ring unclipped. */}
+        <div className="flex min-h-0 flex-col gap-5 overflow-y-auto px-5 pt-2 pb-[max(34px,env(safe-area-inset-bottom))]">
+          {children}
+        </div>
       </DrawerContent>
     </>
   );

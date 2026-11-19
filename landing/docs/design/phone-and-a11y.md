@@ -8,7 +8,7 @@ Breakpoint: phone is below 768px (`md:`). Design the phone at 390px and check 32
 - Fields: `text-base pointer-fine:text-sm`, never `md:text-sm`. iOS zooms into a field under 16px and does not zoom back.
 - Tap targets: at least 44px. When the visual must stay small (a logo, a footer link), add the hit area without moving the layout: `-my-[11px] py-[11px]`, or `inline-flex min-h-11 items-center md:min-h-0`.
 - Actions stack full width; the phone primary is "Get Troupe for your Mac" (`DownloadCta` does this).
-- Choices on a phone open a bottom sheet (UI SDK `Drawer`), not a centred dialog. The sheet scrolls when taller than the screen (`max-h-[calc(100dvh-12px)] overflow-y-auto`) and clears the home indicator (`pb-[max(34px,env(safe-area-inset-bottom))]`).
+- Choices on a phone open a bottom sheet (UI SDK `Drawer`), not a centred dialog. The sheet caps its height (`max-h-[calc(100dvh-12px)]`), and an inner box scrolls when the content is taller than the screen (`overflow-y-auto`) and clears the home indicator (`pb-[max(34px,env(safe-area-inset-bottom))]`). Never put `overflow-*` or `overscroll-contain` on `DrawerContent` itself: on a touch screen the drawer moves by scrolling its own viewport, and a scroll box on the sheet keeps the swipe, so the sheet can't be dragged down.
 - Rows that scroll sideways (tour tabs, testimonials) use native scroll + `snap-x` + `scrollbar-none`. Never a JS carousel.
 - Heights: `dvh`, never `vh` or `h-screen`.
 - Hover: Tailwind's `hover:` is already limited to hover devices. Never put information or an action behind hover only.
