@@ -1,13 +1,16 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 
 import {
   fetchReleases,
+  mergeReleases,
   parseNightlyVersion,
   pickAssets,
   toNightlyChannel,
   toStableChannel,
   type GitHubRelease,
+  type ReleasesResponse,
 } from '../functions/api/_releases';
+import { getReleases } from '../functions/api/_releases-handler';
 
 const asset = (name: string) => ({ name, browser_download_url: `https://example.test/${name}` });
 
@@ -119,5 +122,72 @@ describe('fetchReleases', () => {
     });
     expect(result.stable).toBeNull();
     expect(result.nightly).toBeNull();
+  });
+});
+
+describe('mergeReleases', () => {
+  const stable = toStableChannel(stableRelease);
+  const nightly = toNightlyChannel(nightlyRelease);
+
+  test('keeps the cached channel when the new fetch returns null', () => {
+    const { body, partial } = mergeReleases(
+      { stable, nightly: null, fetchedAt: 'new' },
+      { stable: null, nightly, fetchedAt: 'old' },
+    );
+    expect(body.stable).toEqual(stable);
+    expect(body.nightly).toEqual(nightly);
+    expect(body.fetchedAt).toBe('new');
+    expect(partial).toBe(true);
+  });
+
+  test('a full fetch replaces the cache and is not partial', () => {
+    const { body, partial } = mergeReleases({ stable, nightly, fetchedAt: 'new' }, null);
+    expect(body).toEqual({ stable, nightly, fetchedAt: 'new' });
+    expect(partial).toBe(false);
+  });
+});
+
+describe('getReleases (edge handler)', () => {
+  const realFetch = globalThis.fetch;
+  const realCaches = (globalThis as { caches?: unknown }).caches;
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    (globalThis as { caches?: unknown }).caches = realCaches;
+  });
+
+  test('a failed nightly call keeps the cached nightly (Thermo finding)', async () => {
+    const cachedNightly = toNightlyChannel(nightlyRelease);
+    const store = new Map<string, Response>();
+    // The cache holds a newer nightly than the build snapshot, and it is older than 10 minutes.
+    store.set(
+      'https://usetroupe.dev/api/releases',
+      new Response(JSON.stringify({ stable: null, nightly: cachedNightly, fetchedAt: 'old' }), {
+        headers: { 'X-Releases-Fetched': String(Date.now() - 11 * 60 * 1000) },
+      }),
+    );
+    (globalThis as { caches?: unknown }).caches = {
+      default: {
+        match: async (request: Request) => store.get(request.url)?.clone(),
+        put: async (request: Request, response: Response) => void store.set(request.url, response),
+      },
+    };
+    // GitHub answers the stable call; the nightly call is rate-limited.
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.endsWith('/latest')) return new Response(JSON.stringify(stableRelease), { status: 200 });
+      return new Response('rate limited', { status: 403 });
+    }) as typeof fetch;
+
+    const response = await getReleases(new Request('https://usetroupe.dev/api/releases'));
+    const body = (await response.json()) as ReleasesResponse;
+    expect(body.stable?.version).toBe('0.4.60');
+    expect(body.nightly).toEqual(cachedNightly);
+
+    // The stored copy also keeps the nightly, and is due for a retry within about a minute.
+    const stored = store.get('https://usetroupe.dev/api/releases')!;
+    expect(((await stored.clone().json()) as ReleasesResponse).nightly).toEqual(cachedNightly);
+    const fetchedAt = Number(stored.headers.get('X-Releases-Fetched'));
+    expect(Date.now() - fetchedAt).toBeGreaterThan(8 * 60 * 1000);
   });
 });

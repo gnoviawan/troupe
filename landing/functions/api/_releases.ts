@@ -138,6 +138,23 @@ async function getRelease(fetchImpl: FetchLike, path: string, token?: string): P
   return (await response.json()) as GitHubRelease;
 }
 
+/**
+ * Keeps each channel's last good value when a new fetch could not get it
+ * (a rate limit or a 5xx on one of the two GitHub calls). Without this, a
+ * partial failure would store `null` for that channel, and the page would
+ * fall back to its older build snapshot. `partial` is true when a channel
+ * came from `previous`, so the caller can try GitHub again sooner.
+ */
+export function mergeReleases(
+  fresh: ReleasesResponse,
+  previous: ReleasesResponse | null,
+): { body: ReleasesResponse; partial: boolean } {
+  const stable = fresh.stable ?? previous?.stable ?? null;
+  const nightly = fresh.nightly ?? previous?.nightly ?? null;
+  const partial = (!fresh.stable && stable !== null) || (!fresh.nightly && nightly !== null);
+  return { body: { stable, nightly, fetchedAt: fresh.fetchedAt }, partial };
+}
+
 /** Each channel fails on its own: one GitHub error does not hide the other channel. */
 export async function fetchReleases(fetchImpl: FetchLike, token?: string): Promise<ReleasesResponse> {
   const [stable, nightly] = await Promise.all([

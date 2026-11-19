@@ -49,6 +49,7 @@ Always use `<DownloadCta />`. Never build a download button or link to a release
 - From 768px: "Download for <OS>" opens `DownloadMenu` (Stable and Nightly, chip line, "All releases").
 - Below 768px: "Get Troupe for your Mac" opens `DownloadSheet` (channel picker, "Send to my Mac", "Copy link"). A phone cannot install the app.
 - `compact` is the header version ("Download", `sm`).
+- A shared link with `?channel=nightly` (from "Send to my Mac" / "Copy link") opens on Nightly: the desktop button reads "Download Nightly for <OS>", the menu lists Nightly first with a "From your link" badge, and the sheet starts on Nightly. Read it with `useLinkedChannel()` (`src/lib/linked-channel.ts`), never from `window.location` during render: it must be null in the prerendered HTML.
 
 ```tsx
 // Correct — src/components/sections/ClosingCta.tsx

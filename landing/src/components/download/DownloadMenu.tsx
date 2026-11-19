@@ -57,8 +57,11 @@ function Group({ children }: { children: ReactNode }) {
   return <MenuGroup className="flex flex-col">{children}</MenuGroup>;
 }
 
-/** One release channel. Selecting it downloads the file for this visitor's system. */
-function Channel({ value }: { value: ChannelId }) {
+/**
+ * One release channel. Selecting it downloads the file for this visitor's system.
+ * `fromLink`: the page was opened from a shared link for this channel.
+ */
+function Channel({ value, fromLink = false }: { value: ChannelId; fromLink?: boolean }) {
   const { getChannel } = useDownload();
   const channel = getChannel(value);
   if (!channel) return null;
@@ -75,6 +78,9 @@ function Channel({ value }: { value: ChannelId }) {
           <span className="text-[13px] leading-[18px] font-medium">{channel.title}</span>
           {value === 'stable' ? (
             <span className="rounded-md bg-primary-fill/20 px-1.5 text-[11px] leading-4 font-medium text-primary">Recommended</span>
+          ) : null}
+          {fromLink ? (
+            <span className="rounded-md bg-foreground/8 px-1.5 text-[11px] leading-4 font-medium text-foreground">From your link</span>
           ) : null}
         </span>
         <span className="text-xs leading-4 text-muted-foreground">{channel.description}</span>

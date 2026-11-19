@@ -1,7 +1,9 @@
-import { fetchReleases, type ReleasesResponse } from './_releases';
+import { fetchReleases, mergeReleases, type ReleasesResponse } from './_releases';
 
 const CACHE_SECONDS = 600;
 const STALE_SECONDS = 3600;
+/** After a partial GitHub failure, try again after this many seconds. */
+const RETRY_SECONDS = 60;
 
 function respond(body: ReleasesResponse, cacheHit: boolean): Response {
   return new Response(JSON.stringify(body), {
@@ -15,7 +17,8 @@ function respond(body: ReleasesResponse, cacheHit: boolean): Response {
 
 /**
  * GET /api/releases: the newest stable and nightly builds, cached at the edge.
- * If GitHub fails, the last cached copy is served. With no cached copy, 503;
+ * If GitHub fails for one channel, that channel keeps its cached value. If it
+ * fails for both, the last cached copy is served. With no cached copy, 503;
  * the page then keeps its build-time snapshot.
  */
 export async function getReleases(request: Request, token?: string): Promise<Response> {
@@ -23,32 +26,34 @@ export async function getReleases(request: Request, token?: string): Promise<Res
   const cacheKey = new Request(new URL('/api/releases', request.url).toString());
 
   const cached = cache ? await cache.match(cacheKey) : undefined;
-  if (cached) {
-    const age = Number(cached.headers.get('X-Releases-Fetched') ?? 0);
-    if (Date.now() - age < CACHE_SECONDS * 1000) {
-      const body = (await cached.clone().json()) as ReleasesResponse;
-      return respond(body, true);
-    }
+  const previous = cached ? ((await cached.json().catch(() => null)) as ReleasesResponse | null) : null;
+  if (cached && previous) {
+    const fetchedAt = Number(cached.headers.get('X-Releases-Fetched') ?? 0);
+    if (Date.now() - fetchedAt < CACHE_SECONDS * 1000) return respond(previous, true);
   }
 
   const fresh = await fetchReleases(fetch, token);
   if (!fresh.stable && !fresh.nightly) {
-    if (cached) return respond((await cached.json()) as ReleasesResponse, true);
+    if (previous) return respond(previous, true);
     return new Response(JSON.stringify({ error: 'Release data is not available' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
     });
   }
 
+  const { body, partial } = mergeReleases(fresh, previous);
   if (cache) {
-    const stored = new Response(JSON.stringify(fresh), {
+    // A merged (partial) result counts as fresh for RETRY_SECONDS only, so the
+    // failed channel is asked for again soon.
+    const freshFor = partial ? RETRY_SECONDS : CACHE_SECONDS;
+    const stored = new Response(JSON.stringify(body), {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': `public, max-age=${CACHE_SECONDS + STALE_SECONDS}`,
-        'X-Releases-Fetched': String(Date.now()),
+        'X-Releases-Fetched': String(Date.now() - (CACHE_SECONDS - freshFor) * 1000),
       },
     });
     await cache.put(cacheKey, stored);
   }
-  return respond(fresh, false);
+  return respond(body, false);
 }
