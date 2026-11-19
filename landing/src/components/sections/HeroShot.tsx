@@ -19,7 +19,7 @@ export function HeroShot() {
           srcSet="/media/hero-mobile.webp 1x, /media/hero-mobile@2x.webp 2x"
           width={342}
           height={320}
-          alt="Troupe on macOS: the sidebar lists projects and chats with Claude Code, and the composer asks “What should we do in Troupe?”"
+          alt="Troupe on macOS: the sidebar lists projects and chats with Claude Code, Codex, Gemini CLI, OpenCode and Cursor, and the composer asks “What should we do in Troupe?”"
           fetchPriority="high"
           decoding="async"
           className="h-80 w-full rounded-xl border-[0.5px] border-border bg-[#0B0C0D] object-cover object-left-top md:h-auto"
