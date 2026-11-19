@@ -251,6 +251,15 @@
 }
 
 /*
+ * The inline script in index.html sets .fonts-wait until Inter has loaded
+ * (at most 1s). A paused entrance holds its `from` frame, so the hero stays
+ * hidden while the font changes, then plays in Inter.
+ */
+.fonts-wait :is(.hero-in, .hero-in-shot) {
+  animation-play-state: paused;
+}
+
+/*
  * Scroll reveal (useReveal): children with .reveal-item rise in, 30ms apart,
  * when the box scrolls into view. "waiting" hides them with no transition;
  * "shown" plays the transition. A box that is on screen when the page loads

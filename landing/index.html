@@ -44,6 +44,17 @@
     </script>
   </head>
   <body>
+    <!-- Hold the hero entrance until Inter is ready (at most 1s), so the hero
+         never changes from the fallback font to Inter in mid-animation.
+         It must stay here, first in <body>: an inline script waits for the
+         stylesheets above it, so the Inter @font-face rules exist (in <head>,
+         fonts.load() finds no face and resolves at once), and it still runs
+         before the hero can paint. Without JavaScript the class is never set
+         and the entrance plays as usual. CSS: .fonts-wait in src/index.css. -->
+    <script>(function(d){var r=d.documentElement;if(!d.fonts||!d.fonts.load)return;r.classList.add('fonts-wait');
+    var done=function(){r.classList.remove('fonts-wait')};
+    Promise.race([d.fonts.load('500 40px "Inter Variable"'),new Promise(function(f){setTimeout(f,1000)})]).then(done,done);
+    })(document);</script>
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M7G7GR3C"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>

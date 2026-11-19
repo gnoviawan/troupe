@@ -30,6 +30,7 @@ Should it move?
 | Agent list reveal (on scroll, once) | 250ms; 30ms apart | `--ease-out` | title, then each agent: opacity + 8px rise + `blur(2px)` (`useReveal` + `.reveal-item` with `--n`) |
 
 - Only `transform`, `opacity` (and `stroke-dashoffset` in SVG). The one exception is the 2px `blur` on small text in the hero entrance and the agent reveal; never blur a large image.
+- The hero entrance waits for Inter (at most 1s): an inline script first in `<body>` of `index.html` sets `.fonts-wait` (paused animation) until `document.fonts.load()` resolves, so the hero never changes from the fallback font to Inter in mid-animation. Keep that script in `<body>`: in `<head>` it runs before the stylesheet, finds no Inter `@font-face`, and lets the animation go at once.
 - Entrances keep content visible without the animation: the hero hides only in the keyframe's `from` (held by `backwards`); a scroll reveal hides only a box that was below the screen at load (`useReveal`), so painted content never disappears. The listed measured heights and the tab pill width are the only layout animations; do not add more.
 - Exits are faster than entrances. Never start from `scale(0)`; never `ease-in`; never `transition-all`.
 - Menus are transitions (they can reopen mid-way), never keyframes.
