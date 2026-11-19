@@ -11,7 +11,7 @@
  * fails because GitHub is slow or rate-limited.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,10 +20,17 @@ import { fetchReleases, type ReleasesResponse } from '../functions/api/_releases
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOT_FILE = resolve(__dirname, '../src/data/releases.snapshot.json');
 
+/** The current snapshot, or null when there is none yet (read once, no exists check). */
+function readSnapshot(): ReleasesResponse | null {
+  try {
+    return JSON.parse(readFileSync(SNAPSHOT_FILE, 'utf8')) as ReleasesResponse;
+  } catch {
+    return null;
+  }
+}
+
 async function main(): Promise<void> {
-  const previous: ReleasesResponse | null = existsSync(SNAPSHOT_FILE)
-    ? (JSON.parse(readFileSync(SNAPSHOT_FILE, 'utf8')) as ReleasesResponse)
-    : null;
+  const previous = readSnapshot();
 
   let fresh: ReleasesResponse | null = null;
   try {

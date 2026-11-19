@@ -190,4 +190,53 @@ describe('getReleases (edge handler)', () => {
     const fetchedAt = Number(stored.headers.get('X-Releases-Fetched'));
     expect(Date.now() - fetchedAt).toBeGreaterThan(8 * 60 * 1000);
   });
+
+  test('a partial result is edge-cached for about a minute only (Thermo finding)', async () => {
+    const store = new Map<string, Response>();
+    store.set(
+      'https://usetroupe.dev/api/releases',
+      new Response(JSON.stringify({ stable: null, nightly: toNightlyChannel(nightlyRelease), fetchedAt: 'old' }), {
+        headers: { 'X-Releases-Fetched': String(Date.now() - 11 * 60 * 1000) },
+      }),
+    );
+    (globalThis as { caches?: unknown }).caches = {
+      default: {
+        match: async (request: Request) => store.get(request.url)?.clone(),
+        put: async (request: Request, response: Response) => void store.set(request.url, response),
+      },
+    };
+    let calls = 0;
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      calls += 1;
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.endsWith('/latest')) return new Response(JSON.stringify(stableRelease), { status: 200 });
+      return new Response('rate limited', { status: 403 });
+    }) as typeof fetch;
+
+    const maxAge = (response: Response, name: string) =>
+      Number(new RegExp(`${name}=(\\d+)`).exec(response.headers.get('Cache-Control') ?? '')?.[1]);
+
+    // The merged response: Cloudflare's edge must not keep it for 10 minutes.
+    const first = await getReleases(new Request('https://usetroupe.dev/api/releases'));
+    expect(maxAge(first, 's-maxage')).toBeLessThanOrEqual(60);
+    expect(maxAge(first, 'stale-while-revalidate')).toBeLessThanOrEqual(60);
+
+    // The next visit gets the stored partial copy: still a short edge cache, no new GitHub call.
+    const before = calls;
+    const second = await getReleases(new Request('https://usetroupe.dev/api/releases'));
+    expect(second.headers.get('X-Releases-Cache')).toBe('hit');
+    expect(calls).toBe(before);
+    expect(maxAge(second, 's-maxage')).toBeLessThanOrEqual(60);
+  });
+
+  test('a full result keeps the 10 minute edge cache', async () => {
+    (globalThis as { caches?: unknown }).caches = undefined;
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input instanceof Request ? input.url : input);
+      return new Response(JSON.stringify(url.endsWith('/latest') ? stableRelease : [nightlyRelease]), { status: 200 });
+    }) as typeof fetch;
+
+    const response = await getReleases(new Request('https://usetroupe.dev/api/releases'));
+    expect(response.headers.get('Cache-Control')).toContain('s-maxage=600');
+  });
 });
