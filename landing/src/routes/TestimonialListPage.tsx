@@ -146,7 +146,7 @@ export function TestimonialListPage() {
             className="max-w-2xl"
           />
           {token && (
-            <Button type="button" variant="dark" onClick={handleClearToken}>
+            <Button type="button" variant="secondary" onClick={handleClearToken}>
               Clear token
             </Button>
           )}
@@ -268,7 +268,7 @@ function ModerationActions({
         <Button
           type="button"
           size="sm"
-          variant="dark"
+          variant="secondary"
           onClick={() => runAction('reject')}
         >
           {testimonial.status === 'approved' ? 'Unpublish' : 'Reject'}
@@ -277,7 +277,7 @@ function ModerationActions({
       <Button
         type="button"
         size="sm"
-        variant="dark"
+        variant="secondary"
         onClick={() => runAction('delete')}
       >
         Delete
