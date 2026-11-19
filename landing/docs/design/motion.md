@@ -4,7 +4,8 @@ CSS only (transitions and keyframes). There is no motion library; do not add one
 
 ```
 Should it move?
- ├── Is it on the page when it loads? → no entrance animation
+ ├── Is it on the page when it loads? → no entrance animation (one exception: the hero entrance)
+ ├── Is it a below-the-fold intro row (the agent list)? → scroll reveal, once (`useReveal`)
  ├── Was it caused by the keyboard (arrow keys, shortcut)? → no animation
  ├── Is it a hover? → colour only, 150ms
  └── Caused by a pointer or by the tour → animate transform and opacity, curve and duration below
@@ -25,8 +26,11 @@ Should it move?
 | Tour scene moves across the window | 400–500ms | `--ease-in-out` | transform |
 | FAQ answer | 250ms | `--ease-out` | height (measured by UI SDK) |
 | Card illustration loops | 3.2–6.4s | per Paper keyframes | transform, opacity, stroke-dashoffset |
+| Hero entrance (first paint) | 400ms text, 600ms shot; 100ms apart | `--ease-out` | title → copy → actions and note → shot: opacity + 8px rise + `blur(2px)`; the shot: opacity + 16px rise, no blur (`.hero-in`, `.hero-in-shot` with `--n`) |
+| Agent list reveal (on scroll, once) | 250ms; 30ms apart | `--ease-out` | title, then each agent: opacity + 8px rise + `blur(2px)` (`useReveal` + `.reveal-item` with `--n`) |
 
-- Only `transform`, `opacity` (and `stroke-dashoffset` in SVG). The listed measured heights and the tab pill width are the only layout animations; do not add more.
+- Only `transform`, `opacity` (and `stroke-dashoffset` in SVG). The one exception is the 2px `blur` on small text in the hero entrance and the agent reveal; never blur a large image.
+- Entrances keep content visible without the animation: the hero hides only in the keyframe's `from` (held by `backwards`); a scroll reveal hides only a box that was below the screen at load (`useReveal`), so painted content never disappears. The listed measured heights and the tab pill width are the only layout animations; do not add more.
 - Exits are faster than entrances. Never start from `scale(0)`; never `ease-in`; never `transition-all`.
 - Menus are transitions (they can reopen mid-way), never keyframes.
 - Never a permanent `will-change`.

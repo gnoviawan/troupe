@@ -15,7 +15,8 @@ export function HeroShot() {
         alt="Troupe on macOS: the sidebar lists projects and chats with Claude Code, Codex, Gemini CLI, OpenCode and Cursor, and the composer asks “What should we do in Troupe?”"
         fetchPriority="high"
         decoding="async"
-        className="h-auto w-full rounded-xl border-[0.5px] border-border bg-[#0B0C0D]"
+        // Last block of the hero entrance (index.css).
+        className="hero-in-shot h-auto w-full rounded-xl border-[0.5px] border-border bg-[#0B0C0D] [--n:3]"
       />
     </Container>
   );

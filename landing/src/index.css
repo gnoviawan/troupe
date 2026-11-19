@@ -211,3 +211,78 @@
     }
   }
 }
+
+/*
+ * Hero entrance, on first paint only. Each block gets --n (0, 1, 2…) and
+ * starts 100ms after the one before. The hidden state lives only in the
+ * keyframe's `from` (held during the delay by `backwards`), so the
+ * prerendered page still shows everything if the animation never runs.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    filter: blur(2px);
+  }
+}
+
+/* The hero shot is large: a longer travel, no blur (blur on a big image is slow). */
+@keyframes shot-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.hero-in {
+  animation: rise-in 400ms var(--ease-out) backwards;
+  animation-delay: calc(var(--n, 0) * 100ms);
+}
+
+.hero-in-shot {
+  animation: shot-in 600ms var(--ease-out) backwards;
+  animation-delay: calc(var(--n, 0) * 100ms);
+}
+
+/*
+ * Scroll reveal (useReveal): children with .reveal-item rise in, 30ms apart,
+ * when the box scrolls into view. "waiting" hides them with no transition;
+ * "shown" plays the transition. A box that is on screen when the page loads
+ * never waits, so nothing that was already painted disappears.
+ */
+[data-reveal='waiting'] .reveal-item {
+  opacity: 0;
+  translate: 0 8px;
+  filter: blur(2px);
+}
+
+[data-reveal='shown'] .reveal-item {
+  transition:
+    opacity 250ms var(--ease-out),
+    translate 250ms var(--ease-out),
+    filter 250ms var(--ease-out);
+  transition-delay: calc(var(--n, 0) * 30ms);
+}
+
+/* Reduced motion: no movement and no blur, a short fade only. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-in,
+  .hero-in-shot {
+    animation: fade-in 200ms ease-out backwards;
+  }
+
+  [data-reveal='waiting'] .reveal-item {
+    translate: none;
+    filter: none;
+  }
+
+  [data-reveal='shown'] .reveal-item {
+    transition: opacity 200ms ease-out;
+  }
+}
