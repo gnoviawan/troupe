@@ -1,33 +1,23 @@
 import { Link } from 'react-router';
 
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
+import { TroupeMark } from './Icons';
 
-interface LogoProps {
+type LogoProps = {
   className?: string;
-  iconClassName?: string;
-  textClassName?: string;
-}
+  /** Mark size in px. */
+  size?: number;
+};
 
-export const Logo = ({ className, iconClassName, textClassName }: LogoProps) => {
+export function Logo({ className, size = 20 }: LogoProps) {
   return (
     <Link
       to="/"
       aria-label="Troupe home"
-      className={cn(
-        'flex items-center gap-2 transition-[opacity,transform] duration-150 ease-[var(--ease-out)] hover:opacity-80 active:scale-[0.97]',
-        className,
-      )}
+      className={cn('flex items-center gap-2 rounded-md text-foreground', className)}
     >
-      <img
-        src="/termul.svg"
-        alt=""
-        width={24}
-        height={24}
-        decoding="async"
-        className={cn("h-6 w-auto max-h-6 shrink-0 object-contain object-left", iconClassName)}
-        aria-hidden={true}
-      />
-      <span className={cn("text-xl font-semibold tracking-tight", textClassName)}>Troupe</span>
+      <TroupeMark size={size} />
+      <span className="text-[16px] leading-[22px] font-semibold tracking-[-0.01em]">Troupe</span>
     </Link>
   );
-};
+}
