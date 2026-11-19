@@ -30,11 +30,14 @@ function Content({ className, children, ...props }: ComponentProps<typeof MenuCo
       sideOffset={8}
       collisionPadding={16}
       className={cn(
-        'z-50 flex w-[340px] flex-col rounded-xl border border-border bg-popover p-1 text-foreground shadow-menu outline-none',
-        'origin-(--transform-origin) transition-[opacity,scale] duration-180 ease-(--ease-out)',
+        // Edge = the shadow's 0.5px ring (no border, so no double edge). Crisp, short drops only.
+        'z-50 flex w-[340px] flex-col rounded-xl bg-popover p-1 text-foreground shadow-menu outline-none',
+        // Grows from the middle of the trigger (UI SDK gives --anchor-width), not from the menu's corner.
+        'origin-[calc(var(--anchor-width)/2)_0] data-[side=top]:origin-[calc(var(--anchor-width)/2)_100%]',
+        'transition-[opacity,scale] duration-150 ease-(--ease-out)',
         'data-starting-style:scale-[0.97] data-starting-style:opacity-0',
-        'data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-ending-style:duration-130',
-        'motion-reduce:transition-opacity',
+        'data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-ending-style:duration-120',
+        'motion-reduce:transition-opacity motion-reduce:data-starting-style:scale-100 motion-reduce:data-ending-style:scale-100',
         className as string,
       )}
       {...props}
@@ -65,7 +68,7 @@ function Channel({ value }: { value: ChannelId }) {
       value={value}
       label={`${channel.title} ${channel.versionLabel}`}
       onSelect={() => go(channel.target.url)}
-      className="flex cursor-default items-start gap-3 rounded-lg p-2 outline-none data-highlighted:bg-foreground/6"
+      className="flex cursor-default items-start gap-3 rounded-lg p-2 outline-none transition-colors duration-150 ease-(--ease-out) data-highlighted:bg-foreground/6"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center gap-2">
@@ -93,7 +96,7 @@ function Footer() {
 
   return (
     <>
-      <MenuSeparator className="-mx-1 my-1 h-px bg-border" />
+      <MenuSeparator className="-mx-1 my-1 h-[0.5px] bg-border" />
       <div className="flex items-center justify-between gap-3 px-1 pb-0.5">
         <div className="flex min-w-0 items-center gap-1 text-[11px] leading-4 text-muted-foreground">
           <span className="truncate px-1">{stable?.target.fileLabel ?? 'Download'}</span>
@@ -102,7 +105,7 @@ function Footer() {
               value="intel"
               label="Intel Mac? Get x64"
               onSelect={() => go(intelUrl)}
-              className="rounded-md px-1 py-1 text-foreground outline-none data-highlighted:bg-foreground/6"
+              className="rounded-md px-1 py-1 text-foreground outline-none transition-colors duration-150 ease-(--ease-out) data-highlighted:bg-foreground/6"
             >
               · Intel Mac? Get x64
             </MenuItem>
@@ -112,7 +115,7 @@ function Footer() {
           value="all-releases"
           label="All releases"
           onSelect={() => go(allReleasesUrl)}
-          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] leading-4 font-medium text-foreground outline-none data-highlighted:bg-foreground/6"
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] leading-4 font-medium text-foreground outline-none transition-colors duration-150 ease-(--ease-out) data-highlighted:bg-foreground/6"
         >
           All releases <ArrowUpRightIcon size={11} />
         </MenuItem>
@@ -121,4 +124,5 @@ function Footer() {
   );
 }
 
-export const DownloadMenu = { Root, Trigger, Content, Label, Group, Channel, Footer };
+// Compound parts. Import as a namespace: `import * as DownloadMenu from './DownloadMenu'`.
+export { Root, Trigger, Content, Label, Group, Channel, Footer };

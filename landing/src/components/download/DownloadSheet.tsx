@@ -1,4 +1,15 @@
-import { createContext, useContext, useEffect, useState, type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { Drawer, DrawerBackdrop, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle, DrawerTrigger } from '@ui-sdk/react/drawer';
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from '@ui-sdk/react/segmented-control';
 
@@ -31,12 +42,17 @@ function Root({
 }) {
   const [ownChannel, setOwnChannel] = useState<ChannelId>(defaultChannel);
   const current = channel ?? ownChannel;
-  const setChannel = (next: ChannelId) => {
-    if (channel === undefined) setOwnChannel(next);
-    onChannelChange?.(next);
-  };
+  const setChannel = useCallback(
+    (next: ChannelId) => {
+      if (channel === undefined) setOwnChannel(next);
+      onChannelChange?.(next);
+    },
+    [channel, onChannelChange],
+  );
+  // A stable value, so parts that read the context re-render only when it changes.
+  const value = useMemo(() => ({ channel: current, setChannel }), [current, setChannel]);
   return (
-    <SheetContext value={{ channel: current, setChannel }}>
+    <SheetContext value={value}>
       <Drawer>{children}</Drawer>
     </SheetContext>
   );
@@ -137,15 +153,18 @@ function shareUrl(channel: ChannelId): string {
   return channel === 'nightly' ? `${DOWNLOAD_PAGE_URL.replace('#', '?channel=nightly#')}` : DOWNLOAD_PAGE_URL;
 }
 
+// Web Share support does not change while the page is open.
+const subscribeNever = () => () => {};
+const hasShareSheet = () => typeof navigator.share === 'function';
+const noShareSheet = () => false;
+
 /** "Send to my Mac" (Web Share API) and "Copy link". Share hides where the browser has no share sheet. */
 function Actions() {
   const { channel } = useSheet();
-  const [canShare, setCanShare] = useState(false);
+  // Read during render (no effect), so the sheet opens with its final buttons
+  // instead of growing a frame later. The server snapshot is false.
+  const canShare = useSyncExternalStore(subscribeNever, hasShareSheet, noShareSheet);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
-  }, []);
 
   useEffect(() => {
     if (!copied) return;
@@ -194,4 +213,5 @@ function Footer() {
   );
 }
 
-export const DownloadSheet = { Root, Trigger, Content, Header, ChannelPicker, Actions, Footer };
+// Compound parts. Import as a namespace: `import * as DownloadSheet from './DownloadSheet'`.
+export { Root, Trigger, Content, Header, ChannelPicker, Actions, Footer };

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import type { McpId } from './mcp';
 
 /**
  * Official MCP server logos for the window shots.
@@ -6,15 +7,6 @@ import { cn } from '@/lib/utils';
  * - Paper, Context7: the app icons from paper.design and context7.com
  *   (public/logos), because neither publishes an SVG mark.
  */
-export type McpId = 'paper' | 'supabase' | 'context7' | 'github' | 'linear';
-
-export const MCP_NAMES: Record<McpId, string> = {
-  paper: 'Paper',
-  supabase: 'Supabase',
-  context7: 'Context7',
-  github: 'GitHub',
-  linear: 'Linear',
-};
 
 const PATHS: Partial<Record<McpId, { d: string; color: string }>> = {
   supabase: {

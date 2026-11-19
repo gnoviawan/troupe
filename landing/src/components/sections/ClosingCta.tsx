@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 import { DownloadCta } from '@/components/download/DownloadCta';
-import { Button } from '@/components/ui/Button';
+import { buttonClassName } from '@/components/ui/Button';
 import { TroupeMark } from '@/components/ui/Icons';
 import { DOCS_URL } from '@/lib/links';
 
@@ -30,14 +30,16 @@ export function ClosingCta() {
       </h2>
       <div className="relative flex w-full max-w-[342px] flex-col gap-2.5 md:w-auto md:max-w-none md:flex-row">
         <DownloadCta />
-        <Button
-          variant="secondary"
-          size="lg"
-          className="h-11 w-full px-4 text-base md:w-auto md:px-8 md:text-[15px]"
-          render={<a href={DOCS_URL} />}
+        <a
+          href={DOCS_URL}
+          className={buttonClassName({
+            variant: 'secondary',
+            size: 'lg',
+            className: 'h-11 w-full px-4 text-base md:w-auto md:px-8 md:text-[15px]',
+          })}
         >
           Read the docs
-        </Button>
+        </a>
       </div>
     </section>
   );

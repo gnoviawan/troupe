@@ -3,8 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { AgentLogo } from '@/components/ui/AgentLogo';
 import { cn } from '@/lib/utils';
 import { WindowTabBar } from '../app-ui';
-import { CalendarIcon } from '../icons';
-import type { TourStep, TourTab } from '../types';
+import type { TourStep } from '../types';
 import './automation.css';
 
 /*
@@ -585,7 +584,7 @@ function AutomationsPanel() {
   );
 }
 
-function AutomationScene({ step }: { step: TourStep }) {
+export function AutomationScene({ step }: { step: TourStep }) {
   return (
     <div data-step={step} className="au-root relative flex min-h-0 flex-1 flex-col text-xs leading-4">
       <TabBar />
@@ -597,18 +596,3 @@ function AutomationScene({ step }: { step: TourStep }) {
   );
 }
 
-export const automationTab: TourTab = {
-  id: 'automation',
-  label: 'Automation',
-  icon: <CalendarIcon />,
-  title: 'Turn a repeat into a routine',
-  description:
-    'Troupe notices the work you ask for again and again. You approve exactly what the automation may do, then it runs on its own schedule.',
-  steps: ['Troupe spots a repeat', 'You review what it may do', 'It runs at 9:00 on its own', 'Done, every weekday'],
-  background: 'green',
-  // Phone crop: the left column of the main panel (title, state pill, Enabled
-  // switch, run policy or run history) and the "Fetch open PRs" step with the
-  // moving dot. Stage x 336 = window x 296, just left of the main panel.
-  mobileFocus: { x: 336, y: 88 },
-  Scene: AutomationScene,
-};

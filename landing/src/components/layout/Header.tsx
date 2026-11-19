@@ -1,7 +1,7 @@
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@ui-sdk/react/menu';
 
 import { DownloadCta } from '@/components/download/DownloadCta';
-import { Button } from '@/components/ui/Button';
+import { buttonClassName } from '@/components/ui/Button';
 import { GitHubIcon, MenuIcon } from '@/components/ui/Icons';
 import { Logo } from '@/components/ui/Logo';
 import { CHANGELOG_URL, DOCS_URL, GITHUB_REPO_URL, SECTION } from '@/lib/links';
@@ -33,10 +33,10 @@ export function Header() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" size="sm" render={<a href={GITHUB_REPO_URL} />} className="text-foreground">
+          <a href={GITHUB_REPO_URL} className={buttonClassName({ variant: 'ghost', size: 'sm', className: 'text-foreground' })}>
             <GitHubIcon size={14} />
             GitHub
-          </Button>
+          </a>
           <DownloadCta compact />
         </div>
 
@@ -51,7 +51,7 @@ export function Header() {
             <MenuContent
               align="end"
               sideOffset={4}
-              className="z-50 flex w-56 flex-col rounded-xl border border-border bg-popover p-1 shadow-menu outline-none origin-(--transform-origin) transition-[opacity,scale] duration-180 ease-(--ease-out) data-starting-style:scale-[0.97] data-starting-style:opacity-0 data-ending-style:scale-[0.97] data-ending-style:opacity-0"
+              className="z-50 flex w-56 flex-col rounded-xl bg-popover p-1 shadow-menu outline-none origin-[calc(100%-var(--anchor-width)/2)_0] transition-[opacity,scale] duration-150 ease-(--ease-out) data-starting-style:scale-[0.97] data-starting-style:opacity-0 data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-ending-style:duration-120 motion-reduce:transition-opacity motion-reduce:data-starting-style:scale-100 motion-reduce:data-ending-style:scale-100"
             >
               {[...NAV, { label: 'GitHub', href: GITHUB_REPO_URL }].map((item) => (
                 <MenuItem
@@ -59,7 +59,7 @@ export function Header() {
                   value={item.label}
                   label={item.label}
                   onSelect={() => window.location.assign(item.href)}
-                  className="flex min-h-11 items-center rounded-lg px-3 text-[15px] text-foreground outline-none data-highlighted:bg-foreground/6"
+                  className="flex min-h-11 items-center rounded-lg px-3 text-[15px] text-foreground outline-none transition-colors duration-150 ease-(--ease-out) data-highlighted:bg-foreground/6"
                 >
                   {item.label}
                 </MenuItem>

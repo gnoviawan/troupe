@@ -63,4 +63,5 @@ function Answer({ children }: { children: ReactNode }) {
   );
 }
 
-export const Faq = { Root, Item, Question, Answer };
+// Compound parts. Import as a namespace: `import * as Faq from '@/components/ui/Faq'`.
+export { Root, Item, Question, Answer };

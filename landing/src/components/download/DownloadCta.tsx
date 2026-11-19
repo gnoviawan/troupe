@@ -2,8 +2,8 @@ import { Button, type ButtonSize } from '@/components/ui/Button';
 import { AppleIcon, ChevronIcon, OsIcon } from '@/components/ui/Icons';
 import { cn } from '@/lib/utils';
 import { useDownload } from './DownloadContext';
-import { DownloadMenu } from './DownloadMenu';
-import { DownloadSheet } from './DownloadSheet';
+import * as DownloadMenu from './DownloadMenu';
+import * as DownloadSheet from './DownloadSheet';
 
 /**
  * The page's main download control:

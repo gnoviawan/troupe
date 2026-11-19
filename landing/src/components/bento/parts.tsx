@@ -1,6 +1,8 @@
-import { AgentLogo, type AgentId } from '@/components/ui/AgentLogo';
+import { AgentLogo } from '@/components/ui/AgentLogo';
+import type { AgentId } from '@/components/ui/agents';
 import { ChevronRightIcon, GearIcon, PlusIcon } from '@/components/app-ui/icons';
-import { MCP_NAMES, McpLogo, type McpId } from '@/components/app-ui/McpLogo';
+import { McpLogo } from '@/components/app-ui/McpLogo';
+import { MCP_NAMES, type McpId } from '@/components/app-ui/mcp';
 import { MenuLabel, MenuRow, MenuSeparatorGroup, PopoverMenu, Switch } from '@/components/app-ui/Menu';
 import { cn } from '@/lib/utils';
 

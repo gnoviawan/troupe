@@ -1,4 +1,4 @@
-import { Faq } from '@/components/ui/Faq';
+import * as Faq from '@/components/ui/Faq';
 import { FAQ } from '@/data/faq';
 import { Container } from './Container';
 

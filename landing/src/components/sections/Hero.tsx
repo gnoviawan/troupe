@@ -1,5 +1,5 @@
 import { DownloadCta } from '@/components/download/DownloadCta';
-import { Button } from '@/components/ui/Button';
+import { buttonClassName } from '@/components/ui/Button';
 import { GitHubIcon } from '@/components/ui/Icons';
 import { GITHUB_REPO_URL } from '@/lib/links';
 import { Container } from './Container';
@@ -22,15 +22,17 @@ export function Hero() {
           </p>
           <div className="flex flex-col gap-2.5 pt-2 md:flex-row md:pt-3">
             <DownloadCta />
-            <Button
-              variant="secondary"
-              size="lg"
-              className="h-11 w-full px-4 text-base md:w-auto md:px-8 md:text-[15px]"
-              render={<a href={GITHUB_REPO_URL} />}
+            <a
+              href={GITHUB_REPO_URL}
+              className={buttonClassName({
+                variant: 'secondary',
+                size: 'lg',
+                className: 'h-11 w-full px-4 text-base md:w-auto md:px-8 md:text-[15px]',
+              })}
             >
               <GitHubIcon size={16} />
               View on GitHub
-            </Button>
+            </a>
           </div>
           <p className="text-center text-sm leading-5 text-muted-foreground md:text-left md:text-[13px]">
             Also for Windows and Linux

@@ -3,8 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { AgentLogo } from '@/components/ui/AgentLogo';
 import { cn } from '@/lib/utils';
 import { WindowTab, WindowTabBar } from '../app-ui';
-import { KeyIcon } from '../icons';
-import type { TourStep, TourTab } from '../types';
+import type { TourStep } from '../types';
 import './accounts.css';
 
 /*
@@ -465,7 +464,7 @@ function SuccessToast() {
 
 // Scene ---------------------------------------------------------------------
 
-function AccountsScene({ step }: { step: TourStep }) {
+export function AccountsScene({ step }: { step: TourStep }) {
   return (
     <div data-step={step} className="acc relative flex min-h-0 flex-1 flex-col">
       <WindowTabBar>
@@ -481,7 +480,8 @@ function AccountsScene({ step }: { step: TourStep }) {
   );
 }
 
-function AccountsFooter() {
+/** The agents this tab is about (shown under the steps). */
+export function AccountsFooter() {
   return (
     <>
       <AgentLogo agent="claude-code" size={16} />
@@ -492,17 +492,3 @@ function AccountsFooter() {
     </>
   );
 }
-
-export const accountsTab: TourTab = {
-  id: 'accounts',
-  label: 'Accounts',
-  icon: <KeyIcon />,
-  title: 'Never stop at a usage limit',
-  description:
-    'Sign in to several Claude and ChatGPT accounts. When a chat reaches its limit, Troupe continues it on the account with the most room. Your draft is kept.',
-  steps: ['Near the limit', 'Limit reached, draft kept', 'Switching to Personal', 'Continued on Personal'],
-  footer: <AccountsFooter />,
-  background: 'dusk',
-  mobileFocus: { x: 170, y: 252 },
-  Scene: AccountsScene,
-};

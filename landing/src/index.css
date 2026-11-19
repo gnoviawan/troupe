@@ -53,7 +53,8 @@
   --shadow-emboss: 0 0 0 0.5px #000000, 0 1px 3px #000000b3, inset 0 0 0 0.5px #ffffff1f, inset 0 1px 0 #ffffff66, inset 0 -2px 0 #00000059;
   --shadow-control: 0 0 0 0.5px var(--color-popover-edge), 0 1px 2px rgb(0 0 0 / 0.5);
   --shadow-card: 0 1px 2px #00000080;
-  --shadow-menu: 0 0 0 0.5px var(--color-popover-edge), 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.45);
+  /* Tactile overlay: a 0.5px outline ring is the edge, then crisp short drops (no big soft blur). */
+  --shadow-menu: 0 0 0 0.5px var(--color-popover-edge), 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 4px 8px -4px rgb(0 0 0 / 0.5);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);

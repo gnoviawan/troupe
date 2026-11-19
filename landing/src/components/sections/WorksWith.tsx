@@ -1,4 +1,5 @@
-import { AGENTS, AgentLogo, type AgentId } from '@/components/ui/AgentLogo';
+import { AgentLogo } from '@/components/ui/AgentLogo';
+import { AGENTS, type AgentId } from '@/components/ui/agents';
 import { Container } from './Container';
 
 const LIST: AgentId[] = ['claude-code', 'codex', 'gemini-cli', 'antigravity', 'opencode', 'cursor'];

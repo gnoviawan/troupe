@@ -1,6 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 
-import { Button } from '../components/ui/Button';
+import { buttonClassName } from '../components/ui/Button';
 
 export function NotFoundPage() {
   useSeoMeta({
@@ -23,9 +23,9 @@ export function NotFoundPage() {
           The page you are looking for does not exist or has moved.
         </p>
         <div className="mt-8 flex justify-center">
-          <Button render={<a href="/" />}>
+          <a href="/" className={buttonClassName()}>
             Back to home
-          </Button>
+          </a>
         </div>
       </div>
     </main>

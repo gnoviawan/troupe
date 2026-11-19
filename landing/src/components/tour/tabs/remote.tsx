@@ -4,8 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { AgentLogo } from '@/components/ui/AgentLogo';
 import { cn } from '@/lib/utils';
 import { WindowTab, WindowTabBar } from '../app-ui';
-import { PhoneIcon } from '../icons';
-import type { TourStep, TourTab } from '../types';
+import type { TourStep } from '../types';
 import './remote.css';
 
 /*
@@ -455,7 +454,7 @@ function Phone() {
 
 // Scene ---------------------------------------------------------------------
 
-function RemoteScene({ step }: { step: TourStep }) {
+export function RemoteScene({ step }: { step: TourStep }) {
   return (
     // The tab uses `frame: 'none'`, so this root covers the whole stage and
     // all positions below are stage positions.
@@ -466,19 +465,3 @@ function RemoteScene({ step }: { step: TourStep }) {
   );
 }
 
-export const remoteTab: TourTab = {
-  id: 'remote',
-  label: 'Remote',
-  icon: <PhoneIcon />,
-  title: 'Keep going from your phone',
-  description:
-    'Turn on remote access and scan the QR. The same live chats open on your phone, on any network. Approve a command from anywhere.',
-  steps: ['One switch on the desktop', 'Scan the QR', 'The same chat, on your phone', 'Approve from anywhere'],
-  background: 'orange',
-  // Phone crop (342×330 at this stage point): it keeps the phone with the
-  // "Approval needed" card in view. That is the last step and the
-  // reduced-motion still. The QR popover is only partly in view.
-  mobileFocus: { x: 266, y: 250 },
-  frame: 'none',
-  Scene: RemoteScene,
-};

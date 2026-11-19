@@ -3,8 +3,7 @@ import type { ReactNode } from 'react';
 import { AgentLogo } from '@/components/ui/AgentLogo';
 import { cn } from '@/lib/utils';
 import { WindowTabBar, WindowTab } from '../app-ui';
-import { CanvasIcon } from '../icons';
-import type { TourStep, TourTab } from '../types';
+import type { TourStep } from '../types';
 import './canvas.css';
 
 /*
@@ -396,7 +395,7 @@ function DesignPanel() {
 
 // Scene ---------------------------------------------------------------------
 
-function CanvasScene({ step }: { step: TourStep }) {
+export function CanvasScene({ step }: { step: TourStep }) {
   return (
     <div data-step={step} className="cv flex min-h-0 flex-1 flex-col text-[12px] leading-4">
       <TabBar />
@@ -413,17 +412,3 @@ function CanvasScene({ step }: { step: TourStep }) {
   );
 }
 
-export const canvasTab: TourTab = {
-  id: 'canvas',
-  label: 'Canvas',
-  icon: <CanvasIcon />,
-  title: 'Watch the agent design',
-  description:
-    'Troupe Canvas is a full design editor in a tab. The agent builds frames and layers with its canvas tools, and you can change all of it after.',
-  steps: ['An empty page', 'The agent adds a frame', 'Layers appear one by one', 'It selects the button'],
-  background: 'green',
-  // Stage px. The 342×330 phone crop puts the 300×218 "Home" frame in the
-  // middle with 21px on each side, so the frame and the selection show.
-  mobileFocus: { x: 296, y: 128 },
-  Scene: CanvasScene,
-};

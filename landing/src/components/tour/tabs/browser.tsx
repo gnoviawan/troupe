@@ -3,8 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { AgentLogo } from '@/components/ui/AgentLogo';
 import { cn } from '@/lib/utils';
 import { TrafficLights, WindowTab } from '../app-ui';
-import { GlobeIcon } from '../icons';
-import type { TourStep, TourTab } from '../types';
+import type { TourStep } from '../types';
 import './browser.css';
 
 /*
@@ -524,7 +523,7 @@ function BrowserPane() {
   );
 }
 
-function BrowserScene({ step }: { step: TourStep }) {
+export function BrowserScene({ step }: { step: TourStep }) {
   return (
     <div data-step={step} className="br-root relative min-h-0 flex-1 text-xs leading-4">
       <SingleView />
@@ -546,19 +545,3 @@ function BrowserScene({ step }: { step: TourStep }) {
   );
 }
 
-export const browserTab: TourTab = {
-  id: 'browser',
-  label: 'Browser',
-  icon: <GlobeIcon />,
-  title: 'Checked in a real browser',
-  description:
-    'The agent opens your app in a visible tab beside the chat, clicks through it and sees what breaks. Passwords, uploads and new sites ask you first.',
-  steps: ['The agent reaches for the browser', 'A visible tab beside the chat', 'You stay in control', 'Fixed and checked again'],
-  background: 'pastel',
-  // Phone crop: the whole chat pane (stage x 44 = window x 4), from the tool
-  // rows down (stage y 180 = window y 140). It keeps the tool rows, the
-  // consent card and the screenshot reply in view. The browser pane is to the
-  // right of the crop; the chat pane tells what happens in it.
-  mobileFocus: { x: 44, y: 180 },
-  Scene: BrowserScene,
-};

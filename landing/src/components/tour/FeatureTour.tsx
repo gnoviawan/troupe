@@ -18,21 +18,17 @@ export function FeatureTour({ tabs }: { tabs: TourTab[] }) {
   const { state, running, step, pause, resume, select, toggleUserPause } = useTourTimeline(tabs.length);
   const rootRef = useRef<HTMLElement>(null);
   // Motion on tab change (panel cross-fade, pill slide) is off for the first
-  // render and for a tab reached with the arrow keys. Both values are set in
-  // the same render as the tab change, so the first click also animates.
+  // render and for a tab reached with the arrow keys. Each tab start has its
+  // own runId; we keep the runId that an arrow key started, so the next
+  // automatic tab (a new runId) animates again without an extra effect.
   const [ready, setReady] = useState(false);
-  const [keyboardTab, setKeyboardTab] = useState(-1);
-  const instant = !ready || keyboardTab === state.tab;
+  const [keyboardRun, setKeyboardRun] = useState(-1);
+  const instant = !ready || keyboardRun === state.runId;
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setReady(true));
     return () => cancelAnimationFrame(frame);
   }, []);
-
-  // Once the tour moves on by itself, the arrow-key choice no longer applies.
-  useEffect(() => {
-    if (state.step > 0) setKeyboardTab(-1);
-  }, [state.step]);
 
   // Pause when less than a quarter of the tour is on screen.
   useEffect(() => {
@@ -82,7 +78,8 @@ export function FeatureTour({ tabs }: { tabs: TourTab[] }) {
           value={active?.id}
           onValueChange={(value, details) => {
             const index = tabs.findIndex((tab) => tab.id === value);
-            setKeyboardTab(details.reason === 'list-navigation' ? index : -1);
+            // select() starts run state.runId + 1 for a new tab.
+            setKeyboardRun(details.reason === 'list-navigation' ? state.runId + 1 : -1);
             select(index);
           }}
           className="flex flex-col gap-6 md:gap-8"
