@@ -5,6 +5,7 @@ import { useSeoMeta } from '@unhead/react';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { readCssTime } from '../lib/read-css-time';
+import { shrinkAvatar } from '../lib/shrink-avatar';
 import { submitTestimonial } from '../lib/testimonials-api';
 import { cn } from '../lib/utils';
 import {
@@ -105,6 +106,12 @@ export function TestimonialSubmitPage() {
     setMessage('');
 
     try {
+      // Send a small avatar (max 256px, WebP) instead of the full photo.
+      const avatar = formData.get('avatar');
+      if (avatar instanceof File && avatar.size > 0) {
+        formData.set('avatar', await shrinkAvatar(avatar));
+      }
+
       await submitTestimonial(formData);
       form.reset();
       setStatus('success');
