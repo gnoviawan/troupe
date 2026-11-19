@@ -5,7 +5,7 @@
 - Copy comes from the Paper artboards word for word. A section without Paper copy (for example a new FAQ answer) is written from the docs (`website-docs/content/docs`) and `LICENSE`, then shown to the owner.
 - True facts only. No invented numbers ("10x faster"), people, logos or features. If the app cannot do it today, the page does not say it.
 - Sentence case. "…" not "...". No em dash in UI copy (headings may use "—" in the page title only: "Privacy — Troupe").
-- Product name: "Troupe". The old name "Termul" appears only in data that still has it (GitHub release file names, a testimonial quote).
+- Product name: "Troupe". The old product name appears only in data that still has it (GitHub release file names, a testimonial quote). The repo's rebrand check (`bun run rebrand --check`) fails on any other use; an intended one needs a keep entry with a reason in `scripts/rebrand/rules.ts`.
 
 ## Data on the page
 
