@@ -252,6 +252,41 @@ describe('useAcpSessionResume — refresh reattachment (R1/R2/R6)', () => {
     })
   })
 
+  it('still resumes a chat whose cursor fetch a launch start interrupted', async () => {
+    state.sessionIndex = [eligibleSession({ id: 's-old' })]
+    let resolveCursor: (cursor: { lastSeq: number; logEpoch: null }) => void = () => {}
+    transportMocks.fetchSessionCursor.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveCursor = resolve
+      })
+    )
+    transportMocks.fetchSessionCursor.mockResolvedValue({ lastSeq: 2, logEpoch: null })
+    state.openHistorySession.mockResolvedValue(undefined)
+
+    const { rerender } = renderHook(() => useAcpSessionResume())
+    await waitFor(() => expect(transportMocks.fetchSessionCursor).toHaveBeenCalledWith('s-old'))
+
+    // A New chat starts while the cursor fetch is pending: the run is cancelled.
+    state.sessions = { 'launch-1': { status: 'initializing', projectId: 'p1' } }
+    state.launchingSessionIds = { 'launch-1': true }
+    rerender()
+    resolveCursor({ lastSeq: 1, logEpoch: null })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.openHistorySession).not.toHaveBeenCalled()
+
+    // The launch ends: the interrupted chat is still resumed, once.
+    state.sessions = {}
+    state.launchingSessionIds = {}
+    rerender()
+    await waitFor(() => expect(state.openHistorySession).toHaveBeenCalledWith('s-old'))
+    expect(state.openHistorySession).toHaveBeenCalledTimes(1)
+    expect(transportMocks.seedSessionCursor).toHaveBeenCalledTimes(1)
+    expect(transportMocks.seedSessionCursor).toHaveBeenCalledWith('s-old', {
+      lastSeq: 2,
+      logEpoch: null
+    })
+  })
+
   it('does not wait for a launch in another project', async () => {
     state.sessions = { 'launch-2': { status: 'initializing', projectId: 'p2' } }
     state.launchingSessionIds = { 'launch-2': true }

@@ -104,7 +104,6 @@ export function useAcpSessionResume(): void {
         if (projectChatLaunchInFlight(live, activeProjectId)) return
         const cached = live.sessions[entry.id]
         if (cached && cached.status !== 'closed') continue
-        attemptedRef.current.add(entry.id)
         recordTerminalContinuityEvent({
           name: 'acp-resume-attempted',
           correlationId,
@@ -119,9 +118,17 @@ export function useAcpSessionResume(): void {
           // Desktop has no WS cursor (`session/load` replays) → no-op there.
           if (transport.fetchSessionCursor) {
             const cursor = await transport.fetchSessionCursor(entry.id)
+            // A rerun (a launch starting, a new index) cancelled this attempt
+            // before it opened anything: the chat stays eligible for it.
             if (cancelled) return
             transport.seedSessionCursor?.(entry.id, cursor)
           }
+          // Marked only now, after the last cancellation point before the
+          // open: an attempt interrupted above must not keep the chat from
+          // ever resuming. Only one run is uncancelled at a time, so this
+          // still stops a second open of the same chat.
+          if (attemptedRef.current.has(entry.id)) continue
+          attemptedRef.current.add(entry.id)
           await openHistorySession(entry.id)
           if (cancelled) return
           // 'local' strategy resolves without throwing but leaves the session
@@ -145,6 +152,8 @@ export function useAcpSessionResume(): void {
           }
         } catch (err) {
           if (cancelled) return
+          // A failed cursor fetch counts as an attempt too: no retry loop.
+          attemptedRef.current.add(entry.id)
           // `openHistorySession` rejected (spawn failed, or resume/load threw
           // after the remap) → read-only local. Degrades safely; never throws
           // on the bootstrap path. A load-capable (not resume-capable) agent

@@ -97,8 +97,16 @@ export function useComposerDraft({
     ) {
       hydratedRef.current = true
       setHydrated(true)
-      void persistenceApi.write(draftKey, carried).catch(() => {})
-      void persistenceApi.delete(previous.key).catch(() => {})
+      // Drop the placeholder's copy only once the session's copy is stored: a
+      // failed write resolves (it does not reject), and deleting anyway would
+      // leave a reload with neither.
+      const placeholderKey = previous.key
+      void persistenceApi
+        .write(draftKey, carried)
+        .then((result) => {
+          if (result.success) return persistenceApi.delete(placeholderKey)
+        })
+        .catch(() => {})
       return
     }
     let cancelled = false

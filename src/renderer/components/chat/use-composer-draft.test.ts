@@ -79,7 +79,23 @@ describe('launch placeholder → session (#1941)', () => {
     // No read of the new key: it holds nothing and the text is already here.
     expect(persistence.read).not.toHaveBeenCalled()
     expect(persistence.write).toHaveBeenCalledWith('chat-draft/p1/sess-1', 'draft at 300ms')
-    expect(persistence.delete).toHaveBeenCalledWith('chat-draft/p1/launch-1')
+    await waitFor(() => expect(persistence.delete).toHaveBeenCalledWith('chat-draft/p1/launch-1'))
+  })
+
+  it("keeps the placeholder's stored draft when the session's write fails", async () => {
+    const { result, rerender } = renderHook(
+      ({ sessionId }) => useComposerDraft({ projectId: 'p1', sessionId, seedNonce: undefined }),
+      { initialProps: { sessionId: 'launch-2' } }
+    )
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    act(() => result.current[1]('draft to keep'))
+    persistence.write.mockResolvedValue({ success: false, error: 'disk full' })
+
+    await act(async () => rerender({ sessionId: 'sess-2' }))
+
+    expect(result.current[0]).toBe('draft to keep')
+    expect(persistence.write).toHaveBeenCalledWith('chat-draft/p1/sess-2', 'draft to keep')
+    expect(persistence.delete).not.toHaveBeenCalledWith('chat-draft/p1/launch-2')
   })
 
   it('reads the stored draft as usual when one chat replaces another', async () => {
