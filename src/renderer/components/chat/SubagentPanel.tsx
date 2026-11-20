@@ -529,7 +529,7 @@ export function SubagentPanel({
       </div>
       <div className="flex items-center gap-2 border-t border-border px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-xs text-muted-foreground">
         <Clock size={14} className="shrink-0" aria-hidden="true" />
-        <span className="min-w-0 flex-1">Runs on its own — you can't message a subagent.</span>
+        <span className="min-w-0 flex-1">You can't message it.</span>
         <Button
           type="button"
           variant="ghost"
