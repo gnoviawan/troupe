@@ -176,15 +176,19 @@ function PanelSetupView({
   const rootRef = useRef<HTMLDivElement>(null)
   const actionsRef = useRef<HTMLDivElement>(null)
   // The row that opened it, or the button a phase replaced, is gone: focus
-  // the phase's first action (else Back), never body.
+  // the phase's first action (else Back), never body. Focus parked on Back
+  // while a phase had no action moves on to the next phase's action, so
+  // Enter signs in or retries instead of leaving.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the phase changes the buttons
   useLayoutEffect(() => {
     const active = document.activeElement
-    if (active && active !== document.body) return
+    const back = rootRef.current?.querySelector<HTMLElement>(LIST_ROW) ?? null
+    const onBack = active !== null && active === back
+    if (active && active !== document.body && !onBack) return
     const action = Array.from(
       actionsRef.current?.querySelectorAll<HTMLElement>('button, input') ?? []
     ).find((el) => !el.hasAttribute('disabled'))
-    ;(action ?? rootRef.current?.querySelector<HTMLElement>(LIST_ROW))?.focus()
+    ;(action ?? back)?.focus()
   }, [phase.kind])
 
   const size = touch ? 'touch' : 'sm'

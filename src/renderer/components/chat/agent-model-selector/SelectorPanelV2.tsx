@@ -261,7 +261,8 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
         ? rowKeyOf(effectiveId, view.own[0].value)
         : view.others[0]
           ? rowKeyOf(view.others[0].configId, view.others[0].model.value)
-          : agentRowKey(view.agents.find((tab) => !state.notSetUp(tab)))
+          : // A Needs setup agent is a result too: Enter opens its setup.
+            agentRowKey(view.agents[0])
       : null
 
   // Screen readers hear which result Enter picks while search has focus.

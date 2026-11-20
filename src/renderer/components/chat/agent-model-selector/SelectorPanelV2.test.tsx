@@ -2633,6 +2633,20 @@ describe('SelectorPanelV2 set-up agents in the track, the rest grouped behind Mo
       'true'
     )
   })
+
+  it('Enter in search opens the setup of a Needs setup agent that is the first result', () => {
+    render(<Panel {...props({ source: withDerivedGemini() })} />)
+    const search = screen.getByRole('textbox', { name: 'Search models and agents' })
+    search.focus()
+    fireEvent.change(search, { target: { value: 'gem' } })
+    expect(screen.getByTestId(`selector-agent-${GEMINI.id}`)).toHaveAttribute(
+      'data-search-highlight'
+    )
+
+    fireEvent.keyDown(search, { key: 'Enter' })
+
+    expect(within(setupView()).getByRole('heading', { name: 'Set up Gemini' })).toBeInTheDocument()
+  })
 })
 
 describe('SelectorPanelV2 agent icon on every row', () => {

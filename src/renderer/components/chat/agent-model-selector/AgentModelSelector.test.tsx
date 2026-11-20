@@ -1367,10 +1367,15 @@ describe('desktop: setting up a Needs setup agent from the picker (#1949)', () =
     expect(within(setup).getByRole('heading', { name: 'Set up Gemini CLI' })).toBeInTheDocument()
     expect(within(setup).getByText('Runs with npx.')).toBeInTheDocument()
 
-    fireEvent.click(within(setup).getByRole('button', { name: 'Set up Gemini CLI' }))
+    // A browser focuses a pressed button; jsdom needs the focus itself.
+    const setUp = within(setup).getByRole('button', { name: 'Set up Gemini CLI' })
+    setUp.focus()
+    fireEvent.click(setUp)
     expect(mockSaveAgentConfig).toHaveBeenCalledWith(GEMINI)
     expect(setup).toHaveAttribute('data-phase', 'saving')
     expect(within(setup).getByRole('button', { name: 'Setting up…' })).toBeDisabled()
+    // The pressed button is gone and the busy phase has no action: Back holds focus.
+    expect(within(setup).getByRole('button', { name: 'Back to agents' })).toHaveFocus()
 
     await act(async () => finishSave())
     await waitFor(() =>
@@ -1406,6 +1411,8 @@ describe('desktop: setting up a Needs setup agent from the picker (#1949)', () =
       within(setup).getByRole('heading', { name: 'Sign in to Gemini CLI' })
     ).toBeInTheDocument()
     expect(within(setup).getByText('Gemini needs you to sign in.')).toBeInTheDocument()
+    // Focus parked on Back moves on to the sign-in, so Enter signs in instead of leaving.
+    expect(within(setup).getByRole('button', { name: 'Log in with Google' })).toHaveFocus()
     fireEvent.click(within(setup).getByRole('button', { name: 'Log in with Google' }))
     await waitFor(() =>
       expect(mockAuthenticateAgent).toHaveBeenCalledWith('agent-gemini', 'oauth-personal')
