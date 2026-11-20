@@ -4,6 +4,7 @@ import type { SessionConfigOption } from '@/lib/acp-api'
 import type { SupportedAcpAgentEntry } from '@/lib/agents/supported-acp-agents'
 import {
   type AgentTab,
+  agentGroup,
   agentInRowName,
   agentTabViewId,
   agentTrackCapacity,
@@ -14,6 +15,7 @@ import {
   editButtonAccessibleName,
   entryDisableReason,
   favoriteFor,
+  groupAgentTabs,
   isContextOption,
   modelMatches,
   orderAgentTabs,
@@ -77,7 +79,8 @@ describe('stableAgentTabs OpenCode alias', () => {
       viewConfigId: saved.id,
       entries: [opencode, gemini],
       agentConfigs: [opencode.config!, gemini.config!, saved],
-      capacity: 8
+      capacity: 8,
+      armsUnconfigured: false
     })
     const tabs = [...visible, ...overflow]
     const opencodeTabs = tabs.filter(
@@ -196,58 +199,132 @@ const tab = (
 }
 const ids = (tabs: readonly AgentTab[]): string[] => tabs.map((t) => t.configId)
 
-describe('orderAgentTabs', () => {
-  it('puts installed agents before the rest', () => {
-    const order = orderAgentTabs([
-      tab('a', 'Amp', 'install-required'),
-      tab('z', 'Zed', 'ready'),
-      tab('n', 'Node thing', 'needs-runtime'),
-      tab('c', 'Codex', 'ready')
+/** A registry agent that is installed but has no stored config yet. */
+const unconfigured = (id: string, name: string): AgentTab => ({
+  configId: id,
+  name,
+  config: null,
+  entry: entry(null, id)
+})
+/** Stored configs for every ready `tab()` in these tests. */
+const STORED = ['a', 'c', 'cl', 'cu', 'e', 'g', 'z', 'b', 't0', 't1', 't2', 't3', 't4'].map((id) =>
+  config(id, id)
+)
+const chatGroups = (t: AgentTab) => agentGroup(t, STORED, false)
+
+describe('agentGroup', () => {
+  it('sorts set-up, not-set-up, and not-installed agents into ready, setup, and install', () => {
+    expect(chatGroups(tab('c', 'Codex'))).toBe('ready')
+    expect(chatGroups(unconfigured('q', 'Qwen Code'))).toBe('setup')
+    expect(chatGroups(tab('o', 'OpenCode', 'install-required'))).toBe('install')
+    expect(chatGroups(tab('n', 'Node thing', 'needs-runtime'))).toBe('install')
+    expect(chatGroups(tab('m', 'Manual', 'manual-install'))).toBe('install')
+    expect(chatGroups(tab('u', 'Unavailable', 'unavailable'))).toBe('install')
+  })
+
+  it('counts a stored agent with no registry entry as ready', () => {
+    const custom: AgentTab = {
+      configId: 'x',
+      name: 'Mine',
+      config: config('x', 'Mine'),
+      entry: null
+    }
+    expect(agentGroup(custom, [], false)).toBe('ready')
+  })
+
+  it('counts a not-set-up agent as ready in the launcher, which can arm it', () => {
+    expect(agentGroup(unconfigured('q', 'Qwen Code'), STORED, true)).toBe('ready')
+    expect(agentGroup(tab('o', 'OpenCode', 'install-required'), STORED, true)).toBe('install')
+  })
+})
+
+describe('groupAgentTabs', () => {
+  it('buckets in Ready, Needs setup, Install order and drops empty groups', () => {
+    const groups = groupAgentTabs(
+      [
+        tab('o', 'OpenCode', 'install-required'),
+        unconfigured('q', 'Qwen Code'),
+        tab('z', 'Zed'),
+        tab('c', 'Codex')
+      ],
+      chatGroups
+    )
+    expect(groups.map(({ label, tabs }) => [label, ids(tabs)])).toEqual([
+      ['Ready', ['z', 'c']],
+      ['Needs setup', ['q']],
+      ['Install', ['o']]
     ])
-    expect(ids(order)).toEqual(['c', 'z', 'a', 'n'])
+    expect(groupAgentTabs([tab('c', 'Codex')], chatGroups).map((g) => g.group)).toEqual(['ready'])
+  })
+})
+
+describe('orderAgentTabs', () => {
+  it('puts ready agents first, then those needing setup, then those to install', () => {
+    const order = orderAgentTabs(
+      [
+        tab('a', 'Amp', 'install-required'),
+        unconfigured('au', 'Auggie'),
+        tab('z', 'Zed', 'ready'),
+        tab('n', 'Node thing', 'needs-runtime'),
+        tab('c', 'Codex', 'ready')
+      ],
+      chatGroups
+    )
+    expect(ids(order)).toEqual(['c', 'z', 'au', 'a', 'n'])
   })
 
   it('sorts each group A to Z, ignoring case and accents', () => {
-    const order = orderAgentTabs([
-      tab('g', 'gemini'),
-      tab('cl', 'Claude Agent'),
-      tab('e', 'Éclair'),
-      tab('cu', 'cursor'),
-      tab('o', 'opencode', 'install-required'),
-      tab('ai', 'Aider', 'manual-install')
-    ])
-    expect(ids(order)).toEqual(['cl', 'cu', 'e', 'g', 'ai', 'o'])
-  })
-
-  it('counts a stored agent with no registry entry as installed', () => {
-    const custom: AgentTab = {
-      configId: 'x',
-      name: 'Zz custom',
-      config: config('x', 'Zz'),
-      entry: null
-    }
-    expect(ids(orderAgentTabs([tab('a', 'Amp', 'install-required'), custom]))).toEqual(['x', 'a'])
+    const order = orderAgentTabs(
+      [
+        tab('g', 'gemini'),
+        tab('cl', 'Claude Agent'),
+        unconfigured('k', 'kimi'),
+        tab('e', 'Éclair'),
+        unconfigured('d', 'Droid'),
+        tab('cu', 'cursor'),
+        tab('o', 'opencode', 'install-required'),
+        tab('ai', 'Aider', 'manual-install')
+      ],
+      chatGroups
+    )
+    expect(ids(order)).toEqual(['cl', 'cu', 'e', 'g', 'd', 'k', 'ai', 'o'])
   })
 
   it('does not mutate its input', () => {
     const input = [tab('b', 'Beta'), tab('a', 'Alpha')]
-    orderAgentTabs(input)
+    orderAgentTabs(input, chatGroups)
     expect(ids(input)).toEqual(['b', 'a'])
   })
 })
 
 describe('splitAgentTabs', () => {
-  const ten = Array.from({ length: 10 }, (_, i) => tab(`t${i}`, `Agent ${i}`))
+  const five = Array.from({ length: 5 }, (_, i) => tab(`t${i}`, `Agent ${i}`))
 
-  it('shows every tab and no More when they fit', () => {
-    expect(splitAgentTabs(ten, 10)).toEqual({ visible: ten, overflow: [] })
-    expect(splitAgentTabs(ten.slice(0, 3), 10).overflow).toEqual([])
+  it('shows every tab and no More when every agent is ready and fits', () => {
+    expect(splitAgentTabs(five, 5, chatGroups)).toEqual({ visible: five, overflow: [] })
+    expect(splitAgentTabs(five.slice(0, 3), 10, chatGroups).overflow).toEqual([])
   })
 
-  it('gives the last slot to More when they overflow', () => {
-    const { visible, overflow } = splitAgentTabs(ten, 4)
+  it('gives the last slot to More when ready agents overflow', () => {
+    const { visible, overflow } = splitAgentTabs(five, 4, chatGroups)
     expect(ids(visible)).toEqual(['t0', 't1', 't2'])
-    expect(ids(overflow)).toEqual(['t3', 't4', 't5', 't6', 't7', 't8', 't9'])
+    expect(ids(overflow)).toEqual(['t3', 't4'])
+  })
+
+  it('never gives a tab to an agent that is not set up or not installed, even with free slots', () => {
+    const ordered = [
+      tab('t0', 'Agent 0'),
+      unconfigured('q', 'Qwen Code'),
+      tab('o', 'OpenCode', 'install-required')
+    ]
+    const { visible, overflow } = splitAgentTabs(ordered, 8, chatGroups)
+    expect(ids(visible)).toEqual(['t0'])
+    expect(ids(overflow)).toEqual(['q', 'o'])
+  })
+
+  it('leaves More alone in the track when no agent is set up', () => {
+    const ordered = [unconfigured('q', 'Qwen Code'), tab('o', 'OpenCode', 'install-required')]
+    expect(splitAgentTabs(ordered, 8, chatGroups)).toEqual({ visible: [], overflow: ordered })
   })
 })
 
@@ -267,7 +344,8 @@ describe('stableAgentTabs (V2)', () => {
       viewConfigId: over.view ?? null,
       entries,
       agentConfigs: CONFIGS,
-      capacity: 4
+      capacity: 4,
+      armsUnconfigured: false
     })
 
   it('keeps one order whichever agent is current, armed, or viewed', () => {
@@ -291,6 +369,24 @@ describe('stableAgentTabs (V2)', () => {
     expect(ids(overflow)[1]).toBe('c')
   })
 
+  it('keeps a not-set-up agent behind More in chat, and gives it a tab in the launcher', () => {
+    const withQwen = [...entries, entry(null, 'qwen')]
+    const source = {
+      currentConfigId: 'a',
+      armedConfigId: null,
+      viewConfigId: null,
+      entries: withQwen,
+      agentConfigs: CONFIGS,
+      capacity: 8
+    }
+    const chat = stableAgentTabs({ ...source, armsUnconfigured: false })
+    expect(ids(chat.visible)).toEqual(['a', 'b', 'd', 'e', 'c'])
+    expect(ids(chat.overflow)).toEqual(['qwen', 'opencode'])
+    const launcher = stableAgentTabs({ ...source, armsUnconfigured: true })
+    expect(ids(launcher.visible)).toEqual(['a', 'b', 'd', 'e', 'c', 'qwen'])
+    expect(ids(launcher.overflow)).toEqual(['opencode'])
+  })
+
   it('adds the current agent from its stored config before the catalog lists it', () => {
     const { visible } = stableAgentTabs({
       currentConfigId: 'a',
@@ -298,7 +394,8 @@ describe('stableAgentTabs (V2)', () => {
       viewConfigId: null,
       entries: [],
       agentConfigs: [A],
-      capacity: 10
+      capacity: 10,
+      armsUnconfigured: false
     })
     expect(visible).toEqual([{ configId: 'a', name: 'Alpha', config: A, entry: null }])
   })

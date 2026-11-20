@@ -2375,6 +2375,150 @@ describe('SelectorPanelV2 agent order and overflow', () => {
   })
 })
 
+describe('SelectorPanelV2 set-up agents in the track, the rest grouped behind More', () => {
+  const tabNames = (): string[] =>
+    within(screen.getByRole('tablist', { name: 'Agents' }))
+      .getAllByRole('tab')
+      .map((t) => t.getAttribute('aria-label') ?? '')
+  /** Each agent row as seen after its glyph: `name`, or `name · badge`. */
+  const rowTexts = (el: HTMLElement): string[] =>
+    within(el)
+      .getAllByRole('button')
+      .map((row) =>
+        Array.from(row.children)
+          .slice(1)
+          .map((part) => part.textContent?.trim())
+          .join(' · ')
+      )
+  const GEMINI = config('gemini', 'Gemini')
+  const AMP = config('amp', 'amp')
+  const notSetUp = (c: StoredAgentConfig): SupportedAcpAgentEntry => ({ ...entry(c), config: null })
+  const withStatus = (
+    c: StoredAgentConfig,
+    over: Partial<SupportedAcpAgentEntry>
+  ): SupportedAcpAgentEntry => ({ ...entry(c), config: null, ...over })
+  const TO_INSTALL = [
+    withStatus(config('opencode', 'OpenCode'), { status: 'install-required' }),
+    withStatus(config('aider', 'Aider'), { status: 'manual-install' }),
+    withStatus(config('kimi', 'Kimi'), { status: 'needs-runtime', runtimeLauncher: 'uvx' })
+  ]
+  const chat = (over: Partial<SelectorSource> = {}): SelectorSource =>
+    source({
+      selectAgent: null,
+      agentConfigs: [CURSOR, CLAUDE],
+      entries: [...TO_INSTALL, notSetUp(GEMINI), entry(CURSOR), notSetUp(AMP), entry(CLAUDE)],
+      ...over
+    })
+
+  it('shows only set-up agents as tabs, A to Z, with More last at the far end', () => {
+    render(<Panel {...props({ source: chat() })} />)
+    expect(tabNames()).toEqual(['Claude Agent', 'Cursor', 'More agents'])
+    const more = screen.getByRole('tab', { name: 'More agents' })
+    expect(more.className.split(' ')).toContain('ml-auto')
+    expect(screen.getByRole('tab', { name: 'Cursor' }).className.split(' ')).toContain(
+      AGENT_TRACK_CLASS.stripTab
+    )
+  })
+
+  it('puts More at the bottom end of the left rail', () => {
+    render(<Panel {...props({ agentRail: 'left', source: chat() })} />)
+    expect(tabNames()).toEqual(['Claude Agent', 'Cursor', 'More agents'])
+    expect(screen.getByRole('tab', { name: 'More agents' }).className.split(' ')).toContain(
+      'mt-auto'
+    )
+  })
+
+  it('lists Needs setup without the per-row pill, then Install with its badges', () => {
+    render(<Panel {...props({ source: chat() })} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    const panel = screen.getByRole('tabpanel', { name: 'More agents' })
+    expect(rowTexts(panel)).toEqual([
+      'amp',
+      'Gemini',
+      'Aider · Manual install',
+      'Kimi · Needs uv',
+      'OpenCode · Install'
+    ])
+    expect(rowTexts(within(panel).getByRole('group', { name: 'Needs setup' }))).toEqual([
+      'amp',
+      'Gemini'
+    ])
+    expect(rowTexts(within(panel).getByRole('group', { name: 'Install' }))).toEqual([
+      'Aider · Manual install',
+      'Kimi · Needs uv',
+      'OpenCode · Install'
+    ])
+    expect(within(panel).queryByText('Not set up')).toBeNull()
+  })
+
+  it('lists set-up agents that did not fit first, with no heading', () => {
+    const SET_UP = ['Zed Agent', 'Codex', 'Droid', 'Goose', 'Qwen Code', 'Warp', 'Kiro'].map(
+      (name) => config(name.toLowerCase().replace(/\s/g, '-'), name)
+    )
+    render(
+      <Panel
+        {...props({
+          source: chat({
+            agentConfigs: [CURSOR, CLAUDE, ...SET_UP],
+            entries: [...chat().entries, ...SET_UP.map(entry)]
+          })
+        })}
+      />
+    )
+    expect(tabNames()).toEqual([
+      'Claude Agent',
+      'Codex',
+      'Cursor',
+      'Droid',
+      'Goose',
+      'Kiro',
+      'Qwen Code',
+      'More agents'
+    ])
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    const panel = screen.getByRole('tabpanel', { name: 'More agents' })
+    expect(rowTexts(panel)).toEqual([
+      'Warp',
+      'Zed Agent',
+      'amp',
+      'Gemini',
+      'Aider · Manual install',
+      'Kimi · Needs uv',
+      'OpenCode · Install'
+    ])
+    // Warp and Zed Agent sit above both headed groups.
+    expect(
+      within(panel)
+        .getAllByRole('group')
+        .map((group) => rowTexts(group))
+    ).toEqual([
+      ['amp', 'Gemini'],
+      ['Aider · Manual install', 'Kimi · Needs uv', 'OpenCode · Install']
+    ])
+  })
+
+  it('shows More alone when no agent is set up, active on the chat agent behind it', () => {
+    render(
+      <Panel
+        {...props({
+          source: chat({ agentConfigs: [], entries: [notSetUp(CURSOR), ...TO_INSTALL] })
+        })}
+      />
+    )
+    expect(tabNames()).toEqual(['More agents'])
+    const more = screen.getByRole('tab', { name: 'More agents' })
+    expect(more).toHaveAttribute('aria-selected', 'true')
+    fireEvent.click(more)
+    const panel = screen.getByRole('tabpanel', { name: 'More agents' })
+    expect(rowTexts(within(panel).getByRole('group', { name: 'Needs setup' }))).toEqual(['Cursor'])
+  })
+
+  it('gives a not-set-up agent a tab in the launcher, which can arm it', () => {
+    render(<Panel {...props({ source: chat({ selectAgent: () => {} }) })} />)
+    expect(tabNames()).toEqual(['amp', 'Claude Agent', 'Cursor', 'Gemini', 'More agents'])
+  })
+})
+
 describe('SelectorPanelV2 agent icon on every row', () => {
   it.each([
     'top',

@@ -151,7 +151,7 @@ export function SelectorPanel(props: SelectorPanelProps): React.JSX.Element {
         )
       break
     case 'more':
-      body = view.tabs.map((tab) => agentRow(tab, () => openAgent(tab)))
+      body = tabs.overflow.map((tab) => agentRow(tab, () => openAgent(tab)))
       break
     case 'install':
       body = (

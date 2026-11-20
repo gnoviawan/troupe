@@ -410,16 +410,69 @@ export function isInstalledTab(tab: AgentTab): boolean {
 }
 
 /**
- * The V2 agent order: installed agents, then the rest, each A to Z by name
- * (case- and accent-insensitive). It ignores which agent is current, armed, or
- * viewed, so choosing an agent never moves its tab.
+ * What choosing an agent does, which sets where the pickers list it: `ready`
+ * shows its models, `setup` needs its config saved first (the chat cannot arm
+ * it), `install` needs installing first. The launcher arms a ready agent with
+ * no stored config (a pick saves it, #907), so there every installed agent is
+ * `ready`.
  */
-export function orderAgentTabs(tabs: readonly AgentTab[]): AgentTab[] {
+export type AgentGroup = 'ready' | 'setup' | 'install'
+
+/** The groups in list order, with the heading each one shows under. */
+export const AGENT_GROUPS: ReadonlyArray<{ group: AgentGroup; label: string }> = [
+  { group: 'ready', label: 'Ready' },
+  { group: 'setup', label: 'Needs setup' },
+  { group: 'install', label: 'Install' }
+]
+
+const GROUP_RANK: Record<AgentGroup, number> = { ready: 0, setup: 1, install: 2 }
+
+/** The one classification behind the desktop tabs, its "More" list and the mobile provider list. */
+export function agentGroup(
+  tab: AgentTab,
+  agentConfigs: readonly { id: string }[],
+  armsUnconfigured: boolean
+): AgentGroup {
+  if (!isInstalledTab(tab)) return 'install'
+  if (!armsUnconfigured && tab.entry && armableConfigId(tab.entry, agentConfigs) === null) {
+    return 'setup'
+  }
+  return 'ready'
+}
+
+export interface AgentTabGroup {
+  group: AgentGroup
+  label: string
+  tabs: AgentTab[]
+}
+
+/** `tabs` bucketed by group, in `AGENT_GROUPS` order, each keeping its input order; empty groups dropped. */
+export function groupAgentTabs(
+  tabs: readonly AgentTab[],
+  groupOf: (tab: AgentTab) => AgentGroup
+): AgentTabGroup[] {
+  return AGENT_GROUPS.map(({ group, label }) => ({
+    group,
+    label,
+    tabs: tabs.filter((tab) => groupOf(tab) === group)
+  })).filter(({ tabs: inGroup }) => inGroup.length > 0)
+}
+
+/**
+ * The V2 agent order: ready agents, then those that need setup, then those
+ * that need installing, each A to Z by name (case- and accent-insensitive).
+ * It ignores which agent is current, armed, or viewed, so choosing an agent
+ * never moves its tab.
+ */
+export function orderAgentTabs(
+  tabs: readonly AgentTab[],
+  groupOf: (tab: AgentTab) => AgentGroup
+): AgentTab[] {
   return tabs
-    .map((tab, index) => ({ tab, index, installed: isInstalledTab(tab) }))
+    .map((tab, index) => ({ tab, index, rank: GROUP_RANK[groupOf(tab)] }))
     .sort(
       (a, b) =>
-        Number(b.installed) - Number(a.installed) ||
+        a.rank - b.rank ||
         a.tab.name.localeCompare(b.tab.name, undefined, { sensitivity: 'base' }) ||
         a.index - b.index
     )
@@ -427,25 +480,36 @@ export function orderAgentTabs(tabs: readonly AgentTab[]): AgentTab[] {
 }
 
 /**
- * Fill `capacity` slots with tabs. When they all fit there is no "More";
- * otherwise the last slot is "More" and holds the rest, in the same order.
+ * Fill `capacity` slots with tabs in `orderAgentTabs` order. Only ready agents
+ * get a tab. When every agent is ready and fits there is no "More"; otherwise
+ * the last slot is "More" and holds the rest, in the same order. With no ready
+ * agent the track is "More" alone.
  */
 export function splitAgentTabs(
   ordered: readonly AgentTab[],
-  capacity: number
+  capacity: number,
+  groupOf: (tab: AgentTab) => AgentGroup
 ): { visible: AgentTab[]; overflow: AgentTab[] } {
   const slots = Math.max(1, Math.floor(capacity))
-  if (ordered.length <= slots) return { visible: [...ordered], overflow: [] }
-  const shown = Math.max(0, slots - 1)
+  const firstNotReady = ordered.findIndex((tab) => groupOf(tab) !== 'ready')
+  const ready = firstNotReady < 0 ? ordered.length : firstNotReady
+  if (ready === ordered.length && ordered.length <= slots) {
+    return { visible: [...ordered], overflow: [] }
+  }
+  const shown = Math.min(ready, slots - 1)
   return { visible: ordered.slice(0, shown), overflow: ordered.slice(shown) }
 }
 
 /** V2: every agent in `orderAgentTabs` order, split to fill `capacity` slots. */
-export function stableAgentTabs(source: AgentTabSource & { capacity: number }): {
+export function stableAgentTabs(
+  source: AgentTabSource & { capacity: number; armsUnconfigured: boolean }
+): {
   visible: AgentTab[]
   overflow: AgentTab[]
 } {
-  return splitAgentTabs(orderAgentTabs(allAgentTabs(source).all), source.capacity)
+  const groupOf = (tab: AgentTab): AgentGroup =>
+    agentGroup(tab, source.agentConfigs, source.armsUnconfigured)
+  return splitAgentTabs(orderAgentTabs(allAgentTabs(source).all, groupOf), source.capacity, groupOf)
 }
 
 /**
@@ -467,7 +531,10 @@ export const AGENT_TRACK_CLASS = {
   railPadding: 'py-1',
   /** Rail tabs are squares, as tall as a list row. */
   railTab: 'size-7',
-  railTabTouch: 'size-11'
+  railTabTouch: 'size-11',
+  /** Top-strip tabs: a 16px glyph with 10px either side; 44 on touch. */
+  stripTab: 'w-9',
+  stripTabTouch: 'w-11'
 } as const
 
 /** px of a class on Tailwind's default 4px spacing scale: `size-7` is 28. */
@@ -488,9 +555,8 @@ export const AGENT_TRACK = {
   stripWidth: 300,
   stripPadding: 8,
   stripPaddingTouch: 24,
-  /** Narrowest top-strip tab: a 16px glyph with 10px either side; 44 on touch. */
-  stripMinTab: 36,
-  stripMinTabTouch: 44,
+  stripPitch: spacingPx(AGENT_TRACK_CLASS.stripTab),
+  stripPitchTouch: spacingPx(AGENT_TRACK_CLASS.stripTabTouch),
   /** Top strip on touch before its width is measured: the old 4 tabs + More. */
   stripFallbackSlots: 5
 } as const
@@ -513,9 +579,9 @@ export function agentTrackCapacity({
   if (rail === 'left') {
     return tabTrackCapacity(t.listMaxHeight, touch ? t.railPitchTouch : t.railPitch, t.railPadding)
   }
-  if (!touch) return tabTrackCapacity(t.stripWidth, t.stripMinTab, t.stripPadding)
+  if (!touch) return tabTrackCapacity(t.stripWidth, t.stripPitch, t.stripPadding)
   return width
-    ? tabTrackCapacity(width, t.stripMinTabTouch, t.stripPaddingTouch)
+    ? tabTrackCapacity(width, t.stripPitchTouch, t.stripPaddingTouch)
     : t.stripFallbackSlots
 }
 

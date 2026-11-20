@@ -452,7 +452,7 @@ export function MobileModelSheet(props: MobileModelSheetProps): React.JSX.Elemen
         }}
         disabled={disabled}
         badgeOf={state.badgeOf}
-        notSetUp={state.notSetUp}
+        groupOf={state.groupOf}
         onPick={pickProvider}
       />
     )

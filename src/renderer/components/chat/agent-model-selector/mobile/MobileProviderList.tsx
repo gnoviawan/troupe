@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react'
 import { SheetGroup, SheetRow, SheetSearchField } from '@/components/ui/mobile-sheet'
 import { ListMessage, TabGlyph } from '../SelectorRows'
-import { type AgentTab, agentTabSelected, isInstalledTab } from '../selector-model'
+import {
+  type AgentGroup,
+  type AgentTab,
+  agentTabSelected,
+  groupAgentTabs,
+  isInstalledTab
+} from '../selector-model'
 import { useKnownCatalogs } from '../use-model-catalog'
 import { setupRouteKey } from './MobileProviderSetup'
-
-type ProviderGroup = 'ready' | 'setup' | 'install'
-
-const GROUPS: ReadonlyArray<{ group: ProviderGroup; label: string }> = [
-  { group: 'ready', label: 'Ready' },
-  { group: 'setup', label: 'Needs setup' },
-  { group: 'install', label: 'Install' }
-]
 
 /** The sheet route key of an agent's install view, as its row's `subview`. */
 export const installRouteKey = (configId: string): string => `install:${configId}`
@@ -23,8 +21,8 @@ const modelCount = (count: number): string => `${count} ${count === 1 ? 'model' 
 /**
  * Every agent, grouped by what a tap does: Ready shows its models, Needs setup
  * opens its setup screen (the chat cannot arm it until its config is saved),
- * Install opens its install view. The groups follow the selector's own
- * statuses (`notSetUp`, `badgeOf`).
+ * Install opens its install view. The groups are the selector's own
+ * (`agentGroup`), shared with the desktop "More" list.
  */
 export function ProviderList({
   tabs,
@@ -33,7 +31,7 @@ export function ProviderList({
   ownCatalog,
   disabled,
   badgeOf,
-  notSetUp,
+  groupOf,
   onPick
 }: {
   tabs: readonly AgentTab[]
@@ -43,12 +41,10 @@ export function ProviderList({
   ownCatalog: { configId: string | null; count: number | null }
   disabled: boolean
   badgeOf: (tab: AgentTab) => string | null
-  notSetUp: (tab: AgentTab) => boolean
+  groupOf: (tab: AgentTab) => AgentGroup
   onPick: (tab: AgentTab) => void
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
-  const groupOf = (tab: AgentTab): ProviderGroup =>
-    notSetUp(tab) ? 'setup' : isInstalledTab(tab) ? 'ready' : 'install'
   const readyIds = useMemo(
     () => tabs.filter((tab) => isInstalledTab(tab)).map((tab) => tab.configId),
     [tabs]
@@ -72,9 +68,7 @@ export function ProviderList({
       {shown.length === 0 ? (
         <ListMessage title="No providers match." detail="Try another name." />
       ) : null}
-      {GROUPS.map(({ group, label }) => {
-        const rows = shown.filter((tab) => groupOf(tab) === group)
-        if (rows.length === 0) return null
+      {groupAgentTabs(shown, groupOf).map(({ group, label, tabs: rows }) => {
         return (
           <SheetGroup key={group} label={label}>
             {rows.map((tab) => {

@@ -18,14 +18,17 @@ import {
 } from './favorite-models'
 import type { SelectorPanelProps } from './SelectorPanel'
 import {
+  type AgentGroup,
   type AgentTab,
+  type AgentTabGroup,
+  agentGroup,
   agentTabSelected,
   agentTabViewId,
-  armableConfigId,
   buildAgentTabs,
   type CatalogModel,
   capabilitySummary,
   catalogModels,
+  groupAgentTabs,
   isInstalledTab,
   MORE_AGENTS_VIEW,
   type ModelCatalog,
@@ -68,7 +71,7 @@ export interface FavoriteHit extends ModelHit {
 /** What the panel's list shows. Each kind is one body; the panels draw them. */
 export type PanelView =
   | { kind: 'search'; own: CatalogModel[]; others: ModelHit[]; agents: AgentTab[]; count: number }
-  | { kind: 'more'; tabs: AgentTab[] }
+  | { kind: 'more'; groups: AgentTabGroup[] }
   | {
       kind: 'install'
       tab: AgentTab
@@ -142,6 +145,8 @@ export interface SelectorPanelState {
   tabOf: (configId: string | null) => AgentTab | null
   nameOf: (configId: string | null) => string
   badgeOf: (tab: AgentTab) => string | null
+  /** Where the pickers list the agent (`agentGroup`). */
+  groupOf: (tab: AgentTab) => AgentGroup
   notSetUp: (tab: AgentTab) => boolean
   hasUpdate: (tab: AgentTab) => boolean
 }
@@ -175,8 +180,9 @@ export function useSelectorPanelState(
     /** Keep a grid column for "More" by showing one tab fewer when agents overflow. */
     reserveMoreTab: boolean
     /**
-     * V2: tabs keep one order (installed first, then A to Z; `orderAgentTabs`)
-     * and fill this many slots, the last one "More" when they overflow. Unset
+     * V2: tabs keep one order (ready, needs setup, install, each A to Z;
+     * `orderAgentTabs`); ready agents fill this many slots, the last one
+     * "More" when anything is left over. Unset
      * (V1): the current agent first, the armed one next, the viewed one pinned.
      */
     stableTabCapacity?: number
@@ -195,6 +201,10 @@ export function useSelectorPanelState(
   const searching = query.trim().length > 0
 
   const { reserveMoreTab, stableTabCapacity } = options
+  // Chat cannot arm a ready agent that has no stored config (the store
+  // rejects the arm). The launcher can: an explicit pick persists that config
+  // and prewarms it (issue #907). Do not disable those rows in the launcher.
+  const launcher = sw.selectAgent != null
   const tabs = useMemo(() => {
     const args = {
       currentConfigId: sw.currentConfigId,
@@ -203,7 +213,9 @@ export function useSelectorPanelState(
       entries: sw.entries,
       agentConfigs: sw.agentConfigs
     }
-    if (stableTabCapacity != null) return stableAgentTabs({ ...args, capacity: stableTabCapacity })
+    if (stableTabCapacity != null) {
+      return stableAgentTabs({ ...args, capacity: stableTabCapacity, armsUnconfigured: launcher })
+    }
     const first = buildAgentTabs(args)
     return reserveMoreTab && first.overflow.length > 0 ? buildAgentTabs({ ...args, max: 3 }) : first
   }, [
@@ -213,7 +225,8 @@ export function useSelectorPanelState(
     sw.entries,
     sw.agentConfigs,
     reserveMoreTab,
-    stableTabCapacity
+    stableTabCapacity,
+    launcher
   ])
   const allTabs = useMemo(() => [...tabs.visible, ...tabs.overflow], [tabs])
   const tabById = useMemo(() => new Map(allTabs.map((t) => [t.configId, t])), [allTabs])
@@ -223,13 +236,8 @@ export function useSelectorPanelState(
   }
   const viewInOverflow =
     viewId != null && tabs.overflow.some((tab) => agentTabSelected(tab, viewId))
-  // Chat cannot arm a ready agent that has no stored config (the store
-  // rejects the arm). The launcher can: an explicit pick persists that config
-  // and prewarms it (issue #907). Do not disable those rows in the launcher.
-  const notSetUp = (tab: AgentTab): boolean =>
-    sw.selectAgent == null &&
-    tab.entry?.status === 'ready' &&
-    armableConfigId(tab.entry, sw.agentConfigs) === null
+  const groupOf = (tab: AgentTab): AgentGroup => agentGroup(tab, sw.agentConfigs, launcher)
+  const notSetUp = (tab: AgentTab): boolean => groupOf(tab) === 'setup'
   const hasUpdate = (tab: AgentTab): boolean =>
     Boolean(tab.entry && sw.updateAgentIds?.has(tab.entry.agent.id))
   const badgeOf = (tab: AgentTab): string | null =>
@@ -435,7 +443,7 @@ export function useSelectorPanelState(
       count: own.length + others.length + agents.length
     }
   } else if (showingMore) {
-    body = { kind: 'more', tabs: tabs.overflow }
+    body = { kind: 'more', groups: groupAgentTabs(tabs.overflow, groupOf) }
   } else if (viewKind === 'effective' && viewEntry && viewEntry.status !== 'ready' && viewTab) {
     // Launcher: the selected agent is not installed yet.
     body = installView(viewEntry, viewTab, false)
@@ -546,6 +554,7 @@ export function useSelectorPanelState(
     tabOf,
     nameOf,
     badgeOf,
+    groupOf,
     notSetUp,
     hasUpdate
   }

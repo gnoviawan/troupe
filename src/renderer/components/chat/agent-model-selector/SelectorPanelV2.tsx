@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import {
+  Fragment,
   type KeyboardEvent,
   type ReactNode,
   useCallback,
@@ -114,6 +115,8 @@ interface TabItem {
   glyph: ReactNode
   selected: boolean
   title: string
+  /** Sits at the track's far end (right, or bottom in the rail): "More". */
+  end?: boolean
   onSelect: () => void
 }
 
@@ -216,7 +219,13 @@ function AgentTabStrip({
               ? // A square as tall as a list row (28px), so each icon sits on the
                 // list's row grid; 6px radius like the rows.
                 cn('rounded-md', touch ? AGENT_TRACK_CLASS.railTabTouch : AGENT_TRACK_CLASS.railTab)
-              : cn('flex-1 rounded-t-md', touch ? 'h-11' : 'h-8'),
+              : cn(
+                  'rounded-t-md',
+                  touch
+                    ? cn(AGENT_TRACK_CLASS.stripTabTouch, 'h-11')
+                    : cn(AGENT_TRACK_CLASS.stripTab, 'h-8')
+                ),
+            item.end && (vertical ? 'mt-auto' : 'ml-auto'),
             // Icons keep their colour (brand or foreground); state reads from
             // the icon's opacity, as the active fill alone is too faint.
             'group/tab text-foreground',
@@ -378,6 +387,7 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
   const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
   const favoritesLabelId = useId()
+  const moreLabelId = useId()
 
   const { isRejected, trySet } = useRejectedOptionValues(
     effectiveId,
@@ -535,11 +545,16 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
     })
   }
 
-  const agentRow = (tab: AgentTab, key: string, onPick: () => void): React.JSX.Element => (
+  const agentRow = (
+    tab: AgentTab,
+    key: string,
+    onPick: () => void,
+    badge: string | null = state.badgeOf(tab)
+  ): React.JSX.Element => (
     <AgentRow
       key={key}
       tab={tab}
-      badge={state.badgeOf(tab)}
+      badge={badge}
       highlighted={agentRowKey(tab) === highlightKey}
       disabled={disabled || state.notSetUp(tab)}
       touch={touch}
@@ -569,7 +584,36 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
         )
       break
     case 'more':
-      body = view.tabs.map((tab) => agentRow(tab, tab.configId, () => state.openAgent(tab)))
+      // Ready agents that did not fit the track come first, unlabelled; then
+      // "Needs setup" and "Install", as in the mobile provider list.
+      body = view.groups.map(({ group, label, tabs: inGroup }, index) => {
+        const labelId = `${moreLabelId}-${group}`
+        const rows = inGroup.map((tab) =>
+          agentRow(
+            tab,
+            tab.configId,
+            () => state.openAgent(tab),
+            // The heading says it; no "Not set up" pill on each row.
+            group === 'setup' ? null : state.badgeOf(tab)
+          )
+        )
+        return (
+          <Fragment key={group}>
+            {index > 0 ? (
+              <div aria-hidden="true" className="mx-2 my-1 h-[0.5px] bg-border" />
+            ) : null}
+            {group === 'ready' ? (
+              rows
+            ) : (
+              // biome-ignore lint/a11y/useSemanticElements: a fieldset would give agent rows form semantics and min-content sizing
+              <div role="group" aria-labelledby={labelId}>
+                <SectionLabel id={labelId}>{label}</SectionLabel>
+                {rows}
+              </div>
+            )}
+          </Fragment>
+        )
+      })
       break
     case 'install':
       body = (
@@ -714,10 +758,12 @@ export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element 
       // as active while that agent's models are open.
       selected: showingMore || state.viewInOverflow,
       title: 'More agents',
+      end: true,
       onSelect: state.showMore
     })
   }
-  const showTabs = !searching && tabItems.length > 1
+  // "More" alone still shows when no agent is set up: it is the way to the rest.
+  const showTabs = !searching && (tabItems.length > 1 || tabs.overflow.length > 0)
   const tabStrip = (orientation: 'horizontal' | 'vertical'): React.JSX.Element => (
     <AgentTabStrip
       id={`agent-tabs-${sw.key}`}
