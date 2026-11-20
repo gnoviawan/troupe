@@ -344,7 +344,14 @@ function StopButton({
   const { canStop, stopping, stop } = useStopSubagent(toolCall, status)
   if (!canStop) return null
   return (
-    <Button type="button" variant="outline" size="xs" disabled={stopping} onClick={stop}>
+    <Button
+      type="button"
+      variant="outline"
+      size="xs"
+      className="ml-auto"
+      disabled={stopping}
+      onClick={stop}
+    >
       <Square size={10} fill="currentColor" strokeWidth={0} aria-hidden="true" />
       {stopping ? 'Stopping' : 'Stop'}
     </Button>
@@ -367,6 +374,8 @@ export interface SubagentPanelProps {
   /** Where the clicked row's avatar was: the header avatar grows out of it. */
   morphFrom?: DOMRect | null
 }
+
+export const SUBAGENT_TITLE_CLASS = 'line-clamp-2 break-words text-sm font-semibold text-foreground'
 
 /** The avatar's travel from the row into the header: the eye follows it across. */
 const AVATAR_MORPH_MS = 340
@@ -440,7 +449,7 @@ export function SubagentPanel({
     // biome-ignore lint/a11y/noStaticElementInteractions: arrow keys step siblings from anywhere inside; every control inside stays its own focus target
     <div
       data-testid="subagent-panel"
-      className="flex h-full min-h-0 flex-col"
+      className="@container flex h-full min-h-0 flex-col"
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation()
@@ -467,7 +476,7 @@ export function SubagentPanel({
           <X />
         </IconActionButton>
       </div>
-      <div className="flex items-center gap-3 border-b border-border px-4 pb-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-border px-4 pb-3">
         <span ref={avatarRef} data-subagent-morph="" className="relative z-10 inline-flex shrink-0">
           <SubagentAvatar
             agent={record?.agent}
@@ -475,21 +484,24 @@ export function SubagentPanel({
             waiting={isSubagentWaiting(toolCall, status)}
           />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          {renderTitle ? (
-            renderTitle(title)
-          ) : (
-            <h2 className="truncate text-sm font-semibold text-foreground">{title}</h2>
-          )}
+        <div className="col-span-2 flex min-w-0 flex-col @[28rem]:col-span-1">
+          {renderTitle ? renderTitle(title) : <h2 className={SUBAGENT_TITLE_CLASS}>{title}</h2>}
           {meta.length > 0 && (
-            <p className="break-words text-xs tabular-nums text-muted-foreground">
+            <p className="truncate text-xs tabular-nums text-muted-foreground">
               {meta.join(' · ')}
             </p>
           )}
         </div>
-        <div data-slot="subagent-actions" className="flex shrink-0 items-center gap-2">
+        <div
+          data-slot="subagent-actions"
+          className="col-span-2 col-start-2 flex items-center gap-2 @[28rem]:col-span-1 @[28rem]:col-start-3 @[28rem]:row-start-1"
+        >
           <SubagentStatusLabel toolCall={toolCall} status={status} />
-          <SubagentElapsed toolCall={toolCall} status={status} />
+          <SubagentElapsed
+            toolCall={toolCall}
+            status={status}
+            className="before:mr-2 before:content-['·'] @[28rem]:before:content-none"
+          />
           <StopButton toolCall={toolCall} status={status} />
         </div>
       </div>

@@ -15,7 +15,7 @@ import type { FilePathResolutionContext } from '@/lib/file-path-links'
 import { logFrontendError } from '@/lib/log-api'
 import type { ChatMessage } from '@/stores/acp-store/types'
 import { useOverlayRegistration } from '@/stores/overlay-stack-store'
-import { SubagentPanel } from './SubagentPanel'
+import { SUBAGENT_TITLE_CLASS, SubagentPanel } from './SubagentPanel'
 import { lastUserBoundary, subagentParentTurn, subagentStatus } from './subagent-strip'
 import { type SubagentSurface, SubagentSurfaceContext } from './subagent-surface-context'
 
@@ -241,11 +241,7 @@ export function SubagentSurfaceProvider({
         morphFrom={morph?.id === toolCall.toolCallId ? morph.rect : null}
         renderTitle={
           sheet
-            ? (title) => (
-                <SheetTitle className="truncate text-sm font-semibold text-foreground">
-                  {title}
-                </SheetTitle>
-              )
+            ? (title) => <SheetTitle className={SUBAGENT_TITLE_CLASS}>{title}</SheetTitle>
             : undefined
         }
       />
