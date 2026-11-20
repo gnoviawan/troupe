@@ -1505,6 +1505,11 @@
     /* biome-ignore lint/complexity/noImportantStyles: settled labels must suppress the live shimmer pseudo-element */
     display: none !important;
   }
+  .t-think.is-truncate .t-think-text,
+  .t-think.is-truncate .t-think-text::before {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .t-think-text {

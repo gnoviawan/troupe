@@ -95,7 +95,7 @@ function WorkRunGroupComponent({
           <ChevronRight size={13} />
         </motion.span>
         {/* The shimmer is CSS on data-text, so a count change re-renders in place. */}
-        <span className={cn('t-think is-start min-w-0', !isLiveTail && 'is-settled')}>
+        <span className={cn('t-think is-start is-truncate min-w-0', !isLiveTail && 'is-settled')}>
           <span className="t-think-text tabular-nums" data-text={summary.label}>
             {summary.label}
           </span>
