@@ -1293,6 +1293,196 @@ describe('desktop: signing in to another agent from its tab', () => {
   })
 })
 
+describe('desktop: setting up a Needs setup agent from the picker (#1949)', () => {
+  /** Ready on the host (npx), but its config is not stored: the chat cannot arm it yet. */
+  const GEMINI: StoredAgentConfig = {
+    id: 'acp-registry:gemini',
+    configId: 'acp-registry:gemini',
+    name: 'Gemini CLI',
+    command: 'npx',
+    args: ['@google/gemini-cli', '--experimental-acp'],
+    env: {},
+    allowTerminal: false,
+    templateId: 'gemini'
+  }
+  const GEMINI_KEY = prepareChatKey(GEMINI.id, '/work', undefined)
+  const GEMINI_MODELS = {
+    models: {
+      currentModelId: 'pro',
+      availableModels: [
+        { modelId: 'pro', name: 'Gemini Pro' },
+        { modelId: 'flash', name: 'Gemini Flash' }
+      ]
+    },
+    modes: null,
+    configOptions: [],
+    updatedAt: 1
+  }
+
+  beforeEach(() => {
+    localStorage.setItem(MODEL_PICKER_V2_KEY, '1')
+    seed([readyEntry(CLAUDE), { ...readyEntry(GEMINI), id: 'gemini' }])
+    acpStateRef.current.agentConfigs = [CURSOR, CLAUDE]
+  })
+  afterEach(() => localStorage.removeItem(MODEL_PICKER_V2_KEY))
+
+  function patchStore(patch: Record<string, unknown>): void {
+    acpStateRef.current = { ...acpStateRef.current, ...patch }
+  }
+
+  /** The store keeps what `saveAgentConfig` saves, as the real one does. */
+  function storeSavedConfigs(): void {
+    mockSaveAgentConfig.mockImplementation(async (config: StoredAgentConfig) => {
+      const configs = acpStateRef.current.agentConfigs as StoredAgentConfig[]
+      acpStateRef.current = { ...acpStateRef.current, agentConfigs: [...configs, config] }
+    })
+  }
+
+  /** Open the picker, then Gemini CLI from More's "Needs setup" group. */
+  function openSetup(): HTMLElement {
+    open()
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    const group = within(screen.getByRole('tabpanel', { name: 'More agents' })).getByRole('group', {
+      name: 'Needs setup'
+    })
+    fireEvent.click(within(group).getByRole('button', { name: 'Gemini CLI' }))
+    return screen.getByTestId('panel-agent-setup')
+  }
+
+  it('saves, starts, signs in, then shows its models and arms the model picked', async () => {
+    let finishSave: () => void = () => {}
+    mockSaveAgentConfig.mockImplementationOnce(
+      (config: StoredAgentConfig) =>
+        new Promise<void>((resolve) => {
+          finishSave = () => {
+            const configs = acpStateRef.current.agentConfigs as StoredAgentConfig[]
+            acpStateRef.current = { ...acpStateRef.current, agentConfigs: [...configs, config] }
+            resolve()
+          }
+        })
+    )
+    const { rerender } = renderSelector()
+    const setup = openSetup()
+    expect(setup).toHaveAttribute('data-phase', 'confirm')
+    expect(within(setup).getByRole('heading', { name: 'Set up Gemini CLI' })).toBeInTheDocument()
+    expect(within(setup).getByText('Runs with npx.')).toBeInTheDocument()
+
+    fireEvent.click(within(setup).getByRole('button', { name: 'Set up Gemini CLI' }))
+    expect(mockSaveAgentConfig).toHaveBeenCalledWith(GEMINI)
+    expect(setup).toHaveAttribute('data-phase', 'saving')
+    expect(within(setup).getByRole('button', { name: 'Setting up…' })).toBeDisabled()
+
+    await act(async () => finishSave())
+    await waitFor(() =>
+      expect(mockPrepareChat).toHaveBeenCalledWith(GEMINI.id, '/work', undefined, 'p1', {
+        silent: true
+      })
+    )
+    expect(setup).toHaveAttribute('data-phase', 'starting')
+    expect(within(setup).getByRole('heading', { name: 'Starting Gemini CLI' })).toBeInTheDocument()
+
+    patchStore({
+      prepareChatErrors: {
+        [GEMINI_KEY]: {
+          category: 'auth',
+          label: 'Authentication required',
+          detail: 'Gemini needs you to sign in.'
+        }
+      },
+      configToLiveAgent: {
+        ...(acpStateRef.current.configToLiveAgent as Record<string, string>),
+        [agentReuseKey(GEMINI.id, '/work', 'p1')]: 'agent-gemini'
+      },
+      agents: {
+        'agent-gemini': {
+          authMethods: [{ id: 'oauth-personal', name: 'Log in with Google', type: 'agent' }]
+        }
+      }
+    })
+    rerender(selector())
+
+    expect(setup).toHaveAttribute('data-phase', 'sign-in')
+    expect(
+      within(setup).getByRole('heading', { name: 'Sign in to Gemini CLI' })
+    ).toBeInTheDocument()
+    expect(within(setup).getByText('Gemini needs you to sign in.')).toBeInTheDocument()
+    fireEvent.click(within(setup).getByRole('button', { name: 'Log in with Google' }))
+    await waitFor(() =>
+      expect(mockAuthenticateAgent).toHaveBeenCalledWith('agent-gemini', 'oauth-personal')
+    )
+    await waitFor(() => expect(mockCancelPreparedChat).toHaveBeenCalledWith(GEMINI_KEY))
+    expect(mockPrepareChat).toHaveBeenLastCalledWith(GEMINI.id, '/work', undefined, 'p1', {
+      silent: true
+    })
+
+    patchStore({ prepareChatErrors: {}, agentOptionsCache: { [GEMINI.id]: GEMINI_MODELS } })
+    rerender(selector())
+
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    const list = screen.getByTestId('selector-list')
+    expect(within(list).getByRole('button', { name: 'Gemini Flash' })).toBeInTheDocument()
+    fireEvent.click(within(list).getByRole('button', { name: 'Gemini Flash' }))
+    await waitFor(() => expect(mockArmAgentSwitch).toHaveBeenCalledWith('session-1', GEMINI.id))
+  })
+
+  it('shows a failed save, and Try again saves again', async () => {
+    mockSaveAgentConfig.mockRejectedValueOnce(new Error('The server store is read-only.'))
+    renderSelector()
+    const setup = openSetup()
+
+    fireEvent.click(within(setup).getByRole('button', { name: 'Set up Gemini CLI' }))
+
+    expect(await within(setup).findByRole('heading', { name: 'Setup failed' })).toBeInTheDocument()
+    expect(setup).toHaveAttribute('data-phase', 'failed')
+    expect(within(setup).getByText('The server store is read-only.')).toBeInTheDocument()
+    fireEvent.click(within(setup).getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(mockSaveAgentConfig).toHaveBeenCalledTimes(2))
+  })
+
+  it('shows an agent that fails to start, and Try again starts it again', async () => {
+    storeSavedConfigs()
+    const { rerender } = renderSelector()
+    const setup = openSetup()
+    fireEvent.click(within(setup).getByRole('button', { name: 'Set up Gemini CLI' }))
+    await waitFor(() => expect(mockPrepareChat).toHaveBeenCalledTimes(1))
+
+    patchStore({
+      prepareChatErrors: {
+        [GEMINI_KEY]: {
+          category: 'spawn',
+          label: 'Agent unavailable',
+          detail: 'npx was not found.'
+        }
+      }
+    })
+    rerender(selector())
+
+    expect(setup).toHaveAttribute('data-phase', 'failed')
+    expect(within(setup).getByRole('heading', { name: 'Agent unavailable' })).toBeInTheDocument()
+    expect(within(setup).getByText('npx was not found.')).toBeInTheDocument()
+    fireEvent.click(within(setup).getByRole('button', { name: 'Try again' }))
+    expect(mockCancelPreparedChat).toHaveBeenCalledWith(GEMINI_KEY)
+    expect(mockPrepareChat).toHaveBeenCalledTimes(2)
+    expect(mockSaveAgentConfig).toHaveBeenCalledTimes(1)
+  })
+
+  it('Escape goes back to More without setting anything up, then closes the popover', async () => {
+    renderSelector()
+    openSetup()
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    expect(screen.getByRole('tabpanel', { name: 'More agents' })).toBeInTheDocument()
+    expect(mockSaveAgentConfig).not.toHaveBeenCalled()
+    expect(mockPrepareChat).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('agent-model-selector-panel')).not.toBeInTheDocument()
+    )
+  })
+})
+
 describe('AgentModelSelector desktop markup', () => {
   it.each([
     ['v1', '0'],

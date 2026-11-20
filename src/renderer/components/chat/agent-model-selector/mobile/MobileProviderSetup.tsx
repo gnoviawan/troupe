@@ -1,9 +1,9 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
+import { type ProviderSetup, useProviderSetup } from '../provider-setup'
 import { TabGlyph } from '../SelectorRows'
 import { Busy, Note, SignInActions } from '../SignInActions'
 import type { AgentTab } from '../selector-model'
-import { type ProviderSetup, useProviderSetup } from './provider-setup'
 
 /** The sheet route key of an agent's setup screen. */
 export const setupRouteKey = (configId: string): string => `setup:${configId}`

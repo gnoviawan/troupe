@@ -5,9 +5,9 @@ import type { PrepareChatError } from '@/lib/agents/acp-spawn-errors'
 import { logFrontendError } from '@/lib/log-api'
 import { useAcpStore } from '@/stores/acp-store'
 import { prepareChatKey } from '@/stores/acp-store/helpers'
-import type { AgentTab } from '../selector-model'
-import { useKnownCatalogs } from '../use-model-catalog'
-import { useSelectorAgentSignIn } from '../use-selector-agent-sign-in'
+import type { AgentTab } from './selector-model'
+import { useKnownCatalogs } from './use-model-catalog'
+import { useSelectorAgentSignIn } from './use-selector-agent-sign-in'
 
 /** Saving the agent's config, the one step this screen owns itself. */
 export type SaveState = { kind: 'idle' } | { kind: 'saving' } | { kind: 'failed'; message: string }
@@ -62,9 +62,10 @@ export interface ProviderSetup {
 }
 
 /**
- * One agent's setup inside the chat's model sheet: save its config the way
- * the launcher's explicit pick does (issue #907), start it in the chat's
- * folder to read its models, and run its sign-in when it asks for one.
+ * One agent's setup inside the chat's model picker (the phone sheet's setup
+ * screen and the desktop panel's, issue #1949): save its config the way the
+ * launcher's explicit pick does (issue #907), start it in the chat's folder
+ * to read its models, and run its sign-in when it asks for one.
  */
 export function useProviderSetup(
   tab: AgentTab,

@@ -2517,6 +2517,122 @@ describe('SelectorPanelV2 set-up agents in the track, the rest grouped behind Mo
     render(<Panel {...props({ source: chat({ selectAgent: () => {} }) })} />)
     expect(tabNames()).toEqual(['amp', 'Claude Agent', 'Cursor', 'Gemini', 'More agents'])
   })
+
+  /** Gemini as the host reports it: ready, with a derived config the chat has not stored. */
+  const withDerivedGemini = (over: Partial<SelectorSource> = {}): SelectorSource =>
+    chat({
+      entries: [...TO_INSTALL, entry(GEMINI), entry(CURSOR), notSetUp(AMP), entry(CLAUDE)],
+      ...over
+    })
+  const needsSetup = (): HTMLElement =>
+    within(screen.getByRole('tabpanel', { name: 'More agents' })).getByRole('group', {
+      name: 'Needs setup'
+    })
+  const setupView = (): HTMLElement => screen.getByTestId('panel-agent-setup')
+
+  it('opens a Needs setup agent in the panel to set it up (#1949)', () => {
+    render(<Panel {...props({ source: withDerivedGemini() })} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    const gemini = within(needsSetup()).getByRole('button', { name: 'Gemini' })
+    expect(gemini).toBeEnabled()
+
+    fireEvent.click(gemini)
+
+    expect(setupView()).toHaveAttribute('data-phase', 'confirm')
+    expect(within(setupView()).getByRole('heading', { name: 'Set up Gemini' })).toBeInTheDocument()
+    expect(within(setupView()).getByText('Runs with gemini.')).toBeInTheDocument()
+    expect(within(setupView()).getByRole('button', { name: 'Set up Gemini' })).toBeEnabled()
+    // Still under More: the setup view is one level into its list.
+    expect(screen.getByRole('tab', { name: 'More agents' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+  })
+
+  it('goes back to the More list from Back, and focus returns to the agent row', async () => {
+    render(<Panel {...props({ source: withDerivedGemini() })} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    // A browser focuses a pressed button; jsdom needs the focus itself.
+    const row = within(needsSetup()).getByRole('button', { name: 'Gemini' })
+    row.focus()
+    fireEvent.click(row)
+    const back = within(setupView()).getByRole('button', { name: 'Back to agents' })
+    back.focus()
+
+    fireEvent.click(back)
+
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    await waitFor(() =>
+      expect(within(needsSetup()).getByRole('button', { name: 'Gemini' })).toHaveFocus()
+    )
+  })
+
+  it('reaches the setup view from the keyboard, and Escape steps back before closing', async () => {
+    const escapeRef: SelectorPanelV2Props['escapeRef'] = { current: null }
+    render(<Panel {...props({ source: withDerivedGemini(), escapeRef })} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    const row = within(needsSetup()).getByRole('button', { name: 'Gemini' })
+    row.focus()
+    expect(row).toHaveFocus()
+    // A native button turns Enter into a click; jsdom needs the click itself.
+    fireEvent.keyDown(row, { key: 'Enter' })
+    fireEvent.click(row)
+
+    // The row left with the list: focus lands on the view's action, not on body.
+    await waitFor(() =>
+      expect(within(setupView()).getByRole('button', { name: 'Set up Gemini' })).toHaveFocus()
+    )
+    const back = within(setupView()).getByRole('button', { name: 'Back to agents' })
+    const search = screen.getByRole('textbox', { name: 'Search models and agents' })
+    fireEvent.keyDown(search, { key: 'ArrowDown' })
+    expect(back).toHaveFocus()
+    fireEvent.keyDown(back, { key: 'ArrowUp' })
+    expect(search).toHaveFocus()
+
+    let handled = false
+    act(() => {
+      handled = escapeRef.current?.() ?? false
+    })
+    expect(handled).toBe(true)
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    expect(screen.getByRole('tabpanel', { name: 'More agents' })).toBeInTheDocument()
+    expect(escapeRef.current?.()).toBe(false)
+  })
+
+  it('leaves the setup view for a tab, or for search', () => {
+    render(<Panel {...props({ source: withDerivedGemini() })} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    fireEvent.click(within(needsSetup()).getByRole('button', { name: 'Gemini' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Claude Agent' }))
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    expect(screen.getByRole('tabpanel', { name: 'Claude Agent' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'More agents' }))
+    fireEvent.click(within(needsSetup()).getByRole('button', { name: 'Gemini' }))
+    const search = screen.getByRole('textbox', { name: 'Search models and agents' })
+    fireEvent.change(search, { target: { value: 'gem' } })
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+    fireEvent.change(search, { target: { value: '' } })
+    expect(screen.queryByTestId('panel-agent-setup')).toBeNull()
+  })
+
+  it('opens the setup view from a search result for a Needs setup agent', () => {
+    render(<Panel {...props({ source: withDerivedGemini() })} />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search models and agents' }), {
+      target: { value: 'gem' }
+    })
+    const result = screen.getByTestId(`selector-agent-${GEMINI.id}`)
+    expect(result).toBeEnabled()
+
+    fireEvent.click(result)
+
+    expect(screen.getByRole('textbox', { name: 'Search models and agents' })).toHaveValue('')
+    expect(within(setupView()).getByRole('heading', { name: 'Set up Gemini' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'More agents' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    )
+  })
 })
 
 describe('SelectorPanelV2 agent icon on every row', () => {
