@@ -5,8 +5,25 @@ import {
   getOrCreateProjectContinuityCorrelation,
   recordTerminalContinuityEvent
 } from '@/lib/terminal-continuity-instrumentation'
-import { useAcpStore } from '@/stores/acp-store'
+import { type AcpState, useAcpStore } from '@/stores/acp-store'
+import { isLaunchPlaceholderSessionId } from '@/stores/acp-store/live-turn'
 import { useProjectStore } from '@/stores/project-store'
+
+/**
+ * True while a chat of `projectId` is starting on a launch placeholder. Its
+ * real session can reach the index (the host's history update) before
+ * `createSession` puts the live record in the store, so in that window the
+ * new chat looks like a persisted session to resume (#1941).
+ */
+export function projectChatLaunchInFlight(
+  state: Pick<AcpState, 'launchingSessionIds' | 'sessions'>,
+  projectId: string | null | undefined
+): boolean {
+  if (!projectId) return false
+  return Object.keys(state.launchingSessionIds ?? {}).some(
+    (id) => isLaunchPlaceholderSessionId(id) && state.sessions[id]?.projectId === projectId
+  )
+}
 
 /**
  * R1: proactively reattach still-running ACP agent sessions after a refresh
@@ -33,6 +50,7 @@ import { useProjectStore } from '@/stores/project-store'
 export function useAcpSessionResume(): void {
   const sessionIndex = useAcpStore((s) => s.sessionIndex)
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
+  const launchInFlight = useAcpStore((s) => projectChatLaunchInFlight(s, activeProjectId))
   const attemptedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -41,11 +59,24 @@ export function useAcpSessionResume(): void {
     // (cold start with no history), there is nothing to resume yet — the
     // effect re-runs when `loadSessionIndex` populates it.
     if (sessionIndex.length === 0) return
+    // A chat of this project is starting: its new session may already be in
+    // the index without its live record. Resuming it would reopen the chat
+    // under the starting one (a restore over its panel that drops the unsent
+    // draft, #1941). Wait: the effect runs again when the launch settles, and
+    // by then the new session is live and skipped below.
+    if (launchInFlight) {
+      void logFrontendError({
+        level: 'info',
+        source: 'acp.resumeBootstrap',
+        message: `acp-resume deferred for project ${activeProjectId}: a chat launch is in flight`
+      })
+      return
+    }
     let cancelled = false
     void (async () => {
       const correlationId = getOrCreateProjectContinuityCorrelation(activeProjectId)
       const transport = getAcpTransport()
-      const { openHistorySession, sessions } = useAcpStore.getState()
+      const { openHistorySession } = useAcpStore.getState()
       // Eligible: belongs to this project, advertises an agent (resumeEligible
       // = agentConfigId || agentId), has the authoritative agent id needed to
       // resume, and is neither closed nor errored (closed chats re-open
@@ -67,7 +98,11 @@ export function useAcpSessionResume(): void {
         if (attemptedRef.current.has(entry.id)) continue
         // Skip a session already open in this lifetime (e.g. a chat the user
         // just started) — mirroring `openHistorySession`'s cached early-return.
-        const cached = sessions[entry.id]
+        // Read the store now, not before the loop: an earlier entry's awaits
+        // can outlast a launch that made this session live meanwhile.
+        const live = useAcpStore.getState()
+        if (projectChatLaunchInFlight(live, activeProjectId)) return
+        const cached = live.sessions[entry.id]
         if (cached && cached.status !== 'closed') continue
         attemptedRef.current.add(entry.id)
         recordTerminalContinuityEvent({
@@ -133,5 +168,5 @@ export function useAcpSessionResume(): void {
     return () => {
       cancelled = true
     }
-  }, [sessionIndex, activeProjectId])
+  }, [sessionIndex, activeProjectId, launchInFlight])
 }

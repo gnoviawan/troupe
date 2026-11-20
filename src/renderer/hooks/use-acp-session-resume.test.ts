@@ -21,12 +21,14 @@ const state: {
   }>
   openHistorySession: ReturnType<typeof vi.fn>
   flushLiveSessionSaves: ReturnType<typeof vi.fn>
-  sessions: Record<string, { status: string }>
+  sessions: Record<string, { status: string; projectId?: string }>
+  launchingSessionIds: Record<string, true>
 } = {
   sessionIndex: [],
   openHistorySession: vi.fn(),
   flushLiveSessionSaves: vi.fn(),
-  sessions: {}
+  sessions: {},
+  launchingSessionIds: {}
 }
 
 vi.mock('@/stores/acp-store', () => ({
@@ -84,6 +86,7 @@ describe('useAcpSessionResume — refresh reattachment (R1/R2/R6)', () => {
     state.flushLiveSessionSaves.mockReset()
     state.sessionIndex = []
     state.sessions = {}
+    state.launchingSessionIds = {}
   })
 
   it('resumes a still-running turn with the server cursor + records succeeded', async () => {
@@ -205,6 +208,61 @@ describe('useAcpSessionResume — refresh reattachment (R1/R2/R6)', () => {
       expect(state.openHistorySession).toHaveBeenCalledWith('s1')
     })
     expect(events.find((e) => e.name === 'acp-resume-succeeded')?.terminalId).toBe('s1')
+  })
+
+  it('does not reopen a chat this page is starting: its session can reach the index before its live record (#1941)', async () => {
+    // A New chat of p1 runs on a launch placeholder. The host already lists
+    // its new session `s-new`, but `createSession` has not put the record in
+    // the store yet.
+    state.sessions = { 'launch-1': { status: 'initializing', projectId: 'p1' } }
+    state.launchingSessionIds = { 'launch-1': true }
+    state.sessionIndex = [eligibleSession({ id: 's-new' })]
+    transportMocks.fetchSessionCursor.mockResolvedValue({ lastSeq: 0, logEpoch: null })
+    state.openHistorySession.mockResolvedValue(undefined)
+
+    const { rerender } = renderHook(() => useAcpSessionResume())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.openHistorySession).not.toHaveBeenCalled()
+    expect(events).toHaveLength(0)
+
+    // The launch adopted the placeholder: `s-new` is live, so it is skipped.
+    state.sessions = { 's-new': { status: 'active', projectId: 'p1' } }
+    state.launchingSessionIds = {}
+    rerender()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.openHistorySession).not.toHaveBeenCalled()
+  })
+
+  it('resumes the persisted chats once a launch in the project settles', async () => {
+    state.sessions = { 'launch-1': { status: 'initializing', projectId: 'p1' } }
+    state.launchingSessionIds = { 'launch-1': true }
+    state.sessionIndex = [eligibleSession({ id: 's-old' })]
+    transportMocks.fetchSessionCursor.mockResolvedValue({ lastSeq: 0, logEpoch: null })
+    state.openHistorySession.mockResolvedValue(undefined)
+
+    const { rerender } = renderHook(() => useAcpSessionResume())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(state.openHistorySession).not.toHaveBeenCalled()
+
+    state.sessions = {}
+    state.launchingSessionIds = {}
+    rerender()
+    await waitFor(() => {
+      expect(state.openHistorySession).toHaveBeenCalledWith('s-old')
+    })
+  })
+
+  it('does not wait for a launch in another project', async () => {
+    state.sessions = { 'launch-2': { status: 'initializing', projectId: 'p2' } }
+    state.launchingSessionIds = { 'launch-2': true }
+    state.sessionIndex = [eligibleSession({ id: 's-old' })]
+    transportMocks.fetchSessionCursor.mockResolvedValue({ lastSeq: 0, logEpoch: null })
+    state.openHistorySession.mockResolvedValue(undefined)
+
+    renderHook(() => useAcpSessionResume())
+    await waitFor(() => {
+      expect(state.openHistorySession).toHaveBeenCalledWith('s-old')
+    })
   })
 
   it('does nothing without an active project or an empty index', async () => {

@@ -645,6 +645,44 @@ describe('AgentChatPanel restored-tab rehydration', () => {
     expect(mockOpen).not.toHaveBeenCalled()
   })
 
+  it('keeps the composer and its unsent draft when the launch placeholder becomes a session that a restore is opening (#1941)', () => {
+    sessionsMapRef.current = {
+      'launch-abc': mockAcpSession({ id: 'launch-abc', cwd: '/w', status: 'initializing' })
+    }
+    launchingRef.current = { 'launch-abc': true }
+    const { rerender } = render(<AgentChatPanel sessionId="launch-abc" isVisible />)
+    const editor = screen.getByRole('textbox', { name: 'editor' })
+    fireEvent.change(editor, { target: { value: 'draft at 300ms' } })
+
+    // adoptSession: the store merged the placeholder into `sess-1` and the tab
+    // re-pointed the same panel at it, while an open of `sess-1` (the reload
+    // resume, or a resend answered by lookup) holds its restore mark.
+    sessionsMapRef.current = {
+      'sess-1': mockAcpSession({ id: 'sess-1', cwd: '/w', status: 'active' })
+    }
+    launchingRef.current = {}
+    indexRef.current = [{ id: 'sess-1' }]
+    restoringRef.current = { 'sess-1': true }
+    rerender(<AgentChatPanel sessionId="sess-1" isVisible />)
+
+    expect(screen.queryByRole('status', { name: 'Restoring chat' })).not.toBeInTheDocument()
+    // Same composer node: it never unmounted, so the typed text is still there.
+    expect(screen.getByRole('textbox', { name: 'editor' })).toBe(editor)
+    expect(editor).toHaveValue('draft at 300ms')
+    expect(mockOpen).not.toHaveBeenCalled()
+  })
+
+  it('still shows the restore preload when the panel moves to a chat that did not start on its placeholder', () => {
+    sessionsMapRef.current = {
+      's-a': mockAcpSession({ id: 's-a', cwd: '/w', status: 'active' }),
+      's-b': mockAcpSession({ id: 's-b', cwd: '/w', status: 'active' })
+    }
+    const { rerender } = render(<AgentChatPanel sessionId="s-a" isVisible />)
+    restoringRef.current = { 's-b': true }
+    rerender(<AgentChatPanel sessionId="s-b" isVisible />)
+    expect(screen.getByRole('status', { name: 'Restoring chat' })).toBeInTheDocument()
+  })
+
   it('offers an actionable close for a corpse tab (no session, no history)', () => {
     render(<AgentChatPanel sessionId="s-gone" isVisible />)
     // The dead-end "No active chat for this pane." corpse text is gone; the

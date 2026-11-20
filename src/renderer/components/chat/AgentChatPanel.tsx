@@ -79,6 +79,7 @@ import { PromptReconcileNotice } from './PromptReconcileNotice'
 import { ReloadChatConfirmDialog } from './ReloadChatConfirmDialog'
 import { StoppedChatDock } from './StoppedChatDock'
 import { SubagentSurfaceProvider } from './SubagentSurface'
+import { useAdoptedLaunchSession } from './use-adopted-launch-session'
 import { useApprovalDock } from './use-approval-dock'
 import { AUTO_RESUME_FAILED_REASON, useIdleStopAutoResume } from './use-idle-stop-auto-resume'
 
@@ -339,6 +340,8 @@ export function AgentChatPanel({
   const isOpeningHistory = useAcpStore((s) => Boolean(s.openingHistoryIds[sessionId]))
   const isRestoringChat = useAcpStore((s) => Boolean(s.restoringChatIds[sessionId]))
   const isLaunchingSession = useAcpStore((s) => Boolean(s.launchingSessionIds[sessionId]))
+  // This panel showed the launch placeholder that became `sessionId`.
+  const adoptedLaunch = useAdoptedLaunchSession(sessionId)
   const [rehydrateError, setRehydrateError] = useState<string | null>(null)
   const attemptedReopenRef = useRef<string | null>(null)
   useEffect(() => {
@@ -825,8 +828,12 @@ export function AgentChatPanel({
   const dockClassName = isMobileShell ? 'flex shrink-0 flex-col' : 'contents'
 
   // An automatic resume keeps the composer (and the draft being typed)
-  // mounted; the "Resuming chat…" strip covers the reconnect instead.
-  if (isRestoringChat && !(session && autoResumeActive)) return <ChatRestorePreload />
+  // mounted; the "Resuming chat…" strip covers the reconnect instead. So does
+  // a chat that started here on a launch placeholder: it is already on screen,
+  // and the preload would remount the composer empty (#1941).
+  if (isRestoringChat && !(session && (autoResumeActive || adoptedLaunch))) {
+    return <ChatRestorePreload />
+  }
 
   if (!session) {
     if (rehydrateError) {
