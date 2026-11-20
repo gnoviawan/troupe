@@ -2646,6 +2646,8 @@ describe('SelectorPanelV2 set-up agents in the track, the rest grouped behind Mo
     fireEvent.keyDown(search, { key: 'Enter' })
 
     expect(within(setupView()).getByRole('heading', { name: 'Set up Gemini' })).toBeInTheDocument()
+    // Focus leaves search for the setup action: Enter sets up, typing does not leave.
+    expect(within(setupView()).getByRole('button', { name: 'Set up Gemini' })).toHaveFocus()
   })
 })
 
