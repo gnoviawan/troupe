@@ -189,6 +189,8 @@ __termul_prompt() {
         __termul_json_escape "$__termul_nonce"
         printf -v json '{"type":"CommandFinished","nonce":"%s","exit_code":%s}' "$__termul_escaped" "$__termul_status"
         __termul_frame "$json"
+        # Cosmetic in-band status mark for the renderer's command gutter dot.
+        builtin printf '\033]133;D;%s;termul\007' "$__termul_status"
     fi
     __termul_reclaim_prompt
     __termul_user_prompt

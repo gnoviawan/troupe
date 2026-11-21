@@ -112,6 +112,12 @@ To free a key that Troupe uses as a shortcut, open **Settings**, select **Keyboa
 
 `Shift+Enter` sends a line feed, the same as `Ctrl+J`. AI coding agents that run in a terminal, such as Claude Code, use it to start a new line in a prompt without sending it. When the [command editor](#type-commands-in-the-command-editor) isn't active, a plain shell treats it like `Enter` and runs the command. In the command editor, it starts a new line.
 
+## See which commands succeeded
+
+Each command you run gets a dot to the left of the line where you typed it. A green dot means the command succeeded. A red dot means it failed. Point at a dot to see the exit code.
+
+Dots appear in the zsh and bash shells that Troupe starts. A line you send without a command, such as a plain `Enter`, gets no dot. Output that Troupe restores after a restart has no dots.
+
 ## Open links and files from the output
 
 Hold `Ctrl` (`Cmd` on macOS) and click a web address or a file path in the terminal. A plain click does nothing.

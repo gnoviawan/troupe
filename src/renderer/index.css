@@ -634,6 +634,33 @@
     pointer-events: none;
   }
 
+  /* Success/failure dot left of each finished command (OSC 133;D;<exit>;termul).
+     Sits in the terminal's left padding, like an editor gutter. */
+  .xterm .termul-command-status {
+    /* biome-ignore lint/complexity/noImportantStyles: override xterm inline decoration geometry */
+    width: 10px !important;
+    /* biome-ignore lint/complexity/noImportantStyles: override xterm inline decoration geometry */
+    left: -13px !important;
+    cursor: default;
+  }
+  .xterm .termul-command-status::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .xterm .termul-command-status--success {
+    color: oklch(var(--success));
+  }
+  .xterm .termul-command-status--failure {
+    color: oklch(var(--destructive));
+  }
+
   /* ------------------------------------------------------------
    * Radix popovers, tooltips, dropdowns, selects, menubars,
    * context menus, hover cards: origin-aware scale + custom
