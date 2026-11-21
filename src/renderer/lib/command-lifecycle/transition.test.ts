@@ -114,6 +114,48 @@ describe('reduceSession', () => {
     expect(result.log).toBeNull()
   })
 
+  it('a late alternate-screen enter over a mounted prompt mounts it again on leave', () => {
+    const entered = reduceSession(
+      registeredSession({ mode: 'Editor', phase: 'AtPrompt', promptGeneration: 2 }),
+      { type: 'AlternateScreenEnter' }
+    )
+    expect(entered.state).toMatchObject({
+      mode: 'PTY',
+      alternateScreen: true,
+      heldPromptGeneration: 2
+    })
+
+    const left = reduceSession(entered.state, { type: 'AlternateScreenLeave' })
+
+    expect(left.state).toMatchObject({
+      mode: 'Editor',
+      phase: 'AtPrompt',
+      alternateScreen: false,
+      promptGeneration: 2,
+      heldPromptGeneration: null
+    })
+    expect(left.writeDraft).toBe(false)
+    expect(left.log).toBeNull()
+  })
+
+  it('a late alternate-screen enter does not hold an untrusted or busy editor', () => {
+    const states: Partial<SessionState>[] = [
+      { trusted: false },
+      { phase: 'Submitting' },
+      { committedSubmit: true },
+      { mode: 'PTY' }
+    ]
+    for (const overrides of states) {
+      const entered = reduceSession(
+        registeredSession({ mode: 'Editor', phase: 'AtPrompt', promptGeneration: 2, ...overrides }),
+        { type: 'AlternateScreenEnter' }
+      )
+      expect(entered.state.heldPromptGeneration).toBeNull()
+      const left = reduceSession(entered.state, { type: 'AlternateScreenLeave' })
+      expect(left.state.mode).not.toBe('Editor')
+    }
+  })
+
   it('alternate screen enters the PTY', () => {
     const result = reduceSession(registeredSession({ mode: 'Editor', phase: 'AtPrompt' }), {
       type: 'AlternateScreenEnter'

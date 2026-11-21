@@ -45,10 +45,30 @@ describe('applyScreenMode', () => {
     expect(applyScreenMode(next.state, modes).state).toBe(next.state)
     expect(applyScreenMode(state, undefined).state).toBe(state)
   })
-  it('leaving the alternate screen does not open the editor', () => {
-    const entered = applyScreenMode(editorSession(), modes).state
+  it('leaving the alternate screen does not open the editor without a prompt', () => {
+    const executing: SessionState = {
+      ...editorSession(),
+      mode: 'PTY',
+      phase: 'Executing',
+      committedSubmit: true,
+      completionPending: false
+    }
+    const entered = applyScreenMode(executing, modes).state
     const next = applyScreenMode(entered, { ...modes, alternateScreen: false })
     expect(next.state.mode).toBe('PTY')
+    expect(next.state.alternateScreen).toBe(false)
+    expect(next.writeDraft).toBe(false)
+    expect(next.log).toBeNull()
+    expect(applyScreenMode(next.state, { ...modes, alternateScreen: false }).state).toBe(next.state)
+  })
+  it('leaving an alternate screen entered over the editor mounts that prompt again', () => {
+    // PromptReady can mount the editor before xterm parses a fast enter and leave.
+    const entered = applyScreenMode(editorSession(), modes).state
+    expect(entered.heldPromptGeneration).toBe(1)
+    const next = applyScreenMode(entered, { ...modes, alternateScreen: false })
+    expect(next.state.mode).toBe('Editor')
+    expect(next.state.promptGeneration).toBe(1)
+    expect(next.state.heldPromptGeneration).toBeNull()
     expect(next.state.alternateScreen).toBe(false)
     expect(next.state.buffer).toBe('draft')
     expect(next.writeDraft).toBe(false)

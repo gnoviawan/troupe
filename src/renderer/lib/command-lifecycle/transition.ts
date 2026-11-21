@@ -214,14 +214,50 @@ function reduceExitOrFallback(state: SessionState, event: SessionEvent): Session
   return null
 }
 
+/** A trusted editor mounted for a prompt and not yet handed to a command. */
+function isMountedPrompt(
+  state: SessionState
+): state is SessionState & { promptGeneration: number } {
+  return (
+    state.mode === 'Editor' &&
+    state.phase === 'AtPrompt' &&
+    state.trusted &&
+    !state.committedSubmit &&
+    state.promptGeneration !== null
+  )
+}
+
+/**
+ * The alternate screen always takes the PTY. PromptReady can also win the race
+ * the other way: it mounts the editor before xterm parses the output that came
+ * before the prompt, such as a fast `CSI ? 1049 h` ... `CSI ? 1049 l`. So the
+ * mounted prompt is held, and the leave mounts it again unless a command starts
+ * or a newer prompt replaces it first.
+ */
+function enterAlternateScreen(state: SessionState): SessionReduction {
+  return hold({
+    ...state,
+    alternateScreen: true,
+    mode: 'PTY',
+    completionPending: false,
+    heldPromptGeneration: isMountedPrompt(state)
+      ? state.promptGeneration
+      : state.heldPromptGeneration
+  })
+}
+
 /**
  * Leaving the alternate screen alone never returns Editor. It mounts the editor
- * only for a held prompt that was already mountable apart from the screen.
+ * only for a held prompt that was already mountable apart from the screen: a
+ * newer prompt that arrived during the screen, or the prompt the editor was
+ * mounted for when the screen was entered.
  */
 function leaveAlternateScreen(state: SessionState): SessionReduction {
   const held = state.heldPromptGeneration
   const left = { ...state, alternateScreen: false, heldPromptGeneration: null }
-  if (held === null || !isNewerPrompt(left, held)) return hold(left)
+  if (held === null) return hold(left)
+  const remount = held === state.promptGeneration && state.phase === 'AtPrompt'
+  if (!remount && !isNewerPrompt(left, held)) return hold(left)
   return openEditor(left, held)
 }
 
@@ -233,7 +269,7 @@ export function reduceSession(state: SessionState, event: SessionEvent): Session
   if (exitOrFallback) return exitOrFallback
   switch (event.type) {
     case 'AlternateScreenEnter':
-      return hold({ ...state, alternateScreen: true, mode: 'PTY', completionPending: false })
+      return enterAlternateScreen(state)
     case 'AlternateScreenLeave':
       return leaveAlternateScreen(state)
     case 'CompletionPending':

@@ -119,6 +119,69 @@ it('an unsuppressed prompt inside the alternate screen is not held', async () =>
   expect(sessionStore.read('t1').mode).not.toBe('Editor')
 })
 
+/** Submits a short program; its final prompt mounts the editor before xterm parses its output. */
+async function promptBeforeAlternateScreenOutput(): Promise<void> {
+  await submitFromEditor()
+  sessionStore.apply('t1', { type: 'CommandStarted', session_id: 's1', nonce: 'n1' })
+  sessionStore.apply('t1', {
+    type: 'CommandFinished',
+    session_id: 's1',
+    nonce: 'n1',
+    exit_code: 0
+  })
+  sessionStore.apply('t1', prompt(2))
+  expect(sessionStore.read('t1')).toMatchObject({ mode: 'Editor', promptGeneration: 2 })
+}
+
+it('a prompt that arrives before a fast alternate-screen enter and leave keeps the editor', async () => {
+  await promptBeforeAlternateScreenOutput()
+
+  // `printf '\e[?1049h\e[?1049l'`: xterm parses both after PromptReady mounted the editor.
+  sessionStore.applyScreen('t1', ALTERNATE)
+  expect(sessionStore.read('t1').mode).toBe('PTY')
+  sessionStore.applyScreen('t1', NORMAL)
+
+  expect(sessionStore.read('t1')).toMatchObject({
+    mode: 'Editor',
+    phase: 'AtPrompt',
+    trusted: true,
+    alternateScreen: false,
+    promptGeneration: 2,
+    heldPromptGeneration: null,
+    committedSubmit: false
+  })
+  expect(commandDraftStore.read('t1')).toBe('')
+})
+
+it('repeated fast alternate-screen enters and leaves after the prompt keep the editor', async () => {
+  await promptBeforeAlternateScreenOutput()
+
+  for (let i = 0; i < 10; i++) {
+    sessionStore.applyScreen('t1', ALTERNATE)
+    sessionStore.applyScreen('t1', NORMAL)
+  }
+
+  expect(sessionStore.read('t1')).toMatchObject({ mode: 'Editor', promptGeneration: 2 })
+})
+
+it('a program that stays on the alternate screen over the editor keeps the PTY', async () => {
+  await promptBeforeAlternateScreenOutput()
+
+  sessionStore.applyScreen('t1', ALTERNATE)
+
+  expect(sessionStore.read('t1')).toMatchObject({ mode: 'PTY', alternateScreen: true })
+})
+
+it('a command started over the editor prompt drops it before the leave', async () => {
+  await promptBeforeAlternateScreenOutput()
+
+  sessionStore.applyScreen('t1', ALTERNATE)
+  sessionStore.apply('t1', { type: 'CommandStarted', session_id: 's1', nonce: 'n1' })
+  sessionStore.applyScreen('t1', NORMAL)
+
+  expect(sessionStore.read('t1').mode).toBe('PTY')
+})
+
 it('a held prompt keeps an accepted submit until the leave mounts the editor', async () => {
   await submitFromEditor()
   expect(sessionStore.read('t1')).toMatchObject({ phase: 'Submitting', committedSubmit: true })

@@ -379,10 +379,13 @@ function applyScreen(
   const next = fromReducerState(reduced.state, current.cwd)
   if (next.mode === 'Editor' && current.mode !== 'Editor') {
     // A prompt held during the alternate screen mounts once the leave is parsed.
+    // The same generation means the screen was entered over a mounted prompt.
     settlePromptSubmission(ctx, id, current, next)
-    logSubmit(
-      `editor mounted: held prompt after alternate screen generation=${next.promptGeneration}`
-    )
+    const source =
+      next.promptGeneration === current.promptGeneration
+        ? 'prompt kept across alternate screen'
+        : 'held prompt after alternate screen'
+    logSubmit(`editor mounted: ${source} generation=${next.promptGeneration}`)
   }
   return write(ctx, id, next)
 }
