@@ -2,132 +2,34 @@ name: PR Validation
 
 on:
   pull_request:
-    # ready_for_review is required. The two checks below are required on dev,
-    # and they must start when a draft is marked ready, with no new push.
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    # No `edited`: a title or description edit runs pr-metadata.yml only. An
+    # edit run here would replace this run's job results with skipped ones and
+    # cancel the queued run for the latest commit.
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main, develop, dev]
+  # Pushes to dev run the Rust jobs so rust-cache saves dev-scoped entries.
+  # A PR can restore caches from its base branch but not from other PRs.
+  push:
+    branches: [dev]
 
 permissions:
   contents: read
 
+env:
+  # File and line tables only. Backtraces keep file:line, and codegen, links
+  # and the cache get smaller. The test profile inherits this from dev.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # A description or title edit uses action `edited`. Code jobs skip that
-  # action. Cancelling the in-progress run would abort the synchronize jobs
-  # and leave them skipped.
-  # A base-branch edit is also `edited`, but the merge commit changed.
-  # Cancel the older run. The code jobs on this run still execute.
-  # ready_for_review is not `edited`, so it cancels the in-progress draft run.
-  cancel-in-progress: ${{ github.event.action != 'edited' || github.event.changes.base != null }}
+  # Merges to dev land minutes apart. Cancelling would drop the cache save.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  pr-title-check:
-    name: Validate PR Title
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read
-    steps:
-      - name: Check PR title follows conventional commits
-        uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            chore
-            revert
-          requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
-          subjectPatternError: |
-            The subject "{subject}" must not start with an uppercase letter.
-            Use lowercase like: "feat: add new feature"
-
-  pr-body-check:
-    name: Validate PR Description
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.x
-
-      - name: Validate PR description against template
-        id: validate
-        env:
-          # Pass the body via env, never interpolated into the shell, to avoid
-          # command injection from attacker-controlled PR descriptions.
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_BODY_COMMENT_FILE: ${{ runner.temp }}/pr-body-comment.md
-        run: bun run scripts/validate-pr-body.ts
-
-      - name: Post or update failure comment
-        # Skip on forked PRs: GITHUB_TOKEN is read-only there, so the comment
-        # API calls would 403. Validation itself still gates forked PRs.
-        if: failure() && steps.validate.outcome == 'failure' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            const fs = require('node:fs');
-            const marker = '<!-- pr-body-validation -->';
-            const path = `${process.env.RUNNER_TEMP}/pr-body-comment.md`;
-            let body;
-            try {
-              body = fs.readFileSync(path, 'utf8');
-            } catch {
-              body = `${marker}\n## ❌ PR description does not satisfy the template\n\nPlease fill in every required section of the PR template.`;
-            }
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body });
-            }
-
-      - name: Resolve failure comment on success
-        # Skip on forked PRs (read-only GITHUB_TOKEN) to avoid a 403 turning a
-        # passing validation into a failed job.
-        if: success() && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            const marker = '<!-- pr-body-validation -->';
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              const body = `${marker}\n## ✅ PR description satisfies the template\n\nThanks for filling it in.`;
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            }
-
-  # Job-level filter. Do not add on.pull_request.paths to this workflow.
-  # A skipped workflow leaves "Validate PR Title" and "Validate PR Description"
-  # Pending, and those two checks are required on dev. A skipped job reports
-  # success and does not block the pull request.
+  # Job-level filter. Do not add on.pull_request.paths to this workflow: a
+  # skipped workflow reports nothing, while a skipped job reports success.
   changes:
     name: Detect Rust changes
-    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -143,7 +45,8 @@ jobs:
         id: filter
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # A push compares against the previous tip of the branch.
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           set -euo pipefail
 
@@ -196,9 +99,6 @@ jobs:
 
   validate:
     name: Lint, Typecheck & Test
-    # Skip a description or title edit. A base-branch edit changes the merge
-    # commit, so these jobs still run.
-    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -233,11 +133,9 @@ jobs:
   rust-checks:
     name: Rust Checks
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-22.04
-    # Check, test and clippy run about 17 minutes on a warm cache, and the
+    # Clippy and test run about 14 minutes on a cold cache, and the
     # post-job cache save adds about one more.
     timeout-minutes: 30
     steps:
@@ -262,10 +160,12 @@ jobs:
           components: clippy
 
       - name: Cache Rust
-        uses: swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: src-tauri
           cache-on-failure: true
+          # PR-scoped caches are invisible to other PRs and crowd the 10 GB cap.
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -295,21 +195,18 @@ jobs:
       - name: Fetch and verify figcraft bundle (canvas/bundle/)
         run: bun scripts/canvas/fetch-figcraft-bundle.mjs
 
-      - name: Cargo check
+      # No separate `cargo check --all-targets`: clippy type-checks the same
+      # targets and features and fails on any compile error.
+      - name: Cargo clippy
         working-directory: src-tauri
-        run: cargo check --all-targets
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Cargo test
         working-directory: src-tauri
         run: cargo test
 
-      - name: Cargo clippy
-        working-directory: src-tauri
-        run: cargo clippy --all-targets -- -D warnings
-
   web-build:
     name: Web Client Build
-    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -335,9 +232,7 @@ jobs:
   standalone-server-build:
     name: Standalone Server Build
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -360,10 +255,12 @@ jobs:
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
       - name: Cache Rust
-        uses: swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: src-tauri
           cache-on-failure: true
+          # PR-scoped caches are invisible to other PRs and crowd the 10 GB cap.
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -400,9 +297,7 @@ jobs:
   rust-windows-check:
     name: Rust Windows Smoke Check
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: windows-latest
     # A cold-cache run builds for up to about 18 min, and the post-job cache
     # save adds up to about 6 min. The budget covers both.
@@ -419,10 +314,35 @@ jobs:
           components: clippy
 
       - name: Cache Rust
-        uses: swatinem/rust-cache@42dc69e1aa15d09112580998cf2ef0119e2e91ae # v2
+        uses: swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: src-tauri
           cache-on-failure: true
+          # PR-scoped caches are invisible to other PRs and crowd the 10 GB cap.
+          save-if: ${{ github.ref == 'refs/heads/dev' }}
+
+      # No web build here: a debug build reads dist-web/ from disk at run time
+      # (rust-embed without debug-embed, #[allow_missing]), so the bundle does
+      # not change what compiles. Web Build (Windows) checks the bundle builds.
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check --all-targets
+
+      - name: Build troupe-server (Windows host)
+        working-directory: src-tauri
+        run: cargo build --bin troupe-server --features standalone-server
+
+  web-build-windows:
+    name: Web Build (Windows)
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -439,21 +359,12 @@ jobs:
         shell: bash
         run: test -f dist-web/index.html && test -s dist-web/index.html
 
-      - name: Cargo check
-        working-directory: src-tauri
-        run: cargo check --all-targets
-
-      - name: Build troupe-server (Windows host)
-        working-directory: src-tauri
-        run: cargo build --bin troupe-server --features standalone-server
-
   build-check:
     name: Verify Tauri Frontend Build
     # !cancelled() replaces the default success() check. A path-skipped Rust
     # job must not skip this job. A failed Rust job still does.
     if: >-
       !cancelled() &&
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
       needs.changes.result == 'success' &&
       needs.validate.result == 'success' &&
       needs.web-build.result == 'success' &&

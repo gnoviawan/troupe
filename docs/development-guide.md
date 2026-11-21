@@ -230,9 +230,10 @@ The file explorer and editor support live file watching through the filesystem A
 
 ### Pull Requests
 
-`.github/workflows/pr-validation.yml` runs:
+`.github/workflows/pr-metadata.yml` validates the PR title (conventional commits) and the PR description (template sections). It also runs when you edit the title or description.
 
-- PR title conventional-commit validation
+`.github/workflows/pr-validation.yml` runs on every push to the PR, but not on title or description edits:
+
 - `bun run lint`
 - `bun run typecheck`
 - `bun run test`
