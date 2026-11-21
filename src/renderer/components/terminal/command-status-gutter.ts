@@ -43,7 +43,9 @@ export function commandStatusFromExitCode(exitCode: number): CommandStatus {
 }
 
 export function commandStatusLabel(exitCode: number): string {
-  return exitCode === 0 ? 'Command succeeded' : `Command failed (exit code ${exitCode})`
+  return exitCode === 0
+    ? 'Command succeeded (exit code 0)'
+    : `Command failed (exit code ${exitCode})`
 }
 
 function isRowBlank(terminal: Terminal, row: number): boolean {
@@ -51,13 +53,18 @@ function isRowBlank(terminal: Terminal, row: number): boolean {
   return !line || line.translateToString(true).trim() === ''
 }
 
-/** First non-blank row at or below `markRow`, bounded by the cursor row. */
-function findCommandRow(terminal: Terminal, markRow: number, cursorRow: number): number {
+/**
+ * First non-blank row at or below `markRow`, bounded by the cursor row.
+ * `null` when every candidate is blank: the command erased its own echo (an
+ * inline TUI such as `fzf --height` erasing from its row down leaves only the
+ * blank spacer row), and a dot there would mark an empty row.
+ */
+function findCommandRow(terminal: Terminal, markRow: number, cursorRow: number): number | null {
   const lastCandidate = Math.min(cursorRow, markRow + MAX_LEADING_BLANK_ROWS)
   for (let row = markRow; row <= lastCandidate; row++) {
     if (!isRowBlank(terminal, row)) return row
   }
-  return markRow
+  return null
 }
 
 function isLive(marker: IMarker | null): marker is IMarker {
@@ -68,6 +75,7 @@ function decorate(terminal: Terminal, prompt: IMarker, exitCode: number): void {
   const buffer = terminal.buffer.active
   const cursorRow = buffer.baseY + buffer.cursorY
   const commandRow = findCommandRow(terminal, prompt.line, cursorRow)
+  if (commandRow === null) return
   const marker = terminal.registerMarker(commandRow - cursorRow)
   if (!marker) return
 

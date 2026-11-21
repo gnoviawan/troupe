@@ -1949,7 +1949,7 @@ function ConnectedTerminalComponent({
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: this surface focuses xterm and is not an independent keyboard control */}
             <div
               className={`w-full h-full bg-terminal-bg py-0.5 pb-1 ${
-                isMobileWebShell ? 'px-1.5' : 'px-4'
+                isMobileWebShell ? 'px-1.5 termul-terminal-compact' : 'px-4'
               } ${className}`}
               onClick={handleContainerClick}
               onMouseDown={(e) => {

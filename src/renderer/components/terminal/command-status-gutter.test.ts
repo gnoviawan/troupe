@@ -55,7 +55,7 @@ describe('command-status-gutter', () => {
     expect(commandStatusFromExitCode(0)).toBe('success')
     expect(commandStatusFromExitCode(1)).toBe('failure')
     expect(commandStatusFromExitCode(130)).toBe('failure')
-    expect(commandStatusLabel(0)).toBe('Command succeeded')
+    expect(commandStatusLabel(0)).toBe('Command succeeded (exit code 0)')
     expect(commandStatusLabel(127)).toBe('Command failed (exit code 127)')
   })
 
@@ -101,7 +101,7 @@ describe('command-status-gutter', () => {
       return element
     })
     expect(ok.classList.contains('termul-command-status--success')).toBe(true)
-    expect(ok.getAttribute('aria-label')).toBe('Command succeeded')
+    expect(ok.getAttribute('aria-label')).toBe('Command succeeded (exit code 0)')
     expect(failed.classList.contains('termul-command-status--failure')).toBe(true)
     expect(failed.title).toBe('Command failed (exit code 2)')
   })
@@ -110,6 +110,15 @@ describe('command-status-gutter', () => {
     const { decorations, write } = setup()
     // Empty Enter: two prompts, no finish mark.
     await write(`${PROMPT}\r\n${PROMPT}`)
+    expect(decorations).not.toHaveBeenCalled()
+  })
+
+  it('draws nothing when the command erased its own line', async () => {
+    const { decorations, write } = setup()
+    // Spacer layout (blank mark row above the echo), then an inline TUI such as
+    // `fzf --height` returns to the echo row and erases from there down.
+    await write(`out\r\n\r\n${PROMPT}\r\nfzf --height 5\r\npicker\r\n`)
+    await write(`\x1b[4;1H\x1b[J${finish(130)}`)
     expect(decorations).not.toHaveBeenCalled()
   })
 

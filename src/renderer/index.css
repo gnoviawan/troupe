@@ -654,6 +654,20 @@
     border-radius: 9999px;
     background: currentColor;
   }
+  /* Phone shell pads only 6px inside an overflow-hidden pane: shrink the dot
+     so it fits the padding instead of being clipped. */
+  .termul-terminal-compact .xterm .termul-command-status {
+    /* biome-ignore lint/complexity/noImportantStyles: override xterm inline decoration geometry */
+    width: 6px !important;
+    /* biome-ignore lint/complexity/noImportantStyles: override xterm inline decoration geometry */
+    left: -6px !important;
+  }
+  .termul-terminal-compact .xterm .termul-command-status::after {
+    left: 1px;
+    width: 4px;
+    height: 4px;
+    margin-top: -2px;
+  }
   .xterm .termul-command-status--success {
     color: oklch(var(--success));
   }
