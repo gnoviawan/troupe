@@ -1,6 +1,7 @@
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import { forwardRef } from 'react'
 import { Check } from '@/components/icons'
+import { TOUCH_HIT_AREA_CLASS } from '@/components/phone-modal-classes'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { availableColors, getColorClasses } from '@/lib/colors'
 import { cn } from '@/lib/utils'
@@ -25,7 +26,12 @@ export const ColorSwatchGroup = forwardRef<HTMLDivElement, ColorSwatchGroupProps
         orientation="horizontal"
         loop
         onValueChange={(value) => onValueChange?.(value as ProjectColor)}
-        className={cn('flex flex-wrap items-center gap-1.5', className)}
+        // Touch: 20px gaps (and 10px above and below) so the 44px hit areas
+        // round the 24px swatches do not overlap each other or the label.
+        className={cn(
+          'flex flex-wrap items-center gap-1.5 pointer-coarse:gap-5 pointer-coarse:py-2.5',
+          className
+        )}
         {...props}
       >
         {availableColors.map((color) => (
@@ -36,6 +42,7 @@ export const ColorSwatchGroup = forwardRef<HTMLDivElement, ColorSwatchGroupProps
             title={label(color)}
             className={cn(
               'group flex size-6 items-center justify-center rounded-full ring-offset-2 ring-offset-card transition-opacity duration-150 ease-out hover:opacity-80',
+              TOUCH_HIT_AREA_CLASS,
               FOCUS_RING_CLASS,
               'data-[state=checked]:ring-2 data-[state=checked]:ring-current data-[state=checked]:hover:opacity-100',
               getColorClasses(color).bg,
