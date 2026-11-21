@@ -700,6 +700,46 @@ describe('applyAgentUpdate', () => {
     expect(useAcpStore.getState().agentConfigs).toEqual([])
   })
 
+  it('applies an update for a config added after an update found no config', async () => {
+    const droid = {
+      id: 'factory-droid',
+      name: 'Factory Droid',
+      version: '0.219.0',
+      description: 'Factory Droid - AI coding agent powered by Factory AI',
+      distribution: { npx: { package: 'droid@0.219.0', args: ['exec', '--output-format', 'acp'] } }
+    }
+    useAcpStore.setState({ agentConfigs: [] })
+    expect(await useAcpStore.getState().applyAgentUpdate('acp-registry:droid-late', droid)).toBe(
+      'unchanged'
+    )
+
+    useAcpStore.setState({
+      agentConfigs: [
+        {
+          id: 'acp-registry:droid-late',
+          templateId: 'factory-droid',
+          configId: 'acp-registry:droid-late',
+          name: 'Factory Droid',
+          command: 'npx',
+          args: ['-y', 'droid@0.218.1', 'exec', '--output-format', 'acp'],
+          env: {},
+          allowTerminal: false
+        }
+      ]
+    })
+
+    expect(await useAcpStore.getState().applyAgentUpdate('acp-registry:droid-late', droid)).toBe(
+      'applied'
+    )
+    expect(useAcpStore.getState().agentConfigs[0]?.args).toEqual([
+      '-y',
+      'droid@0.219.0',
+      'exec',
+      '--output-format',
+      'acp'
+    ])
+  })
+
   it('throws when the registry agent has no runnable distribution for the platform', async () => {
     useAcpStore.setState({
       agentConfigs: [
