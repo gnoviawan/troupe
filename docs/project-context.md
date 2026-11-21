@@ -41,7 +41,7 @@ optimized_for_llm: false
 - **ACP / AI:** `agent-client-protocol 0.12` (vendored 0.12.1 at `src-tauri/vendor/`), `ai ^7.0.4`, BlockNote `^0.46.2`, CodeMirror 6, streamdown `2.7.0`, mermaid `^11.14.0`.
 - **Remote server stack (Rust):** Axum `0.8` (ws), `tower-http 0.6` (cors/fs/trace), `rust-embed 8.12` (embeds `dist-web/`), `reqwest 0.13` (rustls), `tokio 1` (full), `parking_lot 0.12`, `keyring 3.6` (OS-native per target), `russh 0.64` + `russh-sftp 3`.
 - **Logging:** `tauri-plugin-log 2` + `log 0.4` (desktop runtime) and `tracing 0.1` + `tracing-subscriber 0.3` (standalone server); `src-tauri/src/logging.rs` owns desktop setup, `server_main.rs` uses tracing. Renderer facade: `src/renderer/lib/log-api.ts`.
-- **Shell tests:** `bats ^1.13.0` (`bun run test:shell`); hooks via `husky ^9.1.7`.
+- **Shell tests:** `bats ^1.13.0` (`bun run test:shell`); Git hooks via hk 2.13.0 (`hk.pkl`, installed by `scripts/hk/install.ts` on `bun install`).
 
 ### Critical stack constraints for AI agents
 

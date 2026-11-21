@@ -1,0 +1,21 @@
+amends "package://github.com/jdx/hk/releases/download/v2.13.0/hk@2.13.0#/Config.pkl"
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps {
+      ["biome"] {
+        check = "bun x biome check --no-errors-on-unmatched --files-ignore-unknown=true {{files}}"
+        fix = "bun x biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {{files}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["ci-checks"] {
+        check = "bun scripts/ci/checks.ts rebrand biome tsc:node tsc:web tsc:test"
+      }
+    }
+  }
+}
