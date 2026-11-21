@@ -88,6 +88,10 @@ function open(phone = false, shown = detail) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  for (const mock of Object.values(api)) mock.mockReset()
+  api.onAutomationChanged.mockImplementation(() => () => {})
+  api.getAutomation.mockResolvedValue(ok(detail))
+  api.setAutomationLayout.mockResolvedValue(ok(detail.automation))
   renders.clear()
   // React Flow reads the element under the pointer to resolve a tapped handle; jsdom has none.
   document.elementFromPoint = () => null

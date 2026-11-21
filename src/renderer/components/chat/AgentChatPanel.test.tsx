@@ -1728,10 +1728,13 @@ describe('AgentChatPanel changed files', () => {
 describe('AgentChatPanel filePathContext parity', () => {
   beforeEach(() => {
     chatMessageListPropsRef.current = null
+    // An empty chat shows the start hero instead of the message list.
+    messagesRef.current = [{ id: 'm1', role: 'user', blocks: [{ type: 'text', text: 'hello' }] }]
   })
 
   afterEach(() => {
     runtimeState.tauri = false
+    messagesRef.current = []
   })
 
   it('builds filePathContext on web (isTauriContext false)', () => {

@@ -363,6 +363,7 @@ describe('DirectoryPicker', () => {
       await waitFor(() =>
         expect(screen.getByText('No subdirectories in this folder')).toBeInTheDocument()
       )
+      await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
 
       fireEvent.keyDown(window, { key: 'Escape' })
 
@@ -400,6 +401,7 @@ describe('DirectoryPicker', () => {
         await waitFor(() =>
           expect(screen.getByText('No subdirectories in this folder')).toBeInTheDocument()
         )
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
 
         fireEvent.keyDown(document.body, { key: 'Escape' })
 
@@ -472,6 +474,9 @@ describe('DirectoryPicker', () => {
       await waitFor(() =>
         expect(screen.getByText('No subdirectories in this folder')).toBeInTheDocument()
       )
+      // The listing can commit before the open commit's effects (Esc listener, overlay
+      // registration) run; the dialog takes focus only after them.
+      await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
       return { result }
     }
 

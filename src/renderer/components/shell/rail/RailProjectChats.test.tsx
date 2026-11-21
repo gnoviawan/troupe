@@ -1,4 +1,11 @@
-import { fireEvent, render as rtlRender, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+  within
+} from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
@@ -8,6 +15,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { resetShellLayoutStoreForTests, useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
+import { RAIL_HOVER_OPEN_DELAY } from '../rail-layout'
 import { RailProjectChats } from './RailProjectChats'
 import { RailDensityProvider } from './rail-density'
 
@@ -439,7 +447,17 @@ describe('RailProjectChats on the collapsed Rail', () => {
   it('opens on keyboard focus and closes on Escape', async () => {
     useAcpStore.setState({ sessionIndex: [entry('a', 1)] })
     renderCollapsed()
-    fireEvent.focus(screen.getByRole('button', { name: 'Chat a' }))
+    // The peek opens on a timer. Run it inside act so the peek's effects,
+    // its Escape listener among them, have run before the key press.
+    vi.useFakeTimers()
+    try {
+      fireEvent.focus(screen.getByRole('button', { name: 'Chat a' }))
+      act(() => {
+        vi.advanceTimersByTime(RAIL_HOVER_OPEN_DELAY)
+      })
+    } finally {
+      vi.useRealTimers()
+    }
     await peek()
     fireEvent.keyDown(document.body, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByTestId('rail-chat-peek')).toBeNull())

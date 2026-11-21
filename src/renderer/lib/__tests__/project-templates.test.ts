@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { filesystemApi } from '../api'
 import { BUILT_IN_TEMPLATES, scaffoldProject } from '../project-templates'
 
@@ -12,6 +12,11 @@ vi.mock('../api', () => {
 })
 
 describe('Project Templates Scaffolding', () => {
+  beforeEach(() => {
+    vi.mocked(filesystemApi.createDirectory).mockReset()
+    vi.mocked(filesystemApi.createFile).mockReset()
+  })
+
   it('defines the correct set of built-in templates', () => {
     const ids = BUILT_IN_TEMPLATES.map((t) => t.id)
     expect(ids).toContain('empty')

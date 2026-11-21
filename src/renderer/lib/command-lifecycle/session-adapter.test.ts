@@ -248,7 +248,7 @@ it('disposal releases the terminal-store subscription so a reload subscribes onc
     useTerminalStore.getState().setTerminals([mockTerminal({ id: 'ta', ptyId: 'pty-a' })])
     expect(sessionStore.read('ta').registered).toBe(true)
   } finally {
-    disposeSessionAdapter()
+    // No trailing dispose: HMR re-evaluates a disposed module, so later tests expect a live screen follower.
     spy.mockRestore()
   }
 })

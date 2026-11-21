@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { toastError, toastWarning } = vi.hoisted(() => ({
   toastError: vi.fn(),
@@ -197,6 +197,9 @@ function cursorSession(id: string, overrides: Partial<AcpSession> = {}): AcpSess
 
 describe('applyAgentUpdate', () => {
   beforeEach(() => {
+    vi.mocked(invoke).mockReset()
+    _resetEphemeralSessionIdsForTesting()
+    useAcpStore.setState(useAcpStore.getInitialState(), true)
     mockListCatalog.mockResolvedValue({
       success: true,
       data: { host: { os: 'macos', arch: 'aarch64', runtimes: {} }, agents: [] }
@@ -282,7 +285,6 @@ describe('applyAgentUpdate', () => {
         }
       ]
     })
-    vi.mocked(invoke).mockReset()
     let installs = 0
     vi.mocked(invoke).mockImplementation(async (cmd) => {
       if (cmd !== 'acp_install_agent') return undefined
@@ -314,7 +316,6 @@ describe('applyAgentUpdate', () => {
   }, 15_000)
 
   it('kills idle warm processes on apply so the next chat spawns the applied version', async () => {
-    vi.mocked(invoke).mockClear()
     useAcpStore.setState({
       agentConfigs: [
         {
@@ -357,7 +358,6 @@ describe('applyAgentUpdate', () => {
   })
 
   it('detaches but preserves a warm process that still has an open chat', async () => {
-    vi.mocked(invoke).mockClear()
     useAcpStore.setState({
       agentConfigs: [
         {
@@ -432,12 +432,7 @@ describe('applyAgentUpdate', () => {
     const reuseKey = agentReuseKey('acp-registry:cursor', '/work')
 
     beforeEach(() => {
-      vi.mocked(invoke).mockClear()
-      _resetEphemeralSessionIdsForTesting()
       installOk()
-    })
-    afterEach(() => {
-      _resetEphemeralSessionIdsForTesting()
     })
 
     it('kills the old agent when it only holds an unclaimed prepared chat', async () => {
@@ -698,6 +693,46 @@ describe('applyAgentUpdate', () => {
 
     expect(outcome).toBe('unchanged')
     expect(useAcpStore.getState().agentConfigs).toEqual([])
+  })
+
+  it('applies an update for a config added after an update found no config', async () => {
+    const droid = {
+      id: 'factory-droid',
+      name: 'Factory Droid',
+      version: '0.219.0',
+      description: 'Factory Droid - AI coding agent powered by Factory AI',
+      distribution: { npx: { package: 'droid@0.219.0', args: ['exec', '--output-format', 'acp'] } }
+    }
+    useAcpStore.setState({ agentConfigs: [] })
+    expect(await useAcpStore.getState().applyAgentUpdate('acp-registry:droid-late', droid)).toBe(
+      'unchanged'
+    )
+
+    useAcpStore.setState({
+      agentConfigs: [
+        {
+          id: 'acp-registry:droid-late',
+          templateId: 'factory-droid',
+          configId: 'acp-registry:droid-late',
+          name: 'Factory Droid',
+          command: 'npx',
+          args: ['-y', 'droid@0.218.1', 'exec', '--output-format', 'acp'],
+          env: {},
+          allowTerminal: false
+        }
+      ]
+    })
+
+    expect(await useAcpStore.getState().applyAgentUpdate('acp-registry:droid-late', droid)).toBe(
+      'applied'
+    )
+    expect(useAcpStore.getState().agentConfigs[0]?.args).toEqual([
+      '-y',
+      'droid@0.219.0',
+      'exec',
+      '--output-format',
+      'acp'
+    ])
   })
 
   it('throws when the registry agent has no runnable distribution for the platform', async () => {

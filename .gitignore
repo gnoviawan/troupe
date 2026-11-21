@@ -114,3 +114,6 @@ canvas/bundle/
 
 # Canvas eval runs (scripts/canvas-eval)
 scripts/canvas-eval/out/
+
+# Test report the PR Validation Test shards upload (tools/ci-audit/test-parity.ts)
+/bun-junit.xml

@@ -406,7 +406,7 @@ describe('a run parked on an approval inside the loop', () => {
     const card = within(await screen.findByRole('region', { name: 'Ship it?' }))
     await waitFor(() => expect(card.getByText('Ship b?')).toBeInTheDocument())
     expect(screen.getByRole('heading', { level: 3, name: 'Waiting for approval' }))
-    expect(cardStatus('gate')).toBe('Waiting')
+    await waitFor(() => expect(cardStatus('gate')).toBe('Waiting'))
 
     fireEvent.click(inspector().getByRole('button', { name: 'Iteration 1, Succeeded' }))
     expect(screen.queryByRole('region', { name: 'Ship it?' })).toBeNull()

@@ -6,6 +6,7 @@ import {
   mockSpawnedTerminal,
   mockTerminalStateSnapshot
 } from '@/lib/test-utils/terminal'
+import { __resetClientIdentityForTesting } from './web-client-identity'
 import { resolveTerminalWsUrl, WebTerminalClient } from './web-terminal-api'
 
 const mockLogFrontendError = vi.hoisted(() => vi.fn())
@@ -1323,6 +1324,8 @@ describe('WebTerminalClient web auth handshake (CAP-1)', () => {
   }
 
   it('sends authenticate with the resolved token BEFORE any terminal op', async () => {
+    // A reset-module import elsewhere in this file mints its own id into the shared sessionStorage.
+    __resetClientIdentityForTesting()
     window.localStorage.setItem('termul.webAuthToken', 's3cret-token')
     const { client, internals } = newClient()
     const spawn = await client.request('spawn', { projectId: 'p1', cwd: '/tmp' })
@@ -1439,6 +1442,7 @@ describe('WebTerminalClient web auth handshake (CAP-1)', () => {
   })
 
   it('a pre-gate server answering NOT_IMPLEMENTED is refused, not tolerated (no compat shim)', async () => {
+    mockHandleProtocolVersionMismatch.mockClear()
     const { client, internals } = newClient()
     const origSend = FakeWebSocket.prototype.send
     FakeWebSocket.prototype.send = function (this: FakeWebSocket, data: string) {

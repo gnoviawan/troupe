@@ -155,6 +155,16 @@ vi.mock('@/components/settings/McpServersSettings', () => ({
   McpServersSettings: () => null
 }))
 
+// Every page stays mounted (hidden), so the Accounts page would list accounts
+// over a real `/ws` on each render; its late failures land in later tests' log mock.
+vi.mock('@/components/settings/provider/ProviderSettings', () => ({
+  ProviderSettings: () => null
+}))
+
+vi.mock('@/components/settings/provider/CodexProviderSettings', () => ({
+  CodexProviderSettings: () => null
+}))
+
 vi.mock('@/components/settings/BrowserPolicySettings', () => ({
   BrowserAppPolicy: () => null
 }))

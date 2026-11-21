@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { acpApi } from '@/lib/acp-api'
 import { AcpTransportError } from '@/lib/acp-transport'
 import { logFrontendError } from '@/lib/log-api'
@@ -140,6 +140,14 @@ beforeEach(() => {
       }
     }
   } as never)
+})
+
+// A restart that still waits on a busy chat keeps that chat marked as restarting,
+// which would make a later test's restart of it a no-op. Closing every chat ends
+// those waits before the next test.
+afterEach(async () => {
+  useAcpStore.setState({ sessions: {} })
+  await new Promise((resolve) => setTimeout(resolve, 0))
 })
 
 describe('claude account switch', () => {

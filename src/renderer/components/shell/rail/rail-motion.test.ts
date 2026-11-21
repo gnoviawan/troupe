@@ -18,6 +18,8 @@ vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 describe('useRailMotion', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    // The shortcut skip window is module state; the fake clock restarts at 0 each test.
+    allowNextRailMotion()
   })
   afterEach(() => {
     vi.useRealTimers()

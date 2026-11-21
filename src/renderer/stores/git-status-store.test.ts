@@ -105,6 +105,7 @@ const makeContext = (over: Partial<GitCommitContext> = {}): GitCommitContext => 
 
 beforeEach(() => {
   vi.clearAllMocks()
+  for (const fn of Object.values(gitApi)) fn.mockReset()
   gitApi.getLog.mockResolvedValue([{ hash: 'a'.repeat(40) }])
   resetGitStatusStoreControlForTests()
   useGitStatusStore.setState({

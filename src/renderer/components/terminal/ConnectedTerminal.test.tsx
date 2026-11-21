@@ -536,6 +536,7 @@ describe('ConnectedTerminal', () => {
     // Reset clipboard mocks
     vi.mocked(clipboardApi).readText.mockResolvedValue({ success: true, data: '' })
     vi.mocked(clipboardApi).writeText.mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(clipboardApi).hasImage.mockResolvedValue({ success: true, data: false })
 
     // Reset terminal selection mocks
     mockTerminalInstance.hasSelection.mockReturnValue(false)

@@ -119,9 +119,12 @@ bun run typecheck
 ### Tests
 
 ```bash
-bun run test
+bun run test                        # every test file, in parallel
+bun run test src/renderer/foo.test.ts
 bun run test:watch
 ```
+
+`bun run test` runs `bun test` on a pinned Bun canary (`scripts/test.ts`), because stable Bun lacks the jsdom environment, `--parallel` and `--files-from`. The first run downloads the canary into `node_modules/.cache/bun-canary/` and checks its npm sha512 integrity. Test files keep their `vitest` imports. `bun test` maps `vi`, `expect` and the hooks itself, and the `vitest` package stays only for its types. Each file runs in a fresh global, and tests run in random order. The run prints `--seed=<n>`. Pass the same `--seed` and files to reproduce an order. The test files are the tracked files that match the globs in `scripts/ci/test-files.ts`.
 
 ### Web end-to-end suite
 
@@ -174,7 +177,7 @@ Typical renderer changes involve:
 1. Updating UI components in `src/renderer/components/`
 2. Adjusting state logic in one or more Zustand stores
 3. Using `@/lib/api` adapters rather than calling Tauri APIs directly from presentation components
-4. Adding Vitest/Testing Library coverage near the affected files
+4. Adding Testing Library coverage near the affected files (`bun run test`)
 
 ### Working on Native Features
 
@@ -230,16 +233,13 @@ The file explorer and editor support live file watching through the filesystem A
 
 ### Pull Requests
 
-`.github/workflows/pr-validation.yml` runs:
+`.github/workflows/pr-metadata.yml` validates the PR title (conventional commits) and the PR description (template sections). It also runs when you edit the title or description.
 
-- PR title conventional-commit validation
-- `bun run lint`
-- `bun run typecheck`
-- `bun run test`
-- `cargo check --all-targets`
-- `cargo test`
-- `cargo clippy --all-targets -- -D warnings`
-- frontend Tauri build verification
+`.github/workflows/pr-validation.yml` runs on every push to the PR, but not on title or description edits. Its jobs run in parallel and none waits on another:
+
+- Checks: `bun scripts/ci/checks.ts` runs the rebrand check, `bun run ci` (Biome), the three typechecks, the shell tests, `bun run build:web` and `bun run build:frontend:tauri` at once, then lists every failure. Run it locally the same way, or name checks to run a subset: `bun scripts/ci/checks.ts biome tsc:web`.
+- Test (1/12) to Test (12/12): `bun run test`, split into 12 shards on 4-vCPU runners with 4 workers each. The frontend suite uses no database, so the shards share nothing. `scripts/ci/shard.ts` splits the files longest first by the file times of the newest dev run that finished before the PR run started, or by `scripts/ci/test-timings.json` when there is none. Every shard checks that the split covers each file exactly once, and that its junit report has exactly its own files. Together the two checks prove that the shards ran every file once. The Test step fails after 1 minute. The seed comes from the run id, so a rerun runs the same order. Each shard uploads its junit report as `bun-junit-<n>`, and dev runs also upload `test-timings-<n>`. `bun tools/ci-audit/test-parity.ts <run-id>` prints each shard's step and job times and the totals.
+- Rust Checks, Standalone Server Build and Rust Windows Smoke Check, when the PR changes Rust inputs: `cargo check --all-targets`, `cargo test`, `cargo clippy --all-targets -- -D warnings`, the `troupe-server` build, and a Windows build.
 
 `.github/workflows/e2e.yml` builds `dist-web/` and a release `troupe-server`, then runs the Playwright suite. It runs the ACP lifecycle specs on a pull request that changes ACP, relay, protocol or e2e files, and daily. A manual dispatch takes a `specs` input to run other specs. The job uploads Playwright traces when it fails.
 

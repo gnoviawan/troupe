@@ -29,6 +29,23 @@ vi.mock('@/lib/web-setup-gate', () => ({
   checkWebSetupGate: mockCheckWebSetupGate
 }))
 
+// The real web auth gate keeps its probe state at module level: the first
+// mount in a file re-publishes 'checking' and renders AppEffects twice, later
+// mounts do not. Hold it at one state so every test mounts the same way.
+vi.mock('@/lib/web-auth-gate', () => {
+  const gate = { status: 'checking', submitting: false }
+  return {
+    useWebAuthGate: () => gate,
+    useWebAuthGateOk: () => false,
+    getWebAuthGateState: () => gate,
+    checkWebAuthGate: vi.fn(),
+    submitWebAuthToken: vi.fn(async () => 'ok'),
+    flagWebAuthUnauthorized: vi.fn(),
+    isUnauthorizedResult: vi.fn(() => false),
+    _resetWebAuthGateForTesting: vi.fn()
+  }
+})
+
 vi.mock('@/components/setup/ServerSetupGate', () => ({
   ServerSetupGate: ({ children }: { children: React.ReactNode }) =>
     setupGateRef.current === 'setup' ? (

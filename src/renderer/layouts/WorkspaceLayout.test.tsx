@@ -470,6 +470,7 @@ beforeEach(() => {
   mockUseActiveTerminal.mockReturnValue(null)
   mockUseActiveTerminalId.mockReturnValue('')
   mockUpdatePanelVisibility.mockReset()
+  mockSaveTerminalLayout.mockClear()
   appSettingsRef.current = { shellLayout: undefined }
   resetShellLayoutStoreForTests()
   useShellLayoutStore.setState({ status: 'ready', sidePanelVisible: true, railExpanded: true })

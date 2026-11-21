@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import type { RegistryAgent } from '@/lib/agents/acp-registry'
 import { registryConfigId } from '@/lib/agents/registry-config-id'
@@ -22,6 +22,10 @@ import {
 // unaffected.
 const { listCatalogMock } = vi.hoisted(() => ({ listCatalogMock: vi.fn() }))
 vi.mock('@/lib/api', () => ({ acpCatalogApi: { listCatalog: listCatalogMock } }))
+
+beforeEach(() => {
+  listCatalogMock.mockReset()
+})
 
 function agent(id: string, distribution: RegistryAgent['distribution'], name = id): RegistryAgent {
   return { id, name, version: '1.0.0', description: `${name} desc`, distribution }
@@ -492,7 +496,6 @@ describe('resolveSupportedAcpAgents OpenCode alias', () => {
     })
     expect(entries.some((entry) => entry.id === 'gemini')).toBe(true)
     expect(saved.name).toBe('OpenCode (legacy ID)')
-    listCatalogMock.mockClear()
   })
 
   it('does not list a custom config twice when its configId is opencode-v2', async () => {
@@ -540,7 +543,6 @@ describe('resolveSupportedAcpAgents OpenCode alias', () => {
     const entries = await resolveSupportedAcpAgents([custom])
     expect(entries.filter((entry) => entry.config?.command === '/legacy/opencode')).toHaveLength(1)
     expect(entries.filter((entry) => entry.id === 'custom-opencode')).toHaveLength(0)
-    listCatalogMock.mockClear()
   })
 })
 

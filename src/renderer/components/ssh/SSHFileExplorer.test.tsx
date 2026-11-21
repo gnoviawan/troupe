@@ -1,5 +1,5 @@
 import type { SFTPEntry } from '@shared/types/ssh.types'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSSHStore } from '@/stores/ssh-store'
@@ -58,8 +58,12 @@ const entries: SFTPEntry[] = [
 ]
 
 async function renderExplorer() {
-  render(<SSHFileExplorer connectionId="s1" profileName="Web" />)
-  await screen.findByText('app.conf')
+  // act waits for the listing and its effects too. findByText can resolve
+  // before the folder-change effect runs, and that effect then clears focus.
+  await act(async () => {
+    render(<SSHFileExplorer connectionId="s1" profileName="Web" />)
+  })
+  screen.getByText('app.conf')
 }
 
 beforeEach(() => {

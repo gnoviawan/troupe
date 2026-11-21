@@ -63,6 +63,7 @@ vi.mock('@/components/ui/context-menu', () => import('@/lib/test-utils/context-m
 
 // Setup mock data
 beforeEach(() => {
+  useProjectStore.setState(useProjectStore.getInitialState(), true)
   mockGetAvailableShells.mockReset()
   mockGetAvailableShells.mockResolvedValue({
     success: true,

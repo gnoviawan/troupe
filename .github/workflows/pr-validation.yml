@@ -2,132 +2,30 @@ name: PR Validation
 
 on:
   pull_request:
-    # ready_for_review is required. The two checks below are required on dev,
-    # and they must start when a draft is marked ready, with no new push.
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    # No `edited`: a title or description edit runs pr-metadata.yml only. An
+    # edit run here would replace this run's job results with skipped ones and
+    # cancel the queued run for the latest commit.
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main, develop, dev]
+  # Pushes to dev run the Rust jobs so rust-cache saves dev-scoped entries.
+  # A PR can restore caches from its base branch but not from other PRs.
+  # They also record the test file times that PR shards balance with.
+  push:
+    branches: [dev]
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # A description or title edit uses action `edited`. Code jobs skip that
-  # action. Cancelling the in-progress run would abort the synchronize jobs
-  # and leave them skipped.
-  # A base-branch edit is also `edited`, but the merge commit changed.
-  # Cancel the older run. The code jobs on this run still execute.
-  # ready_for_review is not `edited`, so it cancels the in-progress draft run.
-  cancel-in-progress: ${{ github.event.action != 'edited' || github.event.changes.base != null }}
+  # Merges to dev land minutes apart. Cancelling would drop the cache save.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  pr-title-check:
-    name: Validate PR Title
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read
-    steps:
-      - name: Check PR title follows conventional commits
-        uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            chore
-            revert
-          requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
-          subjectPatternError: |
-            The subject "{subject}" must not start with an uppercase letter.
-            Use lowercase like: "feat: add new feature"
-
-  pr-body-check:
-    name: Validate PR Description
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.x
-
-      - name: Validate PR description against template
-        id: validate
-        env:
-          # Pass the body via env, never interpolated into the shell, to avoid
-          # command injection from attacker-controlled PR descriptions.
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_BODY_COMMENT_FILE: ${{ runner.temp }}/pr-body-comment.md
-        run: bun run scripts/validate-pr-body.ts
-
-      - name: Post or update failure comment
-        # Skip on forked PRs: GITHUB_TOKEN is read-only there, so the comment
-        # API calls would 403. Validation itself still gates forked PRs.
-        if: failure() && steps.validate.outcome == 'failure' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            const fs = require('node:fs');
-            const marker = '<!-- pr-body-validation -->';
-            const path = `${process.env.RUNNER_TEMP}/pr-body-comment.md`;
-            let body;
-            try {
-              body = fs.readFileSync(path, 'utf8');
-            } catch {
-              body = `${marker}\n## ❌ PR description does not satisfy the template\n\nPlease fill in every required section of the PR template.`;
-            }
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body });
-            }
-
-      - name: Resolve failure comment on success
-        # Skip on forked PRs (read-only GITHUB_TOKEN) to avoid a 403 turning a
-        # passing validation into a failed job.
-        if: success() && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            const marker = '<!-- pr-body-validation -->';
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
-            if (existing) {
-              const body = `${marker}\n## ✅ PR description satisfies the template\n\nThanks for filling it in.`;
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            }
-
-  # Job-level filter. Do not add on.pull_request.paths to this workflow.
-  # A skipped workflow leaves "Validate PR Title" and "Validate PR Description"
-  # Pending, and those two checks are required on dev. A skipped job reports
-  # success and does not block the pull request.
+  # Job-level filter. Do not add on.pull_request.paths to this workflow: a
+  # skipped workflow reports nothing, while a skipped job reports success.
   changes:
     name: Detect Rust changes
-    if: github.event.action != 'edited' || github.event.changes.base != null
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -194,11 +92,8 @@ jobs:
           echo "Rust-relevant changes: $rust"
           echo "rust=$rust" >> "$GITHUB_OUTPUT"
 
-  validate:
-    name: Lint, Typecheck & Test
-    # Skip a description or title edit. A base-branch edit changes the merge
-    # commit, so these jobs still run.
-    if: github.event.action != 'edited' || github.event.changes.base != null
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -215,27 +110,130 @@ jobs:
       - name: Install Bun dependencies
         run: bun install --frozen-lockfile
 
-      - name: Rebrand check (no old product name)
-        run: bun run rebrand --check
+      # Rebrand, Biome, the three typechecks, shell tests and both Vite builds,
+      # in parallel. Prints every failure, not just the first.
+      - name: Run checks
+        run: bun scripts/ci/checks.ts
 
-      - name: Biome (lint + format + imports)
-        run: bun run ci
+  # bun test on a pinned canary (scripts/test.ts), split into shards that
+  # each finish in about 30 s on a 4-vCPU runner. Every shard computes the
+  # same partition, checks that it covers each test file once, and checks
+  # that its junit report has exactly its own files. Together that proves
+  # the shards ran every file, with no job that waits on the others.
+  test:
+    name: Test (${{ matrix.shard }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # Reads the timings artifacts of an earlier dev run.
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
-      - name: Typecheck
-        run: bun run typecheck
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.x
 
+      - name: Install Bun dependencies
+        run: bun install --frozen-lockfile
+
+      # Downloads and checks the pinned canary before the timed Test step.
+      - name: Install pinned Bun canary
+        run: |
+          bin=$(bun -e "import { canaryBun } from './scripts/test.ts'; console.log(await canaryBun())")
+          "$bin" --version
+
+      # The newest dev run that finished before this run was created. Every
+      # shard, and every rerun of a shard, picks the same one, so they all
+      # compute the same partition. A cache restore picks the newest entry
+      # at restore time, which can differ between shards.
+      - name: Download dev test timings
+        timeout-minutes: 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          DIR: ${{ runner.temp }}/dev-timings
+        run: |
+          set -euo pipefail
+          mkdir -p "$DIR"
+          created=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .created_at)
+          dev_run=$(gh api "repos/$REPO/actions/workflows/pr-validation.yml/runs?branch=dev&event=push&status=completed&per_page=20" \
+            --jq "[.workflow_runs[] | select(.updated_at < \"$created\")][0].id // empty")
+          if [ -z "$dev_run" ]; then
+            echo "No dev run finished before $created. Using scripts/ci/test-timings.json only."
+            exit 0
+          fi
+          count=$(gh api "repos/$REPO/actions/runs/$dev_run/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select((.name | startswith("test-timings-")) and (.expired | not))] | length')
+          echo "Dev run $dev_run has $count test-timings artifacts."
+          if [ "$count" -gt 0 ]; then
+            gh run download "$dev_run" -R "$REPO" -p 'test-timings-*' -D "$DIR"
+          fi
+
+      - name: Pick this shard's files
+        timeout-minutes: 1
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARDS: ${{ strategy.job-total }}
+          OUT: ${{ runner.temp }}/shard
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          bun scripts/ci/shard.ts "$SHARD" "$SHARDS" "$OUT" \
+            scripts/ci/test-timings.json "$RUNNER_TEMP"/dev-timings/*/timings.json
+
+      # The seed comes from the run id, so a rerun of this shard runs the
+      # tests in the same order. bun prints it; `bun run test --seed=<n>`
+      # with this shard's files reproduces the order locally.
       - name: Test
-        run: bun run test
+        timeout-minutes: 1
+        env:
+          OUT: ${{ runner.temp }}/shard
+          RUN_ID: ${{ github.run_id }}
+        run: >-
+          bun scripts/test.ts
+          --files-from="$OUT/files.txt"
+          --seed="$((RUN_ID % 2147483647))"
+          --timings="$OUT/timings.json"
+          --update-timings
+          --reporter=junit
+          --reporter-outfile=bun-junit.xml
 
-      - name: Shell tests (installer and Homebrew cask)
-        run: bun run test:shell
+      - name: Check this shard ran exactly its files
+        if: ${{ !cancelled() }}
+        run: bun scripts/ci/check-junit-files.ts "$RUNNER_TEMP/shard/files.txt" bun-junit.xml
+
+      - name: Upload bun junit report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: bun-junit-${{ matrix.shard }}
+          path: bun-junit.xml
+          retention-days: 14
+
+      # Later runs balance their shards with these file times.
+      - name: Upload test timings
+        if: ${{ !cancelled() && github.event_name == 'push' }}
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        with:
+          name: test-timings-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shard/timings.json
+          retention-days: 30
 
   rust-checks:
     name: Rust Checks
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-22.04
     # Check, test and clippy run about 17 minutes on a warm cache, and the
     # post-job cache save adds about one more.
@@ -307,37 +305,10 @@ jobs:
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
 
-  web-build:
-    name: Web Client Build
-    if: github.event.action != 'edited' || github.event.changes.base != null
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.x
-
-      - name: Install Bun dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build web client (dist-web/)
-        run: bun run build:web
-
-      - name: Assert dist-web/index.html exists
-        run: test -f dist-web/index.html && test -s dist-web/index.html
-
   standalone-server-build:
     name: Standalone Server Build
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -400,9 +371,7 @@ jobs:
   rust-windows-check:
     name: Rust Windows Smoke Check
     needs: changes
-    if: >-
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.rust == 'true'
     runs-on: windows-latest
     # A cold-cache run builds for up to about 18 min, and the post-job cache
     # save adds up to about 6 min. The budget covers both.
@@ -446,36 +415,3 @@ jobs:
       - name: Build troupe-server (Windows host)
         working-directory: src-tauri
         run: cargo build --bin troupe-server --features standalone-server
-
-  build-check:
-    name: Verify Tauri Frontend Build
-    # !cancelled() replaces the default success() check. A path-skipped Rust
-    # job must not skip this job. A failed Rust job still does.
-    if: >-
-      !cancelled() &&
-      (github.event.action != 'edited' || github.event.changes.base != null) &&
-      needs.changes.result == 'success' &&
-      needs.validate.result == 'success' &&
-      needs.web-build.result == 'success' &&
-      (needs.rust-checks.result == 'success' || needs.rust-checks.result == 'skipped') &&
-      (needs.rust-windows-check.result == 'success' || needs.rust-windows-check.result == 'skipped') &&
-      (needs.standalone-server-build.result == 'success' || needs.standalone-server-build.result == 'skipped')
-    needs: [changes, validate, rust-checks, rust-windows-check, web-build, standalone-server-build]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.x
-
-      - name: Install Bun dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build Tauri frontend assets
-        run: bun run build:frontend:tauri

@@ -1,5 +1,5 @@
 import type { GithubItemDetail } from '@shared/types/github.types'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -396,7 +396,11 @@ describe('MobileChatShell', () => {
     stubNarrowViewport(false)
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    // A sheet left open fires its onCloseAutoFocus in a setTimeout(0) after unmount. Run it
+    // here, or it consumes the opener the next test records.
+    cleanup()
+    await new Promise((resolve) => setTimeout(resolve, 0))
     window.matchMedia = originalMatchMedia
   })
 

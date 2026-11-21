@@ -150,87 +150,86 @@ export function applyAgentUpdateFlow(
   const { get, set } = deps
   const inFlight = inFlightAgentUpdates.get(configId)
   if (inFlight) return inFlight
+  // Delete on settle, not in a finally inside the async body. A body that
+  // returns before its first await runs that finally before the set below,
+  // which would leave a settled promise in the map for good.
   const apply = (async () => {
-    try {
-      const existing = get().agentConfigs.find((c) => c.id === configId)
-      if (!existing) return 'unchanged'
-      // Resolve the host platform-arch from the catalog (the host is the single
-      // source of truth — the renderer never probes plugin-os locally).
-      const catalog = await acpCatalogApi.listCatalog()
-      if (!catalog.success) {
-        throw new Error(catalog.error ?? 'Could not resolve the host catalog')
-      }
-      const os = registryOsFromHostOs(catalog.data.host.os)
-      const platformArch = `${os}-${catalog.data.host.arch}`
-      const derived = deriveAgentConfig(agent, platformArch)
-      // Env merge (ADR-0002): persisted values win on conflict, registry keys the
-      // persisted config lacks are filled in, and nothing user-added is dropped.
-      const mergeEnv = (registryEnv: Record<string, string>) => ({
-        ...registryEnv,
-        ...existing.env
-      })
-      // Shared tail: drop warm/prepared state so the next chat spawns the
-      // applied version instead of claiming a stale warm process; the live
-      // process still runs the old binary — record the pending restart so
-      // chat surfaces the next-spawn banner.
-      const finishApply = async (): Promise<'applied'> => {
-        await teardownConfigForUpdate(deps, configId)
-        set((s) => ({
-          pendingRestartVersions: { ...s.pendingRestartVersions, [configId]: agent.version }
-        }))
-        return 'applied'
-      }
-      if (agentPolicy(agent.id).install.kind === 'managed-npm') {
-        // Managed npm install (S2-TS policy): update through the same host
-        // install seam as first install; never rewrite it back to an npx
-        // launcher that can resolve an unpinned package at spawn.
-        const installed = await acpApi.installAcpAgent(agent.id)
-        const env = mergeEnv({})
-        // Old Claude templates carried an unresolved/inline API-key value.
-        // New auth is host-keychain-only, so do not migrate that value into
-        // the replacement config.
-        delete env.ANTHROPIC_API_KEY
-        await get().saveAgentConfig({
-          ...existing,
-          name: agent.name,
-          command: installed.command,
-          args: installed.args,
-          env
-        })
-        return await finishApply()
-      }
-      if (derived.kind === 'needs-install') {
-        // Binary agent: Update Application = verified-atomic host re-install
-        // (sha256-checked archive), then overwrite from the install outcome.
-        if (!derived.archiveUrl) {
-          throw new Error(`Agent ${agent.id} requires a manual install; update it outside Troupe`)
-        }
-        const installed = await acpApi.installAcpAgent(agent.id)
-        await get().saveAgentConfig({
-          ...existing,
-          name: agent.name,
-          command: installed.command,
-          args: installed.args,
-          env: mergeEnv(derived.env)
-        })
-        return await finishApply()
-      }
-      if (derived.kind !== 'runnable') {
-        throw new Error(`Agent ${agent.id} has no runnable distribution on this platform`)
-      }
+    const existing = get().agentConfigs.find((c) => c.id === configId)
+    if (!existing) return 'unchanged'
+    // Resolve the host platform-arch from the catalog (the host is the single
+    // source of truth — the renderer never probes plugin-os locally).
+    const catalog = await acpCatalogApi.listCatalog()
+    if (!catalog.success) {
+      throw new Error(catalog.error ?? 'Could not resolve the host catalog')
+    }
+    const os = registryOsFromHostOs(catalog.data.host.os)
+    const platformArch = `${os}-${catalog.data.host.arch}`
+    const derived = deriveAgentConfig(agent, platformArch)
+    // Env merge (ADR-0002): persisted values win on conflict, registry keys the
+    // persisted config lacks are filled in, and nothing user-added is dropped.
+    const mergeEnv = (registryEnv: Record<string, string>) => ({
+      ...registryEnv,
+      ...existing.env
+    })
+    // Shared tail: drop warm/prepared state so the next chat spawns the
+    // applied version instead of claiming a stale warm process; the live
+    // process still runs the old binary — record the pending restart so
+    // chat surfaces the next-spawn banner.
+    const finishApply = async (): Promise<'applied'> => {
+      await teardownConfigForUpdate(deps, configId)
+      set((s) => ({
+        pendingRestartVersions: { ...s.pendingRestartVersions, [configId]: agent.version }
+      }))
+      return 'applied'
+    }
+    if (agentPolicy(agent.id).install.kind === 'managed-npm') {
+      // Managed npm install (S2-TS policy): update through the same host
+      // install seam as first install; never rewrite it back to an npx
+      // launcher that can resolve an unpinned package at spawn.
+      const installed = await acpApi.installAcpAgent(agent.id)
+      const env = mergeEnv({})
+      // Old Claude templates carried an unresolved/inline API-key value.
+      // New auth is host-keychain-only, so do not migrate that value into
+      // the replacement config.
+      delete env.ANTHROPIC_API_KEY
       await get().saveAgentConfig({
         ...existing,
-        name: derived.config.name,
-        command: derived.config.command,
-        args: derived.config.args,
-        env: mergeEnv(derived.config.env),
-        allowTerminal: derived.config.allowTerminal
+        name: agent.name,
+        command: installed.command,
+        args: installed.args,
+        env
       })
       return await finishApply()
-    } finally {
-      inFlightAgentUpdates.delete(configId)
     }
-  })()
+    if (derived.kind === 'needs-install') {
+      // Binary agent: Update Application = verified-atomic host re-install
+      // (sha256-checked archive), then overwrite from the install outcome.
+      if (!derived.archiveUrl) {
+        throw new Error(`Agent ${agent.id} requires a manual install; update it outside Troupe`)
+      }
+      const installed = await acpApi.installAcpAgent(agent.id)
+      await get().saveAgentConfig({
+        ...existing,
+        name: agent.name,
+        command: installed.command,
+        args: installed.args,
+        env: mergeEnv(derived.env)
+      })
+      return await finishApply()
+    }
+    if (derived.kind !== 'runnable') {
+      throw new Error(`Agent ${agent.id} has no runnable distribution on this platform`)
+    }
+    await get().saveAgentConfig({
+      ...existing,
+      name: derived.config.name,
+      command: derived.config.command,
+      args: derived.config.args,
+      env: mergeEnv(derived.config.env),
+      allowTerminal: derived.config.allowTerminal
+    })
+    return await finishApply()
+  })().finally(() => inFlightAgentUpdates.delete(configId))
   inFlightAgentUpdates.set(configId, apply)
   return apply
 }

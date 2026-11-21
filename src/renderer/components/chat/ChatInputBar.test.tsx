@@ -386,6 +386,11 @@ vi.mock('@/lib/acp-api', () => ({
 beforeEach(() => {
   persistenceStore.clear()
   fakePersistenceApi.readFails = false
+  fakePersistenceApi.read.mockClear()
+  fakePersistenceApi.write.mockClear()
+  fakePersistenceApi.writeDebounced.mockClear()
+  fakePersistenceApi.delete.mockClear()
+  fakePersistenceApi.flushPendingWrites.mockClear()
   // Start each test from a clean skill slate (web/no-skills default). Skill
   // tests override mockSkills.current.
   mockSkills.current = []
@@ -959,7 +964,9 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     // Baseline: with the controls on, the session's modes list.
     renderInputBar({ commands })
     expect(within(await openSlashMenu()).getByText('Plan')).toBeInTheDocument()
+    // Each render is a fresh composer: drop the '/' draft the previous one saved.
     cleanup()
+    persistenceStore.clear()
 
     // Modes only (no config options): no Plan/Ask rows, the command stays.
     renderInputBar({ commands, disabled: false, controlsDisabled: true })
@@ -968,6 +975,7 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     expect(within(listbox).queryByText('Plan')).not.toBeInTheDocument()
     expect(within(listbox).queryByText('Ask')).not.toBeInTheDocument()
     cleanup()
+    persistenceStore.clear()
 
     // Config options (which replace the mode rows when present): none list.
     const effort = option('effort', 'Effort', 'other', 'low', [
@@ -977,6 +985,7 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     renderInputBar({ commands, configOptions: [effort] })
     expect(within(await openSlashMenu()).getByText('High effort')).toBeInTheDocument()
     cleanup()
+    persistenceStore.clear()
     renderInputBar({
       commands,
       configOptions: [effort],

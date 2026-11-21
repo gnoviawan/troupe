@@ -87,8 +87,8 @@ describe('tokenizeLine', () => {
   })
 
   it('returns empty array when parser is not loaded', () => {
-    // Parser for 'typescript' is not preloaded in test env
-    const result = tokenizeLine('const x = 1', 'typescript')
+    // Loaded parsers are cached for the module's lifetime, so use a language no other test loads.
+    const result = tokenizeLine('let x = 1;', 'rust')
     // Without preloading, should return empty (no crash)
     expect(result).toEqual([])
   })

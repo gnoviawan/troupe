@@ -183,7 +183,7 @@ The Rust side groups responsibilities into managers/subsystems rather than a sin
 - `vite.config.tauri.ts` — Tauri-specific frontend build config
 - `tailwind.config.ts` — styling config
 - `eslint.config.js` — linting rules
-- `vitest.config.ts` — test runner config
+- `bunfig.toml` — `bun test` config (jsdom, preload, random order); `scripts/test.ts` runs it
 - `components.json` — UI/component tooling metadata
 
 ## Development Notes

@@ -117,6 +117,7 @@ describe('tauri-updater-api', () => {
     vi.clearAllMocks()
     _resetUpdaterStateForTesting()
     vi.mocked(getVersion).mockResolvedValue('0.2.3')
+    vi.mocked(relaunch).mockResolvedValue(undefined)
     vi.mocked(setAppVersion).mockResolvedValue(undefined)
     vi.mocked(setCurrentVersion).mockResolvedValue(undefined)
     vi.mocked(createBackup).mockResolvedValue({

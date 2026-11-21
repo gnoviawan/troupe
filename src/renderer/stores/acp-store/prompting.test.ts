@@ -169,8 +169,15 @@ import {
   _resetGithubChatLinksForTesting,
   useGithubChatLinksStore
 } from '@/stores/github-chat-links-store'
+import { forgetHostReports } from './host-session-reports'
 import { flushNextQueuedPrompt } from './slices/prompt'
 import { deferred, FRESH, flushTurnEnd, seedSession } from './testkit'
+
+// GitHub links and host reports live outside the acp store, so FRESH does not clear them.
+beforeEach(() => {
+  _resetGithubChatLinksForTesting()
+  forgetHostReports('s1')
+})
 
 /** Deliver the durable `prompt_complete` of the turn the last send dispatched. */
 function completeSentTurn(stopReason: string): void {
@@ -1556,7 +1563,6 @@ describe('read-only GitHub chats (CAP-6)', () => {
     sent.length = 0
     mockPersistenceApi.write.mockResolvedValue({ success: true })
     _resetAcpTransportForTests(null)
-    _resetGithubChatLinksForTesting()
     useAcpStore.setState(FRESH)
     ;(invoke as ReturnType<typeof vi.fn>).mockImplementation(async (cmd: string, args: unknown) => {
       if (cmd === 'acp_send_prompt') sent.push((args as { content: ContentBlock[] }).content)

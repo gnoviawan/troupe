@@ -70,6 +70,8 @@ import {
 describe('tauri-notification-api (web vs desktop branch)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // clearAllMocks keeps implementations; drop a throwing constructor from an earlier test.
+    mockNotificationConstructor.mockReset()
     _resetNotificationPermissionForTesting()
     mockNotificationRequestPermission.mockResolvedValue('default')
     ;(NotificationStub as unknown as { permission: NotificationPermission }).permission = 'default'

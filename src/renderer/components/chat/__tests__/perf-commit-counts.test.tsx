@@ -26,7 +26,7 @@
 import { act, render } from '@testing-library/react'
 import { Profiler, type ProfilerOnRenderCallback, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { type AcpSession, useAcpStore } from '@/stores/acp-store'
+import { _flushCoalescedForTesting, type AcpSession, useAcpStore } from '@/stores/acp-store'
 import { AgentChatPanel } from '../AgentChatPanel'
 import { ChatMessageList } from '../ChatMessageList'
 import type { TimelineItem } from '../chat-timeline'
@@ -125,12 +125,12 @@ async function streamChunks(
     })
   }
   // rAF boundary: jsdom fires rAF via setTimeout; drain it plus the store's
-  // own synchronous seam so the flush is deterministic in the test.
+  // own synchronous seam so the flush is deterministic in the test. One frame
+  // is not enough when the previous test flushed under 30 ms ago: the flush
+  // clock then waits another frame.
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
-    useAcpStore.getState()
-    // the store's coalesced flush runs on rAF; the test seam drains it now
-    useAcpStore.getState() // (state read keeps act() flushing microtasks)
+    _flushCoalescedForTesting()
   })
 }
 

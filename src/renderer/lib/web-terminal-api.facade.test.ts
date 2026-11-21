@@ -85,6 +85,7 @@ afterEach(() => {
 
 describe('createWebTerminalApi write delegation (Story 10)', () => {
   it('buffers offline writes instead of opening a fresh socket (no bare request passthrough)', async () => {
+    vi.resetModules()
     vi.stubGlobal('WebSocket', FakeWS)
     FakeWS.instances = []
     // Fresh module graph → the singleton client binds the stubbed WebSocket.

@@ -151,10 +151,10 @@ TERMUL_PERF_PROFILING=1 bun run build:frontend:tauri   # react-dom → react-dom
 
 Unset, the alias is inert — zero behavior change; it never ships.
 
-## CAP-8 vitest lane (no desktop app)
+## CAP-8 test lane (no desktop app)
 
 ```bash
-bun vitest run src/renderer/components/chat/__tests__/perf-commit-counts.test.tsx
+bun run test src/renderer/components/chat/__tests__/perf-commit-counts.test.tsx
 ```
 
 Counts commits of `ChatMessage` / `ChatMessageList` / `AgentChatPanel` under a synthetic stream through the real acp-store, via React `<Profiler>` onRender. Cheap per-change check before any full scenario run.

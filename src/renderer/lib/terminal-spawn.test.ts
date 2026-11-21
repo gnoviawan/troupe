@@ -123,13 +123,20 @@ import {
 } from '@/lib/terminal-spawn'
 import { mockSpawnedTerminal } from '@/lib/test-utils/terminal'
 
+// Tests mutate these shared fixtures; every test starts from the defaults.
+beforeEach(() => {
+  mockTerminals.length = 0
+  mockActivePaneId.current = 'pane-1'
+  mockWorkspace.activeProjectId = 'proj-1'
+  mockWorkspace.parkedTrees = {}
+  mockProjectEnv.current = {}
+  mockProjectShell.current = 'bash'
+  mockAppShell.current = ''
+})
+
 describe('spawnTerminalInPane', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTerminals.length = 0
-    mockActivePaneId.current = 'pane-1'
-    mockWorkspace.activeProjectId = 'proj-1'
-    mockWorkspace.parkedTrees = {}
     mockAddTerminal.mockReturnValue({ id: 'term-new-1' })
     // CAP-3: spawn is the only claim issuance path — the fixture carries the
     // issued lease credential alongside the terminal info.
@@ -253,7 +260,6 @@ describe('spawnTerminalInPane across a project switch', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTerminals.length = 0
     mockAddTerminal.mockReturnValue({ id: 'term-new-1' })
     mockTerminalApiSpawn.mockResolvedValue({
       success: true,
@@ -285,23 +291,18 @@ describe('spawnTerminalInPane across a project switch', () => {
     expect(mockTerminalApiKill).toHaveBeenCalledWith('pty-1')
     expect(mockAddTerminal).not.toHaveBeenCalled()
     expect(mockAddTabToPane).not.toHaveBeenCalled()
-    mockWorkspace.activeProjectId = 'proj-1'
   })
 })
 
 describe('openTerminalAtCwd', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTerminals.length = 0
-    mockActivePaneId.current = 'pane-1'
     mockAddTerminal.mockReturnValue({ id: 'term-new-1' })
     mockTerminalApiSpawn.mockResolvedValue({
       success: true,
       data: mockSpawnedTerminal({ cwd: '/chat/cwd' })
     })
     mockLogFrontendError.mockReset()
-    mockProjectShell.current = 'bash'
-    mockAppShell.current = ''
   })
 
   it('spawns with the App Preferences default shell when the project sets none', async () => {
@@ -387,9 +388,6 @@ describe('openTerminalAtCwd', () => {
 describe('openTerminalFromProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTerminals.length = 0
-    mockActivePaneId.current = 'pane-1'
-    mockProjectEnv.current = {}
     mockAddTerminal.mockReturnValue({ id: 'term-new-1' })
     mockTerminalApiSpawn.mockResolvedValue({
       success: true,
