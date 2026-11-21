@@ -20,10 +20,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Job names carry a "Fork: " prefix. This workflow also runs (all jobs
+# skipped) on pushes to the upstream repo. A skipped job that shared a name with
+# a PR Validation job would report success under that check name.
 jobs:
   validate:
     if: github.repository == 'mannnrachman/termul'
-    name: Lint, Typecheck & Test
+    name: "Fork: Lint, Typecheck & Test"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -51,7 +54,7 @@ jobs:
 
   rust-checks:
     if: github.repository == 'mannnrachman/termul'
-    name: Rust Checks
+    name: "Fork: Rust Checks"
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -94,7 +97,7 @@ jobs:
 
   rust-windows-check:
     if: github.repository == 'mannnrachman/termul'
-    name: Rust Windows Smoke Check
+    name: "Fork: Rust Windows Smoke Check"
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -120,7 +123,7 @@ jobs:
 
   build-check:
     if: github.repository == 'mannnrachman/termul'
-    name: Verify Tauri Frontend Build
+    name: "Fork: Verify Tauri Frontend Build"
     needs: [validate, rust-checks, rust-windows-check]
     runs-on: ubuntu-latest
     timeout-minutes: 15
