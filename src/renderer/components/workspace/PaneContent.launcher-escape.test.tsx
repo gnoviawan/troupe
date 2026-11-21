@@ -31,8 +31,9 @@ vi.mock('@/stores/workspace-store', () => ({
 }))
 
 vi.mock('@/stores/project-store', () => ({
-  useProjectStore: vi.fn((selector: (s: { activeProjectId: string }) => unknown) =>
-    selector({ activeProjectId: 'proj-1' })
+  useProjectStore: vi.fn(
+    (selector: (s: { activeProjectId: string; projects: never[] }) => unknown) =>
+      selector({ activeProjectId: 'proj-1', projects: [] })
   )
 }))
 

@@ -114,3 +114,7 @@ canvas/bundle/
 
 # Canvas eval runs (scripts/canvas-eval)
 scripts/canvas-eval/out/
+
+# Test reports the PR Validation Test jobs upload (tools/ci-audit/test-parity.ts)
+/vitest-report.json
+/bun-junit.xml

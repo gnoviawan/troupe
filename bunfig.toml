@@ -1,0 +1,5 @@
+[test]
+environment = "jsdom"
+preload = ["./bun-test.preload.ts"]
+# bun's vitest mode clears mock call history between tests by default; vitest does not.
+clearMocks = false
