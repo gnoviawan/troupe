@@ -121,22 +121,37 @@ export function emptyChatComposer(page: Page): Locator {
 }
 
 /**
- * The context row under the empty chat composer (desktop shell only):
- * Workspace select (Current checkout, Existing worktree, New worktree) and,
- * per mode, the Base branch or Worktree select. The first send applies the
- * pick.
- */
-export function chatStartContextRow(page: Page): Locator {
-  return emptyChatPanel(page).locator('[data-chat-start-context-row="true"]').first()
-}
-
-/**
  * The launcher composer (aria-label "Agent prompt"): the empty-pane launcher
- * (a pane with no tabs) or the launcher overlay. New chat opens the overlay
- * only as a fallback (no configured agent, or the agent needs a sign-in).
+ * (a pane with no tabs) or the launcher overlay. Since #1943, New chat in a
+ * project opens the launcher; a quick chat (no project) still opens an empty
+ * chat tab.
  */
 export function launcherComposer(page: Page): Locator {
   return page.locator('[data-composer-editor="true"][aria-label="Agent prompt"]').first()
+}
+
+/**
+ * The composer group of the visible agent launcher (empty-pane launcher or
+ * overlay): the composer card and the context row (in the card's foot row on
+ * desktop, under the card on the phone). A launcher that is playing its exit
+ * is `aria-hidden` and does not match.
+ */
+export function launcherComposerGroup(page: Page): Locator {
+  return page
+    .locator('[data-agent-launcher-composer-group="true"]')
+    .filter({ visible: true })
+    .filter({ has: launcherComposer(page) })
+    .first()
+}
+
+/**
+ * The context row of the agent launcher (a git project only): the Workspace
+ * select (Current checkout, Existing worktree, New worktree) and, per mode,
+ * the branch, the Worktree select or the Base branch select. Send applies
+ * the pick.
+ */
+export function launcherContextRow(page: Page): Locator {
+  return launcherComposerGroup(page).locator('[data-agent-launcher-context-strip="true"]')
 }
 
 /**

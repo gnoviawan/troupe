@@ -1,18 +1,18 @@
 import { expect, test } from 'playwright/test'
 import { E2E_TOKEN } from './helpers'
 import {
-  chatStartContextRow,
-  emptyChatPanel,
+  launcherComposerGroup,
+  launcherContextRow,
   openWorkspace,
   selectProject,
   startNewChat
 } from './ui'
 
 /**
- * Worktree-launch E2E on termul-server: the context row under the empty chat
- * composer (New chat) must offer the same worktree isolation the desktop has
- * ("New worktree"), and the first send in that mode creates a real
- * `git worktree` + a chat in it.
+ * Worktree-launch E2E on termul-server: New chat in a project opens the agent
+ * launcher (#1943), and the context row under its composer must offer the
+ * same worktree isolation the desktop has ("New worktree"). The first send in
+ * that mode creates a real `git worktree` + a chat in it.
  *
  * Root cause this suite guards (2026-10-06): `ProjectSummary` carries no git
  * fields and the worktree reconciler early-returns on web, so
@@ -33,16 +33,18 @@ test.beforeEach(async ({ page }) => {
   await openWorkspace(page)
 })
 
-test('the empty chat shows the worktree isolation picker for a git-repo project (web parity with desktop)', async ({
+test('the launcher shows the worktree isolation picker for a git-repo project (web parity with desktop)', async ({
   page
 }) => {
   await selectProject(page, 'proj-w')
 
-  await startNewChat(page)
+  const composer = await startNewChat(page)
+  // New chat in a project opens the agent launcher (#1943).
+  await expect(composer).toHaveAttribute('aria-label', 'Agent prompt')
   // The context row becomes interactive once `canUseWorktree` flips true:
   // the git-branch probe resolves asynchronously after project load, so
   // poll for the Workspace select.
-  const row = chatStartContextRow(page)
+  const row = launcherContextRow(page)
   const workspace = row.getByRole('combobox', { name: 'Workspace' })
   await expect(workspace).toBeVisible({ timeout: 10_000 })
   // Radix Select renders options only while open — assert via the trigger's
@@ -50,19 +52,23 @@ test('the empty chat shows the worktree isolation picker for a git-repo project 
   await expect(workspace).toContainText('Current checkout')
 })
 
-test('the empty chat shows no context row for a non-git project', async ({ page }) => {
+test('the launcher shows no context row for a non-git project', async ({ page }) => {
   await selectProject(page, 'proj-b')
 
   const composer = await startNewChat(page)
   await expect(composer).toBeVisible()
+  await expect(composer).toHaveAttribute('aria-label', 'Agent prompt')
   // Give the (absent) git probe a beat to settle before asserting absence.
   await page.waitForTimeout(1_500)
 
-  // A project that is not a git repo has no context row, like the launcher
-  // (#1856): no workspace picker and no read-only "Current checkout" label.
-  await expect(chatStartContextRow(page)).toHaveCount(0)
-  await expect(emptyChatPanel(page).getByRole('combobox', { name: 'Workspace' })).toHaveCount(0)
-  await expect(emptyChatPanel(page)).not.toContainText('Current checkout')
+  // A project that is not a git repo has no context row (#1856): no
+  // workspace picker, no read-only workspace or branch label.
+  const group = launcherComposerGroup(page)
+  await expect(group).toBeVisible()
+  await expect(launcherContextRow(page)).toHaveCount(0)
+  await expect(group.getByRole('combobox', { name: 'Workspace' })).toHaveCount(0)
+  await expect(group).not.toContainText('Current checkout')
+  await expect(group).not.toContainText('Branch:')
 })
 
 test('a first send in New worktree mode creates the worktree and opens the chat in it', async ({
@@ -71,18 +77,20 @@ test('a first send in New worktree mode creates the worktree and opens the chat 
   await selectProject(page, 'proj-w')
 
   const composer = await startNewChat(page)
-  const row = chatStartContextRow(page)
+  await expect(composer).toHaveAttribute('aria-label', 'Agent prompt')
+  const row = launcherContextRow(page)
   const workspace = row.getByRole('combobox', { name: 'Workspace' })
   await expect(workspace).toBeVisible({ timeout: 10_000 })
 
   // Select worktree isolation. The row is a radix Select — open it and pick
-  // the "New worktree" option, then dismiss the dropdown (focus lands back
-  // on the trigger; a left-open dropdown would swallow the Enter below as
-  // an option pick).
+  // the "New worktree" option. The pick closes the dropdown; wait for that
+  // (a left-open dropdown would swallow the Enter below as an option pick).
+  // No Escape: in the launcher overlay an Escape that reaches the dialog
+  // closes the launcher.
   await workspace.click()
   await page.getByRole('option', { name: 'New worktree' }).click()
-  await page.keyboard.press('Escape')
-  await page.waitForTimeout(300)
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(workspace).toContainText('New worktree')
 
   // Base-branch picker appears in worktree mode; the resolved default (main)
   // auto-fills, so it is present and non-empty.
@@ -94,6 +102,7 @@ test('a first send in New worktree mode creates the worktree and opens the chat 
   // the chat starts again in the worktree (the in-timeline progress card covers the wait).
   await composer.click()
   await page.keyboard.type(PROMPT_W)
+  await expect(composer).toHaveText(PROMPT_W)
   await page.keyboard.press('Enter')
 
   // The worktree-creation progress card covers the wait, but on a fast host

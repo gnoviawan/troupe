@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from 'playwright/test'
 import { E2E_TOKEN } from './helpers'
-import { chatStartContextRow, chatTab, openWorkspace, selectProject, startNewChat } from './ui'
+import { chatTab, launcherContextRow, openWorkspace, selectProject, startNewChat } from './ui'
 
 /**
  * Shell-revamp journeys E2E on termul-server (story 30, CAP-18 / AD-15 / E6).
@@ -142,9 +142,9 @@ async function openRevampWorkspace(page: Page): Promise<void> {
 }
 
 /**
- * Start a NEW chat from the Rail's New chat row (it opens an empty chat tab
- * in the active pane). `workspace` drives the Workspace select of the empty
- * chat's context row; the first send applies the pick.
+ * Start a NEW chat from the Rail's New chat row (it opens the agent launcher
+ * in the active pane, #1943). `workspace` drives the Workspace select of the
+ * launcher's context row; the first send applies the pick.
  * Resolves once the chat tab exists.
  */
 async function launchRevampChat(
@@ -155,7 +155,7 @@ async function launchRevampChat(
   const composer = await startNewChat(page)
   if (workspace) {
     // The select is interactive once the git probe marks the project as git.
-    const chip = chatStartContextRow(page).getByRole('combobox', { name: 'Workspace' })
+    const chip = launcherContextRow(page).getByRole('combobox', { name: 'Workspace' })
     await expect(chip).toBeVisible({ timeout: 15_000 })
     await chip.click()
     await page.getByRole('option', { name: workspace }).click()
@@ -407,9 +407,9 @@ test('Journey 2: two fixes at once, one in a new worktree', async ({ page }) => 
   const before = new Set((await listWorktrees(page)).map((w) => w.path))
   let worktree: ListedWorktree | undefined
 
-  await test.step('1. Empty chat Workspace select: New worktree, then send', async () => {
+  await test.step('1. Launcher Workspace select: New worktree, then send', async () => {
     const composer = await startNewChat(page)
-    const row = chatStartContextRow(page)
+    const row = launcherContextRow(page)
     const chip = row.getByRole('combobox', { name: 'Workspace' })
     await expect(chip).toBeVisible({ timeout: 15_000 })
     await chip.click()
