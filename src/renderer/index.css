@@ -2010,6 +2010,17 @@
   font-weight: 600;
 }
 
+.markdown-editor .markdown-inline-image {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.markdown-editor [data-content-type="table"] .markdown-inline-image {
+  max-width: 12rem;
+  max-height: 12rem;
+}
+
 @container markdown-editor (max-width: 560px) {
   .markdown-editor {
     --markdown-document-gutter: 1rem;
