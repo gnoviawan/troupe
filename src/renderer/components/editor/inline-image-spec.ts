@@ -57,15 +57,20 @@ export const inlineImageSpec = {
   }
 }
 
-/** A lone image in its paragraph stays a block image, with its resize handles. */
+const INLINE_WRAPPERS = new Set(['A', 'B', 'DEL', 'EM', 'I', 'S', 'SPAN', 'STRONG', 'SUB', 'SUP'])
+const INLINE_ONLY_BLOCKS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6'])
+
+/**
+ * Heading and cell text only holds inline content. Elsewhere an image is
+ * inline when its block has text or other images; a lone image, even inside
+ * a link, stays a block image with its resize handles. List item content is
+ * parsed from a detached copy, so the block is found by walking up past inline
+ * wrappers rather than by looking for an `li`.
+ */
 function isInlineImage(image: HTMLElement): boolean {
-  if (image.closest('td, th')) return true
-  const paragraph = image.closest('p')
-  if (!paragraph) return false
-  return [...paragraph.childNodes].some(
-    (node) =>
-      node !== image &&
-      !(node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) &&
-      !(node instanceof HTMLElement && node.tagName === 'BR')
-  )
+  let block = image.parentElement
+  while (block && INLINE_WRAPPERS.has(block.tagName)) block = block.parentElement
+  if (!block) return false
+  if (INLINE_ONLY_BLOCKS.has(block.tagName) || block.closest('td, th')) return true
+  return block.textContent?.trim() !== '' || block.querySelectorAll('img').length > 1
 }

@@ -15,6 +15,12 @@ const DOC = `# Workflow
 ![Turntable](assets/turntable.png)
 
 Badges ![build](https://img.example/build.svg) inline.
+
+## Status ![ok](ok.png)
+
+- Ship ![tick](tick.png) now
+
+[![Diagram](assets/diagram.png)](https://example.com)
 `
 
 function imagesOf(value: unknown): Array<{ type: string; url: string }> {
@@ -32,13 +38,16 @@ function imagesOf(value: unknown): Array<{ type: string; url: string }> {
 describe('markdown images in the editor', () => {
   const editor = BlockNoteEditor.create({ schema: markdownEditorSchema })
 
-  it('keeps images in table cells and in text, and a lone image as a block', async () => {
+  it('keeps images in cells, text, headings and list items, and a lone image as a block', async () => {
     const blocks = await editor.tryParseMarkdownToBlocks(DOC)
     expect(imagesOf(blocks)).toEqual([
       { type: 'inlineImage', url: 'assets/guide.png' },
       { type: 'inlineImage', url: 'assets/paint.png' },
       { type: 'image', url: 'assets/turntable.png' },
-      { type: 'inlineImage', url: 'https://img.example/build.svg' }
+      { type: 'inlineImage', url: 'https://img.example/build.svg' },
+      { type: 'inlineImage', url: 'ok.png' },
+      { type: 'inlineImage', url: 'tick.png' },
+      { type: 'image', url: 'assets/diagram.png' }
     ])
   })
 
@@ -48,6 +57,8 @@ describe('markdown images in the editor', () => {
     expect(markdown).toContain('| ![Guide v0](assets/guide.png) | ![Paint v0](assets/paint.png) |')
     expect(markdown).toContain('![build](https://img.example/build.svg)')
     expect(markdown).toContain('assets/turntable.png')
+    expect(markdown).toContain('## Status ![ok](ok.png)')
+    expect(markdown).toContain('* Ship ![tick](tick.png) now')
   })
 })
 
@@ -77,6 +88,15 @@ describe('createEditorFileUrlResolver', () => {
       ['/root/game/art/tree.png'],
       ['/tmp/shot.png']
     ])
+  })
+
+  it('resolves a relative image for a file at the filesystem root', async () => {
+    vi.mocked(readMediaBytes).mockResolvedValue({ success: true, data: new Blob(['png']) })
+    const resolver = createEditorFileUrlResolver(() => '/README.md')
+
+    await resolver.resolveFileUrl('logo.png')
+
+    expect(vi.mocked(readMediaBytes).mock.calls).toEqual([['/logo.png']])
   })
 
   it('leaves web URLs alone and returns the original URL when a read fails', async () => {

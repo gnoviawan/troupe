@@ -9,7 +9,7 @@ export interface EditorFileUrlResolver {
 }
 
 function directoryOf(filePath: string): string {
-  return filePath.replace(/[\\/][^\\/]*$/, '')
+  return filePath.replace(/[\\/][^\\/]*$/, '') || '/'
 }
 
 /**
