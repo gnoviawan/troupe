@@ -84,6 +84,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
     }
+    state.book.desktop = desktop;
     state.book.open_chat_tabs = context
         .get("openChatTabs")
         .map(parse)
@@ -100,7 +101,6 @@ fn replay(vector: &Value) -> Result<usize, String> {
             now: start + 1000.0 * (index as f64 + 1.0),
             ids: &mut ids,
             server_history,
-            desktop,
         };
         let mut effects = acp::step(
             &mut state,
