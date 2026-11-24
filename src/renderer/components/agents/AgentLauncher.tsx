@@ -1166,9 +1166,6 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
     store.prepareChat(activeConfigId, projectRoot, undefined, activeProjectId)
   }, [activeConfigId, preparedKey, projectRoot, activeProjectId])
 
-  // A terminal sign-in opens its login tab in this pane, or (quick chat) in
-  // the focused pane under the quick view.
-  const signInPaneId = useWorkspaceStore((s) => paneId ?? s.activePaneId ?? '')
   // Factory inline-key auth (AgentAuthPolicy.inlineKeyFormMethodId): the key
   // is stored on the host and the chat re-prepares on save. The special case
   // inside `handleAuthMethod` collapses to this hook's exposed callback.
@@ -1187,7 +1184,8 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
     cwd: place.agentScope.cwd,
     projectId: place.agentScope.projectId,
     projectEnvVars: activeProject?.envVars,
-    paneId: signInPaneId,
+    // A quick chat opens no login terminal: it has no project (useAgentSignIn).
+    paneId: paneId ?? '',
     onSignedIn: handleRetryPrepare
   })
 
