@@ -36,10 +36,8 @@ impl PickOptions {
     }
 }
 
-pub(super) fn rejected(session_id: &str) -> Effect {
-    Effect::ActionRejected {
-        message: format!("Error: unknown session {session_id}"),
-    }
+pub(super) fn unknown_session(session_id: &str) -> Effect {
+    Effect::rejected(format!("unknown session {session_id}"))
 }
 
 /// `String(value)` for a boolean pick, the value itself otherwise.
@@ -66,7 +64,7 @@ impl State {
 
     pub(crate) fn set_mode(&self, session_id: String, mode_id: String, fx: &mut Vec<Effect>) {
         let Some(session) = self.sessions.get(&session_id) else {
-            fx.push(rejected(&session_id));
+            fx.push(unknown_session(&session_id));
             return;
         };
         fx.push(Effect::SetMode {
@@ -85,7 +83,7 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let Some(session) = self.sessions.get(&session_id) else {
-            fx.push(rejected(&session_id));
+            fx.push(unknown_session(&session_id));
             return;
         };
         let model_option = config_options(session)
@@ -112,7 +110,7 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let Some(session) = self.sessions.get(&session_id) else {
-            fx.push(rejected(&session_id));
+            fx.push(unknown_session(&session_id));
             return;
         };
         let is_model = config_options(session).iter().any(|option| {

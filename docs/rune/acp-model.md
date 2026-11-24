@@ -418,7 +418,11 @@ its pinned sources match a path glob of both workflows.
   in flight for the rest of the vector.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
-  `{ "reject": text }` fails that `setConfigOption` with `Error: text`.
+  `{ "reject": text }` fails that `setConfigOption` with `text`.
+- A failed command comes back with the error's raw message
+  (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
+  model adds the `Error: ` prefix `String(error)` prints wherever the store
+  shows or keeps it.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.
