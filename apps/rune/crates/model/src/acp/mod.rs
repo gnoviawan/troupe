@@ -8,6 +8,7 @@
 
 pub mod approvals;
 mod clamp;
+pub mod controls;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
@@ -28,6 +29,7 @@ use approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
+use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
@@ -64,6 +66,11 @@ pub struct State {
     pub prompt_queues: BTreeMap<String, Vec<Value>>,
     /// Sessions whose queue must not flush (a cancel and send-now).
     pub suppress_queue_flush: BTreeMap<String, Value>,
+    /// Per agent config, the last models, modes and options a session showed.
+    pub agent_options_cache: BTreeMap<String, Value>,
+    /// Reuse key (config, cwd, project) to the live agent running it, in the
+    /// order the keys were added.
+    pub config_to_live_agent: Object,
     pub book: Book,
 }
 
@@ -195,6 +202,10 @@ pub enum Event {
     ElicitationRequest(ElicitationRequestEvent, #[serde(default)] Option<f64>),
     #[serde(rename = "_onBrowserTicketClosed")]
     BrowserTicketClosed(BrowserTicketClosedEvent),
+    #[serde(rename = "_onModeUpdate")]
+    ModeUpdate(ModeUpdateEvent),
+    #[serde(rename = "_onConfigOptionsUpdate")]
+    ConfigOptionsUpdate(ConfigOptionsUpdateEvent),
     #[serde(rename = "_onPromptComplete")]
     PromptComplete(PromptCompleteEvent, #[serde(default)] Option<f64>),
     #[serde(rename = "_onAgentWorking")]
@@ -236,6 +247,15 @@ pub enum Effect {
     EndTurn(TurnEnd),
     /// Send this queued prompt now: the chat went idle.
     SendQueuedPrompt { session_id: String, prompt: Value },
+    /// Save the config's model list, so the pickers show it after a restart.
+    PersistModelCatalog { config_id: String, catalog: Value },
+    /// Read the user's saved picks for the config and apply the ones the
+    /// session still offers.
+    ReapplyComposerOptions {
+        config_id: String,
+        #[serde(skip_serializing)]
+        session_id: String,
+    },
 }
 
 impl Effect {
@@ -273,6 +293,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::QuestionCancelled(event) => state.on_question_cancelled(event),
         Event::ElicitationRequest(event, seq) => state.on_elicitation_request(event, seq),
         Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
+        Event::ModeUpdate(event) => state.on_mode_update(event, env, &mut fx),
+        Event::ConfigOptionsUpdate(event) => state.on_config_options_update(event, env, &mut fx),
         Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, &mut fx),
         Event::AgentWorking(event) => state.on_agent_working(event, &mut fx),
         Event::BackgroundCommands(event) => state.on_background_commands(event),

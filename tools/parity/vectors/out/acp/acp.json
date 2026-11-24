@@ -37,6 +37,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 100,
     "historyWatermarks": {}
@@ -111,6 +113,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 101,
       "historyWatermarks": {}
@@ -183,6 +187,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 101,
       "historyWatermarks": {}
@@ -244,6 +250,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 200,
     "historyWatermarks": {}
@@ -318,6 +326,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 200,
       "historyWatermarks": {}
@@ -408,6 +418,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 201,
       "historyWatermarks": {}
@@ -454,6 +466,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 300,
     "historyWatermarks": {}
@@ -528,6 +542,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 301,
       "historyWatermarks": {}
@@ -617,6 +633,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 302,
       "historyWatermarks": {}
@@ -687,6 +705,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 400,
     "historyWatermarks": {}
@@ -786,6 +806,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 401,
       "historyWatermarks": {}
@@ -832,6 +854,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 500,
     "historyWatermarks": {}
@@ -906,6 +930,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 501,
       "historyWatermarks": {}
@@ -993,6 +1019,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 502,
       "historyWatermarks": {}
@@ -1093,6 +1121,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 503,
       "historyWatermarks": {}
@@ -1139,6 +1169,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 600,
     "historyWatermarks": {}
@@ -1197,6 +1229,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 600,
       "historyWatermarks": {}
@@ -1271,6 +1305,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 601,
       "historyWatermarks": {}
@@ -1317,6 +1353,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 700,
     "historyWatermarks": {}
@@ -1375,6 +1413,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 700,
       "historyWatermarks": {}
@@ -1449,6 +1489,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 701,
       "historyWatermarks": {}
@@ -1521,6 +1563,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 701,
       "historyWatermarks": {}
@@ -1567,6 +1611,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 800,
     "historyWatermarks": {}
@@ -1625,6 +1671,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 800,
       "historyWatermarks": {}
@@ -1682,6 +1730,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 800,
       "historyWatermarks": {}
@@ -1755,6 +1805,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 900,
     "historyWatermarks": {}
@@ -1840,6 +1892,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 900,
       "historyWatermarks": {}
@@ -1927,6 +1981,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 1000,
     "historyWatermarks": {}
@@ -2026,6 +2082,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1000,
       "historyWatermarks": {}
@@ -2122,6 +2180,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1001,
       "historyWatermarks": {}
@@ -2216,6 +2276,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1001,
       "historyWatermarks": {}
@@ -2293,6 +2355,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 1100,
     "historyWatermarks": {}
@@ -2394,6 +2458,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1101,
       "historyWatermarks": {}
@@ -2493,6 +2559,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1101,
       "historyWatermarks": {}
@@ -2539,6 +2607,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 1200,
     "historyWatermarks": {}
@@ -2609,6 +2679,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1200,
       "historyWatermarks": {
@@ -2670,6 +2742,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1200,
       "historyWatermarks": {
@@ -2733,6 +2807,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1200,
       "historyWatermarks": {
@@ -2793,6 +2869,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1200,
       "historyWatermarks": {
@@ -2871,6 +2949,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1201,
       "historyWatermarks": {
@@ -2955,6 +3035,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 1202,
       "historyWatermarks": {
@@ -3003,6 +3085,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 1300,
     "historyWatermarks": {}
@@ -3073,6 +3157,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9000,
       "historyWatermarks": {
@@ -3149,6 +3235,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9001,
       "historyWatermarks": {
@@ -3197,6 +3285,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9100,
     "historyWatermarks": {}
@@ -3255,6 +3345,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3308,6 +3400,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3368,6 +3462,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3437,6 +3533,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3506,6 +3604,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3576,6 +3676,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9100,
       "historyWatermarks": {
@@ -3624,6 +3726,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9200,
     "historyWatermarks": {}
@@ -3700,6 +3804,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9201,
       "historyWatermarks": {}
@@ -3760,6 +3866,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9300,
     "historyWatermarks": {}
@@ -3834,6 +3942,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9301,
       "historyWatermarks": {}
@@ -3921,6 +4031,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9302,
       "historyWatermarks": {}
@@ -3994,6 +4106,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9400,
     "historyWatermarks": {}
@@ -4082,6 +4196,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9401,
       "historyWatermarks": {}
@@ -4183,6 +4299,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9402,
       "historyWatermarks": {}
@@ -4229,6 +4347,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9500,
     "historyWatermarks": {}
@@ -4303,6 +4423,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9501,
       "historyWatermarks": {}
@@ -4350,6 +4472,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9600,
     "historyWatermarks": {}
@@ -4426,6 +4550,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9601,
       "historyWatermarks": {}
@@ -4472,6 +4598,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9700,
     "historyWatermarks": {}
@@ -4547,6 +4675,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9701,
       "historyWatermarks": {}
@@ -4593,6 +4723,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9800,
     "historyWatermarks": {}
@@ -4679,6 +4811,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9801,
       "historyWatermarks": {}
@@ -4769,6 +4903,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9802,
       "historyWatermarks": {}
@@ -4815,6 +4951,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 9900,
     "historyWatermarks": {}
@@ -4890,6 +5028,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9901,
       "historyWatermarks": {}
@@ -4982,6 +5122,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9902,
       "historyWatermarks": {}
@@ -5068,6 +5210,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9902,
       "historyWatermarks": {}
@@ -5169,6 +5313,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 9903,
       "historyWatermarks": {}
@@ -5215,6 +5361,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10000,
     "historyWatermarks": {}
@@ -5273,6 +5421,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10000,
       "historyWatermarks": {}
@@ -5319,6 +5469,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10100,
     "historyWatermarks": {}
@@ -5389,6 +5541,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10101,
       "historyWatermarks": {}
@@ -5458,6 +5612,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10102,
       "historyWatermarks": {}
@@ -5536,6 +5692,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10102,
       "historyWatermarks": {}
@@ -5582,6 +5740,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10200,
     "historyWatermarks": {}
@@ -5660,6 +5820,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10201,
       "historyWatermarks": {}
@@ -5748,6 +5910,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10201,
       "historyWatermarks": {}
@@ -5832,6 +5996,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10201,
       "historyWatermarks": {}
@@ -5912,6 +6078,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10201,
       "historyWatermarks": {}
@@ -5958,6 +6126,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10300,
     "historyWatermarks": {}
@@ -6015,6 +6185,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10300,
       "historyWatermarks": {}
@@ -6071,6 +6243,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10300,
       "historyWatermarks": {}
@@ -6136,6 +6310,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10400,
     "historyWatermarks": {}
@@ -6214,6 +6390,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10401,
       "historyWatermarks": {}
@@ -6294,6 +6472,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10402,
       "historyWatermarks": {}
@@ -6374,6 +6554,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10402,
       "historyWatermarks": {}
@@ -6438,6 +6620,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10500,
     "historyWatermarks": {}
@@ -6513,6 +6697,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10500,
       "historyWatermarks": {}
@@ -6589,6 +6775,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10501,
       "historyWatermarks": {}
@@ -6635,6 +6823,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10600,
     "historyWatermarks": {}
@@ -6714,6 +6904,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10601,
       "historyWatermarks": {}
@@ -6791,6 +6983,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10601,
       "historyWatermarks": {}
@@ -6870,6 +7064,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10601,
       "historyWatermarks": {}
@@ -6948,6 +7144,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10601,
       "historyWatermarks": {}
@@ -6994,6 +7192,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10700,
     "historyWatermarks": {}
@@ -7069,6 +7269,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10701,
       "historyWatermarks": {}
@@ -7136,6 +7338,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10701,
       "historyWatermarks": {}
@@ -7208,6 +7412,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10701,
       "historyWatermarks": {}
@@ -7254,6 +7460,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10800,
     "historyWatermarks": {}
@@ -7551,6 +7759,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10801,
       "historyWatermarks": {}
@@ -7597,6 +7807,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 10900,
     "historyWatermarks": {}
@@ -7677,6 +7889,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10901,
       "historyWatermarks": {}
@@ -7748,6 +7962,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 10901,
       "historyWatermarks": {}
@@ -7794,6 +8010,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11000,
     "historyWatermarks": {}
@@ -7919,6 +8137,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11001,
       "historyWatermarks": {}
@@ -8047,6 +8267,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11001,
       "historyWatermarks": {}
@@ -8093,6 +8315,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11100,
     "historyWatermarks": {}
@@ -8168,6 +8392,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11101,
       "historyWatermarks": {}
@@ -8264,6 +8490,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11102,
       "historyWatermarks": {}
@@ -8310,6 +8538,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11200,
     "historyWatermarks": {}
@@ -8398,6 +8628,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11201,
       "historyWatermarks": {}
@@ -8444,6 +8676,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11300,
     "historyWatermarks": {}
@@ -8508,6 +8742,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11301,
       "historyWatermarks": {}
@@ -8554,6 +8790,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11400,
     "historyWatermarks": {}
@@ -8677,6 +8915,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11401,
       "historyWatermarks": {}
@@ -8804,6 +9044,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11402,
       "historyWatermarks": {}
@@ -8937,6 +9179,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11403,
       "historyWatermarks": {}
@@ -9080,6 +9324,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11404,
       "historyWatermarks": {}
@@ -9216,6 +9462,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11404,
       "historyWatermarks": {}
@@ -9262,6 +9510,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11500,
     "historyWatermarks": {}
@@ -9364,6 +9614,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11501,
       "historyWatermarks": {}
@@ -9476,6 +9728,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11502,
       "historyWatermarks": {}
@@ -9609,6 +9863,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11503,
       "historyWatermarks": {}
@@ -9768,6 +10024,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11504,
       "historyWatermarks": {}
@@ -9814,6 +10072,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11600,
     "historyWatermarks": {}
@@ -9884,6 +10144,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11600,
       "historyWatermarks": {}
@@ -9940,6 +10202,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11600,
       "historyWatermarks": {}
@@ -10000,6 +10264,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11600,
       "historyWatermarks": {}
@@ -10046,6 +10312,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11700,
     "historyWatermarks": {}
@@ -10120,6 +10388,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10194,6 +10464,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10268,6 +10540,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10342,6 +10616,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10407,6 +10683,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10481,6 +10759,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10555,6 +10835,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10625,6 +10907,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11700,
       "historyWatermarks": {}
@@ -10677,6 +10961,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11800,
     "historyWatermarks": {}
@@ -10741,6 +11027,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -10806,6 +11094,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -10871,6 +11161,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -10933,6 +11225,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -10998,6 +11292,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -11057,6 +11353,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -11121,6 +11419,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -11180,6 +11480,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11800,
       "historyWatermarks": {}
@@ -11226,6 +11528,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 11900,
     "historyWatermarks": {}
@@ -11279,6 +11583,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 11900,
       "historyWatermarks": {}
@@ -11325,6 +11631,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12000,
     "historyWatermarks": {}
@@ -11387,6 +11695,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11465,6 +11775,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11535,6 +11847,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11605,6 +11919,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11671,6 +11987,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11737,6 +12055,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12000,
       "historyWatermarks": {}
@@ -11783,6 +12103,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12100,
     "historyWatermarks": {}
@@ -11838,6 +12160,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12100,
       "historyWatermarks": {}
@@ -11906,6 +12230,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12100,
       "historyWatermarks": {}
@@ -11969,6 +12295,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12100,
       "historyWatermarks": {}
@@ -12038,6 +12366,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12100,
       "historyWatermarks": {}
@@ -12104,6 +12434,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12100,
       "historyWatermarks": {}
@@ -12150,6 +12482,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12200,
     "historyWatermarks": {}
@@ -12218,6 +12552,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12200,
       "historyWatermarks": {}
@@ -12264,6 +12600,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12300,
     "historyWatermarks": {}
@@ -12387,6 +12725,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12301,
       "historyWatermarks": {}
@@ -12555,6 +12895,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12301,
       "historyWatermarks": {}
@@ -12715,6 +13057,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12302,
       "historyWatermarks": {}
@@ -12867,6 +13211,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12302,
       "historyWatermarks": {}
@@ -12913,6 +13259,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12400,
     "historyWatermarks": {}
@@ -13024,6 +13372,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12401,
       "historyWatermarks": {}
@@ -13117,6 +13467,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12401,
       "historyWatermarks": {}
@@ -13271,6 +13623,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12402,
       "historyWatermarks": {}
@@ -13455,6 +13809,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12403,
       "historyWatermarks": {}
@@ -13662,6 +14018,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12404,
       "historyWatermarks": {}
@@ -13899,6 +14257,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12405,
       "historyWatermarks": {}
@@ -14136,6 +14496,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12406,
       "historyWatermarks": {}
@@ -14409,6 +14771,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12407,
       "historyWatermarks": {}
@@ -14455,6 +14819,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12500,
     "historyWatermarks": {}
@@ -14523,6 +14889,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12501,
       "historyWatermarks": {}
@@ -14609,6 +14977,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12502,
       "historyWatermarks": {}
@@ -14705,6 +15075,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12503,
       "historyWatermarks": {}
@@ -14812,6 +15184,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12504,
       "historyWatermarks": {}
@@ -14858,6 +15232,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12600,
     "historyWatermarks": {}
@@ -14957,6 +15333,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12601,
       "historyWatermarks": {}
@@ -15047,6 +15425,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12602,
       "historyWatermarks": {}
@@ -15172,6 +15552,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12603,
       "historyWatermarks": {}
@@ -15315,6 +15697,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12604,
       "historyWatermarks": {}
@@ -15361,6 +15745,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12700,
     "historyWatermarks": {}
@@ -15429,6 +15815,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12701,
       "historyWatermarks": {}
@@ -15505,6 +15893,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12702,
       "historyWatermarks": {}
@@ -15581,6 +15971,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12703,
       "historyWatermarks": {}
@@ -15664,6 +16056,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12704,
       "historyWatermarks": {}
@@ -15747,6 +16141,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12705,
       "historyWatermarks": {}
@@ -15844,6 +16240,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12706,
       "historyWatermarks": {}
@@ -15945,6 +16343,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12707,
       "historyWatermarks": {}
@@ -16045,6 +16445,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12707,
       "historyWatermarks": {}
@@ -16145,6 +16547,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12707,
       "historyWatermarks": {}
@@ -16245,6 +16649,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12707,
       "historyWatermarks": {}
@@ -16291,6 +16697,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12800,
     "historyWatermarks": {}
@@ -16357,6 +16765,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12800,
       "historyWatermarks": {}
@@ -16416,6 +16826,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12800,
       "historyWatermarks": {}
@@ -16475,6 +16887,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12800,
       "historyWatermarks": {}
@@ -16529,6 +16943,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 12900,
     "historyWatermarks": {}
@@ -16595,6 +17011,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12900,
       "historyWatermarks": {
@@ -16656,6 +17074,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12900,
       "historyWatermarks": {
@@ -16726,6 +17146,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12900,
       "historyWatermarks": {
@@ -16803,6 +17225,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12900,
       "historyWatermarks": {
@@ -16880,6 +17304,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 12901,
       "historyWatermarks": {
@@ -16936,6 +17362,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13000,
     "historyWatermarks": {}
@@ -17003,6 +17431,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13000,
       "historyWatermarks": {}
@@ -17049,6 +17479,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13100,
     "historyWatermarks": {}
@@ -17133,6 +17565,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {}
@@ -17211,6 +17645,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {}
@@ -17319,6 +17755,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {}
@@ -17438,6 +17876,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {}
@@ -17544,6 +17984,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {
@@ -17653,6 +18095,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13100,
       "historyWatermarks": {
@@ -17701,6 +18145,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13200,
     "historyWatermarks": {}
@@ -17779,6 +18225,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13200,
       "historyWatermarks": {}
@@ -17855,6 +18303,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13200,
       "historyWatermarks": {}
@@ -17943,6 +18393,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13200,
       "historyWatermarks": {}
@@ -18010,6 +18462,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13200,
       "historyWatermarks": {}
@@ -18077,6 +18531,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13200,
       "historyWatermarks": {}
@@ -18123,6 +18579,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13300,
     "historyWatermarks": {}
@@ -18220,6 +18678,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13300,
       "historyWatermarks": {}
@@ -18315,6 +18775,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13300,
       "historyWatermarks": {}
@@ -18415,6 +18877,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13300,
       "historyWatermarks": {}
@@ -18518,6 +18982,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13300,
       "historyWatermarks": {}
@@ -18564,6 +19030,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13400,
     "historyWatermarks": {}
@@ -18656,6 +19124,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13400,
       "historyWatermarks": {}
@@ -18778,6 +19248,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13400,
       "historyWatermarks": {}
@@ -18889,6 +19361,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13400,
       "historyWatermarks": {}
@@ -18970,6 +19444,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13400,
       "historyWatermarks": {}
@@ -19051,6 +19527,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13400,
       "historyWatermarks": {}
@@ -19097,6 +19575,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13500,
     "historyWatermarks": {}
@@ -19181,6 +19661,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13500,
       "historyWatermarks": {}
@@ -19282,6 +19764,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13500,
       "historyWatermarks": {}
@@ -19391,6 +19875,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13500,
       "historyWatermarks": {}
@@ -19532,6 +20018,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13500,
       "historyWatermarks": {}
@@ -19683,6 +20171,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13500,
       "historyWatermarks": {}
@@ -19853,6 +20343,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13501,
       "historyWatermarks": {}
@@ -20074,6 +20566,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13502,
       "historyWatermarks": {}
@@ -20161,6 +20655,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13600,
     "historyWatermarks": {}
@@ -20262,6 +20758,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13600,
       "historyWatermarks": {}
@@ -20323,6 +20821,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13700,
     "historyWatermarks": {}
@@ -20399,6 +20899,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13700,
       "historyWatermarks": {}
@@ -20475,6 +20977,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13700,
       "historyWatermarks": {}
@@ -20551,6 +21055,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13700,
       "historyWatermarks": {}
@@ -20627,6 +21133,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13700,
       "historyWatermarks": {}
@@ -20702,6 +21210,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13700,
       "historyWatermarks": {}
@@ -20754,6 +21264,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13800,
     "historyWatermarks": {}
@@ -20820,6 +21332,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13800,
       "historyWatermarks": {}
@@ -20886,6 +21400,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13800,
       "historyWatermarks": {}
@@ -20952,6 +21468,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13800,
       "historyWatermarks": {}
@@ -21018,6 +21536,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13800,
       "historyWatermarks": {}
@@ -21079,6 +21599,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 13900,
     "historyWatermarks": {}
@@ -21154,6 +21676,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13900,
       "historyWatermarks": {}
@@ -21229,6 +21753,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 13900,
       "historyWatermarks": {}
@@ -21287,6 +21813,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14000,
     "historyWatermarks": {}
@@ -21360,6 +21888,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14000,
       "historyWatermarks": {}
@@ -21429,6 +21959,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14000,
       "historyWatermarks": {}
@@ -21540,6 +22072,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14100,
     "historyWatermarks": {}
@@ -21672,6 +22206,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14100,
       "historyWatermarks": {}
@@ -21739,6 +22275,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14200,
     "historyWatermarks": {}
@@ -21824,6 +22362,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14200,
       "historyWatermarks": {}
@@ -21902,6 +22442,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14300,
     "historyWatermarks": {}
@@ -21979,6 +22521,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14300,
       "historyWatermarks": {}
@@ -22033,6 +22577,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14400,
     "historyWatermarks": {}
@@ -22095,6 +22641,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14400,
       "historyWatermarks": {}
@@ -22141,6 +22689,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14500,
     "historyWatermarks": {}
@@ -22199,6 +22749,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14500,
       "historyWatermarks": {
@@ -22257,6 +22809,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14500,
       "historyWatermarks": {
@@ -22320,6 +22874,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14500,
       "historyWatermarks": {
@@ -22368,6 +22924,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14600,
     "historyWatermarks": {}
@@ -22427,6 +22985,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14600,
       "historyWatermarks": {}
@@ -22488,6 +23048,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14700,
     "historyWatermarks": {}
@@ -22558,6 +23120,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14700,
       "historyWatermarks": {}
@@ -22613,6 +23177,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14800,
     "historyWatermarks": {}
@@ -22687,6 +23253,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14800,
       "historyWatermarks": {}
@@ -22804,6 +23372,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 14900,
     "historyWatermarks": {}
@@ -22930,6 +23500,8 @@
      },
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 14900,
       "historyWatermarks": {}
@@ -22991,6 +23563,8 @@
    "suppressQueueFlush": {
     "s1": true
    },
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 15000,
     "historyWatermarks": {}
@@ -23066,6 +23640,8 @@
      "suppressQueueFlush": {
       "s1": true
      },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15000,
       "historyWatermarks": {}
@@ -23112,6 +23688,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 15100,
     "historyWatermarks": {}
@@ -23174,6 +23752,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15100,
       "historyWatermarks": {}
@@ -23229,6 +23809,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15100,
       "historyWatermarks": {}
@@ -23284,6 +23866,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15100,
       "historyWatermarks": {}
@@ -23346,6 +23930,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15100,
       "historyWatermarks": {}
@@ -23392,6 +23978,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 15200,
     "historyWatermarks": {}
@@ -23464,6 +24052,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15200,
       "historyWatermarks": {}
@@ -23536,6 +24126,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15200,
       "historyWatermarks": {}
@@ -23608,6 +24200,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15200,
       "historyWatermarks": {}
@@ -23680,6 +24274,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15200,
       "historyWatermarks": {}
@@ -23746,6 +24342,8 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15200,
       "historyWatermarks": {}
@@ -23797,6 +24395,8 @@
    "turnEndNotices": {},
    "promptQueues": {},
    "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
    "book": {
     "seq": 15300,
     "historyWatermarks": {}
@@ -23869,8 +24469,2800 @@
      "turnEndNotices": {},
      "promptQueues": {},
      "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
      "book": {
       "seq": 15300,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mode_update_sets_and_keeps_the_mode_list",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "default",
+       "availableModes": [
+        {
+         "id": "default",
+         "name": "default"
+        },
+        {
+         "id": "plan",
+         "name": "plan"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "plan",
+          "name": "plan"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "plan"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "plan",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "plan",
+          "name": "plan"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s9",
+       "currentModeId": "x",
+       "availableModes": []
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "plan",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "plan",
+          "name": "plan"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_creation_default_echo_keeps_the_picked_mode",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": {
+      "currentModeId": "plan",
+      "availableModes": [
+       {
+        "id": "default",
+        "name": "default"
+       },
+       {
+        "id": "plan",
+        "name": "plan"
+       }
+      ]
+     },
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "creationOptionDefaults": {
+      "modeId": "default",
+      "configValues": {}
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "default"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.modeEchoPreserved",
+      "message": "mode_update for session s1 re-asserted creation default 'default'; kept current mode 'plan'"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "plan",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "plan",
+          "name": "plan"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "modeId": "default",
+        "configValues": {}
+       },
+       "creationEchoLogged": {
+        "__mode__": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "default"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "plan",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "plan",
+          "name": "plan"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "modeId": "default",
+        "configValues": {}
+       },
+       "creationEchoLogged": {
+        "__mode__": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "acceptEdits",
+       "availableModes": [
+        {
+         "id": "default",
+         "name": "default"
+        },
+        {
+         "id": "acceptEdits",
+         "name": "acceptEdits"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "acceptEdits",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         },
+         {
+          "id": "acceptEdits",
+          "name": "acceptEdits"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "modeId": "default",
+        "configValues": {}
+       },
+       "creationEchoLogged": {
+        "__mode__": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "default",
+       "availableModes": [
+        {
+         "id": "default",
+         "name": "default"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "modeId": "default",
+        "configValues": {}
+       },
+       "creationEchoLogged": {
+        "__mode__": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15500,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "the_first_options_snapshot_is_taken_as_is",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15600,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "the_model_option_keeps_its_value_while_it_is_offered",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "opus",
+       "options": [
+        {
+         "value": "opus",
+         "name": "opus"
+        },
+        {
+         "value": "sonnet",
+         "name": "sonnet"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "sonnet",
+         "options": [
+          {
+           "value": "opus",
+           "name": "opus"
+          },
+          {
+           "value": "sonnet",
+           "name": "sonnet"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "opus",
+         "options": [
+          {
+           "value": "opus",
+           "name": "opus"
+          },
+          {
+           "value": "sonnet",
+           "name": "sonnet"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15700,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "haiku",
+         "options": [
+          {
+           "value": "sonnet",
+           "name": "sonnet"
+          },
+          {
+           "value": "haiku",
+           "name": "haiku"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "haiku",
+         "options": [
+          {
+           "value": "sonnet",
+           "name": "sonnet"
+          },
+          {
+           "value": "haiku",
+           "name": "haiku"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15700,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          }
+         ]
+        },
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "haiku",
+         "options": [
+          {
+           "value": "haiku",
+           "name": "haiku"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          }
+         ]
+        },
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "haiku",
+         "options": [
+          {
+           "value": "haiku",
+           "name": "haiku"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15700,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_creation_default_echo_keeps_the_picked_option",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": null,
+       "type": "select",
+       "currentValue": "high",
+       "options": [
+        {
+         "value": "medium",
+         "name": "medium"
+        },
+        {
+         "value": "high",
+         "name": "high"
+        }
+       ]
+      },
+      {
+       "id": "fast",
+       "name": "Fast",
+       "category": null,
+       "type": "boolean",
+       "currentValue": true
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1,
+     "creationOptionDefaults": {
+      "configValues": {
+       "effort": "medium",
+       "fast": "false"
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "medium",
+         "options": [
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": null,
+         "type": "boolean",
+         "currentValue": false
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.configOptionEchoPreserved",
+      "message": "config_option_update for session s1 re-asserted the creation default on 'effort'; kept the session's current value"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.configOptionEchoPreserved",
+      "message": "config_option_update for session s1 re-asserted the creation default on 'fast'; kept the session's current value"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": null,
+         "type": "boolean",
+         "currentValue": true
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "configValues": {
+         "effort": "medium",
+         "fast": "false"
+        }
+       },
+       "creationEchoLogged": {
+        "effort": true,
+        "fast": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15800,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "medium",
+         "options": [
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": null,
+         "type": "boolean",
+         "currentValue": false
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": null,
+         "type": "boolean",
+         "currentValue": true
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "configValues": {
+         "effort": "medium",
+         "fast": "false"
+        }
+       },
+       "creationEchoLogged": {
+        "effort": true,
+        "fast": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15800,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          },
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "low"
+          },
+          {
+           "value": "medium",
+           "name": "medium"
+          },
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "configValues": {
+         "effort": "medium",
+         "fast": "false"
+        }
+       },
+       "creationEchoLogged": {
+        "effort": true,
+        "fast": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15800,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "the_shown_model_moves_onto_models_and_the_index",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": {
+      "currentModelId": "a",
+      "availableModels": [
+       {
+        "modelId": "a",
+        "name": "Model A"
+       },
+       {
+        "modelId": "b",
+        "name": "Model B"
+       }
+      ]
+     },
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "a",
+     "modelName": "Model A"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 15900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "b",
+         "options": [
+          {
+           "value": "a",
+           "name": "Model A"
+          },
+          {
+           "value": "b",
+           "name": "  Model B  "
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": {
+        "currentModelId": "b",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "Model A"
+         },
+         {
+          "modelId": "b",
+          "name": "Model B"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "b",
+         "options": [
+          {
+           "value": "a",
+           "name": "Model A"
+          },
+          {
+           "value": "b",
+           "name": "  Model B  "
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "b",
+       "modelName": "Model B"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "c",
+         "options": [
+          {
+           "value": "c",
+           "name": "   "
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": {
+        "currentModelId": "b",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "Model A"
+         },
+         {
+          "modelId": "b",
+          "name": "Model B"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "b",
+         "options": [
+          {
+           "value": "c",
+           "name": "   "
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "b",
+       "modelName": "B"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 15900,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "grouped_values_flatten_for_the_model_check",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "opus",
+       "options": [
+        {
+         "group": "anthropic",
+         "name": "Anthropic",
+         "options": [
+          {
+           "value": "opus",
+           "name": "opus"
+          },
+          {
+           "value": "sonnet",
+           "name": "sonnet"
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "sonnet",
+         "options": [
+          {
+           "group": "anthropic",
+           "name": "Anthropic",
+           "options": [
+            {
+             "value": "opus",
+             "name": "opus"
+            },
+            {
+             "value": "sonnet",
+             "name": "sonnet"
+            }
+           ]
+          },
+          {
+           "group": "openai",
+           "options": [
+            {
+             "value": "gpt",
+             "name": "gpt"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "opus",
+         "options": [
+          {
+           "group": "anthropic",
+           "name": "Anthropic",
+           "options": [
+            {
+             "value": "opus",
+             "name": "opus"
+            },
+            {
+             "value": "sonnet",
+             "name": "sonnet"
+            }
+           ]
+          },
+          {
+           "group": "openai",
+           "options": [
+            {
+             "value": "gpt",
+             "name": "gpt"
+            }
+           ]
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "options_land_in_the_agent_cache_and_heal_saved_picks",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": {
+      "currentModeId": "default",
+      "availableModes": [
+       {
+        "id": "default",
+        "name": "default"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "a",
+      "availableModels": [
+       {
+        "modelId": "a",
+        "name": "A",
+        "description": "fast"
+       }
+      ]
+     },
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "other\u0000/x\u0000p2": "agent-2",
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "book": {
+    "seq": 16100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "a",
+         "options": [
+          {
+           "value": "a",
+           "name": "A",
+           "description": "fast"
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "a",
+        "options": [
+         {
+          "value": "a",
+          "name": "A",
+          "description": "fast"
+         },
+         {
+          "value": "b",
+          "name": "B",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "a",
+         "options": [
+          {
+           "value": "a",
+           "name": "A",
+           "description": "fast"
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "a",
+         "options": [
+          {
+           "value": "a",
+           "name": "A",
+           "description": "fast"
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "other\u0000/x\u0000p2": "agent-2",
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "book": {
+      "seq": 16100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onModeUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "currentModeId": "default"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "a",
+        "options": [
+         {
+          "value": "a",
+          "name": "A",
+          "description": "fast"
+         },
+         {
+          "value": "b",
+          "name": "B",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "a",
+         "options": [
+          {
+           "value": "a",
+           "name": "A",
+           "description": "fast"
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "a",
+        "availableModels": [
+         {
+          "modelId": "a",
+          "name": "A",
+          "description": "fast"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "a",
+         "options": [
+          {
+           "value": "a",
+           "name": "A",
+           "description": "fast"
+          },
+          {
+           "value": "b",
+           "name": "B"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "other\u0000/x\u0000p2": "agent-2",
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "book": {
+      "seq": 16100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "an_initializing_session_caches_without_healing",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "initializing",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "book": {
+    "seq": 16200,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": null,
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "high",
+           "name": "high"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "book": {
+      "seq": 16200,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "an_empty_snapshot_drops_the_cache_entry",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "cfg-1": {
+     "models": null,
+     "modes": null,
+     "configOptions": [
+      {
+       "id": "x",
+       "name": "x",
+       "category": null,
+       "type": "select",
+       "currentValue": "y",
+       "options": [
+        {
+         "value": "y",
+         "name": "y"
+        }
+       ]
+      }
+     ],
+     "updatedAt": 1
+    }
+   },
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "book": {
+    "seq": 16300,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onConfigOptionsUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "configOptions": []
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "book": {
+      "seq": 16300,
       "historyWatermarks": {}
      }
     }

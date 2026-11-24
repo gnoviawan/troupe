@@ -20,7 +20,11 @@
         "src/renderer/lib/browser-consent-api.ts": "653bc724d545e28af1b1a4b8e822138534f61acf",
         "src/renderer/stores/acp-store/host-session-reports.ts": "8ae4f30faff5eacf60c377f3e4913395e9d5ba3e",
         "src/renderer/lib/agent-chat-notify.ts": "e702d4fcb64619f0d8458f793786e49a46c83cbd",
-        "src/renderer/components/chat/background-commands.ts": "a3b2fed0cbddc14463d2cc8c628672ac6a284147"
+        "src/renderer/components/chat/background-commands.ts": "a3b2fed0cbddc14463d2cc8c628672ac6a284147",
+        "src/renderer/components/chat/chat-input-bar-config.ts": "9a7e4e7598dbf57d2d48119ea1b66b0e04febd1b",
+        "src/renderer/components/chat/agent-model-selector/selector-model.ts": "8db12afbbee65c1a8c6f93e88ada02aeb3848e42",
+        "src/renderer/stores/acp-store/model-catalog.ts": "35c2383fce1c05e8f5557ddfdaa9f5e2dbbe2450",
+        "src/renderer/stores/acp-reuse-keys.ts": "6b1a4a4336c3d979eb65d2d11f775ac1ca97c73e"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -98,7 +102,17 @@
         "a_suppressed_queue_does_not_flush",
         "agent_working_marks_the_session_busy",
         "background_commands_keep_the_newest_list",
-        "background_commands_of_another_agent_are_replaced"
+        "background_commands_of_another_agent_are_replaced",
+        "mode_update_sets_and_keeps_the_mode_list",
+        "a_creation_default_echo_keeps_the_picked_mode",
+        "the_first_options_snapshot_is_taken_as_is",
+        "the_model_option_keeps_its_value_while_it_is_offered",
+        "a_creation_default_echo_keeps_the_picked_option",
+        "the_shown_model_moves_onto_models_and_the_index",
+        "grouped_values_flatten_for_the_model_check",
+        "options_land_in_the_agent_cache_and_heal_saved_picks",
+        "an_initializing_session_caches_without_healing",
+        "an_empty_snapshot_drops_the_cache_entry"
       ]
     }
   }

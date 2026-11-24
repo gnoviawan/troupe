@@ -44,7 +44,9 @@ const DATA_KEYS = [
   'agentStatus',
   'turnEndNotices',
   'promptQueues',
-  'suppressQueueFlush'
+  'suppressQueueFlush',
+  'agentOptionsCache',
+  'configToLiveAgent'
 ] as const
 
 /** Module functions a step may call besides the store's actions. */
@@ -74,7 +76,11 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/browser-consent-api.ts',
     'src/renderer/stores/acp-store/host-session-reports.ts',
     'src/renderer/lib/agent-chat-notify.ts',
-    'src/renderer/components/chat/background-commands.ts'
+    'src/renderer/components/chat/background-commands.ts',
+    'src/renderer/components/chat/chat-input-bar-config.ts',
+    'src/renderer/components/chat/agent-model-selector/selector-model.ts',
+    'src/renderer/stores/acp-store/model-catalog.ts',
+    'src/renderer/stores/acp-reuse-keys.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -137,7 +143,13 @@ function peekSeq(): number {
 }
 
 import { transcriptScenarios } from './acp-scenarios'
+import { controlScenarios } from './acp-scenarios-controls'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
 
-export const acpScenarios = [...transcriptScenarios, ...subagentScenarios, ...turnScenarios]
+export const acpScenarios = [
+  ...transcriptScenarios,
+  ...subagentScenarios,
+  ...turnScenarios,
+  ...controlScenarios
+]

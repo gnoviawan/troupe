@@ -107,6 +107,21 @@ vi.mock(`${renderer}/stores/acp-store/shared-state`, async (importOriginal) => {
   }
 })
 
+// The model list save and the read of the user's saved composer picks are
+// the boundary of the options cache; the vector keeps both calls.
+vi.mock(`${renderer}/stores/acp-store/model-catalog`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  persistModelCatalog: (configId: string, catalog: unknown) =>
+    emit({ kind: 'persistModelCatalog', configId, catalog })
+}))
+vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  readComposerOptions: async (configId: string) => {
+    emit({ kind: 'reapplyComposerOptions', configId })
+    return null
+  }
+}))
+
 const { acpRecorder, acpScenarios } = await import('./stores/acp')
 
 const ACP_OUT = join(OUT_DIR, 'acp')
