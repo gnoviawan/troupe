@@ -4,6 +4,7 @@
 //! it when the limit resets. The renderer only shows what happened
 //! (`acp:claude_limit_action`).
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -111,6 +112,12 @@ impl ClaudeLimitHandle {
             .map_err(|_| "the Claude limit supervisor stopped".to_string())?
     }
 
+    /// The Accounts the supervisor saw reach a limit, and when each resets.
+    #[must_use]
+    pub(crate) fn limited_until(&self) -> HashMap<String, SystemTime> {
+        self.limited.snapshot()
+    }
+
     /// A turn of the chat started: its scheduled resume no longer applies.
     pub fn turn_started(&self, session_id: SessionId) {
         let seq = self.clock.start(&session_id.0);
@@ -125,20 +132,6 @@ impl ClaudeLimitHandle {
             deleted,
         });
     }
-}
-
-/// The Account of `candidates` with the most room for a new chat: the
-/// ranking a chat at its limit moves by, skipping the Accounts the
-/// supervisor saw reach a limit that has not reset. `None` when none has
-/// room.
-#[must_use]
-pub fn roomiest_account(acp: &AcpManager, candidates: &[decide::Candidate]) -> Option<String> {
-    let ranked = decide::rank_alternatives(candidates);
-    let limited = acp
-        .claude_limit()
-        .map(|handle| handle.limited.snapshot())
-        .unwrap_or_default();
-    decide::first_with_room(&ranked, &limited, SystemTime::now()).cloned()
 }
 
 struct LimitSignalSink {

@@ -6,6 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
+use std::time::SystemTime;
 
 use agent_client_protocol::schema::v1::{ContentBlock, SessionModeState, TextContent};
 use parking_lot::Mutex;
@@ -13,8 +14,9 @@ use serde::Serialize;
 
 use crate::acp::claude_agent::{ClaudeLaunchAuth, LaunchChat};
 use crate::acp::claude_limit::decide::{self, Candidate};
-use crate::acp::claude_limit::{roomiest_account, AccountRef, CLAUDE_CONFIG_ID};
+use crate::acp::claude_limit::{AccountRef, ClaudeLimitHandle, CLAUDE_CONFIG_ID};
 use crate::acp::config::{AgentId, SessionId};
+use crate::acp::limit_runtime::roomiest_account;
 use crate::acp::manager::{LaunchRecipe, SessionCreationContext};
 use crate::acp::session_persistence::{SessionKind, UNASSIGNED_PROJECT_ID};
 use crate::acp::{AcpManager, SignInCheck, SpawnScope};
@@ -708,7 +710,11 @@ async fn child_account(
         }
         _ => Vec::new(),
     };
-    let roomiest = roomiest_account(acp, &candidates);
+    let limited_until = acp
+        .claude_limit()
+        .map(ClaudeLimitHandle::limited_until)
+        .unwrap_or_default();
+    let roomiest = roomiest_account(&candidates, &limited_until, SystemTime::now());
     match pick_account(managed, auto_switch, choice, &candidates, roomiest.as_deref())? {
         AccountPick::FollowsProject(reason) => Ok(ChildAccount::FollowsProject(reason)),
         AccountPick::Pinned(id) => {
