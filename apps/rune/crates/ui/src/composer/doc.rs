@@ -172,7 +172,7 @@ pub fn context_preview(text: &str, max: usize) -> String {
         .join(" ");
     let chars: Vec<char> = flat.chars().collect();
     if chars.len() > max {
-        chars[..max - 1].iter().chain(std::iter::once(&'…')).collect()
+        chars[..max.saturating_sub(1)].iter().chain(std::iter::once(&'…')).collect()
     } else {
         flat
     }
