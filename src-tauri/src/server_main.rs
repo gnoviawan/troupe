@@ -746,9 +746,7 @@ fn build_update_options(default_channel: Option<UpdateChannel>) -> Result<Update
     let channel = match channel {
         Some(c) => c,
         None => {
-            return Err(
-                "TROUPE_SERVER_UPDATE_CHANNEL is unset or not stable/insider/nightly".to_owned(),
-            )
+            return Err("TROUPE_SERVER_UPDATE_CHANNEL is unset or not stable/nightly".to_owned())
         }
     };
     update_options_for_channel(channel)
@@ -1130,7 +1128,7 @@ ENVIRONMENT:
     TROUPE_EXPERIMENTAL_RUNE_CLIENT  true|1 enables --experimental-rune-client
     TROUPE_RUNE_WEB_DIR           Fallback for --rune-web-dir
     TROUPE_SERVER_UPDATE_ENABLED  true gates the periodic self-update loop
-    TROUPE_SERVER_UPDATE_CHANNEL  stable|insider|nightly (required for periodic loop)
+    TROUPE_SERVER_UPDATE_CHANNEL  stable|nightly (required for periodic loop)
     TROUPE_SERVER_UPDATE_INTERVAL_SECS  periodic loop interval [default: 21600]
     Every TROUPE_* variable above also accepts its old TERMUL_* name;
     a TROUPE_* value that is not blank wins when both are set.

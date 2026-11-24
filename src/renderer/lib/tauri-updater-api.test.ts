@@ -92,9 +92,6 @@ describe('channel URL selection', () => {
     expect(getChannelManifestUrl('stable')).toBe(
       'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json'
     )
-    expect(getChannelManifestUrl('insider')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json'
-    )
     expect(getChannelManifestUrl('nightly')).toBe(
       'https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json'
     )
@@ -104,9 +101,6 @@ describe('channel URL selection', () => {
     expect(getChannelReleasePageUrl('stable')).toBe(
       'https://github.com/gnoviawan/troupe/releases/latest'
     )
-    expect(getChannelReleasePageUrl('insider')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/tag/insider'
-    )
     expect(getChannelReleasePageUrl('nightly')).toBe(
       'https://github.com/gnoviawan/troupe/releases/tag/nightly'
     )
@@ -114,11 +108,14 @@ describe('channel URL selection', () => {
 
   it('normalizes unknown/null channel values back to stable', () => {
     expect(normalizeUpdateChannel('stable')).toBe('stable')
-    expect(normalizeUpdateChannel('insider')).toBe('insider')
     expect(normalizeUpdateChannel('nightly')).toBe('nightly')
     expect(normalizeUpdateChannel('bogus')).toBe(DEFAULT_UPDATE_CHANNEL)
     expect(normalizeUpdateChannel(null)).toBe(DEFAULT_UPDATE_CHANNEL)
     expect(normalizeUpdateChannel(undefined)).toBe(DEFAULT_UPDATE_CHANNEL)
+  })
+
+  it('reads a persisted value from the removed insider channel as stable', () => {
+    expect(normalizeUpdateChannel('insider')).toBe('stable')
   })
 
   it('defaults the UpdateChannel type to stable', () => {
@@ -128,54 +125,38 @@ describe('channel URL selection', () => {
 })
 
 describe('fetchChannelManifest via invoke (CSP/CORS-free server-side fetch)', () => {
-  // Insider is the manual-download channel; nightly's signed path and its
-  // manual fallback are covered in __tests__/tauri-updater-api.test.ts.
+  function failSignedCheckThen(fetchManifest: () => Promise<unknown>): void {
+    mockInvoke.mockImplementation(async (command: string) => {
+      if (command === 'updater_check_channel') throw new Error('signature verification failed')
+      return fetchManifest()
+    })
+  }
+
   beforeEach(() => {
     mockInvoke.mockReset()
     mockGetVersion.mockReset()
     _resetUpdaterStateForTesting()
   })
 
-  it('routes the insider manifest fetch through updater_fetch_channel_manifest', async () => {
-    mockInvoke.mockResolvedValue({
-      success: true,
-      data: {
-        version: '0.9.0',
-        notes: 'insider build',
-        pub_date: '2026-08-09T00:00:00Z',
-        platforms: {}
-      }
-    })
-    mockGetVersion.mockResolvedValue('0.4.8')
-
-    const update = await checkForUpdates('insider')
-
-    expect(mockInvoke).toHaveBeenCalledWith('updater_fetch_channel_manifest', {
-      channel: 'insider'
-    })
-    expect(update).not.toBeNull()
-    expect(update?.version).toBe('0.9.0')
-    expect(update?.releaseNotes).toBe('insider build')
-    expect(update?.downloadUrl).toBe('https://github.com/gnoviawan/troupe/releases/tag/insider')
-  })
-
   it('surfaces an IpcResult error as createUpdaterCheckError naming the manifest URL', async () => {
-    mockInvoke.mockResolvedValue({
+    failSignedCheckThen(async () => ({
       success: false,
       error: 'channel manifest returned HTTP 404',
       code: 'UPDATE_CHECK_FAILED'
-    })
+    }))
 
-    await expect(checkForUpdates('insider')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json: channel manifest returned HTTP 404'
+    await expect(checkForUpdates('nightly')).rejects.toThrow(
+      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json: channel manifest returned HTTP 404'
     )
   })
 
   it('surfaces an invoke rejection as createUpdaterCheckError naming the manifest URL', async () => {
-    mockInvoke.mockRejectedValue(new Error('network down'))
+    failSignedCheckThen(async () => {
+      throw new Error('network down')
+    })
 
-    await expect(checkForUpdates('insider')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json: network down'
+    await expect(checkForUpdates('nightly')).rejects.toThrow(
+      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json: network down'
     )
   })
 })

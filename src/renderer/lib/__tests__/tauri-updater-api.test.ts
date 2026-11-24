@@ -85,8 +85,7 @@ import {
   isUpdateDownloaded,
   mapTauriUpdateToInfo,
   registerUpdateEventHandlers,
-  setAutoUpdateEnabled,
-  supportsSignedChannelUpdate
+  setAutoUpdateEnabled
 } from '../tauri-updater-api'
 
 function createMockUpdate(version: string, body?: string, date?: string) {
@@ -162,12 +161,6 @@ describe('tauri-updater-api', () => {
         return handler()
       })
     }
-
-    it('only nightly uses the signed in-app channel flow', () => {
-      expect(supportsSignedChannelUpdate('nightly')).toBe(true)
-      expect(supportsSignedChannelUpdate('insider')).toBe(false)
-      expect(supportsSignedChannelUpdate('stable')).toBe(false)
-    })
 
     it('checks nightly through the signed channel command, not the stable endpoint', async () => {
       routeInvoke({ updater_check_channel: () => NIGHTLY_METADATA })
@@ -262,21 +255,6 @@ describe('tauri-updater-api', () => {
       const state = await getUpdaterState()
       expect(state.success && state.data.updateAvailable).toBe(false)
       expect(state.success && state.data.isManualUpdateMode).toBe(false)
-    })
-
-    it('keeps insider on the manual manifest path', async () => {
-      routeInvoke({
-        updater_fetch_channel_manifest: () => ({
-          success: true,
-          data: { version: '0.6.0-rc.1', platforms: {} }
-        })
-      })
-
-      const result = await checkForUpdates('insider')
-
-      expect(mockInvoke).not.toHaveBeenCalledWith('updater_check_channel', expect.anything())
-      expect(result?.downloadUrl).toBe('https://github.com/gnoviawan/troupe/releases/tag/insider')
-      expect(result?.installMode).toBe('manual')
     })
 
     it('keeps stable on the built-in signed endpoint and never asks for the nightly channel', async () => {

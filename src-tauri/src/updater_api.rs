@@ -1,4 +1,4 @@
-//! Desktop-side channel manifest fetch for the insider/nightly updater path.
+//! Desktop-side channel manifest fetch for the nightly updater path.
 //!
 //! The renderer's `fetchChannelManifest` previously did a `fetch()` to
 //! `https://github.com/.../releases/download/...`, which is blocked by CSP
@@ -117,12 +117,12 @@ pub async fn fetch_channel_manifest(channel: &str) -> Result<serde_json::Value, 
 /// `github.com`.
 ///
 /// Error codes:
-/// - `INVALID_UPDATE_CHANNEL` — `channel` is not `stable`/`insider`/`nightly`
+/// - `INVALID_UPDATE_CHANNEL` — `channel` is not `stable`/`nightly`
 ///   (no network call made).
 /// - `NETWORK_ERROR` — reqwest failed to send or receive (DNS, TLS, timeout,
 ///   connection reset).
 /// - `UPDATE_CHECK_FAILED` — the manifest endpoint returned a non-2xx status
-///   (e.g. 404 for an unreleased insider channel).
+///   (e.g. 404 before the channel's first release).
 /// - `INVALID_UPDATE_INFO` — the response body is not a JSON object.
 #[tauri::command]
 pub async fn updater_fetch_channel_manifest(
@@ -147,12 +147,11 @@ pub async fn updater_fetch_channel_manifest(
 
 /// Manifest URL for channels that update in-app through the signed updater
 /// flow. Only Nightly: Stable keeps the build-time `plugins.updater.endpoints`
-/// (JS `check()`), Insider stays on the manual release-page flow. Keep in sync
-/// with `SIGNED_CHANNELS` in `src/renderer/lib/tauri-updater-api.ts`.
+/// (JS `check()`). The renderer's `checkForUpdates` routes only Nightly here.
 pub fn signed_channel_endpoint(channel: UpdateChannel) -> Option<&'static str> {
     match channel {
         UpdateChannel::Nightly => Some(channel.manifest_url()),
-        UpdateChannel::Stable | UpdateChannel::Insider => None,
+        UpdateChannel::Stable => None,
     }
 }
 
@@ -221,7 +220,7 @@ pub fn accepts_channel_update(
                 _ => true,
             }
         }
-        UpdateChannel::Stable | UpdateChannel::Insider => false,
+        UpdateChannel::Stable => false,
     }
 }
 

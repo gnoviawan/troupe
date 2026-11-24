@@ -10,11 +10,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { confirmInstallAndRestart } from '@/lib/confirm-install-update'
 import { isTauriContext } from '@/lib/tauri-runtime'
-import {
-  AUR_UPDATE_COMMAND,
-  supportsSignedChannelUpdate,
-  type UpdateChannel
-} from '@/lib/tauri-updater-api'
+import { AUR_UPDATE_COMMAND, type UpdateChannel } from '@/lib/tauri-updater-api'
 import type { UpdaterErrorSource } from '@/stores/updater-store'
 
 interface UpdatesSectionProps {
@@ -38,7 +34,6 @@ interface UpdatesSectionProps {
 
 const CHANNELS: Array<{ value: UpdateChannel; label: string; description: string }> = [
   { value: 'stable', label: 'Stable', description: 'Production releases. Most reliable.' },
-  { value: 'insider', label: 'Insider', description: 'Release candidates (rc) before stable.' },
   { value: 'nightly', label: 'Nightly', description: 'Automated main-branch builds.' }
 ]
 
@@ -191,15 +186,13 @@ export function UpdatesSection({
               />
             </SettingsRow>
           </SettingsCard>
-          {updateChannel !== 'stable' && (
+          {updateChannel === 'nightly' && (
             <SettingsNotice tone="warning">
-              {updateChannel === 'nightly'
-                ? `Nightly builds are automated from the latest commit and may be unstable. ${
-                    supportsSignedChannelUpdate(updateChannel) && !isManualUpdateMode
-                      ? 'Updates are signed and install in the app.'
-                      : 'Updates are offered as a manual download from the nightly release page.'
-                  }`
-                : 'Insider release candidates may be unfinished. Updates are offered as a manual download from the insider release page.'}
+              {`Nightly builds are automated from the latest commit and may be unstable. ${
+                isManualUpdateMode
+                  ? 'Updates are offered as a manual download from the nightly release page.'
+                  : 'Updates are signed and install in the app.'
+              }`}
             </SettingsNotice>
           )}
         </SettingsGroup>
