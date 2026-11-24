@@ -75,7 +75,7 @@ fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
         .py(8.0)
         .items_end()
         .hover_group()
-        .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, words.to_owned(), true, last)))
+        .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, crate::composer::wire::copy_text(words), true, last)))
 }
 
 /// A sent message's composer tokens as their labels on a chip (`ChatMessage`'s inline pills).
