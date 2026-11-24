@@ -46,6 +46,15 @@ const LIB_DIR = join(__dirname, '..')
 const TESTS_DIR = __dirname
 
 /**
+ * The `/ws` contract as source text: `web-protocol.types.ts` and the
+ * generated `protocol.ts` whose message types and name lists it re-exports.
+ */
+const readWsProtocol = (): string =>
+  ['web-protocol.types.ts', join('generated', 'protocol.ts')]
+    .map((file) => readFileSync(join(LIB_DIR, '..', '..', 'shared', 'types', file), 'utf-8'))
+    .join('\n')
+
+/**
  * Read a Rust module that may be a single file (`foo.rs`) or a directory
  * module (`foo/mod.rs` + siblings). Concatenates all `*.rs` files in the
  * directory so source-grep checks stay agnostic to the internal submodule
@@ -495,8 +504,7 @@ describe('Parity Checklist Automation', () => {
     })
 
     it('web-protocol.types.ts declares the WS request types for catalog', () => {
-      const protoPath = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
-      const content = readFileSync(protoPath, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'list_acp_catalog'/)
       expect(content).toMatch(/'set_catalog_opt_in'/)
     })
@@ -548,8 +556,7 @@ describe('Parity Checklist Automation', () => {
     })
 
     it('web-protocol.types.ts declares the WS request type for install', () => {
-      const protoPath = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
-      const content = readFileSync(protoPath, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'install_acp_agent'/)
     })
   })
@@ -651,7 +658,7 @@ describe('Parity Checklist Automation', () => {
 
     it('web-protocol.types.ts declares the WS request types list_sessions + get_session_payload', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'list_sessions'/)
       expect(content).toMatch(/'get_session_payload'/)
     })
@@ -721,9 +728,9 @@ describe('Parity Checklist Automation', () => {
 
     it('web-protocol.types.ts declares the record_agent_switch WS request type', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'record_agent_switch'/)
-      expect(content).toMatch(/interface RecordAgentSwitchPayload/)
+      expect(content).toMatch(/type RecordAgentSwitchPayload = \{/)
     })
 
     it('renderer carries the event name + transport facade + payload type', () => {
@@ -866,7 +873,7 @@ describe('Parity Checklist Automation', () => {
 
     it('WS request type spawn_agent + the agent_spawned event are declared', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'spawn_agent'/)
       expect(content).toMatch(/agent_spawned/) // the event channel (reliability tier)
     })
@@ -1880,7 +1887,7 @@ describe('Web FS watcher parity (#856)', () => {
 
   it('web-protocol.types.ts names the fs watch and no longer registers fs_changed or watch_project', () => {
     expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-    const content = readFileSync(ProtoTypes, 'utf-8')
+    const content = readWsProtocol()
     expect(content).toMatch(/'fs',/)
     expect(content).not.toMatch(/'fs_changed'|'fs_watch_ended'|'watch_project'|'unwatch_project'/)
   })
@@ -1963,7 +1970,6 @@ describe('Worktree branch rename parity (shell revamp story 16)', () => {
   const ManagerRust = join(SRC_TAURI, 'acp', 'manager', 'worktree_branch.rs')
   const CommandsWorktreeRust = join(SRC_TAURI, 'commands', 'worktree.rs')
   const LibRust = join(SRC_TAURI, 'lib.rs')
-  const ProtocolTypes = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
   const SinkRust = join(SRC_TAURI, 'web', 'sink', 'watch_bridge.rs')
 
   it('worktree-api.ts branches renameBranch on isTauriContext() between invoke and webServerWorktree', () => {
@@ -2016,7 +2022,7 @@ describe('Worktree branch rename parity (shell revamp story 16)', () => {
   })
 
   it('the worktree_branch_renamed rename is a chat_history watch delta, not a registered event', () => {
-    const protocol = readFileSync(ProtocolTypes, 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).not.toMatch(/worktree_branch_renamed: WS_RELAY_TIERS/)
     expect(protocol).toMatch(/event\?: 'worktree_branch_renamed'/)
     const bridge = readFileSync(SinkRust, 'utf-8')
@@ -2074,21 +2080,15 @@ describe('Bounded delivery parity (host heartbeat, gap frame)', () => {
     const relay = readFileSync(join(RELAY, 'mod.rs'), 'utf-8')
     expect(relay).toMatch(/WS_GAP_TYPE: &str = "gap"/)
     expect(relay).toMatch(/WS_HEARTBEAT_TYPE: &str = "heartbeat"/)
-    const protocol = readFileSync(
-      join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-      'utf-8'
-    )
-    expect(protocol).toMatch(/interface WsGapFrame \{\s+type: 'gap'/)
-    expect(protocol).toMatch(/interface WsHeartbeatFrame \{\s+type: 'heartbeat'/)
+    const protocol = readWsProtocol()
+    expect(protocol).toMatch(/type WsGapFrame = \{[^}]*type: 'gap'/)
+    expect(protocol).toMatch(/type WsHeartbeatFrame = \{\s+type: 'heartbeat'/)
   })
 })
 
 describe('Shared chat read marker parity (cross-surface unread)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('one host service owns the marker and every carrier moves it', () => {
     const service = readFileSync(join(SRC_TAURI, 'web', 'chat_reads.rs'), 'utf-8')
@@ -2121,10 +2121,7 @@ describe('Shared chat read marker parity (cross-surface unread)', () => {
 describe('Host-owned chat activity parity (chat list status on every surface)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
   const rust = (...parts: string[]) => readFileSync(join(SRC_TAURI, ...parts), 'utf-8')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('the relay derives one record per chat from every numbered session event', () => {
     expect(rust('web', 'chat_activity.rs')).toMatch(/pub struct ChatActivity \{/)
@@ -2150,8 +2147,8 @@ describe('Host-owned chat activity parity (chat list status on every surface)', 
 
   it('the protocol declares the watch and its payloads', () => {
     expect(protocol).toMatch(/'chat_activity'\n\] as const/)
-    expect(protocol).toMatch(/interface ChatActivityRecord \{/)
-    expect(protocol).toMatch(/interface ChatActivityWatchState/)
+    expect(protocol).toMatch(/type ChatActivityRecord = \{/)
+    expect(protocol).toMatch(/type ChatActivityWatchState = \{/)
   })
 
   it('both renderer roots mirror it from the shell, and every chat list reads it', () => {
@@ -2251,15 +2248,12 @@ describe('Window ACL parity (issue #1443)', () => {
 describe('Watch hub parity (projects, chat history, agent roster)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
   const hubSource = readFileSync(join(SRC_TAURI, 'web', 'watch', 'hub.rs'), 'utf-8')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('the watch names the host serves are the ones the client names', () => {
     const asStr = hubSource.slice(hubSource.indexOf('fn as_str'), hubSource.indexOf('pub fn parse'))
     const rust = [...asStr.matchAll(/Self::\w+ => "(\w+)"/g)].map((match) => match[1])
-    const client = /WS_WATCH_NAMES = \[([^\]]+)\]/.exec(protocol)
+    const client = /WsWatchNameValues = \[([^\]]+)\]/.exec(protocol)
     expect(client).not.toBeNull()
     const names = [...(client?.[1] ?? '').matchAll(/'(\w+)'/g)].map((match) => match[1])
     expect(rust.sort()).toEqual([...names].sort())
@@ -2761,7 +2755,7 @@ describe('MCP catalog parity (spine AD-1)', () => {
     expect(capabilities).toMatch(/\| "search_mcp_catalog"/)
     const gate = readFileSync(join(SRC_TAURI, 'web', 'router', 'gate.rs'), 'utf-8')
     expect(gate).toMatch(/"\/mcp-catalog\/",/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/'search_mcp_catalog',/)
     expect(protocol).toMatch(/search_mcp_catalog: \['read', null\]/)
   })
@@ -2839,7 +2833,7 @@ describe('MCP install plan parity (spine AD-5, AD-7, AD-12)', () => {
       )
     }
     expect(http).toMatch(/check_local_only::<T>\(/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/describe_mcp_install: \['read', null\]/)
     for (const request of ['plan_mcp_install', 'commit_mcp_install', 'cancel_mcp_install']) {
       expect(protocol).toMatch(new RegExp(`'${request}',`))
@@ -2919,7 +2913,6 @@ describe('Chat MCP install approval parity', () => {
 
 describe('MCP catalog sync parity (spine AD-3, AD-12)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
-  const SHARED_TYPES = join(LIB_DIR, '..', '..', 'shared', 'types')
 
   it('both carriers answer from the one host service', () => {
     const dispatch = readFileSync(join(SRC_TAURI, 'web', 'ws', 'dispatch.rs'), 'utf-8')
@@ -2952,7 +2945,7 @@ describe('MCP catalog sync parity (spine AD-3, AD-12)', () => {
     const capabilities = readFileSync(join(SRC_TAURI, 'web', 'capabilities.rs'), 'utf-8')
     expect(capabilities).toMatch(/\| "get_mcp_catalog_status"/)
     expect(capabilities).not.toMatch(/"set_mcp_catalog_sync"/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/get_mcp_catalog_status: \['read', null\]/)
     expect(protocol).toMatch(/set_mcp_catalog_sync: \['idempotent', null\]/)
   })
@@ -3235,7 +3228,7 @@ describe('MCP catalog icon parity (spine AD-1, AD-15)', () => {
     expect(ledger).toMatch(/\("get_mcp_catalog_icon", CommandClass::read\(\)\)/)
     const gate = readFileSync(join(SRC_TAURI, 'web', 'router', 'gate.rs'), 'utf-8')
     expect(gate).toMatch(/"\/mcp-catalog\/",/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/'get_mcp_catalog_icon',/)
     expect(protocol).toMatch(/get_mcp_catalog_icon: \['read', null\]/)
   })

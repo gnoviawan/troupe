@@ -1,8 +1,9 @@
 //! WS relay protocol — frame envelopes, seq, event log, cursor, tiers (Story 1.4+1.6).
 //!
 //! One multiplexed bidirectional WebSocket per browser connection carries all
-//! sessions (AC1). The wire contract is defined here and mirrored 1:1 in
-//! `src/shared/types/web-protocol.types.ts` (AC2).
+//! sessions (AC1). The wire types live in `crates/troupe-protocol`, which the
+//! TypeScript contract is generated from (AC2). The request, reply and event
+//! envelopes here stay server types: their `type` and `err` are open strings.
 //!
 //! # Wire casing (AC3 — deviation from architecture text, MUST follow)
 //!
