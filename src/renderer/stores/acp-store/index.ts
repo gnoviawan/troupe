@@ -95,6 +95,7 @@ import { useChatStartPickStore } from '@/stores/chat-start-pick-store'
 import { getAgentChatSessionIdsInAllTrees, useWorkspaceStore } from '@/stores/workspace-store'
 import type { QueuedPrompt } from '../prompt-queue-orchestration'
 import { attachAgentRosterWatch } from './agent-roster-watch'
+import { persistComposerOptions } from './composer-options'
 import {
   dropHiddenToolCalls,
   dropPlanForSession,
@@ -106,7 +107,8 @@ import {
   selectAgentIdentity,
   selectConfigWarmState,
   trimLiveToolCalls,
-  withCommands
+  withCommands,
+  writeOptionsCacheFromSession
 } from './helpers'
 import { setLaunchPlaceholderNotedListener, setLiveLaunchSessionLookup } from './live-turn'
 import { syncPendingPrompts } from './pending-permission-sync'
@@ -552,6 +554,22 @@ async function installTransportRecovery(
         : current.sessions
     }
   })
+  // Save the recovered switch on this device too, as `_onModelsUpdate` does:
+  // a later heal must not read the older saved model and switch back.
+  if (recoveredModels && recoveryIsCurrent()) {
+    const configId = writeOptionsCacheFromSession(
+      useAcpStore.setState,
+      useAcpStore.getState,
+      recovery.sessionId
+    )
+    if (configId) {
+      persistComposerOptions(
+        configId,
+        { modelId: recoveredModels.currentModelId },
+        recovery.sessionId
+      )
+    }
+  }
   // AD-6: a prompt that lost its reply resolves from the recovered log.
   reconcilePromptAfterRecovery(recovery.sessionId, recovery.events)
 }
