@@ -397,32 +397,31 @@ describe('mergeUpdaterManifests', () => {
 
     test('accepts an explicit tag override regardless of channel', async () => {
       const dir = await fixtureDir()
-      const rcVersion = '0.5.0-rc.1'
-      const rcAssetNames = completeAssetNames()
-      const rcPlatforms = Object.fromEntries(
+      const version = '0.5.0'
+      const platforms = Object.fromEntries(
         requiredPlatformKeys.map((key: string) => [
           key,
           {
-            url: `https://github.com/gnoviawan/termul/releases/download/v${rcVersion}/${assetName(key)}`,
+            url: `https://github.com/gnoviawan/termul/releases/download/v${version}/${assetName(key)}`,
             signature: `signature-${key}`
           }
         ])
       )
       const input = join(dir, 'manifest.json')
-      await writeManifest(input, rcPlatforms, rcVersion, rcAssetNames)
+      await writeManifest(input, platforms, version, completeAssetNames())
 
       const merged = await mergeUpdaterManifests({
         inputPaths: [input],
-        outputPath: join(dir, 'latest-insider.json'),
-        version: rcVersion,
-        notes: 'rc notes',
+        outputPath: join(dir, 'latest-nightly.json'),
+        version,
+        notes: 'notes',
         pubDate: '2026-08-07T00:00:00.000Z',
-        channel: 'insider',
-        tag: `v${rcVersion}`
+        channel: 'nightly',
+        tag: `v${version}`
       })
 
       expect(merged.platforms['linux-x86_64-server'].url).toContain(
-        `/releases/download/v${rcVersion}/`
+        `/releases/download/v${version}/`
       )
     })
   })

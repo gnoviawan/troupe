@@ -6,11 +6,11 @@ import { BrowserAuthDialogHost } from '@/components/agents/BrowserAuthDialog'
 import { BrowserConsentCardHost } from '@/components/agents/BrowserConsentCardHost'
 import { CodexCliAuthSync } from '@/components/agents/CodexCliAuthSync'
 import { ChatRoute } from '@/components/ChatRoute'
-import { useAntigravityAutoSwitch } from '@/components/chat/antigravity-account/auto-switch'
 import { useAntigravityLimitActions } from '@/components/chat/antigravity-account/limit-actions'
+import { useAntigravityLimitProbe } from '@/components/chat/antigravity-account/limit-probe'
 import { useClaudeLimitActions } from '@/components/chat/claude-account/limit-actions'
-import { useCodexAutoSwitch } from '@/components/chat/codex-account/auto-switch'
 import { useCodexLimitActions } from '@/components/chat/codex-account/limit-actions'
+import { useCodexLimitProbe } from '@/components/chat/codex-account/limit-probe'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ExternalLinkConfirmHost } from '@/components/external-link/ExternalLinkConfirm'
 import { GlobalContextMenu } from '@/components/GlobalContextMenu'
@@ -18,6 +18,7 @@ import { McpOAuthPasteDialogHost } from '@/components/settings/McpOAuthPasteDial
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAcpUpdateChecks } from '@/hooks/use-acp-update-checks'
+import { useAgentOverlayLoader } from '@/hooks/use-agent-overlay'
 import { useAutomationProposals } from '@/hooks/use-automation-proposals'
 import { usePreventDevToolsShortcuts } from '@/hooks/use-prevent-devtools-shortcuts'
 import { usePreventNativeContextMenu } from '@/hooks/use-prevent-native-context-menu'
@@ -129,10 +130,10 @@ function AppEffects(): null {
   // A Codex chat at its account's limit continues on another account, even
   // off screen. Mounted on both renderer roots for parity.
   useCodexLimitActions()
-  useCodexAutoSwitch()
+  useCodexLimitProbe()
   // The same for an Antigravity chat at its account's limit.
   useAntigravityLimitActions()
-  useAntigravityAutoSwitch()
+  useAntigravityLimitProbe()
   // A chat agent's proposed automation opens for review. Both roots.
   useAutomationProposals()
   useAcpMcp()
@@ -196,6 +197,8 @@ export default function TauriApp(): React.JSX.Element {
   const whatsNew = useWhatsNew()
   // Background Update Check: advisory only, never auto-applies (Q8/Q10).
   useAcpUpdateChecks()
+  // Agent names, logos and brand colours from Troupe's registry. Both roots.
+  useAgentOverlayLoader()
 
   useEffect(() => {
     if (!isWindowStateReady) return

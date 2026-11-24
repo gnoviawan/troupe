@@ -77,7 +77,9 @@ pub struct Session {
     pub replaying: Option<Option<Replaying>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub opencode_notice: Option<OpencodeNotice>,
-    pub last_error: Option<String>,
+    /// Absent when an agent failure carried no message, as `undefined`.
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "nullable")]
+    pub last_error: Option<Option<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none", with = "nullable")]
     pub last_error_code: Option<Option<f64>>,
     #[serde(default, skip_serializing_if = "Option::is_none", with = "nullable")]

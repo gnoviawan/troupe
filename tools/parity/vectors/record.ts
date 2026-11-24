@@ -73,6 +73,18 @@ export const dispatchOutcomes: unknown[] = []
 /** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
 export const configReplies: unknown[] = []
 
+/**
+ * How the mocked `setMode` and `setModel` answer, in order, as the agent
+ * commands do; a vector's `context.setReplies`.
+ */
+export const setReplies: unknown[] = []
+
+/**
+ * What the mocked `factoryKeyApi.status` answers: whether the host stores a
+ * Factory key, or `{ reject }`; a vector's `context.factoryKey`.
+ */
+export const factoryKey: { stored: unknown } = { stored: false }
+
 /** What the mocked `readComposerOptions` answers; a vector's `context.composerOptions`. */
 export const composerRecord: { saved: unknown } = { saved: null }
 
@@ -81,6 +93,31 @@ export const composerRecord: { saved: unknown } = { saved: null }
  * answer) answer, in order; a vector's `context.agentReplies`.
  */
 export const agentReplies: unknown[] = []
+
+/**
+ * The durable payload each session's history holds, by session id; a
+ * vector's `context.payloads`. `{ reject }` fails the read; a session it does
+ * not list has none.
+ */
+export const sessionPayloads = new Map<string, unknown>()
+
+/** The app runs native panes (`isTauriContext`); a vector's `context.desktop`. */
+export const platform = { desktop: false }
+
+/**
+ * How the mocked MCP commands (registry load and save, probe, OAuth, the
+ * install answer) answer, in order; a vector's `context.mcpReplies`.
+ */
+export const mcpReplies: unknown[] = []
+
+/** The shared MCP registry watch, once the store started it. */
+export const mcpSharedSync: { apply: ((change: unknown) => void) | null } = { apply: null }
+
+/**
+ * Answers held in flight by a `{ hold: true, release }` reply, oldest first;
+ * a `releaseHeld` step answers the oldest with its `release`.
+ */
+export const heldReplies: Array<() => void> = []
 
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()

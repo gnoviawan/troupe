@@ -39,9 +39,8 @@ function logUpdater(level: 'info' | 'warn' | 'error', message: string): void {
  * download/install flow against its own manifest through the
  * `updater_check_channel` command, because the plugin's JS `check()` cannot
  * take a runtime endpoint (the Rust `updater_builder().endpoints()` can).
- * Insider fetches its manifest JSON directly and offers a manual download.
  */
-export type UpdateChannel = 'stable' | 'insider' | 'nightly'
+export type UpdateChannel = 'stable' | 'nightly'
 
 export const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'stable'
 
@@ -50,13 +49,11 @@ export const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'stable'
 // + release-page source. Keep them in sync when editing.
 const CHANNEL_MANIFEST_URLS: Record<UpdateChannel, string> = {
   stable: 'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json',
-  insider: 'https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json',
-  nightly: 'https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json'
+  nightly: 'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
 }
 
 const CHANNEL_RELEASE_PAGE_URLS: Record<UpdateChannel, string> = {
   stable: 'https://github.com/gnoviawan/troupe/releases/latest',
-  insider: 'https://github.com/gnoviawan/troupe/releases/tag/insider',
   nightly: 'https://github.com/gnoviawan/troupe/releases/tag/nightly'
 }
 
@@ -68,18 +65,8 @@ export function getChannelReleasePageUrl(channel: UpdateChannel): string {
   return CHANNEL_RELEASE_PAGE_URLS[channel]
 }
 
-// Channels whose manifest is checked and installed in-app through the signed
-// updater flow. Must match `signed_channel_endpoint` in
-// src-tauri/src/updater_api.rs.
-const SIGNED_CHANNELS: ReadonlySet<UpdateChannel> = new Set<UpdateChannel>(['nightly'])
-
-export function supportsSignedChannelUpdate(channel: UpdateChannel): boolean {
-  return SIGNED_CHANNELS.has(channel)
-}
-
 export function normalizeUpdateChannel(value: string | null | undefined): UpdateChannel {
-  if (value === 'insider' || value === 'nightly') return value
-  return DEFAULT_UPDATE_CHANNEL
+  return value === 'nightly' ? 'nightly' : DEFAULT_UPDATE_CHANNEL
 }
 
 export type UpdateMode = 'tauri' | 'aur'
@@ -434,22 +421,14 @@ async function fetchChannelManifest(channel: UpdateChannel): Promise<ChannelMani
 }
 
 /**
- * Manual channel check: Insider always, and Nightly when its signed check
- * fails. Fetch the per-channel manifest, compare against the current app
- * version with SemVer prerelease precedence, and offer the channel's GitHub
- * release page (`installMode: 'manual'`) instead of a signed in-app install.
+ * Manual channel check, the fallback when Nightly's signed check fails. Fetch
+ * the per-channel manifest, compare against the current app version with
+ * SemVer prerelease precedence, and offer the channel's GitHub release page
+ * (`installMode: 'manual'`) instead of a signed in-app install.
  *
  * On manifest fetch failure (404 / network) the call throws so the store
  * surfaces the error and the periodic retry re-attempts next cycle.
  */
-/**
- * A nightly manifest only ever offers nightly builds: a stable or rc version
- * that lands there is ignored, matching the signed Rust check.
- */
-function isVersionForChannel(version: string, channel: UpdateChannel): boolean {
-  return channel !== 'nightly' || /-nightly\./.test(version)
-}
-
 async function checkChannelUpdate(channel: UpdateChannel): Promise<UpdateInfo | null> {
   let manifest: ChannelManifest
   try {
@@ -462,7 +441,7 @@ async function checkChannelUpdate(channel: UpdateChannel): Promise<UpdateInfo | 
   const latestVersion = normalizeVersion(manifest.version ?? '')
   let updateInfo: UpdateInfo | null = null
 
-  if (latestVersion && isVersionForChannel(latestVersion, channel)) {
+  if (latestVersion) {
     const currentVersion = await getVersion()
     if (compareVersions(latestVersion, currentVersion) > 0) {
       updateInfo = {
@@ -550,11 +529,8 @@ export async function checkForUpdates(
     }
   }
 
-  // Nightly: signed in-app check against its own manifest; Insider: manual.
-  if (channel !== DEFAULT_UPDATE_CHANNEL) {
-    return supportsSignedChannelUpdate(channel)
-      ? checkSignedChannelUpdate(channel)
-      : checkChannelUpdate(channel)
+  if (channel === 'nightly') {
+    return checkSignedChannelUpdate(channel)
   }
 
   // Stable: reuse the signed `@tauri-apps/plugin-updater` `check()` flow so the

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { quickChatPanelKey, useQuickChatStore } from './quick-chat-store'
+import { followQuickLaunch, quickChatPanelKey, useQuickChatStore } from './quick-chat-store'
 
 function openView() {
   const view = useQuickChatStore.getState().view
@@ -17,7 +17,7 @@ describe('quick chat panel key', () => {
 
   it('keeps the placeholder key when the placeholder on screen becomes its session', () => {
     useQuickChatStore.getState().openChat('launch-1')
-    useQuickChatStore.getState().adoptChat('launch-1', 'sess-9')
+    expect(followQuickLaunch('launch-1', 'sess-9')).toBe(true)
     expect(openView().sessionId).toBe('sess-9')
     expect(quickChatPanelKey(openView())).toBe('launch-1')
   })
@@ -30,7 +30,7 @@ describe('quick chat panel key', () => {
 
   it('ignores an adoption for a chat that is not on screen', () => {
     useQuickChatStore.getState().openChat('sess-2')
-    useQuickChatStore.getState().adoptChat('launch-1', 'sess-9')
+    expect(followQuickLaunch('launch-1', 'sess-9')).toBe(false)
     expect(openView()).toEqual({ mode: 'chat', sessionId: 'sess-2' })
   })
 })

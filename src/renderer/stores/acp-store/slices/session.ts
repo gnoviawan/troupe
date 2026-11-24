@@ -46,6 +46,7 @@ import {
 } from '@/lib/plan-session'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { useProjectStore } from '@/stores/project-store'
+import { followQuickLaunch } from '@/stores/quick-chat-store'
 import {
   agentChatTabId,
   findPaneContainingTab,
@@ -2237,6 +2238,12 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
         initialText: null,
         initialBlocks: lastUserBlocks ?? failed.launchFirstTurnBlocks ?? null,
         adoptSession: (from, to) => {
+          // A quick chat lives in the quick view, not a pane: the view (and
+          // its route) follows the placeholder, as on its first launch.
+          if (failed.kind === 'quick') {
+            followQuickLaunch(from, to)
+            return
+          }
           // Only remap when the tab is still open: remapAgentChatSession's
           // no-pane fallback would ADD an uninvited new tab for a session the
           // user deliberately closed mid-retry.

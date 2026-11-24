@@ -12,6 +12,10 @@
 
 use serde_json::{Map, Value, json};
 
+use super::auth_retry::AuthFailure;
+use super::discovery::SessionList;
+use super::ensure::EnsureId;
+use super::host_error::HostError;
 use super::types::SessionStatus;
 use super::{Effect, State};
 
@@ -89,8 +93,9 @@ impl State {
     pub(crate) fn spawn_agent(
         &mut self,
         config: Value,
-        project_id: Value,
+        project_id: Option<Value>,
         session_id: Option<String>,
+        ensure: Option<EnsureId>,
         fx: &mut Vec<Effect>,
     ) {
         let name = super::js::string_of(config.get("name"));
@@ -99,11 +104,17 @@ impl State {
             config,
             project_id,
             session_id: session_id.filter(|id| !id.is_empty()),
+            ensure,
         });
     }
 
-    pub(crate) fn kill_agent(&mut self, agent_id: String, fx: &mut Vec<Effect>) {
-        fx.push(Effect::KillAgent { agent_id });
+    pub(crate) fn kill_agent(
+        &mut self,
+        agent_id: String,
+        ensure: Option<EnsureId>,
+        fx: &mut Vec<Effect>,
+    ) {
+        fx.push(Effect::KillAgent { agent_id, ensure });
     }
 
     pub(crate) fn authenticate_agent(
@@ -153,6 +164,7 @@ impl State {
             method_id: method_id.to_owned(),
             input: input.filter(super::js::truthy),
             flight,
+            on_demand: None,
         });
     }
 
@@ -221,14 +233,42 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         match command {
-            Effect::SpawnAgent { config, .. } => self.on_agent_spawn_reply(&config, &reply),
-            Effect::KillAgent { agent_id } => self.on_agent_killed(&agent_id),
+            Effect::ListSessions { ref list, .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                match list {
+                    SessionList::Discovery(key) => self.on_discovery_page(key, &reply, fx),
+                    SessionList::Import(import) => self.on_import_list_page(*import, &reply, fx),
+                }
+            }
+            Effect::ImportAgentSession {
+                import,
+                ref session_id,
+                ..
+            } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_session_imported(import, session_id, fx);
+            }
+            Effect::SpawnAgent { config, ensure, .. } => {
+                let agent_id = self.on_agent_spawn_reply(&config, &reply);
+                if let Some(ensure) = ensure {
+                    self.on_ensure_spawned(ensure, agent_id, fx);
+                }
+            }
+            Effect::KillAgent { agent_id, ensure } => {
+                self.on_agent_killed(&agent_id);
+                if let Some(ensure) = ensure {
+                    self.finish_spawn(ensure, Ok(None), fx);
+                }
+            }
             Effect::Authenticate {
                 agent_id,
                 method_id,
                 input,
                 flight,
+                ..
             } => {
+                // An on-demand method always runs by itself without input,
+                // so the click's rule remembers it too.
                 self.book.authenticated_agents.insert(agent_id.clone());
                 if let Some(config_id) = self.config_id_for_agent(&agent_id)
                     && input.is_none()
@@ -239,6 +279,7 @@ impl State {
                 }
                 self.clear_pending_sign_in(&agent_id);
                 self.settle_flight(&agent_id, &method_id, flight);
+                self.settle_auth_retries(flight, Ok(true), fx);
             }
             Effect::Logout { agent_id } => {
                 self.book.authenticated_agents.remove(&agent_id);
@@ -247,18 +288,49 @@ impl State {
         }
     }
 
-    /// The command an agent command effect sent failed with `message`.
+    /// The command an agent command effect sent failed with `message` and
+    /// the host's error `code`.
     pub(crate) fn on_agent_command_failed(
         &mut self,
         command: Effect,
         message: String,
+        code: Option<String>,
         fx: &mut Vec<Effect>,
     ) {
         let mut waiters = 0;
+        let mut message = message;
         match command {
-            Effect::SpawnAgent { config, .. } => {
+            Effect::ListSessions { .. } | Effect::ImportAgentSession { .. } => {
+                return self.on_session_call_failed(command, HostError::new(message, code), fx);
+            }
+            Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));
                 self.agent_status.insert(name, json!("error"));
+                if let Some(ensure) = ensure {
+                    return self.finish_spawn(ensure, Err(HostError::new(message, code)), fx);
+                }
+            }
+            // The ensure's cleanup kill is best effort.
+            Effect::KillAgent {
+                ensure: Some(ensure),
+                ..
+            } => return self.finish_spawn(ensure, Ok(None), fx),
+            Effect::Authenticate {
+                agent_id,
+                method_id,
+                flight,
+                on_demand: Some(on_demand),
+                ..
+            } => {
+                let error = HostError::new(message, code);
+                let failure = self.on_demand_failed(&agent_id, &on_demand, error, fx);
+                message = failure.message().to_owned();
+                // Only the clicks that shared it reject; its owner is a retry.
+                let clicks = self.settle_flight(&agent_id, &method_id, flight);
+                for _ in 0..clicks {
+                    fx.push(Effect::rejected(&message));
+                }
+                return self.settle_auth_retries(flight, Err(failure), fx);
             }
             Effect::Authenticate {
                 agent_id,
@@ -273,6 +345,10 @@ impl State {
                     "Agent authenticate request failed".into(),
                 ));
                 waiters = self.settle_flight(&agent_id, &method_id, flight);
+                for _ in 0..=waiters {
+                    fx.push(Effect::rejected(&message));
+                }
+                return self.settle_auth_retries(flight, Err(AuthFailure::Other(message)), fx);
             }
             Effect::Logout { agent_id } => fx.push(Effect::warn(
                 "acp.logoutAgent",
@@ -307,7 +383,7 @@ impl State {
 
     /// The spawn reply is the one source sure to reach the caller; an
     /// `agent_spawned` that came first only fills what the reply left out.
-    fn on_agent_spawn_reply(&mut self, config: &Value, reply: &Value) {
+    fn on_agent_spawn_reply(&mut self, config: &Value, reply: &Value) -> String {
         let name = super::js::string_of(config.get("name"));
         let agent_id = super::js::string_of(reply.get("agentId"));
         self.agent_status.remove(&name);
@@ -332,7 +408,8 @@ impl State {
             "hostAuthReady".into(),
             field("hostAuthReady").unwrap_or(json!(false)),
         );
-        self.agents.insert(agent_id, Value::Object(agent));
+        self.agents.insert(agent_id.clone(), Value::Object(agent));
+        agent_id
     }
 
     /// `killAgent` after the host confirmed: the agent, its reuse keys and

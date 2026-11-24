@@ -37,7 +37,8 @@ pub struct AgentFailureEvent {
     pub agent_id: String,
     #[serde(default)]
     pub session_id: Option<String>,
-    pub message: String,
+    #[serde(default)]
+    pub message: Option<String>,
     #[serde(default)]
     pub code: Option<Value>,
     #[serde(default)]
@@ -50,6 +51,7 @@ pub struct AgentFailureEvent {
 #[serde(rename_all = "camelCase")]
 pub struct AgentDisconnectedEvent {
     pub agent_id: String,
+    #[serde(default)]
     pub reason: String,
 }
 
@@ -122,20 +124,22 @@ impl ErrorDetail {
         }
     }
 
-    /// `describeProviderFailure` when the provider named one, else `own`.
-    fn describe(&self, own: &str) -> String {
+    /// `describeProviderFailure` when the provider named one, else `own`;
+    /// `None` (`undefined`) for a failure without a message.
+    fn describe(&self, own: Option<&str>) -> Option<Option<String>> {
+        let own = own?;
         let Some((code, plain)) = PROVIDER_FAILURES
             .iter()
             .find(|(code, _)| Some(*code) == self.provider)
         else {
-            return own.to_owned();
+            return Some(Some(own.to_owned()));
         };
         let trimmed = own.trim();
-        if trimmed.is_empty() || trimmed == *code {
+        Some(Some(if trimmed.is_empty() || trimmed == *code {
             (*plain).to_owned()
         } else {
             format!("{plain} ({trimmed})")
-        }
+        }))
     }
 
     /// `isAdapterPlanLimit`: a Codex plan or rate limit.
@@ -299,7 +303,7 @@ impl State {
     fn fail_live_sessions(
         &mut self,
         agent_id: &str,
-        message: &str,
+        message: Option<&str>,
         detail: &ErrorDetail,
         dead: bool,
     ) {
@@ -310,7 +314,7 @@ impl State {
             if dead {
                 session.status = SessionStatus::Error;
             }
-            session.last_error = Some(message.to_owned());
+            session.last_error = message.map(|message| Some(message.to_owned()));
             session.last_error_code = Some(detail.code);
             session.last_error_data = detail.data.clone().map(Some);
             session.active_turn = false;
@@ -331,7 +335,7 @@ impl State {
         let Some(id) = session_id else {
             self.agent_status
                 .insert(event.agent_id.clone(), json!("error"));
-            self.fail_live_sessions(&event.agent_id, &event.message, &detail, false);
+            self.fail_live_sessions(&event.agent_id, event.message.as_deref(), &detail, false);
             return;
         };
         let config_id = self.session_agent_config_id(id);
@@ -360,10 +364,13 @@ impl State {
                 updated_at: None,
                 source: "reported".into(),
             });
-            usage.rate_limit = Some(rejected_rate_limit(&event.message, detail.data.as_ref()));
+            usage.rate_limit = Some(rejected_rate_limit(
+                event.message.as_deref().unwrap_or_default(),
+                detail.data.as_ref(),
+            ));
             usage.updated_at = Some(env.now);
         }
-        session.last_error = Some(detail.describe(&event.message));
+        session.last_error = detail.describe(event.message.as_deref());
         session.last_error_code = Some(detail.code);
         session.last_error_data = detail.data.clone().map(Some);
         session.active_turn = false;
@@ -394,14 +401,14 @@ impl State {
         if let Some(id) = named {
             let session = self.sessions.get_mut(id).expect("checked above");
             session.status = SessionStatus::Error;
-            session.last_error = Some(detail.describe(&event.message));
+            session.last_error = detail.describe(event.message.as_deref());
             session.last_error_code = Some(detail.code);
             session.last_error_data = detail.data.clone().map(Some);
             session.active_turn = false;
             session.open_turn_id = None;
             finalize_streaming(self.messages.get_mut(id));
         } else {
-            self.fail_live_sessions(agent_id, &event.message, &detail, true);
+            self.fail_live_sessions(agent_id, event.message.as_deref(), &detail, true);
         }
         let mut crashed = self.agent_session_ids(agent_id);
         if let Some(id) = session_id
