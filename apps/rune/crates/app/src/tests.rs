@@ -138,3 +138,13 @@ fn the_rail_collapses_to_its_icon_column_and_expands_again() {
     tap(&mut rt, "rail-toggle");
     assert!(rt.state.layout.record.rail_expanded);
 }
+
+#[test]
+fn a_hash_that_names_no_screen_routes_to_not_found() {
+    assert_eq!(crate::Route::from_hash(""), crate::Route::Workspace);
+    assert_eq!(crate::Route::from_hash("#/"), crate::Route::Workspace);
+    assert_eq!(
+        crate::Route::from_hash("#/nowhere"),
+        crate::Route::NotFound("/nowhere".to_owned())
+    );
+}

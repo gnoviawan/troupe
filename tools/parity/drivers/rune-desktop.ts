@@ -239,7 +239,8 @@ export function runeDesktopClient(): ClientLauncher {
         env: {
           TROUPE_SERVER_URL: world.server.baseUrl,
           TROUPE_SERVER_TOKEN: TOKEN,
-          TROUPE_DEVICE_ID: deviceId
+          TROUPE_DEVICE_ID: deviceId,
+          TROUPE_ROUTE: surface.start?.hash ?? ''
         }
       })
       try {

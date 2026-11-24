@@ -54,10 +54,7 @@ mod page {
         let location = window.location();
         let origin = location.origin().unwrap_or_default();
         let hash = location.hash().unwrap_or_default();
-        let route = match hash.as_str() {
-            "" | "#" | "#/" => Route::Workspace,
-            _ => Route::NotFound,
-        };
+        let route = Route::from_hash(&hash);
         let seed = u64::from_str_radix(&random_hex(2), 16).unwrap_or(1);
         Launch {
             config: Some(client::Config {

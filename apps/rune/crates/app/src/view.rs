@@ -9,7 +9,7 @@ use serde_json::json;
 use theme::Tokens;
 use theme::icons as i;
 use ui::shell::{self, COLLAPSED_RAIL, PHONE_MAX_WIDTH, TOOL_STRIP};
-use ui::type_::sans;
+use ui::type_::{mono, sans};
 
 use crate::{DRAWER, Edge, Route, State};
 
@@ -23,6 +23,9 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
         .layout_size(ROOT)
         .is_some_and(|[w, _]| w <= PHONE_MAX_WIDTH);
     let root = row().key(ROOT).w_full().h_full().fill(t.colors.background);
+    if let Route::NotFound(path) = &s.route {
+        return root.child(not_found(t, path));
+    }
     if phone {
         root.child(phone_frame(s, t))
     } else {
@@ -274,6 +277,42 @@ fn main_area(s: &State, t: &'static Tokens, rail_collapsed: bool) -> El {
         )
 }
 
+/// The web client's `NotFound` page, which replaces the whole shell.
+fn not_found(t: &'static Tokens, path: &str) -> El {
+    col()
+        .key("not-found")
+        .w_full()
+        .h_full()
+        .items_center()
+        .justify_center()
+        .child(
+            text("404")
+                .font(mono(60.0, 700.0, 60.0))
+                .color(t.colors.primary)
+                .role("heading")
+                .mb(16.0),
+        )
+        .child(
+            text("Page not found")
+                .font(sans(20.0, 400.0, 28.0))
+                .color(t.colors.foreground)
+                .mb(8.0),
+        )
+        .child(
+            text(path.to_owned())
+                .font(mono(14.0, 400.0, 20.0))
+                .color(t.colors.muted_foreground)
+                .mb(24.0),
+        )
+        .child(
+            ui::Button::new("Return to Workspace")
+                .size(ui::ButtonSize::Sm)
+                .build(t)
+                .key("return-to-workspace")
+                .on_press(|s: &mut State| s.route = Route::Workspace),
+        )
+}
+
 /// The main area's content: the launcher greeting for the active project, or what stands in
 /// for it while the link is not up.
 fn main_body(s: &State, t: &'static Tokens) -> El {
@@ -282,23 +321,6 @@ fn main_body(s: &State, t: &'static Tokens) -> El {
             .font(sans(13.0, 400.0, 20.0))
             .color(t.colors.muted_foreground)
     };
-    if s.route == Route::NotFound {
-        return col()
-            .items_center()
-            .gap(16.0)
-            .child(
-                text("Page not found")
-                    .font(sans(22.0, 400.0, 28.0))
-                    .color(t.colors.foreground)
-                    .role("heading"),
-            )
-            .child(
-                ui::Button::new("Return to Workspace")
-                    .build(t)
-                    .key("return-to-workspace")
-                    .on_press(|s: &mut State| s.route = Route::Workspace),
-            );
-    }
     if let Some(project) = s.active_project() {
         return shell::launcher_heading(t, &project.name);
     }

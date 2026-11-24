@@ -23,13 +23,23 @@ use ui::overlay::Overlays;
 pub use host::Host;
 pub use view::view;
 
-/// What the main area shows.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// What the window shows.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Route {
     #[default]
     Workspace,
-    /// The URL named no screen (`*` in the web client's router).
-    NotFound,
+    /// The URL named no screen (`*` in the web client's router); holds the path it named.
+    NotFound(String),
+}
+
+impl Route {
+    /// The screen a URL hash names, as the web client's hash router reads it.
+    pub fn from_hash(hash: &str) -> Route {
+        match hash.trim_start_matches('#') {
+            "" | "/" => Route::Workspace,
+            path => Route::NotFound(path.to_owned()),
+        }
+    }
 }
 
 /// How an entry starts the app: the server to reach (none for a headless snapshot) and the

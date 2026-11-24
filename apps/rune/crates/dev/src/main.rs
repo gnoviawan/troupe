@@ -2,6 +2,8 @@
 //! `TROUPE_SERVER_URL` with `TROUPE_SERVER_TOKEN` as device `TROUPE_DEVICE_ID`, with no
 //! launcher, and links the live driver, so `RUNE_DRIVE_SOCK=<path>` lets tests and
 //! `tools/parity` drive the window. Without `TROUPE_SERVER_URL` it opens unconnected.
+//! `TROUPE_ROUTE` takes the URL hash the web client would open (`#/nowhere`), since a native
+//! window has no URL.
 
 #![forbid(unsafe_code)]
 
@@ -31,7 +33,7 @@ fn config() -> Option<client::Config> {
 fn main() {
     let launch = Launch {
         config: config(),
-        route: Route::Workspace,
+        route: Route::from_hash(&std::env::var("TROUPE_ROUTE").unwrap_or_default()),
     };
     automation::install(troupe_app::app(launch)).run();
 }
