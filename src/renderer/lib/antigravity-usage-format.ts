@@ -1,10 +1,3 @@
-/**
- * Display helpers for Antigravity Account usage. Antigravity reports one quota
- * per model, so an Account's room is the room of its most used model. Tone,
- * reset time and the usage bar come from the shared helpers the Claude and
- * Codex rows already use.
- */
-
 import type {
   AntigravityAccountUsage,
   AntigravityUsageWindow
@@ -83,6 +76,14 @@ export function antigravityChipUsage(usage: AntigravityAccountUsage | undefined)
     main: { short: label, label, percent, tone: usageTone(percent) },
     other: null
   }
+}
+
+export function formatAntigravityChecked(checkedAt: number, now = Date.now()): string {
+  const at = new Date(checkedAt)
+  const time = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  if (at.toDateString() === new Date(now).toDateString()) return `Checked ${time}`
+  const day = at.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  return `Checked ${day}, ${time}`
 }
 
 export function planLabel(planType: string | null): string | null {

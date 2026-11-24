@@ -10,7 +10,8 @@ const transport = vi.hoisted(() => ({
   addAntigravityAccount: vi.fn(),
   renameAntigravityAccount: vi.fn(),
   removeAntigravityAccount: vi.fn(),
-  startAntigravityAccountLogin: vi.fn()
+  startAntigravityAccountLogin: vi.fn(),
+  checkAntigravityUsage: vi.fn()
 }))
 
 vi.mock('@/lib/acp-transport', () => ({ getAcpTransport: () => transport }))
@@ -75,5 +76,25 @@ describe('antigravityAccountsApi', () => {
     expect(transport.startAntigravityAccountLogin).toHaveBeenCalledWith('ab12', config, {
       commandId: 'cmd-1'
     })
+  })
+
+  it('runs a usage check as a command and returns the agent result', async () => {
+    const read = {
+      accountId: 'ab12',
+      status: 'unavailable',
+      planType: 'Google AI Pro',
+      windows: [],
+      checkedAt: 1_700_000_000_000,
+      message: 'data not available yet'
+    }
+    transport.checkAntigravityUsage.mockResolvedValue(read)
+    const config = { name: 'Antigravity', command: 'agy', args: [], env: {} }
+
+    await expect(antigravityAccountsApi.checkUsage('ab12', config)).resolves.toEqual(read)
+
+    expect(transport.checkAntigravityUsage).toHaveBeenCalledWith('ab12', config, {
+      commandId: 'cmd-1'
+    })
+    expect(transport.listAntigravityUsage).not.toHaveBeenCalled()
   })
 })

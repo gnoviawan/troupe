@@ -1,6 +1,11 @@
-import type { AntigravityAccountsSnapshot } from '@shared/types/antigravity-accounts.types'
+import type {
+  AntigravityAccountsSnapshot,
+  AntigravityAccountUsage
+} from '@shared/types/antigravity-accounts.types'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ANTIGRAVITY_USAGE_POLL_MS } from '@/hooks/use-antigravity-accounts'
+import { formatAntigravityChecked } from '@/lib/antigravity-usage-format'
 import { useProjectStore } from '@/stores/project-store'
 import type { Project } from '@/types/project'
 import { AntigravityProviderSettings } from './AntigravityProviderSettings'
@@ -26,7 +31,8 @@ const {
     setProjectAccount: vi.fn(),
     setAutoSwitch: vi.fn(),
     startLogin: vi.fn(),
-    usage: vi.fn()
+    usage: vi.fn(),
+    checkUsage: vi.fn()
   },
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() }
 }))
@@ -38,6 +44,7 @@ vi.mock('@/lib/antigravity-account-sign-in', () => ({
     { id: 'oauth-business', label: 'Log in with Gemini Enterprise' }
   ],
   isAntigravitySignInMethod: (id: string) => id === 'oauth-personal' || id === 'oauth-business',
+  antigravityLaunchConfig: () => LAUNCH_CONFIG,
   signInAntigravityAccount
 }))
 vi.mock('sonner', () => ({ toast }))
@@ -48,6 +55,14 @@ vi.mock('@/stores/antigravity-account-switch', () => ({
 vi.mock('@/hooks/use-server-admits-remote-writes', () => ({
   useServerAdmitsRemoteWrites: () => admits.value
 }))
+
+const LAUNCH_CONFIG = {
+  configId: 'acp-registry:antigravity-acp',
+  name: 'Antigravity',
+  command: 'agy',
+  args: [],
+  env: {}
+}
 
 const SNAPSHOT: AntigravityAccountsSnapshot = {
   accounts: [
@@ -264,12 +279,82 @@ describe('AntigravityProviderSettings', () => {
     expect(api.setDefault).not.toHaveBeenCalled()
   })
 
+  it('checks usage only when its button is clicked, then shows the meters and the time', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    let answer: (read: AntigravityAccountUsage) => void = () => undefined
+    api.checkUsage.mockReturnValue(
+      new Promise<AntigravityAccountUsage>((resolve) => {
+        answer = resolve
+      })
+    )
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    await vi.advanceTimersByTimeAsync(ANTIGRAVITY_USAGE_POLL_MS * 2)
+    expect(api.checkUsage).not.toHaveBeenCalled()
+    expect(
+      within(screen.getByTestId('antigravity-account-ab12')).queryByRole('button', {
+        name: /Check usage/
+      })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(within(personal).getByRole('button', { name: 'Check usage of Personal' }))
+
+    expect(api.checkUsage).toHaveBeenCalledWith('default', LAUNCH_CONFIG)
+    expect(await within(personal).findByText('Reading usage…')).toBeInTheDocument()
+    expect(within(personal).getByRole('button', { name: 'Check usage of Personal' })).toBeDisabled()
+    const checkedAt = new Date(2026, 10, 24, 14, 5).getTime()
+    vi.setSystemTime(checkedAt + 60_000)
+    answer({
+      accountId: 'default',
+      status: 'ok',
+      planType: 'Google AI Pro',
+      windows: [
+        {
+          kind: 'model',
+          label: 'Gemini Models · Weekly Limit Remaining',
+          modelId: 'Gemini Models · Weekly Limit Remaining',
+          percent: 9,
+          resetsAt: null
+        }
+      ],
+      checkedAt,
+      message: 'Overage: Disabled'
+    })
+    await waitFor(() =>
+      expect(personal).toHaveTextContent('Gemini Models · Weekly Limit Remaining')
+    )
+    expect(personal).toHaveTextContent('Google AI Pro')
+    expect(personal).toHaveTextContent('Overage: Disabled')
+    expect(personal).toHaveTextContent(formatAntigravityChecked(checkedAt))
+    expect(api.checkUsage).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  it('shows the agent line when a check reads no meter', async () => {
+    api.checkUsage.mockResolvedValue({
+      accountId: 'default',
+      status: 'unavailable',
+      planType: null,
+      windows: [],
+      checkedAt: Date.now(),
+      message: 'Not applicable for current authentication method.'
+    })
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    fireEvent.click(within(personal).getByRole('button', { name: 'Check usage of Personal' }))
+    expect(
+      await within(personal).findByText('Not applicable for current authentication method.')
+    ).toBeInTheDocument()
+    expect(within(personal).queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+
   it('hides writes on a view-only connection', async () => {
     admits.value = false
     render(<AntigravityProviderSettings />)
     await screen.findByTestId('antigravity-account-default')
     expect(screen.queryByRole('button', { name: 'Add account' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Actions for/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Check usage/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Switch accounts automatically')).toBeDisabled()
     expect(screen.getByText(/troupe-server antigravity account/)).toBeInTheDocument()
   })

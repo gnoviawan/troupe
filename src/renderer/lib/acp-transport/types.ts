@@ -444,11 +444,13 @@ export interface AcpTransport {
   ): Promise<SpawnAgentResult>
   /** Antigravity Accounts of the host; secret-free. Google logins only. */
   listAntigravityAccounts(): Promise<AntigravityAccountsSnapshot>
-  /**
-   * One usage record per Antigravity Account, in list order. Troupe does not
-   * read Antigravity quotas, so each record is `unavailable` with no windows.
-   */
+  /** The last usage check of each Antigravity Account, in list order. Never starts a check. */
   listAntigravityUsage(force?: boolean): Promise<AntigravityAccountUsage[]>
+  checkAntigravityUsage(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<AntigravityAccountUsage>
   setDefaultAntigravityAccount(accountId: string): Promise<void>
   /**
    * `null` returns the Project to the Default Account. With

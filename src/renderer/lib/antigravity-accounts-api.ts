@@ -41,13 +41,18 @@ export const antigravityAccountsApi = {
   list: (): Promise<AntigravityAccountsSnapshot> =>
     logged('list', () => getAcpTransport().listAntigravityAccounts()),
 
-  /**
-   * Per-model quotas of every Account. The host caches them for 5 minutes.
-   * `force` still reuses a read younger than 60 seconds. A failed read keeps
-   * the last good windows.
-   */
   usage: (force = false): Promise<AntigravityAccountUsage[]> =>
     logged('usage', () => getAcpTransport().listAntigravityUsage(force)),
+
+  checkUsage: (accountId: string, config: AgentConfig): Promise<AntigravityAccountUsage> =>
+    logged('checkUsage', async () => {
+      const run = await runCommand({
+        kind: 'check_antigravity_usage',
+        entityKey: accountId,
+        send: (call) => getAcpTransport().checkAntigravityUsage(accountId, config, call)
+      })
+      return run.result
+    }),
 
   setDefault: (accountId: string): Promise<void> =>
     logged('setDefault', async () => {
