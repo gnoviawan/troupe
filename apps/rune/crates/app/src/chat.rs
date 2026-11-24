@@ -43,6 +43,8 @@ pub struct ChatUi {
     open_when_shown: Option<(String, String)>,
     /// The Markdown of the table the full-window view shows.
     pub zoomed_table: Option<String>,
+    /// The link waiting for the user's "Open" (`ExternalLinkConfirm`); only one at a time.
+    pub link_confirm: Option<String>,
     /// Turn ends the model asked for, run after the events already delivered.
     deferred: Vec<Event>,
     /// Busy-queue retries the model asked for: (due on the frame clock, session, generation).
