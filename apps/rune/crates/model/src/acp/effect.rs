@@ -10,7 +10,7 @@ use super::auth_retry::{AuthRetryId, OnDemand};
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::host_error::HostError;
-use super::import::ImportId;
+use super::import::{ImportId, RequestId};
 use super::mcp::TokenCheck;
 use super::restore::RunId;
 use super::turn::TurnEnd;
@@ -333,10 +333,19 @@ pub enum Effect {
         #[serde(skip_serializing)]
         retried: bool,
     },
-    /// An import finished its `done`-th session with `outcome`.
-    ImportProgress { done: usize, outcome: Value },
-    /// The user's action answered `value`.
-    ActionResolved { value: Value },
+    /// The import `request` finished its `done`-th session with `outcome`.
+    ImportProgress {
+        #[serde(skip_serializing)]
+        request: RequestId,
+        done: usize,
+        outcome: Value,
+    },
+    /// The user's action `request` answered `value`.
+    ActionResolved {
+        #[serde(skip_serializing)]
+        request: RequestId,
+        value: Value,
+    },
     /// Whether the host stores a Factory API key; then
     /// `Event::FactoryKeyStatus` with this effect and the answer, or false
     /// with `failed` when it could not be read.

@@ -68,6 +68,7 @@ use approvals::{PendingElicitation, PendingPermission, PendingQuestion};
 pub use effect::Effect;
 pub use ensure::{EnsureId, Holder};
 pub use event::Event;
+pub use import::RequestId;
 use mcp::{McpBook, RegistryOp};
 pub use plan::is_plan_tool;
 use prompt::{BusyRetry, Dispatch, SendNow, SendOptions};
@@ -445,8 +446,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.on_session_call_failed(command, error, &mut fx)
         }
         Event::DiscoverSessions(agent_id, cwd) => state.discover_sessions(agent_id, cwd, &mut fx),
-        Event::ListImportableSessions(config_id, cwd, project_id) => {
-            state.list_importable_sessions(&config_id, &cwd, project_id, &mut fx);
+        Event::ListImportableSessions(config_id, cwd, project_id, request) => {
+            state.list_importable_sessions(&config_id, &cwd, project_id, request, &mut fx);
         }
         Event::ImportAgentSessions(request) => state.import_agent_sessions(request, &mut fx),
         Event::StopImport => state.stop_imports(),

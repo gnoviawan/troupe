@@ -376,9 +376,15 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       Then it logs, emits its own `refreshSessionIndex`, and answers its
       outcomes once the app answers that effect with
       `sessionIndexReloaded` or `sessionIndexReloadFailed`; another index
-      snapshot does not answer it. A listing answered with no page fails. `updatedAt` goes through a `Date.parse` port of the ISO
-      forms; a time without an offset, which JavaScript reads in the local
-      zone, is not parsed.
+      snapshot does not answer it. A listing answered with no page fails.
+      `updatedAt` goes through a `Date.parse` port of the ISO forms; a time
+      without an offset, which JavaScript reads in the local zone, is not
+      parsed. The app names each call with a request id (the listing's
+      fourth argument, the import request's `request`), and every
+      `actionResolved` and `importProgress` it answers carries that id, so
+      two listings or imports at once stay apart. The recorder has no such
+      id; `import_tests.rs` checks it. A listing that fails still answers
+      with a plain `actionRejected`.
     - 10b, rest. The one-shot collectors (they need `createSession`).
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto

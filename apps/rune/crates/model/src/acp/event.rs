@@ -131,9 +131,15 @@ pub enum Event {
     KillAgent(String),
     #[serde(rename = "discoverSessions")]
     DiscoverSessions(String, String),
-    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`.
+    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`
+    /// and the trailing request id.
     #[serde(rename = "listImportableSessions")]
-    ListImportableSessions(String, String, #[serde(default)] Option<String>),
+    ListImportableSessions(
+        String,
+        String,
+        #[serde(default)] Option<String>,
+        #[serde(default)] import::RequestId,
+    ),
     /// Each session's outcome is an `importProgress`; the outcomes are
     /// answered once the reloaded index arrives.
     #[serde(rename = "importAgentSessions")]
