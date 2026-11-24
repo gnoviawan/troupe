@@ -261,7 +261,7 @@ impl State {
             Err(e) => {
                 log::warn!("[chat] the prompt for {session_id} was refused: {}: {}", e.code, e.message);
                 let agent_dead = AGENT_DEAD.iter().any(|m| e.message.contains(m));
-                DispatchOutcome::Failed { message: format!("Error: {}", e.message), agent_dead }
+                DispatchOutcome::Failed { message: e.message, agent_dead }
             }
         };
         self.acp_step(Event::PromptSettled(PromptSettled { session_id, turn_id, outcome }));
