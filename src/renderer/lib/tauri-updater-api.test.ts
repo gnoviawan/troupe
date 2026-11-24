@@ -96,7 +96,7 @@ describe('channel URL selection', () => {
       'https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json'
     )
     expect(getChannelManifestUrl('nightly')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json'
+      'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
     )
   })
 

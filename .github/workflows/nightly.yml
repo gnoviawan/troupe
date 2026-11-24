@@ -5,11 +5,11 @@ name: Nightly
 # Windows. Pull requests run that suite on Linux only. The test job does
 # not block publish.
 #
-# The workflow synthesizes a `<upcoming>-nightly.<YYYYMMDD>.<run_number>.<shortsha>`
-# version (detected from a release/v* branch, or patch-bumped from current),
-# and publishes a prerelease under the moving `nightly` tag with a per-channel
-# `latest-nightly.json` manifest covering both the desktop targets and the
-# standalone `troupe-server` binary.
+# Stable releases are X.Y.0 and nightlies are X.Y.N, where N counts the dev
+# commits since the newest stable tag. The build is published as a prerelease
+# under the moving `nightly` tag with a `nightly.json` updater manifest
+# covering the desktop targets and the standalone `troupe-server` binary, plus
+# a `latest-nightly.json` copy for builds released before this scheme.
 
 on:
   schedule:
@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       nightly_version: ${{ steps.version.outputs.nightly_version }}
+      legacy_version: ${{ steps.version.outputs.legacy_version }}
       short_sha: ${{ steps.version.outputs.short_sha }}
       nightly_date: ${{ steps.version.outputs.nightly_date }}
       # Full commit SHA the version was synthesized from, pinned into the build
@@ -44,54 +45,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Build dev HEAD — the integration branch receives PRs daily, so the
-          # nightly is always fresh. dev → main only happens during a stable
-          # release (release-stable skill); building main would be stale between
-          # releases.
+          # Build dev HEAD. dev -> main only happens during a stable release, so
+          # main would be stale between releases. Full history and tags are
+          # needed to count the commits since the last stable tag.
           ref: dev
-          fetch-depth: 1
-          # persist-credentials: true needed for git ls-remote (release branch
-          # detection in the version synthesis step below).
-          persist-credentials: true
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Synthesize version
         id: version
         shell: bash
         env:
-          # Monotonic per-workflow counter: orders same-day nightlies strictly
-          # for the in-app updater (the short SHA carries no order).
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           # 00:00 GMT+7 = 17:00 UTC; use the GMT+7 (Asia/Jakarta) date so the
-          # nightly version reflects the local calendar day the build ships.
+          # legacy version reflects the local calendar day the build ships.
           NIGHTLY_DATE="$(TZ='Asia/Jakarta' date +%Y%m%d)"
           SHORT_SHA="$(git rev-parse --short=7 HEAD)"
           COMMIT_SHA="$(git rev-parse HEAD)"
 
-          # Detect the upcoming release version from a release/v* branch on the
-          # remote. If release/v0.5.0 exists, the nightly version is
-          # 0.5.0-nightly.<date>.<run>.<sha> — more readable than 0.0.0-nightly.* and
-          # correctly offers the nightly to stable users (0.5.0-nightly > 0.4.8).
-          # If no release branch exists, bump the patch from the current
-          # package.json version as a best guess (0.4.8 -> 0.4.9-nightly.*).
-          RELEASE_VERSION="$(git ls-remote --heads origin 'release/v*' 2>/dev/null \
-            | sed 's|.*refs/heads/release/v||' | sort -V | tail -1)"
-
-          if [ -z "$RELEASE_VERSION" ]; then
-            RELEASE_VERSION="$(node -e \
-              "const v=require('./package.json').version.split('.').map(Number); \
-               console.log(v[0]+'.'+v[1]+'.'+(v[2]+1))")"
-            echo "No release/v* branch found; using patch-bump ${RELEASE_VERSION} as nightly base."
-          else
-            echo "Detected release/v${RELEASE_VERSION} branch; using as nightly base."
+          # Stable releases are X.Y.0. A nightly is X.Y.N, where X.Y comes from
+          # the newest stable tag and N counts the dev commits since it, so
+          # every nightly sorts above the stable it follows and below the next
+          # one. dev only grows, so N never goes backwards.
+          STABLE_TAG="$(git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+          if [ -z "$STABLE_TAG" ]; then
+            echo "No stable vX.Y.Z tag found." >&2
+            exit 1
           fi
+          IFS=. read -r MAJOR MINOR PATCH <<< "${STABLE_TAG#v}"
+          COMMITS="$(git rev-list --count "$STABLE_TAG..HEAD")"
+          NIGHTLY_VERSION="$MAJOR.$MINOR.$((PATCH + COMMITS))"
 
-          # <run> (github.run_number) sits before the SHA so SemVer orders
-          # same-day builds by run, not by the unordered SHA; the in-app
-          # updater (src-tauri/src/updater_api.rs accepts_channel_update)
-          # relies on this to never re-offer or downgrade a nightly.
-          NIGHTLY_VERSION="${RELEASE_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.${SHORT_SHA}"
+          # Builds released before this scheme only accept
+          # `<core>-nightly.<date>.<run>.<sha>` versions from latest-nightly.json.
+          # That manifest keeps advertising this build under such a version so
+          # they update onto it, and from then on they read nightly.json.
+          LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.${SHORT_SHA}"
+
+          echo "Nightly $NIGHTLY_VERSION: $COMMITS commits after $STABLE_TAG (legacy $LEGACY_VERSION)."
           echo "nightly_version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
+          echo "legacy_version=$LEGACY_VERSION" >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "nightly_date=$NIGHTLY_DATE" >> "$GITHUB_OUTPUT"
           echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
@@ -763,6 +757,7 @@ jobs:
       - name: Validate and merge release inputs
         env:
           VERSION: ${{ needs.prepare.outputs.nightly_version }}
+          LEGACY_VERSION: ${{ needs.prepare.outputs.legacy_version }}
           NIGHTLY_DATE: ${{ needs.prepare.outputs.nightly_date }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
         run: |
@@ -827,7 +822,8 @@ jobs:
           node scripts/release/merge-updater-manifests.mjs \
             --channel nightly \
             --tag nightly \
-            latest-nightly.json "$VERSION" release-notes.md "$PUB_DATE" "${manifests[@]}"
+            nightly.json "$VERSION" release-notes.md "$PUB_DATE" "${manifests[@]}"
+          jq --arg version "$LEGACY_VERSION" '.version = $version' nightly.json > latest-nightly.json
 
           release_file_count=0
           while IFS= read -r -d '' _release_file; do
@@ -841,7 +837,7 @@ jobs:
       # Versioned assets get a new name every night and are never clobbered, so
       # without this the release hits GitHub's 1000-asset cap (#1508). Runs before
       # the upload so a full release can still recover, and keeps the version the
-      # published latest-nightly.json points at so the updater never sees a 404.
+      # published manifest points at so the updater never sees a 404.
       - name: Prune older nightly versions from the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -857,17 +853,30 @@ jobs:
             cat "$err" >&2
             exit 1
           fi
-          if ! jq -e 'any(.assets[]; .name == "latest-nightly.json")' <<< "$release" >/dev/null; then
-            echo "Release has no latest-nightly.json; skipping prune so no live asset is deleted."
+          # nightly.json first; latest-nightly.json is all a release published
+          # before the X.Y.N scheme has.
+          PUBLISHED=""
+          for manifest in nightly.json latest-nightly.json; do
+            if jq -e --arg name "$manifest" 'any(.assets[]; .name == $name)' <<< "$release" >/dev/null; then
+              PUBLISHED="$(gh release download nightly --repo "$GITHUB_REPOSITORY" -p "$manifest" -O - | jq -r '.version')"
+              break
+            fi
+          done
+          if [[ -z "$PUBLISHED" ]]; then
+            echo "Release has no updater manifest; skipping prune so no live asset is deleted."
             exit 0
           fi
-          PUBLISHED="$(gh release download nightly --repo "$GITHUB_REPOSITORY" -p latest-nightly.json -O - | jq -r '.version')"
-          if [[ -z "$PUBLISHED" || "$PUBLISHED" == null ]]; then
-            echo "latest-nightly.json has no version" >&2
+          if [[ "$PUBLISHED" == null ]]; then
+            echo "The published manifest has no version" >&2
             exit 1
           fi
-          jq -r --arg current "$VERSION" --arg published "$PUBLISHED" \
-            '.assets[].name | select(test("-nightly\\.[0-9]{8}\\.") and ((contains($current) or contains($published)) | not))' <<< "$release" |
+          # Versioned names start with Troupe_<version>_ or Troupe-<version>-.
+          jq -r --arg current "$VERSION" --arg published "$PUBLISHED" '
+            .assets[].name as $name
+            | $name
+            | capture("^Troupe[-_](?<version>[0-9]+\\.[0-9]+\\.[0-9]+(-nightly\\.[0-9]+\\.[0-9]+\\.[0-9a-f]+)?)[-_]")
+            | select(.version != $current and .version != $published)
+            | $name' <<< "$release" |
           while IFS= read -r name; do
             echo "Deleting $name"
             gh release delete-asset nightly "$name" --repo "$GITHUB_REPOSITORY" --yes
@@ -900,7 +909,7 @@ jobs:
           while IFS= read -r -d '' asset; do
             assets+=("$asset")
           done < <(find release-assets -maxdepth 1 -type f -print0 | sort -z)
-          assets+=(latest-nightly.json)
+          assets+=(nightly.json latest-nightly.json)
           gh release upload nightly --repo "$GITHUB_REPOSITORY" "${assets[@]}" --clobber
 
   # The image downloads and verifies the `nightly` release assets, so it runs
