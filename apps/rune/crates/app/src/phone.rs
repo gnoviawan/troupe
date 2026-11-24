@@ -181,7 +181,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
                 .placeholder("Search chats...".to_owned(), c.muted_foreground)
                 .color(c.foreground)
                 .w_full()
-                .h(44.0)
+                .py(10.0)
                 .pl(32.0)
                 .pr(12.0)
                 .radius(22.0)
@@ -448,7 +448,7 @@ fn projects_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut
                 );
         }
         if current {
-            line = line.fill(c.accent).child(
+            line = line.fill(c.muted).child(
                 text("Current")
                     .font(sans(16.0, 400.0, 24.0))
                     .color(c.muted_foreground),
