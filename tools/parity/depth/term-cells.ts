@@ -110,7 +110,7 @@ function write(term: InstanceType<typeof Terminal>, bytes: Uint8Array): Promise<
 async function cells(dir: string) {
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.bin'))) {
     const name = file.slice(0, -4)
-    const meta = JSON.parse(readFileSync(join(dir, `${name}.json`), 'utf8')) as Meta
+    const meta = JSON.parse(readFileSync(join(dir, `${name}.checkpoints`), 'utf8')) as Meta
     const bytes = new Uint8Array(readFileSync(join(dir, file)))
     const term = new Terminal({ ...OPTIONS, cols: meta.cols, rows: meta.rows })
     const checkpoints = []
@@ -120,7 +120,7 @@ async function cells(dir: string) {
       fed = offset
       checkpoints.push(dump(term, offset))
     }
-    const out = join(dir, `${name}.cells.json`)
+    const out = join(dir, `${name}.cells`)
     writeFileSync(out, `${JSON.stringify({ cols: meta.cols, rows: meta.rows, checkpoints })}\n`)
     console.log(`${out}: ${checkpoints.length} checkpoints`)
   }

@@ -2,11 +2,12 @@
 """Records the PTY byte streams that `apps/rune/crates/term/tests/cells.rs` replays.
 
 Each session runs a program in a real PTY of a fixed size, types its steps, and
-writes every byte the PTY printed to `<out>/<name>.bin` with the byte offsets of
-its checkpoints in `<out>/<name>.json`. A checkpoint is taken once the output has
-been quiet for a moment after a step, so the screen it marks is settled.
-`term-cells.ts` then feeds the same bytes to `@xterm/headless` and dumps the
-cells at each checkpoint.
+writes every byte the PTY printed to `<out>/<name>.bin` and the byte offsets of
+its checkpoints to `<out>/<name>.checkpoints` (JSON; the extension keeps the
+formatter off it). A checkpoint is taken once the output has been quiet for a
+moment after a step, so the screen it marks is settled. `term-cells.ts` then
+feeds the same bytes to `@xterm/headless` and dumps the cells at each
+checkpoint to `<out>/<name>.cells`.
 
     python3 tools/parity/depth/term-record.py apps/rune/crates/term/tests/fixtures
 """
@@ -145,7 +146,7 @@ def main():
             with open(os.path.join(out_dir, s["name"] + ".bin"), "wb") as f:
                 f.write(data)
             meta = {"cols": s["cols"], "rows": s["rows"], "checkpoints": checkpoints}
-            with open(os.path.join(out_dir, s["name"] + ".json"), "w") as f:
+            with open(os.path.join(out_dir, s["name"] + ".checkpoints"), "w") as f:
                 json.dump(meta, f, indent=2)
                 f.write("\n")
             print(f"{s['name']}: {len(data)} bytes, checkpoints {checkpoints}")

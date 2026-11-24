@@ -98,7 +98,7 @@ fn diff(term: &Term, want: &Value) -> Vec<String> {
 fn replay(name: &str) {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
     let bytes = std::fs::read(format!("{dir}/{name}.bin")).expect("recording");
-    let dump: Value = serde_json::from_str(&std::fs::read_to_string(format!("{dir}/{name}.cells.json")).expect("dump")).expect("json");
+    let dump: Value = serde_json::from_str(&std::fs::read_to_string(format!("{dir}/{name}.cells")).expect("dump")).expect("json");
     let cols = dump["cols"].as_u64().expect("cols") as u16;
     let rows = dump["rows"].as_u64().expect("rows") as u16;
     let mut term = Term::new(cols, rows);
