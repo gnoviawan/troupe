@@ -1,14 +1,9 @@
 //! Session WS handlers: CRUD, payload/cursor reads, snapshot recovery,
 //! agent-switch records, and persisted-session reopen.
 
-use super::*;
+use troupe_protocol::ws::{DeleteSessionPayload, RecordAgentSwitchPayload};
 
-/// `delete_session` request payload (CAP-11).
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct DeleteSessionPayload {
-    session_id: String,
-}
+use super::*;
 
 /// `delete_session` — permanently remove a persisted session from the
 /// host-owned `SessionPersistence` store (CAP-11; desktop parity with the
@@ -326,19 +321,6 @@ pub(super) async fn handle_get_session_payload_tail(
         }
         None => WsReply::err(id, WsErrorCode::NotFound, "session payload not found"),
     }
-}
-
-/// `record_agent_switch` request payload (CAP-2). Mirrors the Tauri command
-/// args; the durable record's payload is the `AgentSwitchEvent` built from it
-/// (these five camelCase fields plus the runtime `agentId`).
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct RecordAgentSwitchPayload {
-    session_id: String,
-    from_config_id: String,
-    to_config_id: String,
-    new_session_id: String,
-    summary_text: String,
 }
 
 /// `record_agent_switch` — durably record an agent-switch marker (CAP-2).
