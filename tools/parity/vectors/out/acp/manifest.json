@@ -31,7 +31,7 @@
         "src/renderer/components/chat/tool-call-summary.ts": "dd533b9f18653865f0c872a940e2a90adabb558c",
         "src/renderer/lib/agents/acp-spawn-errors.ts": "1cd433ce6db28c38bcbe6560e4f11d003004bac1",
         "src/renderer/lib/acp-api.ts": "09469b002085b1799ff694e509a47a7401d98e3b",
-        "src/shared/types/web-protocol.types.ts": "03e9946ec7a3888477352f100cd6a21d4159bbf7",
+        "src/shared/types/web-protocol.types.ts": "27c6c5a03dfce427ec1157344cbde2ae7989214a",
         "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08",
         "src/renderer/stores/acp-store/chat-tab-prune.ts": "d71996dd7ade033932cd54eab92b0db45edcae62",
         "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510",
