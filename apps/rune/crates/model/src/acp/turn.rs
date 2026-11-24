@@ -197,7 +197,7 @@ pub(crate) fn finalize_streaming(messages: Option<&mut Vec<ChatMessage>>) {
 
 impl State {
     /// `claimPromptTurnEnd`: true the first time a turn id ends.
-    fn claim_turn_end(&mut self, turn_id: &str) -> bool {
+    pub(crate) fn claim_turn_end(&mut self, turn_id: &str) -> bool {
         let ended = &mut self.book.ended_prompt_turns;
         if ended.iter().any(|id| id == turn_id) {
             return false;
@@ -369,7 +369,7 @@ impl State {
         if let Some(reason) = &end.stop_reason {
             self.last_error_after_stop(session_id, reason);
         }
-        self.book.active_wire_turns.remove(session_id);
+        self.forget_prompt_turn(session_id);
         if self.indexed(session_id) {
             fx.push(Effect::PersistSession {
                 session_id: session_id.to_owned(),

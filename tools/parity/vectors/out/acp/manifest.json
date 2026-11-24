@@ -53,7 +53,8 @@
         "src/renderer/stores/acp-store/slices/misc.ts": "6dfd2232c8de812b253b6dbc2785d632c36d607d",
         "src/renderer/stores/acp-store/slices/switch.ts": "9d7e958c35907b82f807990d022df8b63de38152",
         "src/renderer/stores/acp-store/registry-mcp-fingerprints.ts": "7626335c928a55bab4e0a460f23a8ceaa837a434",
-        "src/renderer/stores/acp-store/ephemeral-ids.ts": "60d8281e7c6d76945ba08760580aa441605644f7"
+        "src/renderer/stores/acp-store/ephemeral-ids.ts": "60d8281e7c6d76945ba08760580aa441605644f7",
+        "src/renderer/stores/acp-store/slices/prompt-reconcile.ts": "ebc840cb8dd3876988b59b0a0bb7accbb7ade276"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -484,7 +485,26 @@
         "a_chat_whose_promotion_failed_goes_with_its_agent",
         "claim_prepared_chat_drops_a_slot_whose_mcp_list_changed",
         "claim_prepared_chat_never_reaps_an_indexed_chat",
-        "a_second_warm_key_shares_an_agent_that_only_holds_a_warm_session"
+        "a_second_warm_key_shares_an_agent_that_only_holds_a_warm_session",
+        "a_prompt_whose_reply_is_lost_waits_to_confirm",
+        "a_prompt_whose_outcome_is_unknown_holds",
+        "the_echo_confirms_a_waiting_prompt",
+        "an_echo_of_another_turn_leaves_the_prompt_waiting",
+        "prompt_complete_ends_a_waiting_prompt",
+        "recheck_resends_the_same_turn_and_settles",
+        "recheck_answered_by_a_stop_reason_settles",
+        "recheck_that_loses_its_reply_again_keeps_waiting",
+        "recheck_with_an_unknown_outcome_keeps_the_hold",
+        "recheck_rejected_fails_the_turn",
+        "recheck_on_a_busy_host_fails_the_turn",
+        "recheck_with_nothing_waiting_does_nothing",
+        "stop_abandons_a_waiting_prompt",
+        "a_late_terminator_after_stop_is_stale",
+        "recheck_after_stop_sends_nothing",
+        "the_agent_going_away_drops_a_waiting_prompt",
+        "closing_the_chat_drops_a_waiting_prompt",
+        "a_new_prompt_after_stop_replaces_the_waiting_one",
+        "a_terminator_after_a_failed_send_is_not_taken_for_a_stale_one"
       ]
     }
   }

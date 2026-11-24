@@ -540,6 +540,22 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       (`reopenRestores`, `noteUserPick`; it needs history open, 6b) and the
       re-auth retry (`withAuthRetry`, 7b).
     - 11b, rest. The reopen restore and the prompt reconcile.
+    - 11c, the prompt reconcile (R6a-6, `acp/reconcile.rs`). A dispatch the
+      app settles as `uncertain` (the reply was lost, or the host answered
+      `outcome_unknown`) keeps its turn open and waits in
+      `promptCommandStates`, unless the turn moved on meanwhile or its echo
+      already arrived. It is resent with the same turn id on the engine's
+      ladder (`promptResendAfter`, 2, 4, 8, then every 15 s), on
+      `resendPendingPrompts` when the transport recovers, and on
+      `recheckPromptCommand`; a `transportReconnecting` flag holds the
+      ladder, and an `outcome_unknown` hold goes out only on the user's
+      check. The `user_prompt` echo (`echoedWirePromptTurns`) and the turn's
+      end clear it; a rejected resend fails the turn. Stop abandons it: the
+      turn id counts as ended, the turn closes, and a resend still on the
+      wire cancels again once it settles. The ladder's timers, a reconnect
+      and a resend in flight at Stop are Rust unit tests
+      (`reconcile_tests.rs`). Not here: `reconcilePromptAfterRecovery`, which
+      reads a recovered event log the Rune client does not hand the model.
 
 ### Sending as two steps
 
@@ -557,7 +573,10 @@ function. Two shapes were weighed.
   command states itself. Rejected: the client crate already resends a
   ledgered command with the same `commandId` across socket drops (AD-5), so
   a second ledger in the model would race it. The prompt reconcile
-  (`slices/prompt-reconcile.ts`) maps onto that ledger in PR 11.
+  (`slices/prompt-reconcile.ts`, 11c) starts only where that ledger stops:
+  the app settles a dispatch as `uncertain` when the ledger gives up on a
+  reply it cannot get, and the model's resends reuse the turn id, which the
+  host dedups.
 
 The vectors replay this the way the recorder ran it: each `dispatchPrompt`
 settles with the next outcome the vector's `context.dispatch` lists, before
@@ -570,11 +589,9 @@ so the replay drops `retryQueueAfter` before it compares.
   wire framing (skill paths, file tokens, conversation envelopes) and belongs
   to the composer unit, which ports `lib/composer/`. The model keeps the
   echo's blocks as sent; the vectors use prompts without framing.
-- The prompt-reconcile bookkeeping on the echo (`echoedWirePromptTurns`,
-  `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
-- On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
-  the in-memory payload cache (PR 6).
-- In sending: an outcome-unknown dispatch (PR 11), the warm-pool promotion
+- `handoffOnlyTurnIds` on the echo. PR 9.
+- On `prompt_complete`: the update of the in-memory payload cache (PR 6).
+- In sending: the warm-pool promotion
   wait and the launch's `skipUserAppend` and `leadsQueue` (PR 8), the
   history-open wait (`openingHistoryIds`, PR 6), the read-only guard from the
   chat's GitHub link (the model reads it from the transcript only), the

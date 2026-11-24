@@ -251,6 +251,19 @@ pub enum Event {
     /// The timer an [`Effect::RetryQueueAfter`] started ran out.
     #[serde(rename = "queueRetryDue")]
     QueueRetryDue(String, u64),
+    /// The user asked whether a prompt waiting to be confirmed went through.
+    #[serde(rename = "recheckPromptCommand")]
+    RecheckPromptCommand(String),
+    /// The timer an [`Effect::PromptResendAfter`] started ran out.
+    #[serde(rename = "promptResendDue")]
+    PromptResendDue(String, u64),
+    /// The transport started (`true`) or ended a reconnect.
+    #[serde(rename = "transportReconnecting")]
+    TransportReconnecting(bool),
+    /// The transport recovered: the waiting prompts, or one session's, go
+    /// out again.
+    #[serde(rename = "resendPendingPrompts")]
+    ResendPendingPrompts(#[serde(default)] Option<String>),
     /// The deferred close an [`Effect::EndTurn`] asked for.
     #[serde(rename = "turnEnd")]
     TurnEnd(TurnEnd),

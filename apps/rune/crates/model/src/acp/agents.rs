@@ -296,7 +296,7 @@ impl State {
             );
         }
         for id in ended {
-            self.book.active_wire_turns.remove(&id);
+            self.forget_prompt_turn(&id);
         }
     }
 

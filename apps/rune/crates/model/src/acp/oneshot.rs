@@ -29,7 +29,7 @@ const CLEANUP_TIMEOUT_MS: f64 = 2_000.0;
 const UNAVAILABLE: &str =
     "The selected ACP agent is unavailable. Check its configuration and retry";
 /// The recorder's busy rejection (`ACP_TURN_IN_PROGRESS`).
-const BUSY: &str = "Error: ACP_TURN_IN_PROGRESS: a prompt turn is already in progress";
+const BUSY: &str = super::prompt::BUSY_ERROR;
 
 /// Who a [`Effect::DisposeEphemeralSession`] disposes for.
 #[derive(Clone, Debug, PartialEq)]
@@ -479,6 +479,9 @@ impl State {
             DispatchOutcome::Busy => self.fail_oneshot(id, BUSY.into(), fx),
             DispatchOutcome::Failed { message, .. } => {
                 self.fail_oneshot(id, format!("Error: {message}"), fx);
+            }
+            DispatchOutcome::Uncertain { message, .. } => {
+                self.fail_oneshot(id, format!("AcpTransportError: {message}"), fx);
             }
         }
         true

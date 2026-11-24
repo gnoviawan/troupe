@@ -4,6 +4,7 @@ import {
   _setAcpTransportForTests,
   type AcpTransport
 } from '../../../../src/renderer/lib/acp-transport'
+import { __resetCommandEngineForTesting } from '../../../../src/renderer/lib/command-engine'
 import {
   _flushCoalescedForTesting,
   _resetCoalesceForTesting,
@@ -100,6 +101,7 @@ const MCP_KEYS = [
   'selectedAgentConfigId',
   'preparingChatKeys',
   'prepareChatErrors',
+  'promptCommandStates',
   'warmingConfigs',
   'discoveringKeys',
   'mcpServers',
@@ -120,6 +122,7 @@ const MCP_FRESH = {
   selectedAgentConfigId: null,
   preparingChatKeys: {},
   prepareChatErrors: {},
+  promptCommandStates: {},
   warmingConfigs: {},
   discoveringKeys: {},
   mcpServers: [],
@@ -241,7 +244,8 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/slices/misc.ts',
     'src/renderer/stores/acp-store/slices/switch.ts',
     'src/renderer/stores/acp-store/registry-mcp-fingerprints.ts',
-    'src/renderer/stores/acp-store/ephemeral-ids.ts'
+    'src/renderer/stores/acp-store/ephemeral-ids.ts',
+    'src/renderer/stores/acp-store/slices/prompt-reconcile.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -274,6 +278,7 @@ export const acpRecorder: StoreRecorder = {
     shared._resetDefiniteSpawnRejectionsForTesting()
     shared._resetInFlightPreparedForTesting()
     shared._resetEphemeralSessionIdsForTesting()
+    __resetCommandEngineForTesting()
     shared._resetInFlightPromotionsForTesting()
     _resetRegistryMcpFingerprintsForTesting()
     shared.inFlightWarms.clear()
@@ -359,7 +364,10 @@ export const acpRecorder: StoreRecorder = {
     }
     _flushCoalescedForTesting()
     // The deferred turn end (`scheduleTurnEnd`) runs on the next macrotask.
+    // Stop on a prompt still waiting to be confirmed schedules it only once
+    // the cancel command answered: one macrotask more.
     await flushTurnEnd()
+    if (action === 'cancelPrompt') await flushTurnEnd()
   }
 }
 
@@ -388,6 +396,7 @@ import { mcpScenarios } from './acp-scenarios-mcp'
 import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
+import { reconcileScenarios } from './acp-scenarios-reconcile'
 import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
@@ -422,5 +431,6 @@ export const acpScenarios = [
   ...historyScenarios,
   ...oneShotScenarios,
   ...switchScenarios,
-  ...warmScenarios
+  ...warmScenarios,
+  ...reconcileScenarios
 ]

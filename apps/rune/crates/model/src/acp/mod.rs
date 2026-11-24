@@ -46,6 +46,9 @@ mod oneshot_tests;
 mod picks;
 mod plan;
 pub mod prompt;
+mod reconcile;
+#[cfg(test)]
+mod reconcile_tests;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
@@ -151,6 +154,9 @@ pub struct State {
     pub discovering_keys: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// Per session, the prompt command waiting to be confirmed.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub prompt_command_states: BTreeMap<String, Value>,
     /// Warm-pool keys whose prepare is running.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub preparing_chat_keys: BTreeMap<String, Value>,
@@ -324,6 +330,9 @@ pub struct Book {
     /// The `session/new` calls in flight.
     #[serde(skip)]
     pub(crate) creates: create::CreateBook,
+    /// Prompts waiting to be confirmed and their resends.
+    #[serde(skip)]
+    pub(crate) reconcile: reconcile::ReconcileBook,
     /// The warm-pool prepares in flight.
     #[serde(skip)]
     pub(crate) warm: warm::WarmBook,
@@ -592,6 +601,18 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::QueueRetryDue(session_id, generation) => {
             state.on_queue_retry_due(&session_id, generation, env, &mut fx);
+        }
+        Event::RecheckPromptCommand(session_id) => {
+            state.recheck_prompt_command(&session_id, &mut fx);
+        }
+        Event::PromptResendDue(session_id, generation) => {
+            state.on_prompt_resend_due(&session_id, generation, &mut fx);
+        }
+        Event::TransportReconnecting(reconnecting) => {
+            state.book.reconcile.reconnecting = reconnecting;
+        }
+        Event::ResendPendingPrompts(session_id) => {
+            state.resend_pending_prompts(session_id, &mut fx)
         }
         Event::NoteHistoryWatermark(session_id, payload) => {
             state.note_history_watermark(&session_id, &payload);

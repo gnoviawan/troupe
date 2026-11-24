@@ -85,6 +85,7 @@ on:
       - 'src/renderer/stores/acp-store/slices/switch.ts'
       - 'src/renderer/stores/acp-store/registry-mcp-fingerprints.ts'
       - 'src/renderer/stores/acp-store/ephemeral-ids.ts'
+      - 'src/renderer/stores/acp-store/slices/prompt-reconcile.ts'
       - 'src/renderer/stores/acp-store/slices/prompt.ts'
       - 'src/renderer/stores/acp-store/slices/session.ts'
       - 'src/renderer/stores/acp-store/slices/transcript.ts'

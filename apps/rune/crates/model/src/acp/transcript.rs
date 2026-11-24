@@ -347,6 +347,11 @@ impl State {
         env: &mut Env<'_>,
     ) {
         let session_id = event.session_id;
+        // An echo citing a turn id proves the host accepted that command,
+        // even one the installed history already covers.
+        if let Some(turn_id) = event.turn_id.as_deref().filter(|id| !id.is_empty()) {
+            self.on_prompt_echo(&session_id, turn_id);
+        }
         if self.book.history_covered(&session_id, event_seq) {
             return;
         }

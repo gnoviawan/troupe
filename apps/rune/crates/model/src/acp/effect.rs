@@ -67,6 +67,14 @@ pub enum Effect {
         #[serde(skip_serializing)]
         generation: u64,
     },
+    /// Send `Event::PromptResendDue` with this generation after `delay_ms`:
+    /// the next resend of a prompt waiting to be confirmed.
+    PromptResendAfter {
+        session_id: String,
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        generation: u64,
+    },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
     /// Send `session/set_mode`, then `Event::ControlSet` with this effect.

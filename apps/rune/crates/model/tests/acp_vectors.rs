@@ -45,6 +45,11 @@ fn dispatch_outcome(outcome: Option<Value>) -> DispatchOutcome {
             message: error.to_owned(),
             agent_dead: false,
         }
+    } else if let Some(code) = outcome.get("uncertain").and_then(Value::as_str) {
+        DispatchOutcome::Uncertain {
+            message: "connection lost".into(),
+            outcome_unknown: code == "outcome_unknown",
+        }
     } else if outcome.get("agentDead").is_some() {
         DispatchOutcome::Failed {
             message: "agent thread is no longer running".into(),
@@ -330,12 +335,14 @@ fn replay(vector: &Value) -> Result<usize, String> {
             }
             break;
         }
-        // The recorder cannot see the busy-retry timer (`setTimeout`).
-        // Nor the one-shots' timeouts.
+        // The recorder cannot see the busy-retry timer (`setTimeout`), the
+        // one-shots' timeouts or the prompt resend ladder.
         effects.retain(|effect| {
             !matches!(
                 effect,
-                Effect::RetryQueueAfter { .. } | Effect::StartOneShotTimer { .. }
+                Effect::RetryQueueAfter { .. }
+                    | Effect::StartOneShotTimer { .. }
+                    | Effect::PromptResendAfter { .. }
             )
         });
         replay_ends.extend(

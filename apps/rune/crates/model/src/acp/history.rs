@@ -103,6 +103,13 @@ pub(crate) struct HistoryBook {
     pub(crate) created: Vec<(super::create::CreateId, String)>,
 }
 
+impl HistoryBook {
+    /// `openingHistoryIds`: an open of the session is in flight.
+    pub(crate) fn opening(&self, session_id: &str) -> bool {
+        self.by_session.contains_key(session_id)
+    }
+}
+
 fn field<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
     value.get(key).filter(|value| !value.is_null())
 }

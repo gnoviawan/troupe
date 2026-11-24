@@ -419,7 +419,7 @@ impl State {
     /// transcript.
     pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
         self.book.history_watermarks.remove(session_id);
-        self.book.active_wire_turns.remove(session_id);
+        self.forget_prompt_turn(session_id);
         self.book.backfill_counts.remove(session_id);
         self.book.durability_probes.remove(session_id);
         self.book.untrimmable.remove(session_id);

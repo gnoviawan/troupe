@@ -225,6 +225,9 @@ function dispatchPrompt(
     return Promise.reject(new Error('ACP_TURN_IN_PROGRESS: a prompt turn is already in progress'))
   }
   if ('error' in fields) return Promise.reject(new Error(String(fields.error)))
+  if ('uncertain' in fields) {
+    return Promise.reject(new AcpTransportError(String(fields.uncertain), 'connection lost'))
+  }
   if ('agentDead' in fields) {
     return Promise.reject(new Error('agent thread is no longer running'))
   }

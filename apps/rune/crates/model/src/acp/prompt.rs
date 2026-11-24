@@ -29,7 +29,20 @@ pub enum DispatchOutcome {
     /// A definite rejection with the error's message. `agent_dead` when the
     /// agent process went away, whose own crash event reports it.
     Failed { message: String, agent_dead: bool },
+    /// Nobody knows whether the host took the command: the socket dropped,
+    /// timed out or halted before the reply (`isOutcomeUncertainError`).
+    /// `outcome_unknown` when the host said so itself: it will not run the
+    /// command again, and only the user's check resends it.
+    #[serde(rename_all = "camelCase")]
+    Uncertain {
+        message: String,
+        outcome_unknown: bool,
+    },
 }
+
+/// `String(error)` of the host's busy rejection (`ACP_TURN_IN_PROGRESS`).
+pub(crate) const BUSY_ERROR: &str =
+    "Error: ACP_TURN_IN_PROGRESS: a prompt turn is already in progress";
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -61,13 +74,21 @@ enum Caller {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dispatch {
     caller: Caller,
-    session_id: String,
+    pub(crate) session_id: String,
     user_blocks: Vec<Value>,
     display_blocks: Option<Vec<Value>>,
     queued_origin: Option<Value>,
     previous_open_turn_id: Option<String>,
-    open_turn_id: String,
+    pub(crate) open_turn_id: String,
     user_message_id: String,
+    /// The blocks and display blocks as they went on the wire, for a resend.
+    wire: (Vec<Value>, Option<Vec<Value>>),
+}
+
+impl Dispatch {
+    pub(crate) fn wire(&self) -> (Vec<Value>, Option<Vec<Value>>) {
+        self.wire.clone()
+    }
 }
 
 /// A send-now waiting for the running turn to clear.
@@ -227,6 +248,7 @@ impl State {
                     .filter(|_| turn.caller == Caller::SendNow),
             ),
         };
+        let wire = (blocks.clone(), display_blocks.clone());
         fx.push(Effect::DispatchPrompt {
             agent_id,
             session_id: session_id.to_owned(),
@@ -245,6 +267,7 @@ impl State {
                 previous_open_turn_id,
                 open_turn_id,
                 user_message_id,
+                wire,
             },
         );
     }
@@ -256,29 +279,28 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
+        if self.book.reconcile.resending(&settled.turn_id) {
+            return self.on_resend_settled(&settled.turn_id, settled.outcome, fx);
+        }
         let Some(dispatch) = self.book.dispatches.remove(&settled.turn_id) else {
             return;
         };
         let session_id = dispatch.session_id.clone();
+        let caller = dispatch.caller.clone();
         match settled.outcome {
             DispatchOutcome::Answered(result) => {
-                let answer = match result.get("receipt").and_then(Value::as_str) {
-                    Some(receipt @ ("accepted" | "in_progress")) => {
-                        format!("with a {receipt} receipt")
-                    }
-                    _ => format!("with stop reason {}", super::js::string_of(Some(&result))),
-                };
-                fx.push(Effect::info(
-                    "acp-store.promptReceipt",
-                    format!(
-                        "Prompt turn {} on session {session_id} answered {answer}; awaiting its prompt_complete",
-                        settled.turn_id
-                    ),
-                ));
+                log_receipt(&settled.turn_id, &session_id, &result, fx);
                 self.reset_busy_retry(&session_id);
             }
+            DispatchOutcome::Uncertain {
+                outcome_unknown, ..
+            } => {
+                self.reset_busy_retry(&session_id);
+                self.on_prompt_uncertain(settled.turn_id, dispatch, outcome_unknown, fx);
+            }
             DispatchOutcome::Busy => {
-                self.forget_wire_turn(&session_id);
+                self.book.active_wire_turns.remove(&session_id);
+                self.book.reconcile.echoed.remove(&session_id);
                 self.recover_to_queue(&dispatch, env);
                 if !self
                     .sessions
@@ -295,15 +317,7 @@ impl State {
                 // `String(error)`, as the store keeps and shows it.
                 let message = format!("Error: {message}");
                 self.reset_busy_retry(&session_id);
-                self.forget_wire_turn(&session_id);
-                super::turn::finalize_streaming(self.messages.get_mut(&session_id));
-                if let Some(session) = self.sessions.get_mut(&session_id) {
-                    session.active_turn = false;
-                    session.open_turn_id = None;
-                    if !agent_dead {
-                        session.last_error = Some(Some(message.clone()));
-                    }
-                }
+                self.fail_prompt_turn(&session_id, message.clone(), agent_dead);
                 match dispatch.caller {
                     Caller::User => fx.push(Effect::ActionRejected { message }),
                     Caller::SendNow => {
@@ -331,13 +345,23 @@ impl State {
                 }
             }
         }
-        if dispatch.caller == Caller::SendNow {
+        if caller == Caller::SendNow {
             self.suppress_queue_flush.remove(&session_id);
         }
     }
 
-    fn forget_wire_turn(&mut self, session_id: &str) {
-        self.book.active_wire_turns.remove(session_id);
+    /// `failTurn`: a definite rejection ends the turn and shows its error,
+    /// unless the agent went away, whose crash event reports it.
+    pub(crate) fn fail_prompt_turn(&mut self, session_id: &str, message: String, agent_dead: bool) {
+        self.forget_prompt_turn(session_id);
+        super::turn::finalize_streaming(self.messages.get_mut(session_id));
+        if let Some(session) = self.sessions.get_mut(session_id) {
+            session.active_turn = false;
+            session.open_turn_id = None;
+            if !agent_dead {
+                session.last_error = Some(Some(message));
+            }
+        }
     }
 
     /// `recoverPromptToQueue`: the host was busy, so the bubble comes off and
@@ -616,17 +640,48 @@ impl State {
     }
 
     /// `cancelPrompt`: stop the turn, or the agent's own work outside one.
+    /// A prompt still waiting to be confirmed is abandoned, and its turn
+    /// ends here: a host that never saw it sends no terminator.
     pub(crate) fn cancel_prompt(&mut self, session_id: &str, fx: &mut Vec<Effect>) {
         let Some(session) = self.sessions.get(session_id) else {
             return;
         };
-        if session.active_turn || session.agent_working == Some(true) {
-            fx.push(Effect::CancelPrompt {
-                agent_id: session.agent_id.clone(),
+        let agent_id = session.agent_id.clone();
+        let cancel = Effect::CancelPrompt {
+            agent_id: agent_id.clone(),
+            session_id: session_id.to_owned(),
+        };
+        if !session.active_turn {
+            if session.agent_working == Some(true) {
+                fx.push(cancel);
+            }
+            return;
+        }
+        let open_turn_id = session.open_turn_id.clone();
+        let abandoned = self.abandon_pending_prompt(session_id, &agent_id);
+        fx.push(cancel);
+        if abandoned {
+            fx.push(Effect::EndTurn(super::turn::TurnEnd {
                 session_id: session_id.to_owned(),
-            });
+                stop_reason: Some("cancelled".into()),
+                turn_id: open_turn_id,
+            }));
         }
     }
+}
+
+/// `settleDispatch`'s log: the host answered the prompt command.
+pub(crate) fn log_receipt(turn_id: &str, session_id: &str, result: &Value, fx: &mut Vec<Effect>) {
+    let answer = match result.get("receipt").and_then(Value::as_str) {
+        Some(receipt @ ("accepted" | "in_progress")) => format!("with a {receipt} receipt"),
+        _ => format!("with stop reason {}", super::js::string_of(Some(result))),
+    };
+    fx.push(Effect::info(
+        "acp-store.promptReceipt",
+        format!(
+            "Prompt turn {turn_id} on session {session_id} answered {answer}; awaiting its prompt_complete"
+        ),
+    ));
 }
 
 fn item_blocks(item: &Value, key: &str) -> Vec<Value> {
