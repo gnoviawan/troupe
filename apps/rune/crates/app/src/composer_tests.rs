@@ -145,9 +145,14 @@ fn a_second_command_is_refused() {
 #[test]
 fn return_in_the_launcher_starts_a_chat() {
     use rune::{Key, KeyEvent, Mods};
-    let mut rt = crate::tests::runtime_at((1280.0, 800.0));
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    let mut rt = rune::Runtime::new(s, crate::view, (1280.0, 800.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
     rt.state
         .agents_loaded(Some(json!([{ "id": "cfg", "name": "Chat Scenario Agent" }])));
+    rt.state.last_agent_loaded(Some(json!({ "agentId": "cli-tool", "mode": "cli" })));
     rt.frame(0.05);
     let root = rt
         .state
@@ -423,4 +428,30 @@ fn the_phone_plus_opens_the_add_sheet_and_mention_puts_an_at_sign() {
     let host = Host::Launcher("p-a".into());
     assert_eq!(rt.state.draft(&host).map(|d| d.edit.text.as_str()), Some("@"));
     assert!(rt.state.menu_view(&host).is_some(), "the mention menu opens");
+}
+
+#[test]
+fn a_refused_send_puts_the_draft_back() {
+    let (mut s, host) = chat();
+    s.chat.acp.sessions.get_mut("chat-1").expect("session").status = model::acp::types::SessionStatus::Closed;
+    s.draft_mut(&host).edit.insert("keep me");
+    s.composer_send(&host);
+    assert!(prompts(&s).is_empty());
+    assert_eq!(s.draft(&host).map(|d| d.edit.text.as_str()), Some("keep me"));
+}
+
+#[test]
+fn the_launcher_waits_for_the_saved_agent_before_it_starts() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    assert_eq!(s.workspace.project(), Some("p-a"));
+    s.agents_loaded(Some(json!([{ "id": "cfg", "name": "A" }])));
+    let host = Host::Launcher("p-a".into());
+    s.draft_mut(&host).edit.insert("go");
+    s.composer_send(&host);
+    assert!(s.composer.launching.is_none(), "no launch before agents/last-selected is read");
+    s.last_agent_loaded(None);
+    s.composer_send(&host);
+    assert!(s.composer.launching.is_some(), "the launch starts once the read is in");
 }

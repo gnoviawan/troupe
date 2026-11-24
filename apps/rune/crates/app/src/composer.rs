@@ -83,6 +83,10 @@ pub struct ComposerUi {
     pub agents: Vec<AgentConfig>,
     /// The launcher's agent (`agents/last-selected`), by config id.
     pub picked: Option<String>,
+    /// The `agents/last-selected` read came back, so a launch starts the saved agent.
+    pub picked_read: bool,
+    /// The model refused the send this step (`ActionRejected`): the draft goes back.
+    pub(crate) rejected: bool,
     /// Per session, the agent namespace its history names.
     pub namespaces: BTreeMap<String, String>,
     /// What a composer with no draft yet draws.
@@ -504,10 +508,15 @@ impl State {
             ),
         };
         let draft = self.draft_mut(host);
+        let kept = (draft.edit.clone(), std::mem::take(&mut draft.attachments));
         draft.edit.clear();
-        draft.attachments.clear();
         draft.panel = Panel::Root;
+        self.composer.rejected = false;
         self.acp_step(event);
+        if std::mem::take(&mut self.composer.rejected) {
+            let draft = self.draft_mut(host);
+            (draft.edit, draft.attachments) = kept;
+        }
     }
 
     /// The prompt command an `Effect::DispatchPrompt` asked for.
@@ -635,8 +644,12 @@ impl State {
         log::info!("[composer] {} agent configs", self.composer.agents.len());
     }
 
+    /// `readLastSelectedAgentId`: the saved pick counts only when its mode is `acp`.
     pub(crate) fn last_agent_loaded(&mut self, data: Option<Value>) {
-        self.composer.picked = data.and_then(|v| v.get("agentId").and_then(Value::as_str).map(str::to_owned));
+        self.composer.picked_read = true;
+        self.composer.picked = data
+            .filter(|v| v.get("mode").and_then(Value::as_str) == Some("acp"))
+            .and_then(|v| v.get("agentId").and_then(Value::as_str).map(str::to_owned));
     }
 }
 
