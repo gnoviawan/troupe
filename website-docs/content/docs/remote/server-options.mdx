@@ -102,11 +102,12 @@ troupe-server --host 127.0.0.1 --port 8080 --allowed-origins https://troupe.exam
 
 The server can update itself from the GitHub releases. Each download is checked against a signature before the server uses it. Builds you compile yourself can't self-update.
 
-There are three update channels:
+There are two update channels:
 
 - `stable`: tested releases.
-- `insider`: releases before they reach stable.
 - `nightly`: a new build each night.
+
+A server set to the old `insider` channel now uses `stable`.
 
 To update once, run:
 
@@ -123,7 +124,7 @@ To check for updates in the background, set these environment variables before y
 | Variable | Value |
 | --- | --- |
 | `TROUPE_SERVER_UPDATE_ENABLED` | `true` |
-| `TROUPE_SERVER_UPDATE_CHANNEL` | `stable`, `insider` or `nightly`. Required. |
+| `TROUPE_SERVER_UPDATE_CHANNEL` | `stable` or `nightly`. Required. |
 | `TROUPE_SERVER_UPDATE_INTERVAL_SECS` | How often to check. The default is `21600` (6 hours). |
 
 When the server finds a new version in the background, it installs it and restarts itself. Picking an update channel during setup — in the browser or with `troupe-server onboard` — turns background checks on for you.
