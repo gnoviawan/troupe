@@ -274,3 +274,38 @@ async fn only_the_builtin_account_is_probed_as_the_host_home() {
     seen.sort_unstable();
     assert_eq!(seen, [false, true]);
 }
+
+/// A sign-in after a `signed_out` read: the next list sees the login, so the
+/// stale read is dropped and the usage is probed again instead of showing the
+/// Account signed out until the cache expires.
+#[tokio::test]
+async fn a_sign_in_replaces_a_recent_signed_out_read() {
+    let root = tempfile::tempdir().unwrap();
+    let state = root.path().join("state");
+    let store = Arc::new(AntigravityAccountStore::new(
+        &state,
+        root.path().join("shared"),
+    ));
+    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
+    service.usage_probe = Arc::new(Boom);
+    let now = chrono::Utc::now().timestamp_millis();
+    service.usage_cache.lock().insert(
+        "default".to_string(),
+        CachedUsage {
+            usage: AntigravityAccountUsage {
+                account_id: "default".to_string(),
+                status: AntigravityUsageStatus::SignedOut,
+                plan_type: None,
+                windows: vec![],
+                checked_at: now,
+                message: None,
+            },
+            attempted_at: now,
+        },
+    );
+    let snapshot = service.accounts_snapshot().await.unwrap();
+    assert_eq!(snapshot.profiles[0].signed_in, Some(true));
+    let usage = service.accounts_usage(true).await.unwrap();
+    assert_eq!(usage.len(), 1);
+    assert_eq!(usage[0].status, AntigravityUsageStatus::Error);
+}
