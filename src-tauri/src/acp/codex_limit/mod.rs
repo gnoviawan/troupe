@@ -269,7 +269,7 @@ pub fn resume_notice(account: &str, window: &str, reset: &str) -> String {
 
 #[cfg(test)]
 #[path = "real_loop_tests.rs"]
-mod real_loop_tests;
+pub(crate) mod real_loop_tests;
 
 #[cfg(test)]
 #[path = "cross_keep_tests.rs"]
