@@ -220395,5 +220395,6227 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_pages_in_the_messages_before_the_head",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 52600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_without_durable_history_does_nothing",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 52700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_after_a_failed_read_keeps_the_view",
+  "context": {
+   "payloads": {
+    "s1": {
+     "reject": "disk gone"
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 52800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_on_an_empty_window_does_nothing",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 52900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 52900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_rereads_a_copy_that_stops_short_of_the_head",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 4
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      }
+     ]
+    }
+   },
+   "hostPayloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_waits_when_the_host_reread_fails",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 4
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      }
+     ]
+    }
+   },
+   "hostPayloads": {
+    "s1": {
+     "reject": "host gone"
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Host re-read for session s1… failed; scroll-back waits for the next scroll-up instead of paging from a stale copy"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Host re-read for session s1… failed; scroll-back waits for the next scroll-up instead of paging from a stale copy"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_pages_the_cached_copy_when_the_host_has_none",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 4
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 3"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_anchors_a_live_bubble_by_its_host_seq",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "msg-x",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 40,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      3
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5
+       },
+       {
+        "id": "msg-x",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 40,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_cannot_anchor_a_head_without_a_seq",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "msg-x",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "lost"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message for session s1 is not in the persisted payload and could not be anchored by seq; older history will not load"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-x",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "lost"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_folds_the_persisted_twin_of_an_unstamped_head",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "msg-b",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "thr"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 51
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "msg-b",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "thr"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 51
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_skips_rows_the_window_already_shows",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "a2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "two"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 4,
+      "hostSeq": 4
+     },
+     {
+      "id": "msg-c",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 52,
+      "hostSeq": 2
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4,
+        "hostSeq": 4
+       },
+       {
+        "id": "msg-c",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 52,
+        "hostSeq": 2
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_second_load_while_one_reads_waits_for_it",
+  "context": {
+   "payloads": {
+    "s1": {
+     "hold": true,
+     "release": {
+      "metadata": {
+       "id": "s1",
+       "lastSeq": 6
+      },
+      "messages": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6
+       }
+      ]
+     }
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      2
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_skips_hidden_turns",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u0",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "kept"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "h1",
+       "role": "user",
+       "blocks": [],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "h2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "hidden answer"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u3",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "third"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 5,
+      "hostSeq": 5
+     },
+     {
+      "id": "a3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "three"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 6,
+      "hostSeq": 6
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      5
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "kept"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5,
+        "hostSeq": 5
+       },
+       {
+        "id": "a3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "three"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6,
+        "hostSeq": 6
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_drops_a_row_the_window_shows_under_its_id",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "first"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "second"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "third"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "a3",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "three"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "fresh"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "a2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "two"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 51
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 53900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "third"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 51
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 53900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_folds_one_row_per_unstamped_twin",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "again"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "one"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "again"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "again"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 54000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 3"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "again"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "again"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 54000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_never_folds_into_a_stamped_or_persisted_bubble",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "stamped"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "persisted"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "other"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "two"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "fresh"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "msg-s",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "stamped"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 51,
+      "hostSeq": 9
+     },
+     {
+      "id": "a2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "persisted"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 52
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 54100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 3"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "stamped"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "persisted"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "msg-s",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "stamped"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 51,
+        "hostSeq": 9
+       },
+       {
+        "id": "a2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "persisted"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 52
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 54100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_folds_a_streaming_prefix_only_at_the_seam",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "a0",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "far answer"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q1"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "u2",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q2"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      },
+      {
+       "id": "u3",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q3"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 4
+      },
+      {
+       "id": "u4",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q4"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 5
+      },
+      {
+       "id": "u5",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q5"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 6
+      },
+      {
+       "id": "a5",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "near answer"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 7
+      },
+      {
+       "id": "a6",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "end"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 8
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "fresh"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "msg-n",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "near"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 51
+     },
+     {
+      "id": "msg-f",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "far"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 52
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 54200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 7"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "a0",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "far answer"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       },
+       {
+        "id": "u3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q3"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 4
+       },
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q4"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 5
+       },
+       {
+        "id": "u5",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q5"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 6
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "msg-n",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "near"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 51
+       },
+       {
+        "id": "msg-f",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "far"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 52
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 54200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "load_older_keeps_a_streaming_prefix_far_from_the_seam",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "lastSeq": 6
+     },
+     "messages": [
+      {
+       "id": "u1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "q1"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "a1",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "far answer"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      },
+      {
+       "id": "a2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "end"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 3
+      }
+     ]
+    }
+   }
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "turn:t1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "fresh"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 50
+     },
+     {
+      "id": "msg-f",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "far"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 51
+     },
+     {
+      "id": "x1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "x1"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 52,
+      "hostSeq": 20
+     },
+     {
+      "id": "x2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "x2"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 53,
+      "hostSeq": 21
+     },
+     {
+      "id": "x3",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "x3"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 54,
+      "hostSeq": 22
+     },
+     {
+      "id": "x4",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "x4"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 55,
+      "hostSeq": 23
+     },
+     {
+      "id": "x5",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "x5"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 56,
+      "hostSeq": 24
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 54300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadOlderMessages",
+     "args": [
+      "s1",
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.loadOlderMessages",
+      "message": "Oldest live message id for session s1 missing from persisted payload; anchored scroll-back by seq at index 2"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "q1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "far answer"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       },
+       {
+        "id": "turn:t1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 50
+       },
+       {
+        "id": "msg-f",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "far"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 51
+       },
+       {
+        "id": "x1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "x1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 52,
+        "hostSeq": 20
+       },
+       {
+        "id": "x2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "x2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 53,
+        "hostSeq": 21
+       },
+       {
+        "id": "x3",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "x3"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 54,
+        "hostSeq": 22
+       },
+       {
+        "id": "x4",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "x4"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 55,
+        "hostSeq": 23
+       },
+       {
+        "id": "x5",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "x5"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 56,
+        "hostSeq": 24
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 54300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

@@ -421,6 +421,7 @@ impl State {
         self.book.history_watermarks.remove(session_id);
         self.forget_prompt_turn(session_id);
         self.book.backfill_counts.remove(session_id);
+        self.book.loading_older.remove(session_id);
         self.book.durability_probes.remove(session_id);
         self.book.untrimmable.remove(session_id);
         self.forget_composer_session(session_id);

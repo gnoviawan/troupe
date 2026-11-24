@@ -8,11 +8,11 @@
 
 mod agent_commands;
 #[cfg(test)]
-mod answer_tests;
-#[cfg(test)]
 mod agent_commands_tests;
 pub mod agents;
 pub mod answer;
+#[cfg(test)]
+mod answer_tests;
 pub mod approvals;
 mod auth_retry;
 #[cfg(test)]
@@ -42,6 +42,9 @@ mod mcp_install;
 mod mcp_oauth;
 #[cfg(test)]
 mod mcp_tests;
+mod older;
+#[cfg(test)]
+mod older_tests;
 mod oneshot;
 mod oneshot_reply;
 #[cfg(test)]
@@ -311,6 +314,9 @@ pub struct Book {
     /// window keeps on top of its bound.
     #[serde(skip)]
     pub(crate) backfill_counts: BTreeMap<String, usize>,
+    /// Sessions whose `loadOlderMessages` is in flight.
+    #[serde(skip)]
+    pub(crate) loading_older: BTreeSet<String>,
     /// Sessions whose history is known durable, so their window may trim.
     #[serde(skip)]
     pub(crate) durable_history: BTreeSet<String>,
@@ -604,6 +610,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::QueueRetryDue(session_id, generation) => {
             state.on_queue_retry_due(&session_id, generation, env, &mut fx);
+        }
+        Event::LoadOlderMessages(session_id, count) => {
+            state.load_older_messages(session_id, count, &mut fx);
         }
         Event::RecheckPromptCommand(session_id) => {
             state.recheck_prompt_command(&session_id, &mut fx);

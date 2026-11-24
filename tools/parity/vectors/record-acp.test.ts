@@ -10,6 +10,7 @@ import {
   emit,
   factoryKey,
   heldReplies,
+  hostPayloads,
   type Manifest,
   manifestEntry,
   mcpReplies,
@@ -81,7 +82,13 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
       emit({ kind: 'readSessionPayload', sessionId: id })
       return answer(sessionPayloads.get(id) ?? null)
     },
-    loadSessionPayloadTail: async () => null
+    loadSessionPayloadTail: async () => null,
+    // The host re-read is the model's `reloadSessionPayload` effect; it
+    // answers `context.hostPayloads`.
+    reloadSessionPayloadFromHost: (id: string) => {
+      emit({ kind: 'reloadSessionPayload', sessionId: id })
+      return answer(hostPayloads.get(id) ?? null)
+    }
   }
 })
 vi.mock(`${renderer}/lib/acp-agents-persistence`, async (importOriginal) => ({

@@ -504,7 +504,25 @@
         "the_agent_going_away_drops_a_waiting_prompt",
         "closing_the_chat_drops_a_waiting_prompt",
         "a_new_prompt_after_stop_replaces_the_waiting_one",
-        "a_terminator_after_a_failed_send_is_not_taken_for_a_stale_one"
+        "a_terminator_after_a_failed_send_is_not_taken_for_a_stale_one",
+        "load_older_pages_in_the_messages_before_the_head",
+        "load_older_without_durable_history_does_nothing",
+        "load_older_after_a_failed_read_keeps_the_view",
+        "load_older_on_an_empty_window_does_nothing",
+        "load_older_rereads_a_copy_that_stops_short_of_the_head",
+        "load_older_waits_when_the_host_reread_fails",
+        "load_older_pages_the_cached_copy_when_the_host_has_none",
+        "load_older_anchors_a_live_bubble_by_its_host_seq",
+        "load_older_cannot_anchor_a_head_without_a_seq",
+        "load_older_folds_the_persisted_twin_of_an_unstamped_head",
+        "load_older_skips_rows_the_window_already_shows",
+        "a_second_load_while_one_reads_waits_for_it",
+        "load_older_skips_hidden_turns",
+        "load_older_drops_a_row_the_window_shows_under_its_id",
+        "load_older_folds_one_row_per_unstamped_twin",
+        "load_older_never_folds_into_a_stamped_or_persisted_bubble",
+        "load_older_folds_a_streaming_prefix_only_at_the_seam",
+        "load_older_keeps_a_streaming_prefix_far_from_the_seam"
       ]
     }
   }

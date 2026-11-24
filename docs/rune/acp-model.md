@@ -292,9 +292,18 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      marks. A `createSession` the host answered from its records
      (`lookup`) opens the session it names this way and answers once the
      open did, or fails with the open's error.
-   - 6b, rest. History open, `loadOlderMessages` (it needs the composer
-     unit's wire-to-display reversal for its twin folding and the switch
-     bands of PR 9), the resubscribe install, live-turn reattach.
+   - 6e, `loadOlderMessages` (R6a-6, `acp/older.rs`). The page before the
+     live window's head comes from the payload read (`readSessionPayload`);
+     a cached copy that stops short of the head is read again from the host
+     first (`reloadSessionPayload`, answered by `context.hostPayloads`). A
+     head missing from the payload anchors by its host seq. The page drops
+     hidden turns and the rows the window already shows, and a head
+     anchored on its renderer seq folds its persisted twins by host seq or
+     by text. The text compare is on the text as sent: the composer's
+     wire-to-display reversal is not ported. `backfillCounts` keeps the
+     page in the window. Not here: paging into the bands a live switch
+     spliced before the chat's head, which the model never makes.
+   - 6b, rest. The resubscribe install, live-turn reattach.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider

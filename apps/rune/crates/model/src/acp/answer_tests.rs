@@ -67,41 +67,97 @@ fn the_answer(effects: Vec<Effect>) -> Answer {
 #[test]
 fn a_permission_answer_goes_out_once_with_its_option() {
     let mut state = asked();
-    let answer = the_answer(apply(&mut state, json!({ "respondPermission": ["perm-1", "allow-once"] })));
-    let Answer::Permission { pending, option_id } = answer else { panic!("a permission answer") };
-    assert_eq!((pending.agent_id.as_str(), option_id.as_deref()), ("agent-1", Some("allow-once")));
+    let answer = the_answer(apply(
+        &mut state,
+        json!({ "respondPermission": ["perm-1", "allow-once"] }),
+    ));
+    let Answer::Permission { pending, option_id } = answer else {
+        panic!("a permission answer")
+    };
+    assert_eq!(
+        (pending.agent_id.as_str(), option_id.as_deref()),
+        ("agent-1", Some("allow-once"))
+    );
     assert!(state.pending_permissions.is_empty());
-    let again = apply(&mut state, json!({ "respondPermission": ["perm-1", "allow-once"] }));
+    let again = apply(
+        &mut state,
+        json!({ "respondPermission": ["perm-1", "allow-once"] }),
+    );
     assert_eq!(again, Vec::new(), "a second click sends nothing");
 }
 
 #[test]
 fn a_refused_answer_brings_the_prompt_back_unless_already_resolved() {
     let mut state = asked();
-    let answer = the_answer(apply(&mut state, json!({ "respondPermission": ["perm-1", null] })));
-    apply_event(&mut state, Event::AnswerFailed(answer.clone(), "socket closed".into(), Some("closed".into())));
-    assert_eq!(state.pending_permissions.keys().collect::<Vec<_>>(), ["perm-1"]);
+    let answer = the_answer(apply(
+        &mut state,
+        json!({ "respondPermission": ["perm-1", null] }),
+    ));
+    apply_event(
+        &mut state,
+        Event::AnswerFailed(
+            answer.clone(),
+            "socket closed".into(),
+            Some("closed".into()),
+        ),
+    );
+    assert_eq!(
+        state.pending_permissions.keys().collect::<Vec<_>>(),
+        ["perm-1"]
+    );
 
-    let answer = the_answer(apply(&mut state, json!({ "respondPermission": ["perm-1", null] })));
-    apply_event(&mut state, Event::AnswerFailed(answer, "gone".into(), Some("already_resolved".into())));
+    let answer = the_answer(apply(
+        &mut state,
+        json!({ "respondPermission": ["perm-1", null] }),
+    ));
+    apply_event(
+        &mut state,
+        Event::AnswerFailed(answer, "gone".into(), Some("already_resolved".into())),
+    );
     assert!(state.pending_permissions.is_empty());
 }
 
 #[test]
 fn a_question_answer_carries_the_values() {
     let mut state = asked();
-    let answer = the_answer(apply(&mut state, json!({ "answerQuestion": ["q-1", ["main"]] })));
-    let Answer::Question { pending, values } = answer.clone() else { panic!("a question answer") };
-    assert_eq!((pending.question_id.as_str(), values), ("q-1", vec!["main".to_owned()]));
+    let answer = the_answer(apply(
+        &mut state,
+        json!({ "answerQuestion": ["q-1", ["main"]] }),
+    ));
+    let Answer::Question { pending, values } = answer.clone() else {
+        panic!("a question answer")
+    };
+    assert_eq!(
+        (pending.question_id.as_str(), values),
+        ("q-1", vec!["main".to_owned()])
+    );
     assert!(state.pending_questions.is_empty());
-    apply_event(&mut state, Event::AnswerFailed(answer, "refused".into(), None));
+    apply_event(
+        &mut state,
+        Event::AnswerFailed(answer, "refused".into(), None),
+    );
     assert_eq!(state.pending_questions.keys().collect::<Vec<_>>(), ["q-1"]);
 }
 
 #[test]
 fn an_answer_for_an_unknown_prompt_sends_nothing() {
     let mut state = asked();
-    assert_eq!(apply(&mut state, json!({ "respondPermission": ["perm-9", "allow-once"] })), Vec::new());
-    assert_eq!(apply(&mut state, json!({ "answerQuestion": ["q-9", []] })), Vec::new());
-    assert_eq!(apply(&mut state, json!({ "respondElicitation": ["e-9", "cancel"] })), Vec::new());
+    assert_eq!(
+        apply(
+            &mut state,
+            json!({ "respondPermission": ["perm-9", "allow-once"] })
+        ),
+        Vec::new()
+    );
+    assert_eq!(
+        apply(&mut state, json!({ "answerQuestion": ["q-9", []] })),
+        Vec::new()
+    );
+    assert_eq!(
+        apply(
+            &mut state,
+            json!({ "respondElicitation": ["e-9", "cancel"] })
+        ),
+        Vec::new()
+    );
 }

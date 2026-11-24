@@ -7,6 +7,7 @@ use super::agents::{
     AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
     AgentSpawnedEvent, BrowserOpenRequestEvent,
 };
+use super::answer::Answer;
 use super::approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PermissionRequestEvent,
     QuestionCancelledEvent, QuestionRequestEvent,
@@ -24,7 +25,6 @@ use super::transcript::{
 use super::turn::{AgentWorkingEvent, BackgroundCommandsEvent, PromptCompleteEvent, TurnEnd};
 use super::types::{LogPoint, Object};
 use super::window::PayloadReadOutcome;
-use super::answer::Answer;
 use super::{Effect, RunId, import, launch};
 
 /// One store action. The variant names are the TypeScript action names; an
@@ -252,6 +252,10 @@ pub enum Event {
     /// The timer an [`Effect::RetryQueueAfter`] started ran out.
     #[serde(rename = "queueRetryDue")]
     QueueRetryDue(String, u64),
+    /// The reader scrolled up past the window's head: page in `count` older
+    /// messages.
+    #[serde(rename = "loadOlderMessages")]
+    LoadOlderMessages(String, usize),
     /// The user asked whether a prompt waiting to be confirmed went through.
     #[serde(rename = "recheckPromptCommand")]
     RecheckPromptCommand(String),

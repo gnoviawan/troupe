@@ -23,7 +23,10 @@ import {
   authenticatedAgents,
   rememberedAuthMethods
 } from '../../../../src/renderer/stores/acp-store/slices/agent'
-import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
+import {
+  _resetLoadingOlderForTesting,
+  dropSessionTranscriptState
+} from '../../../../src/renderer/stores/acp-store/slices/transcript'
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
@@ -36,6 +39,7 @@ import {
   emit,
   factoryKey,
   heldReplies,
+  hostPayloads,
   mcpReplies,
   mcpSharedSync,
   openChatTabs,
@@ -267,6 +271,13 @@ export const acpRecorder: StoreRecorder = {
     )) {
       sessionPayloads.set(id, payload)
     }
+    hostPayloads.clear()
+    for (const [id, payload] of Object.entries(
+      (context.hostPayloads as Record<string, unknown>) ?? {}
+    )) {
+      hostPayloads.set(id, payload)
+    }
+    _resetLoadingOlderForTesting()
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
     // A vector may leave a history open in flight; the next one starts clean.
@@ -393,6 +404,7 @@ import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
 import { mcpScenarios } from './acp-scenarios-mcp'
+import { olderScenarios } from './acp-scenarios-older'
 import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
@@ -432,5 +444,6 @@ export const acpScenarios = [
   ...oneShotScenarios,
   ...switchScenarios,
   ...warmScenarios,
-  ...reconcileScenarios
+  ...reconcileScenarios,
+  ...olderScenarios
 ]

@@ -312,6 +312,18 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Read the session's payload again from the host
+    /// (`reloadSessionPayloadFromHost`), then send `Event::SessionPayloadRead`
+    /// with this effect and the payload, `None` when the host has none, or
+    /// the error.
+    ReloadSessionPayload {
+        session_id: String,
+        #[serde(skip_serializing)]
+        count: usize,
+        /// The cached copy, paged from when the host has none.
+        #[serde(skip_serializing)]
+        cached: Value,
+    },
     /// Send `session/new`; then `AgentCommandDone` with the new session
     /// (`lookup` set when a resend was answered from the host's records),
     /// or `AgentCommandFailed`.

@@ -104,6 +104,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .unwrap_or_default()
         .into();
     let payloads = context.get("payloads").cloned().unwrap_or(json!({}));
+    let host_payloads = context.get("hostPayloads").cloned().unwrap_or(json!({}));
     // Commands a `{ hold, release }` reply keeps in flight, oldest first,
     // with the reply a `releaseHeld` step answers them with.
     let mut held: VecDeque<(Effect, Value)> = VecDeque::new();
@@ -174,6 +175,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
                         | Effect::ReadSessionPayload { .. }
+                        | Effect::ReloadSessionPayload { .. }
                         | Effect::CloseAgentSession { .. }
                         | Effect::DeleteAgentSession { .. }
                         | Effect::DeleteSessionPayload { .. }
@@ -234,6 +236,17 @@ fn replay(vector: &Value) -> Result<usize, String> {
                     // agent command answers its reply.
                     Effect::ReadSessionPayload { ref session_id, .. } => {
                         let reply = payloads.get(session_id).cloned().unwrap_or(Value::Null);
+                        match hold(command, reply, &mut held) {
+                            Some((command, reply)) => answer(command, reply),
+                            None => continue,
+                        }
+                    }
+                    // The host's re-read answers `context.hostPayloads`.
+                    Effect::ReloadSessionPayload { ref session_id, .. } => {
+                        let reply = host_payloads
+                            .get(session_id)
+                            .cloned()
+                            .unwrap_or(Value::Null);
                         match hold(command, reply, &mut held) {
                             Some((command, reply)) => answer(command, reply),
                             None => continue,
@@ -461,7 +474,7 @@ fn hold(
 fn answer(command: Effect, reply: Value) -> Event {
     let rejected = reply.get("reject").map(|reason| js_string(Some(reason)));
     match command {
-        Effect::ReadSessionPayload { .. } => {
+        Effect::ReadSessionPayload { .. } | Effect::ReloadSessionPayload { .. } => {
             let outcome = match rejected {
                 Some(reason) => Err(reason),
                 None => Ok(Some(reply).filter(|reply| !reply.is_null())),

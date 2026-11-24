@@ -91,6 +91,19 @@ fn partition(messages: Vec<ChatMessage>) -> (Vec<ChatMessage>, Vec<(f64, f64)>) 
     (visible, hidden)
 }
 
+/// `renderableRows`: the payload's messages without the hidden turns, the
+/// user bubbles normalized.
+pub(crate) fn renderable_rows(payload: &Value) -> Vec<ChatMessage> {
+    let messages: Vec<ChatMessage> =
+        serde_json::from_value(payload.get("messages").cloned().unwrap_or(json!([])))
+            .unwrap_or_default();
+    let (mut visible, _) = partition(messages);
+    for message in &mut visible {
+        super::turn::normalize_user_message(message);
+    }
+    visible
+}
+
 /// `maxPayloadSeq` over the messages and tool calls.
 pub(crate) fn max_payload_seq(payload: &Value) -> f64 {
     let seqs = |key: &str| {
