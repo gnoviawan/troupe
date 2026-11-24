@@ -7,6 +7,15 @@
       "message": "refused: auth redirect URL must be http(s) on a loopback host (localhost, *.localhost, 127.0.0.0/8, [::1])"
     }
   },
+  "add_antigravity_account": {
+    "id": "req-ag-93",
+    "ok": true,
+    "payload": {
+      "id": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture",
+      "createdAt": 1795449272014
+    }
+  },
   "add_claude_account": {
     "id": "req-80",
     "ok": true,
@@ -687,6 +696,40 @@
       }
     ]
   },
+  "list_antigravity_accounts": {
+    "id": "req-ag-91",
+    "ok": true,
+    "payload": {
+      "accounts": [
+        {
+          "id": "default",
+          "name": "Default",
+          "builtin": true,
+          "signedIn": false
+        }
+      ],
+      "defaultAccountId": "default",
+      "projectAccounts": {},
+      "chatAccounts": {},
+      "autoSwitch": true
+    }
+  },
+  "list_antigravity_usage": {
+    "id": "req-ag-92",
+    "ok": true,
+    "payload": {
+      "usage": [
+        {
+          "accountId": "default",
+          "status": "signed_out",
+          "planType": null,
+          "windows": [],
+          "checkedAt": 1795449271365,
+          "message": null
+        }
+      ]
+    }
+  },
   "list_claude_accounts": {
     "id": "req-78",
     "ok": true,
@@ -947,6 +990,14 @@
       "logEpoch": "5d67d261-9c53-48ff-b1ad-9b36b0839eaf"
     }
   },
+  "remove_antigravity_account": {
+    "id": "req-ag-101",
+    "ok": true,
+    "payload": {
+      "movedProjectIds": [],
+      "movedChatIds": []
+    }
+  },
   "remove_claude_account": {
     "id": "req-90",
     "ok": true,
@@ -965,6 +1016,11 @@
   },
   "remove_project": {
     "id": "req-108",
+    "ok": true,
+    "payload": {}
+  },
+  "rename_antigravity_account": {
+    "id": "req-ag-94",
     "ok": true,
     "payload": {}
   },
@@ -1024,10 +1080,29 @@
     "ok": true,
     "payload": "end_turn"
   },
+  "set_antigravity_auto_switch": {
+    "id": "req-ag-98",
+    "ok": true,
+    "payload": {}
+  },
+  "set_antigravity_resume": {
+    "id": "req-ag-99",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
   "set_catalog_opt_in": {
     "id": "req-71",
     "ok": true,
     "payload": {}
+  },
+  "set_chat_antigravity_account": {
+    "id": "req-ag-97",
+    "ok": false,
+    "err": {
+      "code": "antigravity_account_signed_out",
+      "message": "The project's Antigravity account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
   },
   "set_chat_claude_account": {
     "id": "req-84",
@@ -1112,6 +1187,14 @@
     ],
     "visible_at": 4
   },
+  "set_default_antigravity_account": {
+    "id": "req-ag-95",
+    "ok": false,
+    "err": {
+      "code": "not_found",
+      "message": "That Antigravity account does not exist"
+    }
+  },
   "set_default_claude_account": {
     "id": "req-82",
     "ok": false,
@@ -1157,6 +1240,14 @@
     "payload": {},
     "visible_at": 3
   },
+  "set_project_antigravity_account": {
+    "id": "req-ag-96",
+    "ok": false,
+    "err": {
+      "code": "antigravity_account_signed_out",
+      "message": "The default Antigravity account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
+  },
   "set_project_claude_account": {
     "id": "req-83",
     "ok": true,
@@ -1194,6 +1285,14 @@
       "authMethods": [],
       "hostAuthReady": false,
       "stableNamespace": "config:fake-longrun"
+    }
+  },
+  "start_antigravity_account_login": {
+    "id": "req-ag-100",
+    "ok": false,
+    "err": {
+      "code": "not_implemented",
+      "message": "Sign-in is only available for the Antigravity agent"
     }
   },
   "start_claude_link_login": {

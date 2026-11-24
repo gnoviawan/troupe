@@ -93,8 +93,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     expect(WS_REQUEST_TYPES).toContain('get_session_payload')
   })
 
-  it('exports exactly 90 request types including chat MCP install approval and per-chat Codex account and resume', () => {
-    expect(WS_REQUEST_TYPES).toHaveLength(90)
+  it('exports exactly 101 request types including chat MCP install approval and per-chat Codex and Antigravity account and resume', () => {
+    expect(WS_REQUEST_TYPES).toHaveLength(101)
     const expected = [
       'send_prompt',
       'cancel_prompt',
@@ -200,6 +200,17 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
       'rename_codex_account',
       'remove_codex_account',
       'start_codex_account_login',
+      'list_antigravity_accounts',
+      'list_antigravity_usage',
+      'set_default_antigravity_account',
+      'set_project_antigravity_account',
+      'set_chat_antigravity_account',
+      'set_antigravity_auto_switch',
+      'set_antigravity_resume',
+      'add_antigravity_account',
+      'rename_antigravity_account',
+      'remove_antigravity_account',
+      'start_antigravity_account_login',
       // The canvas gateway's renderer leg.
       'canvas_mount',
       'canvas_unmount',
@@ -223,9 +234,9 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
 })
 
 describe('web-protocol.types — error codes (AC2)', () => {
-  it('exports exactly 30 stable error codes', () => {
+  it('exports exactly 31 stable error codes', () => {
     const codes = new Set(Object.values(WS_ERROR_CODES))
-    expect(codes.size).toBe(30)
+    expect(codes.size).toBe(31)
     const expected = [
       'not_found',
       'unauthorized',
@@ -262,6 +273,8 @@ describe('web-protocol.types — error codes (AC2)', () => {
       'claude_account_signed_out',
       // A Codex Account that is not signed in.
       'codex_account_signed_out',
+      // An Antigravity Account that is not signed in.
+      'antigravity_account_signed_out',
       // A pasted Claude sign-in code the CLI calls incomplete.
       'claude_login_code_incomplete',
       // A pasted Claude sign-in code while the CLI still checks the last one.

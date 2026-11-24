@@ -30,6 +30,7 @@ use crate::acp::session_persistence::SessionRegistration;
 mod activity;
 mod background_commands;
 mod commands;
+mod quota_hits;
 pub(crate) mod replay_import;
 mod sign_in;
 mod subagents;
@@ -192,6 +193,8 @@ pub(crate) struct DriverState {
     unprompted: UnpromptedWork,
     /// Commands the agent left running, per session.
     background_commands: BackgroundCommands,
+    /// Plan limits reported as turn text (Antigravity).
+    quota_hits: quota_hits::QuotaHits,
 }
 
 /// State of one session's replay window: how many reopens are in flight and
@@ -325,6 +328,10 @@ impl DriverState {
 
     pub(crate) fn sign_in(&mut self) -> &mut SignInSlot {
         &mut self.sign_in
+    }
+
+    pub(crate) fn quota_hits(&mut self) -> &mut quota_hits::QuotaHits {
+        &mut self.quota_hits
     }
 
     pub(crate) fn unprompted(&mut self) -> &mut UnpromptedWork {

@@ -377,3 +377,35 @@ async fn a_recent_attempt_is_not_probed_again() {
     assert_eq!(usage[0].status, CodexUsageStatus::Ok);
     assert_eq!(usage[0].plan_type.as_deref(), Some("plus"));
 }
+
+/// A sign-in after a `signed_out` read: the next list sees the login, so the
+/// stale read is dropped and the usage is probed again instead of showing the
+/// Account signed out until the cache expires.
+#[tokio::test]
+async fn a_sign_in_replaces_a_recent_signed_out_read() {
+    let root = tempfile::tempdir().unwrap();
+    let state = root.path().join("state");
+    let store = Arc::new(CodexAccountStore::new(&state, root.path().join("shared")));
+    let mut service = CodexAgentService::with_probe(store, Arc::new(SignedIn));
+    service.usage_probe = Arc::new(Boom);
+    let now = chrono::Utc::now().timestamp_millis();
+    service.usage_cache.lock().insert(
+        "default".to_string(),
+        CachedUsage {
+            usage: CodexAccountUsage {
+                account_id: "default".to_string(),
+                status: CodexUsageStatus::SignedOut,
+                plan_type: None,
+                windows: vec![],
+                checked_at: now,
+                message: None,
+            },
+            attempted_at: now,
+        },
+    );
+    let snapshot = service.accounts_snapshot().await.unwrap();
+    assert_eq!(snapshot.profiles[0].signed_in, Some(true));
+    let usage = service.accounts_usage(true).await.unwrap();
+    assert_eq!(usage.len(), 1);
+    assert_eq!(usage[0].status, CodexUsageStatus::Error);
+}

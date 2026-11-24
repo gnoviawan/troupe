@@ -44,7 +44,7 @@ impl Shared {
 
 /// What a pending call's reply is for.
 #[derive(Clone, Debug, PartialEq)]
-enum Pending {
+pub(crate) enum Pending {
     ReadLayout,
     ReadActiveProject,
     ReadPrefs,
@@ -65,6 +65,8 @@ enum Pending {
         record: Option<Value>,
     },
     WriteWorkspace(String),
+    /// A chat's history (`get_session_payload`).
+    ChatPayload(String),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -158,7 +160,7 @@ impl State {
         format!("device/{}/{key}", self.device_id)
     }
 
-    fn send(&mut self, command: Command) {
+    pub(crate) fn send(&mut self, command: Command) {
         #[cfg(test)]
         self.sync.sent.push(command.clone());
         if let Some(host) = &mut self.host {
@@ -166,7 +168,7 @@ impl State {
         }
     }
 
-    fn call(&mut self, kind: WsRequestType, payload: Value, pending: Pending) {
+    pub(crate) fn call(&mut self, kind: WsRequestType, payload: Value, pending: Pending) {
         self.sync.next_call += 1;
         let call = self.sync.next_call;
         self.sync.pending.insert(call, pending);
@@ -233,6 +235,7 @@ impl State {
                 );
             }
             Output::Reply { call, result } => self.reply(call, result),
+            Output::Event(event) => self.chat_event(event),
             _ => {}
         }
     }
@@ -385,6 +388,7 @@ impl State {
                     self.toast_error("Failed to create the project", &e.message);
                 }
             },
+            Pending::ChatPayload(session_id) => self.chat_payload(session_id, result),
             Pending::WriteWorkspace(project_id) => {
                 if let Err(e) = result {
                     log::warn!(

@@ -154,6 +154,8 @@ fn only_creates_and_non_prompt_commands_enter_the_ledger() {
             "finish_claude_link_login",
             "add_codex_account",
             "start_codex_account_login",
+            "add_antigravity_account",
+            "start_antigravity_account_login",
         ])
     );
     assert!(
