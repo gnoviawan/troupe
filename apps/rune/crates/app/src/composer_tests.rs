@@ -141,3 +141,65 @@ fn a_second_command_is_refused() {
     let doc = ui::composer::field::doc_of(&s.draft(&host).expect("draft").edit);
     assert_eq!(doc.pills().count(), 1, "one command per draft");
 }
+
+#[test]
+fn return_in_the_launcher_starts_a_chat() {
+    use rune::{Key, KeyEvent, Mods};
+    let mut rt = crate::tests::runtime_at((1280.0, 800.0));
+    rt.state
+        .agents_loaded(Some(json!([{ "id": "cfg", "name": "Chat Scenario Agent" }])));
+    rt.frame(0.05);
+    let root = rt
+        .state
+        .projects
+        .store
+        .projects
+        .iter()
+        .find(|p| p.id == "p-a")
+        .and_then(|p| p.path.clone())
+        .unwrap_or_default();
+    let skill = Skill {
+        name: "matrix-review".into(),
+        description: "Review".into(),
+        scope: "global".into(),
+        path: "/s/SKILL.md".into(),
+    };
+    rt.state.composer.skills.insert(root, vec![skill]);
+    let key = "composer-launcher-p-a-field";
+    crate::tests::tap(&mut rt, key);
+    let typed = |rt: &mut rune::Runtime<crate::State>, text: &str| {
+        for c in text.chars() {
+            rt.key(KeyEvent {
+                key: Key::Text(c.to_string()),
+                mods: Mods::default(),
+            });
+        }
+        rt.frame(0.1);
+    };
+    typed(&mut rt, "Use /matrix");
+    rt.key(KeyEvent {
+        key: Key::Enter,
+        mods: Mods::default(),
+    });
+    rt.frame(0.12);
+    typed(&mut rt, "on it");
+    rt.key(KeyEvent {
+        key: Key::Enter,
+        mods: Mods::default(),
+    });
+    rt.frame(0.15);
+    let spawn = rt.state.sync.sent.iter().find_map(|c| match c {
+        Command::Call {
+            kind: WsRequestType::SpawnAgent,
+            payload,
+            ..
+        } => Some(payload.clone()),
+        _ => None,
+    });
+    let spawn = spawn.expect("Return sends the launcher's draft");
+    assert_eq!(
+        spawn["config"],
+        json!({ "configId": "cfg", "name": "Chat Scenario Agent" }),
+        "the host takes configId, not the stored id"
+    );
+}

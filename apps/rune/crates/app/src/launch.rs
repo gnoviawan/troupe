@@ -43,7 +43,7 @@ impl State {
         let Some(config) = picked
             .and_then(|id| agents.iter().find(|a| a.id == id))
             .or_else(|| agents.first())
-            .map(|a| a.raw.clone())
+            .map(|a| spawn_config(&a.raw))
         else {
             self.toast_error("No agent to start", "Add an agent in Settings first.");
             return;
@@ -128,4 +128,17 @@ impl State {
         };
         self.acp_step(event);
     }
+}
+
+/// The `spawn_agent` config of a stored agent (`StoredAgentConfig` to `AgentConfig`): the host
+/// takes `configId`, `name`, `command`, `args`, `env` and `allowTerminal`, nothing else.
+fn spawn_config(stored: &Value) -> Value {
+    let mut config = serde_json::Map::new();
+    config.insert("configId".into(), stored.get("id").cloned().unwrap_or(Value::Null));
+    for field in ["name", "command", "args", "env", "allowTerminal"] {
+        if let Some(v) = stored.get(field) {
+            config.insert(field.into(), v.clone());
+        }
+    }
+    Value::Object(config)
 }
