@@ -80,23 +80,10 @@ pub(super) struct StartAntigravityAccountLoginPayload {
     config: AgentConfig,
 }
 
-#[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ListAntigravityUsagePayload {
-    #[serde(default)]
-    force: bool,
-}
-
-/// `list_antigravity_usage { force? }` → the usage windows of every Account.
-/// Reads are cached 5 minutes; a forced read still reuses one younger than 60 seconds.
-pub(super) async fn handle_list_antigravity_usage(
-    id: String,
-    payload: &Value,
-    acp: &Arc<AcpManager>,
-) -> WsReply {
-    let parsed: ListAntigravityUsagePayload =
-        serde_json::from_value(payload.clone()).unwrap_or_default();
-    match acp.antigravity_agent().accounts_usage(parsed.force).await {
+/// `list_antigravity_usage` → every Account as `unavailable`: Troupe does not
+/// read Antigravity quotas.
+pub(super) fn handle_list_antigravity_usage(id: String, acp: &Arc<AcpManager>) -> WsReply {
+    match acp.antigravity_agent().accounts_usage() {
         Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),
         Err(error) => {
             warn!(error = %error, "list_antigravity_usage failed");

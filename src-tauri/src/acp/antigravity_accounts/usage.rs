@@ -1,18 +1,9 @@
-//! Usage of an Antigravity Account: one window per model quota bucket, read
-//! from the Cloud Code Assist `fetchAvailableModels` reply. The probe is
-//! best-effort: a missing login file, an endpoint this host does not
-//! understand, or a reply without quota data is `unavailable`, not an error.
-//!
-//! This module also reads the plan-limit message Antigravity sends as plain
-//! agent text ("Usage Limit Reached") instead of a structured error.
+//! Usage of an Antigravity Account, and the plan-limit message Antigravity
+//! sends as plain agent text ("Usage Limit Reached") instead of a structured
+//! error. Troupe does not read quotas, so a usage read carries no windows.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-/// The Cloud Code endpoint for accounts on the Google Cloud terms of service.
-pub const GCP_TOS_ENDPOINT: &str = "https://cloudcode-pa.googleapis.com";
-/// The Cloud Code endpoint for every other account.
-pub const DAILY_ENDPOINT: &str = "https://daily-cloudcode-pa.googleapis.com";
 
 /// One usage window of an Account: the quota bucket of one model.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,7 +25,7 @@ pub struct AntigravityUsageWindow {
 pub enum AntigravityUsageStatus {
     /// Windows were read.
     Ok,
-    /// No usable quota read on this host (keychain login, unknown reply).
+    /// Troupe does not read the quota; see `message`.
     Unavailable,
     /// The Account has no Google login.
     SignedOut,
@@ -74,187 +65,6 @@ impl AntigravityAccountUsage {
             message: Some(message.into()),
         }
     }
-}
-
-/// What one usage probe concluded, before it is stored.
-#[derive(Debug)]
-pub(crate) enum ProbeVerdict {
-    /// The `fetchAvailableModels` reply and the plan name from `loadCodeAssist`.
-    Models {
-        plan_type: Option<String>,
-        reply: Value,
-    },
-    SignedOut,
-    Unavailable(&'static str),
-    Failed(&'static str),
-}
-
-/// The default `unavailable` message.
-pub(crate) const USAGE_UNAVAILABLE: &str = "Antigravity usage is not available";
-/// The `unavailable` message of a built-in Account whose login is in the
-/// macOS keychain, where Troupe cannot read the refresh token.
-pub(crate) const KEYCHAIN_UNAVAILABLE: &str =
-    "Antigravity usage is not available for a keychain login";
-const NO_LIMITS: &str = "Antigravity did not report plan limits";
-
-/// Map a probe verdict to the usage record of one Account.
-#[must_use]
-pub(crate) fn usage_from_verdict(
-    account_id: &str,
-    verdict: ProbeVerdict,
-    checked_at: i64,
-) -> AntigravityAccountUsage {
-    match verdict {
-        ProbeVerdict::Models { plan_type, reply } => {
-            usage_from_models(account_id, plan_type, &reply, checked_at)
-        }
-        ProbeVerdict::SignedOut => AntigravityAccountUsage {
-            account_id: account_id.to_string(),
-            status: AntigravityUsageStatus::SignedOut,
-            plan_type: None,
-            windows: Vec::new(),
-            checked_at,
-            message: None,
-        },
-        ProbeVerdict::Unavailable(message) => AntigravityAccountUsage::status_only(
-            account_id,
-            AntigravityUsageStatus::Unavailable,
-            message,
-            checked_at,
-        ),
-        ProbeVerdict::Failed(message) => AntigravityAccountUsage::status_only(
-            account_id,
-            AntigravityUsageStatus::Error,
-            message,
-            checked_at,
-        ),
-    }
-}
-
-/// Map a `fetchAvailableModels` reply to one window per model with quota
-/// data. Disabled and internal models are skipped. Windows are sorted by
-/// percent used (most used first), then by label. No window is `unavailable`.
-#[must_use]
-pub fn usage_from_models(
-    account_id: &str,
-    plan_type: Option<String>,
-    reply: &Value,
-    checked_at: i64,
-) -> AntigravityAccountUsage {
-    let mut windows: Vec<AntigravityUsageWindow> = reply
-        .get("models")
-        .and_then(Value::as_object)
-        .map(|models| {
-            models
-                .iter()
-                .filter_map(|(id, model)| window_from(id, model))
-                .collect()
-        })
-        .unwrap_or_default();
-    if windows.is_empty() {
-        return AntigravityAccountUsage::status_only(
-            account_id,
-            AntigravityUsageStatus::Unavailable,
-            NO_LIMITS,
-            checked_at,
-        );
-    }
-    windows.sort_by(|a, b| {
-        b.percent
-            .total_cmp(&a.percent)
-            .then_with(|| a.label.cmp(&b.label))
-    });
-    AntigravityAccountUsage {
-        account_id: account_id.to_string(),
-        status: AntigravityUsageStatus::Ok,
-        plan_type,
-        windows,
-        checked_at,
-        message: None,
-    }
-}
-
-fn window_from(model_id: &str, model: &Value) -> Option<AntigravityUsageWindow> {
-    let flag = |key: &str| model.get(key).and_then(Value::as_bool).unwrap_or(false);
-    if flag("disabled") || flag("isInternal") {
-        return None;
-    }
-    let quota = model.get("quotaInfo").filter(|quota| quota.is_object())?;
-    let resets_at = quota
-        .get("resetTime")
-        .and_then(Value::as_str)
-        .filter(|reset| !reset.is_empty())
-        .map(str::to_string);
-    let remaining = quota.get("remainingFraction").and_then(Value::as_f64);
-    let percent = match (remaining, &resets_at) {
-        (Some(fraction), _) => ((1.0 - fraction) * 100.0).clamp(0.0, 100.0),
-        // A bucket with a reset time and no remaining fraction is used up.
-        (None, Some(_)) => 100.0,
-        (None, None) => return None,
-    };
-    let label = model
-        .get("displayName")
-        .and_then(Value::as_str)
-        .filter(|name| !name.trim().is_empty())
-        .unwrap_or(model_id)
-        .to_string();
-    Some(AntigravityUsageWindow {
-        kind: "model".to_string(),
-        label,
-        model_id: model_id.to_string(),
-        percent,
-        resets_at,
-    })
-}
-
-/// The Cloud Code Assist project of a `loadCodeAssist` reply: a string, or
-/// an object with an `id`.
-#[must_use]
-pub(crate) fn code_assist_project(load: &Value) -> Option<String> {
-    let project = load.get("cloudaicompanionProject")?;
-    project
-        .as_str()
-        .or_else(|| project.get("id").and_then(Value::as_str))
-        .filter(|id| !id.is_empty())
-        .map(str::to_string)
-}
-
-/// The plan name of a `loadCodeAssist` reply: the paid tier, else the
-/// current tier, by name, else by id.
-#[must_use]
-pub(crate) fn plan_name(load: &Value) -> Option<String> {
-    let tier_name = |tier: &str| {
-        let tier = load.get(tier)?;
-        ["name", "id"].iter().find_map(|key| {
-            tier.get(*key)
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .filter(|name| !name.is_empty())
-                .map(str::to_string)
-        })
-    };
-    tier_name("paidTier").or_else(|| tier_name("currentTier"))
-}
-
-/// The endpoint `fetchAvailableModels` must go to for this account.
-#[must_use]
-pub(crate) fn quota_endpoint(load: &Value) -> &'static str {
-    let gcp_tos = load
-        .get("paidTier")
-        .and_then(|tier| tier.get("usesGcpTos"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    if gcp_tos {
-        GCP_TOS_ENDPOINT
-    } else {
-        DAILY_ENDPOINT
-    }
-}
-
-/// A token-endpoint error body that means the login is gone.
-#[must_use]
-pub(crate) fn is_invalid_grant(body: &Value) -> bool {
-    body.get("error").and_then(Value::as_str) == Some("invalid_grant")
 }
 
 /// The plan limit Antigravity reported in the text of a turn.
