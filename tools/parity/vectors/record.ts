@@ -67,6 +67,9 @@ export interface StoreRecorder {
 /** What a mocked read returns, keyed by the read (e.g. `project-prefs`). */
 export const reads = new Map<string, unknown>()
 
+/** How the mocked prompt dispatches answer, in order; a vector's `context.dispatch`. */
+export const dispatchOutcomes: unknown[] = []
+
 /** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
 export const readFailures = new Map<string, string>()
 

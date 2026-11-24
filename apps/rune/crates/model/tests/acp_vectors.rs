@@ -6,6 +6,9 @@
 mod common;
 
 use common::{Replay, diff, out_dir, parse, read_json, source_hash, to_value};
+use std::collections::VecDeque;
+
+use model::acp::prompt::{DispatchOutcome, PromptSettled};
 use model::acp::{self, Effect, Env, Event, State};
 use serde_json::{Value, json};
 
@@ -28,10 +31,38 @@ fn event(recorded: &Value) -> Result<Event, String> {
         .map_err(|e| format!("{action}: {e}"))
 }
 
+/// How the recorder's mocked `sendPromptBlocks` answered: `{ busy }` rejects
+/// as a busy session, `{ error }` and `{ agentDead }` reject, anything else
+/// resolves. With no outcome listed it resolves `{ receipt: "accepted" }`.
+fn dispatch_outcome(outcome: Option<Value>) -> DispatchOutcome {
+    let outcome = outcome.unwrap_or_else(|| json!({ "receipt": "accepted" }));
+    if outcome.get("busy").is_some() {
+        DispatchOutcome::Busy
+    } else if let Some(error) = outcome.get("error").and_then(Value::as_str) {
+        DispatchOutcome::Failed {
+            message: format!("Error: {error}"),
+            agent_dead: false,
+        }
+    } else if outcome.get("agentDead").is_some() {
+        DispatchOutcome::Failed {
+            message: "Error: agent thread is no longer running".into(),
+            agent_dead: true,
+        }
+    } else {
+        DispatchOutcome::Answered(outcome)
+    }
+}
+
 fn replay(vector: &Value) -> Result<usize, String> {
     let context = vector.get("context").cloned().unwrap_or(json!({}));
     let start = context.get("now").and_then(Value::as_f64).unwrap_or(NOW);
     let server_history = context.get("serverHistory") == Some(&Value::Bool(true));
+    let mut outcomes: VecDeque<Value> = context
+        .get("dispatch")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
@@ -53,17 +84,41 @@ fn replay(vector: &Value) -> Result<usize, String> {
             event(&recorded["event"]).map_err(|e| at(&e))?,
             &mut env,
         );
-        // The recorder drains the deferred turn end after every step; so does
-        // the replay, the way the app feeds the close back.
-        while let Some(index) = effects
-            .iter()
-            .position(|effect| matches!(effect, Effect::EndTurn(_)))
-        {
-            let Effect::EndTurn(end) = effects.remove(index) else {
-                unreachable!()
-            };
-            effects.extend(acp::step(&mut state, Event::TurnEnd(end), &mut env));
+        // The recorder awaits each dispatched command (a microtask) and then
+        // the deferred turn end (a macrotask) after every step; the replay
+        // feeds both back in that order, the way the app does.
+        let mut settled = std::collections::BTreeSet::new();
+        loop {
+            let dispatched = effects.iter().find_map(|effect| match effect {
+                Effect::DispatchPrompt {
+                    session_id,
+                    turn_id,
+                    ..
+                } if !settled.contains(turn_id) => Some((session_id.clone(), turn_id.clone())),
+                _ => None,
+            });
+            if let Some((session_id, turn_id)) = dispatched {
+                settled.insert(turn_id.clone());
+                let outcome = dispatch_outcome(outcomes.pop_front());
+                let event = Event::PromptSettled(PromptSettled {
+                    session_id,
+                    turn_id,
+                    outcome,
+                });
+                effects.extend(acp::step(&mut state, event, &mut env));
+                continue;
+            }
+            if let Some(index) = effects.iter().position(|e| matches!(e, Effect::EndTurn(_))) {
+                let Effect::EndTurn(end) = effects.remove(index) else {
+                    unreachable!()
+                };
+                effects.extend(acp::step(&mut state, Event::TurnEnd(end), &mut env));
+                continue;
+            }
+            break;
         }
+        // The recorder cannot see the busy-retry timer (`setTimeout`).
+        effects.retain(|effect| !matches!(effect, Effect::RetryQueueAfter { .. }));
         if !ids.ids.is_empty() || ids.overdrawn > 0 {
             return Err(at(&format!(
                 "drew {} ids too few or {} too many",

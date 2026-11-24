@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use super::transcript::{split_read_only_guard, strip_handoff_preamble};
-use super::types::{ChatMessage, PlanEntry, Role, SessionStatus};
-use super::{Effect, State, js};
+use super::types::{ChatMessage, PlanEntry, Role};
+use super::{Effect, Env, State, js};
 
 /// `ENDED_PROMPT_TURN_LIMIT`.
 const ENDED_PROMPT_TURNS: usize = 256;
@@ -188,7 +188,7 @@ fn normalize_user_message(message: &mut ChatMessage) {
 }
 
 /// `finalizeStreaming`: every streaming message of the session stops.
-fn finalize_streaming(messages: Option<&mut Vec<ChatMessage>>) {
+pub(crate) fn finalize_streaming(messages: Option<&mut Vec<ChatMessage>>) {
     for message in messages.into_iter().flatten().filter(|m| m.streaming) {
         message.streaming = false;
         normalize_user_message(message);
@@ -229,32 +229,6 @@ impl State {
         }
     }
 
-    /// `flushNextQueuedPrompt`: send the next queued prompt once the chat is
-    /// idle. Sending is the prompt module's, so the model hands it over.
-    pub(crate) fn flush_next_queued_prompt(&mut self, session_id: &str, fx: &mut Vec<Effect>) {
-        if self.suppress_queue_flush.contains_key(session_id) {
-            return;
-        }
-        let Some(session) = self.sessions.get(session_id) else {
-            return;
-        };
-        if session.status == SessionStatus::Closed || session.turn_busy() {
-            return;
-        }
-        let Some(queue) = self
-            .prompt_queues
-            .get_mut(session_id)
-            .filter(|q| !q.is_empty())
-        else {
-            return;
-        };
-        let prompt = queue.remove(0);
-        fx.push(Effect::SendQueuedPrompt {
-            session_id: session_id.to_owned(),
-            prompt,
-        });
-    }
-
     fn indexed(&self, session_id: &str) -> bool {
         self.sessions.contains_key(session_id)
             && self
@@ -267,17 +241,28 @@ impl State {
         &mut self,
         event: PromptCompleteEvent,
         event_seq: Option<f64>,
+        env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
         let session_id = event.session_id.as_str();
         if self.book.history_covered(session_id, event_seq) {
             return;
         }
-        if let Some(turn_id) = event.turn_id.as_deref().filter(|id| !id.is_empty())
-            && !self.claim_turn_end(turn_id)
-        {
-            self.flush_next_queued_prompt(session_id, fx);
-            return;
+        if let Some(turn_id) = event.turn_id.as_deref().filter(|id| !id.is_empty()) {
+            // A terminator for another turn than the one this client opened
+            // is a stale replay of an earlier turn.
+            if self
+                .book
+                .active_wire_turns
+                .get(session_id)
+                .is_some_and(|open| open != turn_id)
+            {
+                return;
+            }
+            if !self.claim_turn_end(turn_id) {
+                self.flush_next_queued_prompt(session_id, env, fx);
+                return;
+            }
         }
         let live_plan = self.plans.get(session_id);
         let settled = live_plan.and_then(|plan| settle_running_plan(plan));
@@ -350,7 +335,7 @@ impl State {
 
     /// The deferred close `scheduleTurnEnd` runs: only the turn it was
     /// scheduled for, or an `activeTurn`-only session when it named none.
-    pub(crate) fn on_turn_end(&mut self, end: TurnEnd, fx: &mut Vec<Effect>) {
+    pub(crate) fn on_turn_end(&mut self, end: TurnEnd, env: &mut Env<'_>, fx: &mut Vec<Effect>) {
         let session_id = end.session_id.as_str();
         let Some(session) = self.sessions.get(session_id) else {
             return;
@@ -381,15 +366,22 @@ impl State {
         if let Some(reason) = &end.stop_reason {
             self.last_error_after_stop(session_id, reason);
         }
+        self.book.active_wire_turns.remove(session_id);
         if self.indexed(session_id) {
             fx.push(Effect::PersistSession {
                 session_id: session_id.to_owned(),
             });
         }
-        self.flush_next_queued_prompt(session_id, fx);
+        self.flush_next_queued_prompt(session_id, env, fx);
+        self.resume_send_now(session_id, env, fx);
     }
 
-    pub(crate) fn on_agent_working(&mut self, event: AgentWorkingEvent, fx: &mut Vec<Effect>) {
+    pub(crate) fn on_agent_working(
+        &mut self,
+        event: AgentWorkingEvent,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
         let report = self.book.next_report();
         self.book
             .host_reports
@@ -416,7 +408,7 @@ impl State {
             ),
         ));
         if !event.working {
-            self.flush_next_queued_prompt(&event.session_id, fx);
+            self.flush_next_queued_prompt(&event.session_id, env, fx);
         }
     }
 

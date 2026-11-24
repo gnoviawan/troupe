@@ -91,12 +91,12 @@ TypeScript lines are whole files, comments included. Every path below is under
 | `live-turn.ts` | 153 | `acp/session.rs` | state | 6 |
 | `slices/prompt.ts` permission, question and elicitation handlers | 1,671 | `acp/approvals.rs` | state; `respond_*` are socket effects | 2 |
 | `slices/prompt.ts` (`_onPromptComplete`, `scheduleTurnEnd`, `_onAgentWorking`, `_onBackgroundCommands`) and `lib/agent-chat-notify.ts` `bumpTurnEndNotice` | (same) | `acp/turn.rs` | state; the deferred close and the queued send are effects | 3 |
-| `slices/prompt.ts` (send, cancel, queue, send-now) and `../prompt-queue-orchestration.ts` | (same) + 277 | `acp/prompt.rs`, `acp/queue.rs` | state; `send_prompt`/`cancel` are ledgered socket effects | 5 |
-| `slices/prompt-reconcile.ts` | 173 | `acp/prompt.rs` | state plus a resend timer effect | 5 |
+| `slices/prompt.ts` (send, cancel, queue, send-now, busy retry) and `../prompt-queue-orchestration.ts` | (same) + 277 | `acp/prompt.rs` | state; the dispatch, the cancel and the retry timer are effects | 5 |
+| `slices/prompt-reconcile.ts` | 173 | the client crate's command ledger, plus a `waiting to confirm` state | the resend is the ledger's | 11 |
 | `pending-permission-sync.ts` | 146 | `acp/approvals.rs` | state | 6 |
 | `host-session-reports.ts` | 62 | `acp/turn.rs` | state | 3 |
 | `rate-limit.ts` | 34 | `acp/usage.rs` | state | 1 |
-| `session-controls.ts`, `composer-options.ts` (the saved-pick heal, `setMode`, `setModel`, `setConfigOption`, `pickModel`) | 404 | `acp/controls.rs` | state; the composer record and the set commands are effects | 5 |
+| `session-controls.ts`, `composer-options.ts` (the saved-pick heal, `setMode`, `setModel`, `setConfigOption`, `pickModel`) | 404 | `acp/controls.rs` | state; the composer record and the set commands are effects | 11 |
 | `slices/session.ts` (`_onSessionCreated`, `_onSessionClosed`, `createSession`, `closeSession`, index load and snapshot, history open, retry) | 2,879 | `acp/session.rs`, `acp/history.rs` | state; payload reads, index writes, `session/load` are effects | 6 |
 | `slices/agent.ts` (roster events, spawn, kill, sign-in, browser consent) and `agent-roster-watch.ts` | 1,554 | `acp/agents.rs` | state; spawn and kill are socket effects | 7 |
 | `browser-agent-tabs.ts` | 77 | `acp/agents.rs` | state; the workspace tab is an effect | 7 |
@@ -160,18 +160,18 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 3. Turn end. `_onPromptComplete` and the deferred close it schedules (an
    `endTurn` effect the app feeds back as the `turnEnd` event), stop-reason
    notes, the plan settle and snapshot fence, agent working, background
-   commands and the host session reports. A queued prompt is handed over as
-   a `sendQueuedPrompt` effect; sending it is PR 5's.
+   commands and the host session reports. The close flushes the next queued
+   prompt, which PR 5 sends.
 4. Session controls from the agent. `mode_update` and
    `config_option_update` with the creation-default echo guard and the
    sticky model value, the shown model copied onto `models` and the index
    row, and the per-config options cache with two effects: save the model
    list, and heal the user's saved picks.
-5. Sending. Send, cancel, queue mutations, send-now, the prompt reconcile,
-   and the user's own control picks (`setMode`, `setModel`,
-   `setConfigOption`, `pickModel`) with the saved-pick heal. This needs its
-   own architect step: the send is a ledgered socket command whose outcome
-   arrives later, so the model needs events for each dispatch outcome.
+5. Sending. `sendPrompt` and `sendPromptBlocks` (queue behind a busy chat
+   or open the turn with the user's bubble), the dispatch outcomes (an
+   answer, a busy host with the busy-retry ladder, a definite failure), the
+   queue actions, send-now (stopping a running turn first), and Stop. See
+   "Sending as two steps" below.
 6. Session lifecycle and history. Created, closed, index load, history open,
    live window, eviction, the resubscribe install of pending prompts, the
    cancel of running subagents, live-turn reattach.
@@ -179,6 +179,32 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
+11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
+    `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
+    the client crate's command ledger.
+
+### Sending as two steps
+
+The TypeScript `runPromptTurn` awaits the dispatch inside one async
+function. Two shapes were weighed.
+
+- **Outcome events (chosen).** `sendPrompt` stages the turn and returns
+  `dispatchPrompt { turnId, blocks }`. The app sends it through the client
+  crate's ledger and answers with `promptSettled { turnId, outcome }`. What
+  the outcome needs (the caller, the queued item, the turn it replaced) waits
+  in `Book::dispatches`. Timers work the same way: `retryQueueAfter` comes
+  back as `queueRetryDue`, and a send-now that stopped a turn resumes in the
+  turn end that clears it.
+- **A model-owned command ledger.** The model would keep resend timers and
+  command states itself. Rejected: the client crate already resends a
+  ledgered command with the same `commandId` across socket drops (AD-5), so
+  a second ledger in the model would race it. The prompt reconcile
+  (`slices/prompt-reconcile.ts`) maps onto that ledger in PR 11.
+
+The vectors replay this the way the recorder ran it: each `dispatchPrompt`
+settles with the next outcome the vector's `context.dispatch` lists, before
+the deferred turn end. The recorder cannot see the busy-retry `setTimeout`,
+so the replay drops `retryQueueAfter` before it compares.
 
 ## Not ported yet, on purpose
 
@@ -186,20 +212,23 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
   wire framing (skill paths, file tokens, conversation envelopes) and belongs
   to the composer unit, which ports `lib/composer/`. The model keeps the
   echo's blocks as sent; the vectors use prompts without framing.
-- The prompt-reconcile bookkeeping on the echo (`activeWirePromptTurns`,
-  `clearPromptReconcileForTurn`, `handoffOnlyTurnIds`). PR 5.
+- The prompt-reconcile bookkeeping on the echo (`echoedWirePromptTurns`,
+  `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
 - The one-shot collectors that swallow chunks, tool calls and requests of
   commit-message, terminal assist and bug-report sessions. PR 10.
 - The live-window trim and the tool-call trim at flush. PR 6.
 - Switch markers in `maxPayloadSeq`. PR 9.
 - Composer-side option logic: the saved-pick heal itself, and the user's own
-  `setMode`, `setModel`, `setConfigOption`, `pickModel`. PR 5. The model
+  `setMode`, `setModel`, `setConfigOption`, `pickModel`. PR 11. The model
   returns `reapplyComposerOptions` where the store starts the heal.
-- On `prompt_complete`: the check against this client's open wire turn and
-  the prompt-reconcile clear (PR 5), and the update of the in-memory payload
-  cache (PR 6).
-- The send of a queued prompt (`runPromptTurn`). The model pops it and
-  returns `sendQueuedPrompt`; PR 5 ports what the send does to the state.
+- On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
+  the in-memory payload cache (PR 6).
+- In sending: an outcome-unknown dispatch (PR 11), the warm-pool promotion
+  wait and the launch's `skipUserAppend` and `leadsQueue` (PR 8), the
+  history-open wait (`openingHistoryIds`, PR 6), the read-only guard from the
+  chat's GitHub link (the model reads it from the transcript only), the
+  re-auth after an expired token, the armed agent switch (PR 9), and
+  send-now's 5 s wait timeout.
 
 ## Recorder limits
 

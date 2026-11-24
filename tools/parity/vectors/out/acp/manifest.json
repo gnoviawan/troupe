@@ -24,7 +24,8 @@
         "src/renderer/components/chat/chat-input-bar-config.ts": "9a7e4e7598dbf57d2d48119ea1b66b0e04febd1b",
         "src/renderer/components/chat/agent-model-selector/selector-model.ts": "8db12afbbee65c1a8c6f93e88ada02aeb3848e42",
         "src/renderer/stores/acp-store/model-catalog.ts": "35c2383fce1c05e8f5557ddfdaa9f5e2dbbe2450",
-        "src/renderer/stores/acp-reuse-keys.ts": "6b1a4a4336c3d979eb65d2d11f775ac1ca97c73e"
+        "src/renderer/stores/acp-reuse-keys.ts": "6b1a4a4336c3d979eb65d2d11f775ac1ca97c73e",
+        "src/renderer/lib/command-engine.ts": "e5864037def9d4dbbbd68550758302d551b04c01"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -112,7 +113,25 @@
         "grouped_values_flatten_for_the_model_check",
         "options_land_in_the_agent_cache_and_heal_saved_picks",
         "an_initializing_session_caches_without_healing",
-        "an_empty_snapshot_drops_the_cache_entry"
+        "an_empty_snapshot_drops_the_cache_entry",
+        "a_send_opens_the_turn_and_dispatches",
+        "a_blocks_send_shows_its_display_blocks",
+        "a_send_on_a_busy_session_queues",
+        "a_send_waits_behind_a_stalled_queue_and_drains_it",
+        "answers_log_their_receipt_or_stop_reason",
+        "a_busy_answer_puts_the_prompt_back_in_the_queue",
+        "a_failed_answer_fails_the_turn",
+        "a_send_to_a_closed_or_unknown_chat_is_rejected",
+        "a_read_only_chat_guards_every_dispatch",
+        "a_terminator_for_another_turn_is_stale",
+        "queue_items_move_and_clear",
+        "the_turn_end_sends_the_next_queued_prompt",
+        "a_queued_send_that_fails_is_logged",
+        "agent_working_stopping_flushes_the_queue",
+        "send_now_on_an_idle_chat_sends_the_item",
+        "send_now_on_a_busy_chat_stops_the_turn_first",
+        "a_failed_send_now_returns_the_item",
+        "stop_cancels_the_turn_or_the_agents_own_work"
       ]
     }
   }

@@ -17,7 +17,7 @@ import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
-import type { StoreRecorder } from '../record'
+import { dispatchOutcomes, emit, type StoreRecorder } from '../record'
 
 /**
  * Wall clock of a vector: `context.now` (default {@link NOW}) while seeding,
@@ -80,7 +80,8 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/components/chat/chat-input-bar-config.ts',
     'src/renderer/components/chat/agent-model-selector/selector-model.ts',
     'src/renderer/stores/acp-store/model-catalog.ts',
-    'src/renderer/stores/acp-reuse-keys.ts'
+    'src/renderer/stores/acp-reuse-keys.ts',
+    'src/renderer/lib/command-engine.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -96,6 +97,8 @@ export const acpRecorder: StoreRecorder = {
     _resetSubagentRecordLogsForTesting()
     _resetSubagentTranscriptLogsForTesting()
     shared._resetPromptReconcileForTesting()
+    shared._resetBusyQueueRetriesForTesting()
+    dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
     // The counter only moves up; each vector starts on the next hundred.
     shared.rebaseSeqCounter(Math.ceil((peekSeq() + 1) / 100) * 100)
     if (context.serverHistory) {
@@ -127,7 +130,15 @@ export const acpRecorder: StoreRecorder = {
     const call =
       MODULE_CALLS[action] ??
       (useAcpStore.getState() as unknown as Record<string, (...a: unknown[]) => void>)[action]
-    ;(call as (...a: unknown[]) => void)(...args)
+    // A step does not wait for an action to finish: a send-now that stops a
+    // turn resumes in the step that ends it, as the app sees it.
+    const rejected = (error: unknown) => emit({ kind: 'actionRejected', message: String(error) })
+    try {
+      const result = (call as (...a: unknown[]) => unknown)(...args)
+      if (result instanceof Promise) result.catch(rejected)
+    } catch (error) {
+      rejected(error)
+    }
     _flushCoalescedForTesting()
     // The deferred turn end (`scheduleTurnEnd`) runs on the next macrotask.
     await flushTurnEnd()
@@ -144,6 +155,7 @@ function peekSeq(): number {
 
 import { transcriptScenarios } from './acp-scenarios'
 import { controlScenarios } from './acp-scenarios-controls'
+import { promptScenarios } from './acp-scenarios-prompt'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
 
@@ -151,5 +163,6 @@ export const acpScenarios = [
   ...transcriptScenarios,
   ...subagentScenarios,
   ...turnScenarios,
-  ...controlScenarios
+  ...controlScenarios,
+  ...promptScenarios
 ]

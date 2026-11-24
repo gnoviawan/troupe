@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  dispatchOutcomes,
   drawId,
   emit,
   type Manifest,
@@ -104,6 +105,52 @@ vi.mock(`${renderer}/stores/acp-store/shared-state`, async (importOriginal) => {
     persistSession: (_state: unknown, sessionId: string) =>
       emit({ kind: 'persistSession', sessionId }),
     peekSeqCounter: () => actual.seqCounter
+  }
+})
+
+// The prompt command boundary: each dispatch answers with the next outcome
+// the vector lists (`context.dispatch`), else an accepted receipt.
+function dispatchPrompt(
+  agentId: string,
+  sessionId: string,
+  blocks: unknown[],
+  turnId: string,
+  displayBlocks?: unknown[]
+): Promise<unknown> {
+  emit({
+    kind: 'dispatchPrompt',
+    agentId,
+    sessionId,
+    turnId,
+    blocks,
+    ...(displayBlocks ? { displayBlocks } : {})
+  })
+  const outcome = dispatchOutcomes.shift() ?? { receipt: 'accepted' }
+  const fields = (typeof outcome === 'object' && outcome !== null ? outcome : {}) as Record<
+    string,
+    unknown
+  >
+  if ('busy' in fields) {
+    return Promise.reject(new Error('ACP_TURN_IN_PROGRESS: a prompt turn is already in progress'))
+  }
+  if ('error' in fields) return Promise.reject(new Error(String(fields.error)))
+  if ('agentDead' in fields) {
+    return Promise.reject(new Error('agent thread is no longer running'))
+  }
+  return Promise.resolve(outcome)
+}
+vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
+  const actual = await importOriginal<{ acpApi: object }>()
+  return {
+    ...actual,
+    acpApi: {
+      ...actual.acpApi,
+      sendPrompt: (agentId: string, sessionId: string, text: string, turnId: string) =>
+        dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId),
+      sendPromptBlocks: dispatchPrompt,
+      cancelPrompt: async (agentId: string, sessionId: string) =>
+        emit({ kind: 'cancelPrompt', agentId, sessionId })
+    }
   }
 })
 

@@ -13,6 +13,7 @@ pub mod js;
 #[cfg(test)]
 mod js_tests;
 mod plan;
+pub mod prompt;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -30,6 +31,7 @@ use approvals::{
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
@@ -105,6 +107,19 @@ pub struct Book {
     pub host_reports: BTreeMap<(String, String), HostReports>,
     #[serde(skip)]
     pub report_seq: u64,
+    /// Per session, the wire id of the prompt turn this client has open.
+    #[serde(skip)]
+    pub active_wire_turns: BTreeMap<String, String>,
+    /// Dispatched prompts waiting for their command to settle, by turn id.
+    #[serde(skip)]
+    pub dispatches: BTreeMap<String, Dispatch>,
+    #[serde(skip)]
+    pub busy_retries: BTreeMap<String, BusyRetry>,
+    #[serde(skip)]
+    pub retry_generation: u64,
+    /// Send-nows waiting for the turn they stopped, by session.
+    #[serde(skip)]
+    pub send_now: BTreeMap<String, SendNow>,
 }
 
 impl Book {
@@ -212,6 +227,26 @@ pub enum Event {
     AgentWorking(AgentWorkingEvent),
     #[serde(rename = "_onBackgroundCommands")]
     BackgroundCommands(BackgroundCommandsEvent),
+    #[serde(rename = "sendPrompt")]
+    SendPrompt(String, String),
+    #[serde(rename = "sendPromptBlocks")]
+    SendPromptBlocks(String, Vec<Value>, #[serde(default)] Option<SendOptions>),
+    #[serde(rename = "cancelPrompt")]
+    CancelPrompt(String),
+    #[serde(rename = "removeQueuedPrompt")]
+    RemoveQueuedPrompt(String, Value),
+    #[serde(rename = "moveQueuedPrompt")]
+    MoveQueuedPrompt(String, Value, f64),
+    #[serde(rename = "clearQueuedPrompts")]
+    ClearQueuedPrompts(String),
+    #[serde(rename = "sendQueuedPromptNow")]
+    SendQueuedPromptNow(String, Value),
+    /// The command an [`Effect::DispatchPrompt`] sent has settled.
+    #[serde(rename = "promptSettled")]
+    PromptSettled(PromptSettled),
+    /// The timer an [`Effect::RetryQueueAfter`] started ran out.
+    #[serde(rename = "queueRetryDue")]
+    QueueRetryDue(String, u64),
     /// The deferred close an [`Effect::EndTurn`] asked for.
     #[serde(rename = "turnEnd")]
     TurnEnd(TurnEnd),
@@ -245,8 +280,30 @@ pub enum Effect {
     /// Send `Event::TurnEnd` with this close once the events already queued
     /// have been applied, so chunks racing the terminator join the turn.
     EndTurn(TurnEnd),
-    /// Send this queued prompt now: the chat went idle.
-    SendQueuedPrompt { session_id: String, prompt: Value },
+    /// Send the prompt command with this turn id through the client's
+    /// ledger, then send `Event::PromptSettled` with its outcome.
+    DispatchPrompt {
+        agent_id: String,
+        session_id: String,
+        turn_id: String,
+        blocks: Vec<Value>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        display_blocks: Option<Vec<Value>>,
+    },
+    /// Send `session/cancel` for the session's turn or the agent's own work.
+    CancelPrompt {
+        agent_id: String,
+        session_id: String,
+    },
+    /// The action the user took failed; show this.
+    ActionRejected { message: String },
+    /// Send `Event::QueueRetryDue` with this generation after `delay_ms`.
+    RetryQueueAfter {
+        session_id: String,
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        generation: u64,
+    },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
     /// Read the user's saved picks for the config and apply the ones the
@@ -295,10 +352,36 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
         Event::ModeUpdate(event) => state.on_mode_update(event, env, &mut fx),
         Event::ConfigOptionsUpdate(event) => state.on_config_options_update(event, env, &mut fx),
-        Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, &mut fx),
-        Event::AgentWorking(event) => state.on_agent_working(event, &mut fx),
+        Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, env, &mut fx),
+        Event::AgentWorking(event) => state.on_agent_working(event, env, &mut fx),
         Event::BackgroundCommands(event) => state.on_background_commands(event),
-        Event::TurnEnd(end) => state.on_turn_end(end, &mut fx),
+        Event::TurnEnd(end) => state.on_turn_end(end, env, &mut fx),
+        Event::SendPrompt(session_id, text) => {
+            let blocks = vec![serde_json::json!({ "type": "text", "text": text })];
+            state.send_prompt(&session_id, blocks, SendOptions::default(), env, &mut fx);
+        }
+        Event::SendPromptBlocks(session_id, blocks, options) => {
+            state.send_prompt(
+                &session_id,
+                blocks,
+                options.unwrap_or_default(),
+                env,
+                &mut fx,
+            );
+        }
+        Event::CancelPrompt(session_id) => state.cancel_prompt(&session_id, &mut fx),
+        Event::RemoveQueuedPrompt(session_id, id) => state.remove_queued_prompt(&session_id, &id),
+        Event::MoveQueuedPrompt(session_id, id, to) => {
+            state.move_queued_prompt(&session_id, &id, to, &mut fx);
+        }
+        Event::ClearQueuedPrompts(session_id) => state.clear_queued_prompts(&session_id, &mut fx),
+        Event::SendQueuedPromptNow(session_id, id) => {
+            state.send_queued_prompt_now(&session_id, &id, env, &mut fx);
+        }
+        Event::PromptSettled(settled) => state.on_prompt_settled(settled, env, &mut fx),
+        Event::QueueRetryDue(session_id, generation) => {
+            state.on_queue_retry_due(&session_id, generation, env, &mut fx);
+        }
         Event::NoteHistoryWatermark(session_id, payload) => {
             state.note_history_watermark(&session_id, &payload);
         }

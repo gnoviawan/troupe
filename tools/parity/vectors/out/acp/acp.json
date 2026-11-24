@@ -27268,5 +27268,4577 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "a_send_opens_the_turn_and_dispatches",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "hello"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "hello"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16401,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16401,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_blocks_send_shows_its_display_blocks",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPromptBlocks",
+     "args": [
+      "s1",
+      [
+       {
+        "type": "text",
+        "text": "/skill run it"
+       }
+      ],
+      {
+       "displayBlocks": [
+        {
+         "type": "text",
+         "text": "[skill] run it"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "/skill run it"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "[skill] run it"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16501,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16501,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_send_on_a_busy_session_queues",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "first"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "queue-id-2",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "createdAt": 1700000001000
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPromptBlocks",
+     "args": [
+      "s1",
+      [
+       {
+        "type": "text",
+        "text": "second"
+       }
+      ],
+      {
+       "displayBlocks": [
+        {
+         "type": "text",
+         "text": "2nd"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [
+     "id-3",
+     "id-4"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "queue-id-2",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "createdAt": 1700000001000
+       },
+       {
+        "id": "queue-id-4",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "second"
+         }
+        ],
+        "createdAt": 1700000002000,
+        "displayBlocks": [
+         {
+          "type": "text",
+          "text": "2nd"
+         }
+        ]
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16600,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_send_waits_behind_a_stalled_queue_and_drains_it",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "older"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "newer"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2",
+     "id-3",
+     "id-4"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-3",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "older"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-3 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-4",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-3",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "older"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16701,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "queue-id-2",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "newer"
+         }
+        ],
+        "createdAt": 1700000001000
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16701,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "answers_log_their_receipt_or_stop_reason",
+  "context": {
+   "dispatch": [
+    {
+     "receipt": "in_progress"
+    },
+    "end_turn"
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "one"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "one"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a in_progress receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16801,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16801,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "end_turn",
+       "turnId": "id-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16801,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "end_turn"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16801,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "two"
+     ]
+    },
+    "ids": [
+     "id-3",
+     "id-4"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-3",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "two"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-3 on session s1 answered with stop reason end_turn; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-4",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-3",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 16801,
+        "sentHere": true
+       },
+       {
+        "id": "turn:id-3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000003000,
+        "seq": 16802,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "end_turn"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16802,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_busy_answer_puts_the_prompt_back_in_the_queue",
+  "context": {
+   "dispatch": [
+    {
+     "busy": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": "old",
+     "createdAt": 1,
+     "lastErrorCode": 3
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 16900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "retry me"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2",
+     "id-3"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "retry me"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.busyQueueRetry",
+      "message": "Prompt on session s1 was rejected as busy with no turn running here; retrying the queue in 2000ms (attempt 1)"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "queue-id-3",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "retry me"
+         }
+        ],
+        "createdAt": 1700000001000
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16901,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "held behind the retry"
+     ]
+    },
+    "ids": [
+     "id-4",
+     "id-5"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "queue-id-3",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "retry me"
+         }
+        ],
+        "createdAt": 1700000001000
+       },
+       {
+        "id": "queue-id-5",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "held behind the retry"
+         }
+        ],
+        "createdAt": 1700000002000
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 16901,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_failed_answer_fails_the_turn",
+  "context": {
+   "dispatch": [
+    {
+     "error": "boom"
+    },
+    {
+     "agentDead": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "one"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "one"
+       }
+      ]
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: boom"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "Error: boom",
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17001,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17001,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "two"
+     ]
+    },
+    "ids": [
+     "id-3",
+     "id-4"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-3",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "two"
+       }
+      ]
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: agent thread is no longer running"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-3",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "one"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17001,
+        "sentHere": true
+       },
+       {
+        "id": "turn:id-3",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "two"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000002000,
+        "seq": 17002,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17002,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_send_to_a_closed_or_unknown_chat_is_rejected",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "late"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: session is closed"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s9",
+      "nobody"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: unknown session s9"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendPromptBlocks",
+     "args": [
+      "s1",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: session is closed"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_read_only_chat_guards_every_dispatch",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u0",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "what changed?"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 1,
+      "readOnlyGuard": "GUARD"
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17200,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPromptBlocks",
+     "args": [
+      "s1",
+      [
+       {
+        "type": "text",
+        "text": "and now?"
+       }
+      ],
+      {
+       "displayBlocks": [
+        {
+         "type": "text",
+         "text": "now?"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "GUARD"
+       },
+       {
+        "type": "text",
+        "text": "and now?"
+       }
+      ],
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "GUARD"
+       },
+       {
+        "type": "text",
+        "text": "now?"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "what changed?"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1,
+        "readOnlyGuard": "GUARD"
+       },
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "now?"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17201,
+        "sentHere": true,
+        "readOnlyGuard": "GUARD"
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17201,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_terminator_for_another_turn_is_stale",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17300,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendPrompt",
+     "args": [
+      "s1",
+      "mine"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "mine"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "mine"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17301,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17301,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "end_turn",
+       "turnId": "older-turn"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "mine"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17301,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17301,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "end_turn",
+       "turnId": "id-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "mine"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17301,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "end_turn"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17301,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "queue_items_move_and_clear",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "a",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "A"
+       }
+      ],
+      "createdAt": 1
+     },
+     {
+      "id": "b",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ],
+      "createdAt": 1
+     },
+     {
+      "id": "c",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "C"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "moveQueuedPrompt",
+     "args": [
+      "s1",
+      "c",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:prompt-queue",
+      "message": "Chat s1 moved a queued prompt to place 1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "c",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "C"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "b",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveQueuedPrompt",
+     "args": [
+      "s1",
+      "c",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "c",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "C"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "b",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveQueuedPrompt",
+     "args": [
+      "s1",
+      "a",
+      9
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:prompt-queue",
+      "message": "Chat s1 moved a queued prompt to place 10"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "c",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "C"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "b",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveQueuedPrompt",
+     "args": [
+      "s1",
+      "nope",
+      1
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "c",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "C"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "b",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeQueuedPrompt",
+     "args": [
+      "s1",
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "c",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "C"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "clearQueuedPrompts",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:prompt-queue",
+      "message": "Chat s1 cleared 2 queued prompts"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": []
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "clearQueuedPrompts",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": []
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeQueuedPrompt",
+     "args": [
+      "s9",
+      "x"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [],
+      "s9": []
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "the_turn_end_sends_the_next_queued_prompt",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "next"
+       }
+      ],
+      "createdAt": 1,
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "next!"
+       }
+      ]
+     },
+     {
+      "id": "q2",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "end_turn",
+       "turnId": "t1"
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "next"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "next!"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17501,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "end_turn"
+      }
+     },
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "q2",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17501,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_queued_send_that_fails_is_logged",
+  "context": {
+   "dispatch": [
+    {
+     "error": "boom"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "next"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "end_turn",
+       "turnId": "t1"
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "next"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.flushNextQueuedPrompt",
+      "message": "Queued prompt on session s1 failed to send: Error: boom"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "Error: boom",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "next"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17601,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "end_turn"
+      }
+     },
+     "promptQueues": {
+      "s1": []
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17601,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "agent_working_stopping_flushes_the_queue",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "agentWorking": true
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "waited"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onAgentWorking",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "working": false
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.agentWorking",
+      "message": "Agent stopped working on session s1 outside a prompt turn"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "waited"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "agentWorking": false,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "waited"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17701,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": []
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17701,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "send_now_on_an_idle_chat_sends_the_item",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "a",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "A"
+       }
+      ],
+      "createdAt": 1
+     },
+     {
+      "id": "b",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ],
+      "createdAt": 1,
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "b!"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendQueuedPromptNow",
+     "args": [
+      "s1",
+      "b"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ],
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "b!"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "b!"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17801,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17801,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "sendQueuedPromptNow",
+     "args": [
+      "s1",
+      "zzz"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: queued prompt not found"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "b!"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 17801,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17801,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "send_now_on_a_busy_chat_stops_the_turn_first",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "a",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "A"
+       }
+      ],
+      "createdAt": 1
+     },
+     {
+      "id": "b",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 17900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendQueuedPromptNow",
+     "args": [
+      "s1",
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "cancelPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {
+      "s1": true
+     },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "cancelled",
+       "turnId": "t1"
+      }
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s1 answered with a accepted receipt; awaiting its prompt_complete"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000002000,
+        "seq": 17901,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "cancelled"
+      }
+     },
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 17901,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_failed_send_now_returns_the_item",
+  "context": {
+   "dispatch": [
+    {
+     "error": "nope"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "a",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "A"
+       }
+      ],
+      "createdAt": 1
+     },
+     {
+      "id": "b",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ],
+      "createdAt": 1
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 18000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "sendQueuedPromptNow",
+     "args": [
+      "s1",
+      "b"
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "B"
+       }
+      ]
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: nope"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "Error: nope",
+       "createdAt": 1,
+       "latestPromptTurnId": "id-1",
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 18001,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "b",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "B"
+         }
+        ],
+        "createdAt": 1
+       },
+       {
+        "id": "a",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "A"
+         }
+        ],
+        "createdAt": 1
+       }
+      ]
+     },
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18001,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "stop_cancels_the_turn_or_the_agents_own_work",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "book": {
+    "seq": 18100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "cancelPrompt",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "cancelPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onPromptComplete",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "stopReason": "cancelled",
+       "turnId": "t1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "cancelled"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPrompt",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "cancelled"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentWorking",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "working": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.agentWorking",
+      "message": "Agent started working on session s1 outside a prompt turn"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "agentWorking": true
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "cancelled"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPrompt",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "cancelPrompt",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "agentWorking": true
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {
+      "s1": {
+       "seq": 1,
+       "stopReason": "cancelled"
+      }
+     },
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "book": {
+      "seq": 18100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
  }
 ]
