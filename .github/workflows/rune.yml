@@ -63,6 +63,7 @@ on:
       - 'src/renderer/stores/acp-store/session-agent-config.ts'
       - 'src/renderer/stores/acp-store/shared-state.ts'
       - 'src/renderer/stores/acp-store/slices/agent.ts'
+      - 'src/renderer/stores/acp-store/slices/launch.ts'
       - 'src/renderer/stores/acp-store/slices/mcp.ts'
       - 'src/renderer/stores/acp-store/slices/prompt.ts'
       - 'src/renderer/stores/acp-store/slices/session.ts'

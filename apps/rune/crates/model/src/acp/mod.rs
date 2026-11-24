@@ -19,6 +19,7 @@ mod index;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
+mod launch;
 pub mod mcp;
 mod mcp_install;
 mod mcp_oauth;
@@ -510,6 +511,14 @@ pub enum Event {
     NoteLiveTurnReplayFloor(String, f64),
     #[serde(rename = "clearSessionBackfill")]
     ClearSessionBackfill(String),
+    #[serde(rename = "createLaunchPlaceholder")]
+    CreateLaunchPlaceholder(launch::LaunchPlaceholder),
+    #[serde(rename = "discardLaunchPlaceholder")]
+    DiscardLaunchPlaceholder(String),
+    #[serde(rename = "seedLaunchUserMessage")]
+    SeedLaunchUserMessage(String, Vec<Value>),
+    #[serde(rename = "clearLaunchingSession")]
+    ClearLaunchingSession(String),
     #[serde(rename = "loadMcpServers")]
     LoadMcpServers(#[serde(default)] Vec<Value>),
     #[serde(rename = "saveMcpServer")]
@@ -694,6 +703,16 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ClearSessionBackfill(session_id) => {
             state.clear_session_backfill(&session_id, &mut fx);
+        }
+        Event::CreateLaunchPlaceholder(launch) => state.create_launch_placeholder(launch, env),
+        Event::DiscardLaunchPlaceholder(session_id) => {
+            state.discard_launch_placeholder(&session_id);
+        }
+        Event::SeedLaunchUserMessage(session_id, blocks) => {
+            state.seed_launch_user_message(&session_id, blocks, env);
+        }
+        Event::ClearLaunchingSession(session_id) => {
+            state.launching_session_ids.remove(&session_id);
         }
         Event::LoadMcpServers(_) => state.load_mcp_servers(&mut fx),
         Event::SaveMcpServer(server) => {

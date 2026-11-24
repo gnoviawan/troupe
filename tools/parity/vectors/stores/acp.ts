@@ -177,7 +177,8 @@ export const acpRecorder: StoreRecorder = {
     'src/shared/types/antigravity-accounts.types.ts',
     'src/renderer/stores/acp-store/slices/mcp.ts',
     'src/renderer/lib/acp-mcp-persistence.ts',
-    'src/renderer/lib/mcp-install-request.ts'
+    'src/renderer/lib/mcp-install-request.ts',
+    'src/renderer/stores/acp-store/slices/launch.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -290,6 +291,7 @@ import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
+import { launchScenarios } from './acp-scenarios-launch'
 import { mcpScenarios } from './acp-scenarios-mcp'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
@@ -314,5 +316,6 @@ export const acpScenarios = [
   ...agentCommandScenarios,
   ...rosterScenarios,
   ...windowScenarios,
-  ...mcpScenarios
+  ...mcpScenarios,
+  ...launchScenarios
 ]

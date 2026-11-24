@@ -259,6 +259,18 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      covers is skipped. A delta whose payload its handler cannot read is
      logged and dropped, where the TypeScript hands it on unchecked.
 8. Launch, prepare and warm pool, agent configs.
+   - 8a (R6a-4). The launch placeholder (`acp/launch.rs`):
+     `createLaunchPlaceholder` (an initializing chat, with the launcher's
+     first prompt shown and its turn open), `discardLaunchPlaceholder` (the
+     chat, its transcript, its queue and the active mark go),
+     `seedLaunchUserMessage` (the first prompt opens the turn once; a chat
+     already showing a prompt only reopens it) and `clearLaunchingSession`.
+   - 8, rest. `ensureLiveAgent` with its spawn signatures, holders and
+     credential epochs; `prepareChat`, `claimPreparedChat`,
+     `cancelPreparedChat` and the warm-pool promotion; `startChat`,
+     `startQuickChat`, `finalizeChatLaunch` and `applyPendingLauncherOptions`;
+     the config slice. History open, import, the one-shots and the agent
+     switch all wait on `ensureLiveAgent`.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an

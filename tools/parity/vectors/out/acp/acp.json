@@ -142185,5 +142185,2511 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "launch_placeholder_shows_the_chat_before_its_session",
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createLaunchPlaceholder",
+     "args": [
+      {
+       "configId": "cfg-1",
+       "cwd": "/work",
+       "projectId": "p1"
+      }
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "launch-id-1": {
+       "id": "launch-id-1",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "launchConfigId": "cfg-1"
+      }
+     },
+     "messages": {
+      "launch-id-1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "launch-id-1": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "createLaunchPlaceholder",
+     "args": [
+      {
+       "configId": "cfg-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "initialUserBlocks": [
+        {
+         "type": "text",
+         "text": "hello"
+        }
+       ],
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": []
+       },
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "effort"
+        }
+       ],
+       "worktreePath": "/wt",
+       "worktreeBranch": "b1",
+       "worktreeProgressId": "wp-1",
+       "kind": "quick"
+      }
+     ]
+    },
+    "ids": [
+     "id-2",
+     "id-3",
+     "id-4"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "launch-id-1": {
+       "id": "launch-id-1",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "launchConfigId": "cfg-1"
+      },
+      "launch-id-2": {
+       "id": "launch-id-2",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": []
+       },
+       "configOptions": [
+        {
+         "id": "effort"
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null,
+       "worktreePath": "/wt",
+       "worktreeBranch": "b1",
+       "worktreeProgressId": "wp-1",
+       "launchConfigId": "cfg-1",
+       "kind": "quick"
+      }
+     },
+     "messages": {
+      "launch-id-1": [],
+      "launch-id-2": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000002000,
+        "seq": 31001,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "launch-id-1": true,
+      "launch-id-2": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31001,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "createLaunchPlaceholder",
+     "args": [
+      {
+       "configId": "cfg-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "kind": "chat",
+       "initialUserBlocks": []
+      }
+     ]
+    },
+    "ids": [
+     "id-5"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "launch-id-1": {
+       "id": "launch-id-1",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "launchConfigId": "cfg-1"
+      },
+      "launch-id-2": {
+       "id": "launch-id-2",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": []
+       },
+       "configOptions": [
+        {
+         "id": "effort"
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null,
+       "worktreePath": "/wt",
+       "worktreeBranch": "b1",
+       "worktreeProgressId": "wp-1",
+       "launchConfigId": "cfg-1",
+       "kind": "quick"
+      },
+      "launch-id-5": {
+       "id": "launch-id-5",
+       "agentId": "",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1700000003000,
+       "replaying": null,
+       "launchConfigId": "cfg-1"
+      }
+     },
+     "messages": {
+      "launch-id-1": [],
+      "launch-id-2": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000002000,
+        "seq": 31001,
+        "sentHere": true
+       }
+      ],
+      "launch-id-5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "launch-id-1": true,
+      "launch-id-2": true,
+      "launch-id-5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31001,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "launch_placeholder_is_discarded_with_its_queue",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": "s1",
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {
+    "s1": true,
+    "s2": true
+   },
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "discardLaunchPlaceholder",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s2": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "discardLaunchPlaceholder",
+     "args": [
+      "s2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "discardLaunchPlaceholder",
+     "args": [
+      "s3"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "seed_launch_user_message_opens_the_turn_once",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "status": "initializing",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "lastError": "old",
+     "lastErrorCode": 5,
+     "lastErrorData": {
+      "x": 1
+     }
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": "turn:open",
+     "lastError": null
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "lastError": null
+    },
+    "s5": {
+     "id": "s5",
+     "agentId": "agent-1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": "turn:old",
+     "lastError": null
+    },
+    "s6": {
+     "id": "s6",
+     "agentId": "agent-1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "lastError": null
+    },
+    "s4": {
+     "id": "s4",
+     "agentId": "agent-1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "lastError": null
+    }
+   },
+   "messages": {
+    "s1": [],
+    "s2": [
+     {
+      "id": "u0",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "first"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s4": [
+     {
+      "id": "u4",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "first"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s6": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s1",
+      [
+       {
+        "type": "text",
+        "text": "hello"
+       }
+      ]
+     ]
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:open",
+       "lastError": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s1",
+      [
+       {
+        "type": "text",
+        "text": "again"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:open",
+       "lastError": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s2",
+      [
+       {
+        "type": "text",
+        "text": "more"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s3",
+      [
+       {
+        "type": "text",
+        "text": "closed"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s4",
+      [
+       {
+        "type": "text",
+        "text": "reopen"
+       }
+      ]
+     ]
+    },
+    "ids": [
+     "id-3"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true,
+      "s4": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s9",
+      [
+       {
+        "type": "text",
+        "text": "unknown"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:old",
+       "lastError": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true,
+      "s4": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31201,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s5",
+      [
+       {
+        "type": "text",
+        "text": "fresh"
+       }
+      ]
+     ]
+    },
+    "ids": [
+     "id-4",
+     "id-5"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-5",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": [],
+      "s5": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000007000,
+        "seq": 31202,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true,
+      "s4": true,
+      "s5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s6",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-5",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": [],
+      "s5": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000007000,
+        "seq": 31202,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true,
+      "s4": true,
+      "s5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "seedLaunchUserMessage",
+     "args": [
+      "s1",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-5",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": [],
+      "s5": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000007000,
+        "seq": 31202,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s1": true,
+      "s2": true,
+      "s4": true,
+      "s5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "clearLaunchingSession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-5",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": [],
+      "s5": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000007000,
+        "seq": 31202,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s2": true,
+      "s4": true,
+      "s5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "clearLaunchingSession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "status": "initializing",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-2",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:open",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-5",
+       "lastError": null,
+       "lastErrorCode": null
+      },
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "lastError": null
+      },
+      "s4": {
+       "id": "s4",
+       "agentId": "agent-1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn-id-3",
+       "lastError": null,
+       "lastErrorCode": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hello"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000001000,
+        "seq": 31201,
+        "sentHere": true
+       }
+      ],
+      "s2": [
+       {
+        "id": "u0",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s4": [
+       {
+        "id": "u4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "first"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s6": [],
+      "s5": [
+       {
+        "id": "msg-id-4",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "fresh"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000007000,
+        "seq": 31202,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {
+      "s2": true,
+      "s4": true,
+      "s5": true
+     },
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

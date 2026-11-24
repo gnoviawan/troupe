@@ -41,7 +41,8 @@
         "src/shared/types/antigravity-accounts.types.ts": "77987cc285f72c3d0305ffa90f16aa24b294c55b",
         "src/renderer/stores/acp-store/slices/mcp.ts": "a0c6e6daa0b96171edd28c548d539f808aee1626",
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
-        "src/renderer/lib/mcp-install-request.ts": "39fbc1fb23e5bf1a8704eaa8450de163df2c9647"
+        "src/renderer/lib/mcp-install-request.ts": "39fbc1fb23e5bf1a8704eaa8450de163df2c9647",
+        "src/renderer/stores/acp-store/slices/launch.ts": "70113a1fd38d4a0e9322f295a83c897803ab67dc"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -275,7 +276,10 @@
         "mcp_oauth_paste_back_of_an_unknown_state_checks_the_token",
         "mcp_oauth_status_and_disconnect",
         "mcp_install_requests_answers_and_outcomes",
-        "mcp_registry_change_reloads_the_list"
+        "mcp_registry_change_reloads_the_list",
+        "launch_placeholder_shows_the_chat_before_its_session",
+        "launch_placeholder_is_discarded_with_its_queue",
+        "seed_launch_user_message_opens_the_turn_once"
       ]
     }
   }
