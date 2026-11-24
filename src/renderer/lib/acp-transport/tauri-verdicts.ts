@@ -23,6 +23,8 @@
  *   Account is not signed in)
  * - `ACP_CODEX_ACCOUNT_SIGNED_OUT:` → `codex_account_signed_out` (the Codex
  *   Account is not signed in)
+ * - `ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT:` → `antigravity_account_signed_out`
+ *   (the Antigravity Account is not signed in)
  *
  * The prefix is stripped from the message the user reads. Anything else is
  * returned untouched.
@@ -61,7 +63,8 @@ const VERDICT_PREFIXES: ReadonlyArray<readonly [prefix: string, code: string]> =
   ...DEFINITE_SPAWN_REJECTIONS.map(([code, prefix]) => [prefix, code] as const),
   ...PROVIDER_ERROR_PREFIXES.map(([code, prefix]) => [prefix, code] as const),
   ['ACP_CLAUDE_ACCOUNT_SIGNED_OUT', WS_ERROR_CODES.CLAUDE_ACCOUNT_SIGNED_OUT],
-  ['ACP_CODEX_ACCOUNT_SIGNED_OUT', WS_ERROR_CODES.CODEX_ACCOUNT_SIGNED_OUT]
+  ['ACP_CODEX_ACCOUNT_SIGNED_OUT', WS_ERROR_CODES.CODEX_ACCOUNT_SIGNED_OUT],
+  ['ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT', WS_ERROR_CODES.ANTIGRAVITY_ACCOUNT_SIGNED_OUT]
 ]
 
 /** Map a rejected Tauri `invoke` value to a typed error when it is a ledger verdict. */

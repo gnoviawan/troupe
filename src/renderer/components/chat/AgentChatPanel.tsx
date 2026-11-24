@@ -53,6 +53,11 @@ import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { agentChatTabId, useWorkspaceStore } from '@/stores/workspace-store'
 import { AgentConnectionLamp } from './AgentConnectionLamp'
 import { AskUserQuestion } from './AskUserQuestion'
+import { AntigravityLimitNotice } from './antigravity-account/AntigravityLimitNotice'
+import {
+  isAtLimit as isAtAntigravityLimit,
+  useAntigravityLimit
+} from './antigravity-account/use-antigravity-limit'
 import { BrowserConsentCard } from './BrowserConsentCard'
 import { ChatEmptyState } from './ChatEmptyState'
 import { ChatErrorNotice } from './ChatErrorNotice'
@@ -428,9 +433,11 @@ export function AgentChatPanel({
   // At the usage limit, the limit dock replaces the provider's quota error.
   const claudeLimit = useClaudeLimit(sessionId)
   const codexLimit = useCodexLimit(sessionId)
+  const antigravityLimit = useAntigravityLimit(sessionId)
   const atRetainedUsageLimit =
     (claudeLimit !== null && isAtLimit(claudeLimit.limit)) ||
-    (codexLimit !== null && isAtCodexLimit(codexLimit.limit))
+    (codexLimit !== null && isAtCodexLimit(codexLimit.limit)) ||
+    (antigravityLimit !== null && isAtAntigravityLimit(antigravityLimit.limit))
   const seedComposer = useCallback((text: string) => setSeed({ text, nonce: Date.now() }), [])
   const [contextInsert, setContextInsert] = useState<SelectionContextInsertRequest>()
   const addSelectionContext = useCallback(
@@ -963,6 +970,7 @@ export function AgentChatPanel({
     <>
       <ClaudeLimitNotice sessionId={sessionId} />
       <CodexLimitNotice sessionId={sessionId} />
+      <AntigravityLimitNotice sessionId={sessionId} />
     </>
   ) : (
     errorNotice

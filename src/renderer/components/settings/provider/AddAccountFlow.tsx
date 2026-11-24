@@ -26,9 +26,9 @@ export interface SignInStepContext<A extends NamedAccount> {
   setLocked: (locked: boolean) => void
 }
 
-/** The parts of "Add account" that differ between Claude and Codex. */
+/** The parts of "Add account" that differ between Claude, Codex and Antigravity. */
 export interface AddAccountProvider<A extends NamedAccount> {
-  /** "Claude" or "Codex". */
+  /** "Claude", "Codex" or "Antigravity". */
   name: string
   create: (name: string) => Promise<A>
   setDefault: (accountId: string) => Promise<void>

@@ -4,6 +4,7 @@
 use agent_client_protocol::schema::v1::McpServer;
 
 use super::AcpManager;
+use crate::acp::antigravity_agent::AntigravityLaunchAuth;
 use crate::acp::claude_agent::ClaudeLaunchAuth;
 use crate::acp::codex_agent::CodexLaunchAuth;
 use crate::acp::config::{AgentConfig, AgentId, SessionId};
@@ -15,6 +16,7 @@ pub struct AgentLaunch {
     pub project_id: Option<String>,
     pub claude: ClaudeLaunchAuth,
     pub codex: CodexLaunchAuth,
+    pub antigravity: AntigravityLaunchAuth,
 }
 
 #[derive(Debug, Clone)]
@@ -87,6 +89,9 @@ impl AcpManager {
             limit.chat_closed(session_id.clone(), agent_id.is_none());
         }
         if let Some(limit) = self.codex_limit.get() {
+            limit.chat_closed(session_id.clone(), agent_id.is_none());
+        }
+        if let Some(limit) = self.antigravity_limit.get() {
             limit.chat_closed(session_id, agent_id.is_none());
         }
     }
