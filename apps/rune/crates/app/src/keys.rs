@@ -101,35 +101,12 @@ pub fn chord(key: &KeyEvent, platform: Platform) -> Option<Chord> {
     })
 }
 
-/// `AppSpec::on_key`: a recording row takes the key first, then the theme picker's arrows,
-/// then Escape closes the top overlay, then a shortcut fires.
+/// `AppSpec::on_key`: a recording row takes the key first, then Escape closes the top overlay,
+/// then a shortcut fires. The theme picker's search field takes its own arrows and Return.
 pub fn on_key(s: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
     if s.keys.recording.is_some() {
         record(s, key);
         return true;
-    }
-    if s.overlays.top() == Some(crate::theme_picker::KEY) {
-        match key.key {
-            Key::Up => {
-                return {
-                    s.picker_key(Some(-1));
-                    true
-                };
-            }
-            Key::Down => {
-                return {
-                    s.picker_key(Some(1));
-                    true
-                };
-            }
-            Key::Enter => {
-                return {
-                    s.picker_key(None);
-                    true
-                };
-            }
-            _ => {}
-        }
     }
     if matches!(key.key, Key::Escape) {
         return s.close_top();
@@ -239,7 +216,9 @@ impl State {
     fn set_zoom(&mut self, zoom: ui::Zoom) {
         self.zoom = zoom;
         let settings = &mut self.sync.app_settings;
-        settings.insert("uiZoomLevel".into(), json!(zoom.factor()));
+        // Two decimals as the web client stores them, not the f32's widened digits.
+        let level = (f64::from(zoom.factor()) * 100.0).round() / 100.0;
+        settings.insert("uiZoomLevel".into(), json!(level));
         let data = Value::Object(settings.clone());
         self.write_shared(Shared::AppSettings, data);
     }

@@ -169,3 +169,19 @@ fn a_chord_another_shortcut_holds_asks_before_it_rebinds() {
         (None, None)
     );
 }
+
+#[test]
+fn a_rail_collapsed_on_load_expands_from_its_shortcut() {
+    let mut s = crate::tests::connected();
+    s.apply(read_reply(
+        1,
+        json!({ "version": 3, "railExpanded": false }),
+    ));
+    for call in 2..=5 {
+        s.apply(read_reply(call, Value::Null));
+    }
+    s.apply(crate::tests::projects_frame());
+    assert!(!s.layout.record.rail_expanded);
+    key(&mut s, &press("ctrl+b"));
+    assert!(s.layout.record.rail_expanded);
+}

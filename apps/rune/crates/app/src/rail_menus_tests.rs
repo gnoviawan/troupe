@@ -1,5 +1,5 @@
 use client::ws::Command;
-use rune::{Key, KeyEvent, Mods, Runtime, Tx};
+use rune::{Key, KeyEvent, Mods, Runtime};
 use serde_json::{Value, json};
 use troupe_protocol::ws::WsRequestType;
 
@@ -170,25 +170,14 @@ fn the_theme_picker_previews_on_arrows_and_saves_on_return() {
     let mut rt = desktop();
     tap(&mut rt, "rail-color-themes");
     assert_eq!(rt.state.overlays.top(), Some(crate::theme_picker::KEY));
-    let mut tx = Tx::default();
-    crate::keys::on_key(
-        &mut rt.state,
-        &KeyEvent {
-            key: Key::Down,
-            mods: Mods::default(),
-        },
-        &mut tx,
-    );
+    rt.key(KeyEvent {
+        key: Key::Down,
+        mods: Mods::default(),
+    });
+    rt.frame(0.016);
     assert_eq!(rt.state.preview, Some("termul-light"));
     assert!(!rt.state.tokens().dark, "the window paints the preview");
-    crate::keys::on_key(
-        &mut rt.state,
-        &KeyEvent {
-            key: Key::Enter,
-            mods: Mods::default(),
-        },
-        &mut tx,
-    );
+    enter(&mut rt);
     assert_eq!(
         (rt.state.theme, rt.state.dark, rt.state.preview),
         ("termul", false, None)
@@ -208,24 +197,19 @@ fn the_theme_picker_previews_on_arrows_and_saves_on_return() {
 fn escape_puts_the_saved_theme_back() {
     let mut rt = desktop();
     tap(&mut rt, "rail-color-themes");
-    let mut tx = Tx::default();
-    crate::keys::on_key(
-        &mut rt.state,
-        &KeyEvent {
-            key: Key::Down,
-            mods: Mods::default(),
-        },
-        &mut tx,
-    );
-    crate::keys::on_key(
-        &mut rt.state,
-        &KeyEvent {
-            key: Key::Escape,
-            mods: Mods::default(),
-        },
-        &mut tx,
-    );
+    rt.key(KeyEvent {
+        key: Key::Down,
+        mods: Mods::default(),
+    });
+    rt.frame(0.016);
+    assert_eq!(rt.state.preview, Some("termul-light"));
+    rt.key(KeyEvent {
+        key: Key::Escape,
+        mods: Mods::default(),
+    });
+    rt.frame(0.016);
     assert_eq!((rt.state.preview, rt.state.dark), (None, true));
+    assert!(!rt.state.overlays.is_open(crate::theme_picker::KEY));
 }
 
 #[test]
@@ -261,4 +245,3 @@ fn the_phone_project_sheet_switches_projects() {
     );
     assert!(rt.state.overlays.keys().is_empty());
 }
-

@@ -18,8 +18,25 @@ const RAIL_GUTTER: f32 = 8.0;
 #[derive(Default)]
 pub struct Picker {
     pub query: TextEdit,
-    /// The highlighted row among the filtered ones.
-    pub focus: usize,
+    /// The highlighted row among the filtered ones, and the query it was chosen under: a new
+    /// query highlights its first match.
+    focus: (usize, String),
+}
+
+impl Picker {
+    /// The highlighted row among `len` filtered ones.
+    fn lit(&self, len: usize) -> usize {
+        let at = if self.focus.1 == self.query.text {
+            self.focus.0
+        } else {
+            0
+        };
+        at.min(len.saturating_sub(1))
+    }
+
+    fn set_lit(&mut self, i: usize) {
+        self.focus = (i, self.query.text.clone());
+    }
 }
 
 /// One picker row: a bundled theme.
@@ -132,10 +149,17 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
         .border(1.0, c.border)
         .focus_ring(1.0, 0.0, c.focus_ring)
         .autofocus()
-        .on_edit(|s: &mut State| {
-            s.picker.focus = 0;
-            &mut s.picker.query
-        });
+        .on_submit(|s: &mut State, _tx: &mut rune::Tx| s.picker_key(None))
+        .on_input_key(|s: &mut State, key: &rune::KeyEvent, _tx: &mut rune::Tx| {
+            let step = match key.key {
+                rune::Key::Up => Some(-1),
+                rune::Key::Down => Some(1),
+                _ => return false,
+            };
+            s.picker_key(step);
+            true
+        })
+        .on_edit(|s: &mut State| &mut s.picker.query);
     let search_band = col()
         .key("picker-search-band")
         .w_full()
@@ -180,7 +204,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
             );
         }
         let id = r.tokens.id;
-        let lit = i == s.picker.focus.min(rows.len().saturating_sub(1));
+        let lit = i == s.picker.lit(rows.len());
         let mut item = row()
             .key(format!("theme-{id}"))
             .role("option")
@@ -214,7 +238,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
         list = list.child(
             item.on_hover_change(move |s: &mut State, on: bool, _tx: &mut rune::Tx| {
                 if on {
-                    s.picker.focus = i;
+                    s.picker.set_lit(i);
                     s.preview = Some(id);
                 }
             })
@@ -277,10 +301,11 @@ impl State {
     pub fn open_theme_picker(&mut self) {
         self.picker = Picker::default();
         let applied = theme::theme_id(self.theme, self.dark);
-        self.picker.focus = rows("")
+        let at = rows("")
             .iter()
             .position(|r| r.tokens.id == applied)
             .unwrap_or(0);
+        self.picker.set_lit(at);
         self.overlays.open(KEY);
     }
 
@@ -296,11 +321,11 @@ impl State {
         if rows.is_empty() {
             return;
         }
-        let at = self.picker.focus.min(rows.len() - 1);
+        let at = self.picker.lit(rows.len());
         match step {
             Some(d) => {
                 let next = (at as isize + d).clamp(0, rows.len() as isize - 1) as usize;
-                self.picker.focus = next;
+                self.picker.set_lit(next);
                 self.preview = Some(rows[next].tokens.id);
             }
             None => self.apply_theme(rows[at].tokens.id),

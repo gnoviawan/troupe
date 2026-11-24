@@ -218,7 +218,7 @@ pub fn rename_field(t: &Tokens, edit: &TextEdit) -> El {
                 .edit
         })
         .on_submit(|s: &mut State, _tx: &mut Tx| s.save_rename())
-        .on_key(|s: &mut State, key: &KeyEvent, _tx: &mut Tx| {
+        .on_input_key(|s: &mut State, key: &KeyEvent, _tx: &mut Tx| {
             if matches!(key.key, Key::Escape) {
                 s.rail.rename = None;
                 return true;
