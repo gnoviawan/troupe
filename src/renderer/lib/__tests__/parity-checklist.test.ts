@@ -513,6 +513,25 @@ describe('Parity Checklist Automation', () => {
     })
   })
 
+  // Troupe registry overlay parity. One `/ws` request serves the desktop
+  // channel carrier and the browser socket; `acp-transport-carriers.test.ts`
+  // runs `getAgentOverlay` over both carriers against the same fake host.
+  describe('ACP agent overlay parity', () => {
+    it('declares get_acp_agent_overlay as a read in the /ws contract', () => {
+      expect(readWsProtocol()).toMatch(/get_acp_agent_overlay: \['read', null\]/)
+    })
+
+    it('the host routes it to the catalog service on every carrier', () => {
+      const dispatch = readFileSync(
+        join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src', 'web', 'ws', 'dispatch.rs'),
+        'utf-8'
+      )
+      expect(dispatch).toMatch(
+        /"get_acp_agent_overlay" => handle_get_acp_agent_overlay\(id, acp_catalog\)/
+      )
+    })
+  })
+
   // CAP-6 / Story 9: ACP Install parity. The host-owned verified-atomic
   // install ships on two carriers: HTTP `POST /acp/install` (web) and the
   // `/ws` request `install_acp_agent` (desktop channel and web). This block

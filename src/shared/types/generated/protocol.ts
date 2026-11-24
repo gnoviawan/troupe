@@ -1114,6 +1114,7 @@ export type WsRequestType =
   | 'list_acp_catalog'
   | 'set_catalog_opt_in'
   | 'fetch_acp_registry_snapshot'
+  | 'get_acp_agent_overlay'
   | 'search_mcp_catalog'
   | 'get_mcp_catalog_status'
   | 'set_mcp_catalog_sync'
@@ -1217,6 +1218,7 @@ export const WsRequestTypeValues = [
   'list_acp_catalog',
   'set_catalog_opt_in',
   'fetch_acp_registry_snapshot',
+  'get_acp_agent_overlay',
   'search_mcp_catalog',
   'get_mcp_catalog_status',
   'set_mcp_catalog_sync',

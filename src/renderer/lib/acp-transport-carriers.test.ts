@@ -51,6 +51,12 @@ interface HostConn {
   endByHost(code: number, reason: string): void
 }
 
+const AGENT_OVERLAY = {
+  overrides: [{ id: 'claude-acp', brandColor: { light: '#C15F3C', dark: '#D97757' } }],
+  source: 'network',
+  fetchedAt: '2026-11-24T08:00:00+00:00'
+}
+
 const RUNTIME_POLICY = {
   turnTimeoutMs: 3_600_000,
   promptInactivityTimeoutMs: 3_600_000,
@@ -134,6 +140,9 @@ class FakeHost {
         return
       case 'mark_chat_read':
         ok({ sessionId: frame.payload.sessionId, seq: 9 })
+        return
+      case 'get_acp_agent_overlay':
+        ok(AGENT_OVERLAY)
         return
       default:
         ok()
@@ -384,6 +393,14 @@ describe.each([webCarrier(), channelCarrier()])('/ws contract over $name', (carr
     expect(host.conns).toHaveLength(2)
     expect(host.authPayloads).toHaveLength(2)
     await expect(transport.listAgents()).resolves.toEqual([])
+  })
+
+  it('reads the Troupe agent overlay with get_acp_agent_overlay', async () => {
+    await transport.connect()
+
+    await expect(transport.getAgentOverlay()).resolves.toEqual(AGENT_OVERLAY)
+
+    expect(host.framesOf('get_acp_agent_overlay').map((frame) => frame.payload)).toEqual([{}])
   })
 
   it('reports a chat read as mark_chat_read and resolves the host marker', async () => {

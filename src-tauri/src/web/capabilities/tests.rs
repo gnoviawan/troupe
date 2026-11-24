@@ -91,6 +91,7 @@ fn view_only_may_read_but_not_mutate() {
         "list_agents",
         "list_acp_catalog",
         "fetch_acp_registry_snapshot",
+        "get_acp_agent_overlay",
         "search_mcp_catalog",
         "describe_mcp_install",
         "get_mcp_catalog_status",
