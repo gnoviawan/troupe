@@ -142,13 +142,8 @@ struct StoreFile {
     // JSON key stays `chatAccounts`.
     #[serde(default, rename = "chatAccounts")]
     chat_profiles: BTreeMap<String, String>,
-    /// Files written before the setting existed read as on.
-    #[serde(default = "auto_switch_default")]
-    auto_switch: bool,
-}
-
-const fn auto_switch_default() -> bool {
-    true
+    #[serde(default)]
+    auto_switch_opt_in: bool,
 }
 
 impl StoreFile {
@@ -163,7 +158,7 @@ impl StoreFile {
             default_account_id: BUILTIN_ACCOUNT_ID.to_string(),
             project_profiles: BTreeMap::new(),
             chat_profiles: BTreeMap::new(),
-            auto_switch: auto_switch_default(),
+            auto_switch_opt_in: false,
         }
     }
 
@@ -271,7 +266,7 @@ impl AntigravityAccountStore {
             default_account_id: file.default_account_id,
             project_profiles: file.project_profiles,
             chat_profiles: file.chat_profiles,
-            auto_switch: file.auto_switch,
+            auto_switch: file.auto_switch_opt_in,
         })
     }
 
@@ -402,7 +397,7 @@ impl AntigravityAccountStore {
     pub fn set_auto_switch(&self, enabled: bool) -> Result<(), String> {
         let _guard = self.lock_store()?;
         let mut file = self.load()?;
-        file.auto_switch = enabled;
+        file.auto_switch_opt_in = enabled;
         self.save(&file)?;
         log::info!("[antigravity-accounts] automatic switching set to {enabled}");
         Ok(())
