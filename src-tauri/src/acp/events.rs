@@ -205,6 +205,7 @@ pub const EVENT_USAGE_UPDATE: &str = "acp:usage_update";
 /// resume.
 pub const EVENT_CLAUDE_LIMIT_ACTION: &str = "acp:claude_limit_action";
 pub const EVENT_CODEX_LIMIT_ACTION: &str = "acp:codex_limit_action";
+pub const EVENT_ANTIGRAVITY_LIMIT_ACTION: &str = "acp:antigravity_limit_action";
 /// The agent started or stopped working in a session outside a prompt turn
 /// (live only, never persisted: see `session::unprompted`).
 pub const EVENT_AGENT_WORKING: &str = "acp:agent_working";
@@ -879,6 +880,27 @@ impl AcpErrorDetail {
             message,
             code: Some(-32603),
             data: Some(serde_json::json!({ "errorKind": kind })),
+            rpc_message_len,
+            timed_out: false,
+            connection_closed: false,
+        }
+    }
+
+    /// An Antigravity turn that ended on the "Usage Limit Reached" message.
+    /// `data.agent` keeps it apart from a Codex limit; `resetsAt` (epoch ms)
+    /// is the reset the message named, or `null`.
+    #[must_use]
+    pub(crate) fn antigravity_plan_limit(reset_at: Option<i64>) -> Self {
+        let message = "Antigravity reached its usage limit".to_string();
+        let rpc_message_len = u32::try_from(message.len()).ok();
+        Self {
+            message,
+            code: Some(-32603),
+            data: Some(serde_json::json!({
+                "errorKind": "quota_exhausted",
+                "agent": crate::acp::antigravity_accounts::usage::PLAN_LIMIT_AGENT,
+                "resetsAt": reset_at,
+            })),
             rpc_message_len,
             timed_out: false,
             connection_closed: false,

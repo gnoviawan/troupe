@@ -77,6 +77,11 @@ impl MenuItem {
         self.select = Some(Box::new(move |e: El| e.on_press(f)));
         self
     }
+    /// `on_select` with the frame's `Tx`, for a row that copies or moves focus.
+    pub fn on_select_tx<S: 'static>(mut self, f: impl Fn(&mut S, &mut rune::Tx) + 'static) -> Self {
+        self.select = Some(Box::new(move |e: El| e.on_press_tx(f)));
+        self
+    }
 
     fn build(self, t: &Tokens, key: String, layer: &mut Vec<El>) -> El {
         let c = &t.colors;

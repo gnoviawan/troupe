@@ -157,6 +157,7 @@ pub struct ConfirmDialog {
     open: bool,
     cancel: Option<Close>,
     confirm: Option<Close>,
+    secondary: Option<(String, Close)>,
 }
 
 impl ConfirmDialog {
@@ -172,7 +173,14 @@ impl ConfirmDialog {
             open: false,
             cancel: None,
             confirm: None,
+            secondary: None,
         }
+    }
+    /// A third action between Cancel and the confirm (`secondaryAction`): a ghost button in
+    /// destructive ink, such as "Discard".
+    pub fn secondary<S: 'static>(mut self, label: impl Into<String>, f: impl Fn(&mut S) + Clone + 'static) -> Self {
+        self.secondary = Some((label.into(), Close::new(f)));
+        self
     }
     pub fn variant(mut self, v: ConfirmVariant) -> Self {
         self.variant = v;
@@ -256,6 +264,16 @@ impl ConfirmDialog {
             .fill(c.secondary.alpha(0.5))
             .border_sides([1.0, 0.0, 0.0, 0.0], c.border)
             .child(cancel_button)
+            .children(self.secondary.map(|(label, action)| {
+                let button = Button::new(label)
+                    .variant(ButtonVariant::Ghost)
+                    .size(ButtonSize::Sm)
+                    .ink(c.destructive)
+                    .disabled(disabled)
+                    .build(t)
+                    .key("secondary");
+                if disabled { button } else { action.press(button) }
+            }))
             .child(confirm_button);
         let card = col()
             .key(format!("{}-dialog", self.key))

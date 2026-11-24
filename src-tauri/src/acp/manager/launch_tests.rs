@@ -20,6 +20,7 @@ fn launch() -> AgentLaunch {
         project_id: Some("proj-1".to_string()),
         claude: ClaudeLaunchAuth::Account("work".to_string()),
         codex: crate::acp::codex_agent::CodexLaunchAuth::Unmanaged,
+        antigravity: crate::acp::antigravity_agent::AntigravityLaunchAuth::Unmanaged,
     }
 }
 

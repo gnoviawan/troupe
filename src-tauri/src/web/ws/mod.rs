@@ -63,6 +63,7 @@ use crate::web::store::WebStore;
 
 mod access;
 mod agents;
+mod antigravity_accounts;
 mod canvas;
 pub mod channel;
 mod chat_reads;
@@ -87,6 +88,7 @@ mod watch;
 // for `tests.rs`' `use super::*` without widening visibility past `ws`.
 use access::*;
 use agents::*;
+use antigravity_accounts::*;
 use canvas::*;
 use chat_reads::*;
 use claude_accounts::*;
@@ -627,6 +629,13 @@ pub(super) fn acp_err_to_reply(id: String, err: String) -> WsReply {
     }
     if let Some(message) = crate::acp::codex_accounts::strip_signed_out_tag(&err) {
         return WsReply::err(id, WsErrorCode::CodexAccountSignedOut, message.to_string());
+    }
+    if let Some(message) = crate::acp::antigravity_accounts::strip_signed_out_tag(&err) {
+        return WsReply::err(
+            id,
+            WsErrorCode::AntigravityAccountSignedOut,
+            message.to_string(),
+        );
     }
     // Issue #837 split-brain guard: the manager tags a rejected reopen with
     // `ACP_SESSION_OWNED_BY_OTHER` when the session belongs to a different

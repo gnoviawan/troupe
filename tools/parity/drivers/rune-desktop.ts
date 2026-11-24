@@ -64,10 +64,32 @@ export function runeDesktopDriver(socket: RuneSocket, points: Points): Driver {
     target: Target
   ): Promise<{ point: Point; via: ActionLog['via'] }> => {
     if ('point' in target) return { point: target.point, via: 'point' }
+    const recorded = points.get(key)
     if ('css' in target) {
-      const recorded = points.get(key)
       if (!recorded) throw new Error('Rune has no CSS selectors, and no client recorded a point')
       return { point: recorded, via: 'recorded-point' }
+    }
+    if ('testId' in target && recorded) {
+      // A test id may name no Rune key (React repeats `new-tab-menu-trigger` in every pane,
+      // Rune keys each pane's apart), so the reference's point stands in, as on the web.
+      const hit = await socket.send({ cmd: 'wait', key: target.testId, timeout_ms: 1000 })
+      if (!hit.ok) return { point: recorded, via: 'recorded-point' }
+    }
+    if ('text' in target && target.exact === false) {
+      // The live driver matches whole texts only; a prefix (a truncated chat title) is found
+      // in the tree, as the web driver finds it in the mirror.
+      const needle = normalize(target.text)
+      let found: RuneElement | undefined
+      const shown = await poll(async () => {
+        found = (await elementsOf(socket)).find((e) =>
+          [e.text, e.label].some((t) => !!t && normalize(t).includes(needle))
+        )
+        return found !== undefined
+      }, PRESENT_TIMEOUT_MS)
+      if (!shown || !found) throw new Error(`the tree never showed "${target.text}"`)
+      const point = centre(found)
+      points.set(key, point)
+      return { point, via: 'text' }
     }
     const [query, via]: [{ key: string } | { text: string }, ActionLog['via']] =
       'testId' in target

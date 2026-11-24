@@ -11,7 +11,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /** One store action: `getState()[action](...args)` on a Zustand store. */
@@ -66,6 +66,24 @@ export interface StoreRecorder {
 
 /** What a mocked read returns, keyed by the read (e.g. `project-prefs`). */
 export const reads = new Map<string, unknown>()
+
+/** How the mocked prompt dispatches answer, in order; a vector's `context.dispatch`. */
+export const dispatchOutcomes: unknown[] = []
+
+/** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
+export const configReplies: unknown[] = []
+
+/** What the mocked `readComposerOptions` answers; a vector's `context.composerOptions`. */
+export const composerRecord: { saved: unknown } = { saved: null }
+
+/**
+ * How the mocked agent commands (spawn, kill, authenticate, logout, a sign-in
+ * answer) answer, in order; a vector's `context.agentReplies`.
+ */
+export const agentReplies: unknown[] = []
+
+/** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
+export const openChatTabs = new Set<string>()
 
 /** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
 export const readFailures = new Map<string, string>()
@@ -139,6 +157,22 @@ export interface Manifest {
   stores: Record<string, { sources: Record<string, string>; vectors: string[] }>
 }
 
+/**
+ * Repo paths that no `paths:` glob of a workflow's `pull_request` trigger
+ * matches. Both workflows must run on a PR that changes a pinned source:
+ * parity-vectors re-records the vectors, and rune replays them in Rust and
+ * fails while a source is newer than its manifest hash.
+ */
+export function sourcesOutsideWorkflow(
+  sources: string[],
+  file: 'parity-vectors.yml' | 'rune.yml'
+): string[] {
+  const workflow = readFileSync(join(REPO_ROOT, '.github/workflows', file), 'utf8')
+  const block = workflow.split(/^\s+paths:\n/m)[1]?.split(/^\s+[a-z_]+:/m)[0] ?? ''
+  const globs = [...block.matchAll(/^\s+- '([^']+)'$/gm)].map(([, glob]) => new Bun.Glob(glob))
+  return sources.filter((source) => !globs.some((glob) => glob.match(source)))
+}
+
 export function manifestEntry(
   recorder: StoreRecorder,
   vectors: Vector[]
@@ -154,12 +188,17 @@ export function storeText(vectors: Vector[]): string {
   return `${JSON.stringify(vectors, null, 1)}\n`
 }
 
-/** Replace `out/` with these stores' vectors and their manifest. */
-export function writeOut(manifest: Manifest, byStore: Map<string, Vector[]>): void {
-  rmSync(OUT_DIR, { recursive: true, force: true })
-  mkdirSync(OUT_DIR, { recursive: true })
-  for (const [store, vectors] of byStore) {
-    writeFileSync(join(OUT_DIR, `${store}.json`), storeText(vectors))
+/**
+ * Replace the vector files in `dir` (`out/` by default) with these stores'
+ * vectors and their manifest. Subfolders, which other recorders own, stay.
+ */
+export function writeOut(manifest: Manifest, byStore: Map<string, Vector[]>, dir = OUT_DIR): void {
+  mkdirSync(dir, { recursive: true })
+  for (const file of readdirSync(dir)) {
+    if (file.endsWith('.json')) rmSync(join(dir, file))
   }
-  writeFileSync(join(OUT_DIR, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+  for (const [store, vectors] of byStore) {
+    writeFileSync(join(dir, `${store}.json`), storeText(vectors))
+  }
+  writeFileSync(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 }

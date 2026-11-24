@@ -30,6 +30,11 @@
  * P9: Select All is disabled when no mutable editable is focused (no
  * document-wide selectAll fallback).
  *
+ * Right-clicking an http(s) link, or with exactly one URL selected (a
+ * `localhost:4321` in a code span), adds "Open in Troupe browser" on the
+ * desktop app, which opens the URL in a new browser tab instead of the
+ * system browser.
+ *
  * Touch-primary devices get no global menu: a long-press there must stay the
  * OS's text selection. Radix would otherwise open this modal menu after 700ms
  * (or on Android's long-press `contextmenu`), and its layer makes the whole
@@ -38,6 +43,7 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { toast } from 'sonner'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -47,6 +53,11 @@ import {
   ContextMenuTrigger
 } from '@/components/ui/context-menu'
 import { useTouchPrimaryPointer } from '@/hooks/use-touch-primary-pointer'
+import {
+  browsableUrlForContextMenu,
+  canOpenInTroupeBrowser,
+  openUrlInTroupeBrowser
+} from '@/lib/browser/open-in-troupe-browser'
 import { isMac } from '@/lib/platform'
 import {
   captureSelectionSnapshot,
@@ -66,13 +77,16 @@ interface GlobalContextMenuState {
   isMutableEditableFocused: boolean
   focusedEditable: HTMLElement | null
   selection: SelectionSnapshot
+  /** The http(s) URL the right-click is on, when Troupe's browser can open it. */
+  linkUrl: string | null
 }
 
 const CLOSED_STATE: GlobalContextMenuState = {
   hasSelection: false,
   isMutableEditableFocused: false,
   focusedEditable: null,
-  selection: null
+  selection: null,
+  linkUrl: null
 }
 
 function isMutableEditableElement(el: Element | null): boolean {
@@ -88,29 +102,32 @@ function isMutableEditableElement(el: Element | null): boolean {
  * inside `<input>`/`<textarea>` use `selectionStart`/`selectionEnd`, NOT
  * `window.getSelection()` — check the focused editable first.
  */
-function readState(): GlobalContextMenuState {
+function readState(target: EventTarget | null): GlobalContextMenuState {
   if (typeof window === 'undefined' || typeof document === 'undefined') return CLOSED_STATE
   const activeEl = document.activeElement
   const focusedEditable = activeEl instanceof HTMLElement ? activeEl : null
 
   let hasSelection = false
+  let selectedText = ''
   if (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) {
     const start = activeEl.selectionStart
     const end = activeEl.selectionEnd
     if (start !== null && end !== null && start !== end) {
       hasSelection = true
+      selectedText = activeEl.value.slice(start, end)
     }
   }
   if (!hasSelection) {
-    const sel = window.getSelection()
-    hasSelection = sel ? sel.toString().length > 0 : false
+    selectedText = window.getSelection()?.toString() ?? ''
+    hasSelection = selectedText.length > 0
   }
 
   return {
     hasSelection,
     isMutableEditableFocused: isMutableEditableElement(activeEl),
     focusedEditable,
-    selection: focusedEditable ? captureSelectionSnapshot(focusedEditable) : null
+    selection: focusedEditable ? captureSelectionSnapshot(focusedEditable) : null,
+    linkUrl: canOpenInTroupeBrowser() ? browsableUrlForContextMenu(target, selectedText) : null
   }
 }
 
@@ -145,8 +162,8 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps): React.J
   // phase) but is harmless — it only snapshots state to a ref.
   useEffect(() => {
     if (typeof document === 'undefined') return
-    const handler = (): void => {
-      snapshotRef.current = readState()
+    const handler = (event: MouseEvent): void => {
+      snapshotRef.current = readState(event.target)
     }
     document.addEventListener('contextmenu', handler, { capture: true })
     return () => document.removeEventListener('contextmenu', handler, { capture: true })
@@ -186,7 +203,7 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps): React.J
     }
   }, [])
 
-  const { hasSelection, isMutableEditableFocused } = state
+  const { hasSelection, isMutableEditableFocused, linkUrl } = state
 
   return (
     <ContextMenu open={open} onOpenChange={handleOpenChange}>
@@ -198,6 +215,22 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps): React.J
         className="w-48 data-[state=closed]:pointer-events-none"
         onCloseAutoFocus={handleCloseAutoFocus}
       >
+        {linkUrl && (
+          <>
+            <ContextMenuItem
+              onSelect={() => {
+                if (!openUrlInTroupeBrowser(linkUrl)) {
+                  toast.error('Could not open the link in the Troupe browser', {
+                    description: 'Open a project pane first, then try again.'
+                  })
+                }
+              }}
+            >
+              Open in Troupe browser
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        )}
         <ContextMenuItem disabled={!hasSelection} onSelect={() => runAction(copySelection)}>
           Copy <ContextMenuShortcut>{SHORTCUT_MOD}+C</ContextMenuShortcut>
         </ContextMenuItem>

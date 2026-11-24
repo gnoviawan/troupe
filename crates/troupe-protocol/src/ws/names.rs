@@ -229,6 +229,33 @@ wire_enum! {
         // Account. The client then calls `authenticate_agent` with `chat-gpt` or
         // `chat-gpt-device-code`. The config env is not stored in the ledger.
         StartCodexAccountLogin = "start_codex_account_login",
+        // Antigravity Accounts. Google logins only; the same shapes as the Codex
+        // Accounts with `AntigravityAccountsSnapshot` and `AntigravityAccountUsage`
+        // (one `model` window per quota bucket). `list` → the snapshot.
+        ListAntigravityAccounts = "list_antigravity_accounts",
+        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`. Cached 5 min on
+        // the host. A forced read still reuses one younger than 60 s.
+        ListAntigravityUsage = "list_antigravity_usage",
+        SetDefaultAntigravityAccount = "set_default_antigravity_account",
+        SetProjectAntigravityAccount = "set_project_antigravity_account",
+        // `{ projectId, sessionId, accountId | null, expectedAccountId? }` →
+        // `{ applied }`.
+        SetChatAntigravityAccount = "set_chat_antigravity_account",
+        // `{ enabled }` → `{}`.
+        SetAntigravityAutoSwitch = "set_antigravity_auto_switch",
+        // `{ sessionId, at }` → `{}`; `at: null` cancels.
+        SetAntigravityResume = "set_antigravity_resume",
+        // `{ name }` → the new signed-out account.
+        AddAntigravityAccount = "add_antigravity_account",
+        // `{ accountId, name }` → `{}`.
+        RenameAntigravityAccount = "rename_antigravity_account",
+        // `{ accountId }` → `{ movedProjectIds, movedChatIds }`. Deletes that
+        // home's login files first. The built-in Account is refused.
+        RemoveAntigravityAccount = "remove_antigravity_account",
+        // `{ accountId, config }` → the spawn outcome of an agent whose
+        // `GEMINI_HOME` is that Account. The client then calls
+        // `authenticate_agent` with `oauth-personal` or `oauth-business`.
+        StartAntigravityAccountLogin = "start_antigravity_account_login",
         // The canvas gateway's renderer leg (spine AD-21, AD-29). `canvas_mount`
         // / `canvas_unmount` `{ projectId, mountSeq }` tell the host this connection
         // holds (or no longer holds) a project's canvas; the host then forwards
@@ -282,6 +309,7 @@ wire_enum! {
         BrowserTicketClosed = "browser_ticket_closed",
         ClaudeLimitAction = "claude_limit_action",
         CodexLimitAction = "codex_limit_action",
+        AntigravityLimitAction = "antigravity_limit_action",
     }
 }
 
@@ -333,6 +361,7 @@ wire_enum! {
         InvalidCommandId = "invalid_command_id",
         ClaudeAccountSignedOut = "claude_account_signed_out",
         CodexAccountSignedOut = "codex_account_signed_out",
+        AntigravityAccountSignedOut = "antigravity_account_signed_out",
         ClaudeLoginCodeIncomplete = "claude_login_code_incomplete",
         ClaudeLoginBusy = "claude_login_busy",
     }

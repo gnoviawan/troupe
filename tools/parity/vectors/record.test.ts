@@ -12,6 +12,7 @@ import {
   recordVector,
   type Scenario,
   type StoreRecorder,
+  sourcesOutsideWorkflow,
   storeText,
   type Vector,
   writeOut
@@ -122,13 +123,15 @@ const { shortcutsRecorder, shortcutScenarios } = await import('./stores/shortcut
 const { overlayRecorder, overlayScenarios } = await import('./stores/overlay')
 const { projectsRecorder, projectScenarios } = await import('./stores/projects')
 const { shellLayoutRecorder, shellLayoutScenarios } = await import('./stores/shell-layout')
+const { paneTreeRecorder, paneTreeScenarios } = await import('./stores/pane-tree')
 
 const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [workspaceRecorder, workspaceScenarios],
   [shortcutsRecorder, shortcutScenarios],
   [overlayRecorder, overlayScenarios],
   [projectsRecorder, projectScenarios],
-  [shellLayoutRecorder, shellLayoutScenarios]
+  [shellLayoutRecorder, shellLayoutScenarios],
+  [paneTreeRecorder, paneTreeScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'
@@ -141,6 +144,9 @@ describe('test vectors', () => {
     for (const [recorder, scenarios] of STORES) {
       const recorded: Vector[] = []
       for (const scenario of scenarios) recorded.push(await recordVector(recorder, scenario))
+      for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
+        expect(sourcesOutsideWorkflow(recorder.sources, file), `${file} paths`).toEqual([])
+      }
       manifest.stores[recorder.store] = manifestEntry(recorder, recorded)
       byStore.set(recorder.store, recorded)
     }

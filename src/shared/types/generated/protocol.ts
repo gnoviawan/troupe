@@ -182,10 +182,21 @@ export type ChatHistoryWatchDelta = {
 }
 
 /**
- * `mark_chat_read` request payload and reply: a chat's shared last-read
- * marker. `logEpoch` is absent only from a peer that predates it.
+ * `mark_chat_read` request payload: a chat's shared last-read marker.
+ * `logEpoch` is absent only from a peer that predates it.
  */
 export type ChatReadMark = {
+  logEpoch?: string
+  seq: number
+  sessionId: string
+}
+
+/**
+ * `mark_chat_read` reply: the marker as it stands. Unlike the request it
+ * accepts fields it does not name, so a client keeps reading the reply after
+ * the host adds one.
+ */
+export type ChatReadMarkReply = {
   logEpoch?: string
   seq: number
   sessionId: string
@@ -882,6 +893,7 @@ export type WsErrorCode =
   | 'invalid_command_id'
   | 'claude_account_signed_out'
   | 'codex_account_signed_out'
+  | 'antigravity_account_signed_out'
   | 'claude_login_code_incomplete'
   | 'claude_login_busy'
 
@@ -914,6 +926,7 @@ export const WsErrorCodeValues = [
   'invalid_command_id',
   'claude_account_signed_out',
   'codex_account_signed_out',
+  'antigravity_account_signed_out',
   'claude_login_code_incomplete',
   'claude_login_busy'
 ] as const
@@ -975,6 +988,7 @@ export type WsEventType =
   | 'browser_ticket_closed'
   | 'claude_limit_action'
   | 'codex_limit_action'
+  | 'antigravity_limit_action'
 
 export const WsEventTypeValues = [
   'agent_spawned',
@@ -1009,7 +1023,8 @@ export const WsEventTypeValues = [
   'mcp_registry_changed',
   'browser_ticket_closed',
   'claude_limit_action',
-  'codex_limit_action'
+  'codex_limit_action',
+  'antigravity_limit_action'
 ] as const
 
 /**
@@ -1146,6 +1161,17 @@ export type WsRequestType =
   | 'rename_codex_account'
   | 'remove_codex_account'
   | 'start_codex_account_login'
+  | 'list_antigravity_accounts'
+  | 'list_antigravity_usage'
+  | 'set_default_antigravity_account'
+  | 'set_project_antigravity_account'
+  | 'set_chat_antigravity_account'
+  | 'set_antigravity_auto_switch'
+  | 'set_antigravity_resume'
+  | 'add_antigravity_account'
+  | 'rename_antigravity_account'
+  | 'remove_antigravity_account'
+  | 'start_antigravity_account_login'
   | 'canvas_mount'
   | 'canvas_unmount'
   | 'canvas_reply'
@@ -1238,6 +1264,17 @@ export const WsRequestTypeValues = [
   'rename_codex_account',
   'remove_codex_account',
   'start_codex_account_login',
+  'list_antigravity_accounts',
+  'list_antigravity_usage',
+  'set_default_antigravity_account',
+  'set_project_antigravity_account',
+  'set_chat_antigravity_account',
+  'set_antigravity_auto_switch',
+  'set_antigravity_resume',
+  'add_antigravity_account',
+  'rename_antigravity_account',
+  'remove_antigravity_account',
+  'start_antigravity_account_login',
   'canvas_mount',
   'canvas_unmount',
   'canvas_reply'

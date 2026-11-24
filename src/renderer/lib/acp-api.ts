@@ -860,6 +860,7 @@ export const ACP_EVENTS = {
   usageUpdate: 'acp:usage_update',
   claudeLimitAction: 'acp:claude_limit_action',
   codexLimitAction: 'acp:codex_limit_action',
+  antigravityLimitAction: 'acp:antigravity_limit_action',
   agentWorking: 'acp:agent_working',
   backgroundCommands: 'acp:background_commands',
   browserOpenRequest: 'acp:browser_open_request',

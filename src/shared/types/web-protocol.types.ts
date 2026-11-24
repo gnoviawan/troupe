@@ -252,6 +252,17 @@ export const WS_COMMAND_CLASSES: Readonly<
   rename_codex_account: ['idempotent', null],
   remove_codex_account: ['idempotent', null],
   start_codex_account_login: ['command', 'payload'],
+  list_antigravity_accounts: ['read', null],
+  list_antigravity_usage: ['read', null],
+  set_default_antigravity_account: ['idempotent', null],
+  set_project_antigravity_account: ['idempotent', null],
+  set_chat_antigravity_account: ['idempotent', null],
+  set_antigravity_auto_switch: ['idempotent', null],
+  set_antigravity_resume: ['idempotent', null],
+  add_antigravity_account: ['command', 'payload'],
+  rename_antigravity_account: ['idempotent', null],
+  remove_antigravity_account: ['idempotent', null],
+  start_antigravity_account_login: ['command', 'payload'],
   kill_agent: ['idempotent', null],
   list_agents: ['read', null],
   authenticate: ['read', null],
@@ -386,6 +397,9 @@ export const WS_ERROR_CODES = {
   // The Codex Account a managed Codex spawn needs is not signed in. The
   // message names the Account or the project `CODEX_HOME`.
   CODEX_ACCOUNT_SIGNED_OUT: 'codex_account_signed_out',
+  // The Antigravity Account a managed Antigravity spawn needs is not signed
+  // in. The message names the Account or the project `GEMINI_HOME`.
+  ANTIGRAVITY_ACCOUNT_SIGNED_OUT: 'antigravity_account_signed_out',
   // `finish_claude_link_login` got a code the Claude CLI calls incomplete.
   // The sign-in still waits for the whole code.
   CLAUDE_LOGIN_CODE_INCOMPLETE: 'claude_login_code_incomplete',

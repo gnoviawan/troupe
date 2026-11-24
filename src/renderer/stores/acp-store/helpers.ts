@@ -44,11 +44,13 @@ import { getAcpTransport } from '@/lib/acp-transport'
 import { agentConfigIdentityKey } from '@/lib/agents/acp-config-identity'
 import { type AgentAuthPolicy, agentPolicyForConfigId } from '@/lib/agents/acp-registry'
 import {
+  antigravityAccountSignedOutMessage,
   classifySetupError,
   claudeAccountSignedOutMessage,
   codexAccountSignedOutMessage,
   describeProviderFailure,
   isAgentAuthRequiredError,
+  isAntigravityAccountSignedOutError,
   isClaudeAccountSignedOutError,
   isCodexAccountSignedOutError
 } from '@/lib/agents/acp-spawn-errors'
@@ -610,7 +612,9 @@ export function withSessionResumeError(
             ? claudeAccountSignedOutMessage(err)
             : isCodexAccountSignedOutError(err)
               ? codexAccountSignedOutMessage(err)
-              : String(err)
+              : isAntigravityAccountSignedOutError(err)
+                ? antigravityAccountSignedOutMessage(err)
+                : String(err)
         }`
       )
     }

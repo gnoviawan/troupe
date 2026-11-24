@@ -122,7 +122,7 @@ fn check_reply_payload(name: &str, label: &str, body: &Value) {
         "store_write" => drop(round_trip::<StoreDeviceWriteReply>(label, body)),
         "store_delete" => drop(round_trip::<StoreDeleteReply>(label, body)),
         "watch" => drop(round_trip::<WsWatchReply>(label, body)),
-        "mark_chat_read" => drop(round_trip::<ChatReadMark>(label, body)),
+        "mark_chat_read" => drop(round_trip::<ChatReadMarkReply>(label, body)),
         "canvas_mount" => drop(round_trip::<WsCanvasMountReply>(label, body)),
         _ => {}
     }
@@ -373,4 +373,24 @@ fn handwritten_fixtures_name_their_source() {
             entry.source
         );
     }
+}
+
+#[test]
+fn a_read_mark_reply_with_a_new_field_still_parses_and_a_request_does_not() {
+    let body = serde_json::json!({
+        "sessionId": "s1",
+        "seq": 7,
+        "logEpoch": "e1",
+        "unreadCount": 0
+    });
+    let reply: ChatReadMarkReply = serde_json::from_value(body.clone()).expect("lenient reply");
+    assert_eq!(
+        reply,
+        ChatReadMarkReply {
+            session_id: "s1".into(),
+            seq: 7,
+            log_epoch: Some("e1".into()),
+        }
+    );
+    assert!(serde_json::from_value::<ChatReadMark>(body).is_err());
 }

@@ -801,6 +801,8 @@ pub(super) async fn run_command_loop(
                     let cancel_state = turn_state.clone();
                     let cancel_session = session_id.clone();
                     let cancel_cx = turn_cx.clone();
+                    // A limit message from an earlier turn is not this turn's.
+                    turn_state.lock().quota_hits().clear(&session_id.0);
                     let outcome: Result<StopReason, events::AcpErrorDetail> = race_turn(
                         async {
                             match turn_cx
@@ -808,8 +810,14 @@ pub(super) async fn run_command_loop(
                                 .block_task()
                                 .await
                             {
-                                Ok(response) => codex_plan_limit_outcome(&response),
-                                Err(error) => Err(events::AcpErrorDetail::from(error)),
+                                Ok(response) => {
+                                    let quota = turn_state.lock().quota_hits().take(&session_id.0);
+                                    plan_limit_outcome(&response, quota)
+                                }
+                                Err(error) => {
+                                    turn_state.lock().quota_hits().clear(&session_id.0);
+                                    Err(events::AcpErrorDetail::from(error))
+                                }
                             }
                         },
                         cancel_rx,
@@ -1838,6 +1846,20 @@ pub(super) fn initialize_message(
         auth.insert("gateway".to_string(), serde_json::json!({}));
     }
     UntypedMessage::new("initialize", &value).map_err(|error| error.to_string())
+}
+
+/// A plan limit becomes a turn error, so the host and the renderer can
+/// switch accounts: the Antigravity "Usage Limit Reached" message the turn
+/// streamed (`quota`), else a Codex plan limit on the prompt result. Any
+/// other result keeps its stop reason.
+fn plan_limit_outcome(
+    response: &PromptResponse,
+    quota: Option<crate::acp::antigravity_accounts::usage::AntigravityQuotaHit>,
+) -> Result<StopReason, events::AcpErrorDetail> {
+    if let Some(hit) = quota {
+        return Err(events::AcpErrorDetail::antigravity_plan_limit(hit.reset_at));
+    }
+    codex_plan_limit_outcome(response)
 }
 
 /// A Codex plan-limit on the prompt result becomes a turn error, so the

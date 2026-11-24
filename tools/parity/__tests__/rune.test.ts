@@ -64,10 +64,14 @@ test('the Rune shell surfaces exist and run; every other surface waits on a name
   for (const id of RUNE_SHELL_SURFACES) expect(ids.has(id)).toBe(true)
   const dashboard = SURFACES.find((s) => s.id === 'shell.dashboard')
   expect(dashboard && runePending(dashboard)).toBeUndefined()
-  const chat = SURFACES.find((s) => s.area === 'chat')
+  const transcript = SURFACES.find((s) => s.id === 'chat.transcript')
+  expect(transcript && runePending(transcript)).toBeUndefined()
+  const chat = SURFACES.find((s) => s.area === 'chat' && !RUNE_SHELL_SURFACES.has(s.id))
   expect(chat && runePending(chat)?.unit).toBe('R6')
-  const phone = SURFACES.find((s) => s.profile === 'phone')
-  expect(phone && runePending(phone)?.unit).toBe('R5c')
+  const drawer = SURFACES.find((s) => s.id === 'phone.drawer')
+  expect(drawer && runePending(drawer)).toBeUndefined()
+  const files = SURFACES.find((s) => s.id === 'phone.files')
+  expect(files && runePending(files)?.unit).toBe('R8')
 })
 
 test('serveRuneClient serves the build and forwards the rest, upgrades included, to the server', async () => {

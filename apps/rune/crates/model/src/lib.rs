@@ -7,7 +7,10 @@
 //! `tools/parity/vectors/` recorded from them. `README.md` says which state
 //! stays on the client and which the server already owns.
 
+pub mod acp;
+pub mod chats;
 pub mod overlay;
+pub mod persistence;
 pub mod prefs;
 pub mod projects;
 pub mod shell_layout;
