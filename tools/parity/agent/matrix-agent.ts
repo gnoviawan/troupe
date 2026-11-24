@@ -13,6 +13,10 @@
  * - `matrix subagent` announces two running subagents (`subagent_update`, the
  *   subagent panel); the first offers a stop. A `session/cancel` for a child
  *   ends it as cancelled, and the turn ends once no child runs.
+ * - `matrix tools` runs one call of each card shape (a file read, an edit
+ *   with its diff, a command with output, a terminal, a failed call), then
+ *   replies `TOOLS_REPLY`.
+ * - `matrix error` fails the turn with `TURN_ERROR` (the error notice).
  *
  * With `MATRIX_AGENT_OPTIONS=1` in its environment, each new session also
  * offers modes and a model option (the composer's mode chip and model
@@ -49,8 +53,15 @@ export const MATRIX_PROMPTS = {
   permission: 'matrix permission',
   hold: 'matrix hold',
   question: 'matrix question',
-  subagent: 'matrix subagent'
+  subagent: 'matrix subagent',
+  tools: 'matrix tools',
+  error: 'matrix error'
 } as const
+export const TOOLS_REPLY = 'The tool calls are done.'
+export const TURN_ERROR = 'Stream closed: NGHTTP2_INTERNAL_ERROR'
+const OLD_ROUTE = Array.from({ length: 14 }, (_, n) => `const route${n + 1} = '/r${n + 1}'`).join(
+  '\n'
+)
 export const PLAN_ENTRIES = [
   'Read the router module',
   'Write the hash router tests',
@@ -193,6 +204,85 @@ function cancelChild(parent: string, child: string): boolean {
   return true
 }
 
+/** One call: announced in progress, then completed (or failed) with `done`. */
+async function toolCall(
+  sessionId: string,
+  call: Record<string, unknown>,
+  done: Record<string, unknown>
+): Promise<void> {
+  update(sessionId, { sessionUpdate: 'tool_call', status: 'in_progress', ...call })
+  await sleep(150)
+  update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId: call.toolCallId, ...done })
+}
+
+async function tools(sessionId: string): Promise<void> {
+  const file = 'src/renderer/lib/routes.ts'
+  await toolCall(
+    sessionId,
+    {
+      toolCallId: 'matrix-read',
+      title: `Read ${file}`,
+      kind: 'read',
+      locations: [{ path: file }],
+      rawInput: { path: file, offset: 1, limit: 14 }
+    },
+    { status: 'completed', rawOutput: { output: OLD_ROUTE } }
+  )
+  const newRoute = OLD_ROUTE.replace("route9 = '/r9'", "route9 = '/nine'")
+  await toolCall(
+    sessionId,
+    {
+      toolCallId: 'matrix-edit',
+      title: `Edit ${file}`,
+      kind: 'edit',
+      locations: [{ path: file }],
+      rawInput: { path: file }
+    },
+    {
+      status: 'completed',
+      content: [{ type: 'diff', path: file, oldText: OLD_ROUTE, newText: newRoute }]
+    }
+  )
+  await toolCall(
+    sessionId,
+    {
+      toolCallId: 'matrix-run',
+      title: 'Run bun test router',
+      kind: 'execute',
+      rawInput: { command: 'bun test router' }
+    },
+    {
+      status: 'completed',
+      rawOutput: { stdout: ' 6 pass\n 0 fail\nRan 6 tests across 1 file. [812ms]' }
+    }
+  )
+  await toolCall(
+    sessionId,
+    {
+      toolCallId: 'matrix-terminal',
+      title: 'Run bun run dev',
+      kind: 'execute',
+      rawInput: { command: 'bun run dev' }
+    },
+    { status: 'completed', content: [{ type: 'terminal', terminalId: 'term-1' }] }
+  )
+  await toolCall(
+    sessionId,
+    {
+      toolCallId: 'matrix-failed',
+      title: 'Search "routeX"',
+      kind: 'search',
+      rawInput: { pattern: 'routeX' }
+    },
+    { status: 'failed', rawOutput: { output: 'rg: no matches for routeX' } }
+  )
+  say(sessionId, TOOLS_REPLY)
+}
+
+async function failTurn(_sessionId: string): Promise<void> {
+  throw new Error(TURN_ERROR)
+}
+
 let turnSession = ''
 
 export const OPTIONS_ENV = 'MATRIX_AGENT_OPTIONS'
@@ -273,7 +363,9 @@ const HANDLERS: Record<string, (sessionId: string) => Promise<void>> = {
   [MATRIX_PROMPTS.permission]: permission,
   [MATRIX_PROMPTS.hold]: hold,
   [MATRIX_PROMPTS.question]: question,
-  [MATRIX_PROMPTS.subagent]: subagent
+  [MATRIX_PROMPTS.subagent]: subagent,
+  [MATRIX_PROMPTS.tools]: tools,
+  [MATRIX_PROMPTS.error]: failTurn
 }
 
 async function answer(
@@ -289,7 +381,8 @@ async function answer(
     send({ id, result: { stopReason: cancelled ? 'cancelled' : 'end_turn' } })
   } catch (error) {
     console.error(`[matrix-agent] prompt failed: ${error}`)
-    send({ id, error: { code: -32603, message: String(error) } })
+    const message = error instanceof Error ? error.message : String(error)
+    send({ id, error: { code: -32603, message, data: { retryable: true } } })
   }
 }
 
