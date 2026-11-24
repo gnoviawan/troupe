@@ -25,6 +25,14 @@ const KEY = `${AGENT}\u0000/work`
 
 export const discoveryScenarios: Scenario[] = [
   {
+    name: 'discover_sessions_signs_in_on_a_ws_auth_code',
+    context: {
+      agentReplies: [{ reject: 'nope', code: 'agent_auth_required' }, null, page(['a'])]
+    },
+    initial: agent(lists, 'connected', [{ id: 'oauth', name: 'OAuth' }]),
+    steps: [discover()]
+  },
+  {
     name: 'discover_sessions_pages_until_the_cursor_ends_and_drops_repeats',
     context: { agentReplies: [page(['a', 'b'], ''), page(['b', 'c'], 'next'), page(['d'], null)] },
     initial: agent(lists),

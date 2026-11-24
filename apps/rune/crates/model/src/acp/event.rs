@@ -110,9 +110,10 @@ pub enum Event {
     /// snapshot, when the agent sent one.
     #[serde(skip_deserializing)]
     ControlSet(Effect, Option<Vec<Value>>),
-    /// The agent rejected a set command; the text is the error's message.
+    /// The agent rejected a set command with the error's message and the
+    /// host's error code.
     #[serde(skip_deserializing)]
-    ControlFailed(Effect, String),
+    ControlFailed(Effect, String, Option<String>),
     /// What an [`Effect::ReadFactoryKeyStatus`] read; `None` when the host
     /// could not say.
     #[serde(skip_deserializing)]
@@ -140,9 +141,12 @@ pub enum Event {
     /// The running imports start no other session.
     #[serde(rename = "stopImport")]
     StopImport,
-    /// The index reload a [`Effect::RefreshSessionIndex`] asked for failed.
-    #[serde(rename = "sessionIndexReloadFailed")]
-    SessionIndexReloadFailed(String),
+    /// What an import's [`Effect::RefreshSessionIndex`] read.
+    #[serde(skip_deserializing)]
+    SessionIndexReloaded(Effect, Vec<Object>),
+    /// An import's [`Effect::RefreshSessionIndex`] failed with this message.
+    #[serde(skip_deserializing)]
+    SessionIndexReloadFailed(Effect, String),
     #[serde(rename = "prewarmAgent")]
     PrewarmAgent(String, String),
     /// `renewAgentCredentials`: the Project's account for the config changed.

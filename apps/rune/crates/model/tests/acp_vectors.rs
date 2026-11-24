@@ -186,6 +186,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             Some(reason) => Event::ControlFailed(
                                 command,
                                 reason.as_str().unwrap_or_default().to_owned(),
+                                None,
                             ),
                             None => Event::ControlSet(
                                 command,
@@ -200,7 +201,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
                     Effect::SetMode { .. } | Effect::SetModel { .. } => {
                         let reply = set_replies.pop_front().unwrap_or(Value::Null);
                         match reply.get("reject") {
-                            Some(reason) => Event::ControlFailed(command, js_string(Some(reason))),
+                            Some(reason) => Event::ControlFailed(
+                                command,
+                                js_string(Some(reason)),
+                                reply.get("code").map(|code| js_string(Some(code))),
+                            ),
                             None => Event::ControlSet(command, None),
                         }
                     }

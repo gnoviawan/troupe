@@ -15,6 +15,7 @@ use serde_json::{Map, Value, json};
 use super::auth_retry::AuthFailure;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
+use super::host_error::HostError;
 use super::types::SessionStatus;
 use super::{Effect, State};
 
@@ -300,13 +301,13 @@ impl State {
         let mut message = message;
         match command {
             Effect::ListSessions { .. } | Effect::ImportAgentSession { .. } => {
-                return self.on_session_call_failed(command, message, code, fx);
+                return self.on_session_call_failed(command, HostError::new(message, code), fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));
                 self.agent_status.insert(name, json!("error"));
                 if let Some(ensure) = ensure {
-                    return self.finish_spawn(ensure, Err(message), fx);
+                    return self.finish_spawn(ensure, Err(HostError::new(message, code)), fx);
                 }
             }
             // The ensure's cleanup kill is best effort.
@@ -321,7 +322,8 @@ impl State {
                 on_demand: Some(on_demand),
                 ..
             } => {
-                let failure = self.on_demand_failed(&agent_id, &on_demand, message, fx);
+                let error = HostError::new(message, code);
+                let failure = self.on_demand_failed(&agent_id, &on_demand, error, fx);
                 message = failure.message().to_owned();
                 // Only the clicks that shared it reject; its owner is a retry.
                 let clicks = self.settle_flight(&agent_id, &method_id, flight);

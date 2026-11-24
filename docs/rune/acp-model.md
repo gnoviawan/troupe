@@ -373,10 +373,10 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       (`session/load`), reports each outcome as `importProgress`
       (`imported`, `duplicate` on the host's `duplicate` code, or
       `failed`), and stops before the next session after `stopImport`.
-      Then it logs, emits `refreshSessionIndex`, and answers its outcomes
-      once `applySessionIndexSnapshot` arrives, or after
-      `sessionIndexReloadFailed`. `agentCommandFailed` carries the host's
-      error code. `updatedAt` goes through a `Date.parse` port of the ISO
+      Then it logs, emits its own `refreshSessionIndex`, and answers its
+      outcomes once the app answers that effect with
+      `sessionIndexReloaded` or `sessionIndexReloadFailed`; another index
+      snapshot does not answer it. A listing answered with no page fails. `updatedAt` goes through a `Date.parse` port of the ISO
       forms; a time without an offset, which JavaScript reads in the local
       zone, is not parsed.
     - 10b, rest. The one-shot collectors (they need `createSession`).
@@ -532,6 +532,15 @@ its pinned sources match a path glob of both workflows.
   `lastError` absent (`undefined`), not null; `Session::last_error` keeps
   the three states. An `agent_disconnected` without a `reason` counts as a
   deliberate end.
+- The host's verdict on a failed command (`acp/host_error.rs`). `/ws`
+  sends it as the reply's `code` and drops the message's tag; the desktop
+  keeps the tag (`ACP_AGENT_UNAVAILABLE: …`) and sends no code. So
+  `agentCommandFailed` and `controlFailed` carry the code, and the
+  definite-rejection, signed-out, auth-required, provider and ambiguous
+  checks read both, in `classifySetupError`'s order. A rejected action
+  whose error had a code prints as `AcpTransportError: …`, the way
+  `String(error)` prints it. An `agentReplies` or `setReplies` entry
+  `{ "reject": text, "code": c }` records a `/ws`-shaped error.
 - A failed command comes back with the error's raw message
   (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
   model adds the `Error: ` prefix `String(error)` prints wherever the store

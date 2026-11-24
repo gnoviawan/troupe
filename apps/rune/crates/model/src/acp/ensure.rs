@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
+use super::host_error::{DEFINITE_SPAWN_REJECTION, HostError, SIGNED_OUT};
 use super::reuse_key::{agent_reuse_key, detached_reuse_key, parse_reuse_key};
 use super::spawn_env::{find_stored_agent_config, resolve_agent_spawn_env, resolve_spawn_project};
 use super::types::{Object, SessionStatus};
@@ -21,22 +22,6 @@ use super::{Effect, State};
 pub type EnsureId = u64;
 
 const SOURCE: &str = "acp-store.ensureLiveAgent";
-
-/// Host error prefixes of a spawn that can never succeed as asked
-/// (`DEFINITE_SPAWN_REJECTIONS`).
-const DEFINITE_SPAWN_REJECTIONS: [&str; 2] = ["ACP_AGENT_UNAVAILABLE", "ACP_INVALID_AGENT_CONFIG"];
-
-/// Host error prefixes of a provider Account that is signed out.
-const SIGNED_OUT: [&str; 3] = [
-    "ACP_CLAUDE_ACCOUNT_SIGNED_OUT",
-    "ACP_CODEX_ACCOUNT_SIGNED_OUT",
-    "ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT",
-];
-
-fn tagged(message: &str, tags: &[&str]) -> bool {
-    tags.iter()
-        .any(|tag| message.starts_with(&format!("{tag}: ")))
-}
 
 /// What a caller puts on the agent it gets (`AgentHolder`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -501,15 +486,15 @@ impl State {
     pub(crate) fn finish_spawn(
         &mut self,
         id: EnsureId,
-        outcome: Result<Option<String>, String>,
+        outcome: Result<Option<String>, HostError>,
         fx: &mut Vec<Effect>,
     ) {
         let book = &mut self.book.ensure;
         let Some(spawn) = book.spawns.remove(&id) else {
             return;
         };
-        if let Err(message) = &outcome
-            && tagged(message, &DEFINITE_SPAWN_REJECTIONS)
+        if let Err(error) = &outcome
+            && error.is(&DEFINITE_SPAWN_REJECTION)
         {
             book.definite_rejections
                 .insert(spawn.reuse_key.clone(), spawn.signature.clone());
@@ -529,22 +514,21 @@ impl State {
     fn ensured(
         &mut self,
         waiter: Waiter,
-        outcome: Result<Option<String>, String>,
+        outcome: Result<Option<String>, HostError>,
         fx: &mut Vec<Effect>,
     ) {
         let options = &waiter.options;
         let outcome = match outcome {
-            Err(message)
+            Err(error)
                 if options.silent
                     && !(options.surface_definite
-                        && (tagged(&message, &DEFINITE_SPAWN_REJECTIONS)
-                            || tagged(&message, &SIGNED_OUT))) =>
+                        && (error.is(&DEFINITE_SPAWN_REJECTION) || error.is(&SIGNED_OUT))) =>
             {
                 fx.push(Effect::warn(
                     SOURCE,
                     format!(
-                        "Silent spawn failure for config {} ({}): {message}",
-                        waiter.config_id, waiter.reuse_key
+                        "Silent spawn failure for config {} ({}): {}",
+                        waiter.config_id, waiter.reuse_key, error.message
                     ),
                 ));
                 Ok(None)
@@ -553,9 +537,11 @@ impl State {
         };
         match (waiter.caller, outcome) {
             (Caller::Prewarm, Ok(_)) => {}
-            (Caller::Prewarm, Err(message)) => fx.push(Effect::rejected(message)),
+            (Caller::Prewarm, Err(error)) => fx.push(Effect::rejected_by(&error)),
             (Caller::ImportList(id), Ok(agent_id)) => self.on_import_agent(id, agent_id, fx),
-            (Caller::ImportList(id), Err(message)) => self.on_import_list_failed(id, message, fx),
+            (Caller::ImportList(id), Err(error)) => {
+                self.on_import_list_failed(id, &error, fx);
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ use super::FlightId;
 use super::auth_retry::{AuthRetryId, OnDemand};
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
+use super::host_error::HostError;
 use super::import::ImportId;
 use super::mcp::TokenCheck;
 use super::restore::RunId;
@@ -118,8 +119,13 @@ pub enum Effect {
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
-    /// what it read as `applySessionIndexSnapshot`.
-    RefreshSessionIndex,
+    /// what it read as `applySessionIndexSnapshot`. An import's reload
+    /// (`import` set) is answered instead with `Event::SessionIndexReloaded`
+    /// and this effect, or `Event::SessionIndexReloadFailed`.
+    RefreshSessionIndex {
+        #[serde(skip_serializing)]
+        import: Option<ImportId>,
+    },
     /// Read the user's saved picks for the config, then send
     /// `Event::ComposerOptionsRead` with this effect and the record.
     ReadComposerOptions {
@@ -389,6 +395,20 @@ impl Effect {
     pub(crate) fn rejected(message: impl std::fmt::Display) -> Self {
         Self::ActionRejected {
             message: format!("Error: {message}"),
+        }
+    }
+
+    /// The user's action failed with this host error, shown the way
+    /// `String(error)` prints it: an `AcpTransportError` when the host sent
+    /// a code, else an `Error`.
+    pub(crate) fn rejected_by(error: &HostError) -> Self {
+        let name = if error.code.is_some() {
+            "AcpTransportError"
+        } else {
+            "Error"
+        };
+        Self::ActionRejected {
+            message: format!("{name}: {}", error.message),
         }
     }
 

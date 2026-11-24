@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 use super::discovery::SessionList;
+use super::host_error::{self, HostError};
 use super::{Effect, FlightId, State};
 
 /// Names one session call waiting on an authenticate on demand.
@@ -65,8 +66,7 @@ impl AuthFailure {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct AuthRetry {
     command: Effect,
-    first_error: String,
-    first_code: Option<String>,
+    first_error: HostError,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -186,35 +186,25 @@ fn whole_number(text: &str, code: &str) -> bool {
     })
 }
 
-fn tagged(message: &str, tags: &[&str]) -> bool {
-    tags.iter()
-        .any(|tag| message.starts_with(&format!("{tag}: ")))
-}
-
-/// `isAuthRetriableSessionError` for an error's message: the explicit
-/// auth-required signal, or a failure `classifySetupError` files under
-/// `auth`.
-pub(crate) fn is_auth_retriable(message: &str) -> bool {
-    if message.starts_with("ACP_AUTH_REQUIRED") {
-        return true;
-    }
-    if tagged(
-        message,
-        &[
-            "ACP_CLAUDE_ACCOUNT_SIGNED_OUT",
-            "ACP_CODEX_ACCOUNT_SIGNED_OUT",
-            "ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT",
-        ],
-    ) {
-        return true;
-    }
-    if tagged(
-        message,
-        &["ACP_AGENT_UNAVAILABLE", "ACP_INVALID_AGENT_CONFIG"],
-    ) {
+/// `isAuthRetriableSessionError`: the explicit auth-required signal, or a
+/// failure `classifySetupError` files under `auth`, in its order.
+pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
+    let code = error.code.as_deref();
+    if code == Some(host_error::AMBIGUOUS_AUTH) {
         return false;
     }
-    let text = message.to_ascii_lowercase();
+    if code == Some(host_error::AUTH_REQUIRED) || error.message.starts_with("ACP_AUTH_REQUIRED") {
+        return true;
+    }
+    if error.is(&host_error::SIGNED_OUT) {
+        return true;
+    }
+    if error.is(&host_error::DEFINITE_SPAWN_REJECTION)
+        || code.is_some_and(|code| host_error::PROVIDER.contains(&code))
+    {
+        return false;
+    }
+    let text = error.message.to_ascii_lowercase();
     if ENOENT.iter().any(|needle| text.contains(needle)) || on_a_line(&text, "spawn", "fail") {
         return false;
     }
@@ -265,8 +255,7 @@ impl State {
     pub(crate) fn on_session_call_failed(
         &mut self,
         command: Effect,
-        message: String,
-        code: Option<String>,
+        error: HostError,
         fx: &mut Vec<Effect>,
     ) {
         if let Some(op) = auth_op(&command) {
@@ -276,54 +265,41 @@ impl State {
                     format!("{op} failed again after the authenticate-on-demand retry"),
                 ));
                 // A method that signs in but cannot authorize is a dead pick.
-                if is_auth_retriable(&message)
+                if is_auth_retriable(&error)
                     && let Some(config_id) = self.config_id_for_agent(agent_of(&command))
                 {
                     self.forget_auth_method(&config_id, fx);
                 }
-            } else if is_auth_retriable(&message) {
-                return self.reauthenticate(command, message, code, fx);
+            } else if is_auth_retriable(&error) {
+                return self.reauthenticate(command, error, fx);
             }
         }
-        self.control_rejected(command, message, code, fx);
+        self.control_rejected(command, error, fx);
     }
 
     /// The session call's failure reaches its caller.
-    fn control_rejected(
-        &mut self,
-        command: Effect,
-        message: String,
-        code: Option<String>,
-        fx: &mut Vec<Effect>,
-    ) {
+    fn control_rejected(&mut self, command: Effect, error: HostError, fx: &mut Vec<Effect>) {
         match command {
             Effect::ListSessions {
                 list: SessionList::Discovery(key),
                 ..
-            } => return self.on_discovery_failed(&key),
+            } => self.on_discovery_failed(&key),
             Effect::ListSessions {
                 list: SessionList::Import(import),
                 ..
-            } => return self.on_import_list_failed(import, message, fx),
+            } => self.on_import_list_failed(import, &error, fx),
             Effect::ImportAgentSession {
                 import, session_id, ..
-            } => return self.on_import_session_failed(import, session_id, message, code, fx),
-            _ => {}
-        }
-        match command.run() {
-            Some(run) => self.on_run_command(run, Some(message), fx),
-            None => fx.push(Effect::rejected(message)),
+            } => self.on_import_session_failed(import, session_id, error, fx),
+            command => match command.run() {
+                Some(run) => self.on_run_command(run, Some(error.message), fx),
+                None => fx.push(Effect::rejected_by(&error)),
+            },
         }
     }
 
     /// `reauthenticateOnDemand`.
-    fn reauthenticate(
-        &mut self,
-        command: Effect,
-        first_error: String,
-        first_code: Option<String>,
-        fx: &mut Vec<Effect>,
-    ) {
+    fn reauthenticate(&mut self, command: Effect, first_error: HostError, fx: &mut Vec<Effect>) {
         let op = auth_op(&command).unwrap_or_default();
         fx.push(Effect::info(
             SOURCE,
@@ -340,7 +316,6 @@ impl State {
             AuthRetry {
                 command,
                 first_error,
-                first_code,
             },
         );
         self.authenticate_before_session(retry, &agent_id, None, fx);
@@ -555,7 +530,7 @@ impl State {
         &mut self,
         agent_id: &str,
         on_demand: &OnDemand,
-        message: String,
+        error: HostError,
         fx: &mut Vec<Effect>,
     ) -> AuthFailure {
         fx.push(Effect::warn(
@@ -567,13 +542,13 @@ impl State {
                 "Factory API key authentication failed. Enter a new key or choose Login.".into(),
             );
         }
-        if on_demand.remembered && is_auth_retriable(&message) {
+        if on_demand.remembered && is_auth_retriable(&error) {
             if let Some(config_id) = self.config_id_for_agent(agent_id) {
                 self.forget_auth_method(&config_id, fx);
             }
             return AuthFailure::ambiguous(&on_demand.names);
         }
-        AuthFailure::Other(message)
+        AuthFailure::Other(error.message)
     }
 
     /// The flight settled: every retry waiting on it moves on.
@@ -607,14 +582,13 @@ impl State {
         };
         match outcome {
             Ok(true) => fx.push(mark_retried(waiting.command)),
-            Ok(false) => {
-                self.control_rejected(waiting.command, waiting.first_error, waiting.first_code, fx)
-            }
+            Ok(false) => self.control_rejected(waiting.command, waiting.first_error, fx),
             Err(AuthFailure::Ambiguous(_)) => {
-                self.control_rejected(waiting.command, PICKER_UNAVAILABLE.into(), None, fx);
+                let error = HostError::new(PICKER_UNAVAILABLE.into(), None);
+                self.control_rejected(waiting.command, error, fx);
             }
             Err(AuthFailure::Other(message)) => {
-                self.control_rejected(waiting.command, message, None, fx);
+                self.control_rejected(waiting.command, HostError::new(message, None), fx);
             }
         }
     }

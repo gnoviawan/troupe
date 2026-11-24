@@ -16,6 +16,7 @@ use serde_json::{Value, json};
 
 use super::discovery::SessionList;
 use super::ensure::{Caller, EnsureOptions};
+use super::host_error::HostError;
 use super::reuse_key::agent_reuse_key;
 use super::spawn_env::resolve_spawn_project;
 use super::{Effect, State};
@@ -29,6 +30,10 @@ const IMPORT_SOURCE: &str = "acp.importSessions.import";
 /// `MAX_LIST_PAGES`: a repeated cursor also ends the listing, so the cap
 /// only stops a runaway agent.
 const MAX_LIST_PAGES: usize = 200;
+
+/// A `session/list` answered with no page. The TypeScript fails with the
+/// engine's `TypeError` text, which differs between engines.
+const NO_PAGE: &str = "session/list answered with no page";
 
 /// What `importAgentSessions` is asked to load.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -66,8 +71,8 @@ pub(crate) struct ImportBook {
     seq: ImportId,
     listings: BTreeMap<ImportId, Listing>,
     imports: BTreeMap<ImportId, Import>,
-    /// Finished imports waiting on the index reload, with their outcomes.
-    reloading: Vec<Vec<Value>>,
+    /// Finished imports waiting on their index reload, with their outcomes.
+    reloading: BTreeMap<ImportId, Vec<Value>>,
 }
 
 impl ImportBook {
@@ -188,6 +193,11 @@ impl State {
         reply: &Value,
         fx: &mut Vec<Effect>,
     ) {
+        // Reading a page that is not there throws, which fails the listing.
+        if reply.is_null() {
+            let error = HostError::new(NO_PAGE.into(), None);
+            return self.on_import_list_failed(id, &error, fx);
+        }
         let Some(listing) = self.book.imports.listings.get_mut(&id) else {
             return;
         };
@@ -258,11 +268,11 @@ impl State {
     pub(crate) fn on_import_list_failed(
         &mut self,
         id: ImportId,
-        message: String,
+        error: &HostError,
         fx: &mut Vec<Effect>,
     ) {
         if self.book.imports.listings.remove(&id).is_some() {
-            fx.push(Effect::rejected(message));
+            fx.push(Effect::rejected_by(error));
         }
     }
 
@@ -303,14 +313,13 @@ impl State {
         &mut self,
         id: ImportId,
         session_id: String,
-        message: String,
-        code: Option<String>,
+        error: HostError,
         fx: &mut Vec<Effect>,
     ) {
-        let outcome = if code.as_deref() == Some("duplicate") {
+        let outcome = if error.code.as_deref() == Some("duplicate") {
             json!({ "sessionId": session_id, "status": "duplicate" })
         } else {
-            json!({ "sessionId": session_id, "status": "failed", "message": message })
+            json!({ "sessionId": session_id, "status": "failed", "message": error.message })
         };
         self.import_settled(id, outcome, fx);
     }
@@ -382,30 +391,33 @@ impl State {
         });
         // Desktop gets no `chat_history` watch delta: reread the index so
         // the imported chats show up.
-        fx.push(Effect::RefreshSessionIndex);
-        self.book.imports.reloading.push(import.outcomes);
+        fx.push(Effect::RefreshSessionIndex { import: Some(id) });
+        self.book.imports.reloading.insert(id, import.outcomes);
     }
 
-    /// The index reload arrived: the imports waiting on it answer.
-    pub(crate) fn on_index_reloaded(&mut self, fx: &mut Vec<Effect>) {
-        for outcomes in std::mem::take(&mut self.book.imports.reloading) {
-            fx.push(Effect::ActionResolved {
-                value: Value::Array(outcomes),
-            });
-        }
-    }
-
-    /// The index reload failed: the imports waiting on it answer anyway.
-    pub(crate) fn on_index_reload_failed(&mut self, message: &str, fx: &mut Vec<Effect>) {
-        for outcomes in std::mem::take(&mut self.book.imports.reloading) {
+    /// The import's own index reload is over, read or failed: the import
+    /// answers with its outcomes.
+    pub(crate) fn on_import_reloaded(
+        &mut self,
+        reload: &Effect,
+        failure: Option<&str>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let Effect::RefreshSessionIndex { import: Some(id) } = reload else {
+            return;
+        };
+        let Some(outcomes) = self.book.imports.reloading.remove(id) else {
+            return;
+        };
+        if let Some(message) = failure {
             fx.push(Effect::warn(
                 "acp.importSessions.refresh",
                 format!("Chat history refresh after import failed: Error: {message}"),
             ));
-            fx.push(Effect::ActionResolved {
-                value: Value::Array(outcomes),
-            });
         }
+        fx.push(Effect::ActionResolved {
+            value: Value::Array(outcomes),
+        });
     }
 }
 

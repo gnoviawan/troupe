@@ -159100,6 +159100,258 @@
  },
  {
   "store": "acp",
+  "name": "prewarm_remembers_a_ws_definite_rejection",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "reject": "not installed",
+     "code": "agent_unavailable"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Silent spawn failure for config claude (claude\u0000/work/sub\u0000project\u0000p1): not installed"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
   "name": "prewarm_detaches_an_agent_a_chat_holds",
   "context": {
    "projects": [
@@ -159207,7 +159459,7 @@
     }
    ],
    "book": {
-    "seq": 32600,
+    "seq": 32700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -159331,7 +159583,7 @@
       }
      ],
      "book": {
-      "seq": 32600,
+      "seq": 32700,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -159430,7 +159682,7 @@
     }
    ],
    "book": {
-    "seq": 32700,
+    "seq": 32800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -159529,7 +159781,7 @@
       }
      ],
      "book": {
-      "seq": 32700,
+      "seq": 32800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -159629,7 +159881,7 @@
     }
    ],
    "book": {
-    "seq": 32800,
+    "seq": 32900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -159727,7 +159979,7 @@
       }
      ],
      "book": {
-      "seq": 32800,
+      "seq": 32900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -159799,7 +160051,7 @@
       }
      ],
      "book": {
-      "seq": 32800,
+      "seq": 32900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -159911,7 +160163,7 @@
       }
      ],
      "book": {
-      "seq": 32800,
+      "seq": 32900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -159991,7 +160243,7 @@
       }
      ],
      "book": {
-      "seq": 32800,
+      "seq": 32900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -160071,7 +160323,7 @@
       }
      ],
      "book": {
-      "seq": 32800,
+      "seq": 32900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -160129,524 +160381,6 @@
       "capabilities": {},
       "authMethods": []
      }
-    }
-   ]
-  },
-  "initial": {
-   "sessions": {},
-   "messages": {},
-   "toolCalls": {},
-   "plans": {},
-   "commands": {},
-   "commandsSeq": {},
-   "sessionUsage": {},
-   "sessionIndex": [],
-   "pendingPermissions": {},
-   "pendingQuestions": {},
-   "pendingElicitations": {},
-   "pendingBrowserConsents": {},
-   "agentStatus": {},
-   "turnEndNotices": {},
-   "promptQueues": {},
-   "suppressQueueFlush": {},
-   "agentOptionsCache": {},
-   "configToLiveAgent": {},
-   "activeSessionId": null,
-   "preparedSessions": {},
-   "agentSwitches": {},
-   "agents": {},
-   "pendingSignIn": {},
-   "autoOpenBrowserUrl": {},
-   "launchingSessionIds": {},
-   "discoveredSessions": {},
-   "agentConfigs": [
-    {
-     "id": "claude",
-     "name": "Claude",
-     "command": "claude-acp",
-     "args": [
-      "--acp"
-     ],
-     "env": {
-      "TOKEN": "$API_TOKEN",
-      "MODE": "fast",
-      "GONE": "$MISSING",
-      "EMPTY": ""
-     },
-     "allowTerminal": true
-    }
-   ],
-   "book": {
-    "seq": 32900,
-    "historyWatermarks": {},
-    "mcpSharedSync": true
-   }
-  },
-  "steps": [
-   {
-    "event": {
-     "action": "prewarmAgent",
-     "args": [
-      "claude",
-      "/work/sub"
-     ]
-    },
-    "ids": [],
-    "effects": [
-     {
-      "kind": "log",
-      "level": "info",
-      "source": "acp-store.ensureLiveAgent",
-      "message": "Spawning Claude with the env of project p1 (4 var(s))"
-     },
-     {
-      "kind": "spawnAgent",
-      "config": {
-       "configId": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "API_TOKEN": "abc",
-        "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
-        "TOKEN": "abc"
-       },
-       "allowTerminal": true
-      },
-      "projectId": "p1"
-     }
-    ],
-    "state": {
-     "sessions": {},
-     "messages": {},
-     "toolCalls": {},
-     "plans": {},
-     "commands": {},
-     "commandsSeq": {},
-     "sessionUsage": {},
-     "sessionIndex": [],
-     "pendingPermissions": {},
-     "pendingQuestions": {},
-     "pendingElicitations": {},
-     "pendingBrowserConsents": {},
-     "agentStatus": {
-      "Claude": "spawning"
-     },
-     "turnEndNotices": {},
-     "promptQueues": {},
-     "suppressQueueFlush": {},
-     "agentOptionsCache": {},
-     "configToLiveAgent": {},
-     "activeSessionId": null,
-     "preparedSessions": {},
-     "agentSwitches": {},
-     "agents": {},
-     "pendingSignIn": {},
-     "autoOpenBrowserUrl": {},
-     "launchingSessionIds": {},
-     "discoveredSessions": {},
-     "agentConfigs": [
-      {
-       "id": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "TOKEN": "$API_TOKEN",
-        "MODE": "fast",
-        "GONE": "$MISSING",
-        "EMPTY": ""
-       },
-       "allowTerminal": true
-      }
-     ],
-     "warmingConfigs": {
-      "claude\u0000/work/sub\u0000project\u0000p1": true
-     },
-     "book": {
-      "seq": 32900,
-      "historyWatermarks": {},
-      "mcpSharedSync": true
-     }
-    }
-   },
-   {
-    "event": {
-     "action": "setProjects",
-     "args": [
-      [
-       {
-        "id": "p1",
-        "name": "Work",
-        "path": "/work/",
-        "envVars": [
-         {
-          "key": "API_TOKEN",
-          "value": "xyz"
-         }
-        ],
-        "worktrees": [
-         {
-          "path": "/wt/feature"
-         }
-        ]
-       }
-      ]
-     ]
-    },
-    "ids": [],
-    "effects": [],
-    "state": {
-     "sessions": {},
-     "messages": {},
-     "toolCalls": {},
-     "plans": {},
-     "commands": {},
-     "commandsSeq": {},
-     "sessionUsage": {},
-     "sessionIndex": [],
-     "pendingPermissions": {},
-     "pendingQuestions": {},
-     "pendingElicitations": {},
-     "pendingBrowserConsents": {},
-     "agentStatus": {
-      "Claude": "spawning"
-     },
-     "turnEndNotices": {},
-     "promptQueues": {},
-     "suppressQueueFlush": {},
-     "agentOptionsCache": {},
-     "configToLiveAgent": {},
-     "activeSessionId": null,
-     "preparedSessions": {},
-     "agentSwitches": {},
-     "agents": {},
-     "pendingSignIn": {},
-     "autoOpenBrowserUrl": {},
-     "launchingSessionIds": {},
-     "discoveredSessions": {},
-     "agentConfigs": [
-      {
-       "id": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "TOKEN": "$API_TOKEN",
-        "MODE": "fast",
-        "GONE": "$MISSING",
-        "EMPTY": ""
-       },
-       "allowTerminal": true
-      }
-     ],
-     "warmingConfigs": {
-      "claude\u0000/work/sub\u0000project\u0000p1": true
-     },
-     "book": {
-      "seq": 32900,
-      "historyWatermarks": {},
-      "mcpSharedSync": true
-     }
-    }
-   },
-   {
-    "event": {
-     "action": "prewarmAgent",
-     "args": [
-      "claude",
-      "/work/sub"
-     ]
-    },
-    "ids": [],
-    "effects": [
-     {
-      "kind": "log",
-      "level": "info",
-      "source": "acp-store.ensureLiveAgent",
-      "message": "Not joining the running spawn for claude\u0000/work/sub\u0000project\u0000p1: it started with an outdated launch"
-     },
-     {
-      "kind": "log",
-      "level": "info",
-      "source": "acp-store.ensureLiveAgent",
-      "message": "Spawning Claude with the env of project p1 (1 var(s))"
-     },
-     {
-      "kind": "spawnAgent",
-      "config": {
-       "configId": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "API_TOKEN": "xyz",
-        "TOKEN": "xyz",
-        "MODE": "fast"
-       },
-       "allowTerminal": true
-      },
-      "projectId": "p1"
-     }
-    ],
-    "state": {
-     "sessions": {},
-     "messages": {},
-     "toolCalls": {},
-     "plans": {},
-     "commands": {},
-     "commandsSeq": {},
-     "sessionUsage": {},
-     "sessionIndex": [],
-     "pendingPermissions": {},
-     "pendingQuestions": {},
-     "pendingElicitations": {},
-     "pendingBrowserConsents": {},
-     "agentStatus": {
-      "Claude": "spawning"
-     },
-     "turnEndNotices": {},
-     "promptQueues": {},
-     "suppressQueueFlush": {},
-     "agentOptionsCache": {},
-     "configToLiveAgent": {},
-     "activeSessionId": null,
-     "preparedSessions": {},
-     "agentSwitches": {},
-     "agents": {},
-     "pendingSignIn": {},
-     "autoOpenBrowserUrl": {},
-     "launchingSessionIds": {},
-     "discoveredSessions": {},
-     "agentConfigs": [
-      {
-       "id": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "TOKEN": "$API_TOKEN",
-        "MODE": "fast",
-        "GONE": "$MISSING",
-        "EMPTY": ""
-       },
-       "allowTerminal": true
-      }
-     ],
-     "warmingConfigs": {
-      "claude\u0000/work/sub\u0000project\u0000p1": true
-     },
-     "book": {
-      "seq": 32900,
-      "historyWatermarks": {},
-      "mcpSharedSync": true
-     }
-    }
-   },
-   {
-    "event": {
-     "action": "releaseHeld",
-     "args": []
-    },
-    "ids": [],
-    "effects": [],
-    "state": {
-     "sessions": {},
-     "messages": {},
-     "toolCalls": {},
-     "plans": {},
-     "commands": {},
-     "commandsSeq": {},
-     "sessionUsage": {},
-     "sessionIndex": [],
-     "pendingPermissions": {},
-     "pendingQuestions": {},
-     "pendingElicitations": {},
-     "pendingBrowserConsents": {},
-     "agentStatus": {
-      "agent-9": "connected"
-     },
-     "turnEndNotices": {},
-     "promptQueues": {},
-     "suppressQueueFlush": {},
-     "agentOptionsCache": {},
-     "configToLiveAgent": {
-      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9"
-     },
-     "activeSessionId": null,
-     "preparedSessions": {},
-     "agentSwitches": {},
-     "agents": {
-      "agent-9": {
-       "id": "agent-9",
-       "capabilities": {},
-       "authMethods": [],
-       "hostAuthReady": false
-      }
-     },
-     "pendingSignIn": {},
-     "autoOpenBrowserUrl": {},
-     "launchingSessionIds": {},
-     "discoveredSessions": {},
-     "agentConfigs": [
-      {
-       "id": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "TOKEN": "$API_TOKEN",
-        "MODE": "fast",
-        "GONE": "$MISSING",
-        "EMPTY": ""
-       },
-       "allowTerminal": true
-      }
-     ],
-     "book": {
-      "seq": 32900,
-      "historyWatermarks": {},
-      "mcpSharedSync": true
-     }
-    }
-   },
-   {
-    "event": {
-     "action": "releaseHeld",
-     "args": []
-    },
-    "ids": [],
-    "effects": [],
-    "state": {
-     "sessions": {},
-     "messages": {},
-     "toolCalls": {},
-     "plans": {},
-     "commands": {},
-     "commandsSeq": {},
-     "sessionUsage": {},
-     "sessionIndex": [],
-     "pendingPermissions": {},
-     "pendingQuestions": {},
-     "pendingElicitations": {},
-     "pendingBrowserConsents": {},
-     "agentStatus": {
-      "agent-9": "connected",
-      "agent-10": "connected"
-     },
-     "turnEndNotices": {},
-     "promptQueues": {},
-     "suppressQueueFlush": {},
-     "agentOptionsCache": {},
-     "configToLiveAgent": {
-      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
-      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
-     },
-     "activeSessionId": null,
-     "preparedSessions": {},
-     "agentSwitches": {},
-     "agents": {
-      "agent-9": {
-       "id": "agent-9",
-       "capabilities": {},
-       "authMethods": [],
-       "hostAuthReady": false
-      },
-      "agent-10": {
-       "id": "agent-10",
-       "capabilities": {},
-       "authMethods": [],
-       "hostAuthReady": false
-      }
-     },
-     "pendingSignIn": {},
-     "autoOpenBrowserUrl": {},
-     "launchingSessionIds": {},
-     "discoveredSessions": {},
-     "agentConfigs": [
-      {
-       "id": "claude",
-       "name": "Claude",
-       "command": "claude-acp",
-       "args": [
-        "--acp"
-       ],
-       "env": {
-        "TOKEN": "$API_TOKEN",
-        "MODE": "fast",
-        "GONE": "$MISSING",
-        "EMPTY": ""
-       },
-       "allowTerminal": true
-      }
-     ],
-     "book": {
-      "seq": 32900,
-      "historyWatermarks": {},
-      "mcpSharedSync": true
-     }
-    }
-   }
-  ]
- },
- {
-  "store": "acp",
-  "name": "prewarm_kills_the_agent_when_its_config_went_meanwhile",
-  "context": {
-   "projects": [
-    {
-     "id": "p1",
-     "name": "Work",
-     "path": "/work/",
-     "envVars": [
-      {
-       "key": "API_TOKEN",
-       "value": "abc"
-      },
-      {
-       "key": "MODE",
-       "value": "slow"
-      },
-      {
-       "key": "REFS",
-       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
-      },
-      {
-       "key": " ",
-       "value": "skipped"
-      }
-     ],
-     "worktrees": [
-      {
-       "path": "/wt/feature"
-      }
-     ]
-    }
-   ],
-   "agentReplies": [
-    {
-     "hold": true,
-     "release": {
-      "agentId": "agent-9",
-      "capabilities": {},
-      "authMethods": []
-     }
-    },
-    {
-     "reject": "already gone"
     }
    ]
   },
@@ -160795,6 +160529,524 @@
    },
    {
     "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "p1",
+        "name": "Work",
+        "path": "/work/",
+        "envVars": [
+         {
+          "key": "API_TOKEN",
+          "value": "xyz"
+         }
+        ],
+        "worktrees": [
+         {
+          "path": "/wt/feature"
+         }
+        ]
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Not joining the running spawn for claude\u0000/work/sub\u0000project\u0000p1: it started with an outdated launch"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (1 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "xyz",
+        "TOKEN": "xyz",
+        "MODE": "fast"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_kills_the_agent_when_its_config_went_meanwhile",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-9",
+      "capabilities": {},
+      "authMethods": []
+     }
+    },
+    {
+     "reject": "already gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 33100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 33100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
      "action": "agentConfigsChanged",
      "args": [
       []
@@ -160835,7 +161087,7 @@
       "claude\u0000/work/sub\u0000project\u0000p1": true
      },
      "book": {
-      "seq": 33000,
+      "seq": 33100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -160890,7 +161142,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33000,
+      "seq": 33100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -160999,7 +161251,7 @@
     }
    ],
    "book": {
-    "seq": 33100,
+    "seq": 33200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -161099,7 +161351,7 @@
       }
      ],
      "book": {
-      "seq": 33100,
+      "seq": 33200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -161218,7 +161470,734 @@
       }
      ],
      "book": {
-      "seq": 33100,
+      "seq": 33200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_mode_signs_in_on_a_ws_signed_out_code",
+  "context": {
+   "setReplies": [
+    {
+     "reject": "Sign in to the account first",
+     "code": "claude_account_signed_out"
+    }
+   ],
+   "agentReplies": [
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 33300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMode",
+     "args": [
+      "s1",
+      "code"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setMode",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modeId": "code"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/set_mode reported auth required; authenticating on demand"
+     },
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "claude": "oauth"
+      }
+     },
+     {
+      "kind": "setMode",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modeId": "code"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/set_mode succeeded after authenticate-on-demand"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "claude",
+      "patch": {
+       "modeId": "code"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 33300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true,
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "claude": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_model_does_not_sign_in_on_a_ws_provider_code",
+  "context": {
+   "setReplies": [
+    {
+     "reject": "login quota exceeded",
+     "code": "provider_quota_exceeded"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 33400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setModel",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modelId": "m2"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "AcpTransportError: login quota exceeded"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 33400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_mode_does_not_sign_in_on_the_ambiguous_code",
+  "context": {
+   "setReplies": [
+    {
+     "reject": "pick a method to sign in",
+     "code": "ACP_MULTI_AUTH"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 33500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMode",
+     "args": [
+      "s1",
+      "code"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setMode",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modeId": "code"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "AcpTransportError: pick a method to sign in"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 33500,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -161326,7 +162305,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33200,
+    "seq": 33600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -161528,7 +162507,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33200,
+      "seq": 33600,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -161640,7 +162619,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33300,
+    "seq": 33700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -161782,7 +162761,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33300,
+      "seq": 33700,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -161904,7 +162883,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33400,
+    "seq": 33800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -162025,7 +163004,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33400,
+      "seq": 33800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -162141,7 +163120,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33400,
+      "seq": 33800,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -162295,7 +163274,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33400,
+      "seq": 33800,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -162472,7 +163451,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33400,
+      "seq": 33800,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -162585,7 +163564,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33500,
+    "seq": 33900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -162699,7 +163678,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33500,
+      "seq": 33900,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -162845,7 +163824,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33500,
+      "seq": 33900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -162959,7 +163938,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33600,
+    "seq": 34000,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -163079,7 +164058,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33600,
+      "seq": 34000,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -163296,7 +164275,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33600,
+      "seq": 34000,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -163421,7 +164400,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33700,
+    "seq": 34100,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -163546,7 +164525,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33700,
+      "seq": 34100,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -163686,7 +164665,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33700,
+      "seq": 34100,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -163787,7 +164766,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33800,
+    "seq": 34200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -163897,7 +164876,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33800,
+      "seq": 34200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -164001,7 +164980,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33800,
+      "seq": 34200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -164102,7 +165081,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 33900,
+    "seq": 34300,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -164218,7 +165197,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 33900,
+      "seq": 34300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -164318,7 +165297,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34000,
+    "seq": 34400,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -164433,7 +165412,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34000,
+      "seq": 34400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -164534,7 +165513,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34100,
+    "seq": 34500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -164650,7 +165629,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34100,
+      "seq": 34500,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -164760,7 +165739,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34200,
+    "seq": 34600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -164893,7 +165872,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34200,
+      "seq": 34600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -165000,7 +165979,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34300,
+    "seq": 34700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -165134,7 +166113,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34300,
+      "seq": 34700,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -165240,7 +166219,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34400,
+    "seq": 34800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -165344,7 +166323,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34400,
+      "seq": 34800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -165455,7 +166434,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34400,
+      "seq": 34800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -165632,7 +166611,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34400,
+      "seq": 34800,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -165746,7 +166725,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34500,
+    "seq": 34900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -165862,7 +166841,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34500,
+      "seq": 34900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -165960,7 +166939,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34500,
+      "seq": 34900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166070,9 +167049,196 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34500,
+      "seq": 34900,
       "historyWatermarks": {},
       "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "discover_sessions_signs_in_on_a_ws_auth_code",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "nope",
+     "code": "agent_auth_required"
+    },
+    null,
+    {
+     "sessions": [
+      {
+       "sessionId": "a",
+       "cwd": "/work",
+       "title": "t-a"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "sessionCapabilities": {
+       "list": {}
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "OAuth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 35000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "discoverSessions",
+     "args": [
+      "agent-1",
+      "/work/"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "listSessions",
+      "agentId": "agent-1",
+      "cwd": "/work/"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/list reported auth required; authenticating on demand"
+     },
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "claude": "oauth"
+      }
+     },
+     {
+      "kind": "listSessions",
+      "agentId": "agent-1",
+      "cwd": "/work/"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/list succeeded after authenticate-on-demand"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "list": {}
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "OAuth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {
+      "agent-1\u0000/work": [
+       {
+        "sessionId": "a",
+        "cwd": "/work",
+        "title": "t-a"
+       }
+      ]
+     },
+     "book": {
+      "seq": 35000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true,
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "claude": "oauth"
+      }
      }
     }
    }
@@ -166167,7 +167333,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34600,
+    "seq": 35100,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -166266,7 +167432,7 @@
       ]
      },
      "book": {
-      "seq": 34600,
+      "seq": 35100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166315,7 +167481,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34700,
+    "seq": 35200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -166369,7 +167535,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34700,
+      "seq": 35200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166431,7 +167597,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34700,
+      "seq": 35200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166491,7 +167657,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34700,
+      "seq": 35200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166567,7 +167733,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34700,
+      "seq": 35200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166643,7 +167809,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34700,
+      "seq": 35200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166696,7 +167862,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34800,
+    "seq": 35300,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -166754,7 +167920,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 34800,
+      "seq": 35300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166832,7 +167998,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 34900,
+    "seq": 35400,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -166899,7 +168065,7 @@
       "agent-1\u0000/work": true
      },
      "book": {
-      "seq": 34900,
+      "seq": 35400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -166960,7 +168126,7 @@
       "agent-1\u0000/work": true
      },
      "book": {
-      "seq": 34900,
+      "seq": 35400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167034,7 +168200,7 @@
       "agent-1\u0000/work": true
      },
      "book": {
-      "seq": 34900,
+      "seq": 35400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167104,7 +168270,7 @@
       ]
      },
      "book": {
-      "seq": 34900,
+      "seq": 35400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167170,7 +168336,7 @@
     ]
    },
    "book": {
-    "seq": 35000,
+    "seq": 35500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -167234,7 +168400,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 35000,
+      "seq": 35500,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167303,7 +168469,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 35100,
+    "seq": 35600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -167370,7 +168536,7 @@
       "agent-1\u0000/work": true
      },
      "book": {
-      "seq": 35100,
+      "seq": 35600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167433,7 +168599,7 @@
       "agent-1\u0000/work": true
      },
      "book": {
-      "seq": 35100,
+      "seq": 35600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167488,7 +168654,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 35100,
+      "seq": 35600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167655,7 +168821,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 35200,
+    "seq": 35700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -167826,7 +168992,7 @@
       ]
      },
      "book": {
-      "seq": 35200,
+      "seq": 35700,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -167901,7 +169067,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 35300,
+    "seq": 35800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -168006,7 +169172,7 @@
       ]
      },
      "book": {
-      "seq": 35300,
+      "seq": 35800,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -168110,7 +169276,7 @@
     }
    ],
    "book": {
-    "seq": 35400,
+    "seq": 35900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -168217,7 +169383,7 @@
       }
      ],
      "book": {
-      "seq": 35400,
+      "seq": 35900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168294,7 +169460,7 @@
     }
    ],
    "book": {
-    "seq": 35500,
+    "seq": 36000,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -168399,7 +169565,7 @@
       }
      ],
      "book": {
-      "seq": 35500,
+      "seq": 36000,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168481,7 +169647,7 @@
     }
    ],
    "book": {
-    "seq": 35600,
+    "seq": 36100,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -168577,7 +169743,7 @@
       }
      ],
      "book": {
-      "seq": 35600,
+      "seq": 36100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168644,7 +169810,7 @@
       }
      ],
      "book": {
-      "seq": 35600,
+      "seq": 36100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168765,7 +169931,7 @@
       }
      ],
      "book": {
-      "seq": 35600,
+      "seq": 36100,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168825,7 +169991,7 @@
     }
    ],
    "book": {
-    "seq": 35700,
+    "seq": 36200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -168903,7 +170069,7 @@
       }
      ],
      "book": {
-      "seq": 35700,
+      "seq": 36200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -168972,7 +170138,7 @@
       }
      ],
      "book": {
-      "seq": 35700,
+      "seq": 36200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169050,7 +170216,7 @@
       }
      ],
      "book": {
-      "seq": 35700,
+      "seq": 36200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169108,7 +170274,7 @@
     }
    ],
    "book": {
-    "seq": 35800,
+    "seq": 36300,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -169184,7 +170350,7 @@
       }
      ],
      "book": {
-      "seq": 35800,
+      "seq": 36300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169276,7 +170442,7 @@
     }
    ],
    "book": {
-    "seq": 35900,
+    "seq": 36400,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -169386,7 +170552,7 @@
       }
      ],
      "book": {
-      "seq": 35900,
+      "seq": 36400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169464,7 +170630,7 @@
     }
    ],
    "book": {
-    "seq": 36000,
+    "seq": 36500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -169571,7 +170737,7 @@
       }
      ],
      "book": {
-      "seq": 36000,
+      "seq": 36500,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169624,7 +170790,7 @@
     }
    ],
    "book": {
-    "seq": 36100,
+    "seq": 36600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -169688,7 +170854,7 @@
       }
      ],
      "book": {
-      "seq": 36100,
+      "seq": 36600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169752,7 +170918,7 @@
       }
      ],
      "book": {
-      "seq": 36100,
+      "seq": 36600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169819,7 +170985,7 @@
       }
      ],
      "book": {
-      "seq": 36100,
+      "seq": 36600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -169914,7 +171080,7 @@
     }
    ],
    "book": {
-    "seq": 36200,
+    "seq": 36700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -170034,7 +171200,7 @@
       }
      ],
      "book": {
-      "seq": 36200,
+      "seq": 36700,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -170903,7 +172069,7 @@
     }
    ],
    "book": {
-    "seq": 36300,
+    "seq": 36800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -172189,7 +173355,7 @@
       }
      ],
      "book": {
-      "seq": 36300,
+      "seq": 36800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -172266,7 +173432,7 @@
     }
    ],
    "book": {
-    "seq": 36400,
+    "seq": 36900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -172338,7 +173504,7 @@
       }
      ],
      "book": {
-      "seq": 36400,
+      "seq": 36900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -172406,7 +173572,7 @@
       }
      ],
      "book": {
-      "seq": 36400,
+      "seq": 36900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -172482,7 +173648,7 @@
       }
      ],
      "book": {
-      "seq": 36400,
+      "seq": 36900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -172550,7 +173716,7 @@
     }
    ],
    "book": {
-    "seq": 36500,
+    "seq": 37000,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -172626,7 +173792,7 @@
       }
      ],
      "book": {
-      "seq": 36500,
+      "seq": 37000,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -172709,7 +173875,7 @@
     }
    ],
    "book": {
-    "seq": 36600,
+    "seq": 37100,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -172834,7 +174000,7 @@
       }
      ],
      "book": {
-      "seq": 36600,
+      "seq": 37100,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [
@@ -172914,7 +174080,7 @@
     }
    ],
    "book": {
-    "seq": 36700,
+    "seq": 37200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -173081,7 +174247,7 @@
       }
      ],
      "book": {
-      "seq": 36700,
+      "seq": 37200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173142,7 +174308,7 @@
     }
    ],
    "book": {
-    "seq": 36800,
+    "seq": 37300,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -173221,7 +174387,7 @@
       }
      ],
      "book": {
-      "seq": 36800,
+      "seq": 37300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173290,7 +174456,7 @@
     }
    ],
    "book": {
-    "seq": 36900,
+    "seq": 37400,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -173376,7 +174542,7 @@
       }
      ],
      "book": {
-      "seq": 36900,
+      "seq": 37400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173439,7 +174605,7 @@
       }
      ],
      "book": {
-      "seq": 36900,
+      "seq": 37400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173520,7 +174686,7 @@
       }
      ],
      "book": {
-      "seq": 36900,
+      "seq": 37400,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173589,7 +174755,7 @@
     }
    ],
    "book": {
-    "seq": 37000,
+    "seq": 37500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -173692,7 +174858,7 @@
       }
      ],
      "book": {
-      "seq": 37000,
+      "seq": 37500,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -173770,7 +174936,7 @@
     }
    ],
    "book": {
-    "seq": 37100,
+    "seq": 37600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -173941,7 +175107,7 @@
       }
      ],
      "book": {
-      "seq": 37100,
+      "seq": 37600,
       "historyWatermarks": {},
       "mcpSharedSync": true,
       "authenticatedAgents": [

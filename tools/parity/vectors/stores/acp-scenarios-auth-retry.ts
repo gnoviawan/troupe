@@ -46,6 +46,28 @@ const factoryMethods = [method('factory-api-key'), method('login')]
 
 export const authRetryScenarios: Scenario[] = [
   {
+    // `/ws` moves the verdict into the code and drops the message's tag.
+    name: 'set_mode_signs_in_on_a_ws_signed_out_code',
+    context: {
+      setReplies: [{ reject: 'Sign in to the account first', code: 'claude_account_signed_out' }],
+      agentReplies: [null]
+    },
+    initial: chat([method('oauth')]),
+    steps: [setMode]
+  },
+  {
+    name: 'set_model_does_not_sign_in_on_a_ws_provider_code',
+    context: { setReplies: [{ reject: 'login quota exceeded', code: 'provider_quota_exceeded' }] },
+    initial: chat([method('oauth')]),
+    steps: [setModel]
+  },
+  {
+    name: 'set_mode_does_not_sign_in_on_the_ambiguous_code',
+    context: { setReplies: [{ reject: 'pick a method to sign in', code: 'ACP_MULTI_AUTH' }] },
+    initial: chat([method('oauth')]),
+    steps: [setMode]
+  },
+  {
     name: 'set_mode_signs_in_with_the_only_method_and_sends_again',
     context: { setReplies: [REQUIRED], agentReplies: [null] },
     initial: chat([method('oauth', { type: 'agent' }), method('  ')]),

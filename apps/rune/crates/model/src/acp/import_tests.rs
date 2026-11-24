@@ -40,39 +40,64 @@ fn resolved(effects: &[Effect]) -> Vec<Value> {
         .collect()
 }
 
-/// Imports one session and answers it; the import then waits on the index.
-fn imported(state: &mut State) -> Vec<Effect> {
-    let request = json!({ "importAgentSessions": { "agentId": "agent-1", "cwd": "/w", "sessions": [{ "sessionId": "a" }] } });
+/// Imports one session and answers it; returns the reload the import then
+/// waits on.
+fn imported(state: &mut State, session_id: &str) -> Effect {
+    let request = json!({ "importAgentSessions": { "agentId": "agent-1", "cwd": "/w", "sessions": [{ "sessionId": session_id }] } });
     let sent = apply(state, event(request));
     let command = sent
         .into_iter()
         .find(|effect| matches!(effect, Effect::ImportAgentSession { .. }))
         .expect("the import is sent");
-    apply(state, Event::AgentCommandDone(command, Value::Null))
+    let done = apply(state, Event::AgentCommandDone(command, Value::Null));
+    assert_eq!(resolved(&done), Vec::<Value>::new());
+    done.into_iter()
+        .find(|effect| matches!(effect, Effect::RefreshSessionIndex { import: Some(_) }))
+        .expect("the import reloads the index")
 }
 
 #[test]
-fn an_import_answers_once_the_reloaded_index_arrives() {
+fn an_import_answers_once_its_own_reload_arrives() {
     let mut state = State::default();
-    let done = imported(&mut state);
-    assert!(done.contains(&Effect::RefreshSessionIndex));
-    assert_eq!(resolved(&done), Vec::<Value>::new());
-    let reloaded = apply(&mut state, Event::ApplySessionIndexSnapshot(Vec::new()));
+    let reload = imported(&mut state, "a");
+    let other = apply(&mut state, Event::ApplySessionIndexSnapshot(Vec::new()));
+    assert_eq!(resolved(&other), Vec::<Value>::new());
+    let reloaded = apply(
+        &mut state,
+        Event::SessionIndexReloaded(reload.clone(), vec![]),
+    );
     assert_eq!(
         resolved(&reloaded),
         vec![json!([{ "sessionId": "a", "status": "imported" }])]
     );
-    let again = apply(&mut state, Event::ApplySessionIndexSnapshot(Vec::new()));
+    let again = apply(&mut state, Event::SessionIndexReloaded(reload, vec![]));
     assert_eq!(resolved(&again), Vec::<Value>::new());
+}
+
+#[test]
+fn each_import_answers_on_its_own_reload() {
+    let mut state = State::default();
+    let first = imported(&mut state, "a");
+    let second = imported(&mut state, "b");
+    let reloaded = apply(&mut state, Event::SessionIndexReloaded(second, vec![]));
+    assert_eq!(
+        resolved(&reloaded),
+        vec![json!([{ "sessionId": "b", "status": "imported" }])]
+    );
+    let reloaded = apply(&mut state, Event::SessionIndexReloaded(first, vec![]));
+    assert_eq!(
+        resolved(&reloaded),
+        vec![json!([{ "sessionId": "a", "status": "imported" }])]
+    );
 }
 
 #[test]
 fn an_import_answers_after_a_failed_reload_too() {
     let mut state = State::default();
-    imported(&mut state);
+    let reload = imported(&mut state, "a");
     let failed = apply(
         &mut state,
-        Event::SessionIndexReloadFailed("disk gone".into()),
+        Event::SessionIndexReloadFailed(reload.clone(), "disk gone".into()),
     );
     assert_eq!(
         failed,
@@ -86,8 +111,41 @@ fn an_import_answers_after_a_failed_reload_too() {
             },
         ]
     );
-    let none = apply(&mut state, Event::SessionIndexReloadFailed("again".into()));
+    let none = apply(
+        &mut state,
+        Event::SessionIndexReloadFailed(reload, "again".into()),
+    );
     assert_eq!(none, Vec::new());
+}
+
+#[test]
+fn a_listing_answered_with_no_page_fails() {
+    let mut fields = serde_json::to_value(State::default()).expect("a state");
+    let live = json!({
+        "agentConfigs": [{ "id": "claude", "name": "Claude", "command": "c" }],
+        "agents": { "agent-1": { "id": "agent-1", "capabilities": { "loadSession": true, "sessionCapabilities": { "list": {} } } } },
+        "agentStatus": { "agent-1": "connected" },
+        "configToLiveAgent": { "claude\u{0}/work": "agent-1" }
+    });
+    for (key, value) in live.as_object().expect("an object") {
+        fields[key] = value.clone();
+    }
+    let mut state: State = serde_json::from_value(fields).expect("a state");
+    let sent = apply(
+        &mut state,
+        event(json!({ "listImportableSessions": ["claude", "/work"] })),
+    );
+    let page = sent
+        .into_iter()
+        .find(|effect| matches!(effect, Effect::ListSessions { .. }))
+        .expect("a page is asked for");
+    let failed = apply(&mut state, Event::AgentCommandDone(page, Value::Null));
+    assert_eq!(
+        failed,
+        vec![Effect::ActionRejected {
+            message: "Error: session/list answered with no page".into()
+        }]
+    );
 }
 
 #[test]

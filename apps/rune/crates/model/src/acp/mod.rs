@@ -22,6 +22,7 @@ mod discovery;
 mod effect;
 mod ensure;
 mod event;
+mod host_error;
 mod import;
 #[cfg(test)]
 mod import_tests;
@@ -419,9 +420,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentsWatchState(state_) => state.on_agents_watch_state(state_, env, &mut fx),
         Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
-        Event::ApplySessionIndexSnapshot(entries) => {
+        Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
+        Event::SessionIndexReloaded(reload, entries) => {
             state.apply_session_index(entries, &mut fx);
-            state.on_index_reloaded(&mut fx);
+            state.on_import_reloaded(&reload, None, &mut fx);
         }
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
@@ -438,8 +440,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
                 state.on_run_command(run, None, &mut fx);
             }
         }
-        Event::ControlFailed(command, message) => {
-            state.on_session_call_failed(command, message, None, &mut fx)
+        Event::ControlFailed(command, message, code) => {
+            let error = host_error::HostError::new(message, code);
+            state.on_session_call_failed(command, error, &mut fx)
         }
         Event::DiscoverSessions(agent_id, cwd) => state.discover_sessions(agent_id, cwd, &mut fx),
         Event::ListImportableSessions(config_id, cwd, project_id) => {
@@ -447,7 +450,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ImportAgentSessions(request) => state.import_agent_sessions(request, &mut fx),
         Event::StopImport => state.stop_imports(),
-        Event::SessionIndexReloadFailed(message) => state.on_index_reload_failed(&message, &mut fx),
+        Event::SessionIndexReloadFailed(reload, message) => {
+            state.on_import_reloaded(&reload, Some(&message), &mut fx);
+        }
         Event::FactoryKeyStatus(read, stored) => state.on_factory_key_status(read, stored, &mut fx),
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {

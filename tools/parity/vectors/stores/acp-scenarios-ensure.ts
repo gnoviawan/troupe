@@ -68,6 +68,16 @@ export const ensureScenarios: Scenario[] = [
     ]
   },
   {
+    // `/ws` moves the verdict into the code and drops the message's tag.
+    name: 'prewarm_remembers_a_ws_definite_rejection',
+    context: {
+      projects: [WORK],
+      agentReplies: [{ reject: 'not installed', code: 'agent_unavailable' }]
+    },
+    initial: { agentConfigs: [CLAUDE] },
+    steps: [prewarm(), prewarm()]
+  },
+  {
     name: 'prewarm_detaches_an_agent_a_chat_holds',
     context: { projects: [WORK], agentReplies: [spawned('agent-9')] },
     initial: seeded(

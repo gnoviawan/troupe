@@ -394,7 +394,7 @@ impl State {
     /// host pushes it. A relay (`live_only`) app skips the reload too.
     fn refresh_index(&self, env: &Env<'_>, fx: &mut Vec<Effect>) {
         if !env.server_history {
-            fx.push(Effect::RefreshSessionIndex);
+            fx.push(Effect::RefreshSessionIndex { import: None });
         }
     }
 
