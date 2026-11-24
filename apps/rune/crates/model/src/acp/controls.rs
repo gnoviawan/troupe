@@ -10,7 +10,7 @@
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::types::{Object, Session, SessionStatus};
+use super::types::{Object, Session};
 use super::{Effect, Env, State};
 
 pub(super) const MODEL_CATEGORY: &str = "model";
@@ -34,14 +34,14 @@ pub struct ConfigOptionsUpdateEvent {
 }
 
 /// One selectable value of a config option, groups flattened.
-struct FlatValue<'a> {
-    value: &'a str,
+pub(super) struct FlatValue<'a> {
+    pub(super) value: &'a str,
     name: Option<&'a Value>,
     description: Option<&'a Value>,
 }
 
 /// `flattenConfigOptionValues`: an option's values with groups expanded.
-fn flatten(option: &Value) -> Vec<FlatValue<'_>> {
+pub(super) fn flatten(option: &Value) -> Vec<FlatValue<'_>> {
     let entries = option
         .get("options")
         .and_then(Value::as_array)
@@ -73,7 +73,7 @@ fn flatten(option: &Value) -> Vec<FlatValue<'_>> {
     flat
 }
 
-fn option_count(option: &Value) -> usize {
+pub(super) fn option_count(option: &Value) -> usize {
     option
         .get("options")
         .and_then(Value::as_array)
@@ -442,14 +442,6 @@ impl State {
             || entry["configOptions"]
                 .as_array()
                 .is_some_and(|options| !options.is_empty());
-        let reapply = session.status == SessionStatus::Active
-            && (!config_options(session).is_empty()
-                || session
-                    .rest
-                    .get("models")
-                    .and_then(|models| models.get("availableModels"))
-                    .and_then(Value::as_array)
-                    .is_some_and(|models| !models.is_empty()));
         if has_content {
             if let Some(catalog) = model_catalog(&entry, env.now) {
                 fx.push(Effect::PersistModelCatalog {
@@ -461,12 +453,7 @@ impl State {
         } else {
             self.agent_options_cache.remove(&config_id);
         }
-        if reapply {
-            fx.push(Effect::ReapplyComposerOptions {
-                config_id,
-                session_id: session_id.to_owned(),
-            });
-        }
+        self.heal_composer_options(session_id, config_id, fx);
     }
 }
 

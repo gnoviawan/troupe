@@ -192,7 +192,29 @@
         "index_snapshot_newer_host_row_keeps_what_the_host_cannot_know",
         "index_snapshot_keeps_a_live_row_the_host_lacks",
         "index_snapshot_cleans_handoff_titles",
-        "index_snapshot_closes_tabs_of_chats_that_are_gone"
+        "index_snapshot_closes_tabs_of_chats_that_are_gone",
+        "pick_model_brings_back_the_effort_saved_for_that_model",
+        "pick_model_never_tuned_keeps_the_agent_default",
+        "pick_model_without_a_live_config_reads_nothing",
+        "pick_model_favorite_snapshot_skips_an_unoffered_value",
+        "pick_model_of_the_current_model_applies_only_the_snapshot",
+        "pick_model_restores_a_boolean_and_a_grouped_value",
+        "pick_model_on_native_models_skips_the_heal",
+        "pick_model_passes_over_a_model_option_without_values",
+        "pick_model_on_an_unknown_session_is_rejected",
+        "pick_model_whose_model_set_fails_is_rejected",
+        "pick_model_goes_on_after_a_value_the_agent_rejects",
+        "pick_model_on_an_inactive_chat_sets_the_model_only",
+        "heal_brings_back_the_saved_model_and_its_effort",
+        "heal_is_a_no_op_when_the_session_holds_the_picks",
+        "heal_keeps_the_model_when_the_saved_one_is_not_offered",
+        "heal_on_native_models_runs_once_more_after_the_switch",
+        "heal_prefers_the_native_model_state",
+        "heal_guesses_agent_wide_values_before_any_option_is_known",
+        "heal_stops_when_the_saved_model_is_rejected",
+        "heal_recognizes_a_grouped_value",
+        "heal_skips_a_chat_that_is_not_active",
+        "heal_keeps_a_value_no_longer_offered"
       ]
     }
   }

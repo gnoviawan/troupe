@@ -73,6 +73,9 @@ export const dispatchOutcomes: unknown[] = []
 /** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
 export const configReplies: unknown[] = []
 
+/** What the mocked `readComposerOptions` answers; a vector's `context.composerOptions`. */
+export const composerRecord: { saved: unknown } = { saved: null }
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 

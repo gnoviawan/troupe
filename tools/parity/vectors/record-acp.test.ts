@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  composerRecord,
   configReplies,
   dispatchOutcomes,
   drawId,
@@ -179,14 +180,19 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
         value: unknown
       ) => {
         emit({ kind: 'setConfigOption', agentId, sessionId, configId, value })
-        return configReplies.shift() ?? null
+        const reply = configReplies.shift() ?? null
+        if (typeof reply === 'object' && reply !== null && 'reject' in reply) {
+          throw new Error(String(reply.reject))
+        }
+        return reply
       }
     }
   }
 })
 
 // The model list save and the read of the user's saved composer picks are
-// the boundary of the options cache; the vector keeps both calls.
+// the boundary of the options cache; the vector keeps both calls. The read
+// answers `context.composerOptions`.
 vi.mock(`${renderer}/stores/acp-store/model-catalog`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   persistModelCatalog: (configId: string, catalog: unknown) =>
@@ -197,8 +203,8 @@ vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) 
   persistComposerOptions: (configId: string, patch: unknown) =>
     emit({ kind: 'persistComposerOptions', configId, patch }),
   readComposerOptions: async (configId: string) => {
-    emit({ kind: 'reapplyComposerOptions', configId })
-    return null
+    emit({ kind: 'readComposerOptions', configId })
+    return composerRecord.saved
   }
 }))
 

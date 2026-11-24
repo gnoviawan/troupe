@@ -6,7 +6,7 @@ import { AGENT, ev, idle, S, seeded } from './acp-fixtures'
 
 const REUSE_KEY = 'cfg-1\u0000/work\u0000p1'
 
-const select = (id: string, category: string, current: unknown, ...values: string[]) => ({
+export const select = (id: string, category: string, current: unknown, ...values: string[]) => ({
   id,
   name: id,
   category,
@@ -15,10 +15,10 @@ const select = (id: string, category: string, current: unknown, ...values: strin
   options: values.map((value) => ({ value, name: value.toUpperCase() }))
 })
 
-const modelOption = (current = 'm1') => select('model', 'model', current, 'm1', 'm2')
-const effort = (current = 'low') => select('effort', 'thought_level', current, 'low', 'high')
-const speed = (current = 'slow') => select('speed', 'other', current, 'slow', 'fast')
-const permission = (current = 'ask') => select('perm', 'mode', current, 'ask', 'auto')
+export const modelOption = (current = 'm1') => select('model', 'model', current, 'm1', 'm2')
+export const effort = (current = 'low') => select('effort', 'thought_level', current, 'low', 'high')
+export const speed = (current = 'slow') => select('speed', 'other', current, 'slow', 'fast')
+export const permission = (current = 'ask') => select('perm', 'mode', current, 'ask', 'auto')
 
 const modes = { currentModeId: 'ask', availableModes: [{ id: 'ask' }, { id: 'code' }] }
 const models = {
@@ -29,7 +29,7 @@ const models = {
   ]
 }
 
-function picks(
+export function picks(
   session: Record<string, unknown> = {},
   extra: Record<string, unknown> = {}
 ): Record<string, unknown> {

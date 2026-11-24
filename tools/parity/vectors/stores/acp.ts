@@ -10,13 +10,21 @@ import {
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
+import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
 import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
-import { configReplies, dispatchOutcomes, emit, openChatTabs, type StoreRecorder } from '../record'
+import {
+  composerRecord,
+  configReplies,
+  dispatchOutcomes,
+  emit,
+  openChatTabs,
+  type StoreRecorder
+} from '../record'
 
 /**
  * Wall clock of a vector: `context.now` (default {@link NOW}) while seeding,
@@ -116,6 +124,8 @@ export const acpRecorder: StoreRecorder = {
     shared._resetBusyQueueRetriesForTesting()
     dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
     configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
+    composerRecord.saved = context.composerOptions ?? null
+    _resetComposerSessionsForTesting()
     openChatTabs.clear()
     for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
     // The counter only moves up; each vector starts on the next hundred.
@@ -176,6 +186,7 @@ import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
+import { restoreScenarios } from './acp-scenarios-restore'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
@@ -189,5 +200,6 @@ export const acpScenarios = [
   ...sessionScenarios,
   ...agentScenarios,
   ...pickScenarios,
-  ...indexScenarios
+  ...indexScenarios,
+  ...restoreScenarios
 ]

@@ -16,10 +16,11 @@ use super::controls::{
     MODEL_CATEGORY, align_model_projection, category, config_options, mark_echo_logged,
     merge_config_options, model_catalog, model_snapshot,
 };
+use super::restore::RunId;
 use super::{Effect, Env, State};
 
 /// A mode-category option (Claude's permission mode) stays agent-wide.
-const MODE_CATEGORY: &str = "mode";
+pub(super) const MODE_CATEGORY: &str = "mode";
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,7 +36,7 @@ impl PickOptions {
     }
 }
 
-fn rejected(session_id: &str) -> Effect {
+pub(super) fn rejected(session_id: &str) -> Effect {
     Effect::ActionRejected {
         message: format!("Error: unknown session {session_id}"),
     }
@@ -80,6 +81,7 @@ impl State {
         session_id: String,
         model_id: String,
         options: Option<PickOptions>,
+        run: Option<RunId>,
         fx: &mut Vec<Effect>,
     ) {
         let Some(session) = self.sessions.get(&session_id) else {
@@ -96,6 +98,7 @@ impl State {
             model_id,
             persist: PickOptions::saves(options.as_ref()),
             model_option,
+            run,
         });
     }
 
@@ -105,6 +108,7 @@ impl State {
         config_id: String,
         value: Value,
         options: Option<PickOptions>,
+        run: Option<RunId>,
         fx: &mut Vec<Effect>,
     ) {
         let Some(session) = self.sessions.get(&session_id) else {
@@ -123,6 +127,7 @@ impl State {
             value,
             persist: PickOptions::saves(options.as_ref()),
             is_model,
+            run,
         });
     }
 
@@ -163,6 +168,7 @@ impl State {
                 model_id,
                 persist,
                 model_option,
+                ..
             } => {
                 if let Some(session) = self.sessions.get_mut(&session_id) {
                     if let Some(models) = session.rest.get_mut("models").filter(|m| m.is_object()) {
@@ -199,6 +205,7 @@ impl State {
                 persist,
                 model_at_request,
                 is_model,
+                ..
             } => self.on_config_option_set(
                 ConfigOptionSet {
                     agent_id,

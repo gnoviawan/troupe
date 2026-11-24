@@ -17,6 +17,9 @@ mod js_tests;
 mod picks;
 mod plan;
 pub mod prompt;
+mod restore;
+#[cfg(test)]
+mod restore_tests;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
@@ -43,6 +46,8 @@ use approvals::{
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
 use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
+use restore::Run;
+pub use restore::RunId;
 use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
@@ -156,12 +161,31 @@ pub struct Book {
     /// Browser-open URLs caught before their agent registered, oldest first.
     #[serde(skip)]
     pub early_browser_opens: VecDeque<(String, String)>,
+    /// Option restores in flight: model picks and heals.
+    #[serde(skip)]
+    pub(crate) runs: BTreeMap<RunId, Run>,
+    #[serde(skip)]
+    pub(crate) run_seq: RunId,
+    /// Per session, the newest model pick still running (`latestModelPick`).
+    #[serde(skip)]
+    pub(crate) latest_model_pick: BTreeMap<String, RunId>,
+    /// Sessions whose heal was asked for again while one ran.
+    #[serde(skip)]
+    pub(crate) heal_rerun: BTreeSet<String>,
+    /// `session\0key` of the restore warns already logged.
+    #[serde(skip)]
+    pub(crate) warned_once: BTreeSet<String>,
 }
 
 impl Book {
     pub(crate) fn next_report(&mut self) -> u64 {
         self.report_seq += 1;
         self.report_seq
+    }
+
+    pub(crate) fn next_run(&mut self) -> RunId {
+        self.run_seq += 1;
+        self.run_seq
     }
 
     pub(crate) fn next_seq(&mut self) -> f64 {
@@ -297,6 +321,22 @@ pub enum Event {
     /// snapshot, when the agent sent one.
     #[serde(skip_deserializing)]
     ControlSet(Effect, Option<Vec<Value>>),
+    /// The agent rejected a set command; the text is the error.
+    #[serde(skip_deserializing)]
+    ControlFailed(Effect, String),
+    /// The saved picks an [`Effect::ReadComposerOptions`] read; null when
+    /// none are saved.
+    #[serde(skip_deserializing)]
+    ComposerOptionsRead(Effect, Value),
+    /// The wait an [`Effect::WaitForReadvertisedOptions`] started ran out.
+    #[serde(skip_deserializing)]
+    ReadvertiseWaitOver(RunId),
+    #[serde(rename = "pickModel")]
+    PickModel(
+        String,
+        String,
+        #[serde(default)] Option<serde_json::Map<String, Value>>,
+    ),
     #[serde(rename = "clearPendingSignIn")]
     ClearPendingSignIn(String),
     #[serde(rename = "setActiveSession")]
@@ -398,6 +438,9 @@ pub enum Effect {
         /// The id of the session's model-category option when it was sent.
         #[serde(skip_serializing)]
         model_option: Option<Value>,
+        /// The restore that sent it, which its outcome moves on.
+        #[serde(skip_serializing)]
+        run: Option<RunId>,
     },
     /// Send `session/set_config_option`, then `Event::ControlSet` with this
     /// effect and the agent's option snapshot.
@@ -413,6 +456,8 @@ pub enum Effect {
         model_at_request: Option<String>,
         #[serde(skip_serializing)]
         is_model: bool,
+        #[serde(skip_serializing)]
+        run: Option<RunId>,
     },
     /// Free the session's transcript once the `PersistSession` before this
     /// effect has read it: send `Event::DropSessionTranscript` before the
@@ -426,12 +471,20 @@ pub enum Effect {
     /// Reload the chat index from the desktop's history store, then send
     /// what it read as `applySessionIndexSnapshot`.
     RefreshSessionIndex,
-    /// Read the user's saved picks for the config and apply the ones the
-    /// session still offers.
-    ReapplyComposerOptions {
+    /// Read the user's saved picks for the config, then send
+    /// `Event::ComposerOptionsRead` with this effect and the record.
+    ReadComposerOptions {
         config_id: String,
         #[serde(skip_serializing)]
+        run: RunId,
+    },
+    /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
+    /// the agent re-advertised the session's options first.
+    WaitForReadvertisedOptions {
         session_id: String,
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        run: RunId,
     },
 }
 
@@ -441,6 +494,14 @@ impl Effect {
             level: Level::Warn,
             source: source.to_owned(),
             message,
+        }
+    }
+
+    /// The restore a set command belongs to.
+    fn run(&self) -> Option<RunId> {
+        match self {
+            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
+            _ => None,
         }
     }
 
@@ -488,12 +549,31 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
-            state.set_model(session_id, model_id, options, &mut fx);
+            state.set_model(session_id, model_id, options, None, &mut fx);
         }
         Event::SetConfigOption(session_id, config_id, value, options) => {
-            state.set_config_option(session_id, config_id, value, options, &mut fx);
+            state.set_config_option(session_id, config_id, value, options, None, &mut fx);
         }
-        Event::ControlSet(command, reply) => state.on_control_set(command, reply, env, &mut fx),
+        Event::ControlSet(command, reply) => {
+            let run = command.run();
+            state.on_control_set(command, reply, env, &mut fx);
+            if let Some(run) = run {
+                state.on_run_command(run, None, &mut fx);
+            }
+        }
+        Event::ControlFailed(command, message) => match command.run() {
+            Some(run) => state.on_run_command(run, Some(message), &mut fx),
+            None => fx.push(Effect::ActionRejected { message }),
+        },
+        Event::ComposerOptionsRead(read, saved) => {
+            if let Effect::ReadComposerOptions { run, .. } = read {
+                state.on_composer_options_read(run, saved, &mut fx);
+            }
+        }
+        Event::ReadvertiseWaitOver(run) => state.poll_readvertise(Some(run), &mut fx),
+        Event::PickModel(session_id, model_id, values) => {
+            state.pick_model(session_id, model_id, values, &mut fx);
+        }
         Event::ClearPendingSignIn(agent_id) => state.clear_pending_sign_in(&agent_id),
         Event::SetActiveSession(session_id) => state.active_session_id = session_id,
         Event::MarkResumeFailed(session_id, reason) => {
@@ -533,5 +613,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.book.live_turn_replay_floors.insert(session_id, floor);
         }
     }
+    // A run waiting for re-advertised options moves on once an event changed
+    // them, as the TypeScript poll would see.
+    state.poll_readvertise(None, &mut fx);
     fx
 }

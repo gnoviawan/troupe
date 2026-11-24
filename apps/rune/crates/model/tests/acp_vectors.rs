@@ -63,6 +63,10 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .cloned()
         .unwrap_or_default()
         .into();
+    let saved = context
+        .get("composerOptions")
+        .cloned()
+        .unwrap_or(Value::Null);
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
@@ -101,28 +105,43 @@ fn replay(vector: &Value) -> Result<usize, String> {
         let mut settled = std::collections::BTreeSet::new();
         let mut acknowledged = 0;
         loop {
-            // A set command is acknowledged at once; the recorder's mocks
-            // resolve it before the action goes on.
+            // A set command is acknowledged and a saved-picks read answered
+            // at once, in the order they were sent; the recorder's mocks
+            // resolve each before the action goes on.
             if let Some(offset) = effects[acknowledged..].iter().position(|effect| {
                 matches!(
                     effect,
                     Effect::SetMode { .. }
                         | Effect::SetModel { .. }
                         | Effect::SetConfigOption { .. }
+                        | Effect::ReadComposerOptions { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
                 acknowledged += offset + 1;
-                let reply = match command {
-                    Effect::SetConfigOption { .. } => config_replies
-                        .pop_front()
-                        .filter(|reply| !reply.is_null())
-                        .map(|reply| parse(&reply))
-                        .transpose()
-                        .map_err(|e| at(&e))?,
-                    _ => None,
+                let event = match command {
+                    Effect::ReadComposerOptions { .. } => {
+                        Event::ComposerOptionsRead(command, saved.clone())
+                    }
+                    Effect::SetConfigOption { .. } => {
+                        let reply = config_replies.pop_front().filter(|reply| !reply.is_null());
+                        match reply.as_ref().and_then(|reply| reply.get("reject")) {
+                            Some(reason) => Event::ControlFailed(
+                                command,
+                                format!("Error: {}", reason.as_str().unwrap_or_default()),
+                            ),
+                            None => Event::ControlSet(
+                                command,
+                                reply
+                                    .map(|reply| parse(&reply))
+                                    .transpose()
+                                    .map_err(|e| at(&e))?,
+                            ),
+                        }
+                    }
+                    _ => Event::ControlSet(command, None),
                 };
-                let more = acp::step(&mut state, Event::ControlSet(command, reply), &mut env);
+                let more = acp::step(&mut state, event, &mut env);
                 effects.extend(more);
                 continue;
             }

@@ -399,6 +399,7 @@ impl State {
     pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
         self.book.history_watermarks.remove(session_id);
         self.book.active_wire_turns.remove(session_id);
+        self.forget_composer_session(session_id);
     }
 
     /// `dropSessionTranscriptState`: free the transcript maps of a session
