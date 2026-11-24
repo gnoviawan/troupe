@@ -33,6 +33,10 @@
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { useShallow } from 'zustand/shallow'
+import {
+  alignSessionModelProjection,
+  withSessionModelOnIndex
+} from '@/components/chat/chat-input-bar-config'
 import { stripHandoffPreamble } from '@/components/chat/handoff-summary'
 import { applyTerminalStream } from '@/components/chat/terminal-output'
 import {
@@ -305,6 +309,8 @@ async function installTransportRecovery(
   // cards instead of blanking the session's tool-call list.
   const recoveredToolCalls: ToolCall[] = []
   let recoveredCommands: { list: AvailableCommand[]; seq: number } | null = null
+  // The newest legacy-only model switch in the snapshot (`models_update`).
+  let recoveredModels: ModelsUpdateEvent['models'] | null = null
   // Plan events in the snapshot. `null` means the snapshot never mentioned a plan.
   const recoveredPlan = foldRecoveredPlan(recovery.events)
   let openRole: 'agent' | 'thought' | 'user' | null = null
@@ -456,6 +462,9 @@ async function installTransportRecovery(
       if (Array.isArray(availableCommands)) {
         recoveredCommands = { list: availableCommands, seq: event.seq }
       }
+    } else if (event.type === 'models_update') {
+      const { models } = payload as Partial<ModelsUpdateEvent>
+      if (models && Array.isArray(models.availableModels)) recoveredModels = models
     }
   }
   // Single wire→display pass over the folded user bubbles (chip rendering on
@@ -489,6 +498,13 @@ async function installTransportRecovery(
     const splicedToolCalls = (current.toolCalls[recovery.sessionId] ?? []).filter((t) =>
       t.toolCallId.startsWith(SWITCH_SPLICE_ID_PREFIX)
     )
+    // A model switch made while this client was away: the live event is under
+    // the watermark and dropped, so the snapshot's copy is applied here, with
+    // the live `_onModelsUpdate` projection.
+    const recoveredSession =
+      session && recoveredModels
+        ? alignSessionModelProjection({ ...session, models: recoveredModels })
+        : session
     return {
       messages: replacing
         ? {
@@ -519,10 +535,19 @@ async function installTransportRecovery(
               : dropPlanForSession(current.plans, recovery.sessionId)
           }),
       degradedRecoverySessions: dropRecordKey(current.degradedRecoverySessions, recovery.sessionId),
-      sessions: session
+      ...(recoveredSession && recoveredModels
+        ? {
+            sessionIndex: withSessionModelOnIndex(
+              current.sessionIndex,
+              recovery.sessionId,
+              recoveredSession
+            )
+          }
+        : {}),
+      sessions: recoveredSession
         ? {
             ...current.sessions,
-            [recovery.sessionId]: { ...session, ...plainLastError(null) }
+            [recovery.sessionId]: { ...recoveredSession, ...plainLastError(null) }
           }
         : current.sessions
     }

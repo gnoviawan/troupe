@@ -225,6 +225,46 @@ describe('acp-store: composer-selection persistence', () => {
     )
   })
 
+  it('a legacy model switch from another client is not undone by the saved model', async () => {
+    await useAcpStore
+      .getState()
+      .saveAgentConfig({ id: 'cfg-1', name: 'Hermes', command: 'hermes', args: ['acp'], env: {} })
+    seedSession('sess-legacy', 'agent-9', false)
+    const availableModels = [
+      { modelId: 'm1', name: 'Model One' },
+      { modelId: 'm2', name: 'Model Two' }
+    ]
+    useAcpStore.setState((s) => ({
+      sessions: {
+        ...s.sessions,
+        'sess-legacy': {
+          ...s.sessions['sess-legacy'],
+          models: { currentModelId: 'm1', availableModels }
+        }
+      },
+      configToLiveAgent: { ...s.configToLiveAgent, [agentReuseKey('cfg-1', '/work')]: 'agent-9' }
+    }))
+    // This client's saved record still holds the model before the switch.
+    mockPersistenceApi.read.mockImplementation(async (key: string) =>
+      key === 'agents/composer-options/cfg-1'
+        ? { success: true, data: { modelId: 'm1' } }
+        : { success: false }
+    )
+    ;(invoke as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+
+    useAcpStore.getState()._onModelsUpdate({
+      agentId: 'agent-9',
+      sessionId: 'sess-legacy',
+      models: { currentModelId: 'm2', availableModels }
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(useAcpStore.getState().sessions['sess-legacy'].models?.currentModelId).toBe('m2')
+    expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
+    // The options cache still learns the new model.
+    expect(useAcpStore.getState().agentOptionsCache['cfg-1']?.models?.currentModelId).toBe('m2')
+  })
+
   it('setMode persists the modeId to persistenceApi (debounced)', async () => {
     await useAcpStore
       .getState()

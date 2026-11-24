@@ -337,7 +337,9 @@ impl State {
     }
 
     /// `_onModelsUpdate`: a legacy-only session's model switch carries the
-    /// whole list, which replaces the session's copy.
+    /// whole list, which replaces the session's copy. The agent accepted the
+    /// switch, so only the options cache is refreshed: the heal would switch
+    /// the chat back to an older saved model.
     pub(crate) fn on_models_update(
         &mut self,
         event: ModelsUpdateEvent,
@@ -350,7 +352,7 @@ impl State {
             align_model_projection(session);
             self.set_index_model(session_id);
         }
-        self.cache_options_from_session(session_id, env, fx);
+        self.cache_session_options(session_id, env, fx);
     }
 
     pub(crate) fn on_config_options_update(
@@ -436,12 +438,22 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
-        let Some(session) = self.sessions.get(session_id) else {
-            return;
-        };
-        let Some(config_id) = self.config_id_for_agent(&session.agent_id) else {
-            return;
-        };
+        if let Some(config_id) = self.cache_session_options(session_id, env, fx) {
+            self.heal_composer_options(session_id, config_id, fx);
+        }
+    }
+
+    /// `writeOptionsCacheFromSession`: remember the session's options for its
+    /// agent's config and save the model list, without the heal. Returns the
+    /// config id.
+    pub(crate) fn cache_session_options(
+        &mut self,
+        session_id: &str,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) -> Option<String> {
+        let session = self.sessions.get(session_id)?;
+        let config_id = self.config_id_for_agent(&session.agent_id)?;
         let present = |key: &str| {
             session
                 .rest
@@ -477,7 +489,7 @@ impl State {
         } else {
             self.agent_options_cache.remove(&config_id);
         }
-        self.heal_composer_options(session_id, config_id, fx);
+        Some(config_id)
     }
 }
 

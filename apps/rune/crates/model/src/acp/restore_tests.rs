@@ -202,3 +202,24 @@ fn a_value_moved_while_the_heal_reads_the_record_is_kept() {
         "the user's change wins"
     );
 }
+
+#[test]
+fn a_legacy_model_switch_from_the_host_is_not_healed_back() {
+    let mut state = native();
+    let fx = apply(
+        &mut state,
+        event(json!({ "_onModelsUpdate": {
+            "sessionId": "s1",
+            "models": {
+                "currentModelId": "m2",
+                "availableModels": [{ "modelId": "m1", "name": "M1" }, { "modelId": "m2", "name": "M2" }],
+            },
+        }})),
+    );
+    assert!(
+        find(&fx, |e| matches!(e, Effect::ReadComposerOptions { .. })).is_none(),
+        "no heal reads the saved record: {fx:?}"
+    );
+    let value = serde_json::to_value(&state).expect("a state");
+    assert_eq!(value["sessions"]["s1"]["models"]["currentModelId"], "m2");
+}

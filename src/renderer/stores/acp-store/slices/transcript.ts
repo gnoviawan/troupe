@@ -50,7 +50,8 @@ import {
   sessionTurnBusy,
   toolIntervened,
   trimLiveToolCalls,
-  withCommands
+  withCommands,
+  writeOptionsCacheFromSession
 } from '../helpers'
 import { useAcpStore } from '../index'
 import { withRateLimit } from '../rate-limit'
@@ -1679,7 +1680,9 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
 
   // A legacy-only session's model switch (Hermes Agent `session/set_model`):
   // the host sends the whole list, so it replaces the session's copy on every
-  // client, not only the one that picked.
+  // client, not only the one that picked. The switch is one the agent just
+  // accepted, so only the options cache is refreshed: the persisted-pick heal
+  // would switch this client's chat back to its older saved model.
   _onModelsUpdate: (e) => {
     set((s) => {
       const session = s.sessions[e.sessionId]
@@ -1690,7 +1693,7 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
         sessionIndex: withSessionModelOnIndex(s.sessionIndex, e.sessionId, next)
       }
     })
-    cacheOptionsFromSession(set, get, e.sessionId)
+    writeOptionsCacheFromSession(set, get, e.sessionId)
   },
 
   _onConfigOptionsUpdate: (e) => {
