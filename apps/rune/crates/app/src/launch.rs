@@ -124,12 +124,22 @@ impl State {
         self.composer
             .namespaces
             .insert(session_id.clone(), format!("config:{}", launch.config_id));
-        let host = Host::Launcher(launch.project_id);
+        self.composer.launched.insert(session_id.clone(), launch.project_id.clone());
+        if self.workspace.project() != Some(launch.project_id.as_str()) {
+            // Another project came on screen while the agent spawned: open the chat in its own
+            // project, as the web client's route to the new chat does.
+            self.select_project(&launch.project_id);
+        }
+        let host = Host::Launcher(launch.project_id.clone());
         let draft = self.draft_mut(&host);
         draft.edit.clear();
         draft.attachments.clear();
-        self.workspace
-            .step(model::workspace::Event::AddAgentChatTab(session_id.clone(), None));
+        if self.workspace.project() == Some(launch.project_id.as_str()) {
+            self.workspace
+                .step(model::workspace::Event::AddAgentChatTab(session_id.clone(), None));
+        } else {
+            log::warn!("[launch] {} is not on screen; chat {session_id} opens from the rail", launch.project_id);
+        }
         let event = match launch.send {
             Send::Text { text } => Event::SendPrompt(session_id, text),
             Send::Blocks { wire, display } => Event::SendPromptBlocks(

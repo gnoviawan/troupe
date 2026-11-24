@@ -92,6 +92,8 @@ pub struct ComposerUi {
     pub(crate) rejected: bool,
     /// Per session, the agent namespace its history names.
     pub namespaces: BTreeMap<String, String>,
+    /// The project of each chat the launcher started, until the chat list names it.
+    pub launched: BTreeMap<String, String>,
     /// What a composer with no draft yet draws.
     pub empty: Draft,
     /// The agent reads went out on this link.
@@ -118,10 +120,7 @@ impl State {
 
     /// The project folder the composer's skills and mentions read.
     pub(crate) fn root_of(&self, host: &Host) -> Option<String> {
-        let project = match host {
-            Host::Launcher(id) => Some(id.clone()),
-            Host::Chat(id) => self.chats.get(id).and_then(|c| c.project_id.clone()),
-        }?;
+        let project = self.project_of(host)?;
         self.projects
             .store
             .projects
@@ -133,7 +132,11 @@ impl State {
     fn project_of(&self, host: &Host) -> Option<String> {
         match host {
             Host::Launcher(id) => Some(id.clone()),
-            Host::Chat(id) => self.chats.get(id).and_then(|c| c.project_id.clone()),
+            Host::Chat(id) => self
+                .chats
+                .get(id)
+                .and_then(|c| c.project_id.clone())
+                .or_else(|| self.composer.launched.get(id).cloned()),
         }
     }
 
