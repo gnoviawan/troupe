@@ -175,3 +175,46 @@ is the window's frame rate on lavapipe under contention, not the decode
    - Scrolling and pinch do not break the layout.
    - Rotating to landscape and back relays out the window.
 4. Record pass or fail per item, with a screenshot per phone, in this section.
+
+## Code highlighting
+
+**Answer.** rune-highlights, the lexers rune-kit's `Markdown` already uses,
+with each token kind coloured from the theme's syntax map exactly as the web
+client's Shiki theme colours the TextMate scopes that kind stands for
+(`ui::markdown::syntax_colour`), and a small re-cut where the two engines name
+the same text differently (`ui::markdown::recut`: word-shaped `Number` tokens
+become language constants or plain namespaces, primitive types become
+keywords). It does not reach exact colour parity. Exact parity needs Shiki's
+own engine, a TextMate tokenizer running the same grammars, which no section
+has built yet.
+
+**Numbers.** `bun tools/parity/highlight/parity.ts` runs Shiki with the Termul
+theme (`syntaxThemeFor`) and `cargo run -p ui --example highlight_dump` over
+the same eight samples, and counts non-space characters drawn in the same
+colour (measured 2026-11-24):
+
+| Engine | ts | tsx | bash | rust | python | json | css | go | all (1,742 chars) |
+|---|---|---|---|---|---|---|---|---|---|
+| rune-highlights, kinds mapped | 74.8% | 76.7% | 60.0% | 86.3% | 70.3% | 85.2% | 76.1% | 80.9% | 76.8% |
+| rune-highlights, mapped and re-cut (shipped) | 81.6% | 76.7% | 60.0% | 86.3% | 75.6% | 88.1% | 79.8% | 80.9% | 79.6% |
+| A TextMate engine with Shiki's grammars | not built | | | | | | | | 100% by construction (guess) |
+
+The differences are token boundaries the grammars draw, not palette: Shiki's
+TypeScript grammar colours a function's whole parameter list in the function
+colour, Shiki's shell grammar colours every argument as a string, and its JSON
+grammar draws a key's quotes as punctuation.
+
+**Alternatives weighed.**
+
+- A TextMate engine in Rust (for example `syntect` with `fancy-regex`) running
+  the VS Code grammars Shiki bundles. Rejected for now: the eight grammars in
+  the table are 623 KB of grammar source (measured from `@shikijs/langs`), all
+  of Shiki's are 9.9 MB, TextMate matching is backtracking regex per line
+  rather than linear lexing, and `fancy-regex` does not cover every Oniguruma
+  construct the grammars use (guess, not tried). It is the only route to exact
+  parity; take it if the matrix shows code colour is what keeps chat surfaces
+  from scoring ported.
+- Shiki through JavaScript in the web build. Rejected: the desktop app has no
+  JavaScript, so the two Rune clients would colour code differently.
+
+**Source.** R6b (`reports/R6b.md`). Tools: `tools/parity/highlight/`.
