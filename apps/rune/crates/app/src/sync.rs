@@ -1,0 +1,249 @@
+//! Between the server and the model: what the app asks the host for once connected, how
+//! `/ws` outputs become model events, and how model effects become host requests.
+
+use std::collections::HashMap;
+
+use client::CallId;
+use client::link::Status;
+use client::ws::{Command, Output};
+use model::projects::{Event as ProjectEvent, ProjectList};
+use model::shell_layout::{Event as LayoutEvent, ReadOutcome};
+use model::{Effect, Ids, Level, shell_layout};
+use serde_json::{Value, json};
+use troupe_protocol::ws::{WsRequestType, WsWatchName};
+
+use crate::{Host, State};
+
+const ACTIVE_PROJECT_KEY: &str = "active-project";
+
+/// What a pending call's reply is for.
+#[derive(Clone, Debug, PartialEq)]
+enum Pending {
+    ReadLayout,
+    ReadActiveProject,
+    Write(String),
+}
+
+/// The device's saved selection: unread, or read (`None` when it has none).
+#[derive(Clone, Debug, Default, PartialEq)]
+enum Saved {
+    #[default]
+    Unread,
+    Read(Option<String>),
+}
+
+#[derive(Default)]
+pub struct Sync {
+    pending: HashMap<CallId, Pending>,
+    next_call: CallId,
+    saved_active: Saved,
+    /// A registry list that came before the saved selection.
+    held: Option<ProjectList>,
+}
+
+/// Ids for a store that mints them (groups); the shell creates none yet.
+struct Counter(u64);
+
+impl Ids for Counter {
+    fn next_id(&mut self) -> String {
+        self.0 += 1;
+        format!("rune-{}", self.0)
+    }
+}
+
+impl State {
+    /// Takes the link and asks for everything the shell shows.
+    pub(crate) fn connect(&mut self, host: Host) {
+        self.host = Some(host);
+        self.begin();
+    }
+
+    /// The requests a fresh link sends: the projects watch and the two device reads (calls 1
+    /// and 2).
+    pub(crate) fn begin(&mut self) {
+        self.status = Status::Connecting;
+        self.send(Command::Watch {
+            watch: WsWatchName::Projects,
+            scope: String::new(),
+        });
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": self.device_key(shell_layout::KEY) }),
+            Pending::ReadLayout,
+        );
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": self.device_key(ACTIVE_PROJECT_KEY) }),
+            Pending::ReadActiveProject,
+        );
+        self.layout_step(LayoutEvent::StartHydrate);
+    }
+
+    fn device_key(&self, key: &str) -> String {
+        format!("device/{}/{key}", self.device_id)
+    }
+
+    fn send(&mut self, command: Command) {
+        if let Some(host) = &mut self.host {
+            host.send(command);
+        }
+    }
+
+    fn call(&mut self, kind: WsRequestType, payload: Value, pending: Pending) {
+        self.sync.next_call += 1;
+        let call = self.sync.next_call;
+        self.sync.pending.insert(call, pending);
+        self.send(Command::Call {
+            call,
+            kind,
+            payload,
+            ledgered: false,
+        });
+    }
+
+    /// Runs the outputs the link queued; true when the state changed.
+    pub(crate) fn pump(&mut self, now: f64) -> bool {
+        let Some(host) = &mut self.host else {
+            return false;
+        };
+        let outputs = host.drain(now);
+        let changed = !outputs.is_empty();
+        for output in outputs {
+            self.apply(output);
+        }
+        changed
+    }
+
+    /// One `/ws` output.
+    pub fn apply(&mut self, output: Output) {
+        match output {
+            Output::Status(status) => {
+                if let Status::Halted { code, message } = &status {
+                    log::warn!("[app] the server refused this client: {code}: {message}");
+                }
+                self.status = status;
+            }
+            Output::WatchState {
+                watch: WsWatchName::Projects,
+                state,
+                ..
+            }
+            | Output::WatchDelta {
+                watch: WsWatchName::Projects,
+                delta: state,
+                ..
+            } => match serde_json::from_value::<ProjectList>(state) {
+                Ok(list) => self.registry_list(list),
+                Err(e) => log::warn!("[app] unreadable projects frame: {e}"),
+            },
+            Output::WatchRefused { watch, error, .. } => {
+                log::warn!(
+                    "[app] watch {watch:?} refused: {}: {}",
+                    error.code,
+                    error.message
+                );
+            }
+            Output::Reply { call, result } => self.reply(call, result),
+            _ => {}
+        }
+    }
+
+    fn reply(&mut self, call: CallId, result: Result<Option<Value>, troupe_protocol::ws::WsError>) {
+        let Some(pending) = self.sync.pending.remove(&call) else {
+            return;
+        };
+        match pending {
+            Pending::ReadLayout => {
+                let outcome = match result {
+                    Ok(reply) => stored_value(reply).map(|data| ReadOutcome::Found { data }),
+                    Err(e) => Some(ReadOutcome::Failed { code: e.code }),
+                };
+                self.layout_step(LayoutEvent::Hydrate(outcome));
+            }
+            Pending::ReadActiveProject => {
+                let saved = match result {
+                    Ok(reply) => stored_value(reply)
+                        .and_then(|v| v.as_str().filter(|s| !s.is_empty()).map(str::to_owned)),
+                    Err(e) => {
+                        log::warn!("[app] reading the active project failed: {}", e.code);
+                        None
+                    }
+                };
+                self.sync.saved_active = Saved::Read(saved);
+                if let Some(list) = self.sync.held.take() {
+                    self.registry_list(list);
+                }
+            }
+            Pending::Write(key) => {
+                if let Err(e) = result {
+                    log::warn!("[app] writing {key} failed: {}: {}", e.code, e.message);
+                }
+            }
+        }
+    }
+
+    fn registry_list(&mut self, list: ProjectList) {
+        let saved = match &self.sync.saved_active {
+            Saved::Unread if !self.projects.store.is_loaded => {
+                self.sync.held = Some(list);
+                return;
+            }
+            Saved::Read(saved) => saved.clone(),
+            Saved::Unread => None,
+        };
+        self.projects_step(ProjectEvent::ApplyRegistryList(list, saved));
+    }
+
+    pub fn projects_step(&mut self, event: ProjectEvent) {
+        let out = projects::step(&mut self.projects, event, &mut Counter(0));
+        self.run(out.effects);
+    }
+
+    pub fn layout_step(&mut self, event: LayoutEvent) {
+        let effects = shell_layout::step(&mut self.layout, event);
+        self.run(effects);
+    }
+
+    fn write(&mut self, key: &str, value: Value) {
+        let key = self.device_key(key);
+        self.call(
+            WsRequestType::StoreWrite,
+            json!({ "key": key, "value": value }),
+            Pending::Write(key.clone()),
+        );
+    }
+
+    fn run(&mut self, effects: Vec<Effect>) {
+        for effect in effects {
+            match effect {
+                Effect::Log {
+                    level,
+                    source,
+                    message,
+                } => match level {
+                    Level::Info => log::info!("[{source}] {message}"),
+                    Level::Warn | Level::Error => log::warn!("[{source}] {message}"),
+                },
+                Effect::WriteShellLayout { record, .. } => {
+                    let value = serde_json::to_value(record).unwrap_or(Value::Null);
+                    self.write(shell_layout::KEY, value);
+                }
+                Effect::SaveActiveProject { project_id } => {
+                    self.write(ACTIVE_PROJECT_KEY, Value::from(project_id))
+                }
+                other => log::info!("[app] effect not wired in the shell yet: {other:?}"),
+            }
+        }
+    }
+}
+
+use model::projects;
+
+/// A `store_read` reply's value, or `None` when the key is absent (revision 0).
+fn stored_value(reply: Option<Value>) -> Option<Value> {
+    let reply = reply?;
+    if reply.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {
+        return None;
+    }
+    reply.get("value").cloned().filter(|v| !v.is_null())
+}

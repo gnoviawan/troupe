@@ -18,6 +18,7 @@
 pub mod base;
 pub mod overlay;
 pub mod paint;
+pub mod shell;
 pub mod type_;
 pub mod zoom;
 

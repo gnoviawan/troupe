@@ -3907,12 +3907,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "troupe-app"
+version = "0.0.1"
+dependencies = [
+ "client",
+ "js-sys",
+ "log",
+ "model",
+ "rune",
+ "serde_json",
+ "theme",
+ "troupe-protocol",
+ "ui",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "troupe-dev"
+version = "0.0.1"
+dependencies = [
+ "automation",
+ "client",
+ "troupe-app",
+]
+
+[[package]]
 name = "troupe-protocol"
 version = "0.1.0"
 dependencies = [
  "schemars",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "troupe-web"
+version = "0.0.1"
+dependencies = [
+ "client",
+ "js-sys",
+ "log",
+ "troupe-app",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
