@@ -161,6 +161,13 @@ fn replace_skills(value: &str) -> String {
         .collect()
 }
 
+/// What a sent message's Copy puts on the clipboard (`ChatMessage`):
+/// `sanitizeDisplayText(serializeSelectionContexts(text))`, every pill as plain text.
+pub fn copy_text(value: &str) -> String {
+    let plain = replace_files(&replace_skills(&replace_commands(&serialize_contexts(value))));
+    replace_tools(&replace_conversations(&plain, |title, _| format!("(conversation: {title})")))
+}
+
 /// `formatPromptWithSkills`.
 pub fn format_with_skills(skills: &[(String, String)], user_text: &str) -> String {
     let inline = replace_skills(user_text);

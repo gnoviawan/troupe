@@ -33,7 +33,8 @@ import {
 import { fileMentionBlocks } from '../../../src/renderer/lib/composer/retry-wire'
 import {
   createSelectionContext,
-  hasSelectionContexts
+  hasSelectionContexts,
+  serializeSelectionContexts
 } from '../../../src/renderer/lib/composer/selection-context'
 import { hasToolTokens } from '../../../src/renderer/lib/composer/tool-tokens'
 import { composerWireText } from '../../../src/renderer/lib/composer/wire-text'
@@ -41,7 +42,8 @@ import type { TranscriptGap } from '../../../src/renderer/lib/conversation-envel
 import {
   extractCommandNames,
   extractConversationRefs,
-  extractSkillNames
+  extractSkillNames,
+  sanitizeDisplayText
 } from '../../../src/renderer/lib/skill-tokens'
 
 export const composerSources = [
@@ -82,6 +84,8 @@ export interface ComposerCase {
 
 export interface ComposerVector extends ComposerCase {
   display: string
+  /** What the sent bubble's Copy puts on the clipboard (`ChatMessage`). */
+  copy: string
   /** The send, or the error the composer shows instead of sending. */
   send: ReturnType<typeof buildComposerSend> | { error: string }
 }
@@ -188,7 +192,8 @@ export function recordComposer(c: ComposerCase): ComposerVector {
   } catch (error) {
     send = { error: error instanceof Error ? error.message : String(error) }
   }
-  return { ...c, display, send }
+  const copy = sanitizeDisplayText(serializeSelectionContexts(display))
+  return { ...c, display, copy, send }
 }
 
 export function recordContext(c: ContextCase): ContextCase & { context: unknown } {
