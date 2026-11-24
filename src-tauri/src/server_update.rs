@@ -157,9 +157,7 @@ pub fn embedded_public_key() -> Result<&'static PublicKey> {
 
 // ---------------------------------------------------------------------------
 // Version comparison — full SemVer 2.0 prerelease precedence.
-// Ported from the desktop `compareVersions` so both targets agree, and so
-// `0.0.0-nightly.*` (core 0.0.0 + prerelease) is always less than any real
-// release: a nightly server that switches to Stable is always offered it.
+// Ported from the desktop `compareVersions` so both targets agree.
 // ---------------------------------------------------------------------------
 
 #[derive(Debug)]

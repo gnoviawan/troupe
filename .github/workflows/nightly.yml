@@ -29,6 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       nightly_version: ${{ steps.version.outputs.nightly_version }}
+      # true when this version is already published (no dev commits since the
+      # last nightly, or none since the stable tag), so nothing is rebuilt.
+      skip: ${{ steps.version.outputs.skip }}
       legacy_version: ${{ steps.version.outputs.legacy_version }}
       short_sha: ${{ steps.version.outputs.short_sha }}
       nightly_date: ${{ steps.version.outputs.nightly_date }}
@@ -57,6 +60,7 @@ jobs:
         shell: bash
         env:
           RUN_NUMBER: ${{ github.run_number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 00:00 GMT+7 = 17:00 UTC; use the GMT+7 (Asia/Jakarta) date so the
           # legacy version reflects the local calendar day the build ships.
@@ -74,17 +78,32 @@ jobs:
             exit 1
           fi
           IFS=. read -r MAJOR MINOR PATCH <<< "${STABLE_TAG#v}"
+          if [ "$PATCH" != 0 ]; then
+            echo "$STABLE_TAG is not X.Y.0. Patch numbers belong to nightlies; ship a stable fix as the next minor." >&2
+            exit 1
+          fi
           COMMITS="$(git rev-list --count "$STABLE_TAG..HEAD")"
-          NIGHTLY_VERSION="$MAJOR.$MINOR.$((PATCH + COMMITS))"
+          NIGHTLY_VERSION="$MAJOR.$MINOR.$COMMITS"
+
+          # A rebuild under a published version would overwrite its files in
+          # place, and an X.Y.0 nightly would shadow the stable of that name.
+          PUBLISHED="$(gh release download nightly --repo "$GITHUB_REPOSITORY" -p nightly.json -O - 2>/dev/null | jq -r '.version // empty' || true)"
+          SKIP=false
+          if [ "$COMMITS" = 0 ] || [ "$NIGHTLY_VERSION" = "$PUBLISHED" ]; then
+            SKIP=true
+            echo "Nothing to publish: $NIGHTLY_VERSION (published: ${PUBLISHED:-none})."
+          fi
 
           # Builds released before this scheme only accept
           # `<core>-nightly.<date>.<run>.<sha>` versions from latest-nightly.json.
           # That manifest keeps advertising this build under such a version so
           # they update onto it, and from then on they read nightly.json.
-          LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.${SHORT_SHA}"
+          # The g keeps an all-digit SHA with a leading 0 valid SemVer.
+          LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.g${SHORT_SHA}"
 
           echo "Nightly $NIGHTLY_VERSION: $COMMITS commits after $STABLE_TAG (legacy $LEGACY_VERSION)."
           echo "nightly_version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
+          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
           echo "legacy_version=$LEGACY_VERSION" >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "nightly_date=$NIGHTLY_DATE" >> "$GITHUB_OUTPUT"
@@ -99,6 +118,8 @@ jobs:
   mcp-snapshot:
     name: Fetch MCP registry snapshot
     needs: prepare
+    # Skipping this skips every build and the publish that need it.
+    if: needs.prepare.outputs.skip != 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
