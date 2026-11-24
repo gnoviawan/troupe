@@ -76,7 +76,11 @@ function reactClient(page: Page, phone: boolean): Client {
     },
     async fill(label, text) {
       // A field's name also carries its description (`Runs Whole runs of the suite.`).
-      await page.getByLabel(label).first().fill(text, { timeout: 20_000 })
+      await page
+        .getByRole('textbox', { name: label })
+        .or(page.getByRole('spinbutton', { name: label }))
+        .first()
+        .fill(text, { timeout: 20_000 })
     }
   }
 }
@@ -112,17 +116,21 @@ function runeClient(page: Page, phone: boolean): Client {
       // The text field named `label`, not the caption above it that shows the same words.
       const field = await page.evaluate((want) => {
         const root = document.querySelector('[data-rune-a11y]')
-        const fields =
-          root?.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"]') ??
-          []
-        for (const el of fields) {
+        // The field carries the name as its label; the caption only as its text.
+        let best: { area: number; x: number; y: number } | null = null
+        for (const el of root?.querySelectorAll('[aria-label]') ?? []) {
           if ((el.getAttribute('aria-label') ?? '').trim() !== want) continue
           const r = el.getBoundingClientRect()
-          if (r.width > 0 && r.height > 0) return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+          const area = r.width * r.height
+          if (area > 0 && (!best || area > best.area))
+            best = { area, x: r.x + r.width / 2, y: r.y + r.height / 2 }
         }
+        if (best) return { x: best.x, y: best.y }
         return null
       }, label)
-      const { x, y } = field ?? (await at(label, true))
+      // The mirror at the pin has no node for an unfocused text field: the field is the box
+      // under its caption and description, so press 40 points under the caption's centre.
+      const { x, y } = field ?? (await at(label, true).then((p) => ({ x: p.x, y: p.y + 40 })))
       await page.mouse.click(x, y)
       await page.keyboard.type(text, { delay: 15 })
     }

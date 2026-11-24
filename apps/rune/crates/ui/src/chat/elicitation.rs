@@ -284,7 +284,6 @@ pub fn prompt<S: 'static>(t: &'static Tokens, p: &PendingElicitation, form: &For
                         .coarse(phone)
                         .invalid(invalid)
                         .label(f.label().to_owned())
-                        .placeholder(if matches!(f.kind.as_str(), "number" | "integer") { "0" } else { "" })
                         .build(t)
                         .key(format!("elicitation-field-{name}"))
                         .on_edit(move |s: &mut S| (hooks.form)(s, &rid).text(&name))

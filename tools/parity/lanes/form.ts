@@ -44,6 +44,13 @@ async function run(client: Client): Promise<boolean> {
   await client.click('Submit')
   await shot(client, options.root, '2-required')
   await client.fill('Runs', '3')
+  // React's "Runs is required." toast sits over the form's buttons.
+  if (client.name === 'react')
+    await client.page
+      .getByRole('button', { name: 'Close toast' })
+      .first()
+      .click({ timeout: 5000 })
+      .catch(() => undefined)
   await client.click('Submit')
   const ok = await client.sees(ANSWER, 30_000)
   await shot(client, options.root, '3-answered')
