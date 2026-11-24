@@ -85,6 +85,9 @@ pub struct ComposerUi {
     pub empty: Draft,
     /// The agent reads went out on this link.
     pub agents_asked: bool,
+    /// Chats the launcher started, by session, with their project: their dock takes the
+    /// launcher's card in the morph.
+    pub morphed: BTreeMap<String, String>,
     /// The launcher's chat being started.
     pub launching: Option<crate::launch::Launch>,
 }

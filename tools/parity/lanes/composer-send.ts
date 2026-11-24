@@ -26,7 +26,9 @@ const { values } = parseArgs({
     port: { type: 'string', default: '8197' },
     root: { type: 'string', default: '/tmp/troupe-parity/lane4' },
     'server-bin': { type: 'string' },
-    dist: { type: 'string', default: path.join(REPO_DIR, 'dist-web') }
+    dist: { type: 'string', default: path.join(REPO_DIR, 'dist-web') },
+    // Play motion and save the launch as frames (`strip-<client>-<n>.png`), lane 8's morph.
+    strip: { type: 'boolean', default: false }
   }
 })
 const root = path.resolve(values.root as string)
@@ -50,8 +52,24 @@ async function waitForPrompt(count: number): Promise<void> {
   for (let i = 0; i < 100 && prompts().length < count; i++) await Bun.sleep(200)
 }
 
+const STRIP = values.strip === true
+
+/** Frames every 50 ms after a launch, while the composer moves to the chat. */
+async function strip(page: Page, client: string): Promise<void> {
+  for (let n = 0; n < 12; n++) {
+    await page.screenshot({
+      path: path.join(root, `strip-${client}-${String(n).padStart(2, '0')}.png`)
+    })
+    await page.waitForTimeout(50)
+  }
+}
+
 /** Types the draft with a skill pick in the middle, then sends it. */
-async function compose(page: Page, field: { x: number; y: number }): Promise<void> {
+async function compose(
+  page: Page,
+  field: { x: number; y: number },
+  client?: string
+): Promise<void> {
   await page.mouse.click(field.x, field.y)
   await page.keyboard.type(DRAFT_BEFORE, { delay: 20 })
   await page.waitForTimeout(800)
@@ -59,6 +77,7 @@ async function compose(page: Page, field: { x: number; y: number }): Promise<voi
   await page.keyboard.type(DRAFT_AFTER, { delay: 20 })
   await page.waitForTimeout(300)
   await page.keyboard.press('Enter')
+  if (STRIP && client) await strip(page, client)
 }
 
 const world = await createWorld({ port: Number(values.port), root, binary: values['server-bin'] })
@@ -70,7 +89,7 @@ try {
   const context = await browser.newContext({
     viewport: VIEWPORT,
     colorScheme: 'dark',
-    reducedMotion: 'reduce',
+    reducedMotion: STRIP ? 'no-preference' : 'reduce',
     serviceWorkers: 'block'
   })
   await context.route(`${world.server.baseUrl}/**`, async (route) => {
@@ -99,7 +118,7 @@ try {
   const box = await editor.boundingBox()
   if (!box) throw new Error('the React composer has no box')
   await react.waitForTimeout(1500)
-  await compose(react, { x: box.x + 20, y: box.y + box.height / 2 })
+  await compose(react, { x: box.x + 20, y: box.y + box.height / 2 }, 'react')
   await waitForPrompt(seeded + 1)
   await react.waitForTimeout(3000)
   await react.screenshot({ path: path.join(root, 'react.png') })
@@ -118,11 +137,12 @@ try {
     url: `${served.url}/`,
     ready: 'What should we do in alpha?',
     viewport: VIEWPORT,
+    motion: STRIP,
     storage: { 'termul.webAuthToken': TOKEN, 'termul.deviceId': 'lane4-rune' }
   })
   const field = await mirrorPoint(rune.page, 'Message', false)
   await rune.page.waitForTimeout(1500)
-  await compose(rune.page, field ?? { x: box.x + 20, y: box.y + box.height / 2 })
+  await compose(rune.page, field ?? { x: box.x + 20, y: box.y + box.height / 2 }, 'rune')
   await waitForPrompt(seeded + 3)
   await rune.page.waitForTimeout(3000)
   await rune.page.screenshot({ path: path.join(root, 'rune.png') })

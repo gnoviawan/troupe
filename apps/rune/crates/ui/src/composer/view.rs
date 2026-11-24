@@ -100,6 +100,9 @@ pub struct Spec<'a> {
     pub menu: Option<MenuView>,
     pub add_open: bool,
     pub tools_open: bool,
+    /// The shared-element id the tray flies under: the launcher's composer and the chat it
+    /// starts carry the same one, so the card moves from the start block to the chat's dock.
+    pub matched: Option<String>,
 }
 
 pub const PLACEHOLDER: &str = "Ask anything… (/ for commands, @ for files and chats)";
@@ -537,6 +540,10 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
             .pt(6.0)
             .child(card)
             .child(foot)
+    };
+    let tray = match &spec.matched {
+        Some(id) => tray.matched(id.as_str()),
+        None => tray,
     };
     let mut host = col().key(spec.key.clone()).w_full();
     if let Some(menu) = &spec.menu {

@@ -42,8 +42,17 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         menu: s.menu_view(host),
         add_open: draft.add_open,
         tools_open: draft.tools_open,
+        matched: match host {
+            Host::Launcher(id) => Some(morph_id(id)),
+            Host::Chat(id) => s.composer.morphed.get(id).map(|project| morph_id(project)),
+        },
     };
     view::composer(t, spec, &State::composer_hooks(host))
+}
+
+/// The launcher-to-chat morph's shared id (`data-composer-morph`), per project.
+fn morph_id(project_id: &str) -> String {
+    format!("composer-morph-{project_id}")
 }
 
 /// A chat tab's composer dock: 12 points above, 24 below, in the transcript's column.

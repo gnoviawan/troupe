@@ -110,6 +110,11 @@ impl State {
         };
         log::info!("[launch] chat {session_id} on agent {agent_id}");
         self.install_new_chat(&session_id, &agent_id);
+        // One chat per project carries the shared id, so the newest launch is the one matched.
+        self.composer.morphed.retain(|_, project| *project != launch.project_id);
+        self.composer
+            .morphed
+            .insert(session_id.clone(), launch.project_id.clone());
         let host = Host::Launcher(launch.project_id);
         let draft = self.draft_mut(&host);
         draft.edit.clear();
