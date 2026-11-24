@@ -1,8 +1,8 @@
 //! The Antigravity login probe. Antigravity has no `login status` command, so
-//! a home is signed in when its Google token file holds a refresh token. The
-//! built-in Account on macOS may keep its login in the keychain instead; that
-//! entry is looked up without reading the secret. Nothing here logs a path,
-//! a token or an account id.
+//! a home is signed in when one of its Google token files exists and is not
+//! empty. Troupe never opens a token file. The built-in Account on macOS may
+//! keep its login in the keychain instead; that entry is looked up without
+//! reading the secret. Nothing here logs a path, a token or an account id.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -27,33 +27,23 @@ pub(crate) fn token_files(home: &Path) -> [PathBuf; 2] {
     [dir.join(TOKEN_FILE), dir.join(BUSINESS_TOKEN_FILE)]
 }
 
-/// Whether `bytes` are a JSON object with a non-empty `refresh_token` string.
-pub(crate) fn has_refresh_token(bytes: &[u8]) -> bool {
-    serde_json::from_slice::<serde_json::Value>(bytes)
-        .ok()
-        .and_then(|value| {
-            value
-                .as_object()?
-                .get("refresh_token")?
-                .as_str()
-                .map(|token| !token.trim().is_empty())
-        })
-        .unwrap_or(false)
-}
-
-/// The login state of `home` from its token files: `Some(true)` when one holds
-/// a refresh token, `Some(false)` when none does, `None` when one could not be
-/// read and the other did not confirm a login.
+/// The login state of `home` from its token files: `Some(true)` when one
+/// exists and is not empty, `Some(false)` when none does, `None` when one
+/// could not be checked and the other did not confirm a login.
 pub(crate) fn token_file_login(home: &Path) -> Option<bool> {
     let mut unreadable = false;
     for path in token_files(home) {
-        match std::fs::read(&path) {
-            Ok(bytes) if has_refresh_token(&bytes) => return Some(true),
-            Ok(_) => {}
+        match std::fs::metadata(&path) {
+            Ok(meta) if meta.is_file() && meta.len() > 0 => return Some(true),
+            Ok(meta) if meta.is_file() => {}
+            Ok(_) => {
+                log::warn!("[antigravity-accounts] a login file is not a file");
+                unreadable = true;
+            }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
             Err(error) => {
                 log::warn!(
-                    "[antigravity-accounts] could not read a login file: {:?}",
+                    "[antigravity-accounts] could not check a login file: {:?}",
                     error.kind()
                 );
                 unreadable = true;

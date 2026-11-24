@@ -83,7 +83,7 @@ fn add_creates_a_linked_account_dir_and_keeps_the_login_private() {
     fs::create_dir_all(f.shared.join("antigravity-cli")).unwrap();
     fs::create_dir_all(f.shared.join("artifacts")).unwrap();
     for private in links::PRIVATE_FILES {
-        fs::write(f.shared.join(private), br#"{"refresh_token":"secret"}"#).unwrap();
+        fs::write(f.shared.join(private), b"secret").unwrap();
     }
     assert_eq!(links::ensure_links(&f.shared, &dir).unwrap(), 0);
     assert!(is_link_to(
