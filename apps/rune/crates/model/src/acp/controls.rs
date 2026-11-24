@@ -1,7 +1,7 @@
 //! A session's model, mode and config option controls as the agent reports
 //! them, with the guard that keeps a stale echo of a creation default from
 //! undoing a pick, and the per-agent options cache the launcher paints from.
-//! Port of `_onModeUpdate` and `_onConfigOptionsUpdate` in
+//! Port of `_onModeUpdate`, `_onModelsUpdate` and `_onConfigOptionsUpdate` in
 //! `slices/transcript.ts`, of `mergeAgentConfigOptions`,
 //! `cacheOptionsFromSession` and `writeAgentOptionsCache` in `helpers.ts`, of
 //! the model helpers in `components/chat/chat-input-bar-config.ts`, and of
@@ -24,6 +24,13 @@ pub struct ModeUpdateEvent {
     pub current_mode_id: Value,
     #[serde(default)]
     pub available_modes: Option<Vec<Value>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelsUpdateEvent {
+    pub session_id: String,
+    pub models: Value,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -325,6 +332,23 @@ impl State {
                     ),
                 ));
             }
+        }
+        self.cache_options_from_session(session_id, env, fx);
+    }
+
+    /// `_onModelsUpdate`: a legacy-only session's model switch carries the
+    /// whole list, which replaces the session's copy.
+    pub(crate) fn on_models_update(
+        &mut self,
+        event: ModelsUpdateEvent,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let session_id = event.session_id.as_str();
+        if let Some(session) = self.sessions.get_mut(session_id) {
+            session.rest.insert("models".into(), event.models);
+            align_model_projection(session);
+            self.set_index_model(session_id);
         }
         self.cache_options_from_session(session_id, env, fx);
     }

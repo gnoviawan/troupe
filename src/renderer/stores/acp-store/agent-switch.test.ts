@@ -4264,6 +4264,41 @@ describe('composer option fidelity', () => {
       })
     })
 
+    it('_onModelsUpdate replaces a legacy model list on every client', () => {
+      seedOptionsSession('s1', 'agent-1', {
+        models: {
+          currentModelId: 'openrouter:anthropic/claude-sonnet-4',
+          availableModels: [
+            makeModel('openrouter:anthropic/claude-sonnet-4'),
+            makeModel('openrouter:openai/gpt-5')
+          ]
+        }
+      })
+
+      useAcpStore.getState()._onModelsUpdate({
+        agentId: 'agent-1',
+        sessionId: 's1',
+        models: {
+          currentModelId: 'openrouter:openai/gpt-5',
+          availableModels: [
+            makeModel('openrouter:anthropic/claude-sonnet-4'),
+            makeModel('openrouter:openai/gpt-5')
+          ]
+        }
+      })
+
+      expect(useAcpStore.getState().sessions['s1'].models?.currentModelId).toBe(
+        'openrouter:openai/gpt-5'
+      )
+      // An event for a session this client does not hold changes nothing.
+      useAcpStore.getState()._onModelsUpdate({
+        agentId: 'agent-1',
+        sessionId: 'unknown',
+        models: { currentModelId: 'x', availableModels: [] }
+      })
+      expect(useAcpStore.getState().sessions['unknown']).toBeUndefined()
+    })
+
     it('_onModeUpdate preserves a moved-off mode against a creation-default echo', () => {
       seedOptionsSession('s1', 'agent-1', {
         modes: { currentModeId: 'bypass', availableModes: [makeMode('agent'), makeMode('bypass')] },

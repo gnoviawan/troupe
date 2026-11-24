@@ -577,6 +577,15 @@ export interface ModeUpdateEvent {
   currentModeId: string
   availableModes?: SessionMode[]
 }
+/**
+ * `acp:models_update`: the model of a session whose models come only from the
+ * legacy `models` field changed (Hermes Agent). Carries the whole list.
+ */
+export interface ModelsUpdateEvent {
+  agentId: AgentId
+  sessionId: SessionId
+  models: SessionModelState
+}
 export interface ConfigOptionsUpdateEvent {
   agentId: AgentId
   sessionId: SessionId
@@ -842,6 +851,7 @@ export const ACP_EVENTS = {
   planUpdate: 'acp:plan_update',
   commandsUpdate: 'acp:commands_update',
   modeUpdate: 'acp:mode_update',
+  modelsUpdate: 'acp:models_update',
   configOptionsUpdate: 'acp:config_options_update',
   permissionRequest: 'acp:permission_request',
   questionRequest: 'acp:question_request',

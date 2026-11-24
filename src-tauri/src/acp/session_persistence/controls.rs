@@ -114,10 +114,11 @@ pub(super) fn log_payload_controls(session_id: &str, controls: Option<&SessionCo
     }
 }
 
-static CONTROLS_NEEDLES: LazyLock<[memmem::Finder<'static>; 3]> = LazyLock::new(|| {
-    CONTROLS_RECORD_TYPES
-        .map(|type_| memmem::Finder::new(&format!("\"type\":\"{type_}\"")).into_owned())
-});
+static CONTROLS_NEEDLES: LazyLock<[memmem::Finder<'static>; CONTROLS_RECORD_TYPES.len()]> =
+    LazyLock::new(|| {
+        CONTROLS_RECORD_TYPES
+            .map(|type_| memmem::Finder::new(&format!("\"type\":\"{type_}\"")).into_owned())
+    });
 
 /// The controls fold of the log at `path`: one backward pass that parses
 /// only lines naming a controls record type. It stops at the session's

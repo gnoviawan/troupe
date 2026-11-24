@@ -47,7 +47,7 @@ use approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
-use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent, ModelsUpdateEvent};
 use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 use restore::Run;
@@ -310,6 +310,8 @@ pub enum Event {
     BrowserTicketClosed(BrowserTicketClosedEvent),
     #[serde(rename = "_onModeUpdate")]
     ModeUpdate(ModeUpdateEvent),
+    #[serde(rename = "_onModelsUpdate")]
+    ModelsUpdate(ModelsUpdateEvent),
     #[serde(rename = "_onConfigOptionsUpdate")]
     ConfigOptionsUpdate(ConfigOptionsUpdateEvent),
     #[serde(rename = "_onPromptComplete")]
@@ -612,6 +614,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::ElicitationRequest(event, seq) => state.on_elicitation_request(event, seq),
         Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
         Event::ModeUpdate(event) => state.on_mode_update(event, env, &mut fx),
+        Event::ModelsUpdate(event) => state.on_models_update(event, env, &mut fx),
         Event::ConfigOptionsUpdate(event) => state.on_config_options_update(event, env, &mut fx),
         Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, env, &mut fx),
         Event::AgentWorking(event) => state.on_agent_working(event, env, &mut fx),

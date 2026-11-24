@@ -60,6 +60,7 @@ import {
   type ContentBlock,
   type ElicitationRequestEvent,
   type MessageChunkEvent,
+  type ModelsUpdateEvent,
   type ModeUpdateEvent,
   type PermissionRequestEvent,
   type PlanUpdateEvent,
@@ -663,6 +664,9 @@ export function initAcpEventListeners(): () => void {
     }),
     acpApi.onEvent<ModeUpdateEvent>(ACP_EVENTS.modeUpdate, (e) =>
       useAcpStore.getState()._onModeUpdate(e)
+    ),
+    acpApi.onEvent<ModelsUpdateEvent>(ACP_EVENTS.modelsUpdate, (e) =>
+      useAcpStore.getState()._onModelsUpdate(e)
     ),
     acpApi.onEvent<ConfigOptionsUpdateEvent>(ACP_EVENTS.configOptionsUpdate, (e) =>
       useAcpStore.getState()._onConfigOptionsUpdate(e)

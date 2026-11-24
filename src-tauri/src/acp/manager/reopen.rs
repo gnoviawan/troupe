@@ -183,8 +183,8 @@ where
         Ok((outcome, legacy_only)) => {
             let mut state = req_state.lock();
             state.set_session_root(session_id.to_string(), PathBuf::from(cwd));
-            if legacy_only {
-                state.mark_legacy_models(session_id.to_string());
+            if let (true, Some(models)) = (legacy_only, outcome.models.clone()) {
+                state.mark_legacy_models(session_id.to_string(), models);
             } else {
                 state.clear_legacy_models(session_id);
             }

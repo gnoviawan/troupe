@@ -50,6 +50,7 @@ fn action(kind: WsEventType) -> Option<&'static str> {
         WsEventType::SessionInfoUpdate => "_onSessionInfoUpdate",
         WsEventType::UsageUpdate => "_onUsageUpdate",
         WsEventType::ModeUpdate => "_onModeUpdate",
+        WsEventType::ModelsUpdate => "_onModelsUpdate",
         WsEventType::ConfigOptionsUpdate => "_onConfigOptionsUpdate",
         WsEventType::PermissionRequest => "_onPermissionRequest",
         WsEventType::QuestionRequest => "_onQuestionRequest",

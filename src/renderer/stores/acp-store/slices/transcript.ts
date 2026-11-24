@@ -951,6 +951,7 @@ type TranscriptSliceState = Pick<
   | '_onPlanUpdate'
   | '_onCommandsUpdate'
   | '_onModeUpdate'
+  | '_onModelsUpdate'
   | '_onConfigOptionsUpdate'
   | '_onSessionInfoUpdate'
   | '_onUsageUpdate'
@@ -1673,6 +1674,22 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
         message: `mode_update for session ${e.sessionId} re-asserted creation default '${e.currentModeId}'; kept current mode '${preservedModeId}'`
       })
     }
+    cacheOptionsFromSession(set, get, e.sessionId)
+  },
+
+  // A legacy-only session's model switch (Hermes Agent `session/set_model`):
+  // the host sends the whole list, so it replaces the session's copy on every
+  // client, not only the one that picked.
+  _onModelsUpdate: (e) => {
+    set((s) => {
+      const session = s.sessions[e.sessionId]
+      if (!session) return {}
+      const next = alignSessionModelProjection({ ...session, models: e.models })
+      return {
+        sessions: { ...s.sessions, [e.sessionId]: next },
+        sessionIndex: withSessionModelOnIndex(s.sessionIndex, e.sessionId, next)
+      }
+    })
     cacheOptionsFromSession(set, get, e.sessionId)
   },
 

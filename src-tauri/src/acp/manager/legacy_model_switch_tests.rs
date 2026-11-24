@@ -1,12 +1,30 @@
 //! Model switching for an agent that advertises its models only through the
 //! legacy `models` field (Hermes Agent, issue #822): `set_model` reaches the
 //! agent as a raw `session/set_model` request, and an agent that rejects it
-//! surfaces its own error. Drives the production command loop through a
-//! scripted mock agent shaped like `hermes acp`.
+//! surfaces its own error. An accepted switch is fanned out as
+//! `models_update` so every client and the durable log see it. Drives the
+//! production command loop through a scripted mock agent shaped like
+//! `hermes acp`.
 
 use std::sync::Arc;
 
+use parking_lot::Mutex;
+use serde_json::Value;
+
 use super::*;
+use crate::web::EventSink;
+
+/// The `acp:models_update` payloads fanned out, in order.
+#[derive(Default)]
+struct ModelsLog(Mutex<Vec<Value>>);
+
+impl EventSink for ModelsLog {
+    fn emit(&self, event: &crate::web::sink::AcpEvent) {
+        if event.type_ == events::EVENT_MODELS_UPDATE {
+            self.0.lock().push(event.payload.clone());
+        }
+    }
+}
 
 const MOCK_LEGACY_MODELS: &str = r#"
 import json, sys
@@ -74,7 +92,8 @@ async fn a_legacy_model_list_switches_through_session_set_model() {
     }
     let _serial = super::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
     let root = tempfile::tempdir().expect("tempdir");
-    let acp = Arc::new(AcpManager::new(vec![]));
+    let log = Arc::new(ModelsLog::default());
+    let acp = Arc::new(AcpManager::new(vec![log.clone()]));
     let agent = spawn_mock(&acp, root.path()).await;
     let created = acp
         .new_session_with_context(
@@ -95,6 +114,19 @@ async fn a_legacy_model_list_switches_through_session_set_model() {
     )
     .await
     .expect("the legacy switch is accepted");
+    let published = log.0.lock().clone();
+    assert_eq!(published.len(), 1, "{published:?}");
+    assert_eq!(published[0]["sessionId"], created.session_id.0);
+    assert_eq!(
+        published[0]["models"]["currentModelId"],
+        "openrouter:openai/gpt-5"
+    );
+    assert_eq!(
+        published[0]["models"]["availableModels"]
+            .as_array()
+            .map(Vec::len),
+        Some(2)
+    );
 
     let error = acp
         .set_model(
@@ -105,5 +137,6 @@ async fn a_legacy_model_list_switches_through_session_set_model() {
         .await
         .expect_err("the agent's rejection surfaces");
     assert!(error.contains("unknown model"), "{error}");
+    assert_eq!(log.0.lock().len(), 1, "a rejected switch publishes nothing");
     let _ = acp.kill(&agent).await;
 }

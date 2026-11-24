@@ -163,7 +163,8 @@ export interface SessionPayload {
   commandsSeq?: number
   /**
    * The session's latest controls, folded from its newest
-   * `config_options_update` / `mode_update` records over `session_created`.
+   * `config_options_update` / `mode_update` / `models_update` records over
+   * `session_created`.
    * Each is absent when the fold has none, and all are absent on older hosts.
    */
   configOptions?: SessionConfigOption[]

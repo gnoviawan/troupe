@@ -32,8 +32,8 @@ import {
 import { WEB_TERMINAL_ERROR_CODES } from './web-terminal-protocol.types'
 
 describe('web-protocol.types — event/request type registries (AC2)', () => {
-  it('exports exactly 24 event types including durable user prompts, host records, switch markers, the live agent_working and background_commands states + delivery frames', () => {
-    expect(WS_EVENT_TYPES).toHaveLength(24)
+  it('exports exactly 25 event types including durable user prompts, host records, switch markers, legacy model switches, the live agent_working and background_commands states + delivery frames', () => {
+    expect(WS_EVENT_TYPES).toHaveLength(25)
     // The 16 from events.rs (prefix-dropped) + auth_required.
     const expected16FromEvents = [
       'agent_spawned',
@@ -58,6 +58,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     }
     expect(WS_EVENT_TYPES).toContain('auth_required')
     expect(WS_EVENT_TYPES).toContain('user_prompt')
+    // A legacy-only session's model switch (`session/set_model`).
+    expect(WS_EVENT_TYPES).toContain('models_update')
     // The nudges retired by the watch hub must not come back as seq-0 events.
     expect(WS_EVENT_TYPES).not.toContain('projects_changed')
     expect(WS_EVENT_TYPES).not.toContain('chat_history_changed')
@@ -363,6 +365,7 @@ describe('web-protocol.types — reliability tier registry (AC5)', () => {
       'agent_error',
       'tool_call',
       'mode_update',
+      'models_update',
       'config_options_update',
       'session_info_update',
       'usage_update',
