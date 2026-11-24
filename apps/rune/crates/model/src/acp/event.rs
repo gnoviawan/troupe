@@ -124,6 +124,18 @@ pub enum Event {
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
     #[serde(rename = "killAgent")]
     KillAgent(String),
+    #[serde(rename = "prewarmAgent")]
+    PrewarmAgent(String, String),
+    /// `renewAgentCredentials`: the Project's account for the config changed.
+    #[serde(rename = "renewAgentCredentials")]
+    RenewAgentCredentials(String, String),
+    /// The user's Projects changed (`useProjectStore`).
+    #[serde(rename = "setProjects")]
+    SetProjects(Vec<Value>),
+    /// The saved agent configs changed; stands in for the config slice
+    /// until it is ported (PR 8).
+    #[serde(rename = "agentConfigsChanged")]
+    AgentConfigsChanged(Vec<Object>),
     #[serde(rename = "authenticateAgent")]
     AuthenticateAgent(String, String, #[serde(default)] Option<Value>),
     #[serde(rename = "logoutAgent")]

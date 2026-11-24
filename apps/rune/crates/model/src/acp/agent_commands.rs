@@ -12,6 +12,7 @@
 
 use serde_json::{Map, Value, json};
 
+use super::ensure::EnsureId;
 use super::types::SessionStatus;
 use super::{Effect, State};
 
@@ -89,8 +90,9 @@ impl State {
     pub(crate) fn spawn_agent(
         &mut self,
         config: Value,
-        project_id: Value,
+        project_id: Option<Value>,
         session_id: Option<String>,
+        ensure: Option<EnsureId>,
         fx: &mut Vec<Effect>,
     ) {
         let name = super::js::string_of(config.get("name"));
@@ -99,11 +101,17 @@ impl State {
             config,
             project_id,
             session_id: session_id.filter(|id| !id.is_empty()),
+            ensure,
         });
     }
 
-    pub(crate) fn kill_agent(&mut self, agent_id: String, fx: &mut Vec<Effect>) {
-        fx.push(Effect::KillAgent { agent_id });
+    pub(crate) fn kill_agent(
+        &mut self,
+        agent_id: String,
+        ensure: Option<EnsureId>,
+        fx: &mut Vec<Effect>,
+    ) {
+        fx.push(Effect::KillAgent { agent_id, ensure });
     }
 
     pub(crate) fn authenticate_agent(
@@ -221,8 +229,18 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         match command {
-            Effect::SpawnAgent { config, .. } => self.on_agent_spawn_reply(&config, &reply),
-            Effect::KillAgent { agent_id } => self.on_agent_killed(&agent_id),
+            Effect::SpawnAgent { config, ensure, .. } => {
+                let agent_id = self.on_agent_spawn_reply(&config, &reply);
+                if let Some(ensure) = ensure {
+                    self.on_ensure_spawned(ensure, agent_id, fx);
+                }
+            }
+            Effect::KillAgent { agent_id, ensure } => {
+                self.on_agent_killed(&agent_id);
+                if let Some(ensure) = ensure {
+                    self.finish_spawn(ensure, Ok(None), fx);
+                }
+            }
             Effect::Authenticate {
                 agent_id,
                 method_id,
@@ -256,10 +274,18 @@ impl State {
     ) {
         let mut waiters = 0;
         match command {
-            Effect::SpawnAgent { config, .. } => {
+            Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));
                 self.agent_status.insert(name, json!("error"));
+                if let Some(ensure) = ensure {
+                    return self.finish_spawn(ensure, Err(message), fx);
+                }
             }
+            // The ensure's cleanup kill is best effort.
+            Effect::KillAgent {
+                ensure: Some(ensure),
+                ..
+            } => return self.finish_spawn(ensure, Ok(None), fx),
             Effect::Authenticate {
                 agent_id,
                 method_id,
@@ -307,7 +333,7 @@ impl State {
 
     /// The spawn reply is the one source sure to reach the caller; an
     /// `agent_spawned` that came first only fills what the reply left out.
-    fn on_agent_spawn_reply(&mut self, config: &Value, reply: &Value) {
+    fn on_agent_spawn_reply(&mut self, config: &Value, reply: &Value) -> String {
         let name = super::js::string_of(config.get("name"));
         let agent_id = super::js::string_of(reply.get("agentId"));
         self.agent_status.remove(&name);
@@ -332,7 +358,8 @@ impl State {
             "hostAuthReady".into(),
             field("hostAuthReady").unwrap_or(json!(false)),
         );
-        self.agents.insert(agent_id, Value::Object(agent));
+        self.agents.insert(agent_id.clone(), Value::Object(agent));
+        agent_id
     }
 
     /// `killAgent` after the host confirmed: the agent, its reuse keys and

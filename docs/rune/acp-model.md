@@ -280,8 +280,31 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      chat, its transcript, its queue and the active mark go),
      `seedLaunchUserMessage` (the first prompt opens the turn once; a chat
      already showing a prompt only reopens it) and `clearLaunchingSession`.
-   - 8, rest. `ensureLiveAgent` with its spawn signatures, holders and
-     credential epochs; `prepareChat`, `claimPreparedChat`,
+   - 8b (R6a-5). `ensureLiveAgent` (`acp/ensure.rs`) and its first caller,
+     `prewarmAgent`. The launch comes from the saved config (a legacy id
+     such as `opencode-v2` launches the config it resolves to,
+     `acp/spawn_env.rs`), the Project that holds the cwd or the one named,
+     and the env the Project adds under the agent's own; its reuse key is
+     `acp/reuse_key.rs`. A connected agent on the key is reused; one whose
+     launch signature is out of date (an edited env, renewed credentials)
+     or that a chat holds is moved to a detached key first. A spawn
+     already running for the key is joined unless it started with another
+     launch or a holder that excludes the caller. A spawn is the
+     `spawnAgent` effect with the ensure's id (`ensure`, not serialized);
+     its answer maps the agent under the key (a detached one when a newer
+     launch took the key meanwhile), and a config deleted meanwhile kills
+     it (`killAgent` with the same id; a failed kill is ignored). Every
+     waiter judges a failure by its own options: a silent caller logs and
+     gets no agent. A definite rejection is read from the message prefix
+     (`ACP_AGENT_UNAVAILABLE: `, `ACP_INVALID_AGENT_CONFIG: `), so the app
+     hands a coded web error back with that prefix. The Projects are
+     `Book::projects`, which the app keeps equal to the project store
+     (`setProjects`); the saved configs are `State::agent_configs`, set by
+     `agentConfigsChanged` until the config slice is ported;
+     `renewAgentCredentials` bumps a Project's credential epoch. Not
+     exercised yet: the `chat` and `warm` holders and
+     `surfaceDefiniteRejection`, which only the callers still to port pass.
+   - 8, rest. `prepareChat`, `claimPreparedChat`,
      `cancelPreparedChat` and the warm-pool promotion; `startChat`,
      `startQuickChat`, `finalizeChatLaunch` and `applyPendingLauncherOptions`;
      the config slice. History open, import, the one-shots and the agent
@@ -435,6 +458,11 @@ its pinned sources match a path glob of both workflows.
   `releaseHeld` step, which answers the oldest held command with `reply`;
   that is how a vector interleaves a close with a delete, or a durability
   probe with a close.
+- `context.projects` is the project store's list; a `setProjects` step
+  replaces it, `agentConfigsChanged` replaces `agentConfigs`, and
+  `renewAgentCredentials` calls the module function. The spawn bookkeeping
+  (`inFlightWarms`, the definite rejections, the signatures) is reset per
+  vector.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
   `{ "reject": text }` fails that `setConfigOption` with `text`.

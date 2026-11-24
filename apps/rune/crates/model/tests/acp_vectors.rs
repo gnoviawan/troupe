@@ -96,6 +96,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
         return Err(format!("initial state does not round-trip: {problem}"));
     }
     state.book.desktop = desktop;
+    state.book.projects = context
+        .get("projects")
+        .map(parse)
+        .transpose()?
+        .unwrap_or_default();
     state.book.open_chat_tabs = context
         .get("openChatTabs")
         .map(parse)

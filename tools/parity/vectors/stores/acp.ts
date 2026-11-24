@@ -24,6 +24,7 @@ import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
+import { useProjectStore } from '../../../../src/renderer/stores/project-store'
 import {
   agentReplies,
   composerRecord,
@@ -89,8 +90,10 @@ attachAgentRosterWatch(
   () => useAcpStore.getState()
 )
 
-/** The MCP fields, snapshotted only once a vector set one. */
+/** The MCP and launch fields, snapshotted only once a vector set one. */
 const MCP_KEYS = [
+  'agentConfigs',
+  'warmingConfigs',
   'mcpServers',
   'mcpServersLoaded',
   'pendingMcpInstalls',
@@ -105,6 +108,8 @@ const MCP_KEYS = [
 ] as const
 
 const MCP_FRESH = {
+  agentConfigs: [],
+  warmingConfigs: {},
   mcpServers: [],
   mcpServersLoaded: false,
   pendingMcpInstalls: {},
@@ -134,6 +139,11 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
   mcpSharedChanged: (change: unknown) => mcpSharedSync.apply?.(change),
   agentsWatchState: (state: unknown) => agentsWatch.onState?.(state),
   agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta),
+  renewAgentCredentials: shared.renewAgentCredentials,
+  setProjects: (projects: unknown) =>
+    useProjectStore.setState({ projects } as Parameters<typeof useProjectStore.setState>[0]),
+  agentConfigsChanged: (agentConfigs: unknown) =>
+    useAcpStore.setState({ agentConfigs } as Partial<AcpState>),
   releaseHeld: () => heldReplies.shift()?.()
 }
 
@@ -180,7 +190,12 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/slices/mcp.ts',
     'src/renderer/lib/acp-mcp-persistence.ts',
     'src/renderer/lib/mcp-install-request.ts',
-    'src/renderer/stores/acp-store/slices/launch.ts'
+    'src/renderer/stores/acp-store/slices/launch.ts',
+    'src/renderer/stores/acp-store/slices/config.ts',
+    'src/renderer/lib/env-parser.ts',
+    'src/renderer/lib/agents/agent-aliases.ts',
+    'src/shared/acp-agent-aliases.json',
+    'src/renderer/lib/acp-transport/tauri-verdicts.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -208,6 +223,12 @@ export const acpRecorder: StoreRecorder = {
     _resetSubagentTranscriptLogsForTesting()
     shared._resetPromptReconcileForTesting()
     shared._resetBusyQueueRetriesForTesting()
+    shared._resetDefiniteSpawnRejectionsForTesting()
+    shared._resetInFlightPreparedForTesting()
+    shared.inFlightWarms.clear()
+    useProjectStore.setState({
+      projects: (context.projects as unknown[]) ?? []
+    } as Parameters<typeof useProjectStore.setState>[0])
     dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
     configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
     composerRecord.saved = context.composerOptions ?? null
@@ -294,6 +315,7 @@ import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
 import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
+import { ensureScenarios } from './acp-scenarios-ensure'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
 import { mcpScenarios } from './acp-scenarios-mcp'
@@ -322,5 +344,6 @@ export const acpScenarios = [
   ...windowScenarios,
   ...mcpScenarios,
   ...launchScenarios,
-  ...closeScenarios
+  ...closeScenarios,
+  ...ensureScenarios
 ]

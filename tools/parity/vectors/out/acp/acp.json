@@ -158054,5 +158054,3176 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_spawns_once_and_later_callers_join_or_reuse_it",
+  "context": {
+   "projects": [
+    {
+     "id": "p0",
+     "name": "Root",
+     "path": "/"
+    },
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-9",
+      "capabilities": {},
+      "authMethods": []
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 32300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 32300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      " /work/sub "
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_without_a_cwd_or_a_known_config_does_nothing",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "   "
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "missing",
+      "/work"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_failure_is_silent_and_a_definite_rejection_is_not_retried",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "reject": "ACP_AGENT_UNAVAILABLE: not installed"
+    },
+    {
+     "reject": "boom"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Silent spawn failure for config claude (claude\u0000/work/sub\u0000project\u0000p1): ACP_AGENT_UNAVAILABLE: not installed"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "agentConfigsChanged",
+     "args": [
+      [
+       {
+        "id": "claude",
+        "name": "Claude",
+        "command": "claude-acp",
+        "args": [
+         "--acp",
+         "--v2"
+        ],
+        "env": {
+         "TOKEN": "$API_TOKEN",
+         "MODE": "fast",
+         "GONE": "$MISSING",
+         "EMPTY": ""
+        },
+        "allowTerminal": true
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp",
+        "--v2"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp",
+        "--v2"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Silent spawn failure for config claude (claude\u0000/work/sub\u0000project\u0000p1): boom"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp",
+        "--v2"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_detaches_an_agent_a_chat_holds",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work/sub\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Detached agent agent-1 so the next Agent chat gets its own process"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-1": "agent-1",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_spawns_again_over_an_agent_that_is_not_connected",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "error"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work/sub\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "error",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_detaches_an_agent_spawned_before_new_credentials",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "agentId": "agent-10",
+     "capabilities": {},
+     "authMethods": []
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "renewAgentCredentials",
+     "args": [
+      "claude",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Detached agent agent-9: its launch (env or Claude account) no longer matches the project"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "renewAgentCredentials",
+     "args": [
+      "claude",
+      "p2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_does_not_join_a_spawn_started_with_an_older_launch",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-9",
+      "capabilities": {},
+      "authMethods": []
+     }
+    },
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-10",
+      "capabilities": {},
+      "authMethods": []
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 32900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 32900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "p1",
+        "name": "Work",
+        "path": "/work/",
+        "envVars": [
+         {
+          "key": "API_TOKEN",
+          "value": "xyz"
+         }
+        ],
+        "worktrees": [
+         {
+          "path": "/wt/feature"
+         }
+        ]
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 32900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Not joining the running spawn for claude\u0000/work/sub\u0000project\u0000p1: it started with an outdated launch"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (1 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "xyz",
+        "TOKEN": "xyz",
+        "MODE": "fast"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 32900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p1\u0000agent-9": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 32900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_kills_the_agent_when_its_config_went_meanwhile",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-9",
+      "capabilities": {},
+      "authMethods": []
+     }
+    },
+    {
+     "reject": "already gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 33000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "agentConfigsChanged",
+     "args": [
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "warmingConfigs": {
+      "claude\u0000/work/sub\u0000project\u0000p1": true
+     },
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "killAgent",
+      "agentId": "agent-9"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 33000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prewarm_resolves_a_legacy_id_a_worktree_and_another_projects_agent",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work/",
+     "envVars": [
+      {
+       "key": "API_TOKEN",
+       "value": "abc"
+      },
+      {
+       "key": "MODE",
+       "value": "slow"
+      },
+      {
+       "key": "REFS",
+       "value": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
+      },
+      {
+       "key": " ",
+       "value": "skipped"
+      }
+     ],
+     "worktrees": [
+      {
+       "path": "/wt/feature"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "agentId": "agent-10",
+     "capabilities": {},
+     "authMethods": []
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-2": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work/sub\u0000project\u0000p2": "agent-2"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "acp-registry:opencode",
+     "name": "OpenCode",
+     "command": "opencode"
+    },
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp",
+     "args": [
+      "--acp"
+     ],
+     "env": {
+      "TOKEN": "$API_TOKEN",
+      "MODE": "fast",
+      "GONE": "$MISSING",
+      "EMPTY": ""
+     },
+     "allowTerminal": true
+    }
+   ],
+   "book": {
+    "seq": 33100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "opencode-v2",
+      "/wt/feature/"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning OpenCode with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "acp-registry:opencode",
+       "name": "OpenCode",
+       "command": "opencode",
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "slow",
+        "REFS": "ab-cd$X{e%NOT TAG%"
+       }
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-2": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p2": "agent-2",
+      "acp-registry:opencode\u0000/wt/feature/\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "acp-registry:opencode",
+       "name": "OpenCode",
+       "command": "opencode"
+      },
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 33100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prewarmAgent",
+     "args": [
+      "claude",
+      "/work/sub"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Project p1 spawns its own agent for claude at /work/sub; another project already holds that cwd"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Spawning Claude with the env of project p1 (4 var(s))"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "API_TOKEN": "abc",
+        "MODE": "fast",
+        "REFS": "ab-cd$X{e%NOT TAG%",
+        "TOKEN": "abc"
+       },
+       "allowTerminal": true
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-2": "connected",
+      "agent-9": "connected",
+      "agent-10": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work/sub\u0000project\u0000p2": "agent-2",
+      "acp-registry:opencode\u0000/wt/feature/\u0000project\u0000p1": "agent-9",
+      "claude\u0000/work/sub\u0000project\u0000p1": "agent-10"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      },
+      "agent-10": {
+       "id": "agent-10",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "acp-registry:opencode",
+       "name": "OpenCode",
+       "command": "opencode"
+      },
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": [
+        "--acp"
+       ],
+       "env": {
+        "TOKEN": "$API_TOKEN",
+        "MODE": "fast",
+        "GONE": "$MISSING",
+        "EMPTY": ""
+       },
+       "allowTerminal": true
+      }
+     ],
+     "book": {
+      "seq": 33100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

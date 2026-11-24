@@ -16,6 +16,7 @@ mod close;
 pub mod controls;
 mod diff_stat;
 mod effect;
+mod ensure;
 mod event;
 mod index;
 pub mod js;
@@ -33,10 +34,12 @@ pub mod prompt;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
+mod reuse_key;
 pub mod roster;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
+mod spawn_env;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -55,6 +58,7 @@ use crate::Ids;
 pub use agent_commands::FlightId;
 use approvals::{PendingElicitation, PendingPermission, PendingQuestion};
 pub use effect::Effect;
+pub use ensure::{EnsureId, Holder};
 pub use event::Event;
 use mcp::{McpBook, RegistryOp};
 pub use plan::is_plan_tool;
@@ -119,6 +123,12 @@ pub struct State {
     pub launching_session_ids: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// The saved agent configs (`agentConfigs`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub agent_configs: Vec<Object>,
+    /// Reuse keys whose prewarm spawn is in flight, for the warm-up UI.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub warming_configs: BTreeMap<String, Value>,
     /// The user's MCP servers, as the registry saved them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mcp_servers: Vec<Object>,
@@ -264,6 +274,13 @@ pub struct Book {
     /// Sessions whose durability probe is in flight.
     #[serde(skip)]
     pub(crate) durability_probes: BTreeSet<String>,
+    /// The user's Projects (`useProjectStore`), which the app keeps current:
+    /// a spawn takes its Project, its env and its reuse key from them.
+    #[serde(skip)]
+    pub projects: Vec<Value>,
+    /// The spawns `ensureLiveAgent` runs and what it remembers about them.
+    #[serde(skip)]
+    pub(crate) ensure: ensure::EnsureBook,
     /// The shared MCP registry watch started; the store starts it once.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub mcp_shared_sync: bool,
@@ -409,9 +426,22 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ReadvertiseWaitOver(run) => state.poll_readvertise(Some(run), &mut fx),
         Event::SpawnAgent(config, project_id, session_id) => {
-            state.spawn_agent(config, project_id, session_id, &mut fx);
+            state.spawn_agent(config, Some(project_id), session_id, None, &mut fx);
         }
-        Event::KillAgent(agent_id) => state.kill_agent(agent_id, &mut fx),
+        Event::KillAgent(agent_id) => state.kill_agent(agent_id, None, &mut fx),
+        Event::PrewarmAgent(config_id, cwd) => {
+            let options = ensure::EnsureOptions {
+                register_warm_ui: true,
+                silent: true,
+                ..Default::default()
+            };
+            state.ensure_live_agent(&config_id, &cwd, options, ensure::Caller::Prewarm, &mut fx);
+        }
+        Event::RenewAgentCredentials(config_id, project_id) => {
+            state.renew_agent_credentials(&config_id, &project_id);
+        }
+        Event::SetProjects(projects) => state.book.projects = projects,
+        Event::AgentConfigsChanged(configs) => state.agent_configs = configs,
         Event::AuthenticateAgent(agent_id, method_id, input) => {
             state.authenticate_agent(agent_id, &method_id, input, &mut fx);
         }

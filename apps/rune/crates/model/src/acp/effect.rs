@@ -6,6 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::FlightId;
+use super::ensure::EnsureId;
 use super::mcp::TokenCheck;
 use super::restore::RunId;
 use super::turn::TurnEnd;
@@ -121,12 +122,21 @@ pub enum Effect {
     /// with the spawn reply, or `AgentCommandFailed`.
     SpawnAgent {
         config: Value,
-        project_id: Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<Value>,
         #[serde(skip_serializing_if = "Option::is_none")]
         session_id: Option<String>,
+        /// The `ensureLiveAgent` waiting on this spawn.
+        #[serde(skip_serializing)]
+        ensure: Option<EnsureId>,
     },
     /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
-    KillAgent { agent_id: String },
+    KillAgent {
+        agent_id: String,
+        /// The `ensureLiveAgent` whose spawn this kill cleans up.
+        #[serde(skip_serializing)]
+        ensure: Option<EnsureId>,
+    },
     /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
     Authenticate {
         agent_id: String,
