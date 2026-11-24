@@ -343,6 +343,9 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let session_id = event.session_id.as_deref().filter(|id| !id.is_empty());
+        if self.collector_failed(session_id, &event, "The ACP agent reported an error") {
+            return;
+        }
         self.end_prompt_tracking(&event.agent_id, session_id);
         let detail = ErrorDetail::of(&event);
         let Some(id) = session_id else {
@@ -401,6 +404,9 @@ impl State {
     ) {
         let agent_id = event.agent_id.as_str();
         let session_id = event.session_id.as_deref().filter(|id| !id.is_empty());
+        if self.collector_failed(session_id, &event, "The ACP agent crashed") {
+            return;
+        }
         self.end_prompt_tracking(agent_id, session_id);
         let detail = ErrorDetail::of(&event);
         self.agent_status
@@ -442,6 +448,10 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let agent_id = event.agent_id.as_str();
+        for session_id in self.oneshot_sessions_of(agent_id) {
+            let gone = Err("Error: The ACP agent disconnected".to_owned());
+            self.settle_collector(&session_id, gone);
+        }
         self.forget_agent_auth(agent_id);
         let gone = self.agent_session_ids(agent_id);
         if event.reason == "crashed" {
@@ -456,6 +466,18 @@ impl State {
         self.drop_agent_launch_state(agent_id);
         let mut retired = Vec::new();
         let mut emptied = Vec::new();
+        // A one-shot's temporary session goes, transcript and all.
+        let oneshots: Vec<String> = self
+            .sessions
+            .values()
+            .filter(|s| s.agent_id == agent_id && s.status != SessionStatus::Closed)
+            .filter(|s| self.is_oneshot_session(&s.id))
+            .map(|s| s.id.clone())
+            .collect();
+        for id in &oneshots {
+            self.sessions.remove(id);
+            emptied.push(id.clone());
+        }
         for (id, session) in &mut self.sessions {
             if session.agent_id != agent_id || session.status == SessionStatus::Closed {
                 continue;
@@ -488,6 +510,25 @@ impl State {
         for id in emptied {
             fx.push(Effect::DropSessionTranscript { session_id: id });
         }
+    }
+
+    /// A one-shot's session failed: its collector takes the error, and
+    /// nothing else happens to the chat.
+    fn collector_failed(
+        &mut self,
+        session_id: Option<&str>,
+        event: &AgentFailureEvent,
+        fallback: &str,
+    ) -> bool {
+        let Some(session_id) = session_id else {
+            return false;
+        };
+        let message = event
+            .message
+            .as_deref()
+            .filter(|message| !message.is_empty())
+            .unwrap_or(fallback);
+        self.settle_collector(session_id, Err(format!("Error: {message}")))
     }
 
     /// The agent's sessions, closed ones included.

@@ -96,6 +96,7 @@ attachAgentRosterWatch(
 /** The MCP and launch fields, snapshotted only once a vector set one. */
 const MCP_KEYS = [
   'agentConfigs',
+  'selectedAgentConfigId',
   'warmingConfigs',
   'discoveringKeys',
   'mcpServers',
@@ -113,6 +114,7 @@ const MCP_KEYS = [
 
 const MCP_FRESH = {
   agentConfigs: [],
+  selectedAgentConfigId: null,
   warmingConfigs: {},
   discoveringKeys: {},
   mcpServers: [],
@@ -128,10 +130,10 @@ const MCP_FRESH = {
   mcpProbeError: {}
 }
 
-/** `value` as JSON keeps it, when that is not empty, `false` or `[]`. */
+/** `value` as JSON keeps it, when that is not empty, null, `false` or `[]`. */
 function setField(value: unknown): unknown {
   const plain = value === undefined ? undefined : JSON.parse(JSON.stringify(value))
-  if (plain === false || plain === undefined) return undefined
+  if (plain === false || plain === undefined || plain === null) return undefined
   if (typeof plain === 'object' && plain !== null && Object.keys(plain).length === 0)
     return undefined
   return plain
@@ -171,7 +173,10 @@ const RESOLVES = new Set([
   'listImportableSessions',
   'importAgentSessions',
   'createSession',
-  'openHistorySession'
+  'openHistorySession',
+  'generateCommitMessage',
+  'assistTerminal',
+  'draftBugReport'
 ])
 
 export const acpRecorder: StoreRecorder = {
@@ -224,7 +229,8 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/agents/agent-aliases.ts',
     'src/shared/acp-agent-aliases.json',
     'src/renderer/lib/acp-transport/tauri-verdicts.ts',
-    'src/renderer/lib/agents/acp-registry.ts'
+    'src/renderer/lib/agents/acp-registry.ts',
+    'src/renderer/stores/acp-store/slices/misc.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -364,6 +370,7 @@ import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
 import { mcpScenarios } from './acp-scenarios-mcp'
+import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { restoreScenarios } from './acp-scenarios-restore'
@@ -395,5 +402,6 @@ export const acpScenarios = [
   ...discoveryScenarios,
   ...importScenarios,
   ...createScenarios,
-  ...historyScenarios
+  ...historyScenarios,
+  ...oneShotScenarios
 ]

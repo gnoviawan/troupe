@@ -58,6 +58,7 @@ pub(crate) enum Caller {
     Prewarm,
     ImportList(super::import::ImportId),
     HistoryOpen(super::history::OpenId),
+    OneShot(super::oneshot::OneShotId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -544,6 +545,7 @@ impl State {
                 self.on_import_list_failed(id, &error, fx);
             }
             (Caller::HistoryOpen(id), outcome) => self.on_history_agent(id, outcome, fx),
+            (Caller::OneShot(id), outcome) => self.on_oneshot_agent(id, outcome, fx),
         }
     }
 }

@@ -264,6 +264,9 @@ impl State {
                 return;
             }
         }
+        if self.settle_collector(session_id, Ok(event.stop_reason.clone())) {
+            return;
+        }
         let live_plan = self.plans.get(session_id);
         let settled = live_plan.and_then(|plan| settle_running_plan(plan));
         if let (Some(live), Some(settled)) = (live_plan, settled) {

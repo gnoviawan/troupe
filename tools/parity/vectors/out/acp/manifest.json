@@ -49,7 +49,8 @@
         "src/renderer/lib/agents/agent-aliases.ts": "0a5430d9172f39f34622ca50ba2459661ee0fa7a",
         "src/shared/acp-agent-aliases.json": "06a6ef341f46af33e723b0da32c2a11ca938d77a",
         "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c",
-        "src/renderer/lib/agents/acp-registry.ts": "145840484d1acea7d0b4cd8a44b635a3fff83647"
+        "src/renderer/lib/agents/acp-registry.ts": "145840484d1acea7d0b4cd8a44b635a3fff83647",
+        "src/renderer/stores/acp-store/slices/misc.ts": "6dfd2232c8de812b253b6dbc2785d632c36d607d"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -403,7 +404,42 @@
         "history_open_normalizes_user_bubbles_and_restores_payload_models",
         "history_open_signs_in_when_the_load_asks",
         "history_open_reload_needs_a_new_agent",
-        "history_open_with_explicit_servers_and_roots"
+        "history_open_with_explicit_servers_and_roots",
+        "commit_message_is_generated_and_its_session_disposed",
+        "commit_message_reads_a_fenced_reply",
+        "commit_message_refuses_an_empty_diff",
+        "commit_message_refuses_a_diff_over_the_cap",
+        "commit_message_needs_a_selected_agent",
+        "commit_message_fails_when_the_agent_uses_a_tool",
+        "commit_message_fails_on_a_cancelled_turn",
+        "commit_message_rejects_an_invalid_reply",
+        "commit_message_rejects_a_blank_summary",
+        "commit_message_rejects_a_long_summary",
+        "commit_message_rejects_a_bad_description",
+        "commit_message_fails_on_a_reply_over_the_cap",
+        "commit_message_ignores_user_and_thought_chunks",
+        "commit_message_fails_when_the_dispatch_fails",
+        "commit_message_fails_when_the_agent_is_unavailable",
+        "commit_message_fails_when_the_session_cannot_open",
+        "commit_message_logs_a_failed_dispose",
+        "commit_message_fails_on_a_permission_request",
+        "commit_message_is_unavailable_when_its_config_goes_during_the_spawn",
+        "one_shot_clears_the_active_mark_of_its_session",
+        "terminal_assist_refuses_a_selection_over_the_cap",
+        "bug_report_draft_skips_diagnostics_over_the_cap",
+        "terminal_fix_answers_the_text",
+        "terminal_explain_fails_on_an_empty_reply",
+        "terminal_assist_needs_a_working_directory",
+        "terminal_assist_fails_on_a_question",
+        "terminal_assist_fails_when_the_agent_errors",
+        "bug_report_draft_is_parsed",
+        "bug_report_draft_answers_null_on_a_bad_reply",
+        "bug_report_draft_skips_without_a_working_directory",
+        "bug_report_draft_skips_a_long_description",
+        "bug_report_draft_is_quiet_without_an_agent",
+        "bug_report_draft_fails_when_its_session_closes",
+        "one_shot_session_goes_with_a_disconnected_agent",
+        "one_shot_fails_when_the_agent_crashes"
       ]
     }
   }

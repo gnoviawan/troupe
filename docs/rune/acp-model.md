@@ -449,7 +449,28 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       two listings or imports at once stay apart. The recorder has no such
       id; `import_tests.rs` checks it. A listing that fails still answers
       with a plain `actionRejected`.
-    - 10b, rest. The one-shot collectors (they need `createSession`).
+    - 10c, one-shots (R6a-6, `acp/oneshot.rs`). `generateCommitMessage`,
+      `assistTerminal` and `draftBugReport` check their input (the first
+      two reject, the draft answers null), log their start, get the
+      selected config's agent (`ensureLiveAgent`, `Caller::OneShot`), open
+      an ephemeral session (`createSession`, which now answers either the
+      user's action or a one-shot: `CreateCaller`), and send one prompt
+      (`dispatchPrompt`). The session's collector takes the agent's text
+      chunks, past a size cap fails; a tool call, a permission, question or
+      elicitation request, an agent error or crash, a disconnect or a close
+      fails it; `prompt_complete` ends it. None of those reach a transcript,
+      and a disconnect drops the session outright. A collector that settles
+      during an event moves its run on once the step ends, as the
+      TypeScript promise chain runs after the handler. The reply is parsed
+      (the commit summary and description, the assist text, the bug title
+      and body), then the session is cancelled and disposed
+      (`disposeEphemeralSession`) and its state dropped before the caller
+      gets the answer. The overall time (60 s or 90 s) and the dispose time
+      (2 s) are `startOneShotTimer` effects answered by `oneShotTimerDue`;
+      a session that opens after its run ran out is disposed without an
+      answer. The recorder never reaches a timer, so `oneshot_tests.rs`
+      checks them. `State::selected_agent_config_id` stands in for the
+      config slice's selection.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -511,8 +532,6 @@ so the replay drops `retryQueueAfter` before it compares.
   echo's blocks as sent; the vectors use prompts without framing.
 - The prompt-reconcile bookkeeping on the echo (`echoedWirePromptTurns`,
   `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
-- The one-shot collectors that swallow chunks, tool calls and requests of
-  commit-message, terminal assist and bug-report sessions. PR 10.
 - Switch markers in `maxPayloadSeq`. PR 9.
 - On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
   the in-memory payload cache (PR 6).
@@ -524,8 +543,8 @@ so the replay drops `retryQueueAfter` before it compares.
   send-now's 5 s wait timeout.
 
 On a closed session the model does not yet run the reload hand-off
-(`reloadInFlight`, PR 9), the one-shot collectors (PR 10) or the drop of an
-empty warm-pool session (`ephemeralSessionIds`, PR 8).
+(`reloadInFlight`, PR 9) or the drop of an empty warm-pool session
+(`ephemeralSessionIds`, PR 8).
 
 ## CI
 

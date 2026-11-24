@@ -354,6 +354,11 @@ impl State {
             return;
         }
         self.cancel_running_subagents(std::slice::from_ref(&id), env.now, fx);
+        let closed = Err("Error: The temporary ACP session closed unexpectedly".to_owned());
+        if self.settle_collector(&id, closed) {
+            return;
+        }
+        self.invalidate_session_reopen(&id);
         // The app's staged files for the chat (pasted images) go with it.
         fx.push(Effect::DeleteSessionTempFiles {
             session_id: id.clone(),

@@ -111,6 +111,10 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let session_id = event.session_id;
+        let tool = Err("Error: The ACP agent attempted to use a tool".to_owned());
+        if self.settle_collector(&session_id, tool) {
+            return;
+        }
         if self.book.history_covered_tool(&session_id, event_seq) {
             return;
         }

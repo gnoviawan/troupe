@@ -273,6 +273,10 @@ impl State {
             self.on_browser_consent_ticket(ticket, fx);
             return;
         }
+        let asked = Err("Error: The ACP agent requested permission".to_owned());
+        if self.settle_collector(&event.session_id, asked) {
+            return;
+        }
         if self.pending_permissions.contains_key(&event.request_id) {
             return;
         }
@@ -311,7 +315,11 @@ impl State {
         event: QuestionRequestEvent,
         event_seq: Option<f64>,
     ) {
-        if self.book.history_covered(&event.session_id, event_seq)
+        if self.book.history_covered(&event.session_id, event_seq) {
+            return;
+        }
+        let asked = Err("Error: The ACP agent asked an interactive question".to_owned());
+        if self.settle_collector(&event.session_id, asked)
             || self.pending_questions.contains_key(&event.question_id)
         {
             return;
@@ -339,7 +347,11 @@ impl State {
         event: ElicitationRequestEvent,
         event_seq: Option<f64>,
     ) {
-        if (!event.session_id.is_empty() && self.book.history_covered(&event.session_id, event_seq))
+        if !event.session_id.is_empty() && self.book.history_covered(&event.session_id, event_seq) {
+            return;
+        }
+        let asked = Err("Error: The ACP agent requested more information".to_owned());
+        if (!event.session_id.is_empty() && self.settle_collector(&event.session_id, asked))
             || self.pending_elicitations.contains_key(&event.request_id)
         {
             return;

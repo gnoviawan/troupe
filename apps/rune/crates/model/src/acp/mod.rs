@@ -39,6 +39,10 @@ mod mcp_install;
 mod mcp_oauth;
 #[cfg(test)]
 mod mcp_tests;
+mod oneshot;
+mod oneshot_reply;
+#[cfg(test)]
+mod oneshot_tests;
 mod picks;
 mod plan;
 pub mod prompt;
@@ -140,6 +144,9 @@ pub struct State {
     pub discovering_keys: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// The agent config the one-shots run on (`selectedAgentConfigId`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub selected_agent_config_id: Option<String>,
     /// The saved agent configs (`agentConfigs`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub agent_configs: Vec<Object>,
@@ -304,6 +311,9 @@ pub struct Book {
     /// The `session/new` calls in flight.
     #[serde(skip)]
     pub(crate) creates: create::CreateBook,
+    /// The one-shot runs in flight.
+    #[serde(skip)]
+    pub(crate) oneshots: oneshot::OneShotBook,
     /// The history opens in flight and the reopen generations.
     #[serde(skip)]
     pub(crate) history: history::HistoryBook,
@@ -478,6 +488,14 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::KillAgent(agent_id) => state.kill_agent(agent_id, Killer::User, &mut fx),
         Event::CreateSession(request) => state.create_session(request, &mut fx),
         Event::OpenHistorySession(request) => state.open_history_session(request, &mut fx),
+        Event::GenerateCommitMessage(cwd, diff, request) => {
+            state.generate_commit_message(cwd, &diff, request, &mut fx);
+        }
+        Event::AssistTerminal(kind, cwd, selection, exit_code, request) => {
+            state.assist_terminal(&kind, &cwd, &selection, &exit_code, request, &mut fx);
+        }
+        Event::DraftBugReport(input, request) => state.draft_bug_report(input, request, &mut fx),
+        Event::OneShotTimerDue(timer) => state.on_oneshot_timer(&timer, &mut fx),
         Event::ReplayEnd(end) => state.on_replay_end(&end, &mut fx),
         Event::PrewarmAgent(config_id, cwd) => {
             let options = ensure::EnsureOptions {
@@ -537,7 +555,11 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::SendQueuedPromptNow(session_id, id) => {
             state.send_queued_prompt_now(&session_id, &id, env, &mut fx);
         }
-        Event::PromptSettled(settled) => state.on_prompt_settled(settled, env, &mut fx),
+        Event::PromptSettled(settled) => {
+            if !state.on_oneshot_sent(&settled.turn_id, &settled.outcome, &mut fx) {
+                state.on_prompt_settled(settled, env, &mut fx);
+            }
+        }
         Event::QueueRetryDue(session_id, generation) => {
             state.on_queue_retry_due(&session_id, generation, env, &mut fx);
         }
@@ -629,6 +651,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     if let Some(session_id) = flushed {
         state.trim_flushed(&session_id, &mut fx);
     }
+    // A one-shot whose collector settled moves on after the handler, as the
+    // TypeScript promise chain does.
+    state.advance_settled_oneshots(&mut fx);
     // A prompt typed while a history open ran goes out once it ends.
     for session_id in std::mem::take(&mut state.book.history.flush) {
         state.flush_next_queued_prompt(&session_id, env, &mut fx);

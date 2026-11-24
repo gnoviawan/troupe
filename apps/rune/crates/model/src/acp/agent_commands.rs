@@ -264,6 +264,9 @@ impl State {
                 super::auth_retry::note_retry_succeeded(&command, fx);
                 self.on_reopen_done(&command, &reply, fx);
             }
+            Effect::DisposeEphemeralSession { oneshot, .. } => {
+                self.on_oneshot_disposed(oneshot, None, fx);
+            }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
@@ -375,6 +378,10 @@ impl State {
                     fx.push(Effect::rejected(&message));
                 }
                 return self.settle_auth_retries(flight, Err(AuthFailure::Other(message)), fx);
+            }
+            Effect::DisposeEphemeralSession { oneshot, .. } => {
+                let error = super::effect::error_text(&HostError::new(message, code));
+                return self.on_oneshot_disposed(oneshot, Some(error), fx);
             }
             Effect::Logout { agent_id } => fx.push(Effect::warn(
                 "acp.logoutAgent",

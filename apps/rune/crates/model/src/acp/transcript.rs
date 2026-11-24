@@ -407,6 +407,10 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
+        let agent = event.role == Role::Agent;
+        if self.collect_chunk(&event.session_id, agent, &event.content) {
+            return;
+        }
         if event
             .parent_tool_call_id
             .as_deref()

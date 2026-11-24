@@ -62,9 +62,17 @@ pub struct CreateRequest(
     pub RequestId,
 );
 
+/// Who a `createSession` answers.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum CreateCaller {
+    /// The user's action, by the app's request id.
+    Action(RequestId),
+    OneShot(super::oneshot::OneShotId),
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Create {
-    request: RequestId,
+    by: CreateCaller,
     agent_id: String,
     cwd: String,
     project_id: Option<String>,
@@ -185,7 +193,18 @@ impl State {
 
     /// `createSession`.
     pub(crate) fn create_session(&mut self, request: CreateRequest, fx: &mut Vec<Effect>) {
-        let CreateRequest(agent_id, cwd, mcp_servers, project_id, options, request) = request;
+        let by = CreateCaller::Action(request.5);
+        self.create_session_for(request, by, fx);
+    }
+
+    /// `createSession` for `by`, which its answer goes to.
+    pub(crate) fn create_session_for(
+        &mut self,
+        request: CreateRequest,
+        by: CreateCaller,
+        fx: &mut Vec<Effect>,
+    ) {
+        let CreateRequest(agent_id, cwd, mcp_servers, project_id, options, _) = request;
         let options = options.unwrap_or_default();
         let servers = match mcp_servers {
             Some(servers) => servers,
@@ -213,7 +232,7 @@ impl State {
         book.creates.insert(
             create,
             Create {
-                request,
+                by,
                 agent_id: agent_id.clone(),
                 cwd: cwd.clone(),
                 project_id: project_id.clone(),
@@ -268,7 +287,7 @@ impl State {
                 LOOKUP_SOURCE,
                 format!("session/new for agent {agent_id} was answered by entity lookup (session {session_id}); opening it from history"),
             ));
-            return self.resolve_create(create, session_id, fx);
+            return self.resolve_create(create, session_id, env, fx);
         }
         self.invalidate_session_reopen(&session_id);
         self.add_created_session(&call, &session_id, reply, env);
@@ -278,7 +297,7 @@ impl State {
             });
         }
         self.cache_options_from_session(&session_id, env, fx);
-        self.resolve_create(create, session_id, fx);
+        self.resolve_create(create, session_id, env, fx);
     }
 
     /// The chat record, merged with what an event set while the call ran.
@@ -402,12 +421,26 @@ impl State {
         }
     }
 
-    fn resolve_create(&mut self, create: CreateId, session_id: String, fx: &mut Vec<Effect>) {
-        if let Some(call) = self.book.creates.creates.remove(&create) {
-            fx.push(Effect::ActionResolved {
-                request: call.request,
+    fn resolve_create(
+        &mut self,
+        create: CreateId,
+        session_id: String,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
+        match self
+            .book
+            .creates
+            .creates
+            .remove(&create)
+            .map(|call| call.by)
+        {
+            Some(CreateCaller::Action(request)) => fx.push(Effect::ActionResolved {
+                request,
                 value: json!(session_id),
-            });
+            }),
+            Some(CreateCaller::OneShot(id)) => self.on_oneshot_session(id, session_id, env, fx),
+            None => {}
         }
     }
 
@@ -454,8 +487,19 @@ impl State {
     }
 
     fn reject_create(&mut self, create: CreateId, error: &HostError, fx: &mut Vec<Effect>) {
-        if self.book.creates.creates.remove(&create).is_some() {
-            fx.push(Effect::rejected_by(error));
+        match self
+            .book
+            .creates
+            .creates
+            .remove(&create)
+            .map(|call| call.by)
+        {
+            Some(CreateCaller::Action(_)) => fx.push(Effect::rejected_by(error)),
+            Some(CreateCaller::OneShot(id)) => {
+                let message = super::effect::error_text(error);
+                self.on_oneshot_session_failed(id, message, fx);
+            }
+            None => {}
         }
     }
 }

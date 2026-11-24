@@ -127,6 +127,24 @@ pub enum Event {
     ReadvertiseWaitOver(RunId),
     #[serde(rename = "spawnAgent")]
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
+    #[serde(rename = "generateCommitMessage")]
+    GenerateCommitMessage(String, String, #[serde(default)] super::import::RequestId),
+    #[serde(rename = "assistTerminal")]
+    AssistTerminal(
+        String,
+        String,
+        String,
+        #[serde(default)] Value,
+        #[serde(default)] super::import::RequestId,
+    ),
+    #[serde(rename = "draftBugReport")]
+    DraftBugReport(
+        super::oneshot::BugReportInput,
+        #[serde(default)] super::import::RequestId,
+    ),
+    /// A timer an [`Effect::StartOneShotTimer`] started ran out.
+    #[serde(skip_deserializing)]
+    OneShotTimerDue(Effect),
     #[serde(rename = "openHistorySession")]
     OpenHistorySession(super::history::OpenHistoryRequest),
     /// The replay window an [`Effect::EndReplay`] asked to close.

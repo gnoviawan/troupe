@@ -162,6 +162,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::ImportAgentSession { .. }
                         | Effect::NewSession { .. }
                         | Effect::LoadSession { .. }
+                        | Effect::DisposeEphemeralSession { .. }
                         | Effect::ResumeSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
@@ -329,7 +330,13 @@ fn replay(vector: &Value) -> Result<usize, String> {
             break;
         }
         // The recorder cannot see the busy-retry timer (`setTimeout`).
-        effects.retain(|effect| !matches!(effect, Effect::RetryQueueAfter { .. }));
+        // Nor the one-shots' timeouts.
+        effects.retain(|effect| {
+            !matches!(
+                effect,
+                Effect::RetryQueueAfter { .. } | Effect::StartOneShotTimer { .. }
+            )
+        });
         replay_ends.extend(
             effects
                 .iter()

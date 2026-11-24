@@ -13,6 +13,7 @@ use super::history::OpenId;
 use super::host_error::HostError;
 use super::import::{ImportId, RequestId};
 use super::mcp::TokenCheck;
+use super::oneshot::OneShotId;
 use super::restore::RunId;
 use super::turn::TurnEnd;
 use super::types::Object;
@@ -349,6 +350,23 @@ pub enum Effect {
         open: OpenId,
         #[serde(skip_serializing)]
         retried: bool,
+    },
+    /// Send `Event::OneShotTimerDue` with this effect after `delay_ms`: the
+    /// run's overall time, or its session's dispose time (`cleanup`).
+    StartOneShotTimer {
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        oneshot: OneShotId,
+        #[serde(skip_serializing)]
+        cleanup: bool,
+    },
+    /// Dispose a one-shot's temporary session; then `AgentCommandDone` or
+    /// `AgentCommandFailed`.
+    DisposeEphemeralSession {
+        agent_id: String,
+        session_id: String,
+        #[serde(skip_serializing)]
+        oneshot: OneShotId,
     },
     /// Send `Event::ReplayEnd` with this effect once the events already
     /// queued have been applied, so replayed chunks racing the reply still
