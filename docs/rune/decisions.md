@@ -188,7 +188,7 @@ keywords). It does not reach exact colour parity. Exact parity needs Shiki's
 own engine, a TextMate tokenizer running the same grammars, which no section
 has built yet.
 
-**Numbers.** `bun tools/parity/highlight/parity.ts` runs Shiki with the Termul
+**Numbers.** `bun tools/parity/highlight/parity.ts` runs Shiki with the default `termul`
 theme (`syntaxThemeFor`) and `cargo run -p ui --example highlight_dump` over
 the same eight samples, and counts non-space characters drawn in the same
 colour (measured 2026-11-24):

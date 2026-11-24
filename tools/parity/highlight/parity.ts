@@ -1,5 +1,5 @@
 /**
- * Colour parity of chat code blocks: the web client's Shiki output (the Termul syntax theme,
+ * Colour parity of chat code blocks: the web client's Shiki output (the default `termul` syntax theme,
  * `lib/themes/syntax-shiki.ts`) against the Rune client's (`rune-highlights` through
  * `ui::markdown::syntax_colour`), per non-space character.
  *
