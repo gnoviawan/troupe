@@ -81,6 +81,29 @@ fn send_json(vector: &Value) -> Value {
     }
 }
 
+/// A document's pills as its display string carries them: a skill token has no path and a
+/// chat token holds its title on one line.
+fn pills(doc: &Doc) -> Vec<Pill> {
+    doc.parts
+        .iter()
+        .filter_map(|part| match part {
+            Part::Pill(Pill::Skill { name, .. }) => Some(Pill::Skill {
+                name: name.clone(),
+                path: String::new(),
+            }),
+            Part::Pill(Pill::Conversation { title, session_id }) => {
+                let title = super::conversation_title_text(title);
+                Some(Pill::Conversation {
+                    title: if title.is_empty() { "Untitled chat".into() } else { title },
+                    session_id: session_id.clone(),
+                })
+            }
+            Part::Pill(pill) => Some(pill.clone()),
+            Part::Text(_) => None,
+        })
+        .collect()
+}
+
 #[test]
 fn every_recorded_document_serializes_and_sends_as_the_web_client_does() {
     let vectors = vectors();
@@ -95,8 +118,12 @@ fn every_recorded_document_serializes_and_sends_as_the_web_client_does() {
                 vector["display"]
             ));
         }
-        if super::parse_display(&display).display_text() != display {
+        let parsed = super::parse_display(&display);
+        if parsed.display_text() != display {
             failures.push(format!("{name}: the display string does not parse back to itself"));
+        }
+        if pills(&parsed) != pills(&doc(&vector["doc"])) {
+            failures.push(format!("{name}: the display string parses to other pills"));
         }
         let copy = super::wire::copy_text(&display);
         if copy != vector["copy"] {

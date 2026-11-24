@@ -164,6 +164,11 @@ pub fn add_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut 
         .depth(depth)
         .on_back(|s: &mut State| s.close(ADD_TOOLS))
         .on_close(move |s: &mut State| s.close(if tools { ADD_TOOLS } else { ADD_SHEET }));
+    if tools {
+        // The swipe dismisses the whole sheet, sub-view and all, as the web drawer does; the
+        // card follows the finger at either depth.
+        sheet = sheet.drag(s.phone.drag);
+    }
     for e in body {
         sheet = sheet.child(e);
     }

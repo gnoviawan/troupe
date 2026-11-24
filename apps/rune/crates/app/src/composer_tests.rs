@@ -483,3 +483,86 @@ fn a_send_during_a_turn_shows_in_the_queue_and_edit_takes_it_back() {
     let doc = ui::composer::field::doc_of(&s.draft(&host).expect("draft").edit);
     assert_eq!(doc.display_text(), "draft\nUse \u{E000}matrix-review\u{E001}\u{E002}\u{2007}\u{E003} ");
 }
+
+#[test]
+fn a_pick_made_while_the_saved_agent_read_is_out_stays() {
+    let mut s = loaded();
+    s.agents_loaded(Some(json!([{ "id": "cfg-a", "name": "A" }, { "id": "cfg-b", "name": "B" }])));
+    let host = Host::Launcher("p-a".into());
+    s.composer_pick_agent(&host, "cfg-b", &mut rune::Tx::default());
+    s.last_agent_loaded(Some(json!({ "agentId": "cfg-a", "mode": "acp" })));
+    assert_eq!(s.agent_label(&host).as_deref(), Some("B"));
+    assert!(s.composer.picked_read, "the launch may start");
+}
+
+#[test]
+fn a_launched_chat_keeps_naming_its_own_agent() {
+    let mut s = crate::tests::showing_alpha();
+    s.agents_loaded(Some(json!([{ "id": "cfg-a", "name": "A" }, { "id": "cfg-b", "name": "B" }])));
+    s.last_agent_loaded(Some(json!({ "agentId": "cfg-b", "mode": "acp" })));
+    s.composer.launching = Some(crate::launch::Launch {
+        project_id: "p-a".into(),
+        cwd: "/w".into(),
+        config_id: "cfg-b".into(),
+        send: ui::composer::Send::Text { text: "go".into() },
+    });
+    s.launch_created("agent-9".into(), Ok(Some(json!({ "sessionId": "chat-9" }))));
+    let launcher = Host::Launcher("p-a".into());
+    s.composer_pick_agent(&launcher, "cfg-a", &mut rune::Tx::default());
+    assert_eq!(s.agent_label(&Host::Chat("chat-9".into())).as_deref(), Some("B"));
+}
+
+/// Sends `pending`'s read and returns its call id.
+fn read_call(s: &mut crate::State, pending: crate::sync::Pending) -> u64 {
+    s.call(WsRequestType::StoreRead, json!({}), pending);
+    match s.sync.sent.last() {
+        Some(Command::Call { call, .. }) => *call,
+        _ => panic!("the read went out"),
+    }
+}
+
+#[test]
+fn agent_reads_a_dropped_socket_lost_are_asked_again() {
+    use crate::sync::Pending;
+    let error = |code: &str| troupe_protocol::ws::WsError { code: code.into(), message: String::new(), details: None };
+    let mut s = loaded();
+    s.composer.agents_asked = true;
+    let agents = read_call(&mut s, Pending::ReadAgents);
+    let last = read_call(&mut s, Pending::ReadLastAgent);
+    s.apply(client::ws::Output::Reply { call: agents, result: Err(error("closed")) });
+    s.apply(client::ws::Output::Reply { call: last, result: Err(error("closed")) });
+    assert!(!s.composer.agents_asked, "the next live poll reads them again");
+    assert!(!s.composer.picked_read, "the launch waits for the reread");
+
+    s.composer.agents_asked = true;
+    let last = read_call(&mut s, Pending::ReadLastAgent);
+    s.apply(client::ws::Output::Reply { call: last, result: Err(error("store_error")) });
+    assert!(s.composer.agents_asked, "a refused read is not retried");
+    assert!(s.composer.picked_read, "it settles to no saved agent");
+}
+
+#[test]
+fn a_phone_chat_opens_the_add_sheet() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    let mut rt = rune::Runtime::new(s, crate::view, (390.0, 844.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    rt.update_if(|s, _| {
+        s.install_new_chat("chat-1", "agent-1");
+        s.workspace.step(model::workspace::Event::AddAgentChatTab("chat-1".into(), None));
+        true
+    });
+    rt.frame(0.05);
+    crate::tests::tap(&mut rt, "composer-chat-chat-1-add");
+    assert!(crate::tests::present(&rt, "add-tile-camera"), "a phone chat's + opens the sheet");
+}
+
+#[test]
+fn a_chat_foot_names_its_project_branch_only_when_read() {
+    let (mut s, host) = chat();
+    assert_eq!(s.checkout_label(&host), "Current checkout");
+    let project = s.projects.store.projects.iter_mut().find(|p| p.id == "p-a").expect("alpha");
+    project.client.git_branch = Some("feature/login".into());
+    assert_eq!(s.checkout_label(&host), "Current checkout · feature/login");
+}

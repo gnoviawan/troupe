@@ -42,10 +42,7 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         agent: s.agent_label(host),
         agents: s.agent_choices(host),
         agent_open: draft.agent_open,
-        foot: match host {
-            Host::Chat(_) => "Current checkout · main".to_owned(),
-            Host::Launcher(_) => "Current checkout".to_owned(),
-        },
+        foot: s.checkout_label(host),
         attachments: &draft.attachments,
         menu: s.menu_view(host),
         add_open: draft.add_open,
@@ -57,21 +54,22 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
     view::composer(t, spec, &State::composer_hooks(host))
 }
 
-/// A chat tab's composer dock: 12 points above, 24 below, in the transcript's column.
-pub fn chat_dock(s: &State, t: &'static Tokens, session_id: &str) -> El {
+/// A chat tab's composer dock: 12 points above, 24 below, in the transcript's column; `place`
+/// is `Phone` in the phone workspace, so `+` opens the Add to chat sheet.
+pub fn chat_dock(s: &State, t: &'static Tokens, session_id: &str, place: Place) -> El {
     let host = Host::Chat(session_id.to_owned());
     col()
         .key(format!("composer-dock-{session_id}"))
         .w_full()
         .items_center()
-        .px(20.0)
+        .px(if place == Place::Phone { 16.0 } else { 20.0 })
         .pt(12.0)
         .pb(24.0)
         .child(
             col()
                 .w_full()
                 .max_w(ui::chat::COLUMN_MAX_W)
-                .child(composer(s, t, &host, Place::Chat)),
+                .child(composer(s, t, &host, place)),
         )
 }
 
