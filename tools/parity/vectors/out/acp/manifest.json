@@ -34,7 +34,9 @@
         "src/shared/types/web-protocol.types.ts": "03e9946ec7a3888477352f100cd6a21d4159bbf7",
         "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08",
         "src/renderer/stores/acp-store/chat-tab-prune.ts": "d71996dd7ade033932cd54eab92b0db45edcae62",
-        "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510"
+        "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510",
+        "src/renderer/stores/acp-store/session-agent-config.ts": "5d19019e0ef31394b751fa19ac5509a460d5f46d",
+        "src/shared/types/antigravity-accounts.types.ts": "77987cc285f72c3d0305ffa90f16aa24b294c55b"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -168,6 +170,8 @@
         "agent_error_ends_the_turn_of_its_session",
         "agent_error_auth_required_marks_the_agent",
         "agent_error_at_the_provider_limit_rejects_the_rate_limit",
+        "agent_error_at_an_antigravity_limit_counts_only_for_an_antigravity_chat",
+        "agent_error_reads_an_antigravity_chat_from_the_index",
         "agent_error_without_a_session_marks_every_live_one",
         "agent_crashed_on_a_session_marks_it_dead",
         "agent_crashed_without_a_session_marks_every_live_one",

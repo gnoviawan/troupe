@@ -65,6 +65,7 @@ on:
       - 'src/renderer/stores/acp-store/host-session-reports.ts'
       - 'src/renderer/stores/acp-store/model-catalog.ts'
       - 'src/renderer/stores/acp-store/rate-limit.ts'
+      - 'src/renderer/stores/acp-store/session-agent-config.ts'
       - 'src/renderer/stores/acp-store/shared-state.ts'
       - 'src/renderer/stores/acp-store/slices/agent.ts'
       - 'src/renderer/stores/acp-store/slices/prompt.ts'
@@ -84,6 +85,7 @@ on:
       - 'src/renderer/stores/workspace-store/slices/tabs.ts'
       - 'src/renderer/stores/workspace-store/tree.ts'
       - 'src/renderer/types/settings.ts'
+      - 'src/shared/types/antigravity-accounts.types.ts'
       - 'src/shared/types/web-protocol.types.ts'
   # Runs on dev save the Rust cache (`save-if` below) that PR runs restore.
   push:

@@ -111,7 +111,9 @@ export const acpRecorder: StoreRecorder = {
     'src/shared/types/web-protocol.types.ts',
     'src/renderer/stores/acp-store/composer-options.ts',
     'src/renderer/stores/acp-store/chat-tab-prune.ts',
-    'src/renderer/lib/acp-history-persistence.ts'
+    'src/renderer/lib/acp-history-persistence.ts',
+    'src/renderer/stores/acp-store/session-agent-config.ts',
+    'src/shared/types/antigravity-accounts.types.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
