@@ -1,0 +1,986 @@
+[
+ {
+  "store": "pane-tree",
+  "name": "serialize_every_kind_and_splits",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "serializePaneTree",
+     "args": [
+      {
+       "type": "leaf",
+       "id": "l",
+       "tabs": [
+        {
+         "type": "editor",
+         "id": "edit-/p/a.ts",
+         "filePath": "/p/a.ts"
+        },
+        {
+         "type": "terminal",
+         "id": "term-t1",
+         "terminalId": "t1"
+        },
+        {
+         "type": "browser",
+         "id": "browser-tab-0123abcd-4567-89ab-cdef-0123456789ab",
+         "browserTabId": "tab-0123abcd-4567-89ab-cdef-0123456789ab"
+        },
+        {
+         "type": "git",
+         "id": "git-/p",
+         "cwd": "/p"
+        },
+        {
+         "type": "agent-chat",
+         "id": "chat-s1",
+         "sessionId": "s1",
+         "mountKey": "chat-s1"
+        },
+        {
+         "type": "git-history",
+         "id": "git-history-/p",
+         "cwd": "/p"
+        },
+        {
+         "type": "github-item",
+         "id": "github-item-/p-origin-7",
+         "cwd": "/p",
+         "repo": "origin",
+         "kind": "pr",
+         "number": 7,
+         "title": "Fix it"
+        },
+        {
+         "type": "diff",
+         "id": "diff:x",
+         "cwd": "/p",
+         "path": "a.ts",
+         "staged": false
+        },
+        {
+         "type": "commit-diff",
+         "id": "commit:y",
+         "cwd": "/p",
+         "commit": "abc",
+         "path": "b.ts",
+         "oldPath": "c.ts"
+        },
+        {
+         "type": "automations",
+         "id": "automations-p1",
+         "projectId": "p1"
+        },
+        {
+         "type": "canvas",
+         "id": "canvas-p1",
+         "projectId": "p1",
+         "docPath": "/p/design.figcraft"
+        }
+       ],
+       "activeTabId": "edit-/p/a.ts"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "leaf",
+     "id": "l",
+     "tabs": [
+      {
+       "type": "editor",
+       "filePath": "/p/a.ts"
+      },
+      {
+       "type": "terminal",
+       "terminalId": "t1"
+      },
+      {
+       "type": "browser",
+       "browserTabId": "tab-0123abcd-4567-89ab-cdef-0123456789ab"
+      },
+      {
+       "type": "git",
+       "id": "git-/p",
+       "cwd": "/p"
+      },
+      {
+       "type": "agent-chat",
+       "id": "chat-s1",
+       "sessionId": "s1"
+      },
+      {
+       "type": "git-history",
+       "id": "git-history-/p",
+       "cwd": "/p"
+      },
+      {
+       "type": "github-item",
+       "id": "github-item-/p-origin-7",
+       "cwd": "/p",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7,
+       "title": "Fix it"
+      },
+      {
+       "type": "diff",
+       "id": "diff:x",
+       "cwd": "/p",
+       "path": "a.ts",
+       "staged": false
+      },
+      {
+       "type": "commit-diff",
+       "id": "commit:y",
+       "cwd": "/p",
+       "commit": "abc",
+       "path": "b.ts",
+       "oldPath": "c.ts"
+      },
+      {
+       "type": "automations",
+       "id": "automations-p1",
+       "projectId": "p1"
+      }
+     ],
+     "activeTabId": "edit-/p/a.ts"
+    },
+    "state": {}
+   },
+   {
+    "event": {
+     "action": "serializePaneTree",
+     "args": [
+      {
+       "type": "split",
+       "id": "s",
+       "direction": "vertical",
+       "children": [
+        {
+         "type": "leaf",
+         "id": "a",
+         "tabs": [
+          {
+           "type": "terminal",
+           "id": "term-t1",
+           "terminalId": "t1"
+          }
+         ],
+         "activeTabId": "term-t1"
+        },
+        {
+         "type": "split",
+         "id": "t",
+         "direction": "horizontal",
+         "children": [
+          {
+           "type": "leaf",
+           "id": "b",
+           "tabs": [],
+           "activeTabId": null
+          },
+          {
+           "type": "leaf",
+           "id": "c",
+           "tabs": [
+            {
+             "type": "editor",
+             "id": "edit-/x",
+             "filePath": "/x"
+            }
+           ],
+           "activeTabId": null
+          }
+         ],
+         "sizes": [
+          25,
+          75
+         ]
+        }
+       ],
+       "sizes": [
+        40,
+        60
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "split",
+     "id": "s",
+     "direction": "vertical",
+     "children": [
+      {
+       "type": "leaf",
+       "id": "a",
+       "tabs": [
+        {
+         "type": "terminal",
+         "terminalId": "t1"
+        }
+       ],
+       "activeTabId": "term-t1"
+      },
+      {
+       "type": "split",
+       "id": "t",
+       "direction": "horizontal",
+       "children": [
+        {
+         "type": "leaf",
+         "id": "b",
+         "tabs": [],
+         "activeTabId": null
+        },
+        {
+         "type": "leaf",
+         "id": "c",
+         "tabs": [
+          {
+           "type": "editor",
+           "filePath": "/x"
+          }
+         ],
+         "activeTabId": null
+        }
+       ],
+       "sizes": [
+        25,
+        75
+       ]
+      }
+     ],
+     "sizes": [
+      40,
+      60
+     ]
+    },
+    "state": {}
+   }
+  ]
+ },
+ {
+  "store": "pane-tree",
+  "name": "deserialize_every_kind",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "deserializePaneTree",
+     "args": [
+      {
+       "type": "leaf",
+       "id": "l",
+       "tabs": [
+        {
+         "type": "editor",
+         "filePath": "/p/a.ts"
+        },
+        {
+         "type": "terminal",
+         "terminalId": "t1"
+        },
+        {
+         "type": "browser",
+         "browserTabId": "tab-0123abcd-4567-89ab-cdef-0123456789ab"
+        },
+        {
+         "type": "browser",
+         "browserTabId": "agent-session-tab",
+         "url": "https://example.com"
+        },
+        {
+         "type": "git",
+         "id": "git-/p",
+         "cwd": "/p"
+        },
+        {
+         "type": "agent-chat",
+         "id": "chat-s1",
+         "sessionId": "s1"
+        },
+        {
+         "type": "git-history",
+         "id": "git-history-/p",
+         "cwd": "/p"
+        },
+        {
+         "type": "github-item",
+         "id": "stale",
+         "cwd": "/p",
+         "repo": "upstream",
+         "kind": "issue",
+         "number": 12
+        },
+        {
+         "type": "diff",
+         "cwd": "/p",
+         "path": "src\\a.ts",
+         "staged": true
+        },
+        {
+         "type": "diff",
+         "id": "diff:kept",
+         "cwd": "/p",
+         "path": "a.ts",
+         "staged": false
+        },
+        {
+         "type": "commit-diff",
+         "cwd": "/p",
+         "commit": "abc",
+         "path": "b.ts",
+         "oldPath": "c.ts"
+        },
+        {
+         "type": "automations",
+         "id": "ignored",
+         "projectId": "p1"
+        }
+       ],
+       "activeTabId": "git-/p"
+      }
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "result": {
+     "type": "leaf",
+     "id": "l",
+     "tabs": [
+      {
+       "type": "editor",
+       "id": "edit-/p/a.ts",
+       "filePath": "/p/a.ts"
+      },
+      {
+       "type": "terminal",
+       "id": "term-t1",
+       "terminalId": "t1"
+      },
+      {
+       "type": "browser",
+       "id": "browser-tab-0123abcd-4567-89ab-cdef-0123456789ab",
+       "browserTabId": "tab-0123abcd-4567-89ab-cdef-0123456789ab"
+      },
+      {
+       "type": "browser",
+       "id": "browser-tab-id-1",
+       "browserTabId": "tab-id-1"
+      },
+      {
+       "type": "git",
+       "id": "git-/p",
+       "cwd": "/p"
+      },
+      {
+       "type": "agent-chat",
+       "id": "chat-s1",
+       "sessionId": "s1"
+      },
+      {
+       "type": "git-history",
+       "id": "git-history-/p",
+       "cwd": "/p"
+      },
+      {
+       "type": "github-item",
+       "id": "github-item-/p-upstream-12",
+       "cwd": "/p",
+       "repo": "upstream",
+       "kind": "issue",
+       "number": 12,
+       "title": ""
+      },
+      {
+       "type": "diff",
+       "id": "diff:7c97efcbd6eb6eba",
+       "cwd": "/p",
+       "path": "src\\a.ts",
+       "staged": true
+      },
+      {
+       "type": "diff",
+       "id": "diff:kept",
+       "cwd": "/p",
+       "path": "a.ts",
+       "staged": false
+      },
+      {
+       "type": "commit-diff",
+       "id": "diff:488ebdfcdb5b7ec7",
+       "cwd": "/p",
+       "commit": "abc",
+       "path": "b.ts",
+       "oldPath": "c.ts"
+      },
+      {
+       "type": "automations",
+       "id": "automations-p1",
+       "projectId": "p1"
+      }
+     ],
+     "activeTabId": "git-/p"
+    },
+    "state": {}
+   }
+  ]
+ },
+ {
+  "store": "pane-tree",
+  "name": "deserialize_drops_corrupt_tabs",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "deserializePaneTree",
+     "args": [
+      {
+       "type": "leaf",
+       "id": "l",
+       "tabs": [
+        {
+         "type": "agent-chat",
+         "id": "chat-launch-1",
+         "sessionId": "launch-1"
+        },
+        {
+         "type": "agent-chat",
+         "id": "chat-x"
+        },
+        {
+         "type": "automations",
+         "id": "a"
+        },
+        {
+         "type": "diff",
+         "cwd": "/p",
+         "path": "a.ts",
+         "staged": "yes"
+        },
+        {
+         "type": "commit-diff",
+         "cwd": "/p",
+         "path": "a.ts"
+        },
+        {
+         "type": "github-item",
+         "cwd": "/p",
+         "repo": "fork",
+         "kind": "pr",
+         "number": 3
+        },
+        {
+         "type": "github-item",
+         "cwd": "/p",
+         "repo": "origin",
+         "kind": "pr",
+         "number": 1.5
+        },
+        {
+         "type": "hologram\u0007-with-a-very-long-kind-name-that-keeps-going",
+         "id": "h"
+        },
+        {
+         "type": 42
+        },
+        {
+         "id": "no-type"
+        },
+        {
+         "type": "git",
+         "id": "git-/q",
+         "cwd": "/q"
+        }
+       ],
+       "activeTabId": "chat-launch-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped failed-launch placeholder chat tab (session launch-1) during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped agent-chat tab with a missing/invalid sessionId during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped automations tab with a missing projectId during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped malformed diff tab (cwd/path/staged invalid) during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped malformed commit diff tab (cwd/commit/path invalid) during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped malformed GitHub item tab (cwd/repo/kind/number invalid) during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Dropped malformed GitHub item tab (cwd/repo/kind/number invalid) during workspace restore"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Unrecognised workspace tab kind \"hologram?-with-a-very-long-kind-name-tha…\" — dropped"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Unrecognised workspace tab kind \"<number>\" — dropped"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useEditorPersistence.deserializePaneTree",
+      "message": "Unrecognised workspace tab kind \"undefined\" — dropped"
+     }
+    ],
+    "result": {
+     "type": "leaf",
+     "id": "l",
+     "tabs": [
+      {
+       "type": "git",
+       "id": "git-/q",
+       "cwd": "/q"
+      }
+     ],
+     "activeTabId": "git-/q"
+    },
+    "state": {}
+   }
+  ]
+ },
+ {
+  "store": "pane-tree",
+  "name": "deserialize_legacy_leaf_and_split",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "deserializePaneTree",
+     "args": [
+      {
+       "type": "leaf",
+       "id": "old",
+       "editorFilePaths": [
+        "/a.md",
+        "/b.md"
+       ],
+       "activeTabId": "edit-/b.md"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "leaf",
+     "id": "old",
+     "tabs": [
+      {
+       "type": "editor",
+       "id": "edit-/a.md",
+       "filePath": "/a.md"
+      },
+      {
+       "type": "editor",
+       "id": "edit-/b.md",
+       "filePath": "/b.md"
+      }
+     ],
+     "activeTabId": "edit-/b.md"
+    },
+    "state": {}
+   },
+   {
+    "event": {
+     "action": "deserializePaneTree",
+     "args": [
+      {
+       "type": "split",
+       "id": "s",
+       "direction": "horizontal",
+       "children": [
+        {
+         "type": "leaf",
+         "id": "a",
+         "tabs": [
+          {
+           "type": "editor",
+           "filePath": "/a.md"
+          }
+         ],
+         "activeTabId": null
+        },
+        {
+         "type": "leaf",
+         "id": "b",
+         "tabs": [],
+         "activeTabId": null
+        }
+       ],
+       "sizes": [
+        30,
+        70
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "split",
+     "id": "s",
+     "direction": "horizontal",
+     "children": [
+      {
+       "type": "leaf",
+       "id": "a",
+       "tabs": [
+        {
+         "type": "editor",
+         "id": "edit-/a.md",
+         "filePath": "/a.md"
+        }
+       ],
+       "activeTabId": "edit-/a.md"
+      },
+      {
+       "type": "leaf",
+       "id": "b",
+       "tabs": [],
+       "activeTabId": null
+      }
+     ],
+     "sizes": [
+      30,
+      70
+     ]
+    },
+    "state": {}
+   }
+  ]
+ },
+ {
+  "store": "pane-tree",
+  "name": "reconcile_terminals_by_id_then_name",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "reconcileTerminalTabs",
+     "args": [
+      {
+       "type": "split",
+       "id": "s",
+       "direction": "horizontal",
+       "children": [
+        {
+         "type": "leaf",
+         "id": "a",
+         "tabs": [
+          {
+           "type": "terminal",
+           "id": "term-t1",
+           "terminalId": "t1"
+          },
+          {
+           "type": "terminal",
+           "id": "term-old-2",
+           "terminalId": "old-2"
+          },
+          {
+           "type": "editor",
+           "id": "edit-/open.ts",
+           "filePath": "/open.ts"
+          },
+          {
+           "type": "editor",
+           "id": "edit-/closed.ts",
+           "filePath": "/closed.ts"
+          }
+         ],
+         "activeTabId": "term-old-2"
+        },
+        {
+         "type": "leaf",
+         "id": "b",
+         "tabs": [
+          {
+           "type": "terminal",
+           "id": "term-old-3",
+           "terminalId": "old-3"
+          },
+          {
+           "type": "terminal",
+           "id": "term-old-9",
+           "terminalId": "old-9"
+          }
+         ],
+         "activeTabId": "term-old-9"
+        }
+       ],
+       "sizes": [
+        50,
+        50
+       ]
+      },
+      [
+       "/open.ts"
+      ],
+      [
+       {
+        "id": "t1",
+        "name": "Terminal 1",
+        "shell": "bash",
+        "cwd": "/p",
+        "projectId": "p1"
+       },
+       {
+        "id": "n2",
+        "name": "Build",
+        "shell": "zsh",
+        "cwd": "/q",
+        "projectId": "p1"
+       },
+       {
+        "id": "n3",
+        "name": "Logs",
+        "shell": "bash",
+        "cwd": "/p",
+        "projectId": "p1"
+       }
+      ],
+      {
+       "activeTerminalId": null,
+       "updatedAt": "2026-01-01T00:00:00.000Z",
+       "terminals": [
+        {
+         "id": "old-2",
+         "name": "Build",
+         "shell": "zsh",
+         "cwd": "/elsewhere"
+        },
+        {
+         "id": "old-3",
+         "name": "Logs",
+         "shell": "fish"
+        },
+        {
+         "id": "old-9",
+         "name": "Gone",
+         "shell": "bash"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "split",
+     "id": "s",
+     "direction": "horizontal",
+     "children": [
+      {
+       "type": "leaf",
+       "id": "a",
+       "tabs": [
+        {
+         "type": "terminal",
+         "id": "term-t1",
+         "terminalId": "t1"
+        },
+        {
+         "type": "terminal",
+         "id": "term-n2",
+         "terminalId": "n2"
+        },
+        {
+         "type": "editor",
+         "id": "edit-/open.ts",
+         "filePath": "/open.ts"
+        }
+       ],
+       "activeTabId": "term-n2"
+      },
+      {
+       "type": "leaf",
+       "id": "b",
+       "tabs": [
+        {
+         "type": "terminal",
+         "id": "term-n3",
+         "terminalId": "n3"
+        }
+       ],
+       "activeTabId": "term-n3"
+      }
+     ],
+     "sizes": [
+      50,
+      50
+     ]
+    },
+    "state": {}
+   }
+  ]
+ },
+ {
+  "store": "pane-tree",
+  "name": "reconcile_keeps_saved_terminals_when_none_live",
+  "initial": {},
+  "steps": [
+   {
+    "event": {
+     "action": "reconcileTerminalTabs",
+     "args": [
+      {
+       "type": "leaf",
+       "id": "a",
+       "tabs": [
+        {
+         "type": "terminal",
+         "id": "term-t1",
+         "terminalId": "t1"
+        },
+        {
+         "type": "canvas",
+         "id": "canvas-p",
+         "projectId": "p",
+         "docPath": "/d"
+        }
+       ],
+       "activeTabId": "canvas-p"
+      },
+      [],
+      [],
+      {
+       "activeTerminalId": "t1",
+       "updatedAt": "2026-01-01T00:00:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "leaf",
+     "id": "a",
+     "tabs": [
+      {
+       "type": "terminal",
+       "id": "term-t1",
+       "terminalId": "t1"
+      }
+     ],
+     "activeTabId": "term-t1"
+    },
+    "state": {}
+   },
+   {
+    "event": {
+     "action": "reconcileTerminalTabs",
+     "args": [
+      {
+       "type": "split",
+       "id": "s",
+       "direction": "vertical",
+       "children": [
+        {
+         "type": "leaf",
+         "id": "a",
+         "tabs": [
+          {
+           "type": "terminal",
+           "id": "term-t1",
+           "terminalId": "t1"
+          }
+         ],
+         "activeTabId": "term-t1"
+        },
+        {
+         "type": "leaf",
+         "id": "b",
+         "tabs": [],
+         "activeTabId": null
+        }
+       ],
+       "sizes": [
+        0,
+        -5
+       ]
+      },
+      [],
+      [],
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "split",
+     "id": "s",
+     "direction": "vertical",
+     "children": [
+      {
+       "type": "leaf",
+       "id": "a",
+       "tabs": [],
+       "activeTabId": null
+      },
+      {
+       "type": "leaf",
+       "id": "b",
+       "tabs": [],
+       "activeTabId": null
+      }
+     ],
+     "sizes": [
+      50,
+      50
+     ]
+    },
+    "state": {}
+   }
+  ]
+ }
+]

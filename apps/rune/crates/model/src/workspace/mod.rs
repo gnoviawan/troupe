@@ -7,11 +7,11 @@
 //! `{action, args}` is not its serde form: `tests/vectors.rs` (`call`)
 //! rewrites it as `{action: args}`, `{action: arg}` or `"action"` first.
 
-mod ids;
+pub(crate) mod ids;
 mod pane;
 mod sync;
 mod tabs;
-mod tree;
+pub(crate) mod tree;
 
 use std::collections::BTreeMap;
 
