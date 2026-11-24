@@ -49,6 +49,11 @@ impl Overlays {
         self.stack.len()
     }
 
+    /// Every open key, bottom first.
+    pub fn keys(&self) -> &[String] {
+        &self.stack
+    }
+
     /// The keys above `key`, bottom first: a phone sheet's open sub-views.
     pub fn above(&self, key: &str) -> &[String] {
         match self.stack.iter().position(|k| k == key) {
