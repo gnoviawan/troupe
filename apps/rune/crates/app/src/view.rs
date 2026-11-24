@@ -168,6 +168,7 @@ fn main_area(
             leading,
             empty: &empty,
             tab: &tab,
+            title: &|tab: &model::workspace::Tab| crate::chat_view::tab_title(s, tab),
             dark: true,
         };
         return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));

@@ -73,6 +73,14 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
     )
 }
 
+/// A chat tab's label: the chat's title as the rail lists it.
+pub fn tab_title(s: &State, tab: &Tab) -> Option<String> {
+    let Tab::AgentChat { session_id, .. } = tab else {
+        return None;
+    };
+    s.chats.get(session_id).map(|chat| chat.label().to_owned())
+}
+
 /// The full-window table, when one is open.
 pub fn layer(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     let open = s.overlays.is_open(TABLE_ZOOM);

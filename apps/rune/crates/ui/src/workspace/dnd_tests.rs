@@ -36,6 +36,7 @@ fn view(s: &S, cx: &mut Cx<S>) -> El {
             leading: Vec::new(),
             empty: &empty,
             tab: &|_| None,
+            title: &|_| None,
             dark: true,
         },
         &mut layer,
