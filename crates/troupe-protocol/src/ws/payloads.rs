@@ -1,5 +1,7 @@
 //! Typed `/ws` request payloads and reply payloads. Requests not listed here
-//! carry a payload the contract leaves open.
+//! carry a payload the contract leaves open. The host parses the request
+//! payloads marked `deny_unknown_fields` with these types and refuses a
+//! payload that carries any other field.
 
 use std::collections::BTreeMap;
 
@@ -56,7 +58,7 @@ pub struct AcpRuntimePolicy {
 /// `delete_session` request payload. The reply is `true` when the record was
 /// deleted and `false` when it was already absent.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DeleteSessionPayload {
     pub session_id: String,
 }
@@ -64,7 +66,7 @@ pub struct DeleteSessionPayload {
 /// `record_agent_switch` request payload: the host appends one durable
 /// `agent_switch` record built from it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RecordAgentSwitchPayload {
     pub session_id: String,
     pub from_config_id: String,
@@ -77,7 +79,7 @@ pub struct RecordAgentSwitchPayload {
 /// `mark_chat_read` request payload and reply: a chat's shared last-read
 /// marker. `logEpoch` is absent only from a peer that predates it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ChatReadMark {
     pub session_id: String,
     pub seq: u64,
@@ -226,6 +228,7 @@ pub struct UserPromptEvent {
 
 /// `store_read` request payload.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct StoreReadPayload {
     pub key: String,
 }
@@ -242,7 +245,7 @@ pub struct StoreReadReply {
 /// `store_write` request payload. `expected: null` (key must be absent)
 /// differs from no `expected`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StoreWritePayload {
     pub key: String,
     pub value: Value,
@@ -274,7 +277,7 @@ pub struct StoreSharedWriteReply {
 
 /// `store_delete` request payload; shared keys follow the write preconditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StoreDeletePayload {
     pub key: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -297,7 +300,7 @@ pub struct StoreDeleteReply {
 
 /// `add_project` request payload.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AddProjectPayload {
     pub id: String,
     pub name: String,
@@ -310,7 +313,7 @@ pub struct AddProjectPayload {
 /// `update_project` request payload. `cascade: true` stops the project's live
 /// sessions and terminals instead of refusing `project_busy`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UpdateProjectPayload {
     pub project_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -327,7 +330,7 @@ pub struct UpdateProjectPayload {
 
 /// `remove_project` request payload.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RemoveProjectPayload {
     pub project_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
