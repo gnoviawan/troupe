@@ -153,6 +153,8 @@
         "session_closed_in_error_drops_the_transcript_an_open_tab_shows",
         "session_closed_for_an_unknown_session_drops_what_it_left",
         "session_closed_cancels_running_subagents",
+        "session_closed_keeps_a_background_launch_tied_with_the_prompt",
+        "session_closed_splits_turns_by_time_without_a_prompt_seq",
         "session_closed_with_nothing_running_logs_no_cancel",
         "set_active_session_points_at_the_chat",
         "mark_resume_failed_writes_only_on_a_closed_chat",

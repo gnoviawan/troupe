@@ -58,6 +58,27 @@ const dispatch = (
   subagent: record
 })
 
+/** A finished background launch, stamped with `stamps` only. */
+function backgroundLaunch(
+  id: string,
+  stamps: { seq?: number; timestamp: number }
+): Record<string, unknown> {
+  const {
+    seq: _seq,
+    timestamp: _timestamp,
+    ...call
+  } = dispatch(
+    id,
+    0,
+    subagent(id, {
+      background: true,
+      caps: { stop: null, transcript: 'final', liveProgress: false, usage: false }
+    }),
+    'completed'
+  )
+  return { ...call, ...stamps }
+}
+
 const pending = (sessionId: string) => ({
   pendingPermissions: {
     [`perm-${sessionId}`]: {
@@ -226,6 +247,38 @@ export const sessionScenarios: Scenario[] = [
             subagent('done', { activity: 'idle', end: { reason: 'completed' }, endedAt: 9 }),
             'completed'
           )
+        ]
+      }
+    }),
+    steps: [closed()]
+  },
+  {
+    // A launch stamped with the prompt's own seq or time belongs to the turn
+    // before it, so only the strictly later one is cancelled.
+    name: 'session_closed_keeps_a_background_launch_tied_with_the_prompt',
+    context: { openChatTabs: [S] },
+    initial: seeded(idle, {
+      messages: { [S]: [message('u1', 'user', 'go', { seq: 5, timestamp: 5 })] },
+      toolCalls: {
+        [S]: [
+          backgroundLaunch('same-seq', { seq: 5, timestamp: 9 }),
+          backgroundLaunch('later-seq', { seq: 6, timestamp: 1 }),
+          backgroundLaunch('same-time', { timestamp: 5 }),
+          backgroundLaunch('later-time', { timestamp: 6 })
+        ]
+      }
+    }),
+    steps: [closed()]
+  },
+  {
+    name: 'session_closed_splits_turns_by_time_without_a_prompt_seq',
+    context: { openChatTabs: [S] },
+    initial: seeded(idle, {
+      messages: { [S]: [message('u1', 'user', 'go', { timestamp: 5 })] },
+      toolCalls: {
+        [S]: [
+          backgroundLaunch('same-time', { seq: 9, timestamp: 5 }),
+          backgroundLaunch('later-time', { seq: 1, timestamp: 6 })
         ]
       }
     }),

@@ -39064,6 +39064,648 @@
  },
  {
   "store": "acp",
+  "name": "session_closed_keeps_a_background_launch_tied_with_the_prompt",
+  "context": {
+   "openChatTabs": [
+    "s1"
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 5,
+      "seq": 5
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "same-seq",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-same-seq",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "same-seq",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "seq": 5,
+      "timestamp": 9
+     },
+     {
+      "toolCallId": "later-seq",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-later-seq",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "later-seq",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "seq": 6,
+      "timestamp": 1
+     },
+     {
+      "toolCallId": "same-time",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-same-time",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "same-time",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "timestamp": 5
+     },
+     {
+      "toolCallId": "later-time",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-later-time",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "later-time",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "timestamp": 6
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 19400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onSessionClosed",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "reason": "closed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.subagentRecord",
+      "message": "Cancelled 2 running subagents on chat s1: the agent process is gone"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 5,
+        "seq": 5
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "same-seq",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-same-seq",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "same-seq",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "running"
+        },
+        "seq": 5,
+        "timestamp": 9
+       },
+       {
+        "toolCallId": "later-seq",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-later-seq",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "later-seq",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "idle",
+         "end": {
+          "reason": "unexplained"
+         },
+         "endedAt": 1700000001000
+        },
+        "seq": 6,
+        "timestamp": 1
+       },
+       {
+        "toolCallId": "same-time",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-same-time",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "same-time",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "running"
+        },
+        "timestamp": 5
+       },
+       {
+        "toolCallId": "later-time",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-later-time",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "later-time",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "idle",
+         "end": {
+          "reason": "unexplained"
+         },
+         "endedAt": 1700000001000
+        },
+        "timestamp": 6
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 19400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "session_closed_splits_turns_by_time_without_a_prompt_seq",
+  "context": {
+   "openChatTabs": [
+    "s1"
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 5
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "same-time",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-same-time",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "same-time",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "seq": 9,
+      "timestamp": 5
+     },
+     {
+      "toolCallId": "later-time",
+      "title": "Task",
+      "kind": "other",
+      "status": "completed",
+      "subagent": {
+       "id": "sub-later-time",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "later-time",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": true,
+       "startedAt": 10,
+       "caps": {
+        "stop": null,
+        "transcript": "final",
+        "liveProgress": false,
+        "usage": false
+       },
+       "activity": "running"
+      },
+      "seq": 1,
+      "timestamp": 6
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 19500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onSessionClosed",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "reason": "closed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.subagentRecord",
+      "message": "Cancelled 1 running subagents on chat s1: the agent process is gone"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 5
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "same-time",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-same-time",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "same-time",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "running"
+        },
+        "seq": 9,
+        "timestamp": 5
+       },
+       {
+        "toolCallId": "later-time",
+        "title": "Task",
+        "kind": "other",
+        "status": "completed",
+        "subagent": {
+         "id": "sub-later-time",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "later-time",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": true,
+         "startedAt": 10,
+         "caps": {
+          "stop": null,
+          "transcript": "final",
+          "liveProgress": false,
+          "usage": false
+         },
+         "activity": "idle",
+         "end": {
+          "reason": "unexplained"
+         },
+         "endedAt": 1700000001000
+        },
+        "seq": 1,
+        "timestamp": 6
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 19500,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
   "name": "session_closed_with_nothing_running_logs_no_cancel",
   "initial": {
    "sessions": {
@@ -39142,7 +39784,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19400,
+    "seq": 19600,
     "historyWatermarks": {}
    }
   },
@@ -39213,7 +39855,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19400,
+      "seq": 19600,
       "historyWatermarks": {}
      }
     }
@@ -39251,7 +39893,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19500,
+    "seq": 19700,
     "historyWatermarks": {}
    }
   },
@@ -39293,7 +39935,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19500,
+      "seq": 19700,
       "historyWatermarks": {}
      }
     }
@@ -39335,7 +39977,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19500,
+      "seq": 19700,
       "historyWatermarks": {}
      }
     }
@@ -39406,7 +40048,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19600,
+    "seq": 19800,
     "historyWatermarks": {}
    }
   },
@@ -39482,7 +40124,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19600,
+      "seq": 19800,
       "historyWatermarks": {}
      }
     }
@@ -39560,7 +40202,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19600,
+      "seq": 19800,
       "historyWatermarks": {}
      }
     }
@@ -39638,7 +40280,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19600,
+      "seq": 19800,
       "historyWatermarks": {}
      }
     }
@@ -39716,7 +40358,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19600,
+      "seq": 19800,
       "historyWatermarks": {}
      }
     }
@@ -39772,7 +40414,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19700,
+    "seq": 19900,
     "historyWatermarks": {}
    }
   },
@@ -39835,7 +40477,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19700,
+      "seq": 19900,
       "historyWatermarks": {}
      }
     }
@@ -39891,7 +40533,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19800,
+    "seq": 20000,
     "historyWatermarks": {}
    }
   },
@@ -39952,7 +40594,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19800,
+      "seq": 20000,
       "historyWatermarks": {}
      }
     }
@@ -40002,7 +40644,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 19900,
+    "seq": 20100,
     "historyWatermarks": {}
    }
   },
@@ -40070,7 +40712,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19900,
+      "seq": 20100,
       "historyWatermarks": {}
      }
     }
@@ -40140,7 +40782,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19900,
+      "seq": 20100,
       "historyWatermarks": {}
      }
     }
@@ -40229,7 +40871,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 19900,
+      "seq": 20100,
       "historyWatermarks": {}
      }
     }
@@ -40267,7 +40909,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 20000,
+    "seq": 20200,
     "historyWatermarks": {}
    }
   },
@@ -40312,7 +40954,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40357,7 +40999,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40402,7 +41044,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40454,7 +41096,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40516,7 +41158,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40578,7 +41220,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20000,
+      "seq": 20200,
       "historyWatermarks": {}
      }
     }
@@ -40625,7 +41267,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 20100,
+    "seq": 20300,
     "historyWatermarks": {}
    }
   },
@@ -40683,7 +41325,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20100,
+      "seq": 20300,
       "historyWatermarks": {}
      }
     }
@@ -40741,7 +41383,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20100,
+      "seq": 20300,
       "historyWatermarks": {}
      }
     }
@@ -40779,7 +41421,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 20200,
+    "seq": 20400,
     "historyWatermarks": {}
    }
   },
@@ -40831,7 +41473,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -40883,7 +41525,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -40935,7 +41577,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -40987,7 +41629,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41039,7 +41681,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41091,7 +41733,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41143,7 +41785,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41195,7 +41837,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41247,7 +41889,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41299,7 +41941,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41351,7 +41993,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41403,7 +42045,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41455,7 +42097,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41507,7 +42149,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41559,7 +42201,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41611,7 +42253,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41663,7 +42305,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41715,7 +42357,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41767,7 +42409,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41819,7 +42461,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41871,7 +42513,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41923,7 +42565,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -41975,7 +42617,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42027,7 +42669,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42079,7 +42721,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42131,7 +42773,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42183,7 +42825,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42235,7 +42877,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42287,7 +42929,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42339,7 +42981,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42391,7 +43033,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42443,7 +43085,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42501,7 +43143,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42558,7 +43200,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42628,7 +43270,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20200,
+      "seq": 20400,
       "historyWatermarks": {}
      }
     }
@@ -42672,7 +43314,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 20300,
+    "seq": 20500,
     "historyWatermarks": {}
    }
   },
@@ -42725,7 +43367,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -42778,7 +43420,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -42845,7 +43487,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -42903,7 +43545,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -42954,7 +43596,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -43021,7 +43663,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -43069,7 +43711,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 20300,
+      "seq": 20500,
       "historyWatermarks": {}
      }
     }
@@ -43330,7 +43972,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20400,
+    "seq": 20600,
     "historyWatermarks": {}
    }
   },
@@ -43612,7 +44254,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20400,
+      "seq": 20600,
       "historyWatermarks": {}
      }
     }
@@ -43885,7 +44527,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20400,
+      "seq": 20600,
       "historyWatermarks": {}
      }
     }
@@ -44146,7 +44788,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20500,
+    "seq": 20700,
     "historyWatermarks": {}
    }
   },
@@ -44422,7 +45064,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20500,
+      "seq": 20700,
       "historyWatermarks": {}
      }
     }
@@ -44683,7 +45325,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20600,
+    "seq": 20800,
     "historyWatermarks": {}
    }
   },
@@ -44974,7 +45616,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20600,
+      "seq": 20800,
       "historyWatermarks": {}
      }
     }
@@ -45265,7 +45907,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20600,
+      "seq": 20800,
       "historyWatermarks": {}
      }
     }
@@ -45562,7 +46204,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20600,
+      "seq": 20800,
       "historyWatermarks": {}
      }
     }
@@ -45857,7 +46499,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20600,
+      "seq": 20800,
       "historyWatermarks": {}
      }
     }
@@ -46118,7 +46760,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20700,
+    "seq": 20900,
     "historyWatermarks": {}
    }
   },
@@ -46391,7 +47033,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20700,
+      "seq": 20900,
       "historyWatermarks": {}
      }
     }
@@ -46652,7 +47294,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20800,
+    "seq": 21000,
     "historyWatermarks": {}
    }
   },
@@ -46936,7 +47578,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20800,
+      "seq": 21000,
       "historyWatermarks": {}
      }
     }
@@ -47197,7 +47839,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20900,
+    "seq": 21100,
     "historyWatermarks": {}
    }
   },
@@ -47485,7 +48127,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20900,
+      "seq": 21100,
       "historyWatermarks": {}
      }
     }
@@ -47746,7 +48388,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21000,
+    "seq": 21200,
     "historyWatermarks": {}
    }
   },
@@ -48026,7 +48668,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21000,
+      "seq": 21200,
       "historyWatermarks": {}
      }
     }
@@ -48287,7 +48929,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21100,
+    "seq": 21300,
     "historyWatermarks": {}
    }
   },
@@ -48534,7 +49176,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21100,
+      "seq": 21300,
       "historyWatermarks": {}
      }
     }
@@ -48766,7 +49408,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21100,
+      "seq": 21300,
       "historyWatermarks": {}
      }
     }
@@ -49027,7 +49669,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21200,
+    "seq": 21400,
     "historyWatermarks": {}
    }
   },
@@ -49310,7 +49952,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21200,
+      "seq": 21400,
       "historyWatermarks": {}
      }
     }
@@ -49558,7 +50200,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21200,
+      "seq": 21400,
       "historyWatermarks": {}
      }
     }
@@ -49636,7 +50278,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21300,
+    "seq": 21500,
     "historyWatermarks": {}
    }
   },
@@ -49720,7 +50362,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21300,
+      "seq": 21500,
       "historyWatermarks": {}
      }
     }
@@ -49859,7 +50501,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21400,
+    "seq": 21600,
     "historyWatermarks": {}
    }
   },
@@ -50141,7 +50783,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21400,
+      "seq": 21600,
       "historyWatermarks": {}
      }
     }
@@ -50270,7 +50912,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21500,
+    "seq": 21700,
     "historyWatermarks": {}
    }
   },
@@ -50532,7 +51174,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21500,
+      "seq": 21700,
       "historyWatermarks": {}
      }
     }
@@ -50570,7 +51212,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21600,
+    "seq": 21800,
     "historyWatermarks": {}
    }
   },
@@ -50618,7 +51260,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21600,
+      "seq": 21800,
       "historyWatermarks": {}
      }
     }
@@ -50666,7 +51308,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21600,
+      "seq": 21800,
       "historyWatermarks": {}
      }
     }
@@ -50715,7 +51357,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21600,
+      "seq": 21800,
       "historyWatermarks": {}
      }
     }
@@ -50854,7 +51496,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21700,
+    "seq": 21900,
     "historyWatermarks": {}
    }
   },
@@ -51139,7 +51781,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21700,
+      "seq": 21900,
       "historyWatermarks": {}
      }
     }
@@ -51417,7 +52059,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21700,
+      "seq": 21900,
       "historyWatermarks": {}
      }
     }
@@ -51522,7 +52164,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21800,
+    "seq": 22000,
     "historyWatermarks": {}
    }
   },
@@ -51720,7 +52362,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21800,
+      "seq": 22000,
       "historyWatermarks": {}
      }
     }
@@ -51857,7 +52499,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21900,
+    "seq": 22100,
     "historyWatermarks": {}
    }
   },
@@ -52006,7 +52648,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21900,
+      "seq": 22100,
       "historyWatermarks": {}
      }
     }
@@ -52145,7 +52787,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22000,
+    "seq": 22200,
     "historyWatermarks": {}
    }
   },
@@ -52396,7 +53038,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22000,
+      "seq": 22200,
       "historyWatermarks": {}
      }
     }
@@ -52636,7 +53278,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22000,
+      "seq": 22200,
       "historyWatermarks": {}
      }
     }
@@ -52891,7 +53533,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22100,
+    "seq": 22300,
     "historyWatermarks": {}
    }
   },
@@ -53157,7 +53799,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22100,
+      "seq": 22300,
       "historyWatermarks": {}
      }
     }
@@ -53417,7 +54059,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22100,
+      "seq": 22300,
       "historyWatermarks": {}
      }
     }
@@ -53613,7 +54255,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22200,
+    "seq": 22400,
     "historyWatermarks": {}
    }
   },
@@ -53860,7 +54502,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22200,
+      "seq": 22400,
       "historyWatermarks": {}
      }
     }
@@ -53982,7 +54624,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22300,
+    "seq": 22500,
     "historyWatermarks": {}
    }
   },
@@ -54194,7 +54836,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22300,
+      "seq": 22500,
       "historyWatermarks": {}
      }
     }
@@ -54306,7 +54948,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22400,
+    "seq": 22600,
     "historyWatermarks": {}
    }
   },
@@ -54503,7 +55145,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22400,
+      "seq": 22600,
       "historyWatermarks": {}
      }
     }
@@ -54640,7 +55282,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22500,
+    "seq": 22700,
     "historyWatermarks": {}
    }
   },
@@ -54791,7 +55433,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22500,
+      "seq": 22700,
       "historyWatermarks": {}
      }
     }
@@ -54847,7 +55489,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22600,
+    "seq": 22800,
     "historyWatermarks": {}
    }
   },
@@ -54950,7 +55592,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22600,
+      "seq": 22800,
       "historyWatermarks": {}
      }
     }
@@ -55044,7 +55686,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22600,
+      "seq": 22800,
       "historyWatermarks": {}
      }
     }
@@ -55136,7 +55778,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22700,
+    "seq": 22900,
     "historyWatermarks": {}
    }
   },
@@ -55277,7 +55919,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22700,
+      "seq": 22900,
       "historyWatermarks": {}
      }
     }
@@ -55367,7 +56009,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22800,
+    "seq": 23000,
     "historyWatermarks": {}
    }
   },
@@ -55493,7 +56135,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22800,
+      "seq": 23000,
       "historyWatermarks": {}
      }
     }
@@ -55580,7 +56222,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22900,
+    "seq": 23100,
     "historyWatermarks": {}
    }
   },
@@ -55673,7 +56315,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22900,
+      "seq": 23100,
       "historyWatermarks": {}
      }
     }
@@ -55722,7 +56364,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23000,
+    "seq": 23200,
     "historyWatermarks": {}
    }
   },
@@ -55866,7 +56508,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23000,
+      "seq": 23200,
       "historyWatermarks": {}
      }
     }
@@ -55929,7 +56571,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23100,
+    "seq": 23300,
     "historyWatermarks": {}
    }
   },
@@ -56016,7 +56658,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23100,
+      "seq": 23300,
       "historyWatermarks": {}
      }
     }
