@@ -127,12 +127,14 @@ jobs:
           icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)
           VK_ICD_FILENAMES="$icd" ./target/debug/examples/theme-swatches --scene termul --snap theme-swatches-Linux.png
 
-      # `cargo test` built troupe-dev; with no TROUPE_SERVER_URL it draws the
-      # shell frame unconnected.
+      # `cargo test` builds troupe-dev's libraries but not its binary (it has no
+      # integration tests). With no TROUPE_SERVER_URL it draws the shell frame
+      # unconnected.
       - name: Snapshot the Troupe shell (Linux)
         if: runner.os == 'Linux'
         working-directory: apps/rune
         run: |
+          cargo build -p troupe-dev
           icd=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)
           VK_ICD_FILENAMES="$icd" ./target/debug/troupe-dev --snap troupe-dev-Linux.png
 
