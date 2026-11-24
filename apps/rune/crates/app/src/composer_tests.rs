@@ -590,3 +590,59 @@ fn the_phone_launcher_shows_the_worktree_strip_and_a_phone_chat_does_not() {
     assert!(crate::tests::present(&rt, "composer-chat-chat-1-tray"));
     assert!(!crate::tests::present(&rt, "composer-chat-chat-1-strip"), "a working chat has no strip");
 }
+
+fn launching_in_alpha(s: &mut crate::State) {
+    s.agents_loaded(Some(json!([{ "id": "cfg", "name": "A" }])));
+    s.composer.launching = Some(crate::launch::Launch {
+        project_id: "p-a".into(),
+        cwd: "/w/alpha".into(),
+        config_id: "cfg".into(),
+        send: ui::composer::Send::Text { text: "go".into() },
+    });
+}
+
+fn chat_tabs(s: &crate::State) -> Vec<String> {
+    model::workspace::leaves(s.workspace.root())
+        .into_iter()
+        .flat_map(|leaf| leaf.tabs.iter())
+        .filter_map(|tab| match tab {
+            model::workspace::Tab::AgentChat { session_id, .. } => Some(session_id.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_launch_opens_its_chat_in_its_own_project_after_a_switch() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    s.select_project("p-b");
+    for _ in 0..2 {
+        let read = s.sync.sent.iter().rev().find_map(|c| match c {
+            Command::Call { call, payload, .. } if payload["key"].as_str().is_some_and(|k| k.ends_with("p-b")) => Some(*call),
+            _ => None,
+        });
+        s.apply(client::ws::Output::Reply { call: read.expect("beta's reads"), result: Ok(None) });
+    }
+    assert_eq!(s.workspace.project(), Some("p-b"), "beta is open this session");
+    s.select_project("p-a");
+    launching_in_alpha(&mut s);
+    s.select_project("p-b");
+    assert_eq!(s.workspace.project(), Some("p-b"));
+    s.launch_created("agent-9".into(), Ok(Some(json!({ "sessionId": "chat-9" }))));
+    assert_eq!(s.workspace.project(), Some("p-a"), "the chat's project comes back on screen");
+    assert_eq!(chat_tabs(&s), ["chat-9"]);
+}
+
+#[test]
+fn a_launched_chat_reads_its_project_before_the_chat_list_names_it() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    launching_in_alpha(&mut s);
+    s.launch_created("agent-9".into(), Ok(Some(json!({ "sessionId": "chat-9" }))));
+    let chat = Host::Chat("chat-9".into());
+    assert_eq!(s.root_of(&chat), s.root_of(&Host::Launcher("p-a".into())));
+    assert!(s.root_of(&chat).is_some());
+}
