@@ -192,11 +192,12 @@ list and additional folders. A caller with no recipe is refused, and so is a
 start whose Project is removed or archived while the worker starts. The user's
 automatic account switching setting is the consent to run a worker on another
 Account: with it off, the worker follows its Project whatever `account` says.
-With it on and the caller a managed Claude chat on an Account, `account:
-"auto"` (the default) takes the signed-in Account with the most room by the
-same ranking a chat at its limit moves by, and skips the Accounts the
-supervisor saw reach a limit. A named `account` must be signed in. The host
-starts the worker's agent on that Account, then writes it as the worker's own
+With it on and the caller a managed Claude, Codex or Antigravity chat on an
+Account, `account: "auto"` (the default) takes that provider's signed-in
+Account with the most room by the same ranking a chat at its limit moves by,
+and skips the Accounts that provider's supervisor saw reach a limit. A named
+`account` must be an Account of that provider and signed in. The host starts
+the worker's agent on that Account, then writes it as the worker's own
 Account before the first message, so the supervisor moves the worker alone
 when it reaches a limit. When no Account has room, or the caller runs on
 credentials no Account switch changes, the worker follows its Project and the
