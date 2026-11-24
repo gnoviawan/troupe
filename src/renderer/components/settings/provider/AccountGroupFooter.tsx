@@ -26,6 +26,8 @@ export function AccountGroupFooter({
   onAutoSwitchChange: (enabled: boolean) => void
 }): React.JSX.Element | null {
   const [confirming, setConfirming] = useState(false)
+  const canConfirm = accountCount >= 2 && canManage && !autoSwitch
+  if (confirming && !canConfirm) setConfirming(false)
   const switchId = `${provider}-auto-switch`
 
   const closeWarning = (accepted: boolean): void => {
@@ -61,7 +63,7 @@ export function AccountGroupFooter({
         </SettingsCard>
         <AutoSwitchRiskDialog
           provider={provider}
-          open={confirming}
+          open={confirming && canConfirm}
           onConfirm={() => closeWarning(true)}
           onCancel={() => closeWarning(false)}
         />

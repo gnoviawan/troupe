@@ -95,6 +95,30 @@ describe('AccountGroupFooter', () => {
   })
 
   it.each([
+    ['the account count drops below two', { accountCount: 1 }],
+    ['the connection turns read-only', { canManage: false }],
+    ['another client turns it on', { autoSwitch: true }]
+  ] as const)('an open warning closes for good when %s', async (_, change) => {
+    const onAutoSwitchChange = vi.fn()
+    const props = {
+      provider: 'claude' as const,
+      accountCount: 2,
+      canManage: true,
+      autoSwitch: false,
+      saving: false,
+      onAutoSwitchChange
+    }
+    const { rerender } = render(<AccountGroupFooter {...props} />)
+    fireEvent.click(screen.getByRole('switch', { name: 'Switch accounts automatically' }))
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    rerender(<AccountGroupFooter {...props} {...change} />)
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    rerender(<AccountGroupFooter {...props} />)
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(onAutoSwitchChange).not.toHaveBeenCalled()
+  })
+
+  it.each([
     [
       'claude',
       'Switch Claude accounts automatically?',
