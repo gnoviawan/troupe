@@ -234,6 +234,7 @@ impl State {
         for (tag, result) in fetched {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
+                crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
             }
         }
         changed

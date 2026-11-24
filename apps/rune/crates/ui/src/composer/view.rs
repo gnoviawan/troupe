@@ -77,6 +77,8 @@ pub struct MenuView {
     pub sections: Vec<Section>,
     pub highlight: usize,
     pub title: Option<String>,
+    /// The Explorer folder under the title, relative to the project.
+    pub crumb: String,
     pub empty: &'static str,
 }
 
@@ -355,7 +357,11 @@ fn menu_row<S: 'static>(t: &'static Tokens, key: &str, n: usize, item: &Item, li
             matches!(item.row, Row::Conversations),
         ),
         Row::Explorer => (Some(&i::FOLDER), c.muted_foreground, true),
+        Row::Dir(_) => (Some(&i::FOLDER), c.muted_foreground, true),
+        Row::UseFolder(_) => (Some(&i::FOLDER), c.muted_foreground, false),
+        Row::File(_) => (Some(&i::FILE), c.muted_foreground, false),
     };
+    let dimmed = matches!(&item.row, Row::Dir(e) | Row::File(e) if e.ignored);
     let tile = matches!(item.row, Row::Conversations | Row::Explorer);
     let mut e = row()
         .key(format!("{key}-row-{n}"))
@@ -380,7 +386,7 @@ fn menu_row<S: 'static>(t: &'static Tokens, key: &str, n: usize, item: &Item, li
     e = e.child(
         text(item.label.clone())
             .font(sans(12.0, 500.0, 16.0))
-            .color(c.foreground)
+            .color(if dimmed { c.muted_foreground } else { c.foreground })
             .truncate(),
     );
     if let Row::Command { hint: Some(hint), .. } = &item.row {
@@ -427,13 +433,19 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
                 [8.0, 8.0, 4.0, 8.0],
             ));
         }
+        if let Some(notice) = &section.notice {
+            group = group.child(pad(
+                text(notice.clone()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground),
+                [6.0, 8.0, 6.0, 8.0],
+            ));
+        }
         for item in &section.items {
             group = group.child(menu_row(t, key, n, item, n == menu.highlight, hooks));
             n += 1;
         }
         list = list.child(group);
     }
-    if n == 0 {
+    if n == 0 && menu.sections.iter().all(|s| s.notice.is_none()) {
         list = list.child(pad(
             text(menu.empty).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground),
             [6.0, 8.0, 6.0, 8.0],
@@ -457,6 +469,13 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
                 .label("Back")
                 .child(icon(&i::CHEVRON_LEFT, 12.0).color(c.foreground))
                 .child(text(title.clone()).font(sans(12.0, 600.0, 16.0)).color(c.foreground))
+                .child(
+                    text(menu.crumb.clone())
+                        .font(sans(12.0, 400.0, 16.0))
+                        .color(c.muted_foreground)
+                        .truncate()
+                        .shrink(),
+                )
                 .on_press_tx(move |s: &mut S, tx| back(s, tx)),
         );
     }
