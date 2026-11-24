@@ -13,11 +13,17 @@ import {
 import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
+import {
+  _resetAcpAuthForTesting,
+  authenticatedAgents,
+  rememberedAuthMethods
+} from '../../../../src/renderer/stores/acp-store/slices/agent'
 import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
 import {
+  agentReplies,
   composerRecord,
   configReplies,
   dispatchOutcomes,
@@ -125,6 +131,8 @@ export const acpRecorder: StoreRecorder = {
     dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
     configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
     composerRecord.saved = context.composerOptions ?? null
+    agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
+    _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
     openChatTabs.clear()
     for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
@@ -148,7 +156,14 @@ export const acpRecorder: StoreRecorder = {
       ...Object.fromEntries(DATA_KEYS.map((key) => [key, state[key]])),
       book: {
         seq: peekSeq(),
-        historyWatermarks: Object.fromEntries(shared.historySeqWatermarks)
+        historyWatermarks: Object.fromEntries(shared.historySeqWatermarks),
+        // The auth bookkeeping, only once a vector touched it.
+        ...(authenticatedAgents.size > 0
+          ? { authenticatedAgents: [...authenticatedAgents].sort() }
+          : {}),
+        ...(rememberedAuthMethods.size > 0
+          ? { rememberedAuthMethods: Object.fromEntries([...rememberedAuthMethods].sort()) }
+          : {})
       }
     }
   },
@@ -181,6 +196,7 @@ function peekSeq(): number {
 }
 
 import { transcriptScenarios } from './acp-scenarios'
+import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
@@ -201,5 +217,6 @@ export const acpScenarios = [
   ...agentScenarios,
   ...pickScenarios,
   ...indexScenarios,
-  ...restoreScenarios
+  ...restoreScenarios,
+  ...agentCommandScenarios
 ]

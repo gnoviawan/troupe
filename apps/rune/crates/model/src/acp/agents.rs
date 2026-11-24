@@ -361,6 +361,7 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let agent_id = event.agent_id.as_str();
+        self.forget_agent_auth(agent_id);
         let gone = self.agent_session_ids(agent_id);
         if event.reason == "crashed" {
             self.agent_status
@@ -484,13 +485,33 @@ impl State {
             ));
             return;
         }
-        if self
-            .auto_open_browser_url
-            .get(agent_id)
-            .and_then(Value::as_str)
-            != Some(url)
-        {
-            self.auto_open_browser_url.remove(agent_id);
+        // Only the first capture of the agent's own sign-in flight may open
+        // by itself. A later, different capture in the same flight revokes
+        // it, and a capture outside a flight waits for a click.
+        let flight = self.current_auth_flight(agent_id);
+        let first =
+            flight.is_some() && self.book.auto_open_granted.get(agent_id) != flight.as_ref();
+        match flight {
+            Some(flight) if first => {
+                self.book
+                    .auto_open_granted
+                    .insert(agent_id.to_owned(), flight);
+                self.auto_open_browser_url
+                    .insert(agent_id.to_owned(), json!(url));
+            }
+            _ => {
+                if flight.is_none() {
+                    self.book.auto_open_granted.remove(agent_id);
+                }
+                if self
+                    .auto_open_browser_url
+                    .get(agent_id)
+                    .and_then(Value::as_str)
+                    != Some(url)
+                {
+                    self.auto_open_browser_url.remove(agent_id);
+                }
+            }
         }
         self.pending_sign_in.insert(
             agent_id.to_owned(),

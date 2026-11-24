@@ -67,6 +67,12 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .get("composerOptions")
         .cloned()
         .unwrap_or(Value::Null);
+    let mut agent_replies: VecDeque<Value> = context
+        .get("agentReplies")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
@@ -115,6 +121,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::SetModel { .. }
                         | Effect::SetConfigOption { .. }
                         | Effect::ReadComposerOptions { .. }
+                        | Effect::SpawnAgent { .. }
+                        | Effect::KillAgent { .. }
+                        | Effect::Authenticate { .. }
+                        | Effect::Logout { .. }
+                        | Effect::RespondElicitation { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
@@ -139,7 +150,21 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             ),
                         }
                     }
-                    _ => Event::ControlSet(command, None),
+                    Effect::SetMode { .. } | Effect::SetModel { .. } => {
+                        Event::ControlSet(command, None)
+                    }
+                    // An agent command answers the next `agentReplies` entry:
+                    // `{ reject }` fails it, `{ hold }` leaves it in flight.
+                    _ => {
+                        let reply = agent_replies.pop_front().unwrap_or(Value::Null);
+                        if reply.get("hold").is_some() {
+                            continue;
+                        }
+                        match reply.get("reject").and_then(Value::as_str) {
+                            Some(reason) => Event::AgentCommandFailed(command, reason.to_owned()),
+                            None => Event::AgentCommandDone(command, reply),
+                        }
+                    }
                 };
                 let more = acp::step(&mut state, event, &mut env);
                 effects.extend(more);

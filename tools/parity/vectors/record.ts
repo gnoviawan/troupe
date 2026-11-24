@@ -76,6 +76,12 @@ export const configReplies: unknown[] = []
 /** What the mocked `readComposerOptions` answers; a vector's `context.composerOptions`. */
 export const composerRecord: { saved: unknown } = { saved: null }
 
+/**
+ * How the mocked agent commands (spawn, kill, authenticate, logout, a sign-in
+ * answer) answer, in order; a vector's `context.agentReplies`.
+ */
+export const agentReplies: unknown[] = []
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 

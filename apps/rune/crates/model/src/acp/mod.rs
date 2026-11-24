@@ -6,6 +6,9 @@
 //! [`step`] applies one event and returns the effects the app runs. The model
 //! reads no clock and draws no randomness: [`Env`] carries both.
 
+mod agent_commands;
+#[cfg(test)]
+mod agent_commands_tests;
 pub mod agents;
 pub mod approvals;
 mod clamp;
@@ -35,6 +38,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{Ids, Level};
+pub use agent_commands::FlightId;
 use agents::{
     AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
     AgentSpawnedEvent, BrowserOpenRequestEvent,
@@ -175,12 +179,38 @@ pub struct Book {
     /// `session\0key` of the restore warns already logged.
     #[serde(skip)]
     pub(crate) warned_once: BTreeSet<String>,
+    /// Agents whose process signed in.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub authenticated_agents: BTreeSet<String>,
+    /// Per agent config, the auth method that last signed in; saved, never a
+    /// credential.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub remembered_auth_methods: BTreeMap<String, String>,
+    /// `agent\0method` to the authenticate in flight.
+    #[serde(skip)]
+    pub(crate) auth_flights: BTreeMap<String, FlightId>,
+    #[serde(skip)]
+    pub(crate) flight_seq: FlightId,
+    /// Clicks that share a flight, which fail with it.
+    #[serde(skip)]
+    pub(crate) auth_waiters: BTreeMap<FlightId, usize>,
+    /// Per agent, the method of the last authenticate sent.
+    #[serde(skip)]
+    pub(crate) last_auth_attempt: BTreeMap<String, String>,
+    /// Per agent, the flight whose first browser open was let open by itself.
+    #[serde(skip)]
+    pub(crate) auto_open_granted: BTreeMap<String, FlightId>,
 }
 
 impl Book {
     pub(crate) fn next_report(&mut self) -> u64 {
         self.report_seq += 1;
         self.report_seq
+    }
+
+    pub(crate) fn next_flight(&mut self) -> FlightId {
+        self.flight_seq += 1;
+        self.flight_seq
     }
 
     pub(crate) fn next_run(&mut self) -> RunId {
@@ -331,6 +361,25 @@ pub enum Event {
     /// The wait an [`Effect::WaitForReadvertisedOptions`] started ran out.
     #[serde(skip_deserializing)]
     ReadvertiseWaitOver(RunId),
+    #[serde(rename = "spawnAgent")]
+    SpawnAgent(Value, Value, #[serde(default)] Option<String>),
+    #[serde(rename = "killAgent")]
+    KillAgent(String),
+    #[serde(rename = "authenticateAgent")]
+    AuthenticateAgent(String, String, #[serde(default)] Option<Value>),
+    #[serde(rename = "logoutAgent")]
+    LogoutAgent(String),
+    #[serde(rename = "respondAgentSignIn")]
+    RespondAgentSignIn(String, String),
+    #[serde(rename = "completeBrowserAuth")]
+    CompleteBrowserAuth(String),
+    /// The command an agent command effect sent answered with this reply.
+    #[serde(skip_deserializing)]
+    AgentCommandDone(Effect, Value),
+    /// The command an agent command effect sent failed; the text is the
+    /// error's message.
+    #[serde(skip_deserializing)]
+    AgentCommandFailed(Effect, String),
     #[serde(rename = "pickModel")]
     PickModel(
         String,
@@ -478,6 +527,36 @@ pub enum Effect {
         #[serde(skip_serializing)]
         run: RunId,
     },
+    /// Start an agent process for the config; then `Event::AgentCommandDone`
+    /// with the spawn reply, or `AgentCommandFailed`.
+    SpawnAgent {
+        config: Value,
+        project_id: Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        session_id: Option<String>,
+    },
+    /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
+    KillAgent { agent_id: String },
+    /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
+    Authenticate {
+        agent_id: String,
+        method_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        input: Option<Value>,
+        #[serde(skip_serializing)]
+        flight: FlightId,
+    },
+    /// Sign the agent out; then `AgentCommandDone` or `AgentCommandFailed`.
+    Logout { agent_id: String },
+    /// Answer the agent's own sign-in prompt; then `AgentCommandDone` or
+    /// `AgentCommandFailed`.
+    RespondElicitation {
+        agent_id: String,
+        request_id: String,
+        action: String,
+    },
+    /// Save the remembered auth method per config.
+    PersistAuthMethods { methods: BTreeMap<String, String> },
     /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
     /// the agent re-advertised the session's options first.
     WaitForReadvertisedOptions {
@@ -571,6 +650,24 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             }
         }
         Event::ReadvertiseWaitOver(run) => state.poll_readvertise(Some(run), &mut fx),
+        Event::SpawnAgent(config, project_id, session_id) => {
+            state.spawn_agent(config, project_id, session_id, &mut fx);
+        }
+        Event::KillAgent(agent_id) => state.kill_agent(agent_id, &mut fx),
+        Event::AuthenticateAgent(agent_id, method_id, input) => {
+            state.authenticate_agent(agent_id, &method_id, input, &mut fx);
+        }
+        Event::LogoutAgent(agent_id) => state.logout_agent(agent_id, &mut fx),
+        Event::RespondAgentSignIn(agent_id, action) => {
+            state.respond_agent_sign_in(agent_id, action, &mut fx);
+        }
+        Event::CompleteBrowserAuth(agent_id) => state.complete_browser_auth(&agent_id, &mut fx),
+        Event::AgentCommandDone(command, reply) => {
+            state.on_agent_command_done(command, reply, &mut fx);
+        }
+        Event::AgentCommandFailed(command, message) => {
+            state.on_agent_command_failed(command, message, &mut fx);
+        }
         Event::PickModel(session_id, model_id, values) => {
             state.pick_model(session_id, model_id, values, &mut fx);
         }

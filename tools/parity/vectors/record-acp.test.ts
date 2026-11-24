@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  agentReplies,
   composerRecord,
   configReplies,
   dispatchOutcomes,
@@ -158,6 +159,21 @@ function dispatchPrompt(
   }
   return Promise.resolve(outcome)
 }
+// An agent command answers the next `context.agentReplies` entry: `{ reject }`
+// fails it, `{ hold: true }` leaves it in flight, anything else is the reply.
+function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
+  emit(effect)
+  const reply = agentReplies.shift() ?? null
+  if (typeof reply === 'object' && reply !== null) {
+    if ('reject' in reply) return Promise.reject(new Error(String(reply.reject)))
+    if ('hold' in reply) return new Promise(() => {})
+  }
+  return Promise.resolve(reply)
+}
+vi.mock(`${renderer}/lib/acp-auth-method-memory`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  saveAuthMethodMemory: async (methods: unknown) => emit({ kind: 'persistAuthMethods', methods })
+}))
 vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
   const actual = await importOriginal<{ acpApi: object }>()
   return {
@@ -167,6 +183,19 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
       sendPrompt: (agentId: string, sessionId: string, text: string, turnId: string) =>
         dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId),
       sendPromptBlocks: dispatchPrompt,
+      spawnAgent: (config: unknown, projectId: unknown, sessionId?: string) =>
+        agentCommand({
+          kind: 'spawnAgent',
+          config,
+          projectId,
+          ...(sessionId ? { sessionId } : {})
+        }),
+      killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      authenticate: (agentId: string, methodId: string, input?: unknown) =>
+        agentCommand({ kind: 'authenticate', agentId, methodId, ...(input ? { input } : {}) }),
+      logout: (agentId: string) => agentCommand({ kind: 'logout', agentId }),
+      respondElicitation: (agentId: string, requestId: string, action: string) =>
+        agentCommand({ kind: 'respondElicitation', agentId, requestId, action }),
       cancelPrompt: async (agentId: string, sessionId: string) =>
         emit({ kind: 'cancelPrompt', agentId, sessionId }),
       setMode: async (agentId: string, sessionId: string, modeId: string) =>

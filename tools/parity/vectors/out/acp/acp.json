@@ -65766,5 +65766,4805 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "spawn_agent_registers_what_the_reply_says",
+  "context": {
+   "agentReplies": [
+    {
+     "agentId": "agent-2",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "type": "agent"
+      }
+     ],
+     "hostAuthReady": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 25600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "spawnAgent",
+     "args": [
+      {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "p1",
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "projectId": "p1",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "type": "agent"
+        }
+       ],
+       "hostAuthReady": true
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 25600,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "spawn_agent_falls_back_to_what_the_event_seeded",
+  "context": {
+   "agentReplies": [
+    {
+     "agentId": "agent-1",
+     "capabilities": {
+      "loadSession": true
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": true
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 25700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "spawnAgent",
+     "args": [
+      {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": true
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 25700,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "spawn_agent_failure_marks_the_config_name",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "spawn failed"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 25800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "spawnAgent",
+     "args": [
+      {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "id": "cfg-1",
+       "name": "Claude",
+       "command": "claude-acp",
+       "args": []
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: spawn failed"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "Claude": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 25800,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "kill_agent_drops_the_agent_and_closes_its_chats",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {
+    "perm-1": {
+     "requestId": "perm-1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "toolCall": {
+      "toolCallId": "t1",
+      "title": "Edit"
+     },
+     "options": []
+    }
+   },
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "cfg-1\u0000/work\u0000p1\u0000": "s1"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 25900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "killAgent",
+     "args": [
+      "agent-1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "killAgent",
+      "agentId": "agent-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 25900,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "kill_agent_failure_keeps_the_agent",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "no such agent"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "killAgent",
+     "args": [
+      "agent-1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "killAgent",
+      "agentId": "agent-1"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: no such agent"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "authenticate_remembers_an_agent_method_and_ends_the_sign_in",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      " oauth "
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26100,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "legacy"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "legacy"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "legacy"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26100,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "legacy"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "legacy"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "legacy"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26100,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "legacy"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "authenticate_does_not_remember_a_terminal_method_or_a_key",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26200,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "term"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "term"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26200,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth",
+      {
+       "apiKey": "secret"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth",
+      "input": {
+       "apiKey": "secret"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26200,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "authenticate_rejects_an_empty_or_unadvertised_method",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26300,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "  "
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: Cannot sign in: the agent advertised an empty authentication method id."
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26300,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "password"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: Cannot sign in: this authentication method is no longer advertised."
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26300,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "authenticate_failure_logs_without_the_reason",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "bad token abc123"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.authenticateAgent",
+      "message": "Agent authenticate request failed"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: bad token abc123"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "only_the_first_browser_open_of_a_sign_in_flight_auto_opens",
+  "context": {
+   "agentReplies": [
+    {
+     "hold": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onBrowserOpenRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "url": "https://login.example/b"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/b"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/b"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onBrowserOpenRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "url": "https://login.example/c"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/c"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/c"
+     },
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onBrowserOpenRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "url": "https://login.example/c"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/c"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/c"
+     },
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26500,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onBrowserOpenRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "url": "https://evil.example/d"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://evil.example/d"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26500,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "complete_browser_auth_remembers_the_attempted_method",
+  "context": {
+   "agentReplies": [
+    {
+     "hold": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onBrowserOpenRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "url": "https://login.example/c"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/c"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/c"
+     },
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeBrowserAuth",
+     "args": [
+      "agent-1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26600,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_disconnect_forgets_the_sign_in",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26700,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentDisconnected",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "reason": "exited"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      }
+     },
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26700,
+      "historyWatermarks": {},
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "logout_signs_the_agent_out",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26800,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "logoutAgent",
+     "args": [
+      "agent-1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "logout",
+      "agentId": "agent-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26800,
+      "historyWatermarks": {},
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "logout_is_refused_without_the_capability_or_on_failure",
+  "context": {
+   "agentReplies": [
+    null,
+    {
+     "reject": "host gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    },
+    "agent-2": {
+     "id": "agent-2",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 26900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "logoutAgent",
+     "args": [
+      "agent-1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: This agent does not support sign out."
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "cfg-1": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26900,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "logoutAgent",
+     "args": [
+      "agent-2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "logout",
+      "agentId": "agent-2"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.logoutAgent",
+      "message": "Logout failed for agent agent-2: host gone"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: host gone"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 26900,
+      "historyWatermarks": {},
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "cfg-1": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "respond_agent_sign_in_accept_keeps_the_prompt",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "elicitation",
+     "requestId": "req-1",
+     "url": "https://login.example/e",
+     "message": "Code 1234"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 27000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "respondAgentSignIn",
+     "args": [
+      "agent-1",
+      "accept"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:respondAgentSignIn",
+      "message": "[acp] sign-in prompt accept (agentId=agent-1, requestId=req-1)"
+     },
+     {
+      "kind": "respondElicitation",
+      "agentId": "agent-1",
+      "requestId": "req-1",
+      "action": "accept"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "elicitation",
+       "requestId": "req-1",
+       "url": "https://login.example/e",
+       "message": "Code 1234"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 27000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "respond_agent_sign_in_cancel_ends_the_prompt",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "elicitation",
+     "requestId": "req-1",
+     "url": "https://login.example/e",
+     "message": "Code 1234"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 27100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "respondAgentSignIn",
+     "args": [
+      "agent-1",
+      "cancel"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:respondAgentSignIn",
+      "message": "[acp] sign-in prompt cancel (agentId=agent-1, requestId=req-1)"
+     },
+     {
+      "kind": "respondElicitation",
+      "agentId": "agent-1",
+      "requestId": "req-1",
+      "action": "cancel"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 27100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "respond_agent_sign_in_ignores_a_browser_prompt",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 27200,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "respondAgentSignIn",
+     "args": [
+      "agent-1",
+      "accept"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 27200,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "respond_agent_sign_in_failure_is_logged",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "request gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "auth": {
+       "logout": true
+      }
+     },
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "Browser",
+       "type": "agent"
+      },
+      {
+       "id": "term",
+       "name": "Terminal",
+       "type": "terminal"
+      },
+      {
+       "id": "legacy",
+       "name": "Legacy"
+      }
+     ],
+     "hostAuthReady": false
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "elicitation",
+     "requestId": "req-1",
+     "url": "https://login.example/e",
+     "message": "Code 1234"
+    }
+   },
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 27300,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "respondAgentSignIn",
+     "args": [
+      "agent-1",
+      "accept"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store:respondAgentSignIn",
+      "message": "[acp] sign-in prompt accept (agentId=agent-1, requestId=req-1)"
+     },
+     {
+      "kind": "respondElicitation",
+      "agentId": "agent-1",
+      "requestId": "req-1",
+      "action": "accept"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store:respondAgentSignIn",
+      "message": "[acp] sign-in prompt response failed (agentId=agent-1, requestId=req-1)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: request gone"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "auth": {
+         "logout": true
+        }
+       },
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "Browser",
+         "type": "agent"
+        },
+        {
+         "id": "term",
+         "name": "Terminal",
+         "type": "terminal"
+        },
+        {
+         "id": "legacy",
+         "name": "Legacy"
+        }
+       ],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "elicitation",
+       "requestId": "req-1",
+       "url": "https://login.example/e",
+       "message": "Code 1234"
+      }
+     },
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 27300,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
  }
 ]
