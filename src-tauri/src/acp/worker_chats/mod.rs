@@ -1,8 +1,9 @@
 //! Worker chats an agent starts with the `start_chat` host tool. Each is a
 //! real, persisted chat in the caller's project and folder, on its own host
-//! agent, started and prompted with no client connected. A managed Claude
-//! caller's worker runs on the signed-in Account with the most room, written
-//! as the chat's own Account, so the limit supervisor moves it like any chat.
+//! agent, started and prompted with no client connected. A caller on a
+//! managed Claude, Codex or Antigravity Account gets a worker on that
+//! provider's signed-in Account with the most room, written as the chat's own
+//! Account, so the provider's limit supervisor moves it like any chat.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Weak};
@@ -12,14 +13,14 @@ use agent_client_protocol::schema::v1::{ContentBlock, SessionModeState, TextCont
 use parking_lot::Mutex;
 use serde::Serialize;
 
-use crate::acp::claude_agent::{ClaudeLaunchAuth, LaunchChat};
-use crate::acp::claude_limit::decide::{self, Candidate};
-use crate::acp::claude_limit::{AccountRef, ClaudeLimitHandle, CLAUDE_CONFIG_ID};
+use crate::acp::claude_agent::LaunchChat;
+use crate::acp::claude_limit::decide::Candidate;
+use crate::acp::claude_limit::AccountRef;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::limit_runtime::roomiest_account;
 use crate::acp::manager::{LaunchRecipe, SessionCreationContext};
 use crate::acp::session_persistence::{SessionKind, UNASSIGNED_PROJECT_ID};
-use crate::acp::{AcpManager, SignInCheck, SpawnScope};
+use crate::acp::{AcpManager, SpawnScope};
 use crate::logging::redact_session_id;
 use crate::web::prompt_turn::{
     accept_prompt_turn, complete_prompt_turn, PromptAdmission, PromptTurnError, PromptTurnRequest,
@@ -27,10 +28,13 @@ use crate::web::prompt_turn::{
 use crate::web::project_registry::ProjectRegistry;
 use crate::web::WsRelaySink;
 
+mod provider;
+pub use provider::Provider;
+
 /// Worker chats one caller may have running at once.
 pub const MAX_LIVE_CHILDREN: usize = 6;
 
-/// The Claude Account a new worker chat runs on.
+/// The Account a new worker chat runs on, of its caller's provider.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AccountChoice {
     /// The signed-in Account with the most room.
@@ -62,7 +66,7 @@ pub struct StartChatRequest {
 #[serde(rename_all = "camelCase")]
 pub struct StartedChat {
     pub chat_id: String,
-    /// The chat's own Claude Account; `None` when it follows its Project.
+    /// The chat's own Account; `None` when it follows its Project.
     pub account: Option<AccountRef>,
     /// Why the chat follows its Project, or what did not apply.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -79,8 +83,8 @@ pub enum WorkerChatError {
     QuickChat,
     ProjectBusy,
     CapReached,
-    UnknownAccount(String),
-    AccountNotReady(String),
+    UnknownAccount(Provider, String),
+    AccountNotReady(Provider, String),
     /// The chat does not exist or another chat started it.
     NotYourChat(String),
     Busy(String),
@@ -99,8 +103,8 @@ impl WorkerChatError {
             Self::QuickChat => "quick_chat",
             Self::ProjectBusy => "project_busy",
             Self::CapReached => "too_many_chats",
-            Self::UnknownAccount(_) => "unknown_account",
-            Self::AccountNotReady(_) => "account_not_ready",
+            Self::UnknownAccount(..) => "unknown_account",
+            Self::AccountNotReady(..) => "account_not_ready",
             Self::NotYourChat(_) => "not_your_chat",
             Self::Busy(_) => "busy",
             Self::Stopped(_) => "stopped",
@@ -126,13 +130,15 @@ impl WorkerChatError {
                  have. Wait for one to finish (read it with read_chat) or give more work to one \
                  with send_to_chat."
             ),
-            Self::UnknownAccount(id) => format!(
-                "Troupe has no Claude account with ID {id}. Pass \"auto\" to use the account \
-                 with the most room."
+            Self::UnknownAccount(provider, id) => format!(
+                "Troupe has no {} account with ID {id}. Pass \"auto\" to use the account \
+                 with the most room.",
+                provider.name()
             ),
-            Self::AccountNotReady(id) => format!(
-                "The Claude account with ID {id} is not signed in. Pass \"auto\" to use the \
-                 account with the most room, or ask the user to sign in to it."
+            Self::AccountNotReady(provider, id) => format!(
+                "The {} account with ID {id} is not signed in. Pass \"auto\" to use the \
+                 account with the most room, or ask the user to sign in to it.",
+                provider.name()
             ),
             Self::NotYourChat(id) => format!(
                 "Chat {id} was not started by this chat. send_to_chat only reaches chats this \
@@ -169,66 +175,76 @@ struct Children {
 pub(crate) enum FollowReason {
     /// The caller runs on credentials no Account switch changes.
     Unmanaged,
-    /// The user turned automatic account switching off.
-    AutoSwitchOff,
-    NoRoom,
+    /// The user turned the provider's automatic account switching off.
+    AutoSwitchOff(Provider),
+    NoRoom(Provider),
 }
 
 impl FollowReason {
-    fn note(self) -> &'static str {
+    fn note(self) -> String {
         match self {
-            Self::Unmanaged => "This chat does not run on a Claude account Troupe manages, so the \
-                new chat uses its project's agent setup and `account` was ignored.",
-            Self::AutoSwitchOff => {
-                "Automatic account switching is off, so this chat uses the project's account."
-            }
-            Self::NoRoom => "No signed-in Claude account has room now, so the new chat uses its \
-                project's account.",
+            Self::Unmanaged => "This chat does not run on a Claude, Codex or Antigravity account \
+                Troupe manages, so the new chat uses its project's agent setup and `account` was \
+                ignored."
+                .to_string(),
+            Self::AutoSwitchOff(provider) => format!(
+                "Automatic {} account switching is off, so the new chat uses the project's \
+                 account.",
+                provider.name()
+            ),
+            Self::NoRoom(provider) => format!(
+                "No signed-in {} account has room now, so the new chat uses its project's \
+                 account.",
+                provider.name()
+            ),
         }
     }
 }
 
-/// Where a new worker chat's agent gets its Claude Account.
+/// Where a new worker chat's agent gets its Account.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum AccountPick {
-    Pinned(String),
+    Pinned(Provider, String),
     FollowsProject(FollowReason),
 }
 
-/// The Account of a new worker chat. `managed`: the caller is a managed
-/// Claude chat on an Account. `auto_switch`: the user's consent to run chats
-/// on other Accounts. `roomiest`: the ranked pick over `candidates`.
+/// The Account of a new worker chat. `provider`: the provider of the
+/// managed Account the caller runs on, `None` when it runs on none.
+/// `auto_switch`: the user's consent to run that provider's chats on other
+/// Accounts. `roomiest`: the ranked pick over `candidates`.
 pub(crate) fn pick_account(
-    managed: bool,
+    provider: Option<Provider>,
     auto_switch: bool,
     choice: &AccountChoice,
     candidates: &[Candidate],
     roomiest: Option<&str>,
 ) -> Result<AccountPick, WorkerChatError> {
-    if !managed {
+    let Some(provider) = provider else {
         return Ok(AccountPick::FollowsProject(FollowReason::Unmanaged));
-    }
+    };
     if !auto_switch {
-        return Ok(AccountPick::FollowsProject(FollowReason::AutoSwitchOff));
+        return Ok(AccountPick::FollowsProject(FollowReason::AutoSwitchOff(
+            provider,
+        )));
     }
     match choice {
         AccountChoice::Auto => Ok(roomiest.map_or(
-            AccountPick::FollowsProject(FollowReason::NoRoom),
-            |id| AccountPick::Pinned(id.to_string()),
+            AccountPick::FollowsProject(FollowReason::NoRoom(provider)),
+            |id| AccountPick::Pinned(provider, id.to_string()),
         )),
         AccountChoice::Account(id) => match candidates.iter().find(|c| c.account_id == *id) {
-            None => Err(WorkerChatError::UnknownAccount(id.clone())),
+            None => Err(WorkerChatError::UnknownAccount(provider, id.clone())),
             Some(candidate) if !candidate.ready => {
-                Err(WorkerChatError::AccountNotReady(id.clone()))
+                Err(WorkerChatError::AccountNotReady(provider, id.clone()))
             }
-            Some(_) => Ok(AccountPick::Pinned(id.clone())),
+            Some(_) => Ok(AccountPick::Pinned(provider, id.clone())),
         },
     }
 }
 
 /// A worker chat's Account, named.
 enum ChildAccount {
-    Pinned(AccountRef),
+    Pinned(Provider, AccountRef),
     FollowsProject(FollowReason),
 }
 
@@ -382,7 +398,7 @@ impl WorkerChats {
         let slot = self.reserve(&acp, &request.caller)?;
         let account = child_account(&acp, &recipe, &request.account).await?;
         let chat = match &account {
-            ChildAccount::Pinned(account) => LaunchChat::New {
+            ChildAccount::Pinned(_, account) => LaunchChat::New {
                 account_id: account.id.clone(),
             },
             ChildAccount::FollowsProject(_) => LaunchChat::None,
@@ -453,15 +469,13 @@ impl WorkerChats {
         }
         let mut note = None;
         let account = match account {
-            ChildAccount::Pinned(account) => {
-                let pinned = acp
-                    .claude_agent()
-                    .set_chat_account(
+            ChildAccount::Pinned(provider, account) => {
+                let pinned = provider
+                    .pin(
+                        &acp,
                         project_id.as_deref().unwrap_or(UNASSIGNED_PROJECT_ID),
                         &child.0,
-                        Some(&account.id),
-                        None,
-                        SignInCheck::Skip,
+                        &account.id,
                     )
                     .await;
                 if let Err(error) = pinned {
@@ -478,7 +492,7 @@ impl WorkerChats {
                 Some(account)
             }
             ChildAccount::FollowsProject(reason) => {
-                note = Some(reason.note().to_string());
+                note = Some(reason.note());
                 None
             }
         };
@@ -677,53 +691,41 @@ async fn live_owner(acp: &AcpManager, chat: &SessionId) -> Option<AgentId> {
     None
 }
 
-/// Read what [`pick_account`] needs and name the Account it picks.
+/// Read what [`pick_account`] needs from the caller's provider and name the
+/// Account it picks.
 async fn child_account(
     acp: &AcpManager,
     recipe: &LaunchRecipe,
     choice: &AccountChoice,
 ) -> Result<ChildAccount, WorkerChatError> {
-    let managed = recipe.launch.config.config_id.as_deref() == Some(CLAUDE_CONFIG_ID)
-        && matches!(recipe.launch.claude, ClaudeLaunchAuth::Account(_));
-    let snapshot = if managed {
-        Some(
-            acp.claude_agent()
-                .profile_list()
+    let provider = Provider::of(&recipe.launch);
+    let accounts = match provider {
+        Some(provider) => Some(
+            provider
+                .accounts(acp)
                 .await
                 .map_err(WorkerChatError::Failed)?,
-        )
-    } else {
-        None
+        ),
+        None => None,
     };
-    let auto_switch = snapshot.as_ref().is_some_and(|snapshot| snapshot.auto_switch);
-    let candidates = match &snapshot {
-        Some(snapshot) if auto_switch => {
-            let usage = acp
-                .claude_agent()
-                .accounts_usage(true)
-                .await
-                .unwrap_or_else(|error| {
-                    log::warn!("[worker-chats] usage read failed: {error}");
-                    Vec::new()
-                });
-            decide::candidates(snapshot, &usage, None)
-        }
-        _ => Vec::new(),
-    };
-    let limited_until = acp
-        .claude_limit()
-        .map(ClaudeLimitHandle::limited_until)
-        .unwrap_or_default();
-    let roomiest = roomiest_account(&candidates, &limited_until, SystemTime::now());
-    match pick_account(managed, auto_switch, choice, &candidates, roomiest.as_deref())? {
+    let auto_switch = accounts
+        .as_ref()
+        .is_some_and(|accounts| accounts.auto_switch);
+    let candidates = accounts
+        .as_ref()
+        .map_or(&[][..], |accounts| accounts.candidates.as_slice());
+    let roomiest = provider.and_then(|provider| {
+        roomiest_account(candidates, &provider.limited_until(acp), SystemTime::now())
+    });
+    match pick_account(provider, auto_switch, choice, candidates, roomiest.as_deref())? {
         AccountPick::FollowsProject(reason) => Ok(ChildAccount::FollowsProject(reason)),
-        AccountPick::Pinned(id) => {
-            let name = snapshot
+        AccountPick::Pinned(provider, id) => {
+            let name = accounts
                 .iter()
-                .flat_map(|snapshot| &snapshot.profiles)
+                .flat_map(|accounts| &accounts.profiles)
                 .find(|account| account.id == id)
                 .map_or_else(|| id.clone(), |account| account.name.clone());
-            Ok(ChildAccount::Pinned(AccountRef { id, name }))
+            Ok(ChildAccount::Pinned(provider, AccountRef { id, name }))
         }
     }
 }
