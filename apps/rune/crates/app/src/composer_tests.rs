@@ -203,3 +203,19 @@ fn return_in_the_launcher_starts_a_chat() {
         "the host takes configId, not the stored id"
     );
 }
+
+#[test]
+fn a_refused_prompt_shows_the_host_error_once_prefixed() {
+    let (mut s, host) = chat();
+    s.draft_mut(&host).edit.insert("hello");
+    s.composer_send(&host);
+    let turn = prompts(&s)[0]["turnId"].as_str().expect("turn id").to_owned();
+    let error = troupe_protocol::ws::WsError {
+        code: "agent_error".into(),
+        message: "agent busy elsewhere".into(),
+        details: None,
+    };
+    s.prompt_settled("chat-1".into(), turn, Err(error));
+    let session = &s.chat.acp.sessions["chat-1"];
+    assert_eq!(session.last_error.as_deref(), Some("Error: agent busy elsewhere"));
+}
