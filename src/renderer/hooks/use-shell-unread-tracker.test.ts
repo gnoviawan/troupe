@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { cleanup, renderHook } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useChatActivityStore } from '@/stores/chat-activity-store'
+import { type QuickChatView, useQuickChatStore } from '@/stores/quick-chat-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { LeafNode, PaneNode, SplitNode } from '@/types/workspace.types'
-import { activeChatSessionIds, viewingSessionIds } from './use-shell-unread-tracker'
+import { activeChatSessionIds, useShellUnreadTracker } from './use-shell-unread-tracker'
+
+vi.mock('@/lib/chat-activity-sync', () => ({ startChatActivitySync: () => () => {} }))
 
 function chatLeaf(id: string, sessionId: string | null, extra: LeafNode['tabs'] = []): LeafNode {
   const tabs: LeafNode['tabs'] = [...extra]
@@ -96,12 +102,36 @@ describe('activeChatSessionIds', () => {
   })
 })
 
-describe('viewingSessionIds', () => {
-  it('counts only the open quick chat, which covers the panes', () => {
-    expect(viewingSessionIds('quick-1', ['sa', 'sb'])).toEqual(['quick-1'])
+describe('useShellUnreadTracker viewing', () => {
+  const initialWorkspace = useWorkspaceStore.getState()
+
+  afterEach(() => {
+    cleanup()
+    useWorkspaceStore.setState(initialWorkspace, true)
+    useQuickChatStore.setState({ view: { mode: 'closed' } })
+    useChatActivityStore.getState().setViewing([])
   })
 
-  it('counts the panes when no quick chat is open', () => {
-    expect(viewingSessionIds(null, ['sa', 'sb'])).toEqual(['sa', 'sb'])
+  function viewingWith(view: QuickChatView): readonly string[] {
+    useWorkspaceStore.setState({
+      root: split('s', [chatLeaf('a', 'sa'), chatLeaf('b', 'sb')]),
+      activePaneId: 'a',
+      fullscreenPaneId: null
+    })
+    useQuickChatStore.setState({ view })
+    renderHook(() => useShellUnreadTracker())
+    return useChatActivityStore.getState().viewing
+  }
+
+  it('views the panes’ chats when no quick view is open', () => {
+    expect(viewingWith({ mode: 'closed' })).toEqual(['sa', 'sb'])
+  })
+
+  it('views only the open quick chat, which covers the panes', () => {
+    expect(viewingWith({ mode: 'chat', sessionId: 'quick-1' })).toEqual(['quick-1'])
+  })
+
+  it('views no chat while the quick chat launcher covers the panes', () => {
+    expect(viewingWith({ mode: 'launcher' })).toEqual([])
   })
 })
