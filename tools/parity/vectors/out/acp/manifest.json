@@ -32,7 +32,8 @@
         "prompt_echo_dedups_by_turn_id_and_still_counts",
         "prompt_echo_dedups_against_the_trailing_user_blocks",
         "prompt_echo_on_a_busy_session_keeps_its_turn",
-        "prompt_echo_of_a_replay_or_closed_session_does_not_open_a_turn",
+        "prompt_echo_of_a_replaying_session_does_not_open_a_turn",
+        "prompt_echo_of_a_closed_session_does_not_open_a_turn",
         "prompt_echo_splits_off_the_read_only_guard",
         "prompt_echo_strips_the_handoff_preamble",
         "prompt_echo_for_an_unknown_session_is_dropped",
@@ -56,6 +57,7 @@
         "session_info_title_and_notices",
         "session_info_title_of_an_unindexed_session_stays_in_memory",
         "usage_update_tracks_tokens_cost_and_limits",
+        "usage_falsy_rate_limits_count_as_none",
         "usage_rate_limit_without_tokens_starts_a_record"
       ]
     }

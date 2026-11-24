@@ -322,10 +322,6 @@ fn next_notice(
     })
 }
 
-fn truthy(value: Option<&Value>) -> Option<&Value> {
-    value.filter(|value| !value.is_null())
-}
-
 impl State {
     pub(crate) fn on_user_prompt(
         &mut self,
@@ -592,9 +588,12 @@ impl State {
             && event.size.is_finite()
             && event.size > 0.0
             && event.used > 0.0;
-        let reported_limit = truthy(event.rate_limit.as_ref())
-            .or_else(|| truthy(event.limit_reached.as_ref()))
+        // `rateLimit ?? limitReached`, then JavaScript truthiness.
+        let selected = [&event.rate_limit, &event.limit_reached]
+            .into_iter()
+            .find_map(|limit| limit.as_ref().filter(|limit| !limit.is_null()))
             .cloned();
+        let reported_limit = selected.clone().filter(js::truthy);
         if !reports_tokens && reported_limit.is_none() {
             return;
         }
@@ -619,7 +618,7 @@ impl State {
                     ..base
                 }
             }
-            reported_limit => {
+            _ => {
                 let baseline_used = match prev {
                     Some(prev) if prev.used > 0.0 => prev.baseline_used,
                     _ => event.used,
@@ -637,8 +636,10 @@ impl State {
                     size: event.size,
                     baseline_used,
                     cost,
-                    rate_limit: reported_limit
-                        .or_else(|| prev.and_then(|prev| prev.rate_limit.clone())),
+                    rate_limit: match selected {
+                        Some(limit) => js::truthy(&limit).then_some(limit),
+                        None => prev.and_then(|prev| prev.rate_limit.clone()),
+                    },
                     updated_at: Some(env.now),
                     source: "reported".into(),
                 }

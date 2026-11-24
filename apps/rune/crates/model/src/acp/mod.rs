@@ -8,6 +8,8 @@
 
 mod clamp;
 pub mod js;
+#[cfg(test)]
+mod js_tests;
 mod plan;
 mod tool_call;
 mod transcript;
@@ -20,8 +22,9 @@ use serde_json::Value;
 
 use crate::{Ids, Level};
 pub use transcript::{
-    CommandsUpdateEvent, HistoryPayload, MessageChunkEvent, PlanUpdateEvent,
-    SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent, UsageUpdateEvent, UserPromptEvent,
+    CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
+    Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
+    UsageUpdateEvent, UserPromptEvent,
 };
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 
