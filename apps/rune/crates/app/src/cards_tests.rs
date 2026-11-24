@@ -154,3 +154,63 @@ fn an_elicitation_form_checks_its_fields_then_answers() {
         [json!({ "agentId": "agent-1", "requestId": "el-1", "action": "accept", "content": { "runs": 3, "branch": "dev" } })]
     );
 }
+
+fn consent_ticket(rt: &mut Runtime<State>) {
+    ask(
+        rt,
+        json!({ "_onPermissionRequest": [{
+            "agentId": "agent-1", "sessionId": "chat-1", "requestId": "host:ticket-1",
+            "options": [{ "optionId": "allow_session" }, { "optionId": "allow_project" }, { "optionId": "deny" }],
+            "_meta": { "termul": { "origin_kind": "browser", "browser": {
+                "origin": "https://example.com", "targetUrl": "https://example.com/login", "action": "password_submit", "profile": "ephemeral",
+            } } },
+        }, 9] }),
+    );
+}
+
+#[test]
+fn browser_consent_sends_exactly_the_option_pressed_and_comes_back_when_refused() {
+    let mut rt = chat();
+    consent_ticket(&mut rt);
+    assert!(present(&rt, "browser-consent-host:ticket-1"), "the card shows over the composer");
+    tap(&mut rt, "browser-consent-allow_project");
+    assert_eq!(
+        sent(&rt.state, WsRequestType::RespondPermission),
+        [json!({ "agentId": "agent-1", "requestId": "host:ticket-1", "optionId": "allow_project" })]
+    );
+    assert!(!present(&rt, "browser-consent-host:ticket-1"), "the answered card leaves");
+    let ticket = serde_json::to_value(rt.state.chat.acp.pending_browser_consents.clone()).unwrap();
+    assert_eq!(ticket, json!({}));
+    let call = rt.state.sync.last_call();
+    rt.update_if(|s, _| {
+        let error = troupe_protocol::ws::WsError { code: "TICKET_TOO_EARLY".into(), message: "too early".into(), details: None };
+        s.apply(Output::Reply { call, result: Err(error) });
+        true
+    });
+    rt.frame(0.3);
+    assert!(present(&rt, "browser-consent-host:ticket-1"), "a too-early answer brings the card back");
+    assert_eq!(rt.state.toasts.visible().len(), 1, "and says why");
+}
+
+#[test]
+fn a_free_text_question_sends_the_typed_answer() {
+    let mut rt = chat();
+    ask(
+        &mut rt,
+        json!({ "_onQuestionRequest": [{
+            "agentId": "agent-1", "sessionId": "chat-1", "questionId": "q-9", "question": "Which branch?",
+            "options": [{ "value": "main", "label": "main" }], "allowFreeText": true,
+        }, 6] }),
+    );
+    assert!(present(&rt, "question-other-q-9"), "the question offers its own answer");
+    tap(&mut rt, "question-option-0");
+    rt.update_if(|s, _| {
+        s.chat.reader.picks.other("q-9").text = "  release/1.2 ".into();
+        true
+    });
+    tap(&mut rt, "question-submit-q-9");
+    assert_eq!(
+        sent(&rt.state, WsRequestType::AnswerQuestion),
+        [json!({ "agentId": "agent-1", "questionId": "q-9", "values": ["release/1.2"] })]
+    );
+}

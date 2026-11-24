@@ -67,7 +67,11 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
     if let Some(plan) = plan_panel(s, t, session_id, phone) {
         chat = chat.child(plan);
     }
-    let chat = chat.child(body).child(composer);
+    chat = chat.child(body);
+    if let Some(consent) = consent_card(s, t, session_id, phone) {
+        chat = chat.child(consent);
+    }
+    let chat = chat.child(composer);
     let frame = row().key(format!("tab-body-{}", tab.id())).w_full().grow(1.0).min_h(0.0);
     Some(match subagent_panel(s, t, session_id) {
         Some(panel) if phone => frame.child(panel.w_full()),
@@ -191,8 +195,27 @@ fn question_dock(s: &State, t: &'static Tokens, q: &model::acp::approvals::Pendi
             col()
                 .w_full()
                 .max_w(ui::chat::COLUMN_MAX_W)
-                .child(ui::chat::approvals::question_card(t, q, picked, phone, lenses())),
+                .child(ui::chat::approvals::question_card(t, q, picked, s.chat.reader.picks.other_of(&q.question_id), phone, lenses())),
         )
+}
+
+/// `BrowserConsentCard` over the composer while a host ticket for this chat waits (the web
+/// client has no browser pane, so the card always hosts it).
+fn consent_card(s: &State, t: &'static Tokens, session_id: &str, phone: bool) -> Option<El> {
+    let closed = s.chat.acp.sessions.get(session_id).is_none_or(|x| x.status == model::acp::types::SessionStatus::Closed);
+    let ticket = s.chat.acp.pending_browser_consents.values().find(|v| v.get("sessionId").and_then(serde_json::Value::as_str) == Some(session_id)).filter(|_| !closed)?;
+    let agent = s.shown_agent_name(&crate::composer::Host::Chat(session_id.to_owned()));
+    let card = ui::chat::consent::card(t, ticket, agent.as_deref().unwrap_or("The agent"), phone, |s: &mut State, request, option| s.respond_browser_consent(request, option));
+    Some(
+        col()
+            .key(format!("browser-consent-dock-{session_id}"))
+            .w_full()
+            .items_center()
+            .px(if phone { 16.0 } else { 20.0 })
+            .pt(12.0)
+            .pb(8.0)
+            .child(col().w_full().max_w(ui::chat::COLUMN_MAX_W).child(card)),
+    )
 }
 
 /// The chat's dock while an elicitation waits: the composer turned into the agent's form.

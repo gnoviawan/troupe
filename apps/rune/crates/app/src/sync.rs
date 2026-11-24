@@ -83,6 +83,8 @@ pub(crate) enum Pending {
     ComposerOptions(Box<model::acp::Effect>),
     /// A subagent's `stop_subagent`, by the record's id.
     StopSubagent(String),
+    /// A browser consent answer, with the ticket to restore if the host refuses it.
+    BrowserConsent(Box<Value>),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
@@ -401,6 +403,7 @@ impl State {
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
             Pending::Answer(answer) => self.answer_settled(*answer, result),
             Pending::StopSubagent(id) => self.subagent_stop_settled(id, result),
+            Pending::BrowserConsent(ticket) => self.browser_consent_settled(*ticket, result),
             Pending::Control(effect) => self.control_settled(*effect, result),
             Pending::ComposerOptions(effect) => self.composer_options_read(*effect, result),
             Pending::LaunchSpawn => self.launch_spawned(result),

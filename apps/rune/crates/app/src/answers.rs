@@ -63,6 +63,32 @@ impl State {
         self.call(WsRequestType::StopSubagent, payload, Pending::StopSubagent(subagent_id));
     }
 
+    /// `respondBrowserConsent`: send exactly the option the user pressed for the host's ticket.
+    /// The card leaves at once; a refusal other than a stale ticket brings it back.
+    pub(crate) fn respond_browser_consent(&mut self, request_id: String, option_id: String) {
+        let Some(ticket) = self.chat.acp.pending_browser_consents.remove(&request_id) else { return };
+        let session = ticket.get("sessionId").and_then(Value::as_str).unwrap_or_default();
+        let agent_id = self.chat.acp.sessions.get(session).map(|s| s.agent_id.clone()).unwrap_or_default();
+        log::info!("[chat] browser consent {option_id} for {request_id}");
+        let payload = json!({ "agentId": agent_id, "requestId": request_id, "optionId": option_id });
+        self.call(WsRequestType::RespondPermission, payload, Pending::BrowserConsent(Box::new(ticket)));
+    }
+
+    /// The host's reply to a consent answer (`classify`): a stale ticket stays gone, a too-early
+    /// or refused answer restores the card and says why.
+    pub(crate) fn browser_consent_settled(&mut self, ticket: Value, result: Result<Option<Value>, WsError>) {
+        let Err(e) = result else { return };
+        let request_id = ticket.get("requestId").and_then(Value::as_str).unwrap_or_default().to_owned();
+        log::warn!("[chat] browser consent answer refused: requestId={request_id} code={}", e.code);
+        let message = match e.code.as_str() {
+            "TICKET_NOT_FOUND" | "TICKET_ALREADY_RESOLVED" | "stale" | "already_resolved" => return,
+            "TICKET_TOO_EARLY" | "rate_limited" => "That was too quick. Check the request, then choose again.",
+            _ => "Could not send the browser consent answer. Try again.",
+        };
+        self.chat.acp.pending_browser_consents.entry(request_id).or_insert(ticket);
+        self.toast_error(message, "");
+    }
+
     /// The host's answer to a stop: `already_ended` frees the button, a refusal says why.
     pub(crate) fn subagent_stop_settled(&mut self, subagent_id: String, result: Result<Option<Value>, WsError>) {
         match result {
@@ -95,7 +121,8 @@ impl State {
         let id = question.question_id.clone();
         match &key.key {
             Key::Enter => {
-                let values = self.chat.reader.picks.of(&id).to_vec();
+                let multi = ui::chat::approvals::question_is_multi(&question);
+                let values = self.chat.reader.picks.answer(&id, multi);
                 if values.is_empty() {
                     return true;
                 }

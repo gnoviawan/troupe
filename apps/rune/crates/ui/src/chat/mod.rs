@@ -8,6 +8,7 @@
 //! draw a placeholder row.
 
 pub mod approvals;
+pub mod consent;
 pub mod diff;
 pub mod elicitation;
 pub mod notice;

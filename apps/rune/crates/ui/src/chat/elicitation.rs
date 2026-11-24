@@ -176,7 +176,18 @@ pub struct Hooks<S> {
     pub form: for<'a> fn(&'a mut S, &str) -> &'a mut Form,
 }
 
-fn option_row<S: 'static>(t: &Tokens, key: String, label: String, description: Option<&str>, on: bool, multi: bool, phone: bool, press: impl Fn(&mut S) + 'static) -> El {
+/// One option of a pick field: its check or radio mark, label and description.
+struct OptionRow<'a> {
+    key: String,
+    label: String,
+    description: Option<&'a str>,
+    on: bool,
+    multi: bool,
+    phone: bool,
+}
+
+fn option_row<S: 'static>(t: &Tokens, o: OptionRow, press: impl Fn(&mut S) + 'static) -> El {
+    let OptionRow { key, label, description, on, multi, phone } = o;
     let c = &t.colors;
     let mark = row().size(16.0, 16.0).center().radius(if multi { 4.0 } else { 8.0 }).border(1.5, if on { c.primary_fill } else { c.foreground.alpha(0.25) });
     let mark = if on { mark.fill(c.primary_fill).child(icon(&i::CHECK, 10.0).color(c.primary_foreground)) } else { mark };
@@ -248,7 +259,7 @@ pub fn prompt<S: 'static>(t: &'static Tokens, p: &PendingElicitation, form: &For
             let control = match f.kind.as_str() {
                 "boolean" => {
                     let on = form.flags.get(&f.name).copied().unwrap_or(false);
-                    option_row(t, format!("elicitation-field-{name}"), "Yes".into(), None, on, true, phone, move |s: &mut S| {
+                    option_row(t, OptionRow { key: format!("elicitation-field-{name}"), label: "Yes".into(), description: None, on, multi: true, phone }, move |s: &mut S| {
                         let form = (hooks.form)(s, &rid);
                         form.flags.insert(name.clone(), !on);
                         form.error = None;
@@ -260,7 +271,7 @@ pub fn prompt<S: 'static>(t: &'static Tokens, p: &PendingElicitation, form: &For
                     col().w_full().gap(4.0).role(if multi { "group" } else { "radiogroup" }).label(f.label().to_owned()).children(f.options.iter().enumerate().map(|(n, (value, label, description))| {
                         let (rid, name, value) = (rid.clone(), name.clone(), value.clone());
                         let on = picked.contains(&value);
-                        option_row(t, format!("elicitation-field-{name}-{n}"), label.clone(), description.as_deref(), on, multi, phone, move |s: &mut S| {
+                        option_row(t, OptionRow { key: format!("elicitation-field-{name}-{n}"), label: label.clone(), description: description.as_deref(), on, multi, phone }, move |s: &mut S| {
                             (hooks.form)(s, &rid).pick(&name, &value, multi)
                         })
                     }))
