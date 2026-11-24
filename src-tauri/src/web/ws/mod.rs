@@ -156,10 +156,18 @@ pub use troupe_protocol::ws::ReliabilityTier;
 /// the relay never drops an event it does not recognize.
 #[must_use]
 pub fn tier_of(type_: &str) -> ReliabilityTier {
-    WsEventType::ALL
-        .iter()
-        .find(|known| known.as_str() == type_)
-        .map_or(ReliabilityTier::Reliable, |known| known.tier())
+    static TIER_BY_TYPE: std::sync::LazyLock<
+        std::collections::HashMap<&'static str, ReliabilityTier>,
+    > = std::sync::LazyLock::new(|| {
+        WsEventType::ALL
+            .iter()
+            .map(|known| (known.as_str(), known.tier()))
+            .collect()
+    });
+    TIER_BY_TYPE
+        .get(type_)
+        .copied()
+        .unwrap_or(ReliabilityTier::Reliable)
 }
 
 // ---------------------------------------------------------------------------

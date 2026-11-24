@@ -164,6 +164,10 @@ impl AppState {
 /// (gh-1105): it registers the `/server/config` reconfigure routes and turns
 /// the `/health` `setupRequired` flag into a real probe. `None` (the desktop
 /// shared-live host and the in-process channel state) keeps both off.
+///
+/// `rune_web_dir` is the experimental Rune web client's bundle directory
+/// ([`ServerConfig::rune_web_dir`](crate::web::config::ServerConfig::rune_web_dir));
+/// `None` answers `/rune/*` with 404 (see [`assets::rune`]).
 #[allow(clippy::too_many_arguments)]
 pub fn router(
     acp: Arc<AcpManager>,
@@ -186,6 +190,7 @@ pub fn router(
     host_allow: HostAllowList,
     connections: ConnectionRuntime,
     server_admin: Option<ServerAdminContext>,
+    rune_web_dir: Option<std::path::PathBuf>,
 ) -> Router {
     let r = Router::new()
         .route("/health", get(health_check))
@@ -447,6 +452,9 @@ pub fn router(
     } else {
         r = r.fallback(assets::serve_embedded);
     }
+    // Plan R5: the experimental Rune web client answers `/rune/*` (and
+    // `/?ui=rune`) before the React fallback can.
+    r = assets::rune::layer(r, rune_web_dir);
     // PWA: the disk ServeDir sets no Cache-Control, so shell/PWA files would
     // fall under heuristic caching and stall service-worker updates. The
     // layer marks them `no-cache, must-revalidate`; on the embedded path it

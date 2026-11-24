@@ -87,6 +87,7 @@ pub use ws::{AppState, HistoryMode, ReliabilityTier, RuntimePolicy, SequencedEve
 
 use std::future::Future;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 
 use tokio::net::TcpListener;
@@ -318,6 +319,28 @@ pub async fn serve(
     }
 }
 
+/// Startup record of the experimental Rune web client setting (plan R5).
+fn log_rune_web_client(bundle_dir: Option<&Path>) {
+    let Some(dir) = bundle_dir else {
+        return;
+    };
+    if dir.join("index.html").is_file() {
+        info!(
+            target: "termul::web::rune",
+            "experimental Rune web client served at {} from {}",
+            assets::rune::MOUNT,
+            dir.display()
+        );
+    } else {
+        warn!(
+            target: "termul::web::rune",
+            "experimental Rune web client is on but {} has no index.html; {} will answer 404",
+            dir.display(),
+            assets::rune::MOUNT
+        );
+    }
+}
+
 /// Bind the Axum router and spawn the serve loop with an external shutdown.
 ///
 /// Binds the listener synchronously (so the caller learns the bound address
@@ -428,6 +451,7 @@ pub async fn serve_router(
     // Every change of a project's terminal set reaches its `terminals` watchers.
     crate::web::watch::attach_terminal_set_observer(&pty, &ws_relay);
     let socket_shutdown = connections.shutdown.clone();
+    log_rune_web_client(cfg.rune_web_dir.as_deref());
     let app = router::router(
         Arc::clone(&acp),
         pty,
@@ -449,6 +473,7 @@ pub async fn serve_router(
         host_allow,
         connections,
         server_admin,
+        cfg.rune_web_dir.clone(),
     );
 
     // Stale device partitions are swept daily while this host serves; the
