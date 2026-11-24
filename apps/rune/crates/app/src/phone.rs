@@ -372,12 +372,13 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             MORE => more_sheet(s, t, window, layer),
             PROJECTS => projects_sheet(s, t, window, layer),
             RECENTS => recents_sheet(s, t, window, layer),
+            crate::composer_sheet::ADD_SHEET => crate::composer_sheet::add_sheet(s, t, window, layer),
             _ => {}
         }
     }
 }
 
-fn sheet(key: &'static str, title: String, s: &State) -> MobileSheet {
+pub(crate) fn sheet(key: &'static str, title: String, s: &State) -> MobileSheet {
     MobileSheet::new(key, title)
         .open(true)
         .drag(if s.overlays.top() == Some(key) {
