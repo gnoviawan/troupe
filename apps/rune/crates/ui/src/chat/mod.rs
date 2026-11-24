@@ -4,18 +4,28 @@
 //! when scrolled up (`ScrollSpec::stick_bottom`; virtual rows keep their first visible row),
 //! with `MessageScrollerButton`'s "Scroll to latest" over the bottom while it is scrolled up.
 //!
-//! The inline cards (tool calls, approvals, the plan, subagents) are later units; each draws a
-//! placeholder row here so the transcript shows where it goes.
+//! Tool calls draw as `ToolCallCard`s and subagent dispatches as their group; thoughts still
+//! draw a placeholder row.
 
 pub mod approvals;
+pub mod diff;
+pub mod notice;
+pub mod plan;
 mod rows;
 pub mod subagents;
 pub mod timeline;
+pub mod tool_call;
 
+#[cfg(test)]
+mod diff_tests;
+#[cfg(test)]
+mod notice_tests;
 #[cfg(test)]
 mod scroll_tests;
 #[cfg(test)]
 mod timeline_tests;
+#[cfg(test)]
+mod tool_call_tests;
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
@@ -52,6 +62,19 @@ pub struct Reader {
     subagent_panels: BTreeMap<String, String>,
     /// Subagents a stop was sent for, until their record leaves running.
     stopping: BTreeSet<String>,
+    /// Tool call cards whose result the reader opened, by card key.
+    tools_open: BTreeSet<String>,
+    /// Edit diffs shown in full, as `{card key}-diff-{n}`.
+    diffs_open: BTreeSet<String>,
+    /// Per session, the plan bar the reader folded or opened, and whether the plan was
+    /// finished then.
+    plan_folds: BTreeMap<String, (bool, bool)>,
+    /// Plan entries showing their detail.
+    plan_entries: BTreeSet<(String, usize)>,
+    /// Per session, the error the reader dismissed (`dismissedError`).
+    pub dismissed_error: BTreeMap<String, String>,
+    /// Sessions whose error notice shows its details.
+    pub error_details: BTreeSet<String>,
 }
 
 impl Reader {
@@ -103,6 +126,48 @@ impl Reader {
         self.stopping.contains(subagent_id)
     }
 
+    pub fn is_tool_open(&self, key: &str) -> bool {
+        self.tools_open.contains(key)
+    }
+
+    pub fn toggle_tool(&mut self, key: &str) {
+        if !self.tools_open.remove(key) {
+            self.tools_open.insert(key.to_owned());
+        }
+    }
+
+    pub fn is_diff_open(&self, key: &str) -> bool {
+        self.diffs_open.contains(key)
+    }
+
+    pub fn open_diff(&mut self, key: String) {
+        self.diffs_open.insert(key);
+    }
+
+    /// Whether `session`'s plan shows only its bar: the reader's pick, closed again once the plan
+    /// finishes; else folded on a phone or when finished.
+    pub fn plan_collapsed(&self, session: &str, settled: bool, phone: bool) -> bool {
+        match self.plan_folds.get(session) {
+            Some(&(collapsed, was_settled)) => collapsed || (settled && !was_settled),
+            None => phone || settled,
+        }
+    }
+
+    pub fn toggle_plan(&mut self, session: &str, collapsed: bool, settled: bool) {
+        self.plan_folds.insert(session.to_owned(), (!collapsed, settled));
+    }
+
+    pub fn is_plan_entry_open(&self, session: &str, n: usize) -> bool {
+        self.plan_entries.contains(&(session.to_owned(), n))
+    }
+
+    pub fn toggle_plan_entry(&mut self, session: &str, n: usize) {
+        let key = (session.to_owned(), n);
+        if !self.plan_entries.remove(&key) {
+            self.plan_entries.insert(key);
+        }
+    }
+
     /// Records whether the transcript shows its end; true when that changed.
     pub fn set_at_end(&mut self, session_id: &str, at_end: bool) -> bool {
         if at_end { self.away.remove(session_id) } else { self.away.insert(session_id.to_owned()) }
@@ -118,6 +183,8 @@ pub struct Lenses<S> {
     pub step: fn(&mut S, acp::Event),
     /// Asks the host to stop a subagent (`stop_subagent`): the session and the record's id.
     pub stop_subagent: fn(&mut S, String, String),
+    /// Opens a file a card names, as `path` or `path:line`.
+    pub open_file: fn(&mut S, String),
 }
 
 impl<S> Clone for Lenses<S> {

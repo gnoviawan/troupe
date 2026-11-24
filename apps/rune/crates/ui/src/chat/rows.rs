@@ -1,11 +1,12 @@
 //! One transcript row: the user's message, a turn's activity disclosure, or a visible reply.
 
 use rune::{El, col, el, icon, row, text};
-use serde_json::Value;
 use theme::icons as i;
 
+use std::rc::Rc;
+
 use super::timeline::{Activity, Item, Row, RowKind, message_text, tool_id};
-use super::{Ctx, placeholder};
+use super::{Ctx, placeholder, tool_call};
 use crate::markdown;
 use crate::type_::sans;
 use crate::{BubbleAlign, BubbleVariant, IconActionButton, IconActionSize};
@@ -182,14 +183,28 @@ fn step<S: 'static>(ctx: &Ctx<S>, s: &S, item: &Item, active: bool) -> El {
         }
         Item::Tool(i) => {
             let Some(tool) = tools.get(*i) else { return el() };
-            let title = tool.get("title").and_then(Value::as_str).unwrap_or_else(|| tool_id(tool));
-            let status = tool.get("status").and_then(Value::as_str).unwrap_or("pending");
-            let kind = if tool.get("subagent").is_some_and(|v| !v.is_null()) { "Subagent" } else { "Tool call" };
-            placeholder(t, kind, &format!("{title} · {status}")).key(format!("tool-{}", tool_id(tool)))
+            tool_card(ctx, s, tool)
         }
         Item::Message(i) => {
             let Some(m) = messages.get(*i) else { return el() };
             markdown::prose(t, &format!("md-{}", m.id), &message_text(m), active && m.streaming, &ctx.hooks)
         }
     }
+}
+
+/// `ToolCallCard` for `tool`, with the reader's open result and full diffs.
+fn tool_card<S: 'static>(ctx: &Ctx<S>, s: &S, tool: &model::acp::types::Object) -> El {
+    let key = format!("tool-{}", tool_id(tool));
+    let lenses = ctx.lenses;
+    let reader = (lenses.reader)(s);
+    let expanded = |n: usize| reader.is_diff_open(&format!("{key}-diff-{n}"));
+    let (toggled, expand) = (key.clone(), key.clone());
+    let actions = tool_call::Actions {
+        toggle: Box::new(move |s: &mut S| (lenses.reader_mut)(s).toggle_tool(&toggled)),
+        expand_diff: Rc::new(move |s: &mut S, n| (lenses.reader_mut)(s).open_diff(format!("{expand}-diff-{n}"))),
+        open_file: Some(Rc::new(move |s: &mut S, path: String, line: Option<usize>| {
+            (lenses.open_file)(s, line.map_or_else(|| path.clone(), |l| format!("{path}:{l}")))
+        })),
+    };
+    tool_call::card(ctx.t, &key, tool, tool_call::Shown { open: reader.is_tool_open(&key), expanded: &expanded }, actions)
 }

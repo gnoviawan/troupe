@@ -19,6 +19,7 @@ pub(crate) fn lenses() -> Lenses<State> {
         reader_mut: |s: &mut State| -> &mut Reader { &mut s.chat.reader },
         step: |s: &mut State, e| s.acp_step(e),
         stop_subagent: |s: &mut State, session, id| s.stop_subagent(session, id),
+        open_file: |s: &mut State, path| s.open_file_link(&path),
     }
 }
 
@@ -59,8 +60,12 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
         Some(q) => question_dock(s, t, q, place),
         None => crate::composer_view::chat_dock(s, t, session_id, place),
     };
-    let chat = col().w_full().grow(1.0).min_h(0.0).child(body).child(composer);
     let phone = place == ui::composer::view::Place::Phone;
+    let mut chat = col().w_full().grow(1.0).min_h(0.0);
+    if let Some(plan) = plan_panel(s, t, session_id, phone) {
+        chat = chat.child(plan);
+    }
+    let chat = chat.child(body).child(composer);
     let frame = row().key(format!("tab-body-{}", tab.id())).w_full().grow(1.0).min_h(0.0);
     Some(match subagent_panel(s, t, session_id) {
         Some(panel) if phone => frame.child(panel.w_full()),
@@ -93,6 +98,74 @@ fn subagent_panel(s: &State, t: &'static Tokens, session_id: &str) -> Option<El>
         agent_name: agent.as_deref().unwrap_or("The agent"),
     };
     Some(ui::chat::subagents::panel(t, spec, lenses()))
+}
+
+/// `PlanPanel` over the transcript, when the agent shared a plan.
+fn plan_panel(s: &State, t: &'static Tokens, session_id: &str, phone: bool) -> Option<El> {
+    let entries = s.chat.acp.plans.get(session_id).filter(|e| !e.is_empty())?;
+    let reader = &s.chat.reader;
+    let collapsed = reader.plan_collapsed(session_id, ui::chat::plan::is_settled(entries), phone);
+    let opened = |n: usize| reader.is_plan_entry_open(session_id, n);
+    Some(ui::chat::plan::panel(t, session_id, entries, collapsed, &opened, phone, lenses()))
+}
+
+/// `ChatErrorNotice` for the chat's last error, unless the reader dismissed it.
+pub(crate) fn error_notice(s: &State, t: &'static Tokens, session_id: &str) -> Option<El> {
+    let session = s.chat.acp.sessions.get(session_id)?;
+    let raw = session.last_error.clone().flatten().filter(|e| !e.is_empty())?;
+    if s.chat.reader.dismissed_error.get(session_id) == Some(&raw) {
+        return None;
+    }
+    let closed = session.status == model::acp::types::SessionStatus::Closed;
+    let busy = session.turn_busy();
+    let retry = (!busy && !closed && session.status != model::acp::types::SessionStatus::Error && s.last_user_blocks(session_id).is_some()).then_some("Retry");
+    let (details, retried, dismissed) = (session_id.to_owned(), session_id.to_owned(), session_id.to_owned());
+    let error = raw.clone();
+    let spec = ui::chat::notice::Spec {
+        key: format!("chat-error-{session_id}"),
+        title: if closed { "This chat stopped." } else { "The last turn did not finish." },
+        message: ui::chat::notice::format_agent_error(&raw),
+        code: session.last_error_code.flatten(),
+        data: session.last_error_data.as_ref().and_then(Option::as_ref),
+        details_open: s.chat.reader.error_details.contains(session_id),
+        retry,
+    };
+    let actions = ui::chat::notice::Actions {
+        details: Box::new(move |s: &mut State| {
+            let open = &mut s.chat.reader.error_details;
+            if !open.remove(&details) {
+                open.insert(details.clone());
+            }
+        }),
+        retry: Box::new(move |s: &mut State| s.retry_last_turn(&retried)),
+        dismiss: Box::new(move |s: &mut State| {
+            s.chat.reader.dismissed_error.insert(dismissed.clone(), error.clone());
+        }),
+    };
+    Some(ui::chat::notice::error_notice(t, spec, actions))
+}
+
+impl State {
+    /// The last user message's blocks, when one has something to send again
+    /// (`canRetryLastUserTurn`) and no composer token (whose wire form the composer rebuilds).
+    fn last_user_blocks(&self, session_id: &str) -> Option<Vec<serde_json::Value>> {
+        let messages = self.chat.acp.messages.get(session_id)?;
+        let last = messages.iter().rev().find(|m| m.role == model::acp::types::Role::User)?;
+        let text = |b: &serde_json::Value| b.get("text").and_then(serde_json::Value::as_str).unwrap_or("").to_owned();
+        let sendable = last.blocks.iter().any(|b| b.get("type").and_then(serde_json::Value::as_str) != Some("text") || !text(b).trim().is_empty());
+        let tokens = last.blocks.iter().any(|b| text(b).contains(|c: char| ('\u{E000}'..='\u{E00F}').contains(&c)));
+        (sendable && !tokens).then(|| last.blocks.clone())
+    }
+
+    /// The notice's Retry for a live chat: send the last user turn again.
+    pub(crate) fn retry_last_turn(&mut self, session_id: &str) {
+        let Some(blocks) = self.last_user_blocks(session_id) else { return };
+        if let Some(error) = self.chat.acp.sessions.get(session_id).and_then(|s| s.last_error.clone().flatten()) {
+            self.chat.reader.dismissed_error.insert(session_id.to_owned(), error);
+        }
+        log::info!("[chat] retry the last turn of {session_id}");
+        self.acp_step(model::acp::Event::SendPromptBlocks(session_id.to_owned(), blocks.clone(), Some(model::acp::prompt::SendOptions { display_blocks: Some(blocks) })));
+    }
 }
 
 /// The oldest question waiting in the chat (`pendingQuestion`).
