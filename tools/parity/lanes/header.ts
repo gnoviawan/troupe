@@ -250,14 +250,17 @@ try {
   }
   process.exitCode = pass ? 0 : 1
 } finally {
-  writePairs()
   try {
-    await browser?.close()
+    writePairs()
   } finally {
     try {
-      world.ws.close()
+      await browser?.close()
     } finally {
-      await world.server.stop()
+      try {
+        world.ws.close()
+      } finally {
+        await world.server.stop()
+      }
     }
   }
 }
