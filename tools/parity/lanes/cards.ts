@@ -64,7 +64,7 @@ async function run(client: Client): Promise<string[]> {
   await tryClick('Ran bun test router')
   await step('output', '6 pass')
   await tryClick('Show full diff of routes.ts')
-  await step('diff', "route14 = '/r14'")
+  await step('diff', "route12 = '/r12'")
 
   await client.send(MATRIX_PROMPTS.plan)
   await step('plan', PLAN_ENTRIES[2])
