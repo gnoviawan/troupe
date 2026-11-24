@@ -113,7 +113,7 @@ fn diff_stat(tool: &Object) -> Option<(usize, usize)> {
         return Some((n("added")?, n("removed")?));
     }
     Some(diffs.iter().fold((0, 0), |(a, r), d| {
-        let lines = diff::lines(d.get("oldText").and_then(Value::as_str), d.get("newText").and_then(Value::as_str).unwrap_or(""));
+        let lines = diff::lines_of(d.get("oldText").and_then(Value::as_str), d.get("newText").and_then(Value::as_str).unwrap_or(""));
         let (da, dr) = diff::counts(&lines);
         (a + da, r + dr)
     }))
@@ -220,7 +220,7 @@ fn plain_text(t: &Tokens, words: &str) -> El {
 }
 
 /// `renderContentItem`.
-fn item(t: &Tokens, it: &Value, lang: Option<&str>, terminal: (&str, Option<i64>)) -> Option<El> {
+fn item(t: &'static Tokens, it: &Value, lang: Option<&str>, terminal: (&str, Option<i64>)) -> Option<El> {
     match it.get("type").and_then(Value::as_str) {
         Some("diff") => {
             let path = it.get("path").and_then(Value::as_str).unwrap_or("");
