@@ -108,8 +108,14 @@ pub fn on_key(s: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
         record(s, key);
         return true;
     }
+    if matches!(key.key, Key::Escape) && s.close_top() {
+        return true;
+    }
+    if s.question_key(key) {
+        return true;
+    }
     if matches!(key.key, Key::Escape) {
-        return s.close_top();
+        return false;
     }
     let Some(chord) = chord(key, s.shortcuts.platform) else {
         return false;

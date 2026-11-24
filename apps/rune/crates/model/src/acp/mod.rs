@@ -8,8 +8,11 @@
 
 mod agent_commands;
 #[cfg(test)]
+mod answer_tests;
+#[cfg(test)]
 mod agent_commands_tests;
 pub mod agents;
+pub mod answer;
 pub mod approvals;
 mod auth_retry;
 #[cfg(test)]
@@ -676,6 +679,18 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::SessionPayloadRead(read, outcome) => {
             state.on_session_payload_read(read, outcome, &mut fx);
+        }
+        Event::RespondPermission(request_id, option_id) => {
+            state.respond_permission(&request_id, option_id, &mut fx);
+        }
+        Event::AnswerQuestion(question_id, values) => {
+            state.answer_question(&question_id, values, &mut fx);
+        }
+        Event::RespondElicitation(request_id, action, content) => {
+            state.respond_elicitation(&request_id, action, content, &mut fx);
+        }
+        Event::AnswerFailed(answer, message, code) => {
+            state.on_answer_failed(answer, &message, code.as_deref(), &mut fx);
         }
     }
     if let Some(session_id) = flushed {

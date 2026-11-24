@@ -128,6 +128,18 @@ impl State {
         };
         log::info!("[launch] chat {session_id} on agent {agent_id}");
         self.install_new_chat(&session_id, &agent_id);
+        // The modes, models and options the agent advertised with the session.
+        let created = json!({
+            "agentId": agent_id,
+            "sessionId": session_id,
+            "modes": reply.get("modes"),
+            "models": reply.get("models"),
+            "configOptions": reply.get("configOptions"),
+        });
+        match serde_json::from_value(created) {
+            Ok(created) => self.acp_step(model::acp::Event::SessionCreated(created)),
+            Err(e) => log::warn!("[launch] the session reply's options are unreadable: {e}"),
+        }
         // One chat per project carries the shared id, so the newest launch is the one matched.
         self.composer.morphed.retain(|_, project| *project != launch.project_id);
         self.composer
