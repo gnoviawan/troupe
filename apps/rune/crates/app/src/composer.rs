@@ -68,6 +68,13 @@ impl Default for Draft {
     }
 }
 
+/// Where a chat the launcher started runs.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Launched {
+    pub project_id: String,
+    pub cwd: String,
+}
+
 /// An agent config from `acp/agents` (`StoredAgentConfig`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct AgentConfig {
@@ -92,8 +99,8 @@ pub struct ComposerUi {
     pub(crate) rejected: bool,
     /// Per session, the agent namespace its history names.
     pub namespaces: BTreeMap<String, String>,
-    /// The project of each chat the launcher started, until the chat list names it.
-    pub launched: BTreeMap<String, String>,
+    /// The project and folder of each chat the launcher started, until the chat list names it.
+    pub launched: BTreeMap<String, Launched>,
     /// What a composer with no draft yet draws.
     pub empty: Draft,
     /// The agent reads went out on this link.
@@ -115,8 +122,20 @@ impl State {
         self.composer.drafts.entry(host.clone()).or_default()
     }
 
-    /// The project folder the composer's skills and mentions read.
+    /// The folder the composer's skills and mentions read: a chat's own working folder
+    /// (`session.cwd`, a worktree's for a worktree chat), the launcher's project folder.
     pub(crate) fn root_of(&self, host: &Host) -> Option<String> {
+        if let Host::Chat(id) = host {
+            let cwd = self
+                .chats
+                .get(id)
+                .and_then(|c| c.cwd.clone())
+                .or_else(|| self.composer.launched.get(id).map(|l| l.cwd.clone()))
+                .filter(|cwd| !cwd.is_empty());
+            if cwd.is_some() {
+                return cwd;
+            }
+        }
         let project = self.project_of(host)?;
         self.projects
             .store
@@ -126,14 +145,14 @@ impl State {
             .and_then(|p| p.path.clone())
     }
 
-    fn project_of(&self, host: &Host) -> Option<String> {
+    pub(crate) fn project_of(&self, host: &Host) -> Option<String> {
         match host {
             Host::Launcher(id) => Some(id.clone()),
             Host::Chat(id) => self
                 .chats
                 .get(id)
                 .and_then(|c| c.project_id.clone())
-                .or_else(|| self.composer.launched.get(id).cloned()),
+                .or_else(|| self.composer.launched.get(id).map(|l| l.project_id.clone())),
         }
     }
 
@@ -153,28 +172,6 @@ impl State {
             Host::Chat(_) => ui::composer::view::Foot::Chat { branch },
             Host::Launcher(_) => ui::composer::view::Foot::Launcher { branch },
         }
-    }
-
-    /// The agent a composer's chip names.
-    pub fn agent_label(&self, host: &Host) -> Option<String> {
-        self.shown_agent(host).map(|a| a.name.clone())
-    }
-
-    /// The chat's own agent, else the launcher's pick, else the first config.
-    fn shown_agent(&self, host: &Host) -> Option<&AgentConfig> {
-        let agents = &self.composer.agents;
-        let by_id = |id: &str| agents.iter().find(|a| a.id == id);
-        let found = match host {
-            Host::Chat(id) => self.composer.namespaces.get(id).and_then(|ns| {
-                agents
-                    .iter()
-                    .find(|a| ns.strip_prefix("config:").unwrap_or(ns) == a.id)
-            }),
-            Host::Launcher(_) => None,
-        };
-        found
-            .or_else(|| self.composer.picked.as_deref().and_then(by_id))
-            .or_else(|| agents.first())
     }
 
     /// The trigger at the draft's caret, unless Escape closed it there.
@@ -360,7 +357,7 @@ impl State {
             },
             Row::Conversations => return self.drill(host, Panel::Conversations, tx),
             Row::Explorer => {
-                let root = self.root_of(host).unwrap_or_default();
+                let Some(root) = self.root_of(host).filter(|r| !r.is_empty()) else { return };
                 return self.drill(host, Panel::Explorer(root), tx);
             }
             Row::Dir(entry) => return self.drill(host, Panel::Explorer(entry.folder()), tx),
@@ -404,12 +401,12 @@ impl State {
 
     /// `filesystemApi.readDirectory` for an Explorer folder; a ready listing is kept.
     fn read_listing(&mut self, host: &Host, dir: String) {
-        if matches!(self.composer.listings.get(&dir), Some(Listing::Ready(_))) {
+        if dir.is_empty() || matches!(self.composer.listings.get(&dir), Some(Listing::Ready(_))) {
             return;
         }
         let root = self.root_of(host).unwrap_or_default();
         self.composer.listings.insert(dir.clone(), Listing::Loading);
-        let path = format!("/fs/ls?path={}", ui::composer::encode_query(if dir.is_empty() { "/" } else { &dir }));
+        let path = format!("/fs/ls?path={}", ui::composer::encode_query(&dir));
         if let Some(link) = &mut self.host {
             link.fetch(path, crate::host::Fetch::Listing { dir, root });
         }
@@ -434,6 +431,12 @@ impl State {
 
     /// An add-menu row: put a trigger at the caret, a tool pill, or (later) the file picker.
     pub(crate) fn composer_add(&mut self, host: &Host, what: &str, tx: &mut Tx) {
+        if self.composer_locked(host) {
+            let draft = self.draft_mut(host);
+            draft.add_open = false;
+            draft.tools_open = false;
+            return;
+        }
         let draft = self.draft_mut(host);
         if what == "tools" {
             draft.tools_open = true;
@@ -465,27 +468,6 @@ impl State {
         }
         self.composer_changed(host);
         tx.focus(format!("{}-field", host.key()), true);
-    }
-
-    /// A paste with an image becomes an image attachment; text pastes as usual.
-    fn composer_paste(&mut self, host: &Host, content: &ClipboardContent) -> bool {
-        let Some(image) = content.image() else {
-            return false;
-        };
-        let draft = self.draft_mut(host);
-        let n = draft.attachments.len() + 1;
-        log::info!(
-            "[composer] pasted an image ({} bytes) into {}",
-            image.png().len(),
-            host.key()
-        );
-        draft.attachments.push(Attachment::Image {
-            id: format!("paste-{n}"),
-            name: "pasted-image.png".into(),
-            mime_type: "image/png".into(),
-            base64: ui::composer::base64(image.png()),
-        });
-        true
     }
 
     /// Send a chat's draft through the model (`ChatInputBar.submit`).
@@ -599,6 +581,7 @@ impl State {
                 tx.focus(format!("{}-field", host.key()), false);
             }),
             add_menu: Rc::new(move |s: &mut State, open: bool| {
+                let open = open && !s.composer_locked(&menu_host);
                 let draft = s.draft_mut(&menu_host);
                 draft.add_open = open;
                 draft.tools_open &= open;
@@ -613,6 +596,9 @@ impl State {
             queue: Rc::new(move |s: &mut State, act: QueueAct, tx: &mut Tx| s.composer_queue(&queue_host, act, tx)),
             pick_agent: Rc::new(move |s: &mut State, id: &str, tx: &mut Tx| s.composer_pick_agent(&pick_agent_host, id, tx)),
             remove_attachment: Rc::new(move |s: &mut State, n: usize| {
+                if s.composer_locked(&rm_host) {
+                    return;
+                }
                 let draft = s.draft_mut(&rm_host);
                 if n < draft.attachments.len() {
                     draft.attachments.remove(n);
@@ -678,62 +664,6 @@ impl State {
         }
     }
 
-    /// The launcher's agent menu: `rememberLastSelectedAgent`, then back to the field.
-    pub fn composer_pick_agent(&mut self, host: &Host, id: &str, tx: &mut Tx) {
-        self.draft_mut(host).agent_open = false;
-        if !self.composer.agents.iter().any(|a| a.id == id) {
-            return;
-        }
-        log::info!("[composer] launcher agent: {id}");
-        self.composer.picked = Some(id.to_owned());
-        let key = "agents/last-selected";
-        self.write(key, serde_json::json!({ "agentId": id, "mode": "acp" }), Pending::Write(key.to_owned()));
-        tx.focus(format!("{}-field", host.key()), false);
-    }
-
-    /// What the launcher's agent menu lists; a chat's chip has no menu.
-    pub fn agent_choices(&self, host: &Host) -> Vec<ui::composer::view::AgentChoice> {
-        if matches!(host, Host::Chat(_)) {
-            return Vec::new();
-        }
-        let shown = self.shown_agent(host).map(|a| a.id.as_str());
-        self.composer
-            .agents
-            .iter()
-            .map(|a| ui::composer::view::AgentChoice {
-                id: a.id.clone(),
-                name: a.name.clone(),
-                picked: shown == Some(a.id.as_str()),
-            })
-            .collect()
-    }
-
-    /// The agent configs (`acp/agents`) as read.
-    pub(crate) fn agents_loaded(&mut self, data: Option<Value>) {
-        self.composer.agents = data
-            .and_then(|v| v.as_array().cloned())
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|raw| {
-                let id = raw.get("id").and_then(Value::as_str)?.to_owned();
-                let name = raw.get("name").and_then(Value::as_str).unwrap_or(&id).to_owned();
-                Some(AgentConfig { id, name, raw })
-            })
-            .collect();
-        log::info!("[composer] {} agent configs", self.composer.agents.len());
-    }
-
-    /// `readLastSelectedAgentId`: the saved pick counts only when its mode is `acp`, and never
-    /// over an agent the user picked while the read was out.
-    pub(crate) fn last_agent_loaded(&mut self, data: Option<Value>) {
-        self.composer.picked_read = true;
-        if self.composer.picked.is_some() {
-            return;
-        }
-        self.composer.picked = data
-            .filter(|v| v.get("mode").and_then(Value::as_str) == Some("acp"))
-            .and_then(|v| v.get("agentId").and_then(Value::as_str).map(str::to_owned));
-    }
 }
 
 /// A queued prompt's typed text (its display blocks, else its blocks), and whether it is
@@ -780,3 +710,7 @@ fn send_kind(send: &Send) -> String {
 #[cfg(test)]
 #[path = "composer_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "composer_review_tests.rs"]
+mod review_tests;

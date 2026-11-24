@@ -96,6 +96,18 @@ impl State {
             self.composer.launching = None;
             return log::warn!("[launch] the spawn reply names no agent");
         };
+        // The spawn reply is the agent's registration (CAP-4): its capabilities decide images.
+        match serde_json::from_value::<model::acp::agents::AgentSpawnedEvent>(reply.clone()) {
+            Ok(spawned) => self.acp_step(Event::AgentSpawned(spawned)),
+            Err(e) => log::warn!("[launch] unreadable spawn reply for {agent_id}: {e}"),
+        }
+        let image_capable = reply.pointer("/capabilities/promptCapabilities/image").and_then(Value::as_bool) == Some(true);
+        if sends_image(&launch.send) && !image_capable {
+            log::warn!("[launch] {agent_id} takes no images; the draft stays");
+            self.composer.launching = None;
+            self.toast_error(crate::composer_agents::NO_IMAGES, "");
+            return;
+        }
         self.command(
             WsRequestType::CreateSession,
             json!({ "agentId": agent_id, "cwd": launch.cwd, "projectId": launch.project_id }),
@@ -119,7 +131,10 @@ impl State {
         self.composer
             .namespaces
             .insert(session_id.clone(), format!("config:{}", launch.config_id));
-        self.composer.launched.insert(session_id.clone(), launch.project_id.clone());
+        self.composer.launched.insert(
+            session_id.clone(),
+            crate::composer::Launched { project_id: launch.project_id.clone(), cwd: launch.cwd.clone() },
+        );
         if self.workspace.project() != Some(launch.project_id.as_str()) {
             // Another project came on screen while the agent spawned: open the chat in its own
             // project, as the web client's route to the new chat does.
@@ -146,6 +161,13 @@ impl State {
             ),
         };
         self.acp_step(event);
+    }
+}
+
+fn sends_image(send: &Send) -> bool {
+    match send {
+        Send::Text { .. } => false,
+        Send::Blocks { wire, .. } => wire.iter().any(|b| b.get("type").and_then(Value::as_str) == Some("image")),
     }
 }
 

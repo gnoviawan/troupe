@@ -18,6 +18,9 @@ pub const ADD_TOOLS: &str = "composer-add-tools";
 impl State {
     /// The phone's +: the sheet for `host`'s composer.
     pub fn open_add_sheet(&mut self, host: &Host) {
+        if self.composer_locked(host) {
+            return;
+        }
         self.composer.sheet_host = Some(host.clone());
         self.overlays.open(ADD_SHEET);
     }
