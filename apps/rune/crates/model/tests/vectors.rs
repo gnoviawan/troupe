@@ -7,7 +7,7 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
 use model::shortcuts::{self, KeyEvent, Platform, Shortcuts};
-use model::{Effect, Ids, overlay, prefs, projects, workspace};
+use model::{Effect, Ids, overlay, prefs, projects, shell_layout, workspace};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
@@ -192,6 +192,31 @@ impl Store for Shortcut {
     }
 }
 
+struct ShellLayout;
+
+impl Store for ShellLayout {
+    type State = shell_layout::State;
+    fn setup(_: &Value, initial: &Value) -> Result<Self::State, String> {
+        parse(initial)
+    }
+    fn step(
+        state: &mut Self::State,
+        event: &Value,
+        _: &mut Replay,
+    ) -> Result<(Vec<Effect>, Option<Value>), String> {
+        // Setters take a raw `Value`, which an args array would also match.
+        let action = event["action"].as_str().ok_or("event without action")?;
+        let shape = match event["args"].as_array().map(Vec::as_slice) {
+            Some([only]) => json!({ action: only }),
+            _ => json!({ action: event["args"] }),
+        };
+        Ok((shell_layout::step(state, parse(&shape)?), None))
+    }
+    fn query(_: &Self::State, event: &Value) -> Result<Value, String> {
+        Err(format!("no shell-layout query {}", event["action"]))
+    }
+}
+
 struct Overlay;
 
 impl Store for Overlay {
@@ -336,6 +361,7 @@ fn replays_every_vector() {
                 "shortcuts" => replay::<Shortcut>(vector),
                 "overlay" => replay::<Overlay>(vector),
                 "projects" => replay::<Projects>(vector),
+                "shell-layout" => replay::<ShellLayout>(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

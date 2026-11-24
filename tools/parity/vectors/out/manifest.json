@@ -90,6 +90,27 @@
         "persist_prefs_skips_unchanged_record",
         "remembered_prefs_reach_a_new_project"
       ]
+    },
+    "shell-layout": {
+      "sources": {
+        "src/renderer/stores/shell-layout-store.ts": "b3b21628023f847158ed5958d57d8af006b5644d",
+        "src/renderer/lib/shell-layout-record.ts": "cacd65f45ea3524dedc6ce87550a06e99e623e2f",
+        "src/renderer/lib/shell-layout-migration.ts": "b4206d6a3565e40b7fec7e4b328225cbe8eea610"
+      },
+      "vectors": [
+        "gate_then_fresh_install",
+        "load_existing_record_clamped",
+        "version_1_record_is_saved_as_current",
+        "version_2_chats_view_becomes_explorer",
+        "non_object_record_loads_defaults",
+        "read_error_goes_unavailable",
+        "newer_version_goes_unavailable",
+        "tabs_picks_and_sections",
+        "remove_project_when_ready",
+        "remove_project_before_hydration",
+        "remove_project_before_fresh_install",
+        "remove_project_while_unavailable"
+      ]
     }
   }
 }

@@ -10,6 +10,7 @@
 pub mod overlay;
 pub mod prefs;
 pub mod projects;
+pub mod shell_layout;
 pub mod shortcuts;
 pub mod workspace;
 
@@ -70,6 +71,16 @@ pub enum Effect {
     },
     /// Run the owner's close of an overlay.
     CloseOverlay { id: String },
+    /// Write the device's `shell-layout` record: now when `immediate`, else
+    /// through the debounced writer.
+    WriteShellLayout {
+        record: shell_layout::Record,
+        immediate: bool,
+    },
+    /// Forget the chats retained for a project that no longer exists.
+    ForgetProjectChats { project_id: String },
+    /// Delete one device key from the host store.
+    DeleteStoreKey { key: String },
 }
 
 impl Effect {

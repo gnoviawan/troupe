@@ -67,6 +67,9 @@ export interface StoreRecorder {
 /** What a mocked read returns, keyed by the read (e.g. `project-prefs`). */
 export const reads = new Map<string, unknown>()
 
+/** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
+export const readFailures = new Map<string, string>()
+
 const sink = { effects: [] as unknown[], ids: [] as string[], counter: 0 }
 
 /** Record a call the store made outside itself. Mocks call this. */
