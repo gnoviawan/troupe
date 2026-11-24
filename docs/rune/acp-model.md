@@ -393,6 +393,20 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      the config slice. History open, import, the one-shots and the agent
      switch all wait on `ensureLiveAgent`.
 9. In-chat agent switch.
+   - 9a, markers (R6a-6, `acp/switch.rs`). `_onAgentSwitch` adds the
+     separator record (`switch:seq-<seq>`, the event's seq or the next
+     one) to `agentSwitches`, or updates the record a reconnect already
+     installed with the same id or the same target and summary (it keeps
+     its id, seq and arrival time); at most 500 stay. A covered event or a
+     chat that takes no transcript events is dropped. The target's index
+     row gets `continuedFrom` once, within the source's project, and moves
+     to the front (`stampSwitchContinuation`); a history open heals the
+     same edges from its payload (`healChainEdges`). The history watermark
+     now counts switch markers (`maxPayloadSeq`). `cancelAgentSwitch`
+     drops an armed switch. Not here: `armAgentSwitch` (it warms the target
+     through `prepareChat`), `setSwitchPendingOption`, `switchAgent` (the
+     handoff summary, the transcript splice, the new session and the first
+     prompt) and the reopen's switch redirect and re-splice.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
       effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
@@ -532,7 +546,6 @@ so the replay drops `retryQueueAfter` before it compares.
   echo's blocks as sent; the vectors use prompts without framing.
 - The prompt-reconcile bookkeeping on the echo (`echoedWirePromptTurns`,
   `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
-- Switch markers in `maxPayloadSeq`. PR 9.
 - On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
   the in-memory payload cache (PR 6).
 - In sending: an outcome-unknown dispatch (PR 11), the warm-pool promotion

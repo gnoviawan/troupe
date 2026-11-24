@@ -150,6 +150,13 @@ pub enum Event {
     /// The replay window an [`Effect::EndReplay`] asked to close.
     #[serde(skip_deserializing)]
     ReplayEnd(Effect),
+    #[serde(rename = "_onAgentSwitch")]
+    AgentSwitch(
+        super::switch::AgentSwitchEvent,
+        #[serde(default)] Option<f64>,
+    ),
+    #[serde(rename = "cancelAgentSwitch")]
+    CancelAgentSwitch(String),
     #[serde(rename = "createSession")]
     CreateSession(super::create::CreateRequest),
     #[serde(rename = "killAgent")]

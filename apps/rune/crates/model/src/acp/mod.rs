@@ -56,6 +56,9 @@ pub mod session;
 mod session_tests;
 mod spawn_env;
 pub mod subagent;
+mod switch;
+#[cfg(test)]
+mod switch_tests;
 mod tool_call;
 mod transcript;
 pub mod turn;
@@ -487,6 +490,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::KillAgent(agent_id) => state.kill_agent(agent_id, Killer::User, &mut fx),
         Event::CreateSession(request) => state.create_session(request, &mut fx),
+        Event::AgentSwitch(event, seq) => state.on_agent_switch(event, seq, env),
+        Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
         Event::OpenHistorySession(request) => state.open_history_session(request, &mut fx),
         Event::GenerateCommitMessage(cwd, diff, request) => {
             state.generate_commit_message(cwd, &diff, request, &mut fx);

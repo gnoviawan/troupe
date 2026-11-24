@@ -50,7 +50,8 @@
         "src/shared/acp-agent-aliases.json": "06a6ef341f46af33e723b0da32c2a11ca938d77a",
         "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c",
         "src/renderer/lib/agents/acp-registry.ts": "145840484d1acea7d0b4cd8a44b635a3fff83647",
-        "src/renderer/stores/acp-store/slices/misc.ts": "6dfd2232c8de812b253b6dbc2785d632c36d607d"
+        "src/renderer/stores/acp-store/slices/misc.ts": "6dfd2232c8de812b253b6dbc2785d632c36d607d",
+        "src/renderer/stores/acp-store/slices/switch.ts": "9d7e958c35907b82f807990d022df8b63de38152"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -441,7 +442,19 @@
         "bug_report_draft_is_quiet_without_an_agent",
         "bug_report_draft_fails_when_its_session_closes",
         "one_shot_session_goes_with_a_disconnected_agent",
-        "one_shot_fails_when_the_agent_crashes"
+        "one_shot_fails_when_the_agent_crashes",
+        "agent_switch_adds_a_marker_and_stamps_the_continuation",
+        "agent_switch_without_a_seq_takes_the_next_one",
+        "agent_switch_updates_the_installed_marker_with_the_same_content",
+        "agent_switch_updates_the_marker_with_the_same_id",
+        "agent_switch_with_another_summary_adds_a_marker",
+        "cancel_agent_switch_without_an_armed_switch_changes_nothing",
+        "agent_switch_on_a_closed_chat_is_dropped",
+        "agent_switch_covered_by_history_is_dropped",
+        "agent_switch_keeps_an_existing_continuation",
+        "agent_switch_never_stamps_across_projects",
+        "cancel_agent_switch_clears_the_armed_switch",
+        "history_watermark_counts_switch_markers"
       ]
     }
   }

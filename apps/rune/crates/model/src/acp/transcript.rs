@@ -134,6 +134,9 @@ pub struct HistoryPayload {
     pub messages: Vec<Value>,
     #[serde(default)]
     pub tool_calls: Option<Value>,
+    /// The durable agent switch markers, which share the timeline's seqs.
+    #[serde(default)]
+    pub switches: Option<Value>,
 }
 
 impl HistoryPayload {
@@ -159,7 +162,21 @@ impl HistoryPayload {
             .iter()
             .filter_map(|m| js::finite(m.get("seq")));
         let calls = self.tool_calls().filter_map(|c| js::finite(c.get("seq")));
-        messages.chain(calls).fold(0.0, f64::max)
+        // `normalizedSwitches`: a record with a finite seq and an id.
+        let switches = self
+            .switches
+            .as_ref()
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|record| {
+                record
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| !id.is_empty())
+            })
+            .filter_map(|record| js::finite(record.get("seq")));
+        messages.chain(calls).chain(switches).fold(0.0, f64::max)
     }
 
     /// `payloadSeqFloor`: above every timeline seq and subagent message seq.

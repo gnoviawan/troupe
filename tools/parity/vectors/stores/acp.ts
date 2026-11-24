@@ -230,7 +230,8 @@ export const acpRecorder: StoreRecorder = {
     'src/shared/acp-agent-aliases.json',
     'src/renderer/lib/acp-transport/tauri-verdicts.ts',
     'src/renderer/lib/agents/acp-registry.ts',
-    'src/renderer/stores/acp-store/slices/misc.ts'
+    'src/renderer/stores/acp-store/slices/misc.ts',
+    'src/renderer/stores/acp-store/slices/switch.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -377,6 +378,7 @@ import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
+import { switchScenarios } from './acp-scenarios-switch'
 import { turnScenarios } from './acp-scenarios-turn'
 import { windowScenarios } from './acp-scenarios-window'
 
@@ -403,5 +405,6 @@ export const acpScenarios = [
   ...importScenarios,
   ...createScenarios,
   ...historyScenarios,
-  ...oneShotScenarios
+  ...oneShotScenarios,
+  ...switchScenarios
 ]

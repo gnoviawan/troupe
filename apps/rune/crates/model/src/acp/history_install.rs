@@ -388,6 +388,20 @@ impl State {
         let mut calls = projected.tool_calls;
         super::window::trim_live_tool_calls(&mut calls);
         self.tool_calls.insert(session_id.to_owned(), calls);
+        // `healChainEdges`: this chat's own edge, and the edges its markers
+        // name.
+        if let Some(source) = meta.get("continuedFrom").and_then(Value::as_str) {
+            self.stamp_switch_continuation(session_id, source);
+        }
+        for record in &projected.switches {
+            if let Some(target) = record
+                .get("newSessionId")
+                .and_then(Value::as_str)
+                .filter(|id| !id.is_empty())
+            {
+                self.stamp_switch_continuation(target, session_id);
+            }
+        }
         self.agent_switches
             .insert(session_id.to_owned(), projected.switches);
         if let Some(list) = payload.get("commands").and_then(Value::as_array) {
