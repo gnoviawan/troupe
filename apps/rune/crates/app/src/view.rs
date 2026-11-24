@@ -345,6 +345,9 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
 /// launcher just started, say); otherwise the launcher.
 fn active_chat_tab(s: &State) -> Option<&model::workspace::Tab> {
     s.workspace.record()?;
+    if s.workspace.project() != s.active_project().map(|p| p.id.as_str()) {
+        return None;
+    }
     let pane = &s.workspace.tree().active_pane_id;
     let leaf = model::workspace::leaves(s.workspace.root()).into_iter().find(|l| &l.id == pane)?;
     leaf.tabs

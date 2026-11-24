@@ -25,7 +25,7 @@ pub struct Launch {
 impl State {
     pub(crate) fn launch_from(&mut self, host: &Host) {
         let Host::Launcher(project_id) = host else { return };
-        if self.composer.launching.is_some() {
+        if self.composer.launching.is_some() || !self.launcher_ready(project_id) {
             return;
         }
         let Some(draft) = self.draft(host) else { return };
@@ -70,6 +70,12 @@ impl State {
             json!({ "config": config, "projectId": project_id }),
             Pending::LaunchSpawn,
         );
+    }
+
+    /// A launch needs the saved agent read, and `project_id`'s own workspace tree showing, so
+    /// the new tab lands in that project.
+    pub(crate) fn launcher_ready(&self, project_id: &str) -> bool {
+        self.composer.picked_read && self.workspace.project() == Some(project_id)
     }
 
     fn launch_failed(&mut self, step: &str, e: &WsError) {

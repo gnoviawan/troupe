@@ -35,7 +35,7 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         // has not installed, and Send clears the draft.
         disabled: s.host.is_none()
             || match host {
-                Host::Launcher(_) => s.composer.launching.is_some(),
+                Host::Launcher(id) => s.composer.launching.is_some() || !s.launcher_ready(id),
                 Host::Chat(id) => !s.chat.loaded.contains(id),
             },
         placeholder: placeholder.to_owned(),

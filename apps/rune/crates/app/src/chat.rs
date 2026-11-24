@@ -255,7 +255,10 @@ impl State {
                     json!({ "agentId": agent_id, "sessionId": session_id }),
                     Pending::Host("Could not stop the turn"),
                 ),
-                Effect::ActionRejected { message } => self.toast_error("Could not send your message", &message),
+                Effect::ActionRejected { message } => {
+                    self.composer.rejected = true;
+                    self.toast_error("Could not send your message", &message);
+                }
                 Effect::RetryQueueAfter { session_id, delay_ms, generation } => {
                     self.chat.retries.push((self.now + delay_ms / 1000.0, session_id, generation));
                 }
