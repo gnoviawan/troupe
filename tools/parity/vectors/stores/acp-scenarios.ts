@@ -159,7 +159,7 @@ const eventScenarios: Scenario[] = [
       watermark(
         0,
         [],
-        [{ toolCallId: 'd', seq: 50, subagentMessages: [{ seq: 400, timestamp: 1, text: 'x' }] }]
+        [{ toolCallId: 'd', seq: 50, subagentMessages: [{ seq: 9000, timestamp: 1, text: 'x' }] }]
       ),
       chunk('after')
     ]
@@ -210,9 +210,14 @@ const promptScenarios: Scenario[] = [
     steps: [prompt([text('second device')], { turnId: 't2' })]
   },
   {
-    name: 'prompt_echo_of_a_replay_or_closed_session_does_not_open_a_turn',
-    initial: seeded({ replaying: 'pending', status: 'closed', ...idle }),
+    name: 'prompt_echo_of_a_replaying_session_does_not_open_a_turn',
+    initial: seeded({ replaying: 'pending', ...idle }),
     steps: [prompt([text('history')])]
+  },
+  {
+    name: 'prompt_echo_of_a_closed_session_does_not_open_a_turn',
+    initial: seeded({ status: 'closed', ...idle }),
+    steps: [prompt([text('late')])]
   },
   {
     name: 'prompt_echo_splits_off_the_read_only_guard',
@@ -562,6 +567,16 @@ const updateScenarios: Scenario[] = [
         { logEpoch: 'e2', seq: 1 }
       ),
       ev('_onCommandsUpdate', { sessionId: S, availableCommands: commandList('bare') }),
+      ev(
+        '_onCommandsUpdate',
+        { sessionId: S, availableCommands: commandList('no-epoch') },
+        { logEpoch: null, seq: 4 }
+      ),
+      ev(
+        '_onCommandsUpdate',
+        { sessionId: S, availableCommands: commandList('older') },
+        { logEpoch: null, seq: 2 }
+      ),
       ev('_onCommandsUpdate', { sessionId: 's9', availableCommands: commandList('x') })
     ]
   },
@@ -610,6 +625,29 @@ const updateScenarios: Scenario[] = [
       }),
       ev('_onUsageUpdate', { sessionId: S, used: 0, size: 0 }),
       ev('_onUsageUpdate', { sessionId: 's9', used: 1, size: 2 })
+    ]
+  },
+  {
+    name: 'usage_falsy_rate_limits_count_as_none',
+    initial: seeded(),
+    steps: [
+      ev('_onUsageUpdate', { sessionId: S, used: 0, size: 100, rateLimit: 0 }),
+      ev('_onUsageUpdate', { sessionId: S, used: 10, size: 100, rateLimit: { status: 'allowed' } }),
+      ev('_onUsageUpdate', { sessionId: S, used: 20, size: 100, rateLimit: false }),
+      ev('_onUsageUpdate', {
+        sessionId: S,
+        used: 30,
+        size: 100,
+        rateLimit: null,
+        limitReached: { status: 'rejected' }
+      }),
+      ev('_onUsageUpdate', {
+        sessionId: S,
+        used: 40,
+        size: 100,
+        rateLimit: '',
+        limitReached: { status: 'x' }
+      })
     ]
   },
   {

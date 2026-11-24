@@ -9,6 +9,8 @@
 pub mod approvals;
 mod clamp;
 pub mod js;
+#[cfg(test)]
+mod js_tests;
 mod plan;
 pub mod subagent;
 mod tool_call;
@@ -26,8 +28,9 @@ use approvals::{
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
 pub use transcript::{
-    CommandsUpdateEvent, HistoryPayload, MessageChunkEvent, PlanUpdateEvent,
-    SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent, UsageUpdateEvent, UserPromptEvent,
+    CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
+    Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
+    UsageUpdateEvent, UserPromptEvent,
 };
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 

@@ -136,11 +136,12 @@ pub struct ChatMessage {
     pub rest: Object,
 }
 
-/// Where a record sits in a session's durable log.
+/// Where a record sits in a session's durable log. `log_epoch` is `None`
+/// when the transport has no epoch yet.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogPoint {
-    pub log_epoch: String,
+    pub log_epoch: Option<String>,
     pub seq: u64,
 }
 
