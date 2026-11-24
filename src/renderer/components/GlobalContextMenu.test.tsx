@@ -26,6 +26,16 @@ vi.mock('@/lib/text-edit-ops', () => textEditOps)
 const mockIsTauriContext = vi.hoisted(() => vi.fn(() => false))
 vi.mock('@/lib/tauri-runtime', () => ({ isTauriContext: mockIsTauriContext }))
 
+// Real URL detection; only the tab opening is stubbed.
+const mockOpenUrlInTroupeBrowser = vi.hoisted(() => vi.fn(() => true))
+vi.mock('@/lib/browser/open-in-troupe-browser', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/browser/open-in-troupe-browser')>()),
+  openUrlInTroupeBrowser: mockOpenUrlInTroupeBrowser
+}))
+
+const mockToastError = vi.hoisted(() => vi.fn())
+vi.mock('sonner', () => ({ toast: { error: mockToastError } }))
+
 /** Focus (or blur) the rendered input to control document.activeElement. */
 function focusInput(focused: boolean): void {
   const input = screen.queryByTestId('surface-input')
@@ -208,5 +218,72 @@ describe('GlobalContextMenu isolation from nested custom menus', () => {
       'Paste Ctrl+V',
       'Select All Ctrl+A'
     ])
+  })
+})
+
+describe('GlobalContextMenu Open in Troupe browser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    mockIsTauriContext.mockReturnValue(true)
+    mockOpenUrlInTroupeBrowser.mockReturnValue(true)
+  })
+
+  function renderLink(href: string): HTMLElement {
+    render(
+      <GlobalContextMenu>
+        <p>
+          Serving on{' '}
+          <a href={href} data-testid="link">
+            {href}
+          </a>
+        </p>
+        <code data-testid="code">localhost:4321</code>
+      </GlobalContextMenu>
+    )
+    return screen.getByTestId('link')
+  }
+
+  it('offers the item first on an http(s) link and opens the link with it', () => {
+    fireEvent.contextMenu(renderLink('http://localhost:4321'))
+
+    expect(menuItemLabels()[0]).toBe('Open in Troupe browser')
+    fireEvent.click(itemByLabel('Open in Troupe browser'))
+    expect(mockOpenUrlInTroupeBrowser).toHaveBeenCalledWith('http://localhost:4321/')
+    expect(mockToastError).not.toHaveBeenCalled()
+  })
+
+  it('offers the item when the selection is a bare local URL', () => {
+    renderLink('#top')
+    vi.spyOn(window, 'getSelection').mockReturnValue({
+      toString: () => 'localhost:4321'
+    } as unknown as Selection)
+    fireEvent.contextMenu(screen.getByTestId('code'))
+
+    fireEvent.click(itemByLabel('Open in Troupe browser'))
+    expect(mockOpenUrlInTroupeBrowser).toHaveBeenCalledWith('http://localhost:4321/')
+  })
+
+  it('leaves the item out for non-http links and plain text', () => {
+    fireEvent.contextMenu(renderLink('mailto:someone@example.com'))
+    expect(menuItemLabels()).not.toContain('Open in Troupe browser')
+  })
+
+  it('leaves the item out outside the desktop app', () => {
+    mockIsTauriContext.mockReturnValue(false)
+    fireEvent.contextMenu(renderLink('http://localhost:4321'))
+    expect(menuItemLabels()).toEqual([
+      'Copy Ctrl+C',
+      'Cut Ctrl+X',
+      'Paste Ctrl+V',
+      'Select All Ctrl+A'
+    ])
+  })
+
+  it('shows an error when no pane can hold the tab', () => {
+    mockOpenUrlInTroupeBrowser.mockReturnValue(false)
+    fireEvent.contextMenu(renderLink('http://localhost:4321'))
+    fireEvent.click(itemByLabel('Open in Troupe browser'))
+    expect(mockToastError).toHaveBeenCalledOnce()
   })
 })
