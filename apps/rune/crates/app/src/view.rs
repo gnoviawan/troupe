@@ -341,7 +341,23 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
 }
 
 /// The main area under the phone header.
+/// The phone's main area shows the active pane's chat when its active tab is one (a chat the
+/// launcher just started, say); otherwise the launcher.
+fn active_chat_tab(s: &State) -> Option<&model::workspace::Tab> {
+    s.workspace.record()?;
+    let pane = &s.workspace.tree().active_pane_id;
+    let leaf = model::workspace::leaves(s.workspace.root()).into_iter().find(|l| &l.id == pane)?;
+    leaf.tabs
+        .iter()
+        .find(|tab| Some(tab.id()) == leaf.active_tab_id.as_deref())
+        .filter(|tab| matches!(tab, model::workspace::Tab::AgentChat { .. }))
+}
+
 fn workspace_main(s: &State, t: &'static Tokens) -> El {
+    if let Some(tab) = active_chat_tab(s) {
+        let body = crate::chat_view::tab_body(s, t, tab);
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).children(body);
+    }
     if let Some(project) = s.active_project() {
         return col()
             .key("workspace-main")

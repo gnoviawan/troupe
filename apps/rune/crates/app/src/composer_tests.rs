@@ -219,3 +219,45 @@ fn a_refused_prompt_shows_the_host_error_once_prefixed() {
     let session = &s.chat.acp.sessions["chat-1"];
     assert_eq!(session.last_error.as_deref(), Some("Error: agent busy elsewhere"));
 }
+
+#[test]
+fn send_waits_for_the_chat_to_load_and_keeps_the_draft() {
+    let mut s = loaded();
+    let host = Host::Chat("chat-9".into());
+    s.draft_mut(&host).edit.insert("early");
+    s.composer_send(&host);
+    assert!(prompts(&s).is_empty());
+    assert_eq!(s.draft(&host).map(|d| d.edit.text.as_str()), Some("early"));
+}
+
+#[test]
+fn a_phone_shows_the_chat_the_launcher_started() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply {
+        call: 7,
+        result: Ok(None),
+    });
+    s.apply(client::ws::Output::Reply {
+        call: 8,
+        result: Ok(None),
+    });
+    assert!(s.workspace.record().is_some(), "alpha's workspace shows");
+    let mut rt = rune::Runtime::new(s, crate::view, (390.0, 844.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    assert!(
+        crate::tests::present(&rt, "launcher-p-a"),
+        "the phone starts on the launcher"
+    );
+    rt.update_if(|s, _| {
+        s.install_new_chat("chat-1", "agent-1");
+        s.workspace
+            .step(model::workspace::Event::AddAgentChatTab("chat-1".into(), None));
+        true
+    });
+    rt.frame(0.05);
+    rt.frame(0.1);
+    assert!(
+        crate::tests::present(&rt, "composer-dock-chat-1"),
+        "the new chat's composer shows"
+    );
+}
