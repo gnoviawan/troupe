@@ -42,6 +42,8 @@ pub struct Hooks<S> {
     pub back: Act<S>,
     /// The add menu: open it (true) or close it.
     pub add_menu: OnFlag<S>,
+    /// The phone's + opens the host's Add to chat sheet instead of the menu.
+    pub add_sheet: Act<S>,
     /// An add-menu row: `@`, `/`, a tool id, or `attach`.
     pub add: OnAdd<S>,
     /// The agent chip: open its menu (true) or close it.
@@ -64,6 +66,7 @@ impl<S> Clone for Hooks<S> {
             hover: self.hover.clone(),
             back: self.back.clone(),
             add_menu: self.add_menu.clone(),
+            add_sheet: self.add_sheet.clone(),
             add: self.add.clone(),
             agent: self.agent.clone(),
             pick_agent: self.pick_agent.clone(),
@@ -121,6 +124,16 @@ pub struct Spec<'a> {
 pub const PLACEHOLDER: &str = "Ask anything… (/ for commands, @ for files and chats)";
 pub const PHONE_PLACEHOLDER: &str = "Ask anything…";
 
+/// A Troupe tool's glyph (`TERMUL_TOOL_ICONS`).
+pub fn tool_icon(id: &str) -> &'static rune::Icon {
+    match id {
+        "browser" => &i::GLOBE,
+        "canvas" => &i::PALETTE,
+        "automations" => &i::ZAP,
+        _ => &i::BOT,
+    }
+}
+
 fn pill_look(t: &Tokens, id: &str) -> PillStyle {
     let c = &t.colors;
     let glyph: &'static rune::Icon = match pill_of(id) {
@@ -129,12 +142,7 @@ fn pill_look(t: &Tokens, id: &str) -> PillStyle {
         Some(Pill::File { abs_path, .. }) if abs_path.ends_with('/') => &i::FOLDER,
         Some(Pill::File { .. }) => &i::FILE_TEXT,
         Some(Pill::Context { .. } | Pill::Conversation { .. }) => &i::MESSAGE_SQUARE,
-        Some(Pill::Tool { id }) => match id.as_str() {
-            "browser" => &i::GLOBE,
-            "canvas" => &i::PALETTE,
-            "automations" => &i::ZAP,
-            _ => &i::BOT,
-        },
+        Some(Pill::Tool { id }) => tool_icon(&id),
         None => &i::FILE_TEXT,
     };
     let ink = if matches!(pill_of(id), Some(Pill::Skill { .. })) {
@@ -205,6 +213,21 @@ fn send_button<S: 'static>(t: &'static Tokens, spec: &Spec, can_send: bool, hook
 
 fn add_button<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>, layer: &mut Vec<El>) -> El {
     let c = &t.colors;
+    if spec.place == Place::Phone {
+        // Composer V2 phone (Paper "2.6b"): a 36-point ghost button with a 20-point glyph.
+        let sheet = hooks.add_sheet.clone();
+        return row()
+            .key(format!("{}-add", spec.key))
+            .w(36.0)
+            .h(36.0)
+            .center()
+            .radius(10.0)
+            .role("button")
+            .label("Add to chat")
+            .focusable(!spec.disabled)
+            .child(icon(&i::PLUS, 20.0).color(c.muted_foreground))
+            .on_press_tx(move |s: &mut S, tx| sheet(s, tx));
+    }
     let open = hooks.add_menu.clone();
     let trigger = row()
         .key(format!("{}-add", spec.key))

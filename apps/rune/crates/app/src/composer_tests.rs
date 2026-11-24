@@ -405,3 +405,22 @@ fn the_explorer_lists_a_folder_and_a_file_pick_sends_a_resource_link() {
         ])
     );
 }
+
+#[test]
+fn the_phone_plus_opens_the_add_sheet_and_mention_puts_an_at_sign() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    let mut rt = rune::Runtime::new(s, crate::view, (390.0, 844.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    crate::tests::tap(&mut rt, "composer-launcher-p-a-add");
+    assert!(crate::tests::present(&rt, "add-tile-camera"), "the sheet shows its tiles");
+    crate::tests::tap(&mut rt, "add-tools");
+    assert!(crate::tests::present(&rt, "add-tool-browser"), "Troupe tools is a sub-view");
+    crate::tests::tap(&mut rt, "back");
+    crate::tests::tap(&mut rt, "add-mention");
+    assert!(!crate::tests::present(&rt, "add-tile-camera"), "the sheet closes");
+    let host = Host::Launcher("p-a".into());
+    assert_eq!(rt.state.draft(&host).map(|d| d.edit.text.as_str()), Some("@"));
+    assert!(rt.state.menu_view(&host).is_some(), "the mention menu opens");
+}

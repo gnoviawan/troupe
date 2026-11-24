@@ -91,6 +91,8 @@ pub struct ComposerUi {
     pub agents_asked: bool,
     /// The launcher's chat being started.
     pub launching: Option<crate::launch::Launch>,
+    /// The composer the phone's Add to chat sheet writes into.
+    pub sheet_host: Option<Host>,
 }
 
 pub const NO_DRAFT: &str = "";
@@ -403,7 +405,7 @@ impl State {
     }
 
     /// An add-menu row: put a trigger at the caret, a tool pill, or (later) the file picker.
-    fn composer_add(&mut self, host: &Host, what: &str, tx: &mut Tx) {
+    pub(crate) fn composer_add(&mut self, host: &Host, what: &str, tx: &mut Tx) {
         let draft = self.draft_mut(host);
         if what == "tools" {
             draft.tools_open = true;
@@ -535,7 +537,7 @@ impl State {
             let host = host.clone();
             Rc::new(move |s: &mut State, tx: &mut Tx| f(s, &host, tx)) as Rc<dyn Fn(&mut State, &mut Tx)>
         };
-        let (agent_host, pick_agent_host) = (host.clone(), host.clone());
+        let (agent_host, pick_agent_host, sheet_host) = (host.clone(), host.clone(), host.clone());
         let (edit_host, key_host, paste_host, pick_host, hover_host, menu_host, add_host, rm_host) = (
             host.clone(),
             host.clone(),
@@ -569,6 +571,7 @@ impl State {
                 draft.tools_open &= open;
             }),
             add: Rc::new(move |s: &mut State, what: &str, tx: &mut Tx| s.composer_add(&add_host, what, tx)),
+            add_sheet: Rc::new(move |s: &mut State, _: &mut Tx| s.open_add_sheet(&sheet_host)),
             agent: Rc::new(move |s: &mut State, open: bool| match &agent_host {
                 Host::Chat(_) if open => s.toast_later("Switching agents in a chat"),
                 Host::Chat(_) => {}

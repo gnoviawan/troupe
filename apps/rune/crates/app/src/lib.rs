@@ -16,6 +16,7 @@ mod chat;
 mod chat_images;
 mod chat_view;
 mod composer;
+mod composer_sheet;
 mod composer_view;
 mod host;
 mod ids;
