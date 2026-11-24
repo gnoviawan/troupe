@@ -16,7 +16,7 @@ import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
-import { dispatchOutcomes, emit, openChatTabs, type StoreRecorder } from '../record'
+import { configReplies, dispatchOutcomes, emit, openChatTabs, type StoreRecorder } from '../record'
 
 /**
  * Wall clock of a vector: `context.now` (default {@link NOW}) while seeding,
@@ -94,7 +94,8 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/components/chat/tool-call-summary.ts',
     'src/renderer/lib/agents/acp-spawn-errors.ts',
     'src/renderer/lib/acp-api.ts',
-    'src/shared/types/web-protocol.types.ts'
+    'src/shared/types/web-protocol.types.ts',
+    'src/renderer/stores/acp-store/composer-options.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -112,6 +113,7 @@ export const acpRecorder: StoreRecorder = {
     shared._resetPromptReconcileForTesting()
     shared._resetBusyQueueRetriesForTesting()
     dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
+    configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
     openChatTabs.clear()
     for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
     // The counter only moves up; each vector starts on the next hundred.
@@ -169,6 +171,7 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
+import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
@@ -181,5 +184,6 @@ export const acpScenarios = [
   ...controlScenarios,
   ...promptScenarios,
   ...sessionScenarios,
-  ...agentScenarios
+  ...agentScenarios,
+  ...pickScenarios
 ]

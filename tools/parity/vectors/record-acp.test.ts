@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  configReplies,
   dispatchOutcomes,
   drawId,
   emit,
@@ -155,7 +156,20 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
         dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId),
       sendPromptBlocks: dispatchPrompt,
       cancelPrompt: async (agentId: string, sessionId: string) =>
-        emit({ kind: 'cancelPrompt', agentId, sessionId })
+        emit({ kind: 'cancelPrompt', agentId, sessionId }),
+      setMode: async (agentId: string, sessionId: string, modeId: string) =>
+        emit({ kind: 'setMode', agentId, sessionId, modeId }),
+      setModel: async (agentId: string, sessionId: string, modelId: string) =>
+        emit({ kind: 'setModel', agentId, sessionId, modelId }),
+      setConfigOption: async (
+        agentId: string,
+        sessionId: string,
+        configId: string,
+        value: unknown
+      ) => {
+        emit({ kind: 'setConfigOption', agentId, sessionId, configId, value })
+        return configReplies.shift() ?? null
+      }
     }
   }
 })
@@ -169,6 +183,8 @@ vi.mock(`${renderer}/stores/acp-store/model-catalog`, async (importOriginal) => 
 }))
 vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  persistComposerOptions: (configId: string, patch: unknown) =>
+    emit({ kind: 'persistComposerOptions', configId, patch }),
   readComposerOptions: async (configId: string) => {
     emit({ kind: 'reapplyComposerOptions', configId })
     return null

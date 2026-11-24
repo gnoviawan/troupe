@@ -49726,5 +49726,5076 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "set_mode_moves_the_mode_and_saves_the_pick",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMode",
+     "args": [
+      "s1",
+      "code"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setMode",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modeId": "code"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "modeId": "code"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_mode_without_modes_only_saves_the_pick",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMode",
+     "args": [
+      "s1",
+      "code"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setMode",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modeId": "code"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "modeId": "code"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21500,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_pick_on_an_unknown_session_is_rejected",
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMode",
+     "args": [
+      "s1",
+      "code"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: unknown session s1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: unknown session s1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "effort",
+      "high"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: unknown session s1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21600,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_model_moves_both_projections_and_the_index",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setModel",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modelId": "m2"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "modelId": "m2",
+       "configValues": {
+        "model": "m2"
+       }
+      }
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m2",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m2",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m2",
+       "modelName": "M2"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m2",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21700,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m1",
+      {
+       "persist": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setModel",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modelId": "m1"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21700,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_model_with_native_models_only",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setModel",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modelId": "m2"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "modelId": "m2"
+      }
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "modelId": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "reapplyComposerOptions",
+      "configId": "cfg-1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m2",
+       "modelName": "M2"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21800,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_model_without_a_live_config_saves_nothing",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 21900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setModel",
+     "args": [
+      "s1",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setModel",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "modelId": "m2"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m2",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m2",
+       "modelName": "M2"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 21900,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_without_a_snapshot_sets_the_value",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "effort",
+      "high"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "effort",
+      "value": "high"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "configValues": {
+        "effort": "high"
+       },
+       "modelValues": {
+        "m1": {
+         "effort": "high"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22000,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "speed",
+      "fast",
+      {
+       "persist": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "speed",
+      "value": "fast"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000002000
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "fast",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "fast",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_keeps_a_moved_value_over_a_creation_echo",
+  "context": {
+   "configReplies": [
+    [
+     {
+      "id": "model",
+      "name": "model",
+      "category": "model",
+      "type": "select",
+      "currentValue": "m1",
+      "options": [
+       {
+        "value": "m1",
+        "name": "M1"
+       },
+       {
+        "value": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     {
+      "id": "effort",
+      "name": "effort",
+      "category": "thought_level",
+      "type": "select",
+      "currentValue": "high",
+      "options": [
+       {
+        "value": "low",
+        "name": "LOW"
+       },
+       {
+        "value": "high",
+        "name": "HIGH"
+       }
+      ]
+     },
+     {
+      "id": "speed",
+      "name": "speed",
+      "category": "other",
+      "type": "select",
+      "currentValue": "fast",
+      "options": [
+       {
+        "value": "slow",
+        "name": "SLOW"
+       },
+       {
+        "value": "fast",
+        "name": "FAST"
+       }
+      ]
+     }
+    ],
+    [
+     {
+      "id": "model",
+      "name": "model",
+      "category": "model",
+      "type": "select",
+      "currentValue": "m1",
+      "options": [
+       {
+        "value": "m1",
+        "name": "M1"
+       },
+       {
+        "value": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     {
+      "id": "effort",
+      "name": "effort",
+      "category": "thought_level",
+      "type": "select",
+      "currentValue": "high",
+      "options": [
+       {
+        "value": "low",
+        "name": "LOW"
+       },
+       {
+        "value": "high",
+        "name": "HIGH"
+       }
+      ]
+     },
+     {
+      "id": "speed",
+      "name": "speed",
+      "category": "other",
+      "type": "select",
+      "currentValue": "fast",
+      "options": [
+       {
+        "value": "slow",
+        "name": "SLOW"
+       },
+       {
+        "value": "fast",
+        "name": "FAST"
+       }
+      ]
+     }
+    ]
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1,
+     "creationOptionDefaults": {
+      "configValues": {
+       "speed": "fast",
+       "effort": "low"
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "effort",
+      "high"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "effort",
+      "value": "high"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.configOptionEchoPreserved",
+      "message": "set_config_option response for session s1 re-asserted the creation default on 'speed'; kept the session's current value"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "configValues": {
+        "effort": "high"
+       },
+       "modelValues": {
+        "m1": {
+         "effort": "high"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "configValues": {
+         "speed": "fast",
+         "effort": "low"
+        }
+       },
+       "creationEchoLogged": {
+        "speed": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22100,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "effort",
+      "high"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "effort",
+      "value": "high"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "configValues": {
+        "effort": "high"
+       },
+       "modelValues": {
+        "m1": {
+         "effort": "high"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1,
+       "creationOptionDefaults": {
+        "configValues": {
+         "speed": "fast",
+         "effort": "low"
+        }
+       },
+       "creationEchoLogged": {
+        "speed": true
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_on_the_model_saves_the_model",
+  "context": {
+   "configReplies": [
+    [
+     {
+      "id": "model",
+      "name": "model",
+      "category": "model",
+      "type": "select",
+      "currentValue": "m2",
+      "options": [
+       {
+        "value": "m1",
+        "name": "M1"
+       },
+       {
+        "value": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     {
+      "id": "effort",
+      "name": "effort",
+      "category": "thought_level",
+      "type": "select",
+      "currentValue": "high",
+      "options": [
+       {
+        "value": "low",
+        "name": "LOW"
+       },
+       {
+        "value": "high",
+        "name": "HIGH"
+       }
+      ]
+     },
+     {
+      "id": "speed",
+      "name": "speed",
+      "category": "other",
+      "type": "select",
+      "currentValue": "slow",
+      "options": [
+       {
+        "value": "slow",
+        "name": "SLOW"
+       },
+       {
+        "value": "fast",
+        "name": "FAST"
+       }
+      ]
+     }
+    ]
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22200,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "model",
+      "m2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "model",
+      "value": "m2"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m2",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "modelId": "m2",
+       "configValues": {
+        "model": "m2"
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m2",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m2",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m2",
+       "modelName": "M2"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m2",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22200,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_on_a_mode_option_is_agent_wide",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "perm",
+       "name": "perm",
+       "category": "mode",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22300,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "perm",
+      "auto"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "perm",
+      "value": "auto"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "configValues": {
+        "perm": "auto"
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "perm",
+         "name": "perm",
+         "category": "mode",
+         "type": "select",
+         "currentValue": "auto",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "perm",
+         "name": "perm",
+         "category": "mode",
+         "type": "select",
+         "currentValue": "auto",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22300,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_saves_a_boolean_as_text",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "fast",
+       "name": "Fast",
+       "category": "other",
+       "type": "boolean",
+       "currentValue": false
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "cfg-1\u0000/work\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22400,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "fast",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "fast",
+      "value": true
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "cfg-1",
+      "catalog": {
+       "models": null,
+       "modelOption": {
+        "id": "model",
+        "name": "model",
+        "currentValue": "m1",
+        "options": [
+         {
+          "value": "m1",
+          "name": "M1",
+          "description": null
+         },
+         {
+          "value": "m2",
+          "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "cfg-1",
+      "patch": {
+       "configValues": {
+        "fast": "true"
+       },
+       "modelValues": {
+        "m1": {
+         "fast": "true"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": "other",
+         "type": "boolean",
+         "currentValue": true
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "cfg-1": {
+       "models": null,
+       "modes": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "fast",
+         "name": "Fast",
+         "category": "other",
+         "type": "boolean",
+         "currentValue": true
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "cfg-1\u0000/work\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22400,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_config_option_without_a_live_config_only_sets_the_value",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       },
+       {
+        "modelId": "m2",
+        "name": "M2"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "category": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ]
+      },
+      {
+       "id": "effort",
+       "name": "effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "high",
+         "name": "HIGH"
+        }
+       ]
+      },
+      {
+       "id": "speed",
+       "name": "speed",
+       "category": "other",
+       "type": "select",
+       "currentValue": "slow",
+       "options": [
+        {
+         "value": "slow",
+         "name": "SLOW"
+        },
+        {
+         "value": "fast",
+         "name": "FAST"
+        }
+       ]
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat",
+     "modelId": "m1",
+     "modelName": "M1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22500,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setConfigOption",
+     "args": [
+      "s1",
+      "effort",
+      "high"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "setConfigOption",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "configId": "effort",
+      "value": "high"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         },
+         {
+          "modelId": "m2",
+          "name": "M2"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "category": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ]
+        },
+        {
+         "id": "effort",
+         "name": "effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "high",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "high",
+           "name": "HIGH"
+          }
+         ]
+        },
+        {
+         "id": "speed",
+         "name": "speed",
+         "category": "other",
+         "type": "select",
+         "currentValue": "slow",
+         "options": [
+          {
+           "value": "slow",
+           "name": "SLOW"
+          },
+          {
+           "value": "fast",
+           "name": "FAST"
+          }
+         ]
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Chat",
+       "modelId": "m1",
+       "modelName": "M1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22500,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
  }
 ]

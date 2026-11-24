@@ -203,7 +203,19 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 10. MCP, import, discovery, one-shot collectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
-    the client crate's command ledger.
+    the client crate's command ledger. Split in two:
+    - 11a (R6a-2). `setMode`, `setModel` and `setConfigOption` as two steps,
+      like sending: the action returns the set command, and the app hands
+      the same effect back as `controlSet` once the agent acknowledged it,
+      with the agent's option snapshot. The acknowledgement applies the
+      value (the echo guard spares the option just set), updates the index
+      row and the options cache, and saves the pick
+      (`persistComposerOptions`, with the per-model values of a scoped
+      option). Not yet: the re-auth retry (`withAuthRetry`, 7b), the pick
+      marks a reopen restore reads (`noteUserPick`), and the drop of a
+      warm-pool session's pick (PR 8).
+    - 11b. `pickModel`, the saved-pick heal, the reopen restore, and the
+      prompt reconcile.
 
 ### Sending as two steps
 

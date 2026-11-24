@@ -13,6 +13,7 @@ pub mod controls;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
+mod picks;
 mod plan;
 pub mod prompt;
 pub mod session;
@@ -37,6 +38,7 @@ use approvals::{
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
@@ -276,6 +278,17 @@ pub enum Event {
     AgentSignInRequest(AgentSignInRequestEvent),
     #[serde(rename = "_onAgentSignInResolved")]
     AgentSignInResolved(AgentSignInResolvedEvent),
+    #[serde(rename = "setMode")]
+    SetMode(String, String),
+    #[serde(rename = "setModel")]
+    SetModel(String, String, #[serde(default)] Option<PickOptions>),
+    #[serde(rename = "setConfigOption")]
+    SetConfigOption(String, String, Value, #[serde(default)] Option<PickOptions>),
+    /// The agent acknowledged a set command an `Effect::SetMode`, `SetModel`
+    /// or `SetConfigOption` sent; the reply is a `SetConfigOption`'s option
+    /// snapshot, when the agent sent one.
+    #[serde(skip_deserializing)]
+    ControlSet(Effect, Option<Vec<Value>>),
     #[serde(rename = "clearPendingSignIn")]
     ClearPendingSignIn(String),
     #[serde(rename = "setActiveSession")]
@@ -361,6 +374,40 @@ pub enum Effect {
     },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
+    /// Send `session/set_mode`, then `Event::ControlSet` with this effect.
+    SetMode {
+        agent_id: String,
+        session_id: String,
+        mode_id: String,
+    },
+    /// Send `session/set_model`, then `Event::ControlSet` with this effect.
+    SetModel {
+        agent_id: String,
+        session_id: String,
+        model_id: String,
+        #[serde(skip_serializing)]
+        persist: bool,
+        /// The id of the session's model-category option when it was sent.
+        #[serde(skip_serializing)]
+        model_option: Option<Value>,
+    },
+    /// Send `session/set_config_option`, then `Event::ControlSet` with this
+    /// effect and the agent's option snapshot.
+    SetConfigOption {
+        agent_id: String,
+        session_id: String,
+        config_id: String,
+        value: Value,
+        #[serde(skip_serializing)]
+        persist: bool,
+        /// The model the session ran when the value was sent.
+        #[serde(skip_serializing)]
+        model_at_request: Option<String>,
+        #[serde(skip_serializing)]
+        is_model: bool,
+    },
+    /// Merge this patch into the config's saved composer picks.
+    PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
     /// what it read as `applySessionIndexSnapshot`.
     RefreshSessionIndex,
@@ -422,6 +469,14 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
+        Event::SetModel(session_id, model_id, options) => {
+            state.set_model(session_id, model_id, options, &mut fx);
+        }
+        Event::SetConfigOption(session_id, config_id, value, options) => {
+            state.set_config_option(session_id, config_id, value, options, &mut fx);
+        }
+        Event::ControlSet(command, reply) => state.on_control_set(command, reply, env, &mut fx),
         Event::ClearPendingSignIn(agent_id) => state.clear_pending_sign_in(&agent_id),
         Event::SetActiveSession(session_id) => state.active_session_id = session_id,
         Event::MarkResumeFailed(session_id, reason) => {

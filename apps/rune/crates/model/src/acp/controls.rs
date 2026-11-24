@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 use super::types::{Object, Session, SessionStatus};
 use super::{Effect, Env, State};
 
-const MODEL_CATEGORY: &str = "model";
+pub(super) const MODEL_CATEGORY: &str = "model";
 /// The `creationEchoLogged` key of the native mode picker.
 const MODE_ECHO_KEY: &str = "__mode__";
 
@@ -80,7 +80,7 @@ fn option_count(option: &Value) -> usize {
         .map_or(0, Vec::len)
 }
 
-fn category(option: &Value) -> Option<&str> {
+pub(super) fn category(option: &Value) -> Option<&str> {
     option.get("category").and_then(Value::as_str)
 }
 
@@ -95,10 +95,11 @@ fn comparable(value: Option<&Value>) -> Option<Value> {
 /// `mergeAgentConfigOptions`: a snapshot that re-asserts the creation default
 /// (or any model value) keeps the value the session moved to, while that value
 /// is still offered. `echoed` collects the options kept over an echo.
-fn merge_config_options(
+pub(super) fn merge_config_options(
     previous: &[Value],
     next: Vec<Value>,
     creation: Option<&Value>,
+    opted: Option<&str>,
     echoed: &mut Vec<String>,
 ) -> Vec<Value> {
     if previous.is_empty() {
@@ -107,6 +108,9 @@ fn merge_config_options(
     next.into_iter()
         .map(|option| {
             let id = option.get("id");
+            if opted.is_some() && id.and_then(Value::as_str) == opted {
+                return option;
+            }
             let Some(prior) = previous.iter().find(|prior| prior.get("id") == id) else {
                 return option;
             };
@@ -143,7 +147,7 @@ fn merge_config_options(
 
 /// `sessionModelSnapshot`: the model the composer shows, and its name. A
 /// `model` config option wins over the native `models` state.
-fn model_snapshot(session: &Session) -> Option<(String, String)> {
+pub(super) fn model_snapshot(session: &Session) -> Option<(String, String)> {
     let config_model = config_options(session).iter().find(|option| {
         category(option) == Some(MODEL_CATEGORY)
             && option
@@ -190,7 +194,7 @@ fn model_snapshot(session: &Session) -> Option<(String, String)> {
     Some((current.to_owned(), name.to_owned()))
 }
 
-fn config_options(session: &Session) -> &[Value] {
+pub(super) fn config_options(session: &Session) -> &[Value] {
     session
         .rest
         .get("configOptions")
@@ -199,7 +203,7 @@ fn config_options(session: &Session) -> &[Value] {
 }
 
 /// `alignSessionModelProjection`: copy the shown model onto `models`.
-fn align_model_projection(session: &mut Session) {
+pub(super) fn align_model_projection(session: &mut Session) {
     let Some((model_id, _)) = model_snapshot(session) else {
         return;
     };
@@ -229,7 +233,7 @@ fn catalog_models(option: &Value) -> Vec<Value> {
 
 /// `modelCatalogFromOptions`: the model list of a cache entry, kept across
 /// restarts; `None` when the entry has no model list.
-fn model_catalog(entry: &Value, now: f64) -> Option<Value> {
+pub(super) fn model_catalog(entry: &Value, now: f64) -> Option<Value> {
     let option = entry["configOptions"]
         .as_array()
         .into_iter()
@@ -344,6 +348,7 @@ impl State {
                 config_options(session),
                 event.config_options,
                 creation.as_ref(),
+                None,
                 &mut echoed,
             );
             echoed.retain(|id| {
@@ -359,18 +364,7 @@ impl State {
                 mark_echo_logged(session, id);
             }
             align_model_projection(session);
-            if let Some((model_id, model_name)) = model_snapshot(session) {
-                for entry in &mut self.session_index {
-                    let current = entry.get("id").and_then(Value::as_str) == Some(session_id);
-                    if current
-                        && (entry.get("modelId").and_then(Value::as_str) != Some(&model_id)
-                            || entry.get("modelName").and_then(Value::as_str) != Some(&model_name))
-                    {
-                        entry.insert("modelId".into(), json!(model_id));
-                        entry.insert("modelName".into(), json!(model_name));
-                    }
-                }
-            }
+            self.set_index_model(session_id);
             for id in echoed {
                 fx.push(Effect::warn(
                     "acp.configOptionEchoPreserved",
@@ -383,9 +377,27 @@ impl State {
         self.cache_options_from_session(session_id, env, fx);
     }
 
+    /// `withSessionModelOnIndex`: the index row shows the session's model.
+    pub(super) fn set_index_model(&mut self, session_id: &str) {
+        let Some((model_id, model_name)) = self.sessions.get(session_id).and_then(model_snapshot)
+        else {
+            return;
+        };
+        for entry in &mut self.session_index {
+            let current = entry.get("id").and_then(Value::as_str) == Some(session_id);
+            if current
+                && (entry.get("modelId").and_then(Value::as_str) != Some(&model_id)
+                    || entry.get("modelName").and_then(Value::as_str) != Some(&model_name))
+            {
+                entry.insert("modelId".into(), json!(model_id));
+                entry.insert("modelName".into(), json!(model_name));
+            }
+        }
+    }
+
     /// `configIdForAgentId`: the config whose live agent this is, from the
     /// first reuse key that maps to it.
-    fn config_id_for_agent(&self, agent_id: &str) -> Option<String> {
+    pub(crate) fn config_id_for_agent(&self, agent_id: &str) -> Option<String> {
         self.config_to_live_agent
             .iter()
             .find(|(_, live)| live.as_str() == Some(agent_id))
@@ -458,7 +470,7 @@ impl State {
     }
 }
 
-fn mark_echo_logged(session: &mut Session, key: &str) {
+pub(super) fn mark_echo_logged(session: &mut Session, key: &str) {
     let logged = session
         .rest
         .entry("creationEchoLogged")

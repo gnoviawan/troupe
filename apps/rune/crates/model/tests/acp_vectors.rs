@@ -57,6 +57,12 @@ fn replay(vector: &Value) -> Result<usize, String> {
     let context = vector.get("context").cloned().unwrap_or(json!({}));
     let start = context.get("now").and_then(Value::as_f64).unwrap_or(NOW);
     let server_history = context.get("serverHistory") == Some(&Value::Bool(true));
+    let mut config_replies: VecDeque<Value> = context
+        .get("configReplies")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
@@ -93,7 +99,33 @@ fn replay(vector: &Value) -> Result<usize, String> {
         // the deferred turn end (a macrotask) after every step; the replay
         // feeds both back in that order, the way the app does.
         let mut settled = std::collections::BTreeSet::new();
+        let mut acknowledged = 0;
         loop {
+            // A set command is acknowledged at once; the recorder's mocks
+            // resolve it before the action goes on.
+            if let Some(offset) = effects[acknowledged..].iter().position(|effect| {
+                matches!(
+                    effect,
+                    Effect::SetMode { .. }
+                        | Effect::SetModel { .. }
+                        | Effect::SetConfigOption { .. }
+                )
+            }) {
+                let command = effects[acknowledged + offset].clone();
+                acknowledged += offset + 1;
+                let reply = match command {
+                    Effect::SetConfigOption { .. } => config_replies
+                        .pop_front()
+                        .filter(|reply| !reply.is_null())
+                        .map(|reply| parse(&reply))
+                        .transpose()
+                        .map_err(|e| at(&e))?,
+                    _ => None,
+                };
+                let more = acp::step(&mut state, Event::ControlSet(command, reply), &mut env);
+                effects.extend(more);
+                continue;
+            }
             let dispatched = effects.iter().find_map(|effect| match effect {
                 Effect::DispatchPrompt {
                     session_id,

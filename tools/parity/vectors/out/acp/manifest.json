@@ -31,7 +31,8 @@
         "src/renderer/components/chat/tool-call-summary.ts": "dd533b9f18653865f0c872a940e2a90adabb558c",
         "src/renderer/lib/agents/acp-spawn-errors.ts": "4d6688350c5becfe0353863eb5552bce04ac5836",
         "src/renderer/lib/acp-api.ts": "02df50ba69ea0f725df918e8e18587c067577d9f",
-        "src/shared/types/web-protocol.types.ts": "296a28c60d36c8129c6388a8b5639115a7f33e55"
+        "src/shared/types/web-protocol.types.ts": "296a28c60d36c8129c6388a8b5639115a7f33e55",
+        "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -169,7 +170,19 @@
         "agent_crashed_on_a_closed_session_marks_the_others",
         "agent_disconnected_on_purpose_drops_the_agent",
         "agent_disconnected_after_a_crash_keeps_the_error",
-        "agent_disconnected_keeps_an_idle_chat_with_content"
+        "agent_disconnected_keeps_an_idle_chat_with_content",
+        "set_mode_moves_the_mode_and_saves_the_pick",
+        "set_mode_without_modes_only_saves_the_pick",
+        "a_pick_on_an_unknown_session_is_rejected",
+        "set_model_moves_both_projections_and_the_index",
+        "set_model_with_native_models_only",
+        "set_model_without_a_live_config_saves_nothing",
+        "set_config_option_without_a_snapshot_sets_the_value",
+        "set_config_option_keeps_a_moved_value_over_a_creation_echo",
+        "set_config_option_on_the_model_saves_the_model",
+        "set_config_option_on_a_mode_option_is_agent_wide",
+        "set_config_option_saves_a_boolean_as_text",
+        "set_config_option_without_a_live_config_only_sets_the_value"
       ]
     }
   }

@@ -70,6 +70,9 @@ export const reads = new Map<string, unknown>()
 /** How the mocked prompt dispatches answer, in order; a vector's `context.dispatch`. */
 export const dispatchOutcomes: unknown[] = []
 
+/** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
+export const configReplies: unknown[] = []
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 
