@@ -25,7 +25,7 @@ struct S {
 fn view(s: &S, _cx: &mut Cx<S>) -> El {
     let lenses = Lenses { acp: |s: &S| &s.acp, reader: |s: &S| &s.reader, reader_mut: |s: &mut S| &mut s.reader, step: |s: &mut S, e| {
         acp::step(&mut s.acp, e, &mut acp::Env { now: 0.0, ids: &mut NoIds, server_history: true });
-    } };
+    }, stop_subagent: |_: &mut S, _, _| {} };
     transcript(theme::tokens("termul", true), s, "c1", lenses, Hooks::default())
 }
 

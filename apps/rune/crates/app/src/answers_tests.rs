@@ -117,3 +117,48 @@ fn a_question_replaces_the_composer_and_submits_the_pick() {
     assert!(present(&rt, "composer-chat-chat-1-tray"), "the composer comes back");
 }
 
+
+fn dispatch(activity: &str, end: Option<&str>) -> Value {
+    let mut record = json!({
+        "id": "child-explore",
+        "rootSessionId": "chat-1",
+        "dispatchToolCallId": "termul-subagent:child-explore",
+        "source": "acp-rfd",
+        "title": "Explore the router",
+        "background": false,
+        "caps": { "stop": "session-cancel", "transcript": "live", "liveProgress": true, "usage": true },
+        "activity": activity,
+    });
+    if let Some(reason) = end {
+        record["end"] = json!({ "reason": reason });
+        record["caps"]["stop"] = Value::Null;
+    }
+    json!({ "_onToolCall": [{
+        "agentId": "agent-1",
+        "sessionId": "chat-1",
+        "toolCall": {
+            "toolCallId": "termul-subagent:child-explore",
+            "title": "Explore the router",
+            "status": if end.is_some() { "completed" } else { "in_progress" },
+            "_meta": { "termul/subagent": record },
+        },
+    }, 20] })
+}
+
+#[test]
+fn the_subagent_panel_stops_a_running_subagent_through_the_host() {
+    let mut rt = chat_at((1280.0, 800.0));
+    ask(&mut rt, json!({ "_onUserPrompt": [{ "agentId": "agent-1", "sessionId": "chat-1", "turnId": "t1", "blocks": [{ "type": "text", "text": "matrix subagent" }] }, 19] }));
+    ask(&mut rt, dispatch("running", None));
+    assert!(present(&rt, "subagent-row-termul-subagent:child-explore"), "the dispatch shows as a subagent row");
+    tap(&mut rt, "subagent-row-termul-subagent:child-explore");
+    assert!(present(&rt, "subagent-panel-termul-subagent:child-explore"), "the row opens the panel");
+    tap(&mut rt, "subagent-stop-termul-subagent:child-explore");
+    assert_eq!(
+        sent(&rt.state, WsRequestType::StopSubagent),
+        [json!({ "agentId": "agent-1", "rootSessionId": "chat-1", "subagentId": "child-explore" })]
+    );
+    assert!(rt.state.chat.reader.is_stopping("child-explore"));
+    ask(&mut rt, dispatch("idle", Some("cancelled")));
+    assert!(!present(&rt, "subagent-stop-termul-subagent:child-explore"), "a stopped subagent offers no Stop");
+}

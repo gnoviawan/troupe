@@ -77,6 +77,8 @@ pub(crate) enum Pending {
     Prompt { session_id: String, turn_id: String },
     /// The user's answer to a permission request, question or elicitation.
     Answer(Box<model::acp::answer::Answer>),
+    /// A subagent's `stop_subagent`, by the record's id.
+    StopSubagent(String),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
@@ -394,6 +396,7 @@ impl State {
             },
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
             Pending::Answer(answer) => self.answer_settled(*answer, result),
+            Pending::StopSubagent(id) => self.subagent_stop_settled(id, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ListChats => {

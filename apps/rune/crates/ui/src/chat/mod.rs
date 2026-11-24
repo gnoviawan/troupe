@@ -9,6 +9,7 @@
 
 pub mod approvals;
 mod rows;
+pub mod subagents;
 pub mod timeline;
 
 #[cfg(test)]
@@ -47,6 +48,10 @@ pub struct Reader {
     away: BTreeSet<String>,
     /// The options picked in the open questions.
     pub picks: approvals::Picks,
+    /// Per session, the subagent dispatch whose panel is open.
+    subagent_panels: BTreeMap<String, String>,
+    /// Subagents a stop was sent for, until their record leaves running.
+    stopping: BTreeSet<String>,
 }
 
 impl Reader {
@@ -71,6 +76,33 @@ impl Reader {
         self.away.contains(session_id)
     }
 
+    /// Opens the panel of the dispatch `tool_call_id` in `session_id`.
+    pub fn open_subagent(&mut self, session_id: &str, tool_call_id: &str) {
+        self.subagent_panels.insert(session_id.to_owned(), tool_call_id.to_owned());
+    }
+
+    pub fn close_subagent(&mut self, session_id: &str) {
+        self.subagent_panels.remove(session_id);
+    }
+
+    /// The dispatch whose panel is open in `session_id`.
+    pub fn subagent_panel(&self, session_id: &str) -> Option<&str> {
+        self.subagent_panels.get(session_id).map(String::as_str)
+    }
+
+    /// A stop was sent for `subagent_id` (`setStopping(true)`), or it settled.
+    pub fn set_stopping(&mut self, subagent_id: &str, on: bool) {
+        if on {
+            self.stopping.insert(subagent_id.to_owned());
+        } else {
+            self.stopping.remove(subagent_id);
+        }
+    }
+
+    pub fn is_stopping(&self, subagent_id: &str) -> bool {
+        self.stopping.contains(subagent_id)
+    }
+
     /// Records whether the transcript shows its end; true when that changed.
     pub fn set_at_end(&mut self, session_id: &str, at_end: bool) -> bool {
         if at_end { self.away.remove(session_id) } else { self.away.insert(session_id.to_owned()) }
@@ -84,6 +116,8 @@ pub struct Lenses<S> {
     pub reader_mut: fn(&mut S) -> &mut Reader,
     /// Applies one model action and runs its effects; the cards answer through it.
     pub step: fn(&mut S, acp::Event),
+    /// Asks the host to stop a subagent (`stop_subagent`): the session and the record's id.
+    pub stop_subagent: fn(&mut S, String, String),
 }
 
 impl<S> Clone for Lenses<S> {

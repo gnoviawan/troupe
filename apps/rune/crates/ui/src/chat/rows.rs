@@ -141,10 +141,34 @@ fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
     let header = header.on_press(move |s: &mut S| reader(s).toggle(&row_key, &toggled));
     let mut frame = col().w_full().my(4.0).min_w(0.0).child(header);
     if open {
-        let steps = a.items.iter().map(|item| step(ctx, s, item, a.active));
-        frame = frame.child(col().w_full().min_w(0.0).pl(16.0).pb(4.0).gap(4.0).children(steps));
+        frame = frame.child(col().w_full().min_w(0.0).pl(16.0).pb(4.0).gap(4.0).children(steps(ctx, s, a)));
     }
     frame
+}
+
+/// The turn's steps, with each run of subagent dispatches drawn as one `SubagentGroup`.
+fn steps<S: 'static>(ctx: &Ctx<S>, s: &S, a: &Activity) -> Vec<El> {
+    let tools = ctx.tools(s);
+    let dispatch = |item: &Item| match item {
+        Item::Tool(i) => tools.get(*i).filter(|t| t.get("subagent").is_some_and(|v| !v.is_null())),
+        _ => None,
+    };
+    let mut out = Vec::new();
+    let mut run = Vec::new();
+    for item in &a.items {
+        if let Some(tool) = dispatch(item) {
+            run.push(tool);
+            continue;
+        }
+        if !run.is_empty() {
+            out.push(super::subagents::group(ctx.t, &ctx.session, &std::mem::take(&mut run), a.active, ctx.lenses));
+        }
+        out.push(step(ctx, s, item, a.active));
+    }
+    if !run.is_empty() {
+        out.push(super::subagents::group(ctx.t, &ctx.session, &run, a.active, ctx.lenses));
+    }
+    out
 }
 
 fn step<S: 'static>(ctx: &Ctx<S>, s: &S, item: &Item, active: bool) -> El {
