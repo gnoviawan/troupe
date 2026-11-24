@@ -206,6 +206,9 @@ fn poll(s: &mut State, now: f64, tx: &mut Tx) -> bool {
     changed
 }
 
+/// The fonts the web build fetches after its first frame, relative to the page.
+pub const WEB_FONTS: [&str; 2] = ["fonts/NotoSansJP.ttf", "fonts/NotoColorEmoji.ttf"];
+
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen(start))]
 pub fn start() {
     let spec = AppSpec {
@@ -218,5 +221,10 @@ pub fn start() {
     };
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens (R0 measured it the
     // closest to the web client).
-    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).run();
+    let app = rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu);
+    // The web target has no system fonts: CJK and emoji glyphs draw as boxes until these arrive.
+    // They load after the first frame (`scripts/rune/fetch-web-fonts.mjs` puts them there).
+    #[cfg(target_arch = "wasm32")]
+    let app = WEB_FONTS.iter().fold(app, |app, url| app.font_url_later(url));
+    app.run();
 }

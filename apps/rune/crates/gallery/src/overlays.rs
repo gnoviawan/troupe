@@ -235,6 +235,7 @@ pub fn menus(c: &Ctx) -> El {
     let s = c.s;
     let mut layer = c.layer.borrow_mut();
     let mut view = Menu::new("view-menu")
+        .name("View options")
         .width(224.0)
         .label("Editor")
         .item(MenuItem::new("Word wrap").checked(s.wrap).on_select(|s: &mut State| s.wrap = !s.wrap))
@@ -245,6 +246,7 @@ pub fn menus(c: &Ctx) -> El {
         view = view.item(MenuItem::new(*shell).checked(s.shell == n).on_select(move |s: &mut State| s.shell = n));
     }
     let open_in = Menu::new("open-in")
+        .name("Open in")
         .item(MenuItem::new("New tab").on_select(closer("view-menu")))
         .item(MenuItem::new("Split right").on_select(closer("view-menu")))
         .open(s.overlays.is_open("open-in"))
@@ -275,6 +277,7 @@ pub fn menus(c: &Ctx) -> El {
         });
     let context_at = if s.overlays.is_open("file-menu") { s.context_at } else { None };
     let context = Menu::new("file-menu")
+        .name("src/server/index.ts")
         .width(208.0)
         .label("src/server/index.ts")
         .item(MenuItem::new("Reveal in explorer").icon(&i::FOLDER_OPEN).on_select(closer("file-menu")))
