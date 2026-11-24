@@ -32,13 +32,6 @@ normalize_release_version() {
   printf '%s\n' "$version"
 }
 
-is_release_prerelease() {
-  local version
-  version="$(normalize_release_version "$1")" || return 1
-  version="${version%%+*}"
-  [[ "$version" == *-* ]]
-}
-
 # 0.5.0 renamed the app from "Termul Manager" to Troupe. The DMG assets carry
 # the product name with spaces turned into dots, and the DMG holds
 # "<name>.app".
