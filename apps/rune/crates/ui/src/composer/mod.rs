@@ -5,6 +5,7 @@
 
 mod doc;
 pub mod field;
+mod foot;
 pub mod menu;
 mod send;
 mod uri;
