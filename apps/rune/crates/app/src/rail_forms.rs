@@ -195,7 +195,7 @@ fn new_group(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
 /// The inline rename field a row shows in place of its name: Return saves, Escape cancels.
 pub fn rename_field(t: &Tokens, edit: &TextEdit) -> El {
     let c = &t.colors;
-    text_input(edit, sans(14.0, 400.0, 20.0))
+    text_input(edit, sans(12.0, 400.0, 16.0))
         .single_line()
         .key(RENAME_FIELD)
         .label("Rename")
@@ -205,7 +205,7 @@ pub fn rename_field(t: &Tokens, edit: &TextEdit) -> El {
         .h(24.0)
         .px(6.0)
         .radius(4.0)
-        .fill(c.background)
+        .fill(c.card)
         .border(1.0, c.border)
         .on_edit(|s: &mut State| {
             &mut s

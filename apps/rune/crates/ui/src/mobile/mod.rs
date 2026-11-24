@@ -64,11 +64,12 @@ pub fn header_subtitle(t: &Tokens, line: &str, label: &str) -> El {
         .child(icon(chevron, 12.0).color(c.muted_foreground))
 }
 
-/// A drawer section header ("Today", "Quick chats"): 15/500 muted, with an optional action.
+/// A drawer section header ("Today", "Quick chats"): 16/500 muted on a 36 px row, with an
+/// optional action.
 pub fn section(t: &Tokens, title: &str, action: Option<El>) -> El {
     let mut e = row()
         .w_full()
-        .h(TOUCH)
+        .h(36.0)
         .pl(24.0)
         .pr(8.0)
         .items_center()

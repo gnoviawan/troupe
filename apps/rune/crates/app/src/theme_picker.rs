@@ -262,7 +262,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
     let placed = if phone {
         panel.pin(Some(16.0), Some(16.0), Some(16.0), Some(16.0))
     } else {
-        panel.pin(Some(16.0), None, Some(16.0), Some(left)).w(320.0)
+        panel.pin(Some(left), Some(16.0), None, Some(16.0)).w(320.0)
     };
     layer.push(
         el().key("theme-picker-layer")

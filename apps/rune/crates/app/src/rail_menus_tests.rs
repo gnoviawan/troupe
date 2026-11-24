@@ -74,7 +74,7 @@ fn the_project_menu_recolours_and_deletes_on_the_server() {
     assert_eq!(updates, [json!({ "projectId": "p-b", "color": "red" })]);
 
     secondary(&mut rt, "project-item-p-c");
-    tap(&mut rt, "project-menu-item8");
+    tap(&mut rt, "project-menu-item9");
     assert_eq!(rt.state.overlays.top(), Some(DELETE_PROJECT));
     tap(&mut rt, "confirm");
     assert_eq!(rt.state.overlays.top(), None);
@@ -261,3 +261,4 @@ fn the_phone_project_sheet_switches_projects() {
     );
     assert!(rt.state.overlays.keys().is_empty());
 }
+

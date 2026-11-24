@@ -41,7 +41,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     layer.push(
         row()
             .key("toaster-layer")
-            .pin(None, Some(16.0), Some(16.0), None)
+            .pin(None, None, Some(16.0), Some(16.0))
             .child(s.toasts.build(t, |id| Box::new(move |s: &mut State| s.toasts.dismiss(id)))),
     );
     ui::overlay::root(root, layer)

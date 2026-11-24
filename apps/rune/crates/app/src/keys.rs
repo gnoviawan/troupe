@@ -471,6 +471,7 @@ pub fn build(s: &State, t: &'static Tokens, height: f32, layer: &mut Vec<El>) {
             .w_full()
             .h_full()
             .fill(c.overlay.alpha(0.4))
+            .backdrop_blur(4.0)
             .a11y_hidden(),
     );
     layer.push(

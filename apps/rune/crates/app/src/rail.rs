@@ -11,6 +11,8 @@ use crate::State;
 pub const PROJECT_MENU: &str = "project-menu";
 /// Its "Move to group" submenu.
 pub const MOVE_MENU: &str = "project-move-menu";
+/// Its "Default shell" submenu; the detected shells list ports with the terminal (R7).
+pub const SHELL_MENU: &str = "project-shell-menu";
 /// The colour swatches (`ColorPickerPopover`).
 pub const COLOUR: &str = "colour-picker";
 pub const DELETE_PROJECT: &str = "delete-project";
@@ -87,7 +89,7 @@ impl State {
     fn forget(&mut self, key: &str) {
         let r = &mut self.rail;
         match key {
-            PROJECT_MENU | MOVE_MENU => r.at = r.at.filter(|_| self.overlays.is_open(COLOUR)),
+            PROJECT_MENU | MOVE_MENU | SHELL_MENU => r.at = r.at.filter(|_| self.overlays.is_open(COLOUR)),
             COLOUR => r.paint = None,
             NEW_PROJECT => {
                 r.project_path = TextEdit::new("");

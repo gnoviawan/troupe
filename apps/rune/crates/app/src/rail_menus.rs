@@ -111,6 +111,17 @@ fn project_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
                     }),
             )
             .item(
+                MenuItem::new("Default shell")
+                    .icon(glyph("Terminal"))
+                    .submenu(
+                        Menu::new(SHELL_MENU)
+                            .width(192.0)
+                            .open(s.overlays.is_open(SHELL_MENU))
+                            .item(MenuItem::new("System default").checked(true).disabled(true)),
+                    )
+                    .on_select(|s: &mut State| s.overlays.open(SHELL_MENU)),
+            )
+            .item(
                 MenuItem::new("Move to group")
                     .icon(glyph("Folder"))
                     .submenu(moves)
@@ -493,6 +504,7 @@ fn confirms(s: &State, t: &Tokens, layer: &mut Vec<El>) {
 pub fn add_menu(s: &State, t: &Tokens, layer: &mut Vec<El>, trigger: El) -> El {
     let import = s.active_project().is_some();
     let mut menu = Menu::new(ADD_MENU)
+        .width(145.0)
         .placement(ui::overlay::Placement::BottomEnd)
         .open(s.overlays.is_open(ADD_MENU))
         .item(

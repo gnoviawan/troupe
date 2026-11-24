@@ -120,7 +120,7 @@ impl Modal {
             );
         }
         let card = close.modal(shadows(card, &t.shadows.elevation_2xl));
-        layer.push(scrim(format!("{}-scrim", self.key), c.overlay.alpha(0.6)));
+        layer.push(scrim(format!("{}-scrim", self.key), c.overlay.alpha(0.6)).backdrop_blur(4.0));
         layer.push(
             col()
                 .key(format!("{}-layer", self.key))

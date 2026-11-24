@@ -33,13 +33,20 @@ fn glyph(name: &str) -> &'static rune::Icon {
     theme::icons::named(name).unwrap_or(&theme::icons::X)
 }
 
-/// The project line: `alpha · main` when the branch is known, else the name.
+/// The branch a project shows: its git branch, or `main` as the web client prints for a
+/// checkout whose branch it has not read.
+fn branch(p: &model::projects::Project) -> &str {
+    p.client
+        .git_branch
+        .as_deref()
+        .filter(|b| !b.is_empty())
+        .unwrap_or("main")
+}
+
+/// The project line: `alpha · main`.
 fn project_line(s: &State) -> String {
     match s.active_project() {
-        Some(p) => match p.client.git_branch.as_deref().filter(|b| !b.is_empty()) {
-            Some(branch) => format!("{} · {branch}", p.name),
-            None => p.name.clone(),
-        },
+        Some(p) => format!("{} · {}", p.name, branch(p)),
         None => String::new(),
     }
 }
@@ -94,9 +101,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
     let badge = project.map_or_else(el, |p| {
         ui::shell::project_badge(t, &p.name, &p.color).size(20.0, 20.0)
     });
-    let branch = project
-        .and_then(|p| p.client.git_branch.clone())
-        .unwrap_or_else(|| "main".to_owned());
+    let branch = project.map_or("main", branch);
     let head = row()
         .key("drawer-head")
         .w_full()
@@ -194,7 +199,8 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
     let recents: Vec<&Chat> = project
         .map(|p| s.chats.of_project(&p.id).filter(hit).collect())
         .unwrap_or_default();
-    if !recents.is_empty() {
+    let spaced = !recents.is_empty();
+    if spaced {
         list = list.child(mobile::section(t, "Today", None));
         for chat in recents {
             list = list.child(recents_row(t, chat));
@@ -203,7 +209,9 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
     let new_quick = mobile::icon_button(t, glyph("Plus"), "New quick chat")
         .key("drawer-new-quick")
         .on_press(|s: &mut State| s.toast_later("New quick chat"));
-    list = list.child(mobile::section(t, "Quick chats", Some(new_quick)));
+    list = list.child(
+        mobile::section(t, "Quick chats", Some(new_quick)).mt(if spaced { 12.0 } else { 0.0 }),
+    );
     for chat in s.chats.quick().filter(hit) {
         list = list.child(recents_row(t, chat));
     }
@@ -339,6 +347,11 @@ fn recents_row(t: &'static Tokens, chat: &Chat) -> El {
         )
 }
 
+/// A sheet's rows, flush (the sheet body spaces its children 8 px apart).
+fn stack(rows: Vec<El>, gap: f32) -> El {
+    col().w_full().gap(gap).items_stretch().children(rows)
+}
+
 /// The open phone sheets, bottom-most first.
 pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec<El>) {
     for key in s.overlays.keys().iter().map(String::as_str) {
@@ -374,20 +387,25 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
         })
     };
     sheet(MORE, "Troupe".to_owned(), s)
-        .child(mobile::sheet_subtitle(t, &project_line(s)))
-        .child(row_of("GitBranch", "Git changes"))
-        .child(row_of("FolderOpen", "Files"))
-        .child(row_of("Search", "Command palette"))
-        .child(row_of("TerminalSquare", "New terminal"))
-        .child(row_of("Settings", "Project settings"))
-        .child(row_of("Bug", "Report a bug"))
+        .child(stack(
+            vec![
+                mobile::sheet_subtitle(t, &project_line(s)),
+                row_of("GitBranch", "Git changes"),
+                row_of("FolderOpen", "Files"),
+                row_of("Search", "Command palette"),
+                row_of("TerminalSquare", "New terminal"),
+                row_of("Settings", "Project settings"),
+                row_of("Bug", "Report a bug"),
+            ],
+            0.0,
+        ))
         .build(t, window, layer);
 }
 
 fn projects_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec<El>) {
     let c = &t.colors;
     let active = s.active_project().map(|p| p.id.clone());
-    let mut sheet = sheet(PROJECTS, "Projects".to_owned(), s);
+    let mut rows = Vec::new();
     for project in s
         .projects
         .store
@@ -430,7 +448,7 @@ fn projects_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut
                 );
         }
         if current {
-            line = line.fill(c.secondary).child(
+            line = line.fill(c.accent).child(
                 text("Current")
                     .font(sans(16.0, 400.0, 24.0))
                     .color(c.muted_foreground),
@@ -448,7 +466,7 @@ fn projects_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut
         };
         let action = mobile::icon_button(t, glyph(glyph_name), label)
             .on_press(move |s: &mut State| s.toast_later(label));
-        sheet = sheet.child(
+        rows.push(
             row()
                 .w_full()
                 .gap(4.0)
@@ -457,7 +475,8 @@ fn projects_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut
                 .child(action),
         );
     }
-    sheet
+    sheet(PROJECTS, "Projects".to_owned(), s)
+        .child(stack(rows, 2.0))
         .child(el().w_full().h(0.5).fill(c.border).my(4.0))
         .child(
             mobile::sheet_row(t, glyph("Plus"), "Add project", false)

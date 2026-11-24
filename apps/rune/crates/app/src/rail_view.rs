@@ -66,16 +66,32 @@ pub fn body(
         .role("list")
         .label("Projects");
     let (groups, ungrouped) = layout(&s.projects.store.projects, &s.projects.store.groups);
+    let mut grouped = col().w_full().px(8.0).gap(4.0).role("list").label("Groups");
+    let has_groups = !groups.is_empty();
     for (group, members) in groups {
         let folded = group.is_collapsed == Some(true);
-        if !collapsed {
-            projects = projects.child(group_row(s, t, group, folded));
-        }
-        if !folded || collapsed {
+        if collapsed {
             for project in members {
-                projects = projects.children(project_rows(s, t, project, collapsed));
+                projects = projects.children(project_rows(s, t, project, true));
+            }
+            continue;
+        }
+        // An open group sits on a faint block that spans its member rows.
+        let mut block = col()
+            .key(format!("rail-group-block-{}", group.id))
+            .w_full()
+            .mx(-4.0)
+            .px(4.0)
+            .gap(1.0)
+            .radius(10.0)
+            .child(group_row(s, t, group, folded));
+        if !folded {
+            block = block.pb(4.0).fill(t.colors.row_hover);
+            for project in members {
+                block = block.children(project_rows(s, t, project, false));
             }
         }
+        grouped = grouped.child(block);
     }
     for project in ungrouped {
         projects = projects.children(project_rows(s, t, project, collapsed));
@@ -108,6 +124,23 @@ pub fn body(
             .label("Quick chats");
         for chat in s.chats.quick().take(CHATS_PER_PROJECT) {
             quick = quick.child(chat_row(s, t, chat));
+        }
+        if has_groups {
+            let new_group = shell::rail_button(
+                t,
+                glyph("FolderPlus"),
+                "New folder group",
+                20.0,
+                12.0,
+                false,
+            )
+            .key("rail-new-group")
+            .on_press(|s: &mut State| s.overlays.open(crate::rail::NEW_GROUP));
+            body = body
+                .child(shell::section_header(t, "Groups", Some(new_group)))
+                .child(el().h(2.0))
+                .child(grouped)
+                .child(el().h(14.0));
         }
         body = body
             .child(shell::section_header(t, "Projects", Some(add)))
@@ -313,6 +346,10 @@ fn project_rows(s: &State, t: &'static Tokens, project: &Project, collapsed: boo
                 .take(CHATS_PER_PROJECT)
                 .map(|chat| chat_row(s, t, chat)),
         );
+        if out.len() > 1 {
+            // The chat list's `pb-1` under its last row.
+            out.push(el().h(3.0));
+        }
     }
     out
 }
@@ -356,9 +393,9 @@ fn chat_row(s: &State, t: &'static Tokens, chat: &Chat) -> El {
         .label(chat.label().to_owned())
         .w_full()
         .h(30.0)
-        .pl(32.0)
+        .pl(34.0)
         .pr(12.0)
-        .gap(8.0)
+        .gap(10.0)
         .items_center()
         .radius(8.0)
         .hover(c.row_hover)
