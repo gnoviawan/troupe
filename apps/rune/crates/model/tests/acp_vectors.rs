@@ -40,12 +40,12 @@ fn dispatch_outcome(outcome: Option<Value>) -> DispatchOutcome {
         DispatchOutcome::Busy
     } else if let Some(error) = outcome.get("error").and_then(Value::as_str) {
         DispatchOutcome::Failed {
-            message: format!("Error: {error}"),
+            message: error.to_owned(),
             agent_dead: false,
         }
     } else if outcome.get("agentDead").is_some() {
         DispatchOutcome::Failed {
-            message: "Error: agent thread is no longer running".into(),
+            message: "agent thread is no longer running".into(),
             agent_dead: true,
         }
     } else {
@@ -143,7 +143,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         match reply.as_ref().and_then(|reply| reply.get("reject")) {
                             Some(reason) => Event::ControlFailed(
                                 command,
-                                format!("Error: {}", reason.as_str().unwrap_or_default()),
+                                reason.as_str().unwrap_or_default().to_owned(),
                             ),
                             None => Event::ControlSet(
                                 command,
