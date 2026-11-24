@@ -19,6 +19,9 @@ const BARE_LOCAL_HOST =
 
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
 
+/** Prose punctuation after a link, minus the `]` that closes an IPv6 host. */
+const TRAILING_PROSE_PUNCTUATION = /[),.;:!?]+$/
+
 /**
  * The http(s) URL `text` names, or null. Accepts a full URL or a bare local
  * host (`localhost:4321`), with the wrappers and trailing punctuation prose
@@ -26,9 +29,12 @@ const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i
  */
 export function browsableUrlFrom(text: string | null | undefined): string | null {
   if (!text) return null
-  // The cleanup reads the `[` of `[::1]:8000` as a wrapper, so the trimmed
-  // text is the fallback.
-  return urlFromToken(sanitizeTerminalUrlToken(text)) ?? urlFromToken(text.trim())
+  // The terminal cleanup reads the `[` of `[::1]:8000` as a wrapper, so the
+  // fallback trims only trailing prose punctuation (`[::1]:8000.`).
+  return (
+    urlFromToken(sanitizeTerminalUrlToken(text)) ??
+    urlFromToken(text.trim().replace(TRAILING_PROSE_PUNCTUATION, ''))
+  )
 }
 
 function urlFromToken(token: string): string | null {
@@ -58,7 +64,9 @@ export function browsableUrlForContextMenu(
 ): string | null {
   if (target instanceof Element) {
     const anchor = target.closest('a[href]')
-    const fromLink = browsableUrlFrom(anchor?.getAttribute('href'))
+    // An href is already a URL, not prose: a trailing `)` (`/Function_(math)`)
+    // is part of the destination, so it skips the prose cleanup.
+    const fromLink = urlFromToken(anchor?.getAttribute('href')?.trim() ?? '')
     if (fromLink) return fromLink
   }
   return browsableUrlFrom(selectionText)

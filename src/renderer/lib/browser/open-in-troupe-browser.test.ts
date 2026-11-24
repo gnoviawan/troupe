@@ -28,6 +28,8 @@ describe('browsableUrlFrom', () => {
     ['127.0.0.1:8080', 'http://127.0.0.1:8080/'],
     ['0.0.0.0:5173', 'http://0.0.0.0:5173/'],
     ['[::1]:8000', 'http://[::1]:8000/'],
+    ['[::1]:8000.', 'http://[::1]:8000/'],
+    ['([::1]:8000).', 'http://[::1]:8000/'],
     ['app.localhost:3000', 'http://app.localhost:3000/'],
     ['  (http://localhost:4321).  ', 'http://localhost:4321/'],
     ['`localhost:4321`', 'http://localhost:4321/'],
@@ -65,6 +67,14 @@ describe('browsableUrlForContextMenu', () => {
     const anchor = document.createElement('a')
     anchor.setAttribute('href', '#section')
     expect(browsableUrlForContextMenu(anchor, 'localhost:9999')).toBe('http://localhost:9999/')
+  })
+
+  it('keeps a trailing parenthesis that is part of the href', () => {
+    const anchor = document.createElement('a')
+    anchor.setAttribute('href', 'https://en.wikipedia.org/wiki/Function_(mathematics)')
+    expect(browsableUrlForContextMenu(anchor, '')).toBe(
+      'https://en.wikipedia.org/wiki/Function_(mathematics)'
+    )
   })
 
   it('returns null with no link and no URL selected', () => {
