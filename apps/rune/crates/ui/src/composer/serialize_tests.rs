@@ -102,6 +102,10 @@ fn every_recorded_document_serializes_and_sends_as_the_web_client_does() {
         if copy != vector["copy"] {
             failures.push(format!("{name}: copy\n  want {:?}\n  got  {copy:?}", vector["copy"]));
         }
+        let preview = super::wire::queue_preview(&display);
+        if preview != vector["queuePreview"] {
+            failures.push(format!("{name}: queue preview\n  want {:?}\n  got  {preview:?}", vector["queuePreview"]));
+        }
         let send = send_json(vector);
         if send != vector["send"] {
             failures.push(format!("{name}: send\n  want {}\n  got  {send}", vector["send"]));

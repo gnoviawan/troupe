@@ -54,6 +54,9 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
             Host::Launcher(id) => Some(morph_id(id)),
             Host::Chat(id) => s.composer.morphed.get(id).map(|project| morph_id(project)),
         },
+        queue: s.queue_rows(host),
+        // `defaultOpen={!isMobileShell}`.
+        queue_open: (place != Place::Phone) != draft.queue_toggled,
     };
     view::composer(t, spec, &State::composer_hooks(host))
 }

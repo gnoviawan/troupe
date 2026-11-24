@@ -13,7 +13,7 @@ use serde_json::Value;
 use troupe_protocol::ws::WsRequestType;
 use ui::composer::field::{self, Trigger, TriggerKind};
 use ui::composer::menu::{self, ChatRef, Item, Listing, Panel, Row, Skill};
-use ui::composer::view::{Hooks, MenuView};
+use ui::composer::view::{Hooks, MenuView, QueueAct, QueueRow};
 use ui::composer::{Attachment, Pill, Send};
 
 use crate::State;
@@ -48,6 +48,8 @@ pub struct Draft {
     pub add_open: bool,
     pub tools_open: bool,
     pub agent_open: bool,
+    /// The queue panel was folded or unfolded from where it starts (open on desktop).
+    pub queue_toggled: bool,
 }
 
 impl Default for Draft {
@@ -61,6 +63,7 @@ impl Default for Draft {
             add_open: false,
             tools_open: false,
             agent_open: false,
+            queue_toggled: false,
         }
     }
 }
@@ -549,7 +552,7 @@ impl State {
             let host = host.clone();
             Rc::new(move |s: &mut State, tx: &mut Tx| f(s, &host, tx)) as Rc<dyn Fn(&mut State, &mut Tx)>
         };
-        let (agent_host, pick_agent_host, sheet_host) = (host.clone(), host.clone(), host.clone());
+        let (agent_host, pick_agent_host, sheet_host, queue_host) = (host.clone(), host.clone(), host.clone(), host.clone());
         let (edit_host, key_host, paste_host, pick_host, hover_host, menu_host, add_host, rm_host) = (
             host.clone(),
             host.clone(),
@@ -589,6 +592,7 @@ impl State {
                 Host::Chat(_) => {}
                 Host::Launcher(_) => s.draft_mut(&agent_host).agent_open = open,
             }),
+            queue: Rc::new(move |s: &mut State, act: QueueAct, tx: &mut Tx| s.composer_queue(&queue_host, act, tx)),
             pick_agent: Rc::new(move |s: &mut State, id: &str, tx: &mut Tx| s.composer_pick_agent(&pick_agent_host, id, tx)),
             remove_attachment: Rc::new(move |s: &mut State, n: usize| {
                 let draft = s.draft_mut(&rm_host);
@@ -596,6 +600,63 @@ impl State {
                     draft.attachments.remove(n);
                 }
             }),
+        }
+    }
+
+    /// The chat's queued prompts as the panel's rows (`previewQueuedPrompt`, `editableText`).
+    pub fn queue_rows(&self, host: &Host) -> Vec<QueueRow> {
+        let Host::Chat(id) = host else { return Vec::new() };
+        let Some(queue) = self.chat.acp.prompt_queues.get(id) else { return Vec::new() };
+        queue
+            .iter()
+            .filter_map(|item| {
+                let id = item.get("id")?.as_str()?.to_owned();
+                let (text, editable) = queued_text(item);
+                let summary = Some(ui::composer::wire::queue_preview(&text))
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| "(queued message)".to_owned());
+                Some(QueueRow { id, summary, editable })
+            })
+            .collect()
+    }
+
+    /// A press in the queue panel: Steer, Remove and Clear go to the model; Edit takes a
+    /// text-only prompt back under the draft (`editQueued`).
+    fn composer_queue(&mut self, host: &Host, act: QueueAct, tx: &mut Tx) {
+        let Host::Chat(session) = host else { return };
+        let session = session.clone();
+        match act {
+            QueueAct::Toggle => {
+                let draft = self.draft_mut(host);
+                draft.queue_toggled = !draft.queue_toggled;
+            }
+            QueueAct::Clear => self.acp_step(Event::ClearQueuedPrompts(session)),
+            QueueAct::Steer(id) => self.acp_step(Event::SendQueuedPromptNow(session, Value::String(id))),
+            QueueAct::Remove(id) => self.acp_step(Event::RemoveQueuedPrompt(session, Value::String(id))),
+            QueueAct::Edit(id) => {
+                let Some((text, true)) = self
+                    .chat
+                    .acp
+                    .prompt_queues
+                    .get(&session)
+                    .and_then(|q| q.iter().find(|item| item.get("id").and_then(Value::as_str) == Some(&id)))
+                    .map(queued_text)
+                else {
+                    return;
+                };
+                let draft = self.draft_mut(host);
+                let current = field::doc_of(&draft.edit).display_text();
+                let next = if ui::composer::js_trim(&current).is_empty() {
+                    text
+                } else {
+                    format!("{}\n{text}", current.trim_end_matches(ui::composer::is_js_space))
+                };
+                draft.edit = field::edit_of(&ui::composer::parse_display(&next));
+                let end = draft.edit.text.len();
+                draft.edit.set_caret(end);
+                self.acp_step(Event::RemoveQueuedPrompt(session, Value::String(id)));
+                tx.focus(format!("{}-field", host.key()), true);
+            }
         }
     }
 
@@ -651,6 +712,23 @@ impl State {
             .filter(|v| v.get("mode").and_then(Value::as_str) == Some("acp"))
             .and_then(|v| v.get("agentId").and_then(Value::as_str).map(str::to_owned));
     }
+}
+
+/// A queued prompt's typed text (its display blocks, else its blocks), and whether it is
+/// text only, so Edit can take it back.
+fn queued_text(item: &Value) -> (String, bool) {
+    let blocks = item
+        .get("displayBlocks")
+        .and_then(Value::as_array)
+        .or_else(|| item.get("blocks").and_then(Value::as_array));
+    let blocks = blocks.map(Vec::as_slice).unwrap_or_default();
+    let text = blocks
+        .iter()
+        .filter(|b| b.get("type").and_then(Value::as_str) == Some("text"))
+        .filter_map(|b| b.get("text").and_then(Value::as_str))
+        .collect();
+    let editable = !blocks.is_empty() && blocks.iter().all(|b| b.get("type").and_then(Value::as_str) == Some("text"));
+    (text, editable)
 }
 
 fn pill_kind(pill: &Pill) -> &'static str {

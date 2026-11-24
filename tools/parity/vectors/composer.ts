@@ -34,6 +34,7 @@ import { fileMentionBlocks } from '../../../src/renderer/lib/composer/retry-wire
 import {
   createSelectionContext,
   hasSelectionContexts,
+  replaceSelectionContextsWithMarkers,
   serializeSelectionContexts
 } from '../../../src/renderer/lib/composer/selection-context'
 import { hasToolTokens } from '../../../src/renderer/lib/composer/tool-tokens'
@@ -86,6 +87,8 @@ export interface ComposerVector extends ComposerCase {
   display: string
   /** What the sent bubble's Copy puts on the clipboard (`ChatMessage`). */
   copy: string
+  /** A queued prompt's row text (`previewQueuedPrompt`). */
+  queuePreview: string
   /** The send, or the error the composer shows instead of sending. */
   send: ReturnType<typeof buildComposerSend> | { error: string }
 }
@@ -193,7 +196,8 @@ export function recordComposer(c: ComposerCase): ComposerVector {
     send = { error: error instanceof Error ? error.message : String(error) }
   }
   const copy = sanitizeDisplayText(serializeSelectionContexts(display))
-  return { ...c, display, copy, send }
+  const queuePreview = sanitizeDisplayText(replaceSelectionContextsWithMarkers(display)).trim()
+  return { ...c, display, copy, queuePreview, send }
 }
 
 export function recordContext(c: ContextCase): ContextCase & { context: unknown } {
