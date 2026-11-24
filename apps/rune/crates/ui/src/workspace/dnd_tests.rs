@@ -128,7 +128,7 @@ fn record(rt: &Runtime<S>) -> Value {
 }
 
 #[test]
-fn a_tab_dragged_to_a_pane_edge_splits_there_and_a_tab_bar_takes_a_tab() {
+fn a_tab_dragged_to_a_pane_edge_splits_there_and_the_centre_takes_a_tab() {
     let mut rt = seeded();
     let from = rt.find("tab-edit-/p/b.md").expect("b.md tab");
     let [x, y, w, h] = rect(&rt, "pane-content-left");
@@ -166,10 +166,17 @@ fn a_tab_dragged_to_a_pane_edge_splits_there_and_a_tab_bar_takes_a_tab() {
     assert_eq!(written["activeTabId"], json!("edit-/p/b.md"));
     assert_eq!(written["activeFilePath"], json!("/p/b.md"));
 
-    // The Git tab goes onto the new pane's tab bar.
+    // Another pane's tab bar takes no tab, as `WorkspaceTabBar` lands only chat drags there.
+    let before = record(&rt);
     let from = rt.find("tab-git-/p").expect("git tab");
     let [bx, by, bw, bh] = rect(&rt, "tab-bar-id-2");
     drag(&mut rt, from, (bx + bw * 0.6, by + bh * 0.5), |_| {});
+    assert_eq!(record(&rt)["paneLayout"], before["paneLayout"]);
+
+    // The new pane's centre zone takes it.
+    let from = rt.find("tab-git-/p").expect("git tab");
+    let [cx, cy, cw, ch] = rect(&rt, "pane-content-id-2");
+    drag(&mut rt, from, (cx + cw * 0.5, cy + ch * 0.5), |_| {});
     let written = record(&rt);
     assert_eq!(
         written["paneLayout"]["children"],

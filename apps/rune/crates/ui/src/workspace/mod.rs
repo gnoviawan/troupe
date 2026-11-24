@@ -279,8 +279,9 @@ impl Workspace {
         self.step(Event::TogglePaneFullscreen(pane.to_owned()));
     }
 
-    /// Release a dragged tab over `target`: a zone splits or joins the pane, a tab bar
-    /// takes the tab (reordering it within its own bar).
+    /// Release a dragged tab over `target`: a zone splits or joins the pane, its own tab bar
+    /// reorders it. `WorkspaceTabBar` lands only chat drags on another pane's bar, so a tab
+    /// dropped there stays put.
     pub fn drop_tab(&mut self, tab: &str, source: &str, target: &DropTarget) {
         match target {
             DropTarget::Zone { pane, position } => {
@@ -295,14 +296,11 @@ impl Workspace {
                     ));
                 }
             }
-            DropTarget::Bar { pane, at } if pane == source => {
-                if let Some((over, side)) = at {
-                    self.reorder(source, tab, over, *side);
-                }
-            }
-            DropTarget::Bar { pane, .. } => {
-                self.step(Event::MoveTabToPane(tab.into(), source.into(), pane.clone()));
-            }
+            DropTarget::Bar {
+                pane,
+                at: Some((over, side)),
+            } if pane == source => self.reorder(source, tab, over, *side),
+            DropTarget::Bar { .. } => {}
         }
     }
 
