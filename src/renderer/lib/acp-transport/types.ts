@@ -5,7 +5,7 @@
  * (`./desktop-transport`).
  */
 
-import type { AcpCatalog } from '@shared/types/acp-catalog.types'
+import type { AcpAgentOverlay, AcpCatalog } from '@shared/types/acp-catalog.types'
 import type {
   AntigravityAccount,
   AntigravityAccountsSnapshot,
@@ -272,6 +272,12 @@ export interface AcpTransport {
    * CDN registry augmentation. Failures throw {@link AcpTransportError}.
    */
   setCatalogOptIn(enabled: boolean): Promise<void>
+  /**
+   * Troupe's registry overlay presentation (`get_acp_agent_overlay`): display
+   * names, logos and brand colours. The host refreshes a copy older than an
+   * hour before it answers. Failures throw {@link AcpTransportError}.
+   */
+  getAgentOverlay(): Promise<AcpAgentOverlay>
   /**
    * One page of the host-owned MCP catalog (`search_mcp_catalog`). Failures
    * throw {@link AcpTransportError} carrying the host's code (`VALIDATION_ERROR`).

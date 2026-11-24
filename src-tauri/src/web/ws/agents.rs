@@ -175,6 +175,28 @@ pub(super) async fn handle_list_acp_catalog(
     }
 }
 
+/// `get_acp_agent_overlay` → the Troupe registry overlay's presentation
+/// (display names, logos, brand colours). Takes no payload.
+pub(super) async fn handle_get_acp_agent_overlay(
+    id: String,
+    acp_catalog: Option<&Arc<crate::acp::AcpCatalogService>>,
+) -> WsReply {
+    let Some(service) = acp_catalog else {
+        return WsReply::err_with_code(
+            id,
+            "ACP_CATALOG_UNAVAILABLE",
+            "acp catalog store is unavailable",
+        );
+    };
+    let presentation = service.agent_overlay().await;
+    tracing::debug!(
+        "[ws] get_acp_agent_overlay source={:?} overrides={}",
+        presentation.source,
+        presentation.overrides.len()
+    );
+    ok_with_payload(id, &presentation)
+}
+
 /// `set_catalog_opt_in` WS request payload. `deny_unknown_fields` rejects an
 /// over-serialized payload loudly at the host boundary.
 #[derive(Debug, Deserialize)]

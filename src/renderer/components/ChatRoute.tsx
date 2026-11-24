@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { logFrontendError } from '@/lib/log-api'
-import { openNoProjectChat } from '@/lib/no-project-chat'
+import { followStartedQuickLaunchRoute, openNoProjectChat } from '@/lib/no-project-chat'
 import { openAgentChatInOwnProject } from '@/lib/open-agent-chat'
 import { isChatRouteCurrent } from '@/lib/router-navigate'
 import { clearChatClosedOnRoute, isChatClosedOnRoute } from '@/lib/web-tab-session'
 import { sessionProjectId, useAcpStore } from '@/stores/acp-store'
+import { isLaunchPlaceholderSessionId } from '@/stores/acp-store/live-turn'
 import { useProjectStore } from '@/stores/project-store'
 import { isQuickChatLeaving } from '@/stores/quick-chat-store'
 import { agentChatTabId, findPaneContainingTab, useWorkspaceStore } from '@/stores/workspace-store'
@@ -165,6 +166,20 @@ export function ChatRoute(): null {
     }
 
     const existing = useAcpStore.getState().sessions[sessionId]
+    // Back to the stale entry of a quick launch that started off screen: the
+    // route moves to its session and this effect runs again for it.
+    if (followStartedQuickLaunchRoute(sessionId, 'ChatRoute')) return
+    // A launch placeholder lives only in this renderer and has no persisted
+    // history: a gone one (rolled back, or from before a reload) has nothing
+    // to open.
+    if (!existing && isLaunchPlaceholderSessionId(sessionId)) {
+      void logFrontendError({
+        level: 'info',
+        source: 'ChatRoute',
+        message: `Chat route names launch placeholder ${sessionId}, which is gone; nothing to open`
+      })
+      return
+    }
     if (!firstRun && isChatClosedOnRoute(sessionId)) {
       // The user closed this chat while its route stayed current: closing
       // releases the chat and removes the tab without clearing the route,

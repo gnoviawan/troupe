@@ -585,6 +585,7 @@ The class column is the request's command class, defined in `src-tauri/src/web/c
 | `list_acp_catalog` | read | Returns the host's agent catalog with per-agent availability. Takes an optional `refresh`. |
 | `set_catalog_opt_in` | idempotent | Sets the host-persisted opt-in for registry augmentation of the catalog. |
 | `fetch_acp_registry_snapshot` | read | The registry check behind "Check for updates". Every check bypasses the cache TTL. |
+| `get_acp_agent_overlay` | read | The display names, logos and brand colours from Troupe's own registry overlay, as `{overrides, source, fetchedAt?}`. Fetches a new copy when the held one is over an hour old. |
 | `install_acp_agent` | command | Installs a catalog agent. The host downloads, verifies the sha256, extracts and activates it atomically. The request is `{agentId}` only. |
 | `search_mcp_catalog` | read | Searches the host's MCP server catalog (`{query?, cursor?, limit?}`) and returns one ranked page, `{items, nextCursor, total, updatedAt, sample}`. The desktop sends it over its `ws_channel_*` relay, and `GET /mcp-catalog/search` gives a browser the same answer. |
 | `get_mcp_catalog_status` | read | Returns where the catalog comes from and what live sync is doing, `{updatedAt, sample, servers, sync}`. `GET /mcp-catalog/status` gives a browser the same answer. |

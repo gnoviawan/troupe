@@ -11,6 +11,7 @@ use crate::acp::claude_limit::real_loop_tests::{
     actions, has_config_dir_chunk, now_secs, texts, Host, OpenChat, PROJECT,
 };
 use crate::acp::claude_limit::{switch_notice, AccountRef};
+use crate::acp::codex_limit::real_loop_tests as codex;
 use crate::acp::config::SessionId;
 use crate::acp::host_mcp::read_chat::{chat_from_records, render_page, Names};
 use crate::web::project_registry::ProjectRegistry;
@@ -369,4 +370,58 @@ async fn a_worker_whose_agent_still_runs_a_turn_is_busy_for_send_to_chat() {
         Err(WorkerChatError::Busy(child.0.clone()))
     );
     kill_all(&host).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_codex_callers_worker_starts_on_the_codex_account_with_most_room() {
+    let Some(python) = crate::acp::manager::real_loop_tests::find_python() else {
+        return;
+    };
+    let Some(host) = codex::Host::start(
+        &[("default", 90.0), ("Work", 50.0), ("Spare", 10.0)],
+        "Work",
+        now_secs() + 3600,
+    )
+    .await
+    else {
+        return;
+    };
+    let chats = install(&host.acp, &host.relay, &tokio::runtime::Handle::current());
+    let (_, caller) = host.open_chat_with(python, &UNIQUE_IDS).await;
+
+    let started = chats
+        .start(request(
+            &caller,
+            "Troupe moved this chat from Codex: worker task",
+        ))
+        .await
+        .expect("the worker chat starts");
+
+    let spare = &host.accounts["Spare"];
+    assert_eq!(
+        started,
+        StartedChat {
+            chat_id: started.chat_id.clone(),
+            account: Some(AccountRef {
+                id: spare.clone(),
+                name: "Spare".to_string(),
+            }),
+            note: None,
+        }
+    );
+    let child = SessionId(started.chat_id.clone());
+    let snapshot = host.acp.codex_agent().accounts_snapshot().await.unwrap();
+    assert_eq!(
+        snapshot.chat_profiles,
+        BTreeMap::from([(child.0.clone(), spare.clone())])
+    );
+    let records = host.log_until(&child, codex::has_home_chunk).await;
+    let spare_home = host.state().join("codex-accounts").join(spare);
+    assert_eq!(
+        codex::texts(&records, "message_chunk"),
+        vec![format!("codex_home={}", spare_home.display()).as_str()]
+    );
+    for agent in host.acp.list_agents() {
+        let _ = host.acp.kill(&agent).await;
+    }
 }

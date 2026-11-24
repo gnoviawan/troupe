@@ -740,6 +740,37 @@ describe('MobileRecentsList quick chats', () => {
     expect(mockOpenNewQuickChat).toHaveBeenCalledWith('mobile-drawer-quick')
   })
 
+  it('with the quick launcher open, an open chat row closes it and shows its tab; a quick chat row opens that quick chat', () => {
+    useAcpStore.setState({
+      sessionIndex: [
+        mockSessionIndexEntry({ id: 's1', title: 'Open one', projectId: 'p1', status: 'active' }),
+        mockSessionIndexEntry({
+          id: 'q1',
+          title: 'Quick notes',
+          projectId: '__unassigned__',
+          kind: 'quick',
+          status: 'active'
+        })
+      ],
+      openHistorySession: mockOpenHistorySession,
+      deleteHistorySession: mockDeleteHistorySession
+    })
+    seedOptionsSession('s1', 'agent-1', { title: 'Open one' })
+    seedTabs([{ type: 'agent-chat', id: 'tab-1', sessionId: 's1' }])
+    useQuickChatStore.getState().openLauncher()
+    renderList()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open one' }))
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    expect(workspaceRef.current.setActiveTab).toHaveBeenCalledWith('pane-1', 'tab-1')
+
+    act(() => useQuickChatStore.getState().openLauncher())
+    fireEvent.click(screen.getByRole('button', { name: 'Quick notes' }))
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'q1' })
+    expect(mockOpenHistorySession).toHaveBeenCalledWith('q1')
+    expect(workspaceRef.current.setActiveTab).toHaveBeenCalledTimes(1)
+  })
+
   it('highlights the open quick chat row and keeps one + on its heading', () => {
     useAcpStore.setState({
       sessionIndex: [

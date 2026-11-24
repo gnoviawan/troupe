@@ -98,14 +98,6 @@ describe('UpdatesSection update mode copy', () => {
     expect(screen.getByText(/Update through the AUR with: yay -S troupe$/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Open download page/ })).toBeNull()
   })
-
-  it('keeps insider on the manual-download copy', () => {
-    renderSection({ updateChannel: 'insider' })
-
-    expect(
-      screen.getByText(/Updates are offered as a manual download from the insider release page\./)
-    ).toBeTruthy()
-  })
 })
 
 describe('UpdatesSection error copy', () => {

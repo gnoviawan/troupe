@@ -30,7 +30,7 @@ import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { githubItemKey, useGithubStore } from '@/stores/github-store'
 import { useOverlayRegistration } from '@/stores/overlay-stack-store'
 import { useActiveProject, useProjectStore } from '@/stores/project-store'
-import { useQuickChatSessionId } from '@/stores/quick-chat-store'
+import { useQuickChatOpen, useQuickChatSessionId } from '@/stores/quick-chat-store'
 import { useShellAnnouncerStore } from '@/stores/shell-announcer-store'
 import { useTerminalStore } from '@/stores/terminal-store'
 import { getAllLeafPanes, useWorkspaceStore } from '@/stores/workspace-store'
@@ -181,10 +181,11 @@ export function MobileChatShell({
     const pane = leaves.find((p) => p.id === s.activePaneId) ?? leaves[0]
     return pane?.tabs.find((t) => t.id === pane.activeTabId) ?? null
   })
-  // An open quick chat covers the pane tree: the header, the drawer and the
-  // ⋯ sheet describe it, not the hidden project tab under it.
+  // An open quick chat (or its launcher) covers the pane tree: the header,
+  // the drawer and the ⋯ sheet describe it, not the hidden project tab under it.
+  const quickOpen = useQuickChatOpen()
   const quickSessionId = useQuickChatSessionId()
-  const activeTab = quickSessionId ? null : paneTab
+  const activeTab = quickOpen ? null : paneTab
 
   // Active terminal — subscribe to the terminal store directly (not via
   // getState() inside the workspace selector) so updates are observed and the
@@ -232,6 +233,8 @@ export function MobileChatShell({
   // "Troupe" when no tab is open.
   const headerTitle = ((): string => {
     if (quickSessionId) return sessionTitle ?? 'Quick chat'
+    // The quick chat launcher: no chat yet.
+    if (quickOpen) return 'New chat'
     if (!activeTab) return 'Troupe'
     switch (activeTab.type) {
       case 'terminal':
@@ -286,7 +289,7 @@ export function MobileChatShell({
     worktreePath: chatSessionLoaded ? sessionWorktreePath : undefined,
     worktreeBranch: chatSessionLoaded ? sessionWorktreeBranch : undefined
   })
-  const subtitle = quickSessionId
+  const subtitle = quickOpen
     ? { text: 'Quick chat', label: 'Quick chat, no project, switch project' }
     : describeProjectSubtitle(
         chatSessionLoaded ? (sessionProjectName ?? activeProject?.name) : activeProject?.name,
@@ -305,7 +308,7 @@ export function MobileChatShell({
   // Both ⋯ sheets belong to the tab they opened on. A tab change underneath
   // them (another client, an agent opening a tab) closes them, so a stale sheet
   // cannot act on the wrong chat or terminal, nor reopen on the next one.
-  const activeTabId = quickSessionId ? `quick:${quickSessionId}` : activeTab?.id
+  const activeTabId = quickOpen ? `quick:${quickSessionId ?? 'launcher'}` : activeTab?.id
   const lastActiveTabIdRef = useRef(activeTabId)
   useEffect(() => {
     if (lastActiveTabIdRef.current === activeTabId) return
@@ -528,12 +531,12 @@ export function MobileChatShell({
         onCloseAutoFocus={onMoreSheetCloseAutoFocus}
         onItemChosen={() => setSheetFocusDestination('header-more-sheet', titleRef.current)}
         // A quick chat has no project: no Git, Files, terminal or project settings.
-        onOpenGitChanges={quickSessionId ? undefined : openGitChangesFromSheet}
-        onOpenFiles={quickSessionId ? undefined : openFilesFromSheet}
+        onOpenGitChanges={quickOpen ? undefined : openGitChangesFromSheet}
+        onOpenFiles={quickOpen ? undefined : openFilesFromSheet}
         onOpenCommandPalette={openCommandPalette}
-        onNewTerminal={quickSessionId ? undefined : newTerminal}
+        onNewTerminal={quickOpen ? undefined : newTerminal}
         onOpenProjectSettings={
-          quickSessionId ? undefined : handOffToModal('header-more-sheet', openProjectSettings)
+          quickOpen ? undefined : handOffToModal('header-more-sheet', openProjectSettings)
         }
         onReportBug={handOffToModal('header-more-sheet', onReportBug)}
         onCloseChat={chatOnScreen ? closeActiveChat : undefined}

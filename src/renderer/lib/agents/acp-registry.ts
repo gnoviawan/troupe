@@ -2,13 +2,14 @@
  * Registry-driven ACP agent catalog.
  *
  * Reads the bundled offline-first snapshot
- * (`assets/agent-icons/acp/agents.json` — a frozen, trusted baseline) and
- * derives a runnable `AgentConfig` from each agent's `distribution` for the
+ * (`assets/agent-icons/acp/agents.json` — a frozen, trusted baseline) plus
+ * the agents of the bundled Troupe overlay (`troupe.json`), and derives a runnable `AgentConfig` from each agent's `distribution` for the
  * current OS/arch. No runtime network.
  */
 
 import { arch as osArch, platform as osPlatform } from '@tauri-apps/plugin-os'
 import agentsSnapshot from '@/assets/agent-icons/acp/agents.json'
+import troupeOverlay from '@/assets/agent-icons/acp/troupe.json'
 import type { AgentConfig } from '@/lib/acp-api'
 import { canonicalAgentId, isLegacyAgentId } from '@/lib/agents/agent-aliases'
 
@@ -217,8 +218,14 @@ function normalizeSnapshot(raw: unknown): RegistryAgent[] {
   return out
 }
 
-/** The bundled registry catalog (normalized; sorted by id at sync time). */
-export const REGISTRY_AGENTS: readonly RegistryAgent[] = normalizeSnapshot(agentsSnapshot)
+/**
+ * The bundled registry catalog, then the bundled Troupe overlay agents. The
+ * first entry of an id wins, so an overlay agent never replaces an upstream one.
+ */
+export const REGISTRY_AGENTS: readonly RegistryAgent[] = normalizeSnapshot([
+  ...agentsSnapshot,
+  ...troupeOverlay.agents
+])
 
 /** Normalize untrusted registry JSON (bundled snapshot or CDN fetch). */
 export function normalizeRegistrySnapshot(raw: unknown): RegistryAgent[] {

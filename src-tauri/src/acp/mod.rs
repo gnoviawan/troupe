@@ -56,6 +56,7 @@ pub mod session_payload;
 pub mod session_persistence;
 pub(crate) mod subagents;
 pub mod terminal;
+pub mod troupe_overlay;
 pub mod worker_chats;
 
 // Re-exported for the renderer bridge and `lib.rs` wiring. `AcpManager`

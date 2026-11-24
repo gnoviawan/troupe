@@ -122,8 +122,16 @@ export function useAgentSignIn({
   // ordinary extra tab — never killed or recreated.
   const runTerminalAuth = useCallback(
     async (method: AuthMethod) => {
-      if (!liveAgentId || !config || !cwd || !projectId) {
+      if (!liveAgentId || !config || !cwd) {
         toast.error('Agent is not connected. Use Retry to reconnect, then sign in again.')
+        return
+      }
+      // A login terminal is a tab in a project's pane, run in its folder. A
+      // quick chat's agent has neither.
+      if (!projectId) {
+        toast.error(
+          `${config.name} signs in from a terminal, which needs a project. Sign in from a chat in a project first.`
+        )
         return
       }
       // The store's per-agent record (set synchronously here) guards a fast

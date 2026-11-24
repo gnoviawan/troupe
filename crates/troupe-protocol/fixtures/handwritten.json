@@ -352,5 +352,44 @@
         }
       ]
     }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "type": "get_acp_agent_overlay",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "ok": true,
+      "payload": {
+        "overrides": [
+          {
+            "id": "claude-acp",
+            "brandColor": {
+              "light": "#C15F3C",
+              "dark": "#D97757"
+            }
+          },
+          {
+            "id": "gemini",
+            "name": "Gemini CLI",
+            "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#4796E3\" d=\"M0 0h24v24H0z\"/></svg>"
+          }
+        ],
+        "source": "network",
+        "fetchedAt": "2026-11-24T08:00:00+00:00"
+      }
+    }
   }
 ]

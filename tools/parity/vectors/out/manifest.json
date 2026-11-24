@@ -74,7 +74,7 @@
     },
     "projects": {
       "sources": {
-        "src/renderer/stores/project-store.ts": "444b3ce412505d9408c82c5bd39577e95b8d3009",
+        "src/renderer/stores/project-store.ts": "d0435cf8d23d84fde360d7b169e539f278fd7f92",
         "src/renderer/stores/project-registry-feed.ts": "902f5b3a3b44b0b2ab6545a5eefa4d084007db2d",
         "src/renderer/lib/project-prefs.ts": "cf89f1c53afc6438ac5325b130df3db941582acf"
       },

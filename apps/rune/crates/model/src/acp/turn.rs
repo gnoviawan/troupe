@@ -218,12 +218,12 @@ impl State {
         let note = note_for_stop_reason(reason);
         let failed = matches!(reason, "error" | "timeout" | "crashed");
         let keep = if failed {
-            session.last_error.is_some()
+            session.last_error != Some(None)
         } else {
             note.is_none()
         };
         if !keep {
-            session.last_error = note;
+            session.last_error = Some(note);
             session.last_error_code = Some(None);
             session.last_error_data = None;
         }

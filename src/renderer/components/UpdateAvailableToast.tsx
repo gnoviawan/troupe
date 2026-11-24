@@ -92,12 +92,7 @@ export function showUpdateToast(version: string, releaseNotes?: string): void {
   // Copy follows the update mode, not the channel: a signed nightly installs
   // in the app, while a fallback (any channel) opens the release page.
   const { updateChannel: channel, isManualUpdateMode: isManual } = updaterStore.getState()
-  const title =
-    channel === 'insider'
-      ? 'Insider update available'
-      : channel === 'nightly'
-        ? 'Nightly update available'
-        : 'Update available'
+  const title = channel === 'nightly' ? 'Nightly update available' : 'Update available'
 
   toast.success(title, {
     id: availableToastId(version),

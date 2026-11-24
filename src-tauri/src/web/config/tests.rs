@@ -1991,6 +1991,34 @@ fn corrupt_config_file_recovers_into_setup_mode() {
     );
 }
 
+#[test]
+fn config_file_with_removed_insider_channel_loads_as_stable() {
+    let state = tempdir_like("insider-channel");
+    std::fs::write(
+        state.join(server_config_file::SERVER_CONFIG_FILE_NAME),
+        serde_json::json!({
+            "host": "0.0.0.0",
+            "port": 9090,
+            "sessionsDir": state.join("sessions"),
+            "projectsFile": state.join("projects.json"),
+            "allowRemoteWrites": false,
+            "updateChannel": "insider",
+            "updateIntervalSecs": 21600,
+        })
+        .to_string(),
+    )
+    .expect("write config file");
+
+    let file = server_config_file::load(&state)
+        .expect("config file loads")
+        .expect("config file present");
+    assert_eq!(
+        file.update_channel,
+        Some(crate::server_update::UpdateChannel::Stable)
+    );
+    cleanup(&state);
+}
+
 /// A file that PARSES but carries semantically invalid values (a hand-edit
 /// or a partial write) must be treated as corrupt too — it would otherwise
 /// win the argv/env merge and wedge the boot (port `0`, unparseable host)

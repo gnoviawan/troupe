@@ -161,7 +161,7 @@ pub(crate) mod code {
 
 /// Downloaded archive descriptor. The production downloader streams the body
 /// to a temp file under `target_dir` (never holding the full archive in RAM
-/// — the 256 MiB cap bounds memory to the streaming buffer); tests inject a
+/// — the download cap bounds memory to the streaming buffer); tests inject a
 /// canned-bytes impl that writes the bytes to a temp file.
 pub struct DownloadedArchive {
     /// The temp file holding the downloaded archive bytes.
@@ -175,7 +175,7 @@ pub struct DownloadedArchive {
 
 /// Async download seam. The production impl streams the HTTPS archive to a
 /// temp file with an incremental size cap (never holding the full archive in
-/// RAM — a 256 MiB × N parallel installs OOM hazard); tests inject a
+/// RAM, which would be an OOM hazard across parallel installs); tests inject a
 /// canned-bytes impl to drive the sha256-mismatch / archive-too-large /
 /// download-failure matrix rows without network.
 #[async_trait::async_trait]
@@ -215,7 +215,6 @@ impl Downloader for HttpDownloader {
     ) -> Result<DownloadedArchive, InstallError> {
         use futures_util::StreamExt;
         use std::io::Write;
-        use std::time::Duration;
 
         if !url.starts_with("https://") {
             return Err(InstallError::new(
@@ -223,8 +222,7 @@ impl Downloader for HttpDownloader {
                 "archive URL must be https",
             ));
         }
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(crate::acp::archive::FETCH_TIMEOUT_SECS))
+        let client = crate::acp::archive::download_client()
             .redirect(crate::acp::https_only::redirect_policy())
             .build()
             .map_err(|e| InstallError::new(code::DOWNLOAD_FAILED, format!("http client: {e}")))?;
@@ -235,6 +233,12 @@ impl Downloader for HttpDownloader {
             return Err(InstallError::new(
                 code::DOWNLOAD_FAILED,
                 format!("download returned HTTP {}", response.status()),
+            ));
+        }
+        if let Some(size) = response.content_length().filter(|&n| n > MAX_ARCHIVE_BYTES) {
+            return Err(InstallError::new(
+                code::ARCHIVE_TOO_LARGE,
+                crate::acp::archive::archive_too_large_message(Some(size)),
             ));
         }
 
@@ -260,7 +264,7 @@ impl Downloader for HttpDownloader {
             if downloaded > MAX_ARCHIVE_BYTES {
                 return Err(InstallError::new(
                     code::ARCHIVE_TOO_LARGE,
-                    "archive exceeds download cap",
+                    crate::acp::archive::archive_too_large_message(None),
                 ));
             }
             file.write_all(&chunk)
@@ -980,7 +984,7 @@ impl AcpInstallService {
         })?;
 
         // Download streams the archive body to a temp file under `tmp_dir`
-        // (never held in RAM — the 256 MiB cap bounds memory to the streaming
+        // (never held in RAM — the download cap bounds memory to the streaming
         // buffer). The archive temp file lives inside `tmp_dir` so a failure
         // path's `remove_dir_all(&tmp_dir)` reclaims it too.
         let downloaded = match downloader.download(archive_url, &tmp_dir).await {
