@@ -221,7 +221,7 @@ export function CodexProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="codex"
+          provider="codex"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}

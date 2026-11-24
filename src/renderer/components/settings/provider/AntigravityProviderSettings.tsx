@@ -221,7 +221,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="antigravity"
+          provider="antigravity"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}

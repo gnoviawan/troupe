@@ -299,12 +299,27 @@ describe('ProviderSettings', () => {
     const toggle = await screen.findByRole('switch', { name: 'Switch accounts automatically' })
     expect(toggle).toHaveAttribute('aria-checked', 'true')
     expect(toggle).toHaveAccessibleDescription(
-      "When a chat reaches its account's limit, continue it on the signed-in account with the most room."
+      "When a chat reaches its account's limit, move it to another signed-in account. Off by default, because Anthropic's terms may not allow it."
     )
     api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: false })
     fireEvent.click(toggle)
     expect(api.setAutoSwitch).toHaveBeenCalledWith(false)
     await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'))
+  })
+
+  it('turns automatic switching on on the host only after the risk warning', async () => {
+    api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: false })
+    render(<ProviderSettings />)
+    const toggle = await screen.findByRole('switch', { name: 'Switch accounts automatically' })
+    fireEvent.click(toggle)
+    expect(await screen.findByRole('alertdialog')).toHaveAccessibleName(
+      'Switch Claude accounts automatically?'
+    )
+    expect(api.setAutoSwitch).not.toHaveBeenCalled()
+    api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on anyway' }))
+    expect(api.setAutoSwitch).toHaveBeenCalledWith(true)
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
   })
 
   it('says why automatic switching did not change and shows the host state', async () => {

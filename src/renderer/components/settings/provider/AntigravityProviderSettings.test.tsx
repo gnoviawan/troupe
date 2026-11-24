@@ -96,9 +96,9 @@ describe('AntigravityProviderSettings', () => {
     expect(work).toHaveTextContent('Signed out')
     expect(work).toHaveTextContent('m-pos')
     expect(screen.getByLabelText('Switch accounts automatically')).toBeChecked()
-    expect(
-      screen.getByText(/continue it on the signed-in account with the most room/)
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Switch accounts automatically')).toHaveAccessibleDescription(
+      "When a chat reaches its account's limit, move it to another signed-in account. Off by default, because Google's terms may not allow it."
+    )
   })
 
   it('shows one usage bar per model and the plan', async () => {

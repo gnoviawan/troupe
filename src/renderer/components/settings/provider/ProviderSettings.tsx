@@ -237,7 +237,7 @@ export function ProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="claude"
+          provider="claude"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}
