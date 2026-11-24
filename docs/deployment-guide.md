@@ -220,6 +220,16 @@ A server that runs without a bearer token also checks the `Host` header, so a DN
 
 The desktop app talks to the host through Tauri IPC, not these HTTP or WebSocket routes. The desktop shared-live server uses the same origin check. Browser clients of that server are served by it, so they match the request host. It always requires its token, so like a gated standalone server it answers any `Host` (its cloudflared tunnel host, a LAN or MagicDNS name, a reverse proxy name).
 
+## Rune web client preview
+
+The Rune web client is a wasm build of the new UI. It is experimental and off by default. While it is off, `/rune/` answers `404` and `/?ui=rune` loads the React client as usual. Nothing is embedded in the binary yet, so the operator builds the bundle and names its directory:
+
+```bash
+troupe-server --experimental-rune-client --rune-web-dir /path/to/rune-web
+```
+
+`TROUPE_EXPERIMENTAL_RUNE_CLIENT=true` and `TROUPE_RUNE_WEB_DIR` do the same. The server then serves that directory at `/rune/` (`*_bg.wasm` as `application/wasm`) and redirects `/?ui=rune` there. Either setting alone leaves the client off and logs a startup warning. The desktop shared-live server never serves it.
+
 ## Run in Docker
 
 `Dockerfile` and `docker-compose.yml` at the repository root run `troupe-server` in a container as the non-root user `termul`. The image holds the published release binary for `linux/amd64` or `linux/arm64`, plus `bash`, `git`, `ssh`, and `curl`. The build checks the binary's minisign signature against the updater public key in `src-tauri/tauri.conf.json`. Release tags publish the image to `ghcr.io/gnoviawan/troupe-server`, and the nightly workflow publishes the `nightly` tag. For the 0.5 release cycle every tag is also pushed to the old name `ghcr.io/gnoviawan/termul-server`. Inside the image `/usr/local/bin/termul-server` is a link to `/usr/local/bin/troupe-server`, so a Compose file whose `entrypoint` names the old binary keeps working. The image's own entrypoint is `/usr/bin/tini -- /usr/local/bin/troupe-server`, so keep `tini` in an override, and `command` holds only server options, as before. The Compose project, the `termul-server` service, and the `termul-home` volume keep their names, so `docker compose up -d` with the new file replaces the running container and keeps its state.

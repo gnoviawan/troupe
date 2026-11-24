@@ -255,6 +255,7 @@ impl OnboardAnswers {
             // answers must never enter setup mode.
             explicit_config: true,
             host_explicit: true,
+            rune_web_dir: None,
         }
     }
 

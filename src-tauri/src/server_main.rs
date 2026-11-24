@@ -1020,6 +1020,16 @@ OPTIONS:
                                   commands keep starting, but ignored (a
                                   warning is logged at startup).
 
+  Experimental:
+    --experimental-rune-client    Serve the Rune web client preview at /rune/
+                                  and redirect /?ui=rune there. Needs
+                                  --rune-web-dir; off by default, when /rune/
+                                  answers 404 and /?ui=rune is the React client.
+                                  [env: TROUPE_EXPERIMENTAL_RUNE_CLIENT=true|1]
+    --rune-web-dir <DIR>          The built Rune web bundle (index.html, *.js,
+                                  *_bg.wasm, fonts) to serve at /rune/.
+                                  [env: TROUPE_RUNE_WEB_DIR]
+
   Security & updates:
     --allow-remote-writes         Admit non-loopback peers on all guarded write
                                   routes. /fs/* writes reject only .. traversal
@@ -1090,6 +1100,8 @@ ENVIRONMENT:
     TROUPE_SERVER_ALLOW_REMOTE_WRITES  true|1 enables --allow-remote-writes
     TROUPE_WEB_AUTH_TOKEN         Fallback for --web-auth-token
     TROUPE_ALLOWED_ORIGINS        Fallback for --allowed-origins (comma-separated)
+    TROUPE_EXPERIMENTAL_RUNE_CLIENT  true|1 enables --experimental-rune-client
+    TROUPE_RUNE_WEB_DIR           Fallback for --rune-web-dir
     TROUPE_SERVER_UPDATE_ENABLED  true gates the periodic self-update loop
     TROUPE_SERVER_UPDATE_CHANNEL  stable|insider|nightly (required for periodic loop)
     TROUPE_SERVER_UPDATE_INTERVAL_SECS  periodic loop interval [default: 21600]

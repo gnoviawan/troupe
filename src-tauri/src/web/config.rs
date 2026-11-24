@@ -87,6 +87,43 @@ where
     }
 }
 
+/// Whether a `TROUPE_`/`TERMUL_` boolean variable is on: `true` or `1`,
+/// case-insensitive. Anything else, a typo included, is off.
+fn env_flag_on(suffix: &str) -> bool {
+    brand_env::value(suffix)
+        .is_some_and(|value| matches!(value.trim().to_ascii_lowercase().as_str(), "true" | "1"))
+}
+
+/// The Rune bundle directory to serve: the setting must be on AND a directory
+/// named. Either half alone leaves the client off with a startup warning, so
+/// an operator who set only one sees why `/rune/` answers 404.
+fn resolve_rune_web_dir(
+    on: bool,
+    dir: Option<PathBuf>,
+    warnings: &mut Vec<String>,
+) -> Option<PathBuf> {
+    match (on, dir) {
+        (true, Some(dir)) => Some(dir),
+        (true, None) => {
+            warnings.push(
+                "--experimental-rune-client is on but no bundle directory is set \
+                 (--rune-web-dir or $TROUPE_RUNE_WEB_DIR); /rune/ stays off"
+                    .into(),
+            );
+            None
+        }
+        (false, Some(_)) => {
+            warnings.push(
+                "a Rune bundle directory is set but --experimental-rune-client is off \
+                 ($TROUPE_EXPERIMENTAL_RUNE_CLIENT=true enables it); /rune/ stays off"
+                    .into(),
+            );
+            None
+        }
+        (false, None) => None,
+    }
+}
+
 /// The idle-agent window for the desktop host, which has no CLI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DesktopAgentIdleWindow {
@@ -536,6 +573,14 @@ pub struct ServerConfig {
     /// [`Self::host`] — a `server-config.json` host always wins the VALUE
     /// while this flag only records that argv carried one.
     pub host_explicit: bool,
+    /// The experimental Rune web client's bundle directory (plan R5),
+    /// served at `/rune/` with `/?ui=rune` redirected there. `Some` only when
+    /// the setting is on (`--experimental-rune-client` /
+    /// `$TROUPE_EXPERIMENTAL_RUNE_CLIENT=true|1`) AND a bundle directory is
+    /// named (`--rune-web-dir` / `$TROUPE_RUNE_WEB_DIR`). `None`, the
+    /// default, answers `/rune/*` with 404 and keeps `/?ui=rune` on the
+    /// React client. The desktop shared-live host always passes `None`.
+    pub rune_web_dir: Option<PathBuf>,
 }
 
 impl ServerConfig {
@@ -697,6 +742,8 @@ impl ServerConfig {
         // Extra origins for a reverse proxy. `None` until a flag is seen so
         // the env var is consulted only when the flag is absent.
         let mut allowed_origins_cli: Option<OriginPolicy> = None;
+        let mut experimental_rune_client = false;
+        let mut rune_web_dir: Option<PathBuf> = None;
 
         // gh-1105 provenance: which onboarding fields argv supplied. These
         // record argv/env ONLY — a `server-config.json` merge below never
@@ -908,6 +955,17 @@ impl ServerConfig {
                         None => parsed,
                     });
                 }
+                "--experimental-rune-client" => experimental_rune_client = true,
+                "--rune-web-dir" => {
+                    let value = require_value(&mut iter, "--rune-web-dir")?;
+                    let trimmed = value.as_ref().trim();
+                    if trimmed.is_empty() {
+                        return Err(ParseCliError::Message(
+                            "invalid --rune-web-dir '': must be a non-empty path".into(),
+                        ));
+                    }
+                    rune_web_dir = Some(PathBuf::from(trimmed));
+                }
                 "--projects-file" => {
                     projects_file_explicit = true;
                     let value = iter.next().ok_or_else(|| {
@@ -1011,6 +1069,11 @@ impl ServerConfig {
         });
         let allowed_origins =
             OriginPolicy::from_cli_or_env(allowed_origins_cli).map_err(ParseCliError::Message)?;
+        let rune_web_dir = resolve_rune_web_dir(
+            experimental_rune_client || env_flag_on("EXPERIMENTAL_RUNE_CLIENT"),
+            rune_web_dir.or_else(|| trimmed_env_path("RUNE_WEB_DIR")),
+            &mut deprecation_warnings,
+        );
 
         // Issue #839 / #879: explicit --sessions-dir wins, then
         // `$TROUPE_SESSIONS_DIR`, then `<--state-dir>/sessions` when
@@ -1105,6 +1168,7 @@ impl ServerConfig {
             allowed_origins,
             explicit_config,
             host_explicit,
+            rune_web_dir,
         };
 
         // gh-1105: merge the persisted onboarding file AFTER argv/env/default
