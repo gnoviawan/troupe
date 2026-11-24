@@ -39,6 +39,9 @@ export {
   isTransientAcpTransportError,
   parseVisibleAt,
   type SessionCursor,
+  type SubagentApprovals,
+  type SubagentProfile,
+  type SubagentProfileView,
   type SubagentSettingsAgentView,
   type SubagentSettingsInput,
   type SubagentSettingsView

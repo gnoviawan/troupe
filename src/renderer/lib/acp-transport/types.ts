@@ -205,7 +205,11 @@ export interface AgentIdleWindowStatus {
   source: 'default' | 'setting' | 'env' | 'operator'
 }
 
-/** One launchable agent in the sub-agent orchestrator's settings view. */
+/**
+ * Legacy: one launchable agent in the sub-agent orchestrator's settings
+ * view, read from the agent's default profile (the one whose id is the
+ * agent's key). An agent without one has no row. Replaced by `profiles`.
+ */
 export interface SubagentSettingsAgentView {
   agentId: string
   name: string
@@ -220,23 +224,63 @@ export interface SubagentSettingsAgentView {
 }
 
 /**
+ * How the host treats a sub-agent's tool permission requests: `ask` waits
+ * for the user in the chat, `allowAll` picks the request's allow-once
+ * option (never allow-always).
+ */
+export type SubagentApprovals = 'ask' | 'allowAll'
+
+/**
+ * One sub-agent profile as stored: what `subagent_start`'s `agent` names.
+ * `id` is 1 to 64 characters of `[A-Za-z0-9._:-]`, unique ignoring case;
+ * an agent's default profile keeps the agent's key as its id. `agentId`
+ * is the listing key of the agent it launches. `mode` and `configOptions`
+ * (ACP session config option id to value) apply after the model at start.
+ */
+export interface SubagentProfile {
+  id: string
+  agentId: string
+  enabled: boolean
+  model: string | null
+  mode: string | null
+  configOptions: Record<string, string>
+  approvals: SubagentApprovals
+  /** Up to 1000 characters; `null` is no note. */
+  description: string | null
+}
+
+/**
+ * A profile in the settings view. `agentName` is `null` when its agent is
+ * not installed. `implicit` marks an agent's synthesized default profile,
+ * which is stored only once upserted.
+ */
+export interface SubagentProfileView extends SubagentProfile {
+  agentName: string | null
+  implicit: boolean
+}
+
+/**
  * The orchestrator's settings view (`subagent_settings_get` reply):
- * `{ enabled, maxRunning, maxDepth, agents }`. `agents` lists the launchable
- * agents with their `allowed` switch.
+ * `{ enabled, maxRunning, maxDepth, agents, profiles }`. `profiles` lists
+ * the stored profiles in the user's order, then each untouched agent's
+ * implicit default. `agents` is the legacy per-agent view.
  */
 export interface SubagentSettingsView {
   enabled: boolean
   maxRunning: number
   maxDepth: number
   agents: SubagentSettingsAgentView[]
+  profiles: SubagentProfileView[]
 }
 
 /**
  * A `subagent_settings_set` call: every field optional, an omitted field
- * keeps its value. `agents` carries allow toggles, `models` default models
- * (`null` clears) and `descriptions` notes of up to 1000 characters (`null`
- * or blank clears), all keyed by `agentId`; an omitted agent keeps its
- * setting. The reply is the new full view.
+ * keeps its value. Applied in order: `deleteProfiles` (idempotent), then
+ * `upsertProfiles` (`previousId` renames a stored or implicit profile and
+ * must exist), then the legacy `agents` allow toggles, `models` default
+ * models (`null` clears) and `descriptions` notes (`null` or blank clears),
+ * keyed by `agentId` and applied to that agent's default profile. The
+ * reply is the new full view.
  */
 export interface SubagentSettingsInput {
   enabled?: boolean
@@ -245,6 +289,8 @@ export interface SubagentSettingsInput {
   agents?: Array<{ agentId: string; allowed: boolean }>
   models?: Array<{ agentId: string; model: string | null }>
   descriptions?: Array<{ agentId: string; description: string | null }>
+  upsertProfiles?: Array<{ previousId?: string; profile: SubagentProfile }>
+  deleteProfiles?: string[]
 }
 
 export interface AcpTransport {

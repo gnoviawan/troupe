@@ -33,6 +33,9 @@ import {
   type AgentIdleWindowStatus,
   type CommandCallOptions,
   getAcpTransport,
+  type SubagentApprovals,
+  type SubagentProfile,
+  type SubagentProfileView,
   type SubagentSettingsAgentView,
   type SubagentSettingsInput,
   type SubagentSettingsView
@@ -52,6 +55,9 @@ import { webServerMcpOAuth } from '@/lib/web-server-api'
 
 export type {
   AgentIdleWindowStatus,
+  SubagentApprovals,
+  SubagentProfile,
+  SubagentProfileView,
   SubagentSettingsAgentView,
   SubagentSettingsInput,
   SubagentSettingsView

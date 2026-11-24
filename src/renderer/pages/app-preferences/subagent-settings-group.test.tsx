@@ -58,7 +58,8 @@ const VIEW: SubagentSettingsView = {
       model: null,
       description: null
     }
-  ]
+  ],
+  profiles: []
 }
 
 const view = (overrides: Partial<SubagentSettingsView> = {}): SubagentSettingsView => ({
