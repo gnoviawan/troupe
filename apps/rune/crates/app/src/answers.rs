@@ -3,6 +3,7 @@
 //! subagent panel's Stop (`useStopSubagent`), which React sends outside the store too.
 
 use model::acp::Event;
+use rune::{Key, KeyEvent};
 use model::acp::answer::Answer;
 use serde_json::{Value, json};
 use troupe_protocol::ws::{WsError, WsRequestType};
@@ -75,5 +76,49 @@ impl State {
                 self.toast_error("Couldn't stop the subagent", &e.message);
             }
         }
+    }
+
+    /// The question card's keys (`QuestionStepper`): a digit picks that option, Enter sends the
+    /// picks, Escape cancels. Only while the chat on screen shows a question.
+    pub(crate) fn question_key(&mut self, key: &KeyEvent) -> bool {
+        if key.mods != rune::Mods::default() {
+            return false;
+        }
+        let active = model::workspace::query(&self.workspace.store, model::workspace::Query::GetActiveTab);
+        let model::workspace::Reply::Tab(Some(model::workspace::Tab::AgentChat { session_id, .. })) = active else {
+            return false;
+        };
+        let Some(question) = self.chat.acp.pending_questions.values().find(|q| q.session_id == session_id).cloned() else {
+            return false;
+        };
+        let id = question.question_id.clone();
+        match &key.key {
+            Key::Escape => {
+                log::info!("[chat] cancel question {id}");
+                self.chat.reader.picks.forget(&id);
+                self.acp_step(Event::AnswerQuestion(id, Vec::new()));
+            }
+            Key::Enter => {
+                let values = self.chat.reader.picks.of(&id).to_vec();
+                if values.is_empty() {
+                    return true;
+                }
+                log::info!("[chat] answer question {id}");
+                self.chat.reader.picks.forget(&id);
+                self.acp_step(Event::AnswerQuestion(id, values));
+            }
+            Key::Text(digit) => {
+                let Some(n) = digit.parse::<usize>().ok().filter(|n| (1..=9).contains(n)) else {
+                    return false;
+                };
+                let Some(value) = question.options.get(n - 1).and_then(|o| o.get("value")).and_then(Value::as_str) else {
+                    return false;
+                };
+                let multi = ui::chat::approvals::question_is_multi(&question);
+                self.chat.reader.picks.toggle(&id, value, multi);
+            }
+            _ => return false,
+        }
+        true
     }
 }

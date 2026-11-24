@@ -384,7 +384,8 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
             text("The agent provided no options.").font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).px(20.0).pb(12.0),
         )
     } else {
-        col().w_full().gap(2.0).px(8.0).py(6.0).children(rows)
+        // `QUESTION_PANEL_MAX_H`: the rows scroll, the header and the footer stay.
+        col().w_full().max_h(380.0).scroll(rune::ScrollSpec { stick_bottom: false }).child(col().w_full().gap(2.0).px(8.0).py(6.0).children(rows))
     };
     let mut card = col().key(format!("question-{qid}")).role("dialog").label(heading).w_full().child(header).child(prompt).child(body);
     if !options.is_empty() {
@@ -418,8 +419,8 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
                 })
         };
         let count = options.len();
-        let hints = [("↑↓", "move"), (if count > 1 { "1–N" } else { "1" }, "pick"), ("esc", "close")].map(|(k, w)| {
-            let k = if k == "1–N" { format!("1–{count}") } else { k.to_owned() };
+        let picks = if count > 1 { format!("1–{count}") } else { "1".to_owned() };
+        let hints = [(picks, "pick"), ("esc".to_owned(), "close")].map(|(k, w)| {
             row()
                 .gap(6.0)
                 .items_center()
