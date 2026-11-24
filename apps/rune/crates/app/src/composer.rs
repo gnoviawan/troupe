@@ -263,8 +263,11 @@ impl State {
         let items: Vec<Item> = menu::flat(&view.sections).into_iter().cloned().collect();
         let draft = self.draft_mut(host);
         match key.key {
-            Key::Down if !items.is_empty() => draft.highlight = (view.highlight + 1) % items.len(),
-            Key::Up if !items.is_empty() => draft.highlight = (view.highlight + items.len() - 1) % items.len(),
+            Key::Down | Key::Up if !items.is_empty() => {
+                let step = if key.key == Key::Down { 1 } else { items.len() - 1 };
+                draft.highlight = (view.highlight + step) % items.len();
+                tx.scroll_into_view(format!("{}-row-{}", host.key(), draft.highlight));
+            }
             Key::Enter | Key::Tab if !key.mods.shift => match items.get(view.highlight) {
                 Some(item) => self.composer_pick(host, item, tx),
                 None => return false,
@@ -386,6 +389,10 @@ impl State {
             self.launch_from(host);
             return;
         };
+        if !self.chat.loaded.contains(session) {
+            log::warn!("[composer] send to {session} before its transcript loaded; kept the draft");
+            return;
+        }
         let Some(draft) = self.draft(host) else { return };
         let doc = field::doc_of(&draft.edit);
         let root = self.root_of(host).unwrap_or_default();

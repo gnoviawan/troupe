@@ -179,7 +179,7 @@ fn failed(call: u64) -> Output {
 
 /// Alpha selected and shown, every read `begin` sent answered (calls 1 to 6): its workspace
 /// record is read with call 7 and its terminals with call 8.
-fn showing_alpha() -> State {
+pub(crate) fn showing_alpha() -> State {
     let mut s = connected();
     s.apply(read_reply(2, json!("p-a")));
     for call in [3, 4, 5] {

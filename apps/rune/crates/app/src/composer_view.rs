@@ -31,7 +31,13 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         edit: &draft.edit,
         place,
         busy,
-        disabled: s.host.is_none() || (matches!(host, Host::Launcher(_)) && s.composer.launching.is_some()),
+        // A chat's draft waits for its transcript: the model refuses a prompt for a session it
+        // has not installed, and Send clears the draft.
+        disabled: s.host.is_none()
+            || match host {
+                Host::Launcher(_) => s.composer.launching.is_some(),
+                Host::Chat(id) => !s.chat.loaded.contains(id),
+            },
         placeholder: placeholder.to_owned(),
         agent: s.agent_label(host),
         foot: match host {

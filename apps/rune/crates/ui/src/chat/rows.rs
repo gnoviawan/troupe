@@ -64,9 +64,8 @@ fn actions<S: 'static>(ctx: &Ctx<S>, text: String, user: bool, pinned: bool) -> 
 
 /// The user's turn: a tinted bubble at the end of the row, `max-w-[85%]`, with its actions.
 fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
-    let (words, spans) = pills_inline(ctx.t, words);
-    let words = words.as_str();
-    let bubble = crate::Bubble::new(words.to_owned())
+    let (shown, spans) = pills_inline(ctx.t, words);
+    let bubble = crate::Bubble::new(shown)
         .spans(spans)
         .variant(BubbleVariant::Tinted)
         .align(BubbleAlign::End)
