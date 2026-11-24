@@ -438,7 +438,9 @@ impl State {
         if let Some(display) = display {
             payload["displayContent"] = Value::Array(display);
         }
-        self.command(
+        // Outside the ledger: the host takes a prompt's turn id as its command id and refuses
+        // the ledger's own (`invalid_command_id`).
+        self.call(
             WsRequestType::SendPrompt,
             payload,
             Pending::Prompt { session_id, turn_id },
