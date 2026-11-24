@@ -5,7 +5,7 @@
 //! read what the other wrote. Shared keys (`shared/lww/...`) carry the revision this client
 //! last saw as `baseRevision`; a shared key is never written before it was read.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use client::CallId;
 use client::link::Status;
@@ -14,6 +14,7 @@ use model::chats::Chat;
 use model::prefs::Record;
 use model::projects::{Event as ProjectEvent, ProjectList};
 use model::shell_layout::{Event as LayoutEvent, ReadOutcome};
+use model::persistence;
 use model::{Effect, Ids, Level, shell_layout};
 use serde_json::{Value, json};
 use troupe_protocol::ws::{WsError, WsRequestType, WsWatchName};
@@ -22,8 +23,6 @@ use crate::{Host, State};
 
 const ACTIVE_PROJECT_KEY: &str = "active-project";
 const PREFS_KEY: &str = "project-prefs";
-/// `STORED_VALUE_VERSION` in `persistence-trim.ts`.
-const STORED_VERSION: u64 = 1;
 
 /// A key every device shares, written last-writer-wins on the host.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -58,6 +57,14 @@ enum Pending {
     Host(&'static str),
     /// `add_project`: select the new project once the host has it.
     AddProject(String),
+    /// A project's workspace record, read when the project becomes visible.
+    ReadWorkspace(String),
+    /// Then its terminal layout (`loadPersistedTerminals`), with the record read before it.
+    ReadTerminals {
+        project_id: String,
+        record: Option<Value>,
+    },
+    WriteWorkspace(String),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -85,6 +92,14 @@ pub struct Sync {
     /// Every command sent, for the tests (a test state has no host).
     #[cfg(test)]
     pub(crate) sent: Vec<Command>,
+    /// The project whose workspace record is being read.
+    reading: Option<String>,
+    /// The last record written per project, so an unchanged one is not written again.
+    written: HashMap<String, Value>,
+    /// The workspace revision the last persist saw.
+    persisted_revision: u64,
+    /// Projects whose stored record failed to read or decode: this session never writes over it.
+    unwritable: HashSet<String>,
 }
 
 /// Fresh ids for groups and projects: UUID v4 text, as `randomUUID` gives.
@@ -306,6 +321,37 @@ impl State {
                     Err(e) => log::warn!("[app] listing chats failed: {}: {}", e.code, e.message),
                 }
             }
+            Pending::ReadWorkspace(project_id) => match result {
+                Ok(reply) => {
+                    let key = self.device_key(&format!("terminals/{project_id}"));
+                    let record = stored_value(reply);
+                    self.call(
+                        WsRequestType::StoreRead,
+                        json!({ "key": key }),
+                        Pending::ReadTerminals { project_id, record },
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[app] reading the workspace of {project_id} failed: {}; its stored record is left unwritten",
+                        e.code
+                    );
+                    self.sync.unwritable.insert(project_id.clone());
+                    self.workspace_read(&project_id, None, None);
+                }
+            },
+            Pending::ReadTerminals { project_id, record } => {
+                let terminals = match result {
+                    Ok(reply) => stored_value(reply)
+                        .and_then(|layout| layout.get("terminals").cloned())
+                        .and_then(|list| serde_json::from_value(list).ok()),
+                    Err(e) => {
+                        log::warn!("[app] reading the terminal layout of {project_id} failed: {}", e.code);
+                        None
+                    }
+                };
+                self.workspace_read(&project_id, record, terminals);
+            }
             Pending::Write(key) => {
                 if let Err(e) = result {
                     log::warn!("[app] writing {key} failed: {}: {}", e.code, e.message);
@@ -339,6 +385,17 @@ impl State {
                     self.toast_error("Failed to create the project", &e.message);
                 }
             },
+            Pending::WriteWorkspace(project_id) => {
+                if let Err(e) = result {
+                    log::warn!(
+                        "[app] writing the workspace of {project_id} failed: {}: {}",
+                        e.code,
+                        e.message
+                    );
+                    // The next change writes again, even back to the value that failed.
+                    self.sync.written.remove(&project_id);
+                }
+            }
         }
     }
 
@@ -372,6 +429,116 @@ impl State {
     pub fn projects_step(&mut self, event: ProjectEvent) {
         let out = projects::step(&mut self.projects, event, &mut Uuid);
         self.run(out.effects);
+        self.show_active_project();
+    }
+
+    /// Bring the selected project's tree on screen: its parked tree at once, else after its
+    /// record is read. The project being left is saved first.
+    fn show_active_project(&mut self) {
+        let Some(project_id) = self.active_project().map(|p| p.id.clone()) else {
+            return;
+        };
+        if self.workspace.project() == Some(project_id.as_str())
+            || self.sync.reading.as_deref() == Some(project_id.as_str())
+        {
+            return;
+        }
+        self.persist_workspace();
+        if self.workspace.has_tree(&project_id) {
+            self.workspace.activate(&project_id, None);
+            return;
+        }
+        self.sync.reading = Some(project_id.clone());
+        let key = self.device_key(&persistence::key(&project_id));
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": key }),
+            Pending::ReadWorkspace(project_id),
+        );
+    }
+
+    fn workspace_read(
+        &mut self,
+        project_id: &str,
+        raw: Option<Value>,
+        terminals: Option<Vec<persistence::TerminalInfo>>,
+    ) {
+        if self.sync.reading.as_deref() != Some(project_id) {
+            return;
+        }
+        self.sync.reading = None;
+        let root = self
+            .projects
+            .store
+            .projects
+            .iter()
+            .find(|p| p.id == project_id)
+            .and_then(|p| p.path.clone());
+        let mut effects = Vec::new();
+        // No terminal is live in the Rune shell yet, so the layout keeps the saved terminal tabs.
+        let hydrated = persistence::hydrate(
+            raw,
+            root.as_deref(),
+            &[],
+            terminals.as_deref(),
+            self.workspace.ids(),
+            &mut effects,
+        );
+        self.run(effects);
+        if hydrated.unreadable {
+            self.sync.unwritable.insert(project_id.to_owned());
+        }
+        self.workspace.activate(project_id, Some(hydrated));
+        if self.active_project().map(|p| p.id.as_str()) != Some(project_id) {
+            self.show_active_project();
+        }
+    }
+
+    /// Write the visible project's record when it changed (`persistState`), and carry out what
+    /// the workspace asked for.
+    pub(crate) fn persist_workspace(&mut self) {
+        let logs = std::mem::take(&mut self.workspace.logs);
+        self.run(logs);
+        for request in std::mem::take(&mut self.workspace.requests) {
+            log::info!("[app] workspace request not wired in the Rune shell yet: {request:?}");
+        }
+        if self.workspace.revision == self.sync.persisted_revision {
+            return;
+        }
+        self.sync.persisted_revision = self.workspace.revision;
+        let (Some(project_id), Some(record)) = (
+            self.workspace.project().map(str::to_owned),
+            self.workspace.record(),
+        ) else {
+            return;
+        };
+        if self.sync.unwritable.contains(&project_id) {
+            return;
+        }
+        let value = persistence::js_numbers(serde_json::to_value(record).unwrap_or(Value::Null));
+        if self.sync.written.get(&project_id) == Some(&value) {
+            return;
+        }
+        self.sync.written.insert(project_id.clone(), value.clone());
+        let key = self.device_key(&persistence::key(&project_id));
+        self.call(
+            WsRequestType::StoreWrite,
+            json!({ "key": key, "value": persistence::stored(value) }),
+            Pending::WriteWorkspace(project_id),
+        );
+    }
+
+    /// The projects whose workspace record has a write in flight.
+    #[cfg(test)]
+    pub(crate) fn workspace_writes(&self) -> Vec<&str> {
+        self.sync
+            .pending
+            .values()
+            .filter_map(|pending| match pending {
+                Pending::WriteWorkspace(project_id) => Some(project_id.as_str()),
+                _ => None,
+            })
+            .collect()
     }
 
     /// A group change: apply it, then save the sidebar layout.
@@ -389,7 +556,7 @@ impl State {
         let key = self.device_key(key);
         self.call(
             WsRequestType::StoreWrite,
-            json!({ "key": key, "value": envelope(value) }),
+            json!({ "key": key, "value": persistence::stored(value) }),
             pending,
         );
     }
@@ -403,7 +570,7 @@ impl State {
         };
         self.call(
             WsRequestType::StoreWrite,
-            json!({ "key": shared.host_key(), "value": envelope(data), "baseRevision": base }),
+            json!({ "key": shared.host_key(), "value": persistence::stored(data), "baseRevision": base }),
             Pending::WriteShared(shared),
         );
     }
@@ -473,23 +640,16 @@ impl State {
 
 use model::projects;
 
-/// `{ _version, data }`, the envelope `web-persistence-api.ts` stores.
-fn envelope(data: Value) -> Value {
-    json!({ "_version": STORED_VERSION, "data": data })
-}
-
-/// A `store_read` reply's value without its envelope, or `None` when the key is absent
-/// (revision 0). A bare value (an older Rune write) reads as itself.
+/// A `store_read` reply's value without the web client's envelope, or `None` when the key
+/// is absent (revision 0).
 fn stored_value(reply: Option<Value>) -> Option<Value> {
     let reply = reply?;
     if reply.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {
         return None;
     }
-    let value = reply.get("value").cloned().filter(|v| !v.is_null())?;
-    match value {
-        Value::Object(ref o) if o.contains_key("_version") => {
-            o.get("data").cloned().filter(|v| !v.is_null())
-        }
-        other => Some(other),
-    }
+    reply
+        .get("value")
+        .cloned()
+        .map(persistence::unwrap_stored)
+        .filter(|v| !v.is_null())
 }

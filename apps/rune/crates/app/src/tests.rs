@@ -165,3 +165,89 @@ fn a_hash_that_names_no_screen_routes_to_not_found() {
         crate::Route::NotFound("/nowhere".to_owned())
     );
 }
+
+fn failed(call: u64) -> Output {
+    Output::Reply {
+        call,
+        result: Err(troupe_protocol::ws::WsError {
+            code: "INTERNAL".into(),
+            message: "disk full".into(),
+            details: None,
+        }),
+    }
+}
+
+/// Alpha selected and shown, every read `begin` sent answered (calls 1 to 6): its workspace
+/// record is read with call 7 and its terminals with call 8.
+fn showing_alpha() -> State {
+    let mut s = connected();
+    s.apply(read_reply(2, json!("p-a")));
+    for call in [3, 4, 5] {
+        s.apply(read_reply(call, Value::Null));
+    }
+    s.apply(projects_frame());
+    s
+}
+
+fn tab_kinds(s: &State) -> Vec<String> {
+    let mut kinds = Vec::new();
+    let mut stack = vec![s.workspace.tree().root.clone()];
+    while let Some(node) = stack.pop() {
+        match node {
+            model::workspace::PaneNode::Leaf(leaf) => {
+                kinds.extend(leaf.tabs.iter().map(|tab| tab.id().to_owned()));
+            }
+            model::workspace::PaneNode::Split(split) => stack.extend(split.children),
+        }
+    }
+    kinds
+}
+
+#[test]
+fn a_workspace_record_that_failed_to_read_is_never_written_over() {
+    let mut s = showing_alpha();
+    s.apply(failed(7));
+    assert_eq!(s.workspace.project(), Some("p-a"), "a fresh workspace still shows");
+    s.workspace.focus_pane("elsewhere");
+    s.persist_workspace();
+    assert_eq!(s.workspace_writes(), Vec::<&str>::new());
+}
+
+#[test]
+fn a_workspace_record_that_does_not_decode_is_never_written_over() {
+    let mut s = showing_alpha();
+    s.apply(read_reply(7, json!({ "openFiles": "not a list" })));
+    s.apply(read_reply(8, Value::Null));
+    s.persist_workspace();
+    assert_eq!(s.workspace_writes(), Vec::<&str>::new());
+}
+
+#[test]
+fn saved_terminal_tabs_survive_while_no_terminal_is_live() {
+    let mut s = showing_alpha();
+    let record = json!({
+        "openFiles": [], "activeFilePath": null, "expandedDirs": [], "activeTabId": "term-t1",
+        "paneLayout": { "type": "leaf", "id": "l1", "activeTabId": "term-t1", "tabs": [
+            { "type": "terminal", "terminalId": "t1" }, { "type": "git", "id": "git-/w/alpha", "cwd": "/w/alpha" }
+        ] },
+        "activePaneId": "l1"
+    });
+    s.apply(read_reply(7, record));
+    s.apply(read_reply(8, json!({ "activeTerminalId": "t1", "terminals": [{ "id": "t1", "name": "Terminal 1", "shell": "bash", "cwd": "/w/alpha" }], "updatedAt": "2026-11-24T00:00:00Z" })));
+    assert_eq!(tab_kinds(&s), ["term-t1", "git-/w/alpha"]);
+    s.persist_workspace();
+    assert_eq!(s.workspace_writes(), ["p-a"]);
+}
+
+#[test]
+fn a_failed_workspace_write_is_sent_again_with_the_same_value() {
+    let mut s = showing_alpha();
+    s.apply(read_reply(7, Value::Null));
+    s.apply(read_reply(8, Value::Null));
+    s.persist_workspace();
+    assert_eq!(s.workspace_writes(), ["p-a"]);
+    s.apply(failed(9));
+    s.workspace.revision += 1;
+    s.persist_workspace();
+    assert_eq!(s.workspace_writes(), ["p-a"], "the same record goes out again");
+}

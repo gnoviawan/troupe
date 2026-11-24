@@ -31,7 +31,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     let root = if phone {
         root.child(crate::phone::frame(s, t, workspace_main(s, t)))
     } else {
-        root.children(desktop_frame(s, t, &mut layer))
+        root.children(desktop_frame(s, t, cx, &mut layer))
     };
     crate::rail_menus::build(s, t, &mut layer);
     crate::rail_forms::build(s, t, &mut layer);
@@ -47,7 +47,16 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     ui::overlay::root(root, layer)
 }
 
-fn desktop_frame(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
+fn workspace(s: &mut State) -> &mut ui::workspace::Workspace {
+    &mut s.workspace
+}
+
+fn desktop_frame(
+    s: &State,
+    t: &'static Tokens,
+    cx: &Cx<State>,
+    layer: &mut Vec<El>,
+) -> Vec<El> {
     let expanded = s.layout.record.rail_expanded;
     let mut parts = vec![rail(s, t, !expanded, s.width(Edge::Rail) as f32, layer)];
     let mut shell_row = row()
@@ -55,7 +64,7 @@ fn desktop_frame(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> 
         .grow(1.0)
         .h_full()
         .min_w(0.0)
-        .child(main_area(s, t, !expanded));
+        .child(main_area(s, t, !expanded, cx, layer));
     if s.layout.record.side_panel_visible && s.active_project().is_some() {
         shell_row = shell_row.child(side_panel(s, t));
     }
@@ -127,12 +136,39 @@ fn new_tab_button(t: &Tokens) -> El {
     shell::rail_button(t, &i::PLUS, "New tab", 28.0, 14.0, false).key("new-tab")
 }
 
-fn main_area(s: &State, t: &'static Tokens, rail_collapsed: bool) -> El {
+fn main_area(
+    s: &State,
+    t: &'static Tokens,
+    rail_collapsed: bool,
+    cx: &Cx<State>,
+    layer: &mut Vec<El>,
+) -> El {
     let start = if rail_collapsed {
         vec![rail_toggle(t, false)]
     } else {
         Vec::new()
     };
+    let main = col()
+        .key("shell-main")
+        .grow(1.0)
+        .h_full()
+        .min_w(0.0)
+        .border_sides([0.0, 0.0, 0.0, 1.0], t.colors.border);
+    let shown = s.active_project().filter(|p| s.workspace.project() == Some(p.id.as_str()));
+    if let Some(project) = shown {
+        let name = project.name.clone();
+        let empty = move || shell::launcher_heading(t, &name);
+        let leading = start
+            .into_iter()
+            .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
+            .collect();
+        let slots = ui::workspace::Slots {
+            leading,
+            empty: &empty,
+            dark: true,
+        };
+        return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));
+    }
     col()
         .key("shell-main")
         .grow(1.0)

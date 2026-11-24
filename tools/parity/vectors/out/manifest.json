@@ -111,6 +111,20 @@
         "remove_project_before_fresh_install",
         "remove_project_while_unavailable"
       ]
+    },
+    "pane-tree": {
+      "sources": {
+        "src/renderer/hooks/editor-persistence/pane-tree.ts": "0440ab7b7976f34906c47e6378d70e80f6c88f09",
+        "src/renderer/lib/workspace-tab-kinds.ts": "99aa05cc1857c1927ffb2cf7160a18a152c75f6a"
+      },
+      "vectors": [
+        "serialize_every_kind_and_splits",
+        "deserialize_every_kind",
+        "deserialize_drops_corrupt_tabs",
+        "deserialize_legacy_leaf_and_split",
+        "reconcile_terminals_by_id_then_name",
+        "reconcile_keeps_saved_terminals_when_none_live"
+      ]
     }
   }
 }

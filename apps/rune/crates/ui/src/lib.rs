@@ -21,6 +21,7 @@ pub mod overlay;
 pub mod paint;
 pub mod shell;
 pub mod type_;
+pub mod workspace;
 pub mod zoom;
 
 pub use base::*;

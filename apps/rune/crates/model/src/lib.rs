@@ -9,6 +9,7 @@
 
 pub mod chats;
 pub mod overlay;
+pub mod persistence;
 pub mod prefs;
 pub mod projects;
 pub mod shell_layout;

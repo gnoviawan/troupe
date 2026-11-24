@@ -64,10 +64,16 @@ export function runeDesktopDriver(socket: RuneSocket, points: Points): Driver {
     target: Target
   ): Promise<{ point: Point; via: ActionLog['via'] }> => {
     if ('point' in target) return { point: target.point, via: 'point' }
+    const recorded = points.get(key)
     if ('css' in target) {
-      const recorded = points.get(key)
       if (!recorded) throw new Error('Rune has no CSS selectors, and no client recorded a point')
       return { point: recorded, via: 'recorded-point' }
+    }
+    if ('testId' in target && recorded) {
+      // A test id may name no Rune key (React repeats `new-tab-menu-trigger` in every pane,
+      // Rune keys each pane's apart), so the reference's point stands in, as on the web.
+      const hit = await socket.send({ cmd: 'wait', key: target.testId, timeout_ms: 1000 })
+      if (!hit.ok) return { point: recorded, via: 'recorded-point' }
     }
     const [query, via]: [{ key: string } | { text: string }, ActionLog['via']] =
       'testId' in target

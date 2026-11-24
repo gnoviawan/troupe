@@ -3,6 +3,8 @@
 Usage: uv run --with python-xlib==0.33 python -I xinput.py CMD...  (DISPLAY from the environment)
   click X Y     move the pointer to root X,Y and press button 1
   move X Y      move the pointer only
+  down X Y      move the pointer to root X,Y and hold button 1 (a drag's start)
+  up            release button 1 where the pointer is (a drag's drop)
   type TEXT     type ASCII letters, digits, spaces, the punctuation in `names` and \\n (Return)
   key COMBO     press a keysym combination, as Control_L+a or Escape
   clipboard     print the CLIPBOARD selection as text
@@ -17,16 +19,22 @@ from Xlib.ext import xtest
 
 dpy = display.Display()
 cmd = sys.argv[1]
-if cmd in ("click", "move"):
+if cmd in ("click", "move", "down"):
     x, y = int(sys.argv[2]), int(sys.argv[3])
     xtest.fake_input(dpy, X.MotionNotify, x=x, y=y)
     dpy.sync()
+    if cmd == "down":
+        time.sleep(0.05)
+        xtest.fake_input(dpy, X.ButtonPress, 1)
     if cmd == "click":
         time.sleep(0.05)
         xtest.fake_input(dpy, X.ButtonPress, 1)
         dpy.sync()
         time.sleep(0.03)
         xtest.fake_input(dpy, X.ButtonRelease, 1)
+    dpy.sync()
+elif cmd == "up":
+    xtest.fake_input(dpy, X.ButtonRelease, 1)
     dpy.sync()
 elif cmd == "type":
     names = {

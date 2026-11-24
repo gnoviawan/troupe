@@ -122,13 +122,15 @@ const { shortcutsRecorder, shortcutScenarios } = await import('./stores/shortcut
 const { overlayRecorder, overlayScenarios } = await import('./stores/overlay')
 const { projectsRecorder, projectScenarios } = await import('./stores/projects')
 const { shellLayoutRecorder, shellLayoutScenarios } = await import('./stores/shell-layout')
+const { paneTreeRecorder, paneTreeScenarios } = await import('./stores/pane-tree')
 
 const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [workspaceRecorder, workspaceScenarios],
   [shortcutsRecorder, shortcutScenarios],
   [overlayRecorder, overlayScenarios],
   [projectsRecorder, projectScenarios],
-  [shellLayoutRecorder, shellLayoutScenarios]
+  [shellLayoutRecorder, shellLayoutScenarios],
+  [paneTreeRecorder, paneTreeScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

@@ -8,6 +8,7 @@ description = "Troupe's base components (components/ui) for the Rune client."
 [dependencies]
 rune = { workspace = true }
 theme = { path = "../theme" }
+model = { path = "../model" }
 rune-kit = { workspace = true }
 
 [dev-dependencies]

@@ -32,6 +32,7 @@ use rune::{AppSpec, FontSmoothing, KeyEvent, Tx, Waker};
 use std::sync::OnceLock;
 use theme::Tokens;
 use ui::overlay::{Overlays, ToastKind, Toasts};
+use ui::workspace::{Uuids, Workspace};
 
 pub use host::Host;
 pub use view::view;
@@ -95,6 +96,8 @@ pub struct State {
     pub phone: phone::PhoneUi,
     /// `settings/app` `uiZoomLevel`.
     pub zoom: ui::Zoom,
+    /// The visible project's panes and tabs.
+    pub workspace: Workspace,
     pub(crate) sync: sync::Sync,
 }
 
@@ -138,6 +141,7 @@ impl Default for State {
             keys: keys::KeysUi::default(),
             phone: phone::PhoneUi::default(),
             zoom: ui::Zoom::DEFAULT,
+            workspace: Workspace::new(Box::new(Uuids::new(seed()))),
             sync: sync::Sync::default(),
         }
     }
@@ -189,6 +193,20 @@ impl State {
     }
 }
 
+/// A different seed each run, so pane ids minted now never repeat ids a saved tree holds.
+#[cfg(not(target_arch = "wasm32"))]
+fn seed() -> u64 {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos() as u64);
+    nanos ^ u64::from(std::process::id()).rotate_left(32)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn seed() -> u64 {
+    (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
+}
+
 fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
@@ -206,6 +224,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     if let Some(due) = state.toasts.next_expiry() {
         tx.wake_at(due);
     }
+    state.persist_workspace();
     changed
 }
 

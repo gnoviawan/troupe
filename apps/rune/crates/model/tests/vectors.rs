@@ -7,6 +7,8 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
 use model::shortcuts::{self, KeyEvent, Platform, Shortcuts};
+use model::persistence::{TerminalInfo, pane_tree};
+use model::workspace::PaneNode;
 use model::{Effect, Ids, overlay, prefs, projects, shell_layout, workspace};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -281,6 +283,55 @@ impl Store for Projects {
     }
 }
 
+/// The record's pane tree helpers: no state, each step's result is the function's.
+struct PaneTree;
+
+#[derive(Serialize)]
+struct Stateless {}
+
+impl Store for PaneTree {
+    type State = Stateless;
+    fn setup(_: &Value, _: &Value) -> Result<Self::State, String> {
+        Ok(Stateless {})
+    }
+    fn step(
+        _: &mut Self::State,
+        event: &Value,
+        ids: &mut Replay,
+    ) -> Result<(Vec<Effect>, Option<Value>), String> {
+        let args = &event["args"];
+        let mut effects = Vec::new();
+        let result = match event["action"].as_str().unwrap_or_default() {
+            "serializePaneTree" => {
+                let node: PaneNode = parse(&args[0])?;
+                to_value(&pane_tree::serialize(&node))
+            }
+            "deserializePaneTree" => to_value(&pane_tree::deserialize(&args[0], ids, &mut effects)),
+            "reconcileTerminalTabs" => {
+                let node: PaneNode = parse(&args[0])?;
+                let open: std::collections::BTreeSet<String> = parse(&args[1])?;
+                let live: Vec<TerminalInfo> = parse(&args[2])?;
+                let layout: Option<Vec<TerminalInfo>> = args[3]
+                    .get("terminals")
+                    .map(parse)
+                    .transpose()?;
+                to_value(&pane_tree::reconcile_terminal_tabs(
+                    &node,
+                    &open,
+                    &live,
+                    layout.as_deref(),
+                    ids,
+                ))
+            }
+            other => return Err(format!("no pane-tree function {other}")),
+        };
+        Ok((effects, Some(result)))
+    }
+    fn query(_: &Self::State, event: &Value) -> Result<Value, String> {
+        Err(format!("no pane-tree read {}", event["action"]))
+    }
+}
+
 fn replay<S: Store>(vector: &Value) -> Result<usize, String> {
     let empty = json!({});
     let context = vector.get("context").unwrap_or(&empty);
@@ -362,6 +413,7 @@ fn replays_every_vector() {
                 "overlay" => replay::<Overlay>(vector),
                 "projects" => replay::<Projects>(vector),
                 "shell-layout" => replay::<ShellLayout>(vector),
+                "pane-tree" => replay::<PaneTree>(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {
