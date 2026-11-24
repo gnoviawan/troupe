@@ -87,13 +87,14 @@ function httpRoutes(root: string): string[] {
 
 export function collectAcpReference(root: string = REPO_ROOT): AcpReference {
   const protocol = read(root, 'src/shared/types/web-protocol.types.ts')
+  const generated = read(root, 'src/shared/types/generated/protocol.ts')
   const quoted = /'([a-z_]+)'/g
   const events = acpEvents(root)
   const eventNames = new Set(events.map((name) => name.replace(/^acp:/, '')))
   const typedWireTypes = capture(tsArray(protocol, 'WS_EVENT_TYPES'), quoted)
   return {
     'tauri-commands': tauriCommands(root),
-    'ws-requests': sortedUnique(capture(tsArray(protocol, 'WS_REQUEST_TYPES'), quoted)),
+    'ws-requests': sortedUnique(capture(tsArray(generated, 'WsRequestTypeValues'), quoted)),
     'acp-events': events,
     'relay-frames': sortedUnique(typedWireTypes.filter((type) => !eventNames.has(type))),
     'http-routes': httpRoutes(root)

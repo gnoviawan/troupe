@@ -148,12 +148,27 @@ pub struct Menu {
     placement: Placement,
     width: Option<f32>,
     at: Option<PointerPress>,
+    name: Option<String>,
     close: Option<Close>,
 }
 
 impl Menu {
     pub fn new(key: impl Into<String>) -> Menu {
-        Menu { key: key.into(), entries: Vec::new(), open: false, placement: Placement::BottomStart, width: None, at: None, close: None }
+        Menu {
+            key: key.into(),
+            entries: Vec::new(),
+            open: false,
+            placement: Placement::BottomStart,
+            width: None,
+            at: None,
+            name: None,
+            close: None,
+        }
+    }
+    /// The menu's accessible name: its trigger's text, as `aria-labelledby` gives it.
+    pub fn name(mut self, n: impl Into<String>) -> Self {
+        self.name = Some(n.into());
+        self
     }
     /// A group label (`label-panel`, 12 px medium muted).
     pub fn label(mut self, l: impl Into<String>) -> Self {
@@ -204,6 +219,9 @@ impl Menu {
             .items_stretch();
         if let Some(w) = self.width {
             frame = frame.w(w);
+        }
+        if let Some(n) = self.name {
+            frame = frame.label(n);
         }
         for (i, entry) in self.entries.into_iter().enumerate() {
             frame = frame.child(match entry {

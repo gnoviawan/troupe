@@ -2,7 +2,14 @@
 
 Troupe builds Rune at one pinned rev (`apps/rune/rune.pin`). When Troupe needs
 a change in Rune before upstream has it, the change lives here as a numbered
-patch series on top of that rev. The folder holds no patches yet.
+patch series on top of that rev.
+
+| Patch | What it changes | Upstream issue |
+|---|---|---|
+| `0001-web-a11y-menu-tooltip-combobox-roles.patch` | The web mirror gives menus and tooltips their ARIA role and container, and mirrors a combobox trigger as `role="combobox"` with its name | Drafted, not filed |
+
+Cargo still builds the pinned rev until a fork carries the series: CI checks that the
+series applies, and local runs use it through a `[patch]` of the scratch clone.
 
 ## Rules
 

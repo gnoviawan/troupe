@@ -3,7 +3,7 @@
 //! `Option<Arc<WebStore>>`, acting for the connection's authenticated
 //! identity (the store enforces the key scopes against its `deviceId`).
 
-use serde::Deserializer;
+use troupe_protocol::ws::{StoreDeletePayload, StoreReadPayload, StoreWritePayload};
 
 use super::*;
 use crate::web::store::{unix_ms, Precondition, StoreError, WriteOutcome, STORE_VALUE_MAX_BYTES};
@@ -30,47 +30,6 @@ pub(super) fn validate_store_key(id: &str, key: &str) -> Option<WsReply> {
         ));
     }
     None
-}
-
-/// `store_read` WS request payload. `deny_unknown_fields` rejects an
-/// over-serialized payload loudly at the host boundary.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct StoreReadPayload {
-    key: String,
-}
-
-/// `expected` is "present" even when JSON `null` (the key must be absent), so
-/// `null` is told apart from a missing field.
-fn present<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Value>, D::Error> {
-    Value::deserialize(deserializer).map(Some)
-}
-
-/// `store_write` WS request payload. `value` is any JSON value.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct StoreWritePayload {
-    key: String,
-    value: Value,
-    #[serde(default)]
-    base_revision: Option<u64>,
-    #[serde(default, deserialize_with = "present")]
-    expected: Option<Value>,
-    #[serde(default)]
-    command_id: Option<String>,
-}
-
-/// `store_delete` WS request payload.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct StoreDeletePayload {
-    key: String,
-    #[serde(default)]
-    base_revision: Option<u64>,
-    #[serde(default, deserialize_with = "present")]
-    expected: Option<Value>,
-    #[serde(default)]
-    command_id: Option<String>,
 }
 
 fn malformed(id: String, request: &str, wants: &str, error: serde_json::Error) -> WsReply {

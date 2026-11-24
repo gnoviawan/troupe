@@ -4,7 +4,7 @@
 
 use rune::El;
 
-use crate::{Ctx, State, components as c, foundations as f, patterns as p};
+use crate::{Ctx, State, components as c, foundations as f, overlays as o, patterns as p};
 
 pub struct Scene {
     pub id: &'static str,
@@ -58,11 +58,11 @@ scenes! {
     "text-motion", "Text motion", 480.0 x 156.0 => c::text_motion;
     "write-gate", "Write gate", 480.0 x 188.0 => c::write_gates;
     "text-fields", "Input and Textarea", 520.0 x 300.0 => c::text_fields;
-    "select", "Select", 480.0 x 196.0 => p::select;
+    "select", "Select", 480.0 x 196.0 => o::select;
     "panel-styles", "Panel styles", 560.0 x 272.0 => c::panel_styles;
     "accordion", "Accordion", 480.0 x 340.0 => c::accordion;
     "collapsible", "Collapsible", 480.0 x 304.0 => c::collapsible;
-    "floating", "Tooltip, HoverCard, Popover, Lightbox", 560.0 x 252.0 => p::floating;
+    "floating", "Tooltip, HoverCard, Popover, Lightbox", 560.0 x 252.0 => o::floating;
     "scroll-area", "ScrollArea", 420.0 x 252.0 => c::scroll_area;
     "resizable", "Resizable panels", 560.0 x 268.0 => c::resizable;
     "bubble", "Bubble variants", 520.0 x 384.0 => c::bubbles;
@@ -75,12 +75,12 @@ scenes! {
     "chat.model-selector.v2-rail", "Model selector v2 rail (flag)", 1200.0 x 680.0 => p::model_selector;
     "chat.model-selector.v2-many-agents", "Model selector v2, 14 agents (flag)", 1200.0 x 680.0 => p::model_selector;
     "chat.model-selector.v2-composer", "Model selector v2 in the chat composer (flag)", 820.0 x 600.0 => p::model_selector;
-    "dialog", "Dialog and AlertDialog", 480.0 x 140.0 => p::overlay;
-    "sheet", "Sheet", 480.0 x 116.0 => p::overlay;
-    "confirm-dialog", "ConfirmDialog", 480.0 x 120.0 => p::overlay;
-    "menus", "DropdownMenu and ContextMenu", 480.0 x 180.0 => p::overlay;
-    "command", "Command", 520.0 x 372.0 => p::overlay;
-    "toast", "Toasts", 560.0 x 216.0 => p::overlay;
+    "dialog", "Dialog and AlertDialog", 480.0 x 140.0 => o::dialogs;
+    "sheet", "Sheet", 480.0 x 116.0 => o::sheets;
+    "confirm-dialog", "ConfirmDialog", 480.0 x 120.0 => o::confirms;
+    "menus", "DropdownMenu and ContextMenu", 480.0 x 180.0 => o::menus;
+    "command", "Command", 520.0 x 372.0 => o::commands;
+    "toast", "Toasts", 560.0 x 216.0 => o::toasts;
     "status", "Status", 560.0 x 220.0 => p::surface;
     "connection", "Connection states", 520.0 x 348.0 => p::surface;
     "form", "Settings form", 480.0 x 532.0 => p::surface;

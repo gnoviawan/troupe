@@ -1,8 +1,9 @@
 //! WS relay protocol — frame envelopes, seq, event log, cursor, tiers (Story 1.4+1.6).
 //!
 //! One multiplexed bidirectional WebSocket per browser connection carries all
-//! sessions (AC1). The wire contract is defined here and mirrored 1:1 in
-//! `src/shared/types/web-protocol.types.ts` (AC2).
+//! sessions (AC1). The wire types live in `crates/troupe-protocol`, which the
+//! TypeScript contract is generated from (AC2). The request, reply and event
+//! envelopes here stay server types: their `type` and `err` are open strings.
 //!
 //! # Wire casing (AC3 — deviation from architecture text, MUST follow)
 //!
@@ -43,6 +44,7 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tracing::{debug, info, warn};
+use troupe_protocol::ws::WsEventType;
 
 use crate::acp::config::AgentConfig;
 use crate::acp::provider_errors::ProviderErrorKind;
@@ -144,52 +146,27 @@ impl SequencedEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Reliability tier registry (AC5) — single Rust enum + tier_of
+// Reliability tiers (AC5) — the crate's tier of each event type
 // ---------------------------------------------------------------------------
 
-/// The three delivery tiers for a WS event type. Mirrors the TS
-/// `WS_RELAY_TIERS` const.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReliabilityTier {
-    /// Dropped for a slow client, followed by a `gap` frame (high-frequency
-    /// streams the client can rebuild from a snapshot).
-    Lossy,
-    /// Never dropped silently: a subscriber that cannot take it loses its
-    /// connection and resumes by cursor.
-    Reliable,
-    /// Dedup by turn-id before enqueue.
-    Idempotent,
-}
+pub use troupe_protocol::ws::ReliabilityTier;
 
-/// Map a prefix-dropped event `type` to its [`ReliabilityTier`].
-///
-/// Lossy: `message_chunk`, `tool_call_update`, `commands_update`, `plan_update`.
-/// Idempotent: `prompt_complete`.
-/// Reliable: everything else (including `permission_request` + all request↔reply,
-/// though request↔reply reliability is enforced at the request layer, not here).
-/// Unknown types default to [`ReliabilityTier::Reliable`] (the safe choice —
-/// never drop an event the relay does not recognize).
+/// Map a prefix-dropped event `type` to its [`ReliabilityTier`]
+/// ([`WsEventType::tier`]). An unknown type is [`ReliabilityTier::Reliable`]:
+/// the relay never drops an event it does not recognize.
 #[must_use]
 pub fn tier_of(type_: &str) -> ReliabilityTier {
-    match type_ {
-        "message_chunk" | "tool_call_update" | "commands_update" | "plan_update" => {
-            ReliabilityTier::Lossy
-        }
-        "prompt_complete" => ReliabilityTier::Idempotent,
-        _ => ReliabilityTier::Reliable,
-    }
+    WsEventType::ALL
+        .iter()
+        .find(|known| known.as_str() == type_)
+        .map_or(ReliabilityTier::Reliable, |known| known.tier())
 }
 
 // ---------------------------------------------------------------------------
 // Request / reply / error envelope structs (AC2 + AC10)
 // ---------------------------------------------------------------------------
 
-/// The `authenticate` protocol version this host speaks. Mirrors the TS
-/// `WS_PROTOCOL_VERSION`. Bump it on any wire-contract change (AD-15).
-pub const WS_PROTOCOL_VERSION: u32 = 7;
-
-/// Longest accepted `deviceId` / `clientInstanceId`, in bytes.
-pub const MAX_CLIENT_ID_LEN: usize = 128;
+pub use troupe_protocol::version::{MAX_CLIENT_ID_LEN, WS_PROTOCOL_VERSION};
 
 /// Client identity presented on `authenticate` (AD-4). Neither id is a
 /// credential, and the host stores both exactly as received.
@@ -406,129 +383,7 @@ pub struct WsError {
     pub details: Option<Value>,
 }
 
-/// The stable `err.code` machine strings (AC2). Mirrors the TS
-/// `WS_ERROR_CODES` const. Serialized as snake_case via [`WsErrorCode::as_str`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WsErrorCode {
-    NotFound,
-    Unauthorized,
-    RateLimited,
-    AgentCrashed,
-    PermissionDenied,
-    Stale,
-    Duplicate,
-    Unsupported,
-    NotImplemented,
-    /// The agent rejected session entry (`session/new` / `session/load` /
-    /// `session/resume`) with ACP `AuthRequired` (-32000) — the user must
-    /// authenticate first. Additive (Story 7): receivers that ignore unknown
-    /// codes stay compatible.
-    AgentAuthRequired,
-    /// `session/load` / `session/resume` targeted a session owned by a
-    /// DIFFERENT live agent with a turn in flight (issue #837 split-brain
-    /// guard). Additive: receivers that ignore unknown codes stay compatible.
-    SessionOwnedByOther,
-    /// `authenticate` carried a missing or different `protocolVersion`
-    /// ([`WS_PROTOCOL_VERSION`]). The client must reload; no compatibility
-    /// shim exists (AD-15).
-    ProtocolVersionMismatch,
-    /// `authenticate` carried a missing, empty or oversized `deviceId` /
-    /// `clientInstanceId` (AD-4). The host never mints either id.
-    InvalidClientIdentity,
-    /// A host terminal cap (per project or global) refused a spawn. The
-    /// terminal carriers (`/terminal/ws`, desktop `terminal_spawn`) answer it
-    /// as the SCREAMING form `TERMINAL_LIMIT`; this is the `/ws` spelling.
-    TerminalLimit,
-    /// Reserved: project remove/archive refused while sessions or PTYs bound
-    /// to the project are live. Handler behavior lands with the project
-    /// registry work.
-    ProjectBusy,
-    /// A command resend found no stored outcome (evicted ledger entry,
-    /// interrupted handler); the command is never re-executed (AD-5).
-    OutcomeUnknown,
-    /// Reserved: branch switch / worktree removal refused while a session
-    /// with its cwd inside the target path has an active turn.
-    DestructiveOpBlocked,
-    /// The upstream provider refused the call for quota / usage limits.
-    ProviderQuotaExceeded,
-    /// The upstream provider refused the call for a session limit.
-    ProviderSessionLimit,
-    /// The upstream provider rejected the request with a 4xx class error.
-    ProviderRequestRejected,
-    /// The connection lacks the capability the request needs (view-only
-    /// connection attempting a mutation outside `device/<deviceId>/`).
-    Forbidden,
-    /// `respond_permission` / `answer_question` named a ticket that was
-    /// already resolved (answered by this or another connection, or released
-    /// when its turn, session or agent ended). Tombstones are bounded: an
-    /// older ticket reads `stale`.
-    AlreadyResolved,
-    /// A spawn failed deterministically: the agent binary is missing, not
-    /// installed, or cannot start (AD-5). Definite — never retried
-    /// automatically.
-    AgentUnavailable,
-    /// A spawn named an unusable agent config: empty name, command or
-    /// `configId` (AD-5). Definite — never retried automatically.
-    InvalidAgentConfig,
-    /// A `commandId` was resent with a different request than the one it was
-    /// first used for (AD-5). Never replayed, never executed.
-    CommandConflict,
-    /// A request's `commandId` is malformed: not 1-128 characters of
-    /// `[A-Za-z0-9_-]`.
-    InvalidCommandId,
-    /// The Claude Account a request needs is not signed in: choosing it for
-    /// a Project or as the default, or starting a managed Claude agent on it.
-    /// The message names the Account and where to sign in.
-    ClaudeAccountSignedOut,
-    /// The Codex Account a managed `acp-registry:codex-acp` spawn needs is not
-    /// signed in. The message names the Account or the project `CODEX_HOME`.
-    CodexAccountSignedOut,
-    /// `finish_claude_link_login` got a code the Claude CLI calls incomplete.
-    /// The sign-in still waits for the whole code.
-    ClaudeLoginCodeIncomplete,
-    /// `finish_claude_link_login` got a code while the Claude CLI still checks
-    /// an earlier one. The sign-in goes on; its first code gets the verdict.
-    ClaudeLoginBusy,
-}
-
-impl WsErrorCode {
-    /// The stable snake_case wire string for this code.
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::NotFound => "not_found",
-            Self::Unauthorized => "unauthorized",
-            Self::RateLimited => "rate_limited",
-            Self::AgentCrashed => "agent_crashed",
-            Self::PermissionDenied => "permission_denied",
-            Self::Stale => "stale",
-            Self::Duplicate => "duplicate",
-            Self::Unsupported => "unsupported",
-            Self::NotImplemented => "not_implemented",
-            Self::AgentAuthRequired => "agent_auth_required",
-            Self::SessionOwnedByOther => "session_owned_by_other",
-            Self::ProtocolVersionMismatch => "protocol_version_mismatch",
-            Self::InvalidClientIdentity => "invalid_client_identity",
-            Self::TerminalLimit => "terminal_limit",
-            Self::ProjectBusy => "project_busy",
-            Self::OutcomeUnknown => "outcome_unknown",
-            Self::DestructiveOpBlocked => "destructive_op_blocked",
-            Self::ProviderQuotaExceeded => "provider_quota_exceeded",
-            Self::ProviderSessionLimit => "provider_session_limit",
-            Self::ProviderRequestRejected => "provider_request_rejected",
-            Self::Forbidden => "forbidden",
-            Self::AlreadyResolved => "already_resolved",
-            Self::AgentUnavailable => "agent_unavailable",
-            Self::InvalidAgentConfig => "invalid_agent_config",
-            Self::CommandConflict => "command_conflict",
-            Self::InvalidCommandId => "invalid_command_id",
-            Self::ClaudeAccountSignedOut => "claude_account_signed_out",
-            Self::CodexAccountSignedOut => "codex_account_signed_out",
-            Self::ClaudeLoginCodeIncomplete => "claude_login_code_incomplete",
-            Self::ClaudeLoginBusy => "claude_login_busy",
-        }
-    }
-}
+pub use troupe_protocol::ws::WsErrorCode;
 
 // ---------------------------------------------------------------------------
 // OS vs human cap boundary (AC8)
@@ -669,54 +524,33 @@ pub struct AppState {
     pub connections: ConnectionRuntime,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum HistoryMode {
-    Server,
-    LiveOnly,
-}
+pub use troupe_protocol::ws::{AcpRuntimePolicy as RuntimePolicy, HistoryMode};
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct RuntimePolicy {
-    /// Authoritative absolute server turn ceiling, in ms. `0` is the
-    /// **unlimited** sentinel — no hard cap is imposed (the default). A
-    /// non-zero value is the bounded hard-cap deadline the client should not
-    /// let its inactivity refresh extend past.
-    pub turn_timeout_ms: u64,
-    /// Inactivity budget, in ms, refreshed on matching-session activity. `0`
-    /// is the **unlimited** sentinel — the client imposes no inactivity timer
-    /// (the default). A non-zero value is the bounded inactivity window.
-    pub prompt_inactivity_timeout_ms: u64,
-    pub ping_interval_ms: u64,
-    pub pong_timeout_ms: u64,
-}
-
-impl RuntimePolicy {
-    #[must_use]
-    pub fn resolved() -> Self {
-        let turn_timeout = crate::acp::manager::resolved_turn_timeout(); // Option
-        let turn_idle = crate::acp::manager::turn_idle_timeout(); // Option
-                                                                  // `turn_timeout_ms`: 0 = unlimited (no hard cap) sentinel; otherwise
-                                                                  // the bounded hard cap in ms.
-        let turn_timeout_ms = turn_timeout.map(|d| d.as_millis() as u64).unwrap_or(0);
-        // Inactivity budget published to the client. Preserve the original
-        // `hard/2` derivation when a hard cap is configured (bounded, strictly
-        // shorter than the ceiling); otherwise use the idle timeout when it is
-        // configured (bounded); otherwise 0 (unlimited — no client-side
-        // inactivity timer). 0 keeps the client's `setTimeout` well under the
-        // browser 32-bit ceiling and defers entirely to the server.
-        let prompt_inactivity_timeout_ms = match (turn_timeout, turn_idle) {
-            (Some(hard), _) => (hard.as_millis() as u64 / 2).max(1),
-            (None, Some(idle)) => idle.as_millis() as u64,
-            (None, None) => 0,
-        };
-        Self {
-            turn_timeout_ms,
-            prompt_inactivity_timeout_ms,
-            ping_interval_ms: PING_INTERVAL.as_millis() as u64,
-            pong_timeout_ms: PONG_TIMEOUT.as_millis() as u64,
-        }
+/// The turn and keepalive budgets this host hands out at `authenticate`.
+/// `turn_timeout_ms` is the hard turn ceiling the client's inactivity refresh
+/// must not extend past; `prompt_inactivity_timeout_ms` is the window that
+/// matching-session activity refreshes. `0` means no limit for both.
+#[must_use]
+pub fn resolved_runtime_policy() -> RuntimePolicy {
+    let turn_timeout = crate::acp::manager::resolved_turn_timeout();
+    let turn_idle = crate::acp::manager::turn_idle_timeout();
+    let turn_timeout_ms = turn_timeout.map(|d| d.as_millis() as u64).unwrap_or(0);
+    // Inactivity budget published to the client. Preserve the original
+    // `hard/2` derivation when a hard cap is configured (bounded, strictly
+    // shorter than the ceiling); otherwise use the idle timeout when it is
+    // configured (bounded); otherwise 0 (unlimited — no client-side
+    // inactivity timer). 0 keeps the client's `setTimeout` well under the
+    // browser 32-bit ceiling and defers entirely to the server.
+    let prompt_inactivity_timeout_ms = match (turn_timeout, turn_idle) {
+        (Some(hard), _) => (hard.as_millis() as u64 / 2).max(1),
+        (None, Some(idle)) => idle.as_millis() as u64,
+        (None, None) => 0,
+    };
+    RuntimePolicy {
+        turn_timeout_ms,
+        prompt_inactivity_timeout_ms,
+        ping_interval_ms: PING_INTERVAL.as_millis() as u64,
+        pong_timeout_ms: PONG_TIMEOUT.as_millis() as u64,
     }
 }
 
@@ -847,6 +681,8 @@ mod pending_permission_tests;
 mod project_binding_tests;
 #[cfg(test)]
 mod project_command_tests;
+#[cfg(test)]
+pub(crate) mod protocol_fixture_tests;
 #[cfg(test)]
 mod provider_error_tests;
 #[cfg(test)]
