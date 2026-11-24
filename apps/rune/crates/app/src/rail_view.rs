@@ -178,7 +178,7 @@ pub fn body(
         shell::rail_button(
             t,
             &i::KEYBOARD,
-            "Keyboard shortcuts",
+            "Open keyboard shortcuts menu",
             28.0,
             14.0,
             s.overlays.is_open(keys::MENU),

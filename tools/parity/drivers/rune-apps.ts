@@ -63,15 +63,31 @@ export const RUNE_APPS = {
 export type RuneAppName = keyof typeof RUNE_APPS
 
 /**
- * The surfaces the Rune shell draws today (R5a: the frame, the rail's
- * projects, the side panel frame). Every other surface waits on the unit that
- * ports its content, named by its area in `RUNE_UNIT_BY_AREA`.
+ * The surfaces the Rune shell draws today: the frame, the rail's projects and
+ * the side panel frame (R5a), and the rail's overlays, the theme picker, the
+ * shortcut menu and the phone shell (R5c). Every other surface waits on the
+ * unit that ports its content, named by its area in `RUNE_UNIT_BY_AREA`.
  */
 export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'shell.dashboard',
   'shell.not-found',
   'rail.project-list',
-  'rail.collapse'
+  'rail.collapse',
+  'rail.project-menu',
+  'rail.project-colour',
+  'rail.delete-project',
+  'rail.group-menu',
+  'rail.delete-group',
+  'rail.new-project',
+  'rail.new-project-modal',
+  'rail.new-group',
+  'rail.chat-menu',
+  'theme.picker',
+  'shortcuts.menu',
+  'phone.drawer',
+  'phone.header-more',
+  'phone.project-sheet',
+  'phone.recents-actions'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
@@ -101,10 +117,14 @@ const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
 
 /** Why a surface cannot run on a Rune client yet, or undefined when the shell draws it. */
 export function runePending(surface: Pick<Surface, 'id' | 'area' | 'profile'>): Surface['pending'] {
-  if ((surface.profile ?? 'desktop') === 'phone') {
-    return { unit: 'R5c', reason: 'the Rune phone shell (header, drawer, sheets) is R5c' }
-  }
   if (RUNE_SHELL_SURFACES.has(surface.id)) return undefined
+  if ((surface.profile ?? 'desktop') === 'phone') {
+    const unit = RUNE_UNIT_BY_AREA[surface.area]
+    return {
+      unit,
+      reason: `the Rune phone shell draws its header, drawer and sheets; ${unit} ports this surface`
+    }
+  }
   const unit = RUNE_UNIT_BY_AREA[surface.area]
   return { unit, reason: `the Rune shell draws the frame only; ${unit} ports this surface` }
 }
