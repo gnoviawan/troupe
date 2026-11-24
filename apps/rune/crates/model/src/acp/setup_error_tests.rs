@@ -283,3 +283,14 @@ fn an_ambiguous_sign_in_reads_as_multi_auth() {
     let want = serde_json::json!({"category": "multi-auth", "label": "Multiple sign-in methods", "detail": "This agent advertises multiple sign-in methods (A, B). Troupe does not choose one automatically; pick one of the methods below to sign in."});
     assert_eq!(got, want);
 }
+
+#[test]
+fn non_ascii_spawn_errors_do_not_panic() {
+    for (message, command) in [
+        (r"spawn failed: C:\Users\İlker\claude.exe program not found", Some("claude")),
+        ("npx failed: İİİ missing optional dependency @scope/pkg-İ (x)", Some("npx")),
+        ("ẞtraße İ program not found on PATH: İ", None),
+    ] {
+        let _ = classify_setup_error(&HostError::new(message.into(), None), command);
+    }
+}

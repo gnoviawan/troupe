@@ -210,7 +210,7 @@ fn npm_missing_dep(lower: &str) -> bool {
 
 /// `isNpxCacheDamage`.
 fn npx_cache_damage(message: &str, command: Option<&str>) -> bool {
-    let lower = message.to_lowercase();
+    let lower = message.to_ascii_lowercase();
     command == Some("npx")
         && (npx_damaged_bin(message).is_some()
             || npx_entry_manifest(&lower)
@@ -278,7 +278,7 @@ fn transport(lower: &str) -> bool {
 /// `formatAcpAgentError`: the rate-limit and stream-drop wording rewritten,
 /// any other message as it is.
 fn agent_error_text(message: &str) -> String {
-    let lower = message.to_lowercase();
+    let lower = message.to_ascii_lowercase();
     let rate_limited = lower.contains("enhance_your_calm")
         || joined_any(&lower, "enhance", "your")
         || joined_any(&lower, "rate", "limit")
@@ -325,10 +325,10 @@ fn transport_interrupt(lower: &str) -> bool {
 
 /// `RESOLVER_FAILURE_PATTERN`: the file the resolver could not prepare.
 fn resolver_named_path(message: &str) -> Option<String> {
-    let lower = message.to_lowercase();
+    let lower = message.to_ascii_lowercase();
     let at = lower.find("program not found")?;
     let rest = &message[at + "program not found".len()..];
-    let lower_rest = rest.to_lowercase();
+    let lower_rest = rest.to_ascii_lowercase();
     let rest = if lower_rest.starts_with(" or not executable") {
         &rest[" or not executable".len()..]
     } else if lower_rest.starts_with(" on path") {
@@ -355,7 +355,7 @@ fn spawn_error_text(message: &str, command: Option<&str>) -> String {
         return message.to_owned();
     }
     if command == Some("npx") {
-        if npx_entry_manifest(&message.to_lowercase()) {
+        if npx_entry_manifest(&message.to_ascii_lowercase()) {
             return format!(
                 "npm could not read package.json in its npx cache entry for this agent. {NPX_CACHE_REPAIR_GUIDANCE}"
             );
@@ -365,7 +365,7 @@ fn spawn_error_text(message: &str, command: Option<&str>) -> String {
                 "npx started, but its package executable \"{bin}\" was not found. {NPX_CACHE_REPAIR_GUIDANCE}"
             );
         }
-        let lower = message.to_lowercase();
+        let lower = message.to_ascii_lowercase();
         if let Some(at) = lower.find("missing optional dependency ") {
             let dep: String = message[at + "missing optional dependency ".len()..]
                 .chars()
