@@ -152,6 +152,7 @@ import {
   readComposerOptions,
   savedModelValues
 } from '@/stores/acp-store/composer-options'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorktreePick } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 
@@ -1431,6 +1432,18 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
         wireBlocks: dedupeAttachmentBlocks(blocks),
         pendingPayload: hasPendingLauncherOptions(launchSnapshot) ? launchSnapshot : null
       }
+    }
+
+    // The user left the quick launcher (picked a project) while the launch
+    // waited above: opening the quick chat now would pull them back.
+    if (surfaceSnapshot.kind === 'quick' && useQuickChatStore.getState().view.mode !== 'launcher') {
+      void logFrontendError({
+        level: 'info',
+        source: 'agentLauncher.launch',
+        message: `Quick chat launch for agent ${configSnapshot.id} called off: the quick chat launcher closed before it started`
+      })
+      releaseLaunch()
+      return
     }
 
     // Open the chat immediately; worktree prepare + ACP spawn/session/send

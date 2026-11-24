@@ -5064,4 +5064,38 @@ describe('AgentLauncher for a new quick chat', () => {
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
     expect(mockHideAgentLauncher).not.toHaveBeenCalled()
   })
+
+  it('calls the launch off when a project is picked while a mentioned chat loads', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      act(() => useQuickChatStore.getState().close())
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).not.toHaveBeenCalled()
+      expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+
+      // Nothing stays in flight: Send works again once the launcher is back.
+      conversationContextsOverride.current = null
+      act(() => useQuickChatStore.getState().openLauncher())
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() =>
+        expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
+          expect.objectContaining({ kind: 'quick', projectId: '__unassigned__' })
+        )
+      )
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
 })
