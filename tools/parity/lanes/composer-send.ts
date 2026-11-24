@@ -167,7 +167,13 @@ try {
   console.log(same ? 'PASS: the prompts are byte for byte equal' : 'FAIL: the prompts differ')
   process.exitCode = same ? 0 : 1
 } finally {
-  await browser?.close()
-  world.ws.close()
-  await world.server.stop()
+  try {
+    await browser?.close()
+  } finally {
+    try {
+      world.ws.close()
+    } finally {
+      await world.server.stop()
+    }
+  }
 }
