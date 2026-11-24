@@ -16,6 +16,7 @@
 #![forbid(unsafe_code)]
 
 pub mod base;
+pub mod mobile;
 pub mod overlay;
 pub mod paint;
 pub mod shell;

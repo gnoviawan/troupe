@@ -4,21 +4,34 @@
 //! and draws the workspace shell: the rail with the server's projects, the main area's top row,
 //! the side panel frame and the tool strip.
 //!
-//! The model crate owns the state rules (`projects`, `shell_layout`); this crate carries their
-//! effects to the host and draws. Tabs, panes and the side panel's views are placeholders here.
+//! The model crate owns the state rules (`projects`, `shell_layout`, `shortcuts`, `chats`); this
+//! crate carries their effects to the host and draws. The rail's overlays live in `rail_menus`
+//! and `rail_forms`, the theme picker in `theme_picker`, the shortcut menu and the key dispatch
+//! in `keys`, and the phone shell in `phone`. Tabs, panes and the side panel's views are
+//! placeholders here.
 
 #![forbid(unsafe_code)]
 
 mod host;
+mod ids;
+mod keys;
+mod phone;
+mod rail;
+mod rail_forms;
+mod rail_menus;
+mod rail_view;
 mod sync;
+mod theme_picker;
 mod view;
 
 use client::Config;
 use client::link::Status;
-use model::{projects, shell_layout};
-use rune::{AppSpec, FontSmoothing, Key, KeyEvent, Tx, Waker};
+use model::chats::Chats;
+use model::{projects, shell_layout, shortcuts};
+use rune::{AppSpec, FontSmoothing, KeyEvent, Tx, Waker};
 use std::sync::OnceLock;
-use ui::overlay::Overlays;
+use theme::Tokens;
+use ui::overlay::{Overlays, ToastKind, Toasts};
 use ui::workspace::{Uuids, Workspace};
 
 pub use host::Host;
@@ -65,9 +78,24 @@ pub struct State {
     pub layout: shell_layout::State,
     pub overlays: Overlays,
     pub route: Route,
+    /// The colour theme family (`settings/app` `colorTheme`) and its appearance.
     pub theme: &'static str,
+    pub dark: bool,
+    /// The theme id the picker previews while it is open.
+    pub preview: Option<&'static str>,
     /// The rail or side panel width while its edge is dragged; committed on release.
     pub drag_width: Option<(Edge, f64)>,
+    pub chats: Chats,
+    pub shortcuts: shortcuts::State,
+    pub toasts: Toasts,
+    /// The frame clock (seconds) `poll` last saw: toasts expire on it.
+    pub now: f64,
+    pub rail: rail::RailUi,
+    pub picker: theme_picker::Picker,
+    pub keys: keys::KeysUi,
+    pub phone: phone::PhoneUi,
+    /// `settings/app` `uiZoomLevel`.
+    pub zoom: ui::Zoom,
     /// The visible project's panes and tabs.
     pub workspace: Workspace,
     pub(crate) sync: sync::Sync,
@@ -101,7 +129,18 @@ impl Default for State {
             overlays: Overlays::default(),
             route: launch.route,
             theme: theme::DEFAULT_FAMILY,
+            dark: true,
+            preview: None,
             drag_width: None,
+            chats: Chats::default(),
+            shortcuts: shortcuts::State::new(keys::platform()),
+            toasts: Toasts::default(),
+            now: 0.0,
+            rail: rail::RailUi::default(),
+            picker: theme_picker::Picker::default(),
+            keys: keys::KeysUi::default(),
+            phone: phone::PhoneUi::default(),
+            zoom: ui::Zoom::DEFAULT,
             workspace: Workspace::new(Box::new(Uuids::new(seed()))),
             sync: sync::Sync::default(),
         }
@@ -116,6 +155,30 @@ impl State {
             .projects
             .iter()
             .find(|p| p.id == store.active_project_id)
+    }
+
+    /// The tokens the window paints with: the picker's preview, else the saved theme.
+    pub fn tokens(&self) -> &'static Tokens {
+        self.preview
+            .and_then(theme::by_id)
+            .unwrap_or_else(|| theme::tokens(self.theme, self.dark))
+    }
+
+    /// Switches to `id`, closes the phone drawer and returns to the workspace.
+    pub fn select_project(&mut self, id: &str) {
+        self.projects_step(projects::Event::SelectProject(id.to_owned()));
+        self.overlays.close(DRAWER);
+        self.route = Route::Workspace;
+    }
+
+    /// A toast that names a placeholder: the action ports in a later unit.
+    pub fn toast_later(&mut self, what: &str) {
+        self.toasts.push(self.now, ToastKind::Info, what, Some("Not in the Rune client yet"));
+    }
+
+    pub fn toast_error(&mut self, title: &str, detail: &str) {
+        let detail = (!detail.is_empty()).then_some(detail);
+        self.toasts.push(self.now, ToastKind::Error, title, detail);
     }
 
     /// A width the drag is moving, else the saved one.
@@ -151,18 +214,22 @@ fn setup(state: &mut State, wake: Waker) {
     }
 }
 
-fn poll(state: &mut State, now: f64, _tx: &mut Tx) -> bool {
-    let mut changed = false;
+fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
+    state.now = now;
+    let mut changed = state.toasts.expire(now);
     for _ in 0..ui::overlay::history::take_back_presses() {
-        changed |= state.overlays.pop().is_some();
+        changed |= state.close_top();
     }
     changed |= state.pump(now);
+    if let Some(due) = state.toasts.next_expiry() {
+        tx.wake_at(due);
+    }
     state.persist_workspace();
     changed
 }
 
-fn on_key(state: &mut State, key: &KeyEvent, _tx: &mut Tx) -> bool {
-    matches!(key.key, Key::Escape) && state.overlays.pop().is_some()
+fn on_key(state: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
+    keys::on_key(state, key, tx)
 }
 
 /// The app for `launch`. The entries call `run` on it, the desktop one after linking the live

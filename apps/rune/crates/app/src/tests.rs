@@ -6,7 +6,7 @@ use troupe_protocol::ws::WsWatchName;
 
 use crate::{State, view};
 
-fn projects_frame() -> Output {
+pub(crate) fn projects_frame() -> Output {
     let project = |id: &str, name: &str, color: &str| json!({ "id": id, "name": name, "color": color, "path": format!("/w/{name}"), "isArchived": false, "isDefault": id == "p-a" });
     Output::WatchState {
         watch: WsWatchName::Projects,
@@ -18,7 +18,7 @@ fn projects_frame() -> Output {
     }
 }
 
-fn read_reply(call: u64, value: Value) -> Output {
+pub(crate) fn read_reply(call: u64, value: Value) -> Output {
     let revision = if value.is_null() { 0 } else { 3 };
     Output::Reply {
         call,
@@ -28,8 +28,9 @@ fn read_reply(call: u64, value: Value) -> Output {
     }
 }
 
-/// A state that asked for its projects, layout (call 1) and active project (call 2).
-fn connected() -> State {
+/// A state that asked for its projects, its layout (call 1), active project (call 2) and
+/// project prefs (call 3), `settings/app` (4), the shortcuts (5) and the chats (6).
+pub(crate) fn connected() -> State {
     let mut s = State::default();
     s.begin();
     s.apply(Output::Status(Status::Live));
@@ -54,6 +55,8 @@ fn the_registry_waits_for_the_saved_selection_then_selects_it() {
         "held until the device's selection is read"
     );
     s.apply(read_reply(2, json!("p-b")));
+    assert!(names(&s).is_empty(), "held until the project prefs are read");
+    s.apply(read_reply(3, Value::Null));
     assert_eq!(names(&s), ["alpha", "beta", "gamma"]);
     assert_eq!(s.active_project().map(|p| p.name.as_str()), Some("beta"));
 }
@@ -62,6 +65,7 @@ fn the_registry_waits_for_the_saved_selection_then_selects_it() {
 fn a_device_without_a_selection_lands_on_the_host_default() {
     let mut s = connected();
     s.apply(read_reply(2, Value::Null));
+    s.apply(read_reply(3, Value::Null));
     s.apply(projects_frame());
     assert_eq!(s.active_project().map(|p| p.name.as_str()), Some("alpha"));
 }
@@ -75,18 +79,31 @@ fn the_saved_layout_hydrates_the_shell() {
     assert_eq!(s.layout.record.side_panel_width, 420.0);
 }
 
-fn runtime() -> Runtime<State> {
+/// A state with every read answered: the seeded projects, no saved settings, and one chat in
+/// alpha.
+pub(crate) fn loaded() -> State {
     let mut s = connected();
-    s.apply(read_reply(1, Value::Null));
-    s.apply(read_reply(2, Value::Null));
+    for call in 1..=5 {
+        s.apply(read_reply(call, Value::Null));
+    }
     s.apply(projects_frame());
-    let mut rt = Runtime::new(s, view, (1280.0, 800.0), Env::new(true, 1.0));
+    let chat = json!({ "sessionId": "chat-1", "projectId": "p-a", "title": "How does the web client decide", "lastActivityAt": 0.0 });
+    s.apply(Output::Reply { call: 6, result: Ok(Some(json!([chat]))) });
+    s
+}
+
+pub(crate) fn runtime_at(size: (f32, f32)) -> Runtime<State> {
+    let mut rt = Runtime::new(loaded(), view, size, Env::new(true, 1.0));
     rt.frame(0.0);
     rt.frame(0.016);
     rt
 }
 
-fn tap(rt: &mut Runtime<State>, key: &str) {
+fn runtime() -> Runtime<State> {
+    runtime_at((1280.0, 800.0))
+}
+
+pub(crate) fn tap(rt: &mut Runtime<State>, key: &str) {
     let (x, y) = rt
         .find(key)
         .unwrap_or_else(|| panic!("no element keyed {key}"));
@@ -96,7 +113,7 @@ fn tap(rt: &mut Runtime<State>, key: &str) {
     rt.frame(0.032);
 }
 
-fn present(rt: &Runtime<State>, key: &str) -> bool {
+pub(crate) fn present(rt: &Runtime<State>, key: &str) -> bool {
     rt.elements()
         .iter()
         .any(|e| e.key.as_deref() == Some(key) && !e.exiting)
@@ -160,10 +177,14 @@ fn failed(call: u64) -> Output {
     }
 }
 
-/// Alpha selected and shown: its workspace record is read with call 3.
+/// Alpha selected and shown, every read `begin` sent answered (calls 1 to 6): its workspace
+/// record is read with call 7 and its terminals with call 8.
 fn showing_alpha() -> State {
     let mut s = connected();
     s.apply(read_reply(2, json!("p-a")));
+    for call in [3, 4, 5] {
+        s.apply(read_reply(call, Value::Null));
+    }
     s.apply(projects_frame());
     s
 }
@@ -185,7 +206,7 @@ fn tab_kinds(s: &State) -> Vec<String> {
 #[test]
 fn a_workspace_record_that_failed_to_read_is_never_written_over() {
     let mut s = showing_alpha();
-    s.apply(failed(3));
+    s.apply(failed(7));
     assert_eq!(s.workspace.project(), Some("p-a"), "a fresh workspace still shows");
     s.workspace.focus_pane("elsewhere");
     s.persist_workspace();
@@ -195,8 +216,8 @@ fn a_workspace_record_that_failed_to_read_is_never_written_over() {
 #[test]
 fn a_workspace_record_that_does_not_decode_is_never_written_over() {
     let mut s = showing_alpha();
-    s.apply(read_reply(3, json!({ "openFiles": "not a list" })));
-    s.apply(read_reply(4, Value::Null));
+    s.apply(read_reply(7, json!({ "openFiles": "not a list" })));
+    s.apply(read_reply(8, Value::Null));
     s.persist_workspace();
     assert_eq!(s.workspace_writes(), Vec::<&str>::new());
 }
@@ -211,8 +232,8 @@ fn saved_terminal_tabs_survive_while_no_terminal_is_live() {
         ] },
         "activePaneId": "l1"
     });
-    s.apply(read_reply(3, record));
-    s.apply(read_reply(4, json!({ "activeTerminalId": "t1", "terminals": [{ "id": "t1", "name": "Terminal 1", "shell": "bash", "cwd": "/w/alpha" }], "updatedAt": "2026-11-24T00:00:00Z" })));
+    s.apply(read_reply(7, record));
+    s.apply(read_reply(8, json!({ "activeTerminalId": "t1", "terminals": [{ "id": "t1", "name": "Terminal 1", "shell": "bash", "cwd": "/w/alpha" }], "updatedAt": "2026-11-24T00:00:00Z" })));
     assert_eq!(tab_kinds(&s), ["term-t1", "git-/w/alpha"]);
     s.persist_workspace();
     assert_eq!(s.workspace_writes(), ["p-a"]);
@@ -221,11 +242,11 @@ fn saved_terminal_tabs_survive_while_no_terminal_is_live() {
 #[test]
 fn a_failed_workspace_write_is_sent_again_with_the_same_value() {
     let mut s = showing_alpha();
-    s.apply(read_reply(3, Value::Null));
-    s.apply(read_reply(4, Value::Null));
+    s.apply(read_reply(7, Value::Null));
+    s.apply(read_reply(8, Value::Null));
     s.persist_workspace();
     assert_eq!(s.workspace_writes(), ["p-a"]);
-    s.apply(failed(5));
+    s.apply(failed(9));
     s.workspace.revision += 1;
     s.persist_workspace();
     assert_eq!(s.workspace_writes(), ["p-a"], "the same record goes out again");

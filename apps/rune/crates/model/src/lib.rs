@@ -8,6 +8,7 @@
 //! stays on the client and which the server already owns.
 
 pub mod acp;
+pub mod chats;
 pub mod overlay;
 pub mod persistence;
 pub mod prefs;

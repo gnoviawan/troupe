@@ -531,3 +531,42 @@ fn matches_normalized(normalized: &str, shortcut_key: &str, platform: Platform) 
         .collect();
     shortcuts_equal(&aliased.join("+"), shortcut_key)
 }
+
+/// The shortcut a key event fires, in settings order; an empty binding never
+/// fires.
+#[must_use]
+pub fn find_match<'a>(state: &'a State, event: &KeyEvent) -> Option<&'a Shortcut> {
+    state
+        .shortcuts
+        .0
+        .iter()
+        .map(|(_, shortcut)| shortcut)
+        .find(|s| !s.active_key().is_empty() && matches_shortcut(event, s.active_key(), state.platform))
+}
+
+impl Shortcuts {
+    /// Every binding's `customKey` over the platform's defaults, as
+    /// `mergeWithDefaults` reads a saved record: shortcuts added since stay
+    /// on their defaults and unknown ids drop.
+    #[must_use]
+    pub fn merged(saved: &serde_json::Value, platform: Platform) -> Shortcuts {
+        let mut merged = defaults(platform);
+        for (id, shortcut) in &mut merged.0 {
+            shortcut.custom_key = saved
+                .get(id.as_str())
+                .and_then(|s| s.get("customKey"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned);
+        }
+        merged
+    }
+
+    #[must_use]
+    pub fn get(&self, id: &str) -> Option<&Shortcut> {
+        self.0.iter().find(|(slot, _)| slot == id).map(|(_, s)| s)
+    }
+}
+
+#[cfg(test)]
+#[path = "shortcuts_tests.rs"]
+mod tests;

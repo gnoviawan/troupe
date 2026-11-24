@@ -59,6 +59,14 @@ pub(crate) fn anchor(surface: El, anchor: &str, placement: Placement, gap: f32) 
     e.anchored_round()
 }
 
+/// Mounts `surface` at a window point (a context menu's press), below and after it, flipped and
+/// kept inside the window like any anchored surface. The point is keyed `{key}-point`.
+pub fn at_point(key: &str, p: rune::PointerPress, surface: El, layer: &mut Vec<El>) {
+    let point = format!("{key}-point");
+    layer.push(rune::el().key(point.clone()).absolute(p.x, p.y).size(0.0, 0.0));
+    layer.push(anchor(surface, &point, Placement::BottomStart, 0.0));
+}
+
 /// `Popover::new("find").trigger(button).child(body).open(..).on_close(..).build(t, &mut layer)`
 /// returns the trigger wrapped in its anchor (`{key}-trigger`); the surface is keyed
 /// `{key}-content`.
