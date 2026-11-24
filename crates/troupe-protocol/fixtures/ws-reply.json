@@ -131,6 +131,14 @@
       "unmounted": false
     }
   },
+  "check_antigravity_usage": {
+    "id": "req-ag-102",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "Usage checks run only on the Antigravity agent"
+    }
+  },
   "close_session": {
     "id": "req-106",
     "ok": false,

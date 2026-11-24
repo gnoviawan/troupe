@@ -1,0 +1,170 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+use super::{run_usage_command, Failure};
+use crate::acp::antigravity_accounts::usage::AntigravityUsageStatus;
+use crate::acp::config::AgentConfig;
+use crate::acp::manager::real_loop_tests::{find_python, SKIP_ENV, TIMEOUT_TEST_LOCK};
+use crate::acp::manager::AcpManager;
+
+const MOCK_AGENT: &str = r#"
+import json, os, sys
+
+def send(obj):
+    sys.stdout.write(json.dumps(obj) + "\n")
+    sys.stdout.flush()
+
+def update(update):
+    send({"jsonrpc": "2.0", "method": "session/update",
+          "params": {"sessionId": "s1", "update": update}})
+
+with open(os.environ["MOCK_PROMPTS_FILE"], "w") as f:
+    pass
+
+for line in sys.stdin:
+    msg = json.loads(line)
+    method, rid = msg.get("method"), msg.get("id")
+    if method == "initialize":
+        send({"jsonrpc": "2.0", "id": rid, "result": {
+            "protocolVersion": 1, "agentCapabilities": {}, "authMethods": []}})
+    elif method == "session/new":
+        send({"jsonrpc": "2.0", "id": rid, "result": {"sessionId": "s1", "_meta": {
+            "antigravity": {"tier": {"name": "Google AI Pro", "id": "g1-pro-tier",
+                                     "upgradeUri": ""}}}}})
+        commands = [{"name": "logout", "description": "Sign out."}]
+        if os.environ.get("MOCK_USAGE") == "1":
+            commands.append({"name": "usage",
+                             "description": "Show model token usage and quota limits."})
+        update({"sessionUpdate": "available_commands_update",
+                "availableCommands": commands})
+    elif method == "session/prompt":
+        text = msg["params"]["prompt"][0]["text"]
+        with open(os.environ["MOCK_PROMPTS_FILE"], "a") as f:
+            f.write(text + "\n")
+        update({"sessionUpdate": "agent_message_chunk",
+                "content": {"type": "text", "text": os.environ["MOCK_REPLY"]}})
+        send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
+"#;
+
+const REPLY: &str = "### Session Usage
+- **Session total:** data not available yet
+
+### Quota Limits
+- **Gemini Models**
+  - **Weekly Limit Remaining:** 91% remaining (resets Oct 02, 2026, 14:00 UTC)
+- **Claude and GPT models**
+  - **Weekly Limit Remaining:** 100% remaining";
+
+struct Mock {
+    acp: Arc<AcpManager>,
+    dir: tempfile::TempDir,
+    python: &'static str,
+    _serial: tokio::sync::MutexGuard<'static, ()>,
+}
+
+impl Mock {
+    async fn new() -> Option<Self> {
+        let Some(python) = find_python() else {
+            if std::env::var(SKIP_ENV).as_deref() == Ok("1") {
+                eprintln!("SKIP usage check tests: no python interpreter ({SKIP_ENV}=1)");
+                return None;
+            }
+            panic!("usage check tests need `python3` on PATH, or {SKIP_ENV}=1 to skip");
+        };
+        let serial = TIMEOUT_TEST_LOCK.lock().await;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("mock_agent.py"), MOCK_AGENT).unwrap();
+        Some(Self {
+            acp: Arc::new(AcpManager::new(vec![])),
+            dir,
+            python,
+            _serial: serial,
+        })
+    }
+
+    fn config(&self, offers_usage: bool) -> AgentConfig {
+        let env = HashMap::from([
+            ("MOCK_USAGE".to_string(), u8::from(offers_usage).to_string()),
+            ("MOCK_REPLY".to_string(), REPLY.to_string()),
+            (
+                "MOCK_PROMPTS_FILE".to_string(),
+                self.prompts_file().to_string_lossy().into_owned(),
+            ),
+        ]);
+        AgentConfig {
+            config_id: None,
+            name: "mock-antigravity".to_string(),
+            command: self.python.to_string(),
+            args: vec![
+                "-u".to_string(),
+                self.dir
+                    .path()
+                    .join("mock_agent.py")
+                    .to_string_lossy()
+                    .into_owned(),
+            ],
+            env,
+            allow_terminal: false,
+        }
+    }
+
+    fn prompts_file(&self) -> std::path::PathBuf {
+        self.dir.path().join("prompts")
+    }
+
+    fn prompts(&self) -> String {
+        std::fs::read_to_string(self.prompts_file()).unwrap_or_default()
+    }
+
+    async fn run(&self, offers_usage: bool) -> Result<String, Failure> {
+        run_usage_command(
+            &self.acp,
+            "work",
+            self.config(offers_usage),
+            self.dir.path().join("scratch"),
+        )
+        .await
+    }
+
+    fn no_agent_left(&self) -> bool {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !self.acp.list_agents().is_empty() {
+            if Instant::now() >= deadline {
+                return false;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        true
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_check_sends_usage_returns_the_agent_text_and_stops_the_agent() {
+    let Some(mock) = Mock::new().await else {
+        return;
+    };
+
+    let reply = mock.run(true).await.expect("the check reads the reply");
+
+    assert_eq!(reply, REPLY);
+    assert_eq!(mock.prompts(), "/usage\n");
+    assert!(mock.dir.path().join("scratch").is_dir());
+    assert!(mock.no_agent_left());
+    let read = mock.acp.antigravity_agent().usage_book().read("work");
+    assert_eq!(read.plan_type.as_deref(), Some("Google AI Pro"));
+    assert_eq!(read.status, AntigravityUsageStatus::NotChecked);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_agent_without_usage_is_never_prompted_and_is_stopped() {
+    let Some(mock) = Mock::new().await else {
+        return;
+    };
+
+    let failure = mock.run(false).await.expect_err("no /usage command");
+
+    assert!(matches!(failure, Failure::NoUsageCommand), "{failure:?}");
+    assert_eq!(mock.prompts(), "");
+    assert!(mock.no_agent_left());
+}

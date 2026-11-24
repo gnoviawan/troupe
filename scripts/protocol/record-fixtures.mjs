@@ -667,6 +667,11 @@ async function recordWs() {
 
   await ws.request('list_antigravity_accounts', {})
   await ws.request('list_antigravity_usage', {})
+  await ws.request(
+    'check_antigravity_usage',
+    { accountId: 'missing-account', config: fakeAgent },
+    { commandId: 'fixture-antigravity-check' }
+  )
   const antigravity = await ws.request(
     'add_antigravity_account',
     { name: 'Fixture' },

@@ -277,3 +277,79 @@ async fn a_signed_out_spawn_error_maps_to_the_antigravity_code() {
         "The Antigravity account \"Work\" is not signed in."
     );
 }
+
+fn antigravity_config(config_id: &str) -> Value {
+    json!({
+        "configId": config_id,
+        "name": "Antigravity",
+        "command": "agy_acp_server_that_does_not_exist",
+        "args": [],
+        "env": {}
+    })
+}
+
+#[tokio::test]
+async fn listing_usage_never_starts_a_check() {
+    let (_root, acp) = manager_with_account(&[]);
+    acp.antigravity_agent().record_tier("ab12", "Google AI Pro");
+
+    for n in 0..3 {
+        let reply = handle_list_antigravity_usage(n.to_string(), &acp);
+        let usage = reply.payload.unwrap()["usage"].clone();
+        assert_eq!(usage[0]["status"], "not_checked");
+        assert_eq!(usage[1]["status"], "not_checked");
+        assert_eq!(usage[1]["planType"], "Google AI Pro");
+        assert_eq!(usage[1]["checkedAt"], 0);
+    }
+    assert!(acp.list_agents().is_empty());
+}
+
+#[tokio::test]
+async fn a_usage_check_refuses_other_agents_and_unknown_accounts_before_a_process_starts() {
+    let (_root, acp) = manager_with_account(&[]);
+
+    let other = handle_check_antigravity_usage(
+        "1".into(),
+        &json!({ "accountId": "ab12", "config": antigravity_config("acp-registry:claude-acp") }),
+        &acp,
+    )
+    .await;
+    let unknown = handle_check_antigravity_usage(
+        "2".into(),
+        &json!({ "accountId": "ffff", "config": antigravity_config("acp-registry:antigravity-acp") }),
+        &acp,
+    )
+    .await;
+    let malformed =
+        handle_check_antigravity_usage("3".into(), &json!({ "accountId": "ab12" }), &acp).await;
+
+    assert_eq!(
+        other.err.unwrap().message,
+        "Usage checks run only on the Antigravity agent"
+    );
+    assert_eq!(
+        unknown.err.unwrap().message,
+        "That Antigravity account does not exist"
+    );
+    assert_eq!(malformed.err.unwrap().code, "unsupported");
+    assert!(acp.list_agents().is_empty());
+}
+
+#[tokio::test]
+async fn a_signed_out_account_check_answers_signed_out_without_a_process() {
+    let (_root, acp) = manager_with_account(&["ab12"]);
+
+    let reply = handle_check_antigravity_usage(
+        "1".into(),
+        &json!({ "accountId": "ab12", "config": antigravity_config("acp-registry:antigravity-acp") }),
+        &acp,
+    )
+    .await;
+
+    let usage = reply.payload.unwrap()["usage"].clone();
+    assert_eq!(usage["status"], "signed_out");
+    assert_eq!(usage["accountId"], "ab12");
+    assert!(acp.list_agents().is_empty());
+    let listed = handle_list_antigravity_usage("2".into(), &acp);
+    assert_eq!(listed.payload.unwrap()["usage"][1]["status"], "signed_out");
+}
