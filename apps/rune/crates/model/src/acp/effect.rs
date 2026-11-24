@@ -6,6 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::FlightId;
+use super::answer::Answer;
 use super::auth_retry::{AuthRetryId, OnDemand};
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
@@ -205,6 +206,9 @@ pub enum Effect {
     },
     /// Delete the files the app staged for the session (pasted images).
     DeleteSessionTempFiles { session_id: String },
+    /// Send the user's answer to a prompt; hand a refusal back as
+    /// `Event::AnswerFailed`.
+    Answer(Answer),
     /// Ask the agent to delete its own session (`session/delete`); then
     /// `SessionCommandDone` or `SessionCommandFailed`.
     DeleteAgentSession {
