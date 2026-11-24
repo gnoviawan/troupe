@@ -372,7 +372,25 @@
     },
     "ChatReadMark": {
       "additionalProperties": false,
-      "description": "`mark_chat_read` request payload and reply: a chat's shared last-read\nmarker. `logEpoch` is absent only from a peer that predates it.",
+      "description": "`mark_chat_read` request payload: a chat's shared last-read marker.\n`logEpoch` is absent only from a peer that predates it.",
+      "properties": {
+        "logEpoch": {
+          "type": "string"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "seq"],
+      "type": "object"
+    },
+    "ChatReadMarkReply": {
+      "description": "`mark_chat_read` reply: the marker as it stands. Unlike the request it\naccepts fields it does not name, so a client keeps reading the reply after\nthe host adds one.",
       "properties": {
         "logEpoch": {
           "type": "string"

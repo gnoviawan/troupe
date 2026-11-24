@@ -182,10 +182,21 @@ export type ChatHistoryWatchDelta = {
 }
 
 /**
- * `mark_chat_read` request payload and reply: a chat's shared last-read
- * marker. `logEpoch` is absent only from a peer that predates it.
+ * `mark_chat_read` request payload: a chat's shared last-read marker.
+ * `logEpoch` is absent only from a peer that predates it.
  */
 export type ChatReadMark = {
+  logEpoch?: string
+  seq: number
+  sessionId: string
+}
+
+/**
+ * `mark_chat_read` reply: the marker as it stands. Unlike the request it
+ * accepts fields it does not name, so a client keeps reading the reply after
+ * the host adds one.
+ */
+export type ChatReadMarkReply = {
   logEpoch?: string
   seq: number
   sessionId: string

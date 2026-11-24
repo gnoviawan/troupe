@@ -167,7 +167,7 @@ describe('troupe-protocol fixtures', () => {
       ['get_session_cursor', 'SessionCursorReply'],
       ['store_read', 'StoreReadReply'],
       ['watch', 'WsWatchReply'],
-      ['mark_chat_read', 'ChatReadMark'],
+      ['mark_chat_read', 'ChatReadMarkReply'],
       ['canvas_mount', 'WsCanvasMountReply']
     ]
     for (const [request, type] of typed) {

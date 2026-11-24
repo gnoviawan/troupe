@@ -109,6 +109,7 @@ pub fn protocol_schema() -> Value {
     add::<ws::DeleteSessionPayload>(g);
     add::<ws::RecordAgentSwitchPayload>(g);
     add::<ws::ChatReadMark>(g);
+    add::<ws::ChatReadMarkReply>(g);
     add::<ws::SessionSubscribeReply>(g);
     add::<ws::SessionSnapshotEvent>(g);
     add::<ws::SessionCursorReply>(g);

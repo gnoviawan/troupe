@@ -76,11 +76,23 @@ pub struct RecordAgentSwitchPayload {
     pub summary_text: String,
 }
 
-/// `mark_chat_read` request payload and reply: a chat's shared last-read
-/// marker. `logEpoch` is absent only from a peer that predates it.
+/// `mark_chat_read` request payload: a chat's shared last-read marker.
+/// `logEpoch` is absent only from a peer that predates it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ChatReadMark {
+    pub session_id: String,
+    pub seq: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log_epoch: Option<String>,
+}
+
+/// `mark_chat_read` reply: the marker as it stands. Unlike the request it
+/// accepts fields it does not name, so a client keeps reading the reply after
+/// the host adds one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatReadMarkReply {
     pub session_id: String,
     pub seq: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
