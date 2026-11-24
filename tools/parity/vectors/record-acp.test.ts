@@ -10,6 +10,8 @@ import {
   emit,
   type Manifest,
   manifestEntry,
+  mcpReplies,
+  mcpSharedSync,
   OUT_DIR,
   openChatTabs,
   platform,
@@ -45,7 +47,12 @@ vi.mock(`${renderer}/lib/tauri-runtime`, async (importOriginal) => ({
 vi.mock(`${renderer}/lib/log-api`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   logFrontendError: (payload: { level: string; source: string; message: string }) => {
-    emit({ kind: 'log', level: payload.level, source: payload.source, message: payload.message })
+    emit({
+      kind: 'log',
+      level: payload.level ?? 'error',
+      source: payload.source,
+      message: payload.message
+    })
     return Promise.resolve()
   }
 }))
@@ -81,10 +88,19 @@ vi.mock(`${renderer}/lib/acp-agents-persistence`, async (importOriginal) => ({
   loadAgentConfigs: async () => [],
   saveAgentConfigs: async () => {}
 }))
+// The MCP registry's disk is the model's `loadMcpServers` and `saveMcpServers`
+// effects; both answer `context.mcpReplies`.
 vi.mock(`${renderer}/lib/acp-mcp-persistence`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  loadMcpServers: async () => [],
-  saveMcpServers: async () => {}
+  loadMcpServers: () => mcpCommand({ kind: 'loadMcpServers' }),
+  saveMcpServers: (servers: unknown) => mcpCommand({ kind: 'saveMcpServers', servers })
+}))
+vi.mock(`${renderer}/lib/shared-key-sync`, () => ({
+  syncSharedKey: (_key: string, apply: (change: unknown) => void) => {
+    emit({ kind: 'watchSharedMcpServers' })
+    mcpSharedSync.apply = apply
+    return () => {}
+  }
 }))
 vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -219,6 +235,41 @@ function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
   }
   return Promise.resolve(reply)
 }
+// An MCP command answers the next `context.mcpReplies` entry: `{ reject }`
+// fails it (an `McpOAuthError` with `code`), `{ hold: true }` leaves it in
+// flight, anything else is the reply. An OAuth start's `authUrl` reaches the
+// paste-back callback first (with `hold`, the dialog stays), and a held start
+// rejects as cancelled once its signal aborts, as on the web.
+function mcpCommand(
+  effect: Record<string, unknown>,
+  options: { signal?: AbortSignal; onAuthUrl?: (url: string, redirect: string) => void } = {}
+): Promise<never> {
+  emit(effect)
+  options.signal?.addEventListener('abort', () => emit({ kind: 'abortMcpOAuth', url: effect.url }))
+  const reply = mcpReplies.shift() ?? null
+  if (typeof reply === 'object' && reply !== null) {
+    const fields = reply as Record<string, unknown>
+    if (typeof fields.authUrl === 'string') {
+      options.onAuthUrl?.(fields.authUrl, String(fields.redirectUri))
+    }
+    if ('reject' in fields) {
+      const message = String(fields.reject)
+      return Promise.reject(
+        typeof fields.code === 'string'
+          ? new McpOAuthError(message, fields.code)
+          : new Error(message)
+      )
+    }
+    if ('hold' in fields) {
+      return new Promise((_resolve, reject) =>
+        options.signal?.addEventListener('abort', () =>
+          reject(new McpOAuthError('OAuth sign-in cancelled', 'OAUTH_CANCELLED'))
+        )
+      )
+    }
+  }
+  return Promise.resolve(reply as never)
+}
 vi.mock(`${renderer}/lib/acp-auth-method-memory`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   saveAuthMethodMemory: async (methods: unknown) => emit({ kind: 'persistAuthMethods', methods })
@@ -227,6 +278,7 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
   const actual = await importOriginal<{ acpApi: object }>()
   return {
     ...actual,
+    answerMcpInstall: (request: unknown) => mcpCommand({ kind: 'answerMcpInstall', request }),
     acpApi: {
       ...actual.acpApi,
       sendPrompt: (agentId: string, sessionId: string, text: string, turnId: string) =>
@@ -240,6 +292,18 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      probeMcpServer: (config: unknown) => mcpCommand({ kind: 'probeMcpServer', config }),
+      startMcpOAuth: (
+        projectId: string,
+        url: string,
+        options: { signal?: AbortSignal; onAuthUrl?: (url: string, redirect: string) => void }
+      ) => mcpCommand({ kind: 'startMcpOAuth', projectId, url }, options),
+      completeMcpOAuth: (projectId: string, callbackUrl: string) =>
+        mcpCommand({ kind: 'completeMcpOAuth', projectId, callbackUrl }),
+      hasMcpOAuthToken: (projectId: string, url: string) =>
+        mcpCommand({ kind: 'hasMcpOAuthToken', projectId, url }),
+      disconnectMcpOAuth: (projectId: string, url: string) =>
+        mcpCommand({ kind: 'disconnectMcpOAuth', projectId, url }),
       authenticate: (agentId: string, methodId: string, input?: unknown) =>
         agentCommand({ kind: 'authenticate', agentId, methodId, ...(input ? { input } : {}) }),
       logout: (agentId: string) => agentCommand({ kind: 'logout', agentId }),
@@ -286,6 +350,7 @@ vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) 
   }
 }))
 
+const { McpOAuthError } = await import('../../../src/renderer/lib/acp-api')
 const { acpRecorder, acpScenarios } = await import('./stores/acp')
 
 const ACP_OUT = join(OUT_DIR, 'acp')

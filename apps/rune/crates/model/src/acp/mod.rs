@@ -19,6 +19,11 @@ mod index;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
+pub mod mcp;
+mod mcp_install;
+mod mcp_oauth;
+#[cfg(test)]
+mod mcp_tests;
 mod picks;
 mod plan;
 pub mod prompt;
@@ -55,6 +60,7 @@ use approvals::{
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
 pub use effect::Effect;
+use mcp::{McpBook, McpError, RegistryOp};
 use picks::PickOptions;
 pub use plan::is_plan_tool;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
@@ -121,6 +127,45 @@ pub struct State {
     pub launching_session_ids: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// The user's MCP servers, as the registry saved them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mcp_servers: Vec<Object>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub mcp_servers_loaded: bool,
+    /// The agent's MCP install requests, by request id.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub pending_mcp_installs: BTreeMap<String, Value>,
+    /// Per server id, what Troupe's own probe reached.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probe_status: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_tools: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_tools_loaded: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probing: BTreeMap<String, Value>,
+    /// Per server id, the redacted reason a probe could not connect.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probe_error: BTreeMap<String, Value>,
+    #[serde(
+        default,
+        rename = "mcpOAuthConnecting",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_connecting: BTreeMap<String, Value>,
+    #[serde(
+        default,
+        rename = "mcpOAuthConnected",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_connected: BTreeMap<String, Value>,
+    /// Per server id, the web sign-in whose callback the user pastes back.
+    #[serde(
+        default,
+        rename = "mcpOAuthPasteBack",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_paste_back: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -227,6 +272,11 @@ pub struct Book {
     /// Sessions whose durability probe is in flight.
     #[serde(skip)]
     pub(crate) durability_probes: BTreeSet<String>,
+    /// The shared MCP registry watch started; the store starts it once.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub mcp_shared_sync: bool,
+    #[serde(skip)]
+    pub(crate) mcp: McpBook,
 }
 
 impl Book {
@@ -460,6 +510,62 @@ pub enum Event {
     NoteLiveTurnReplayFloor(String, f64),
     #[serde(rename = "clearSessionBackfill")]
     ClearSessionBackfill(String),
+    #[serde(rename = "loadMcpServers")]
+    LoadMcpServers(#[serde(default)] Vec<Value>),
+    #[serde(rename = "saveMcpServer")]
+    SaveMcpServer(Object),
+    #[serde(rename = "importMcpServers")]
+    ImportMcpServers(Vec<Object>),
+    #[serde(rename = "saveCatalogInstall")]
+    SaveCatalogInstall(Value),
+    #[serde(rename = "setMcpServerEnabled")]
+    SetMcpServerEnabled(String, Value),
+    #[serde(rename = "deleteMcpServer")]
+    DeleteMcpServer(String),
+    #[serde(rename = "_onMcpRegistryChanged")]
+    McpRegistryChanged(#[serde(default)] Value),
+    #[serde(rename = "probeMcpServer")]
+    ProbeMcpServer(String),
+    #[serde(rename = "loadMcpTools")]
+    LoadMcpTools(String),
+    #[serde(rename = "connectMcpOAuth")]
+    ConnectMcpOAuth(String, String),
+    #[serde(rename = "completeMcpOAuthPaste")]
+    CompleteMcpOAuthPaste(String, String),
+    #[serde(rename = "cancelMcpOAuth")]
+    CancelMcpOAuth(String),
+    #[serde(rename = "checkMcpOAuthStatus")]
+    CheckMcpOAuthStatus(String, String),
+    #[serde(rename = "disconnectMcpOAuth")]
+    DisconnectMcpOAuth(String, String),
+    #[serde(rename = "answerMcpInstall")]
+    AnswerMcpInstall(
+        String,
+        String,
+        #[serde(default)] Option<Value>,
+        #[serde(default)] Option<Value>,
+        #[serde(default)] Option<Value>,
+        #[serde(default)] Option<Value>,
+    ),
+    #[serde(rename = "dismissMcpInstall")]
+    DismissMcpInstall(String),
+    #[serde(rename = "_onMcpInstallRequest")]
+    McpInstallRequest(Value),
+    #[serde(rename = "_onMcpInstallResolved")]
+    McpInstallResolved(Value),
+    /// Another browser or device saved the shared MCP registry; `data` is
+    /// the list as the app normalized it.
+    #[serde(rename = "mcpSharedChanged")]
+    McpSharedChanged(Value),
+    /// An MCP command effect answered with this reply.
+    #[serde(skip_deserializing)]
+    McpCommandDone(Effect, Value),
+    /// An MCP command effect failed.
+    #[serde(skip_deserializing)]
+    McpCommandFailed(Effect, McpError),
+    /// A web OAuth start knows its sign-in link and redirect address.
+    #[serde(skip_deserializing)]
+    McpOAuthAuthUrl(Effect, String, String),
     /// What an [`Effect::ReadSessionPayload`] read.
     #[serde(skip_deserializing)]
     SessionPayloadRead(Effect, PayloadReadOutcome),
@@ -588,6 +694,60 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ClearSessionBackfill(session_id) => {
             state.clear_session_backfill(&session_id, &mut fx);
+        }
+        Event::LoadMcpServers(_) => state.load_mcp_servers(&mut fx),
+        Event::SaveMcpServer(server) => {
+            state.queue_mcp_write(RegistryOp::Save(server), env, &mut fx);
+        }
+        Event::ImportMcpServers(servers) => {
+            state.queue_mcp_write(RegistryOp::Import(servers), env, &mut fx);
+        }
+        Event::SaveCatalogInstall(result) => {
+            state.queue_mcp_write(RegistryOp::Catalog(result), env, &mut fx);
+        }
+        Event::SetMcpServerEnabled(id, enabled) => {
+            state.queue_mcp_write(RegistryOp::SetEnabled(id, enabled), env, &mut fx);
+        }
+        Event::DeleteMcpServer(id) => state.queue_mcp_write(RegistryOp::Delete(id), env, &mut fx),
+        Event::McpRegistryChanged(_) => state.queue_mcp_write(RegistryOp::Reload, env, &mut fx),
+        Event::ProbeMcpServer(id) => state.probe_mcp_server(&id, &mut fx),
+        Event::LoadMcpTools(id) => state.load_mcp_tools(&id, &mut fx),
+        Event::ConnectMcpOAuth(project_id, id) => state.connect_mcp_oauth(project_id, id, &mut fx),
+        Event::CompleteMcpOAuthPaste(id, callback_url) => {
+            state.complete_mcp_oauth_paste(id, callback_url, &mut fx);
+        }
+        Event::CancelMcpOAuth(id) => state.cancel_mcp_oauth(&id, &mut fx),
+        Event::CheckMcpOAuthStatus(project_id, id) => {
+            state.check_mcp_oauth_status(project_id, id, &mut fx);
+        }
+        Event::DisconnectMcpOAuth(project_id, id) => {
+            state.disconnect_mcp_oauth(project_id, id, &mut fx);
+        }
+        Event::AnswerMcpInstall(request_id, decision, inputs, secrets, plan_id, digest) => {
+            let answer = mcp::InstallAnswer {
+                request_id,
+                decision,
+                inputs,
+                secrets,
+                plan_id,
+                digest,
+            };
+            state.answer_mcp_install(answer, &mut fx);
+        }
+        Event::DismissMcpInstall(request_id) => {
+            state.pending_mcp_installs.remove(&request_id);
+        }
+        Event::McpInstallRequest(event) => state.on_mcp_install_request(event),
+        Event::McpInstallResolved(event) => state.on_mcp_install_resolved(event),
+        Event::McpSharedChanged(change) => state.on_mcp_shared_changed(change, &mut fx),
+        Event::McpCommandDone(command, reply) => {
+            state.on_mcp_command(command, Ok(reply), env, &mut fx);
+        }
+        Event::McpCommandFailed(command, error) => {
+            state.on_mcp_command(command, Err(error), env, &mut fx);
+        }
+        Event::McpOAuthAuthUrl(start, auth_url, redirect_uri) => {
+            state.on_mcp_oauth_auth_url(start, auth_url, redirect_uri);
         }
         Event::SessionPayloadRead(read, outcome) => {
             state.on_session_payload_read(read, outcome, &mut fx);

@@ -30,6 +30,8 @@ import {
   configReplies,
   dispatchOutcomes,
   emit,
+  mcpReplies,
+  mcpSharedSync,
   openChatTabs,
   platform,
   type StoreRecorder,
@@ -86,10 +88,49 @@ attachAgentRosterWatch(
   () => useAcpStore.getState()
 )
 
+/** The MCP fields, snapshotted only once a vector set one. */
+const MCP_KEYS = [
+  'mcpServers',
+  'mcpServersLoaded',
+  'pendingMcpInstalls',
+  'mcpProbeStatus',
+  'mcpOAuthConnecting',
+  'mcpOAuthConnected',
+  'mcpOAuthPasteBack',
+  'mcpTools',
+  'mcpToolsLoaded',
+  'mcpProbing',
+  'mcpProbeError'
+] as const
+
+const MCP_FRESH = {
+  mcpServers: [],
+  mcpServersLoaded: false,
+  pendingMcpInstalls: {},
+  mcpProbeStatus: {},
+  mcpOAuthConnecting: {},
+  mcpOAuthConnected: {},
+  mcpOAuthPasteBack: {},
+  mcpTools: {},
+  mcpToolsLoaded: {},
+  mcpProbing: {},
+  mcpProbeError: {}
+}
+
+/** `value` as JSON keeps it, when that is not empty, `false` or `[]`. */
+function setField(value: unknown): unknown {
+  const plain = value === undefined ? undefined : JSON.parse(JSON.stringify(value))
+  if (plain === false || plain === undefined) return undefined
+  if (typeof plain === 'object' && plain !== null && Object.keys(plain).length === 0)
+    return undefined
+  return plain
+}
+
 /** Module functions a step may call besides the store's actions. */
 const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
   noteHistoryWatermark: shared.noteHistoryWatermark,
   noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor,
+  mcpSharedChanged: (change: unknown) => mcpSharedSync.apply?.(change),
   agentsWatchState: (state: unknown) => agentsWatch.onState?.(state),
   agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta)
 }
@@ -133,7 +174,10 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/agent-roster-watch.ts',
     'src/renderer/stores/acp-store/browser-agent-tabs.ts',
     'src/renderer/stores/acp-store/session-agent-config.ts',
-    'src/shared/types/antigravity-accounts.types.ts'
+    'src/shared/types/antigravity-accounts.types.ts',
+    'src/renderer/stores/acp-store/slices/mcp.ts',
+    'src/renderer/lib/acp-mcp-persistence.ts',
+    'src/renderer/lib/mcp-install-request.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -165,6 +209,7 @@ export const acpRecorder: StoreRecorder = {
     configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
     composerRecord.saved = context.composerOptions ?? null
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
+    mcpReplies.splice(0, mcpReplies.length, ...((context.mcpReplies as unknown[]) ?? []))
     _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
     platform.desktop = context.desktop === true
@@ -179,7 +224,11 @@ export const acpRecorder: StoreRecorder = {
       dispose: () => {}
     } as unknown as AcpTransport)
     clock = typeof context.now === 'number' ? context.now : NOW
-    useAcpStore.setState({ ...FRESH, pendingBrowserConsents: {} } as Partial<AcpState>)
+    useAcpStore.setState({
+      ...FRESH,
+      ...MCP_FRESH,
+      pendingBrowserConsents: {}
+    } as Partial<AcpState>)
   },
   seed(initial) {
     useAcpStore.setState(initial as Partial<AcpState>)
@@ -188,9 +237,16 @@ export const acpRecorder: StoreRecorder = {
     const state = useAcpStore.getState()
     return {
       ...Object.fromEntries(DATA_KEYS.map((key) => [key, state[key]])),
+      ...Object.fromEntries(
+        MCP_KEYS.map((key) => [key, setField(state[key])]).filter(
+          ([, value]) => value !== undefined
+        )
+      ),
       book: {
         seq: peekSeq(),
         historyWatermarks: Object.fromEntries(shared.historySeqWatermarks),
+        // The store starts the shared registry watch once per page.
+        ...(mcpSharedSync.apply ? { mcpSharedSync: true } : {}),
         // The auth bookkeeping, only once a vector touched it.
         ...(authenticatedAgents.size > 0
           ? { authenticatedAgents: [...authenticatedAgents].sort() }
@@ -234,6 +290,7 @@ import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
+import { mcpScenarios } from './acp-scenarios-mcp'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { restoreScenarios } from './acp-scenarios-restore'
@@ -256,5 +313,6 @@ export const acpScenarios = [
   ...restoreScenarios,
   ...agentCommandScenarios,
   ...rosterScenarios,
-  ...windowScenarios
+  ...windowScenarios,
+  ...mcpScenarios
 ]

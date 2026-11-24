@@ -38,7 +38,10 @@
         "src/renderer/stores/acp-store/agent-roster-watch.ts": "ce955780d8e578d22b0705e7ae4534a94193c582",
         "src/renderer/stores/acp-store/browser-agent-tabs.ts": "17e0cfcad6dc3306c3d6823cc293f1f9b9c11130",
         "src/renderer/stores/acp-store/session-agent-config.ts": "5d19019e0ef31394b751fa19ac5509a460d5f46d",
-        "src/shared/types/antigravity-accounts.types.ts": "77987cc285f72c3d0305ffa90f16aa24b294c55b"
+        "src/shared/types/antigravity-accounts.types.ts": "77987cc285f72c3d0305ffa90f16aa24b294c55b",
+        "src/renderer/stores/acp-store/slices/mcp.ts": "a0c6e6daa0b96171edd28c548d539f808aee1626",
+        "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
+        "src/renderer/lib/mcp-install-request.ts": "39fbc1fb23e5bf1a8704eaa8450de163df2c9647"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -258,7 +261,21 @@
         "live_tool_calls_plateau_at_the_bound_keeping_in_flight_calls",
         "live_tool_calls_keep_a_finished_subagent_dispatch",
         "live_tool_calls_leave_a_summary_of_a_dropped_file_change",
-        "live_tool_calls_over_the_bound_in_flight_keep_the_newest"
+        "live_tool_calls_over_the_bound_in_flight_keep_the_newest",
+        "mcp_load_sets_the_list_and_starts_the_shared_watch",
+        "mcp_load_failure_logs_and_toasts",
+        "mcp_save_adds_or_replaces_and_reprobes_an_edited_server",
+        "mcp_registry_writes_roll_back_when_the_save_fails",
+        "mcp_catalog_install_names_and_saves_the_entry",
+        "mcp_delete_clears_the_server_state",
+        "mcp_probe_records_the_result",
+        "mcp_oauth_connect_confirms_the_token_and_probes",
+        "mcp_oauth_connect_failure_rejects_and_a_cancel_does_not",
+        "mcp_oauth_paste_back_and_a_cancel_of_the_held_flow",
+        "mcp_oauth_paste_back_of_an_unknown_state_checks_the_token",
+        "mcp_oauth_status_and_disconnect",
+        "mcp_install_requests_answers_and_outcomes",
+        "mcp_registry_change_reloads_the_list"
       ]
     }
   }

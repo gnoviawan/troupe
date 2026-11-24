@@ -133890,5 +133890,8300 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_load_sets_the_list_and_starts_the_shared_watch",
+  "context": {
+   "mcpReplies": [
+    [
+     {
+      "id": "a",
+      "type": "http",
+      "name": "srv-a",
+      "url": "https://a.example/mcp",
+      "headers": [],
+      "enabled": true
+     },
+     {
+      "id": "b",
+      "type": "stdio",
+      "name": "cmd-b",
+      "command": "npx",
+      "args": [
+       "server"
+      ],
+      "env": [],
+      "enabled": true
+     }
+    ],
+    {
+     "status": "connected",
+     "tools": [
+      {
+       "name": "search"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 29600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadMcpServers",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "loadMcpServers"
+     },
+     {
+      "kind": "watchSharedMcpServers"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "mcpSharedChanged",
+     "args": [
+      {
+       "exists": true,
+       "data": [
+        {
+         "id": "a",
+         "type": "http",
+         "name": "srv-a",
+         "url": "https://moved.example/mcp",
+         "headers": [],
+         "enabled": true
+        },
+        {
+         "id": "b",
+         "type": "stdio",
+         "name": "cmd-b",
+         "command": "npx",
+         "args": [
+          "server"
+         ],
+         "env": [],
+         "enabled": true
+        },
+        {
+         "id": "c",
+         "type": "http",
+         "name": "srv-c",
+         "url": "https://c.example/mcp",
+         "headers": [],
+         "enabled": true
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "book": {
+      "seq": 29600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "mcpSharedChanged",
+     "args": [
+      {
+       "exists": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "book": {
+      "seq": 29600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "mcpSharedChanged",
+     "args": [
+      {
+       "exists": true,
+       "data": [
+        {
+         "id": "z",
+         "type": "http",
+         "name": "srv-z",
+         "url": "https://z.example/mcp",
+         "headers": [],
+         "enabled": true
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "z",
+       "type": "http",
+       "name": "srv-z",
+       "url": "https://z.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "book": {
+      "seq": 29600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "mcpSharedChanged",
+     "args": [
+      {
+       "exists": false,
+       "data": [
+        {
+         "id": "z",
+         "type": "http",
+         "name": "srv-z",
+         "url": "https://z.example/mcp",
+         "headers": [],
+         "enabled": true
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "book": {
+      "seq": 29600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_load_failure_logs_and_toasts",
+  "context": {
+   "mcpReplies": [
+    {
+     "reject": "disk gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 29700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadMcpServers",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "loadMcpServers"
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.loadMcpServers",
+      "message": "Failed to load MCP registry (Error: disk gone)"
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Could not load MCP servers. Try reopening Settings."
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 29700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_save_adds_or_replaces_and_reprobes_an_edited_server",
+  "context": {
+   "mcpReplies": [
+    null,
+    null,
+    null,
+    {
+     "status": "connected",
+     "tools": [
+      {
+       "name": "search"
+      }
+     ]
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "b",
+     "type": "stdio",
+     "name": "cmd-b",
+     "command": "npx",
+     "args": [
+      "server"
+     ],
+     "env": [],
+     "enabled": false
+    }
+   ],
+   "mcpServersLoaded": true,
+   "mcpProbeStatus": {
+    "a": "connected",
+    "b": "disconnected"
+   },
+   "mcpTools": {
+    "a": [
+     {
+      "name": "search"
+     }
+    ]
+   },
+   "mcpToolsLoaded": {
+    "a": true
+   },
+   "mcpProbeError": {
+    "b": "refused"
+   },
+   "book": {
+    "seq": 29800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "saveMcpServer",
+     "args": [
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "b",
+        "type": "stdio",
+        "name": "cmd-b",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": false
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "srv-c",
+        "url": "https://c.example",
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": false
+      },
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example",
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 29800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveMcpServer",
+     "args": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": false
+       },
+       {
+        "id": "b",
+        "type": "stdio",
+        "name": "cmd-b",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": false
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "srv-c",
+        "url": "https://c.example",
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": false
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": false
+      },
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example",
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 29800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveMcpServer",
+     "args": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://moved.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "b",
+        "type": "stdio",
+        "name": "cmd-b",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": false
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "srv-c",
+        "url": "https://c.example",
+        "enabled": true
+       }
+      ]
+     },
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": false
+      },
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example",
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "b": "disconnected",
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 29800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveMcpServer",
+     "args": [
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "other"
+       ],
+       "env": [],
+       "enabled": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://moved.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "b",
+        "type": "stdio",
+        "name": "cmd-b",
+        "command": "npx",
+        "args": [
+         "other"
+        ],
+        "env": [],
+        "enabled": false
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "srv-c",
+        "url": "https://c.example",
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://moved.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "other"
+       ],
+       "env": [],
+       "enabled": false
+      },
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example",
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": false
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "book": {
+      "seq": 29800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_registry_writes_roll_back_when_the_save_fails",
+  "context": {
+   "mcpReplies": [
+    {
+     "reject": "disk full"
+    },
+    null,
+    {
+     "reject": "disk full"
+    },
+    null,
+    {
+     "reject": "no"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 29900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "saveMcpServer",
+     "args": [
+      {
+       "id": "c",
+       "type": "http",
+       "name": "srv-c",
+       "url": "https://c.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "srv-c",
+        "url": "https://c.example/mcp",
+        "headers": [],
+        "enabled": true
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.saveMcpServer",
+      "message": "Failed to persist MCP registry (Error: disk full)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: disk full"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "importMcpServers",
+     "args": [
+      [
+       {
+        "id": "d",
+        "type": "http",
+        "name": "srv-d",
+        "url": "https://d.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "e",
+        "type": "stdio",
+        "name": "cmd-e",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "d",
+        "type": "http",
+        "name": "srv-d",
+        "url": "https://d.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "e",
+        "type": "stdio",
+        "name": "cmd-e",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "e",
+       "type": "stdio",
+       "name": "cmd-e",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "importMcpServers",
+     "args": [
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "e",
+       "type": "stdio",
+       "name": "cmd-e",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "importMcpServers",
+     "args": [
+      [
+       {
+        "id": "f",
+        "type": "http",
+        "name": "srv-f",
+        "url": "https://f.example/mcp",
+        "headers": [],
+        "enabled": true
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "d",
+        "type": "http",
+        "name": "srv-d",
+        "url": "https://d.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "e",
+        "type": "stdio",
+        "name": "cmd-e",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       },
+       {
+        "id": "f",
+        "type": "http",
+        "name": "srv-f",
+        "url": "https://f.example/mcp",
+        "headers": [],
+        "enabled": true
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.importMcpServers",
+      "message": "Failed to persist MCP registry import (Error: disk full)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: disk full"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "e",
+       "type": "stdio",
+       "name": "cmd-e",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setMcpServerEnabled",
+     "args": [
+      "a",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": false
+       },
+       {
+        "id": "d",
+        "type": "http",
+        "name": "srv-d",
+        "url": "https://d.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "e",
+        "type": "stdio",
+        "name": "cmd-e",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": false
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "e",
+       "type": "stdio",
+       "name": "cmd-e",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setMcpServerEnabled",
+     "args": [
+      "a",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "http",
+        "name": "srv-a",
+        "url": "https://a.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "d",
+        "type": "http",
+        "name": "srv-d",
+        "url": "https://d.example/mcp",
+        "headers": [],
+        "enabled": true
+       },
+       {
+        "id": "e",
+        "type": "stdio",
+        "name": "cmd-e",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.setMcpServerEnabled",
+      "message": "Failed to persist MCP registry toggle (Error: no)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: no"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": false
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "e",
+       "type": "stdio",
+       "name": "cmd-e",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 29900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_catalog_install_names_and_saves_the_entry",
+  "context": {
+   "mcpReplies": [
+    [
+     {
+      "id": "g",
+      "type": "stdio",
+      "name": "github",
+      "command": "npx",
+      "args": [
+       "server"
+      ],
+      "env": [],
+      "enabled": true
+     }
+    ],
+    null,
+    null,
+    {
+     "reject": "disk full"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 30000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "github",
+       "config": {
+        "transport": "stdio",
+        "command": "uvx",
+        "args": [
+         "gh"
+        ],
+        "env": [
+         {
+          "name": "TOKEN"
+         }
+        ]
+       },
+       "secrets": [
+        {
+         "slot": "env",
+         "name": "TOKEN",
+         "value": "t0k"
+        },
+        {
+         "slot": "header",
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "provenance": {
+        "name": "io.github/server",
+        "version": "1.2.0"
+       },
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: The MCP server list has not loaded yet"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadMcpServers",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "loadMcpServers"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "github",
+       "config": {
+        "transport": "stdio",
+        "command": "uvx",
+        "args": [
+         "gh"
+        ],
+        "env": [
+         {
+          "name": "TOKEN"
+         }
+        ]
+       },
+       "secrets": [
+        {
+         "slot": "env",
+         "name": "TOKEN",
+         "value": "t0k"
+        },
+        {
+         "slot": "header",
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "provenance": {
+        "name": "io.github/server",
+        "version": "1.2.0"
+       },
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "g",
+        "type": "stdio",
+        "name": "github",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       },
+       {
+        "id": "id-1",
+        "type": "stdio",
+        "name": "github-2",
+        "command": "uvx",
+        "args": [
+         "gh"
+        ],
+        "env": [
+         {
+          "name": "TOKEN",
+          "value": "t0k"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.saveCatalogInstall",
+      "message": "Saved the catalog install of 'io.github/server' 1.2.0 as 'github-2' digest=0123456789ab"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "id-1",
+       "type": "stdio",
+       "name": "github-2",
+       "command": "uvx",
+       "args": [
+        "gh"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "t0k"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "github",
+       "config": {
+        "transport": "sse",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization"
+         }
+        ]
+       },
+       "secrets": [
+        {
+         "slot": "env",
+         "name": "TOKEN",
+         "value": "t0k"
+        },
+        {
+         "slot": "header",
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "provenance": {
+        "name": "io.github/server",
+        "version": "1.2.0"
+       },
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "g",
+        "type": "stdio",
+        "name": "github",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       },
+       {
+        "id": "id-1",
+        "type": "stdio",
+        "name": "github-2",
+        "command": "uvx",
+        "args": [
+         "gh"
+        ],
+        "env": [
+         {
+          "name": "TOKEN",
+          "value": "t0k"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       },
+       {
+        "id": "id-2",
+        "type": "sse",
+        "name": "github-3",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": "Bearer x"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.saveCatalogInstall",
+      "message": "Saved the catalog install of 'io.github/server' 1.2.0 as 'github-3' digest=0123456789ab"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "id-1",
+       "type": "stdio",
+       "name": "github-2",
+       "command": "uvx",
+       "args": [
+        "gh"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "t0k"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      },
+      {
+       "id": "id-2",
+       "type": "sse",
+       "name": "github-3",
+       "url": "https://gh.example/mcp",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "github",
+       "config": {
+        "transport": "http",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization"
+         }
+        ]
+       },
+       "secrets": [
+        {
+         "slot": "env",
+         "name": "TOKEN",
+         "value": "t0k"
+        },
+        {
+         "slot": "header",
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "provenance": null,
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [
+     "id-3"
+    ],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: A catalog install result carries its provenance"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "id-1",
+       "type": "stdio",
+       "name": "github-2",
+       "command": "uvx",
+       "args": [
+        "gh"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "t0k"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      },
+      {
+       "id": "id-2",
+       "type": "sse",
+       "name": "github-3",
+       "url": "https://gh.example/mcp",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "github",
+       "config": {
+        "transport": "http",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization"
+         }
+        ]
+       },
+       "secrets": [],
+       "provenance": {
+        "name": "io.github/server",
+        "version": "1.2.0"
+       },
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [
+     "id-4"
+    ],
+    "effects": [
+     {
+      "kind": "actionRejected",
+      "message": "Error: The install result has no value for header Authorization"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "id-1",
+       "type": "stdio",
+       "name": "github-2",
+       "command": "uvx",
+       "args": [
+        "gh"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "t0k"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      },
+      {
+       "id": "id-2",
+       "type": "sse",
+       "name": "github-3",
+       "url": "https://gh.example/mcp",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "saveCatalogInstall",
+     "args": [
+      {
+       "name": "other",
+       "config": {
+        "transport": "http",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization"
+         }
+        ]
+       },
+       "secrets": [
+        {
+         "slot": "env",
+         "name": "TOKEN",
+         "value": "t0k"
+        },
+        {
+         "slot": "header",
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "provenance": {
+        "name": "io.github/server",
+        "version": "1.2.0"
+       },
+       "launchDigest": "0123456789abcdef0123"
+      }
+     ]
+    },
+    "ids": [
+     "id-5"
+    ],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "g",
+        "type": "stdio",
+        "name": "github",
+        "command": "npx",
+        "args": [
+         "server"
+        ],
+        "env": [],
+        "enabled": true
+       },
+       {
+        "id": "id-1",
+        "type": "stdio",
+        "name": "github-2",
+        "command": "uvx",
+        "args": [
+         "gh"
+        ],
+        "env": [
+         {
+          "name": "TOKEN",
+          "value": "t0k"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       },
+       {
+        "id": "id-2",
+        "type": "sse",
+        "name": "github-3",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": "Bearer x"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       },
+       {
+        "id": "id-5",
+        "type": "http",
+        "name": "other",
+        "url": "https://gh.example/mcp",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": "Bearer x"
+         }
+        ],
+        "enabled": true,
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/server",
+         "version": "1.2.0",
+         "launchDigest": "0123456789abcdef0123"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.saveCatalogInstall",
+      "message": "Failed to persist the catalog install of 'io.github/server' 1.2.0 (Error: disk full)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: disk full"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "stdio",
+       "name": "github",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "id-1",
+       "type": "stdio",
+       "name": "github-2",
+       "command": "uvx",
+       "args": [
+        "gh"
+       ],
+       "env": [
+        {
+         "name": "TOKEN",
+         "value": "t0k"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      },
+      {
+       "id": "id-2",
+       "type": "sse",
+       "name": "github-3",
+       "url": "https://gh.example/mcp",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": true,
+       "catalog": {
+        "source": "mcp-registry",
+        "name": "io.github/server",
+        "version": "1.2.0",
+        "launchDigest": "0123456789abcdef0123"
+       }
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_delete_clears_the_server_state",
+  "context": {
+   "mcpReplies": [
+    null,
+    {
+     "reject": "disk full"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "b",
+     "type": "http",
+     "name": "srv-b",
+     "url": "https://b.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "mcpProbeStatus": {
+    "a": "connected",
+    "b": "connected"
+   },
+   "mcpOAuthConnecting": {
+    "a": false
+   },
+   "mcpOAuthConnected": {
+    "a": true
+   },
+   "mcpTools": {
+    "a": [
+     {
+      "name": "search"
+     }
+    ]
+   },
+   "mcpToolsLoaded": {
+    "a": true
+   },
+   "mcpProbing": {
+    "a": false
+   },
+   "book": {
+    "seq": 30100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "deleteMcpServer",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "b",
+        "type": "http",
+        "name": "srv-b",
+        "url": "https://b.example/mcp",
+        "headers": [],
+        "enabled": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "b": "connected"
+     },
+     "book": {
+      "seq": 30100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "deleteMcpServer",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": []
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.deleteMcpServer",
+      "message": "Failed to persist MCP registry deletion (Error: disk full)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: disk full"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "b": "connected"
+     },
+     "book": {
+      "seq": 30100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_probe_records_the_result",
+  "context": {
+   "mcpReplies": [
+    {
+     "status": "connected",
+     "tools": [
+      {
+       "name": "search"
+      }
+     ],
+     "error": "stale"
+    },
+    {
+     "status": "disconnected",
+     "tools": [],
+     "error": "refused"
+    },
+    {
+     "reject": "spawn failed"
+    },
+    {
+     "status": "disconnected",
+     "tools": [],
+     "error": "refused"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "b",
+     "type": "http",
+     "name": "srv-b",
+     "url": "https://b.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "c",
+     "type": "stdio",
+     "name": "cmd-c",
+     "command": "npx",
+     "args": [
+      "server"
+     ],
+     "env": [],
+     "enabled": true
+    },
+    {
+     "id": "d",
+     "type": "http",
+     "name": "srv-d",
+     "url": "https://d.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "mcpTools": {
+    "c": [
+     {
+      "name": "old"
+     }
+    ]
+   },
+   "mcpProbing": {
+    "d": true
+   },
+   "book": {
+    "seq": 30200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "probeMcpServer",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpTools": {
+      "c": [
+       {
+        "name": "old"
+       }
+      ],
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "probeMcpServer",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected"
+     },
+     "mcpTools": {
+      "c": [
+       {
+        "name": "old"
+       }
+      ],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "probeMcpServer",
+     "args": [
+      "c"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": []
+      }
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.probeMcpServer",
+      "message": "MCP probe failed for server 'cmd-c' (Error: spawn failed)"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadMcpTools",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadMcpTools",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "probeMcpServer",
+     "args": [
+      "missing"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "probeMcpServer",
+     "args": [
+      "d"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadMcpTools",
+     "args": [
+      "d"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "http",
+       "name": "srv-b",
+       "url": "https://b.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "c",
+       "type": "stdio",
+       "name": "cmd-c",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "d",
+       "type": "http",
+       "name": "srv-d",
+       "url": "https://d.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected",
+      "b": "disconnected",
+      "c": "disconnected"
+     },
+     "mcpTools": {
+      "c": [],
+      "a": [
+       {
+        "name": "search"
+       }
+      ],
+      "b": []
+     },
+     "mcpToolsLoaded": {
+      "a": true,
+      "b": true,
+      "c": false
+     },
+     "mcpProbing": {
+      "d": true,
+      "a": false,
+      "b": false,
+      "c": false
+     },
+     "mcpProbeError": {
+      "b": "refused"
+     },
+     "book": {
+      "seq": 30200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_oauth_connect_confirms_the_token_and_probes",
+  "context": {
+   "mcpReplies": [
+    null,
+    {
+     "status": "connected",
+     "tools": [
+      {
+       "name": "search"
+      }
+     ]
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "b",
+     "type": "stdio",
+     "name": "cmd-b",
+     "command": "npx",
+     "args": [
+      "server"
+     ],
+     "env": [],
+     "enabled": true
+    },
+    {
+     "id": "q",
+     "type": "http",
+     "name": "srv-q",
+     "url": "https://q.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "mcpProbing": {
+    "q": true
+   },
+   "book": {
+    "seq": 30300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-a'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://a.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth token confirmed for server 'srv-a'"
+     },
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "q",
+       "type": "http",
+       "name": "srv-q",
+       "url": "https://q.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpOAuthConnecting": {
+      "a": false
+     },
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "q": true,
+      "a": false
+     },
+     "book": {
+      "seq": 30300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "q",
+       "type": "http",
+       "name": "srv-q",
+       "url": "https://q.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpOAuthConnecting": {
+      "a": false
+     },
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "q": true,
+      "a": false
+     },
+     "book": {
+      "seq": 30300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "missing"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "q",
+       "type": "http",
+       "name": "srv-q",
+       "url": "https://q.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpOAuthConnecting": {
+      "a": false
+     },
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "q": true,
+      "a": false
+     },
+     "book": {
+      "seq": 30300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "q"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-q'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://q.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth token confirmed for server 'srv-q'"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      },
+      {
+       "id": "q",
+       "type": "http",
+       "name": "srv-q",
+       "url": "https://q.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "connected"
+     },
+     "mcpOAuthConnecting": {
+      "a": false,
+      "q": false
+     },
+     "mcpOAuthConnected": {
+      "a": true,
+      "q": true
+     },
+     "mcpTools": {
+      "a": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "q": true,
+      "a": false
+     },
+     "book": {
+      "seq": 30300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_oauth_connect_failure_rejects_and_a_cancel_does_not",
+  "context": {
+   "mcpReplies": [
+    {
+     "reject": "boom",
+     "code": "OAUTH_FAILED"
+    },
+    {
+     "reject": "stopped",
+     "code": "OAUTH_CANCELLED"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "g",
+     "type": "http",
+     "name": "srv-g",
+     "url": "https://g.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "h",
+     "type": "http",
+     "name": "srv-h",
+     "url": "https://h.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 30400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "g"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-g'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://g.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow failed for server 'srv-g' (McpOAuthError: boom)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "McpOAuthError: boom"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "http",
+       "name": "srv-g",
+       "url": "https://g.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "h",
+       "type": "http",
+       "name": "srv-h",
+       "url": "https://h.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "g": false
+     },
+     "book": {
+      "seq": 30400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "h"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-h'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://h.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow cancelled for server 'srv-h'"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "g",
+       "type": "http",
+       "name": "srv-g",
+       "url": "https://g.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "h",
+       "type": "http",
+       "name": "srv-h",
+       "url": "https://h.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "g": false,
+      "h": false
+     },
+     "book": {
+      "seq": 30400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_oauth_paste_back_and_a_cancel_of_the_held_flow",
+  "context": {
+   "mcpReplies": [
+    {
+     "authUrl": "https://auth.example/k",
+     "redirectUri": "https://cb.example",
+     "hold": true
+    },
+    null,
+    {
+     "hold": true
+    },
+    null,
+    {
+     "status": "connected",
+     "tools": [
+      {
+       "name": "search"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "k",
+     "type": "http",
+     "name": "srv-k",
+     "url": "https://k.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "m",
+     "type": "http",
+     "name": "srv-m",
+     "url": "https://m.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 30500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "k"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-k'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://k.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "k": true
+     },
+     "mcpOAuthPasteBack": {
+      "k": {
+       "projectId": "p1",
+       "serverUrl": "https://k.example/mcp",
+       "serverName": "srv-k",
+       "authUrl": "https://auth.example/k",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeMcpOAuthPaste",
+     "args": [
+      "k",
+      "https://cb.example/?code=1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "completeMcpOAuth",
+      "projectId": "p1",
+      "callbackUrl": "https://cb.example/?code=1"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.completeMcpOAuthPaste",
+      "message": "OAuth paste-back accepted for server 'srv-k'"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "k": true
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelMcpOAuth",
+     "args": [
+      "k"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "abortMcpOAuth",
+      "url": "https://k.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow cancelled for server 'srv-k'"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "k": false
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelMcpOAuth",
+     "args": [
+      "k"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "k": false
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "m"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-m'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://m.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "k": false,
+      "m": true
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "m"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "abortMcpOAuth",
+      "url": "https://m.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-m'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://m.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow cancelled for server 'srv-m'"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth token confirmed for server 'srv-m'"
+     },
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "k",
+       "type": "http",
+       "name": "srv-k",
+       "url": "https://k.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "m",
+       "type": "http",
+       "name": "srv-m",
+       "url": "https://m.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "m": "connected"
+     },
+     "mcpOAuthConnecting": {
+      "k": false,
+      "m": false
+     },
+     "mcpOAuthConnected": {
+      "m": true
+     },
+     "mcpTools": {
+      "m": [
+       {
+        "name": "search"
+       }
+      ]
+     },
+     "mcpToolsLoaded": {
+      "m": true
+     },
+     "mcpProbing": {
+      "m": false
+     },
+     "book": {
+      "seq": 30500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_oauth_paste_back_of_an_unknown_state_checks_the_token",
+  "context": {
+   "mcpReplies": [
+    {
+     "authUrl": "https://auth.example/n",
+     "redirectUri": "https://cb.example",
+     "hold": true
+    },
+    {
+     "reject": "gone",
+     "code": "OAUTH_UNKNOWN_STATE"
+    },
+    true,
+    {
+     "authUrl": "https://auth.example/o",
+     "redirectUri": "https://cb.example",
+     "hold": true
+    },
+    {
+     "reject": "gone",
+     "code": "OAUTH_UNKNOWN_STATE"
+    },
+    false,
+    {
+     "authUrl": "https://auth.example/r",
+     "redirectUri": "https://cb.example",
+     "hold": true
+    },
+    {
+     "reject": "bad code",
+     "code": "OAUTH_INVALID"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "n",
+     "type": "http",
+     "name": "srv-n",
+     "url": "https://n.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "o",
+     "type": "http",
+     "name": "srv-o",
+     "url": "https://o.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "r",
+     "type": "http",
+     "name": "srv-r",
+     "url": "https://r.example/mcp",
+     "headers": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 30600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "n"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-n'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://n.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true
+     },
+     "mcpOAuthPasteBack": {
+      "n": {
+       "projectId": "p1",
+       "serverUrl": "https://n.example/mcp",
+       "serverName": "srv-n",
+       "authUrl": "https://auth.example/n",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeMcpOAuthPaste",
+     "args": [
+      "n",
+      "https://cb.example/?code=1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "completeMcpOAuth",
+      "projectId": "p1",
+      "callbackUrl": "https://cb.example/?code=1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.completeMcpOAuthPaste",
+      "message": "OAuth paste-back failed for server 'srv-n' (OAUTH_UNKNOWN_STATE)"
+     },
+     {
+      "kind": "hasMcpOAuthToken",
+      "projectId": "p1",
+      "url": "https://n.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.completeMcpOAuthPaste",
+      "message": "OAuth paste-back accepted for server 'srv-n'"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "o"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-o'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://o.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true,
+      "o": true
+     },
+     "mcpOAuthPasteBack": {
+      "o": {
+       "projectId": "p1",
+       "serverUrl": "https://o.example/mcp",
+       "serverName": "srv-o",
+       "authUrl": "https://auth.example/o",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeMcpOAuthPaste",
+     "args": [
+      "o",
+      "https://cb.example/?code=2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "completeMcpOAuth",
+      "projectId": "p1",
+      "callbackUrl": "https://cb.example/?code=2"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.completeMcpOAuthPaste",
+      "message": "OAuth paste-back failed for server 'srv-o' (OAUTH_UNKNOWN_STATE)"
+     },
+     {
+      "kind": "hasMcpOAuthToken",
+      "projectId": "p1",
+      "url": "https://o.example/mcp"
+     },
+     {
+      "kind": "abortMcpOAuth",
+      "url": "https://o.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow cancelled for server 'srv-o'"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "McpOAuthError: gone"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true,
+      "o": false
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "connectMcpOAuth",
+     "args": [
+      "p1",
+      "r"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.connectMcpOAuth",
+      "message": "OAuth flow started for server 'srv-r'"
+     },
+     {
+      "kind": "startMcpOAuth",
+      "projectId": "p1",
+      "url": "https://r.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true,
+      "o": false,
+      "r": true
+     },
+     "mcpOAuthPasteBack": {
+      "r": {
+       "projectId": "p1",
+       "serverUrl": "https://r.example/mcp",
+       "serverName": "srv-r",
+       "authUrl": "https://auth.example/r",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeMcpOAuthPaste",
+     "args": [
+      "r",
+      "https://cb.example/?code=3"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "completeMcpOAuth",
+      "projectId": "p1",
+      "callbackUrl": "https://cb.example/?code=3"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.completeMcpOAuthPaste",
+      "message": "OAuth paste-back failed for server 'srv-r' (OAUTH_INVALID)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "McpOAuthError: bad code"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true,
+      "o": false,
+      "r": true
+     },
+     "mcpOAuthPasteBack": {
+      "r": {
+       "projectId": "p1",
+       "serverUrl": "https://r.example/mcp",
+       "serverName": "srv-r",
+       "authUrl": "https://auth.example/r",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "completeMcpOAuthPaste",
+     "args": [
+      "none",
+      "https://cb.example/?code=4"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "n",
+       "type": "http",
+       "name": "srv-n",
+       "url": "https://n.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "o",
+       "type": "http",
+       "name": "srv-o",
+       "url": "https://o.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "r",
+       "type": "http",
+       "name": "srv-r",
+       "url": "https://r.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnecting": {
+      "n": true,
+      "o": false,
+      "r": true
+     },
+     "mcpOAuthPasteBack": {
+      "r": {
+       "projectId": "p1",
+       "serverUrl": "https://r.example/mcp",
+       "serverName": "srv-r",
+       "authUrl": "https://auth.example/r",
+       "redirectUri": "https://cb.example"
+      }
+     },
+     "book": {
+      "seq": 30600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_oauth_status_and_disconnect",
+  "context": {
+   "mcpReplies": [
+    true,
+    {
+     "reject": "offline"
+    },
+    null,
+    {
+     "status": "disconnected",
+     "tools": [],
+     "error": "refused"
+    },
+    {
+     "reject": "refused"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "http",
+     "name": "srv-a",
+     "url": "https://a.example/mcp",
+     "headers": [],
+     "enabled": true
+    },
+    {
+     "id": "b",
+     "type": "stdio",
+     "name": "cmd-b",
+     "command": "npx",
+     "args": [
+      "server"
+     ],
+     "env": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 30700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "checkMcpOAuthStatus",
+     "args": [
+      "p1",
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "hasMcpOAuthToken",
+      "projectId": "p1",
+      "url": "https://a.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "book": {
+      "seq": 30700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "checkMcpOAuthStatus",
+     "args": [
+      "p1",
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "hasMcpOAuthToken",
+      "projectId": "p1",
+      "url": "https://a.example/mcp"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "book": {
+      "seq": 30700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "checkMcpOAuthStatus",
+     "args": [
+      "p1",
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpOAuthConnected": {
+      "a": true
+     },
+     "book": {
+      "seq": 30700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "disconnectMcpOAuth",
+     "args": [
+      "p1",
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "disconnectMcpOAuth",
+      "projectId": "p1",
+      "url": "https://a.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.disconnectMcpOAuth",
+      "message": "OAuth disconnect completed for server 'srv-a'"
+     },
+     {
+      "kind": "probeMcpServer",
+      "config": {
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": []
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "disconnected"
+     },
+     "mcpOAuthConnected": {
+      "a": false
+     },
+     "mcpTools": {
+      "a": []
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "mcpProbeError": {
+      "a": "refused"
+     },
+     "book": {
+      "seq": 30700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "disconnectMcpOAuth",
+     "args": [
+      "p1",
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "disconnectMcpOAuth",
+      "projectId": "p1",
+      "url": "https://a.example/mcp"
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "acp-store.disconnectMcpOAuth",
+      "message": "OAuth disconnect failed for server 'srv-a' (Error: refused)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: refused"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      },
+      {
+       "id": "b",
+       "type": "stdio",
+       "name": "cmd-b",
+       "command": "npx",
+       "args": [
+        "server"
+       ],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "mcpProbeStatus": {
+      "a": "disconnected"
+     },
+     "mcpOAuthConnected": {
+      "a": false
+     },
+     "mcpTools": {
+      "a": []
+     },
+     "mcpToolsLoaded": {
+      "a": true
+     },
+     "mcpProbing": {
+      "a": false
+     },
+     "mcpProbeError": {
+      "a": "refused"
+     },
+     "book": {
+      "seq": 30700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_install_requests_answers_and_outcomes",
+  "context": {
+   "mcpReplies": [
+    null,
+    {
+     "reject": "host gone"
+    },
+    {
+     "reject": "busy"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 30800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onMcpInstallRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "answerMcpInstall",
+     "args": [
+      "r1",
+      "approve",
+      {
+       "repo": "x"
+      },
+      {
+       "token": "y"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "answerMcpInstall",
+      "request": {
+       "requestId": "r1",
+       "sessionId": "s1",
+       "decision": "approve",
+       "inputs": {
+        "repo": "x"
+       },
+       "secretValues": {
+        "token": "y"
+       },
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": true,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallResolved",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r1",
+       "outcome": "installed",
+       "name": "github",
+       "serverId": "srv-1",
+       "nextSteps": [
+        {
+         "kind": "oauth",
+         "message": "Sign in"
+        }
+       ],
+       "oauth": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "answerMcpInstall",
+     "args": [
+      "r1",
+      "approve"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r2",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": "bad input"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r2": {
+       "requestId": "r2",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": "bad input",
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "answerMcpInstall",
+     "args": [
+      "r2",
+      "decline",
+      null,
+      null,
+      "plan-2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "answerMcpInstall",
+      "request": {
+       "requestId": "r2",
+       "sessionId": "s1",
+       "decision": "decline",
+       "planId": "plan-2",
+       "launchDigest": "digest-1"
+      }
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.answerMcpInstall",
+      "message": "mcp install decline failed (Error)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: host gone"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r2": {
+       "requestId": "r2",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": "bad input",
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallResolved",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r2",
+       "outcome": "declined",
+       "nextSteps": [],
+       "oauth": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallResolved",
+     "args": [
+      {
+       "requestId": "r9",
+       "outcome": "installed",
+       "nextSteps": [],
+       "oauth": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r4",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r4": {
+       "requestId": "r4",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "answerMcpInstall",
+     "args": [
+      "r4",
+      "approve"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "answerMcpInstall",
+      "request": {
+       "requestId": "r4",
+       "sessionId": "s1",
+       "decision": "approve",
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.answerMcpInstall",
+      "message": "mcp install approve failed (Error)"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: busy"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r4": {
+       "requestId": "r4",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onMcpInstallRequest",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "requestId": "r3",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r4": {
+       "requestId": "r4",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      },
+      "r3": {
+       "requestId": "r3",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "dismissMcpInstall",
+     "args": [
+      "r3"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r4": {
+       "requestId": "r4",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "dismissMcpInstall",
+     "args": [
+      "r3"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "pendingMcpInstalls": {
+      "r1": {
+       "requestId": "r1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": {
+        "outcome": "installed",
+        "name": "github",
+        "serverId": "srv-1",
+        "nextSteps": [
+         {
+          "kind": "oauth",
+          "message": "Sign in"
+         }
+        ],
+        "oauth": true
+       }
+      },
+      "r4": {
+       "requestId": "r4",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "name": "github",
+       "title": "GitHub",
+       "transport": "http",
+       "form": {
+        "fields": []
+       },
+       "consent": null,
+       "planId": "plan-1",
+       "launchDigest": "digest-1",
+       "error": null,
+       "saving": false,
+       "result": null
+      }
+     },
+     "book": {
+      "seq": 30800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "mcp_registry_change_reloads_the_list",
+  "context": {
+   "mcpReplies": [
+    [
+     {
+      "id": "a",
+      "type": "http",
+      "name": "srv-a",
+      "url": "https://a.example/mcp",
+      "headers": [],
+      "enabled": true
+     }
+    ]
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 30900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onMcpRegistryChanged",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "serverId": "a",
+       "name": "srv-a"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "loadMcpServers"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "http",
+       "name": "srv-a",
+       "url": "https://a.example/mcp",
+       "headers": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 30900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

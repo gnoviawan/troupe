@@ -6,8 +6,10 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::FlightId;
+use super::mcp::TokenCheck;
 use super::restore::RunId;
 use super::turn::TurnEnd;
+use super::types::Object;
 use super::window::PayloadRead;
 use crate::Level;
 
@@ -167,6 +169,82 @@ pub enum Effect {
     },
     /// Close the agent's browser tab and its browser session (desktop only).
     CloseAgentBrowserTab { tab_id: String },
+    /// Read the MCP registry, then send `Event::McpCommandDone` with the
+    /// list as the app normalized it, or `McpCommandFailed`.
+    LoadMcpServers {
+        #[serde(skip_serializing)]
+        reload: bool,
+    },
+    /// Write the MCP registry; then `McpCommandDone` or `McpCommandFailed`.
+    SaveMcpServers { servers: Vec<Object> },
+    /// Watch the shared MCP registry key; send each change as
+    /// `Event::McpSharedChanged`.
+    WatchSharedMcpServers,
+    /// Probe the server's config; then `McpCommandDone` with the probe
+    /// result, or `McpCommandFailed`.
+    ProbeMcpServer {
+        config: Object,
+        #[serde(skip_serializing)]
+        server: Object,
+        #[serde(skip_serializing)]
+        deletions: u64,
+    },
+    /// Run an OAuth sign-in; send `Event::McpOAuthAuthUrl` once a web flow
+    /// knows its link, then `McpCommandDone` once the token is stored, or
+    /// `McpCommandFailed`.
+    StartMcpOAuth {
+        project_id: String,
+        url: String,
+        #[serde(skip_serializing)]
+        server_id: String,
+        #[serde(skip_serializing)]
+        server_name: String,
+        #[serde(skip_serializing)]
+        flow: u64,
+        #[serde(skip_serializing)]
+        deletions: u64,
+    },
+    /// Stop the running OAuth sign-in for this URL; the model already ended
+    /// it, so no answer is needed.
+    AbortMcpOAuth { url: String },
+    /// Hand the pasted OAuth callback to the host; then `McpCommandDone`
+    /// or `McpCommandFailed` with the `McpOAuthError` code.
+    CompleteMcpOAuth {
+        project_id: String,
+        callback_url: String,
+        #[serde(skip_serializing)]
+        server_id: String,
+        #[serde(skip_serializing)]
+        server_name: String,
+        #[serde(skip_serializing)]
+        server_url: String,
+    },
+    /// Whether a token is stored for the URL; then `McpCommandDone` with
+    /// the answer, or `McpCommandFailed`.
+    HasMcpOAuthToken {
+        project_id: String,
+        url: String,
+        #[serde(skip_serializing)]
+        check: TokenCheck,
+    },
+    /// Delete the stored token; then `McpCommandDone` or `McpCommandFailed`.
+    DisconnectMcpOAuth {
+        project_id: String,
+        url: String,
+        #[serde(skip_serializing)]
+        server_id: String,
+        #[serde(skip_serializing)]
+        server_name: String,
+        #[serde(skip_serializing)]
+        deletions: u64,
+    },
+    /// Answer the agent's MCP install request; then `McpCommandDone` or
+    /// `McpCommandFailed`.
+    AnswerMcpInstall {
+        request: Value,
+        #[serde(skip_serializing)]
+        decision: String,
+    },
     /// Read the session's durable payload (the cache, else the history
     /// store), then send `Event::SessionPayloadRead` with this effect and
     /// the payload, `None` when the session has none, or the error.
@@ -199,6 +277,14 @@ impl Effect {
         match self {
             Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
             _ => None,
+        }
+    }
+
+    pub(crate) fn error(source: &str, message: String) -> Self {
+        Self::Log {
+            level: Level::Error,
+            source: source.to_owned(),
+            message,
         }
     }
 

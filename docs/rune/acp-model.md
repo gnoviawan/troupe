@@ -107,7 +107,7 @@ TypeScript lines are whole files, comments included. Every path below is under
 | `slices/launch.ts`, `chat-reuse-scope.ts`, `ephemeral-ids.ts`, `registry-mcp-fingerprints.ts` | 1,139 | `acp/launch.rs` | state; prepare and claim are socket effects | 8 |
 | `slices/config.ts` | 344 | `acp/launch.rs` | state; config writes are persistence effects | 8 |
 | `slices/switch.ts`, `slices/switch-seam.ts` | 943 | `acp/switch.rs` | state; `record_agent_switch` and payload reads are effects | 9 |
-| `slices/mcp.ts` | 682 | `acp/mcp.rs` | state; probe, OAuth and writes are effects | 10 |
+| `slices/mcp.ts`; `lib/acp-mcp-persistence.ts` `catalogInstallEntry`; `lib/mcp-install-request.ts` | 682 | `acp/mcp.rs` (registry, probes), `acp/mcp_oauth.rs`, `acp/mcp_install.rs` | state; probe, OAuth and writes are effects | 10 |
 | `slices/import-sessions.ts` | 168 | `acp/history.rs` | effect-driven (a host loop); the candidate filter is state | 10 |
 | `slices/misc.ts` (commit message, terminal assist, bug report collectors) | 537 | `acp/oneshot.rs` | one-shot sessions whose chunks feed a collector, never a transcript | 10 |
 | `reload-guard.ts`, `chat-tab-prune.ts` | 63 | `acp/session.rs` | state; the tab prune is a workspace effect | 6 |
@@ -261,6 +261,27 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
+    - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
+      effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
+      `startMcpOAuth`, `completeMcpOAuth`, `hasMcpOAuthToken`,
+      `disconnectMcpOAuth`, `answerMcpInstall`) the app answers with
+      `mcpCommandDone` or `mcpCommandFailed` (the raw message and an
+      `McpOAuthError` code). Registry writes run one at a time through
+      `Book::mcp`, as the TypeScript promise queue runs them, and a failed
+      save puts the list back. A probe whose server was edited, deleted or
+      signed in or out meanwhile does not land; it probes again. The first
+      successful load starts the shared registry watch
+      (`watchSharedMcpServers`, answered by `mcpSharedChanged` with the list
+      the app normalized); `Book::mcp_shared_sync` remembers it, as the
+      module flag does. An OAuth flow the model aborts (a newer flow, a
+      cancel, a delete) ends as cancelled at once, after the step's own
+      effects: the web rejects it that way, and the app's later answer is
+      ignored. On the desktop, whose sign-in ignores the abort, the
+      TypeScript logs the cancel only if the old flow later fails. The
+      registry normalization and the legacy canvas entry migration stay in
+      the app's persistence layer. Not here: the answering marks of
+      `pending-permission-sync` (the resubscribe install, PR 6).
+    - 10b, rest. Import, discovery and the one-shot collectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -364,6 +385,17 @@ its pinned sources match a path glob of both workflows.
   `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
   session it does not list, and `{ "reject": text }` fails the read. The
   payload cache is cleared per vector.
+- `context.mcpReplies` answers the MCP commands in order: an entry is the
+  reply, `{ "reject": text, "code": c }` fails it (an `McpOAuthError` when
+  `code` is set), `{ "hold": true }` leaves it in flight, and a start's
+  `authUrl` reaches the paste-back callback first. A held start rejects as
+  cancelled when its signal aborts. The MCP fields are snapshotted only once
+  a vector set one. The store's OAuth flows and its shared-watch flag are
+  module state no reset reaches, so a vector that leaves a flow in flight
+  uses a server id no other vector does, and every vector after the first
+  load starts with `book.mcpSharedSync`.
+- Logs without a level record the `error` that `logFrontendError` defaults
+  to.
 - Vectors over the live bounds keep their records small: every step
   snapshots the whole state.
 - Toasts are effects (`toast`, with the level). The roster watch is attached

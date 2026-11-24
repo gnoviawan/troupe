@@ -92,6 +92,15 @@ export const sessionPayloads = new Map<string, unknown>()
 /** The app runs native panes (`isTauriContext`); a vector's `context.desktop`. */
 export const platform = { desktop: false }
 
+/**
+ * How the mocked MCP commands (registry load and save, probe, OAuth, the
+ * install answer) answer, in order; a vector's `context.mcpReplies`.
+ */
+export const mcpReplies: unknown[] = []
+
+/** The shared MCP registry watch, once the store started it. */
+export const mcpSharedSync: { apply: ((change: unknown) => void) | null } = { apply: null }
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 
