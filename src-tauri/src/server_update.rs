@@ -7,11 +7,10 @@
 //! Flow (opt-in, default off — `server_main.rs` only wires it when
 //! `TERMUL_SERVER_UPDATE_ENABLED=true` + `TERMUL_SERVER_UPDATE_CHANNEL` are set):
 //!
-//! 1. Fetch the per-channel manifest (`latest-<channel>.json`) from GitHub
-//!    Releases.
+//! 1. Fetch the per-channel manifest (see [`UpdateChannel::manifest_url`])
+//!    from GitHub Releases.
 //! 2. Compare the manifest `version` against `CARGO_PKG_VERSION` with full
-//!    SemVer 2.0 prerelease precedence (`0.5.0` > `0.5.0-rc.1` >
-//!    `0.0.0-nightly.*`).
+//!    SemVer 2.0 precedence. Stable is `X.Y.0` and Nightly is `X.Y.N`.
 //! 3. Download the binary for this build's arch (`linux-x86_64-server` or
 //!    `linux-aarch64-server`, see `SERVER_PLATFORM_KEY`) + its minisign `.sig`.
 //! 4. **Verify the signature before any filesystem mutation** — on failure the
@@ -65,8 +64,11 @@ impl UpdateChannel {
             Self::Stable => {
                 "https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json"
             }
+            // latest-nightly.json is kept for builds released before the
+            // X.Y.N nightly scheme; it advertises the same build under a
+            // `-nightly.<date>.<run>.<sha>` version those builds accept.
             Self::Nightly => {
-                "https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json"
+                "https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json"
             }
         }
     }
@@ -151,9 +153,7 @@ pub fn embedded_public_key() -> Result<&'static PublicKey> {
 
 // ---------------------------------------------------------------------------
 // Version comparison — full SemVer 2.0 prerelease precedence.
-// Ported from the desktop `compareVersions` so both targets agree, and so
-// `0.0.0-nightly.*` (core 0.0.0 + prerelease) is always less than any real
-// release: a nightly server that switches to Stable is always offered it.
+// Ported from the desktop `compareVersions` so both targets agree.
 // ---------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -256,7 +256,7 @@ pub fn is_newer(manifest_version: &str, current_version: &str) -> bool {
 }
 
 /// The running crate version (`CARGO_PKG_VERSION`), stamped to the channel
-/// version at build time (nightly rewrites it to `0.0.0-nightly.*`).
+/// version at build time (nightly stamps its `X.Y.N` version).
 pub fn current_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }

@@ -1,10 +1,10 @@
 import fs from 'node:fs'
 
-// Nightly builds synthesize a `<upcoming>-nightly.<YYYYMMDD>.<run_number>.<shortsha>` version
-// (detected from a release/v* branch, or patch-bumped from current) and may
-// write it to only a subset of the three version sources (or pass it via
-// Tauri config overrides), so the strict 3-source equality guard is bypassed
-// for nightly. Stable tags keep the strict guard.
+// Nightly builds stamp an `X.Y.N` version (N counts the dev commits since the
+// newest stable tag) at build time and may write it to only a subset of the
+// three version sources (or pass it via Tauri config overrides), so the strict
+// 3-source equality guard is bypassed for nightly.
+// Stable tags keep the strict guard.
 const nightlyBypass =
   process.argv.slice(2).includes('--nightly') ||
   process.env.TERMUL_NIGHTLY === '1' ||

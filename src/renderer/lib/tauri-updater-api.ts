@@ -49,7 +49,7 @@ export const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'stable'
 // + release-page source. Keep them in sync when editing.
 const CHANNEL_MANIFEST_URLS: Record<UpdateChannel, string> = {
   stable: 'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json',
-  nightly: 'https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json'
+  nightly: 'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
 }
 
 const CHANNEL_RELEASE_PAGE_URLS: Record<UpdateChannel, string> = {
@@ -429,14 +429,6 @@ async function fetchChannelManifest(channel: UpdateChannel): Promise<ChannelMani
  * On manifest fetch failure (404 / network) the call throws so the store
  * surfaces the error and the periodic retry re-attempts next cycle.
  */
-/**
- * A nightly manifest only ever offers nightly builds: a stable or rc version
- * that lands there is ignored, matching the signed Rust check.
- */
-function isVersionForChannel(version: string, channel: UpdateChannel): boolean {
-  return channel !== 'nightly' || /-nightly\./.test(version)
-}
-
 async function checkChannelUpdate(channel: UpdateChannel): Promise<UpdateInfo | null> {
   let manifest: ChannelManifest
   try {
@@ -449,7 +441,7 @@ async function checkChannelUpdate(channel: UpdateChannel): Promise<UpdateInfo | 
   const latestVersion = normalizeVersion(manifest.version ?? '')
   let updateInfo: UpdateInfo | null = null
 
-  if (latestVersion && isVersionForChannel(latestVersion, channel)) {
+  if (latestVersion) {
     const currentVersion = await getVersion()
     if (compareVersions(latestVersion, currentVersion) > 0) {
       updateInfo = {

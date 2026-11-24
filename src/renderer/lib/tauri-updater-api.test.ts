@@ -93,7 +93,7 @@ describe('channel URL selection', () => {
       'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json'
     )
     expect(getChannelManifestUrl('nightly')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json'
+      'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
     )
   })
 
@@ -146,7 +146,7 @@ describe('fetchChannelManifest via invoke (CSP/CORS-free server-side fetch)', ()
     }))
 
     await expect(checkForUpdates('nightly')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json: channel manifest returned HTTP 404'
+      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json: channel manifest returned HTTP 404'
     )
   })
 
@@ -156,7 +156,7 @@ describe('fetchChannelManifest via invoke (CSP/CORS-free server-side fetch)', ()
     })
 
     await expect(checkForUpdates('nightly')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json: network down'
+      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json: network down'
     )
   })
 })

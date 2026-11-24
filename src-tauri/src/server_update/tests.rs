@@ -237,7 +237,7 @@ fn channel_manifest_urls_match_hosting_scheme() {
     );
     assert_eq!(
         UpdateChannel::Nightly.manifest_url(),
-        "https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json"
+        "https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json"
     );
 }
 

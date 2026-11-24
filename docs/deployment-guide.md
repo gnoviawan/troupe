@@ -44,6 +44,14 @@ Stable Homebrew publication additionally requires:
 
 The reusable Homebrew workflow generates `SHA256SUMS.txt` before this token is checked, so a missing token fails only the tap update.
 
+## Version Numbers
+
+A stable release is `X.Y.0`: bump the minor for a normal release and the major for a breaking one, then push the `vX.Y.0` tag. A fix for a stable release ships as the next minor, because the patch number belongs to nightlies.
+
+A nightly is `X.Y.N`. `.github/workflows/nightly.yml` takes `X.Y` from the newest `vX.Y.Z` tag and sets N to the number of `dev` commits after it, so each nightly sorts above the stable it follows and below the next one. Nothing in the repository is bumped for a nightly; the workflow stamps the version at build time. The nightly fails if the newest tag's patch is not 0, and builds nothing when N is 0 or the version is already published. A Nightly user who switches to Stable stays on their build until the next stable minor ships.
+
+The nightly release carries two updater manifests for the same build. `nightly.json` holds the `X.Y.N` version and is what current builds read. `latest-nightly.json` holds the same build under `X.Y.N-nightly.<YYYYMMDD>.<run>.g<sha>`, the only form that builds released before this scheme (0.5.0 and older, and the old nightlies) accept, so they update onto an `X.Y.N` build and read `nightly.json` from then on.
+
 ## Release Workflow
 
 `.github/workflows/release.yml` is triggered by `v*` tags, and every such tag publishes a stable release. Tags must be plain `vX.Y.Z`, for example `v1.2.0`; the workflow fails on a prerelease suffix such as `-rc.1` or build metadata. There is no release-candidate channel. Pre-stable builds come from the nightly workflow.

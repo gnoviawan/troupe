@@ -237,24 +237,43 @@ describe('tauri-updater-api', () => {
     })
 
     it.each([
-      ['a stable release', '0.6.0'],
-      ['an insider release candidate', '0.6.0-rc.1']
-    ])('never offers %s from the nightly manifest in the manual fallback', async (_label, version) => {
+      ['a build from before the X.Y.N scheme', '0.5.0-nightly.20261124.116.c181ffe', '0.5.37'],
+      ['an older nightly', '0.5.36', '0.5.37'],
+      ['the stable it follows', '0.5.0', '0.5.37'],
+      ['a nightly install, the next stable', '0.5.37', '0.6.0']
+    ])('offers %s the newer build in the manual fallback', async (_label, current, remote) => {
       routeInvoke({
         updater_check_channel: () => {
           throw new Error('signature verification failed')
         },
         updater_fetch_channel_manifest: () => ({
           success: true,
-          data: { version, platforms: {} }
+          data: { version: remote, platforms: {} }
         })
       })
-      vi.mocked(getVersion).mockResolvedValue('0.5.0-nightly.20261027.100.aaaaaaa')
+      vi.mocked(getVersion).mockResolvedValue(current)
 
-      await expect(checkForUpdates('nightly')).resolves.toBeNull()
-      const state = await getUpdaterState()
-      expect(state.success && state.data.updateAvailable).toBe(false)
-      expect(state.success && state.data.isManualUpdateMode).toBe(false)
+      const result = await checkForUpdates('nightly')
+
+      expect(result?.version).toBe(remote)
+      expect(result?.installMode).toBe('manual')
+    })
+
+    it('does not offer the installed or an older nightly in the manual fallback', async () => {
+      for (const remote of ['0.5.37', '0.5.36']) {
+        routeInvoke({
+          updater_check_channel: () => {
+            throw new Error('signature verification failed')
+          },
+          updater_fetch_channel_manifest: () => ({
+            success: true,
+            data: { version: remote, platforms: {} }
+          })
+        })
+        vi.mocked(getVersion).mockResolvedValue('0.5.37')
+
+        await expect(checkForUpdates('nightly')).resolves.toBeNull()
+      }
     })
 
     it('keeps stable on the built-in signed endpoint and never asks for the nightly channel', async () => {
