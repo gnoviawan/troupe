@@ -80,6 +80,11 @@ export const SETTINGS: Surface[] = [
   pref('shell', 'Shell', 'The shell that new terminals start with.'),
   pref('terminal-profiles', 'Profiles', 'No terminal profiles'),
   pref('ai-agents', 'Agent chats', 'Time limits for agent chats, and the agents Troupe can start.'),
+  pref(
+    'subagents',
+    'Sub-agents',
+    'Agents your chats can hand work to, and what each one runs with.'
+  ),
   pref('skills', 'Skills', 'Skills in your home folder and in the open project.'),
   pref('provider', 'Accounts', 'The Claude and Codex accounts that agent chats use'),
   pref('mcp-servers', 'MCP servers', 'No MCP servers configured', [
