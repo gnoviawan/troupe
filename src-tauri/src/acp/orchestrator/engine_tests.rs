@@ -14,6 +14,32 @@ use crate::acp::config::SessionId;
 use crate::acp::orchestrator::run::{ChildRun, RunBody, RunCapture, RunId, RunState, StartRequest};
 use crate::acp::orchestrator::settings::OrchestratorSettings;
 
+fn with_profiles(profiles: Vec<SubagentProfile>) -> OrchestratorSettings {
+    OrchestratorSettings {
+        profiles,
+        ..OrchestratorSettings::default()
+    }
+}
+
+/// The agent's default profile, switched off.
+fn blocked(key: &str) -> SubagentProfile {
+    SubagentProfile {
+        enabled: false,
+        ..SubagentProfile::default_for(key)
+    }
+}
+
+fn listing(agent_id: &str, name: &str, allowed: bool) -> crate::acp::orchestrator::AgentListing {
+    crate::acp::orchestrator::AgentListing {
+        agent_id: agent_id.to_string(),
+        name: name.to_string(),
+        agent: agent_id.to_string(),
+        allowed,
+        default_model: None,
+        description: None,
+    }
+}
+
 const MOCK_CHILD: &str = r#"
 import json, sys
 
@@ -21,15 +47,29 @@ def send(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
     sys.stdout.flush()
 
+def say(text):
+    send({"jsonrpc": "2.0", "method": "session/update", "params": {
+        "sessionId": "child-1",
+        "update": {"sessionUpdate": "agent_message_chunk",
+                   "content": {"type": "text", "text": text}}}})
+
 hung = None
 model = None
+mode = None
+options = {}
+asking = None
 for line in sys.stdin:
     line = line.strip()
     if not line:
         continue
     msg = json.loads(line)
     method, rid = msg.get("method"), msg.get("id")
-    if method == "initialize":
+    if method is None and rid == 900 and asking is not None:
+        outcome = msg["result"]["outcome"]
+        say("permission=%s" % outcome.get("optionId", outcome.get("outcome")))
+        send({"jsonrpc": "2.0", "id": asking, "result": {"stopReason": "end_turn"}})
+        asking = None
+    elif method == "initialize":
         send({"jsonrpc": "2.0", "id": rid, "result": {
             "protocolVersion": 1, "agentCapabilities": {}, "authMethods": []}})
     elif method == "session/new":
@@ -48,15 +88,36 @@ for line in sys.stdin:
                 "update": {"sessionUpdate": "agent_message_chunk",
                            "content": {"type": "text", "text": "all green"}}}})
             send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
+        elif task == "report-profile":
+            say("model=%s mode=%s options=%s" % (model, mode, json.dumps(options, sort_keys=True)))
+            send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
+        elif task == "ask-permission":
+            asking = rid
+            send({"jsonrpc": "2.0", "id": 900, "method": "session/request_permission",
+                  "params": {"sessionId": "child-1",
+                             "toolCall": {"toolCallId": "tc-1", "title": "edit a file"},
+                             "options": [
+                                 {"optionId": "always", "name": "Always", "kind": "allow_always"},
+                                 {"optionId": "once", "name": "Once", "kind": "allow_once"},
+                                 {"optionId": "no", "name": "No", "kind": "reject_once"}]}})
         else:
             hung = rid
     elif method == "session/set_config_option":
-        model = msg["params"].get("value")
+        if msg["params"]["configId"] == "model":
+            model = msg["params"].get("value")
+        else:
+            options[msg["params"]["configId"]] = msg["params"].get("value")
         send({"jsonrpc": "2.0", "id": rid, "result": {"configOptions": []}})
+    elif method == "session/set_mode":
+        mode = msg["params"]["modeId"]
+        send({"jsonrpc": "2.0", "id": rid, "result": {}})
     elif method == "session/cancel":
         if hung is not None:
             send({"jsonrpc": "2.0", "id": hung, "result": {"stopReason": "cancelled"}})
             hung = None
+        if asking is not None:
+            send({"jsonrpc": "2.0", "id": asking, "result": {"stopReason": "cancelled"}})
+            asking = None
 "#;
 
 const CHAT: &str = "chat-1";
@@ -407,11 +468,9 @@ async fn start_refuses_each_settings_gate() {
         .set_settings(OrchestratorSettings::default())
         .expect("settings");
 
-    let mut disallowed = OrchestratorSettings::default();
-    disallowed
-        .agents
-        .insert("mock-sub".to_string(), false);
-    engine.set_settings(disallowed).expect("settings");
+    engine
+        .set_settings(with_profiles(vec![blocked("mock-sub")]))
+        .expect("settings");
     assert_eq!(
         engine.start(caller.clone(), request("finish")).await,
         Err(crate::acp::orchestrator::StartError::AgentNotAllowed(
@@ -424,11 +483,17 @@ async fn start_refuses_each_settings_gate() {
         agent: "no-such-agent".to_string(),
         ..request("finish")
     };
+    let refused = engine.start(caller.clone(), unknown).await;
     assert_eq!(
-        engine.start(caller.clone(), unknown).await,
-        Err(crate::acp::orchestrator::StartError::UnknownAgent(
-            "no-such-agent".to_string()
-        ))
+        refused,
+        Err(crate::acp::orchestrator::StartError::UnknownAgent {
+            agent: "no-such-agent".to_string(),
+            allowed: vec!["mock-sub".to_string()],
+        })
+    );
+    assert_eq!(
+        refused.unwrap_err().to_string(),
+        "unknown agent no-such-agent; the agentIds you can start are mock-sub"
     );
 
     let empty_task = StartRequest {
@@ -509,30 +574,43 @@ async fn worktree_mode_is_refused_outside_a_repository() {
 async fn the_listing_names_the_registry_agent_and_its_allowance() {
     let test = refusal_engine();
     let engine = &test.engine;
-    let listed = engine.list_agents();
-    assert_eq!(
-        listed,
-        vec![crate::acp::orchestrator::AgentListing {
-            agent_id: "mock-sub".to_string(),
-            name: "Mock Sub".to_string(),
-            allowed: true,
-            default_model: None,
-            description: None,
-        }]
-    );
-    let mut disallowed = OrchestratorSettings::default();
-    disallowed.agents.insert("mock-sub".to_string(), false);
-    engine.set_settings(disallowed).expect("settings");
+    assert_eq!(engine.list_agents(), vec![listing("mock-sub", "Mock Sub", true)]);
+    engine
+        .set_settings(with_profiles(vec![blocked("mock-sub")]))
+        .expect("settings");
     assert!(!engine.list_agents()[0].allowed);
 
-    let mut described = OrchestratorSettings::default();
-    described
-        .descriptions
-        .insert("mock-sub".to_string(), "Fast at UI tweaks".to_string());
-    engine.set_settings(described).expect("settings");
+    engine
+        .set_settings(with_profiles(vec![
+            SubagentProfile {
+                id: "mock-docs".to_string(),
+                description: Some("Fast at UI tweaks".to_string()),
+                ..SubagentProfile::default_for("mock-sub")
+            },
+            SubagentProfile {
+                id: "mock-deep".to_string(),
+                model: Some("deep".to_string()),
+                ..SubagentProfile::default_for("mock-sub")
+            },
+        ]))
+        .expect("settings");
     assert_eq!(
-        engine.list_agents()[0].description.as_deref(),
-        Some("Fast at UI tweaks")
+        engine.list_agents(),
+        vec![
+            crate::acp::orchestrator::AgentListing {
+                agent_id: "mock-docs".to_string(),
+                agent: "mock-sub".to_string(),
+                description: Some("Fast at UI tweaks".to_string()),
+                ..listing("mock-sub", "Mock Sub", true)
+            },
+            crate::acp::orchestrator::AgentListing {
+                agent_id: "mock-deep".to_string(),
+                agent: "mock-sub".to_string(),
+                default_model: Some("deep".to_string()),
+                ..listing("mock-sub", "Mock Sub", true)
+            },
+        ],
+        "two profiles of one agent, and no implicit default beside them"
     );
 }
 
@@ -872,13 +950,7 @@ async fn an_installed_agent_the_registry_knows_is_listed_once() {
         engine_with_installed(&[registry_agent("cursor", "Cursor")], &["cursor"]).await;
     assert_eq!(
         engine.list_agents(),
-        vec![crate::acp::orchestrator::AgentListing {
-            agent_id: "acp-registry:cursor".to_string(),
-            name: "Cursor".to_string(),
-            allowed: true,
-            default_model: None,
-            description: None,
-        }]
+        vec![listing("acp-registry:cursor", "Cursor", true)]
     );
 }
 
@@ -887,13 +959,7 @@ async fn an_installed_agent_the_registry_lacks_is_listed_under_its_config_id() {
     let (engine, _data) = engine_with_installed(&[], &["opencode"]).await;
     assert_eq!(
         engine.list_agents(),
-        vec![crate::acp::orchestrator::AgentListing {
-            agent_id: "acp-registry:opencode".to_string(),
-            name: "opencode".to_string(),
-            allowed: true,
-            default_model: None,
-            description: None,
-        }]
+        vec![listing("acp-registry:opencode", "opencode", true)]
     );
     let config = engine
         .resolve_agent("acp-registry:opencode")
@@ -909,13 +975,7 @@ async fn an_installed_agent_the_registry_lacks_is_listed_under_its_config_id() {
 async fn a_block_saved_under_an_installed_agents_bare_id_still_holds() {
     let (engine, data) =
         engine_with_saved_switches(&[], &["opencode"], &[("opencode", false)]).await;
-    let blocked = vec![crate::acp::orchestrator::AgentListing {
-        agent_id: "acp-registry:opencode".to_string(),
-        name: "opencode".to_string(),
-        allowed: false,
-        default_model: None,
-        description: None,
-    }];
+    let blocked = vec![listing("acp-registry:opencode", "opencode", false)];
     assert_eq!(engine.list_agents(), blocked);
 
     crate::automation::agents::AgentRegistry::open(
@@ -951,8 +1011,8 @@ async fn a_block_saved_under_an_installed_agents_bare_id_still_holds() {
 async fn a_bare_block_moves_when_its_agent_is_not_installed_yet() {
     let (engine, _data) = engine_with_saved_switches(&[], &[], &[("opencode", false)]).await;
     assert_eq!(
-        engine.settings_view().agents,
-        [("acp-registry:opencode".to_string(), false)].into_iter().collect()
+        engine.settings_view().profiles,
+        vec![blocked("acp-registry:opencode")]
     );
 }
 
@@ -963,8 +1023,7 @@ async fn bare_switches_stay_when_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
     std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
         .expect("registry");
-    let mut saved = OrchestratorSettings::default();
-    saved.agents.insert("my-agent".to_string(), false);
+    let saved = with_profiles(vec![blocked("my-agent")]);
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
         .set(saved.clone())
         .expect("settings");
@@ -974,7 +1033,7 @@ async fn bare_switches_stay_when_the_registry_cannot_be_read() {
         None,
         Handle::current(),
     );
-    assert_eq!(engine.settings_view().agents, saved.agents);
+    assert_eq!(engine.settings_view().profiles, saved.profiles);
 }
 
 /// While an unreadable registry holds the move back, a bare block still
@@ -984,21 +1043,13 @@ async fn a_bare_block_holds_while_the_registry_cannot_be_read() {
     let data = tempfile::tempdir().expect("data dir");
     std::fs::write(data.path().join(crate::automation::agents::FILE_NAME), b"{not json")
         .expect("registry");
-    let mut saved = OrchestratorSettings::default();
-    saved.agents.insert("cursor".to_string(), false);
     crate::acp::orchestrator::settings::SettingsStore::open(data.path())
-        .set(saved)
+        .set(with_profiles(vec![blocked("cursor")]))
         .expect("settings");
     let (engine, _data) = engine_in(data, &["cursor"]).await;
     assert_eq!(
         engine.list_agents(),
-        vec![crate::acp::orchestrator::AgentListing {
-            agent_id: "acp-registry:cursor".to_string(),
-            name: "cursor".to_string(),
-            allowed: false,
-            default_model: None,
-            description: None,
-        }]
+        vec![listing("acp-registry:cursor", "cursor", false)]
     );
     let caller = crate::acp::orchestrator::CallerRef {
         agent: AgentId("agent-parent".to_string()),
@@ -1028,26 +1079,18 @@ async fn a_bare_block_does_not_apply_to_an_agent_the_registry_knows() {
     .await;
     assert_eq!(
         engine.list_agents(),
-        vec![crate::acp::orchestrator::AgentListing {
-            agent_id: "acp-registry:cursor".to_string(),
-            name: "Cursor".to_string(),
-            allowed: true,
-            default_model: None,
-            description: None,
-        }]
+        vec![listing("acp-registry:cursor", "Cursor", true)]
     );
-    assert_eq!(engine.settings_view().agents, Default::default());
+    assert_eq!(engine.settings_view().profiles, Vec::new());
 }
 
 #[tokio::test]
 async fn a_bare_installed_id_starts_under_its_config_id() {
     let (engine, _data) =
         engine_with_installed(&[registry_agent("cursor", "Cursor")], &["cursor"]).await;
-    let mut disallowed = OrchestratorSettings::default();
-    disallowed
-        .agents
-        .insert("acp-registry:cursor".to_string(), false);
-    engine.set_settings(disallowed).expect("settings");
+    engine
+        .set_settings(with_profiles(vec![blocked("acp-registry:cursor")]))
+        .expect("settings");
     let caller = crate::acp::orchestrator::CallerRef {
         agent: AgentId("agent-parent".to_string()),
         session: SessionId(CHAT.to_string()),
@@ -1074,11 +1117,12 @@ async fn a_start_without_a_model_asks_for_the_agents_default_model() {
         .await;
     let engine = test.engine.clone();
     let caller = test.caller.clone();
-    let mut settings = OrchestratorSettings::default();
-    settings
-        .models
-        .insert("mock-sub".to_string(), "fast".to_string());
-    engine.set_settings(settings).expect("settings");
+    engine
+        .set_settings(with_profiles(vec![SubagentProfile {
+            model: Some("fast".to_string()),
+            ..SubagentProfile::default_for("mock-sub")
+        }]))
+        .expect("settings");
     assert_eq!(
         engine.list_agents()[0].default_model.as_deref(),
         Some("fast")
@@ -1105,4 +1149,110 @@ async fn a_start_without_a_model_asks_for_the_agents_default_model() {
         .expect("run starts");
     let settled = wait_settled(&engine, &caller, &picked.run).await;
     assert_eq!(settled.result.as_deref(), Some("model=deep"));
+}
+
+/// A profile's model, mode and config options reach the child's session,
+/// the start names the profile, and the run is titled after it.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_profile_sets_the_childs_model_mode_and_config_options() {
+    let Some(test) = engine_test("report-profile") else {
+        return;
+    };
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
+    let engine = test.engine.clone();
+    let caller = test.caller.clone();
+    engine
+        .set_settings(with_profiles(vec![SubagentProfile {
+            id: "mock-fast".to_string(),
+            model: Some("mini".to_string()),
+            mode: Some("bypassPermissions".to_string()),
+            config_options: [
+                ("thinking".to_string(), "low".to_string()),
+                ("context".to_string(), "1m".to_string()),
+            ]
+            .into(),
+            ..SubagentProfile::default_for("mock-sub")
+        }]))
+        .expect("settings");
+    let start = StartRequest {
+        agent: "mock-fast".to_string(),
+        ..request("report-profile")
+    };
+    let summary = engine.start(caller.clone(), start).await.expect("run starts");
+    assert_eq!(summary.title, "Mock Sub (mock-fast)");
+    let settled = wait_settled(&engine, &caller, &summary.run).await;
+    assert_eq!(
+        settled.result.as_deref(),
+        Some(r#"model=mini mode=bypassPermissions options={"context": "1m", "thinking": "low"}"#)
+    );
+
+    let unknown = StartRequest {
+        agent: "mock-sub".to_string(),
+        ..request("report-profile")
+    };
+    assert_eq!(
+        engine.start(caller.clone(), unknown).await.map(|summary| summary.run),
+        Err(crate::acp::orchestrator::StartError::UnknownAgent {
+            agent: "mock-sub".to_string(),
+            allowed: vec!["mock-fast".to_string()],
+        }),
+        "the agent's only profile was renamed, so its key starts nothing"
+    );
+}
+
+/// An allow-all profile's child has its permission answered with the
+/// allow-once option, never allow-always; an ask profile's child waits for
+/// the user.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn approvals_decide_who_answers_the_childs_permission_requests() {
+    let Some(test) = engine_test("ask-permission") else {
+        return;
+    };
+    let _serial = crate::acp::manager::real_loop_tests::TIMEOUT_TEST_LOCK
+        .lock()
+        .await;
+    let engine = test.engine.clone();
+    let caller = test.caller.clone();
+    engine
+        .set_settings(with_profiles(vec![
+            SubagentProfile {
+                approvals: SubagentApprovals::AllowAll,
+                ..SubagentProfile::default_for("mock-sub")
+            },
+            SubagentProfile {
+                id: "mock-asks".to_string(),
+                ..SubagentProfile::default_for("mock-sub")
+            },
+        ]))
+        .expect("settings");
+
+    let allowed = engine
+        .start(caller.clone(), request("ask-permission"))
+        .await
+        .expect("run starts");
+    let settled = wait_settled(&engine, &caller, &allowed.run).await;
+    assert_eq!(settled.result.as_deref(), Some("permission=once"));
+
+    let asks = StartRequest {
+        agent: "mock-asks".to_string(),
+        ..request("ask-permission")
+    };
+    let waiting = engine.start(caller.clone(), asks).await.expect("run starts");
+    let mut state = RunState::Running;
+    for _ in 0..200 {
+        state = engine.status(caller.clone(), Some(vec![waiting.run.clone()])).expect("status")[0]
+            .state;
+        if state == RunState::RequiresAction {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert_eq!(state, RunState::RequiresAction, "the request waits in the chat");
+    engine
+        .stop(caller.clone(), waiting.run.clone())
+        .await
+        .expect("stopped");
+    wait_settled(&engine, &caller, &waiting.run).await;
 }

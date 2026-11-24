@@ -1,19 +1,20 @@
 //! The orchestrator's settings: host-side truth, one atomic JSON file in
 //! the data dir, plus the view/input pair the WS routes read and write.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 
 use crate::acp::atomic_file;
+use crate::acp::orchestrator::profiles::SubagentProfile;
 
 pub const FILE_NAME: &str = "subagent-settings.json";
-/// 2 added `models`, 3 added `descriptions`. The payload denies unknown
-/// fields, so an older host must read a newer file as newer (read-only), not
-/// as corrupt.
-const SCHEMA_VERSION: u32 = 3;
+/// 2 added `models`, 3 added `descriptions`, 4 replaced the per-agent maps
+/// with `profiles`. The payload denies unknown fields, so an older host must
+/// read a newer file as newer (read-only), not as corrupt.
+const SCHEMA_VERSION: u32 = 4;
 pub const DEFAULT_MAX_RUNNING: u32 = 4;
 pub const DEFAULT_MAX_DEPTH: u8 = 2;
 
@@ -24,13 +25,15 @@ pub const MAX_DEPTH_BOUNDS: (u8, u8) = (1, 4);
 pub const MAX_MODEL_CHARS: usize = 512;
 /// A description's length bound, so one note cannot flood the listing.
 pub const MAX_DESCRIPTION_CHARS: usize = 1000;
+/// A profile id's length bound. An agent's default profile, whose id is the
+/// agent's listing key, is exempt (see [`validate`]).
+pub const MAX_PROFILE_ID_CHARS: usize = 64;
+/// The length bound of a mode id, a config option id and a config value.
+pub const MAX_OPTION_CHARS: usize = 256;
 
-/// The orchestrator settings. `agents` maps a launch key to whether it is
-/// allowed; an absent key is allowed. `models` maps a launch key to the
-/// model its sub-agents start with when the start names none; an absent
-/// key keeps the agent's own default. `descriptions` maps a launch key to
-/// the user's note on what that agent is good at, which the listing hands
-/// to the calling agent.
+/// The orchestrator settings. `profiles` are the user's sub-agent profiles
+/// in the user's order. An agent no profile points at is still startable
+/// through its implicit default profile (`profiles::Launchable::resolve`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct OrchestratorSettings {
@@ -38,12 +41,8 @@ pub struct OrchestratorSettings {
     pub max_running: u32,
     /// 1 = no nesting.
     pub max_depth: u8,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub agents: BTreeMap<String, bool>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub models: BTreeMap<String, String>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub descriptions: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub profiles: Vec<SubagentProfile>,
 }
 
 impl Default for OrchestratorSettings {
@@ -52,9 +51,7 @@ impl Default for OrchestratorSettings {
             enabled: true,
             max_running: DEFAULT_MAX_RUNNING,
             max_depth: DEFAULT_MAX_DEPTH,
-            agents: BTreeMap::new(),
-            models: BTreeMap::new(),
-            descriptions: BTreeMap::new(),
+            profiles: Vec::new(),
         }
     }
 }
@@ -74,6 +71,73 @@ pub type SettingsInput = OrchestratorSettings;
 #[derive(Deserialize)]
 struct SchemaPeek {
     schema_version: u32,
+}
+
+/// Schemas 1 to 3: per-agent maps keyed by listing key. `agents` maps a key
+/// to its allow switch (absent: allowed), `models` to its default model and
+/// `descriptions` to the user's note.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct LegacySettings {
+    enabled: bool,
+    max_running: u32,
+    max_depth: u8,
+    #[serde(default)]
+    agents: BTreeMap<String, bool>,
+    #[serde(default)]
+    models: BTreeMap<String, String>,
+    #[serde(default)]
+    descriptions: BTreeMap<String, String>,
+}
+
+#[derive(Deserialize)]
+struct LegacyFile {
+    #[serde(rename = "schema_version")]
+    _schema_version: u32,
+    #[serde(flatten)]
+    settings: LegacySettings,
+}
+
+impl From<LegacySettings> for OrchestratorSettings {
+    /// One default profile per key any map names, so every switch, model
+    /// and note keeps applying to the agent it was saved for.
+    fn from(mut legacy: LegacySettings) -> Self {
+        let keys: BTreeSet<String> = legacy
+            .agents
+            .keys()
+            .chain(legacy.models.keys())
+            .chain(legacy.descriptions.keys())
+            .cloned()
+            .collect();
+        let profiles = keys
+            .into_iter()
+            .map(|key| SubagentProfile {
+                enabled: legacy.agents.get(&key).copied().unwrap_or(true),
+                model: legacy.models.remove(&key),
+                description: legacy.descriptions.remove(&key),
+                ..SubagentProfile::default_for(&key)
+            })
+            .collect();
+        Self {
+            enabled: legacy.enabled,
+            max_running: legacy.max_running,
+            max_depth: legacy.max_depth,
+            profiles,
+        }
+    }
+}
+
+/// The settings of a file at or below this build's schema. An older file
+/// is migrated in memory; the first save writes it in the current schema.
+fn parse(bytes: &[u8], schema_version: u32) -> Result<OrchestratorSettings, serde_json::Error> {
+    if schema_version < SCHEMA_VERSION {
+        let legacy = serde_json::from_slice::<LegacyFile>(bytes)?;
+        log::info!(
+            "[orchestrator] settings schema {schema_version} migrated to sub-agent profiles"
+        );
+        return Ok(legacy.settings.into());
+    }
+    serde_json::from_slice::<SettingsFile>(bytes).map(|file| file.settings)
 }
 
 pub(crate) struct SettingsStore {
@@ -107,8 +171,8 @@ impl SettingsStore {
                     newer_schema = Some(peek.schema_version);
                     OrchestratorSettings::default()
                 }
-                _ => match serde_json::from_slice::<SettingsFile>(&bytes) {
-                    Ok(file) => file.settings,
+                peek => match peek.and_then(|peek| parse(&bytes, peek.schema_version)) {
+                    Ok(settings) => settings,
                     Err(error) => {
                         let backup = atomic_file::backup_corrupt(&path, &bytes);
                         log::warn!(
@@ -182,6 +246,18 @@ impl SettingsStore {
         &self,
         edit: impl FnOnce(&mut OrchestratorSettings),
     ) -> Result<OrchestratorSettings, String> {
+        self.try_update(|settings| {
+            edit(settings);
+            Ok(())
+        })
+    }
+
+    /// [`update`](Self::update) with an edit that may refuse; a refusal
+    /// leaves the settings unchanged.
+    pub(crate) fn try_update(
+        &self,
+        edit: impl FnOnce(&mut OrchestratorSettings) -> Result<(), String>,
+    ) -> Result<OrchestratorSettings, String> {
         let _writer = self.writer.lock();
         if let Some(found) = self.newer_schema {
             return Err(format!(
@@ -190,7 +266,7 @@ impl SettingsStore {
             ));
         }
         let mut next = self.get();
-        edit(&mut next);
+        edit(&mut next)?;
         let next = validate(next)?;
         if let Some(path) = &self.path {
             persist(path, &next)?;
@@ -200,7 +276,12 @@ impl SettingsStore {
     }
 }
 
-fn validate(input: OrchestratorSettings) -> Result<OrchestratorSettings, String> {
+/// Bounds every field and trims each profile's agent id and description.
+/// A profile id is 1 to [`MAX_PROFILE_ID_CHARS`] characters of
+/// `[A-Za-z0-9._:-]`, unique case-insensitively. An agent's default profile
+/// is exempt from the character rule: its id is the agent's listing key,
+/// which for a custom agent is its display name.
+fn validate(mut input: OrchestratorSettings) -> Result<OrchestratorSettings, String> {
     if !(MAX_RUNNING_BOUNDS.0..=MAX_RUNNING_BOUNDS.1).contains(&input.max_running) {
         return Err(format!(
             "max_running must be between {} and {}",
@@ -213,49 +294,70 @@ fn validate(input: OrchestratorSettings) -> Result<OrchestratorSettings, String>
             MAX_DEPTH_BOUNDS.0, MAX_DEPTH_BOUNDS.1
         ));
     }
-    if input.agents.keys().any(|key| key.trim().is_empty()) {
-        return Err("an agent allow key must not be blank".to_string());
+    let mut ids = HashSet::new();
+    for profile in &mut input.profiles {
+        validate_profile(profile)?;
+        if !ids.insert(profile.id.to_lowercase()) {
+            return Err(format!("two sub-agent profiles are named {}", profile.id));
+        }
     }
-    if input.models.keys().any(|key| key.trim().is_empty()) {
-        return Err("an agent model key must not be blank".to_string());
+    Ok(input)
+}
+
+fn validate_profile(profile: &mut SubagentProfile) -> Result<(), String> {
+    profile.agent_id = profile.agent_id.trim().to_string();
+    if profile.agent_id.is_empty()
+        || profile.agent_id.chars().count() > crate::acp::subagents::MAX_ID_CHARS
+    {
+        return Err(format!("the sub-agent profile {} names no agent", profile.id));
     }
-    if input
-        .models
-        .values()
-        .any(|model| model.trim().is_empty() || model.chars().count() > MAX_MODEL_CHARS)
+    let id_ok = if profile.id == profile.agent_id {
+        true
+    } else {
+        (1..=MAX_PROFILE_ID_CHARS).contains(&profile.id.chars().count())
+            && profile
+                .id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | ':' | '-'))
+    };
+    if !id_ok {
+        return Err(format!(
+            "a profile id must be 1 to {MAX_PROFILE_ID_CHARS} letters, digits, '.', '_', ':' \
+             or '-'"
+        ));
+    }
+    if profile
+        .model
+        .as_deref()
+        .is_some_and(|model| model.trim().is_empty() || model.chars().count() > MAX_MODEL_CHARS)
     {
         return Err(format!(
             "a default model must be 1 to {MAX_MODEL_CHARS} characters"
         ));
     }
-    if input.descriptions.keys().any(|key| key.trim().is_empty()) {
-        return Err("an agent description key must not be blank".to_string());
+    let option_ok =
+        |text: &str| !text.trim().is_empty() && text.chars().count() <= MAX_OPTION_CHARS;
+    if profile.mode.as_deref().is_some_and(|mode| !option_ok(mode)) {
+        return Err(format!("a mode must be 1 to {MAX_OPTION_CHARS} characters"));
     }
-    if input.descriptions.values().any(|description| {
-        description.trim().is_empty() || description.trim().chars().count() > MAX_DESCRIPTION_CHARS
-    }) {
+    if profile
+        .config_options
+        .iter()
+        .any(|(id, value)| !option_ok(id) || !option_ok(value))
+    {
         return Err(format!(
-            "a description must be 1 to {MAX_DESCRIPTION_CHARS} characters"
+            "a config option id and value must be 1 to {MAX_OPTION_CHARS} characters"
         ));
     }
-    Ok(OrchestratorSettings {
-        agents: input
-            .agents
-            .into_iter()
-            .map(|(key, allowed)| (key.trim().to_string(), allowed))
-            .collect(),
-        models: input
-            .models
-            .into_iter()
-            .map(|(key, model)| (key.trim().to_string(), model))
-            .collect(),
-        descriptions: input
-            .descriptions
-            .into_iter()
-            .map(|(key, description)| (key.trim().to_string(), description.trim().to_string()))
-            .collect(),
-        ..input
-    })
+    if let Some(description) = &mut profile.description {
+        *description = description.trim().to_string();
+        if description.is_empty() || description.chars().count() > MAX_DESCRIPTION_CHARS {
+            return Err(format!(
+                "a description must be 1 to {MAX_DESCRIPTION_CHARS} characters"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn persist(path: &Path, settings: &OrchestratorSettings) -> Result<(), String> {
