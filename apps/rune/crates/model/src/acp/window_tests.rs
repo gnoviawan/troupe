@@ -45,7 +45,6 @@ fn apply(state: &mut State, event: Value) -> Vec<Effect> {
         now: 1_000.0,
         ids: &mut ids,
         server_history: false,
-        desktop: false,
     };
     let event: Event = serde_json::from_value(event).expect("an event");
     step(state, event, &mut env)

@@ -196,7 +196,6 @@ impl State {
         &mut self,
         event: BrowserAgentTabEvent,
         seq: Option<f64>,
-        env: &Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
         let Some(tab_id) = non_empty(&event.tab_id).map(str::to_owned) else {
@@ -223,7 +222,7 @@ impl State {
             }),
             _ => {}
         }
-        if !env.desktop {
+        if !self.book.desktop {
             return;
         }
         match action {
@@ -255,7 +254,6 @@ impl State {
     pub(crate) fn on_browser_tab_closed(
         &mut self,
         event: AgentBrowserTabClosedEvent,
-        env: &Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
         let Some(tab_id) = non_empty(&event.tab_id).map(str::to_owned) else {
@@ -264,7 +262,7 @@ impl State {
         fx.push(Effect::UntrackAgentTab {
             tab_id: tab_id.clone(),
         });
-        if env.desktop {
+        if self.book.desktop {
             fx.push(Effect::CloseAgentBrowserTab { tab_id });
         }
     }

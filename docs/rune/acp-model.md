@@ -255,7 +255,7 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      reaches; a crash or error also toasts. The browser policy and
      automation hints pass through as effects. `_onBrowserAgentTab` and
      `_onBrowserTabClosed` track the tab's Stop owner and, when
-     `Env::desktop`, open or close the workspace tab; an open the history
+     `Book::desktop`, open or close the workspace tab; an open the history
      covers is skipped. A delta whose payload its handler cannot read is
      logged and dropped, where the TypeScript hands it on unchecked.
 8. Launch, prepare and warm pool, agent configs.
@@ -359,7 +359,7 @@ its pinned sources match a path glob of both workflows.
   (`live_only`) client skips the index reload the way the server one does;
   the model folds both into `Env::server_history`.
 - `context.openChatTabs` lists the sessions a chat tab shows.
-- `context.desktop` makes `isTauriContext` true, as `Env::desktop` does.
+- `context.desktop` makes `isTauriContext` true, as `Book::desktop` does.
 - `context.payloads` is each session's durable history: every
   `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
   session it does not list, and `{ "reject": text }` fails the read. The

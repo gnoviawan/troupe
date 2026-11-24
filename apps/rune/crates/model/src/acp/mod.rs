@@ -175,6 +175,10 @@ pub struct Book {
     /// Browser-open URLs caught before their agent registered, oldest first.
     #[serde(skip)]
     pub early_browser_opens: VecDeque<(String, String)>,
+    /// The app shows native panes, such as an agent's browser tab
+    /// (`isTauriContext`). The app sets it once.
+    #[serde(skip)]
+    pub desktop: bool,
     /// Option restores in flight: model picks and heals.
     #[serde(skip)]
     pub(crate) runs: BTreeMap<RunId, Run>,
@@ -291,9 +295,6 @@ pub struct Env<'a> {
     pub ids: &'a mut dyn Ids,
     /// The host owns the history (`historyMode` is `server`): the web client.
     pub server_history: bool,
-    /// The app shows native panes, such as an agent's browser tab
-    /// (`isTauriContext`).
-    pub desktop: bool,
 }
 
 impl Env<'_> {
@@ -496,8 +497,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
-        Event::BrowserAgentTab(event, seq) => state.on_browser_agent_tab(event, seq, env, &mut fx),
-        Event::AgentBrowserTabClosed(event) => state.on_browser_tab_closed(event, env, &mut fx),
+        Event::BrowserAgentTab(event, seq) => state.on_browser_agent_tab(event, seq, &mut fx),
+        Event::AgentBrowserTabClosed(event) => state.on_browser_tab_closed(event, &mut fx),
         Event::AgentsWatchState(state_) => state.on_agents_watch_state(state_, env, &mut fx),
         Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
