@@ -117,3 +117,50 @@ fn a_question_replaces_the_composer_and_submits_the_pick() {
     assert!(present(&rt, "composer-chat-chat-1-tray"), "the composer comes back");
 }
 
+
+/// A key the app's own handler gets (no field has focus while a question shows).
+fn press(rt: &mut Runtime<State>, key: rune::Key) {
+    rt.update_if(|s, tx| crate::keys::on_key(s, &rune::KeyEvent { key: key.clone(), mods: rune::Mods::default() }, tx));
+    rt.frame(0.3);
+}
+
+#[test]
+fn digits_pick_and_return_answers_the_question_on_screen() {
+    use rune::Key;
+    let mut rt = chat_at((1280.0, 800.0));
+    ask(
+        &mut rt,
+        json!({ "_onQuestionRequest": [{
+            "agentId": "agent-1",
+            "sessionId": "chat-1",
+            "questionId": "q-1",
+            "question": "Which branch?",
+            "options": [{ "value": "main", "label": "main" }, { "value": "feature", "label": "feature/router" }],
+        }, 6] }),
+    );
+    for key in [Key::Text("2".into()), Key::Enter] {
+        press(&mut rt, key);
+    }
+    assert_eq!(
+        sent(&rt.state, WsRequestType::AnswerQuestion),
+        [json!({ "agentId": "agent-1", "questionId": "q-1", "values": ["feature"] })]
+    );
+}
+
+#[test]
+fn escape_cancels_the_question_on_screen() {
+    use rune::Key;
+    let mut rt = chat_at((1280.0, 800.0));
+    ask(
+        &mut rt,
+        json!({ "_onQuestionRequest": [{
+            "agentId": "agent-1", "sessionId": "chat-1", "questionId": "q-1",
+            "question": "Which branch?", "options": [{ "value": "main", "label": "main" }],
+        }, 6] }),
+    );
+    press(&mut rt, Key::Escape);
+    assert_eq!(
+        sent(&rt.state, WsRequestType::AnswerQuestion),
+        [json!({ "agentId": "agent-1", "questionId": "q-1", "values": null })]
+    );
+}
