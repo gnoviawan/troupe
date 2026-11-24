@@ -287,7 +287,7 @@ impl State {
                 LOOKUP_SOURCE,
                 format!("session/new for agent {agent_id} was answered by entity lookup (session {session_id}); opening it from history"),
             ));
-            return self.resolve_create(create, session_id, env, fx);
+            return self.open_looked_up_session(session_id, create, fx);
         }
         self.invalidate_session_reopen(&session_id);
         self.add_created_session(&call, &session_id, reply, env);
@@ -421,7 +421,7 @@ impl State {
         }
     }
 
-    fn resolve_create(
+    pub(crate) fn resolve_create(
         &mut self,
         create: CreateId,
         session_id: String,

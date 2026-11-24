@@ -402,6 +402,8 @@
         "history_open_shows_a_signed_out_account",
         "history_open_host_turn_flag_wins_over_a_reply",
         "history_open_normalizes_user_bubbles_and_restores_payload_models",
+        "create_session_lookup_opens_the_session_from_history",
+        "create_session_lookup_fails_without_history",
         "history_open_signs_in_when_the_load_asks",
         "history_open_reload_needs_a_new_agent",
         "history_open_with_explicit_servers_and_roots",

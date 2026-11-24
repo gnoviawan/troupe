@@ -484,6 +484,21 @@ export const historyScenarios: Scenario[] = [
     steps: [open()]
   },
   {
+    name: 'create_session_lookup_opens_the_session_from_history',
+    context: {
+      payloads: { s5: payload({ id: 's5' }) },
+      agentReplies: [{ sessionId: 's5', lookup: true }, {}]
+    },
+    initial: live(LOADS),
+    steps: [ev('createSession', AGENT, '/work', [], 'p1'), tick]
+  },
+  {
+    name: 'create_session_lookup_fails_without_history',
+    context: { agentReplies: [{ sessionId: 's5', lookup: true }] },
+    initial: live(LOADS),
+    steps: [ev('createSession', AGENT, '/work', [], 'p1')]
+  },
+  {
     name: 'history_open_signs_in_when_the_load_asks',
     context: { payloads: { s1: payload() }, agentReplies: [REQUIRED, null, {}] },
     initial: live(LOADS, {

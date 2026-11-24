@@ -57,12 +57,21 @@ enum Strategy {
     Resume,
 }
 
+/// Who waits on an open.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum OpenWaiter {
+    /// The user's action, by the app's request id.
+    Action(RequestId),
+    /// A `createSession` the host answered from its records.
+    Create(super::create::CreateId),
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Open {
     session_id: String,
     generation: u64,
     options: OpenHistoryOptions,
-    waiters: Vec<RequestId>,
+    waiters: Vec<OpenWaiter>,
     /// The index held the chat when the open began, so its row going away
     /// meanwhile is a delete.
     was_indexed: bool,
@@ -90,6 +99,8 @@ pub(crate) struct HistoryBook {
     generations: BTreeMap<String, u64>,
     /// Sessions whose queued prompt goes out once the step ends.
     pub(crate) flush: Vec<String>,
+    /// Creates whose looked-up session opened, answered once the step ends.
+    pub(crate) created: Vec<(super::create::CreateId, String)>,
 }
 
 fn field<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
@@ -158,6 +169,32 @@ impl State {
                 value: Value::Null,
             });
         }
+        self.open_history_for(session_id, options, OpenWaiter::Action(request), fx);
+    }
+
+    /// `createSession` was answered from the host's records: open the
+    /// session it names from history, then answer the create.
+    pub(crate) fn open_looked_up_session(
+        &mut self,
+        session_id: String,
+        create: super::create::CreateId,
+        fx: &mut Vec<Effect>,
+    ) {
+        if self.sessions.get(&session_id).is_some_and(|session| {
+            !matches!(session.status, SessionStatus::Closed | SessionStatus::Error)
+        }) {
+            return self.book.history.created.push((create, session_id));
+        }
+        self.open_history_for(session_id, None, OpenWaiter::Create(create), fx);
+    }
+
+    fn open_history_for(
+        &mut self,
+        session_id: String,
+        options: Option<OpenHistoryOptions>,
+        waiter: OpenWaiter,
+        fx: &mut Vec<Effect>,
+    ) {
         let current = self.reopen_generation(&session_id);
         let book = &mut self.book.history;
         if let Some(open) = book
@@ -166,7 +203,7 @@ impl State {
             .and_then(|id| book.opens.get_mut(id))
             .filter(|open| open.generation == current)
         {
-            return open.waiters.push(request);
+            return open.waiters.push(waiter);
         }
         self.invalidate_session_reopen(&session_id);
         let was_indexed = self
@@ -183,7 +220,7 @@ impl State {
                 session_id: session_id.clone(),
                 generation: current + 1,
                 options: options.unwrap_or_default(),
-                waiters: vec![request],
+                waiters: vec![waiter],
                 was_indexed,
                 payload: Value::Null,
                 turn_live: false,
@@ -203,7 +240,7 @@ impl State {
 
     /// The open is over: its callers get the outcome, and a prompt queued
     /// meanwhile goes out.
-    fn finish_open(&mut self, id: OpenId, error: Option<String>, fx: &mut Vec<Effect>) {
+    fn finish_open(&mut self, id: OpenId, error: Option<HostError>, fx: &mut Vec<Effect>) {
         let book = &mut self.book.history;
         let Some(open) = book.opens.remove(&id) else {
             return;
@@ -212,16 +249,21 @@ impl State {
             book.by_session.remove(&open.session_id);
             book.flush.push(open.session_id.clone());
         }
-        for request in open.waiters {
-            fx.push(match &error {
-                None => Effect::ActionResolved {
+        for waiter in open.waiters {
+            match (waiter, &error) {
+                (OpenWaiter::Action(request), None) => fx.push(Effect::ActionResolved {
                     request,
                     value: Value::Null,
-                },
-                Some(message) => Effect::ActionRejected {
-                    message: message.clone(),
-                },
-            });
+                }),
+                (OpenWaiter::Action(_), Some(error)) => fx.push(Effect::rejected_by(error)),
+                (OpenWaiter::Create(create), None) => {
+                    let opened = (create, open.session_id.clone());
+                    self.book.history.created.push(opened);
+                }
+                (OpenWaiter::Create(create), Some(error)) => {
+                    self.on_create_failed(create, error.clone(), fx);
+                }
+            }
         }
     }
 
@@ -246,7 +288,7 @@ impl State {
             session.last_error_code = Some(None);
             session.last_error_data = None;
         }
-        self.finish_open(id, Some(text), fx);
+        self.finish_open(id, Some(error.clone()), fx);
     }
 
     /// The payload read is over: show the transcript, then look for the
@@ -265,16 +307,16 @@ impl State {
             return self.finish_open(id, None, fx);
         }
         let payload = match outcome {
-            Err(message) => return self.finish_open(id, Some(format!("Error: {message}")), fx),
+            Err(message) => return self.finish_open(id, Some(HostError::new(message, None)), fx),
             Ok(None) => {
-                let message = format!("Error: no persisted history for {session_id}");
-                return self.finish_open(id, Some(message), fx);
+                let message = format!("no persisted history for {session_id}");
+                return self.finish_open(id, Some(HostError::new(message, None)), fx);
             }
             Ok(Some(payload)) => payload,
         };
         let Some(installed) = self.install_history(&session_id, &payload, fx) else {
-            let message = format!("Error: unreadable history for {session_id}");
-            return self.finish_open(id, Some(message), fx);
+            let message = format!("unreadable history for {session_id}");
+            return self.finish_open(id, Some(HostError::new(message, None)), fx);
         };
         let Installed {
             turn_live,
@@ -540,8 +582,8 @@ impl State {
                 .insert(session_id.clone(), cursor);
         }
         let Some(session) = self.sessions.get_mut(&session_id) else {
-            let message = format!("Error: no session record to attach for {session_id}");
-            return self.finish_open(id, Some(message), fx);
+            let message = format!("no session record to attach for {session_id}");
+            return self.finish_open(id, Some(HostError::new(message, None)), fx);
         };
         session.agent_id = open.live_agent.clone();
         session.status = SessionStatus::Active;

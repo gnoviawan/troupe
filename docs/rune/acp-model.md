@@ -248,9 +248,8 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `transport` forgets the agent's sign-in and kills it (`killAgent`
      with `Killer::Evict`) before the caller sees the error; one under
      `auth` forgets the sign-in. A resend the host answered from its
-     records (`lookup`) fails for an ephemeral session; for any other it
-     answers with the session id but does not open it yet: history open
-     does that, and it is not ported. Not here: the registry server
+     records (`lookup`) fails for an ephemeral session; any other is opened
+     from history (6d) before the create answers. Not here: the registry server
      fingerprints (`recordRegistryMcpServers`, read by the warm-pool
      claim), `ephemeralSessionIds` (PR 8), the reopen generation
      (`invalidateSessionReopen`, history open) and `pendingRestartVersions`
@@ -290,8 +289,9 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      it needs `applyPendingLauncherOptions`), the 3 s capability wait (an
      agent without capabilities reopens locally), the durable plan replay
      from plan tool calls, the switch chain edges and the restore preload
-     marks. `createSession`'s `lookup` branch still does not open the
-     session it names.
+     marks. A `createSession` the host answered from its records
+     (`lookup`) opens the session it names this way and answers once the
+     open did, or fails with the open's error.
    - 6b, rest. History open, `loadOlderMessages` (it needs the composer
      unit's wire-to-display reversal for its twin folding and the switch
      bands of PR 9), the resubscribe install, live-turn reattach.
