@@ -89,8 +89,11 @@ export function setAgentOverlay(overrides: unknown): void {
   for (const listener of listeners) listener()
 }
 
-/** Replace the seed with the host's overlay. Failures keep what is shown. */
-export async function loadAgentOverlay(): Promise<void> {
+/**
+ * Replace the seed with the host's overlay. A failure keeps what is shown.
+ * Resolves `true` when the host answered.
+ */
+export async function loadAgentOverlay(): Promise<boolean> {
   try {
     const overlay = await getAcpTransport().getAgentOverlay()
     setAgentOverlay(overlay.overrides)
@@ -99,11 +102,13 @@ export async function loadAgentOverlay(): Promise<void> {
       source: 'agent-overlay',
       message: `Agent overlay loaded source=${overlay.source} overrides=${overlay.overrides.length}`
     })
+    return true
   } catch (err) {
     void logFrontendError({
       level: 'warn',
       source: 'agent-overlay',
       message: `Agent overlay load failed: ${err instanceof Error ? err.message : String(err)}`
     })
+    return false
   }
 }
