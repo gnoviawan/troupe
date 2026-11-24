@@ -80,8 +80,6 @@ pub(super) struct StartAntigravityAccountLoginPayload {
     config: AgentConfig,
 }
 
-/// `list_antigravity_usage` → every Account as `unavailable`: Troupe does not
-/// read Antigravity quotas.
 pub(super) fn handle_list_antigravity_usage(id: String, acp: &Arc<AcpManager>) -> WsReply {
     match acp.antigravity_agent().accounts_usage() {
         Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),

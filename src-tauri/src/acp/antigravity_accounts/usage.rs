@@ -1,6 +1,6 @@
 //! Usage of an Antigravity Account, and the plan-limit message Antigravity
 //! sends as plain agent text ("Usage Limit Reached") instead of a structured
-//! error. Troupe does not read quotas, so a usage read carries no windows.
+//! error.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

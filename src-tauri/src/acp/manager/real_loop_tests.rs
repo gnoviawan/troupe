@@ -146,7 +146,7 @@ for line in sys.stdin:
                 "data": {"errorKind": "rate_limited"}}})
         elif text.startswith("antigravitylimit"):
             # Antigravity at its quota: the limit message as agent text, then
-            # a normal end of turn. Text after the command is the reset it names.
+            # a normal end of turn.
             body = "Usage Limit Reached\n\nYou have reached your current quota for this period."
             reset = text[len("antigravitylimit"):].strip()
             if reset:

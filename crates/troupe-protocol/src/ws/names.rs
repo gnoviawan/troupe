@@ -237,8 +237,7 @@ wire_enum! {
         // Accounts with `AntigravityAccountsSnapshot` and `AntigravityAccountUsage`
         // (one `model` window per quota bucket). `list` → the snapshot.
         ListAntigravityAccounts = "list_antigravity_accounts",
-        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`. Every Account is
-        // `unavailable`: Troupe does not read Antigravity quotas.
+        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`.
         ListAntigravityUsage = "list_antigravity_usage",
         SetDefaultAntigravityAccount = "set_default_antigravity_account",
         SetProjectAntigravityAccount = "set_project_antigravity_account",

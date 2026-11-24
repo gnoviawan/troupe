@@ -20,6 +20,7 @@ use crate::web::WsRelaySink;
 const PROJECT: &str = "proj-1";
 const WAIT: Duration = Duration::from_secs(45);
 const SCHEDULE_FILE: &str = "antigravity-limit-resumes.json";
+const SIGNED_OUT: &[&str] = &["default"];
 
 struct Host {
     dir: tempfile::TempDir,
@@ -31,9 +32,6 @@ struct Host {
 }
 
 impl Host {
-    /// A host with the Accounts `names` (`default` is the built-in one),
-    /// every one signed in except the built-in Account, and the project on
-    /// `project_account`.
     async fn start(names: &[&'static str], project_account: &str) -> Option<Self> {
         Self::start_ready(names, project_account, None).await
     }
@@ -62,7 +60,7 @@ impl Host {
         let serial = TIMEOUT_TEST_LOCK.lock().await;
         let dir = tempfile::tempdir().unwrap();
         let state = dir.path().join("state");
-        let antigravity = AntigravityAgentService::with_logins_for_test(&state, &["default"]);
+        let antigravity = AntigravityAgentService::with_logins_for_test(&state, SIGNED_OUT);
         let mut accounts = HashMap::new();
         for name in names {
             let id = if *name == "default" {

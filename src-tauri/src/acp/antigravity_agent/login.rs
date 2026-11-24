@@ -1,8 +1,8 @@
 //! The Antigravity login probe. Antigravity has no `login status` command, so
 //! a home is signed in when one of its Google token files exists and is not
-//! empty. Troupe never opens a token file. The built-in Account on macOS may
-//! keep its login in the keychain instead; that entry is looked up without
-//! reading the secret. Nothing here logs a path, a token or an account id.
+//! empty. The built-in Account on macOS may keep its login in the keychain
+//! instead; that entry is looked up without reading the secret. Nothing here
+//! logs a path, a token or an account id.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -27,9 +27,6 @@ pub(crate) fn token_files(home: &Path) -> [PathBuf; 2] {
     [dir.join(TOKEN_FILE), dir.join(BUSINESS_TOKEN_FILE)]
 }
 
-/// The login state of `home` from its token files: `Some(true)` when one
-/// exists and is not empty, `Some(false)` when none does, `None` when one
-/// could not be checked and the other did not confirm a login.
 pub(crate) fn token_file_login(home: &Path) -> Option<bool> {
     let mut unreadable = false;
     for path in token_files(home) {
