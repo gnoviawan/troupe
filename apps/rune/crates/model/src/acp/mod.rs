@@ -35,6 +35,8 @@ mod transcript;
 pub mod turn;
 pub mod types;
 pub mod window;
+#[cfg(test)]
+mod window_tests;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -54,6 +56,7 @@ use approvals::{
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
 pub use effect::Effect;
 use picks::PickOptions;
+pub use plan::is_plan_tool;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 use restore::Run;
 pub use restore::RunId;
@@ -64,7 +67,6 @@ pub use transcript::{
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
     UsageUpdateEvent, UserPromptEvent,
 };
-pub use plan::is_plan_tool;
 use turn::{AgentWorkingEvent, BackgroundCommandsEvent, HostReports, PromptCompleteEvent, TurnEnd};
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 use window::PayloadReadOutcome;

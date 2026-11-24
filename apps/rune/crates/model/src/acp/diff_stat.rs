@@ -134,10 +134,10 @@ fn anchor_kept(old: &[&str], new: &[&str], depth: usize) -> usize {
         .collect();
     let mut anchors: Vec<(usize, usize)> = Vec::new();
     for (i, line) in old.iter().enumerate() {
-        if let Some(&j) = new_unique.get(line) {
-            if anchors.last().is_none_or(|&(_, last)| j > last) {
-                anchors.push((i, j));
-            }
+        if let Some(&j) = new_unique.get(line)
+            && anchors.last().is_none_or(|&(_, last)| j > last)
+        {
+            anchors.push((i, j));
         }
     }
     if anchors.is_empty() {

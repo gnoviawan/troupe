@@ -119,7 +119,8 @@ export const windowScenarios: Scenario[] = [
               rawInput: { path: '/w/a.ts' },
               content: [
                 { type: 'diff', path: '/w/a.ts', oldText: 'a\nb\nc\n', newText: 'a\nB\nc\nd\n' },
-                { type: 'diff', path: '/w/b.ts', oldText: null, newText: 'x\r\ny\n' }
+                { type: 'diff', path: '/w/b.ts', oldText: null, newText: 'x\r\ny\n' },
+                { type: 'diff', path: '/w/a.ts', oldText: 'p\r\nq\r\n', newText: 'p\nq\nr\n' }
               ]
             },
             {
@@ -143,6 +144,12 @@ export const windowScenarios: Scenario[] = [
             },
             { toolCallId: 'r1', kind: 'read', status: 'completed', locations: [{ path: '/w/r' }] },
             {
+              toolCallId: 'x1',
+              kind: 'delete',
+              status: 'completed',
+              content: [{ type: 'diff', path: '/w/x.ts', oldText: 'x\n', newText: '' }]
+            },
+            {
               toolCallId: 'e4',
               kind: 'edit',
               status: 'completed',
@@ -154,7 +161,7 @@ export const windowScenarios: Scenario[] = [
         }
       }
     ),
-    // 506 calls: the six above drop, and the file changes leave summaries.
+    // 507 calls: the seven above drop, and the file changes leave summaries.
     steps: [toolCall({ toolCallId: 'n1', title: 'Run', status: 'completed' })]
   },
   {
