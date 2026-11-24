@@ -63,16 +63,20 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
         .gap(4.0)
         .border_sides([0.0, 0.0, 1.0, 0.0], c.border)
         .child(
-            mobile::icon_button(t, glyph("Menu"), "Open navigation")
+            mobile::icon_button(t, glyph("Menu"), "Open menu")
                 .key("phone-menu")
                 .on_press(|s: &mut State| s.overlays.open(DRAWER)),
         )
         .child(mobile::header_title(
             t,
             "Troupe",
-            mobile::header_subtitle(t, &project_line(s), "Switch project")
-                .key("phone-project-line")
-                .on_press(|s: &mut State| s.overlays.open(PROJECTS)),
+            mobile::header_subtitle(
+                t,
+                &project_line(s),
+                &format!("{}, switch project", project_line(s)),
+            )
+            .key("phone-project-line")
+            .on_press(|s: &mut State| s.overlays.open(PROJECTS)),
         ))
         .child(
             mobile::icon_button(t, glyph("MessageSquarePlus"), "New chat")
@@ -195,7 +199,12 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
         );
     let query = s.phone.query.text.trim().to_lowercase();
     let hit = |chat: &&Chat| query.is_empty() || chat.label().to_lowercase().contains(&query);
-    let mut list = col().key("drawer-list").w_full().pt(8.0);
+    let mut list = col()
+        .key("drawer-list")
+        .role("list")
+        .label("Recents")
+        .w_full()
+        .pt(8.0);
     let recents: Vec<&Chat> = project
         .map(|p| s.chats.of_project(&p.id).filter(hit).collect())
         .unwrap_or_default();
@@ -337,7 +346,7 @@ fn recents_row(t: &'static Tokens, chat: &Chat) -> El {
             mobile::icon_button(
                 t,
                 glyph("MoreHorizontal"),
-                &format!("Actions for {}", chat.label()),
+                &format!("More actions for {}", chat.label()),
             )
             .key("actions")
             .on_press(move |s: &mut State| {

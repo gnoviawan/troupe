@@ -367,25 +367,32 @@ fn chat_row(s: &State, t: &'static Tokens, chat: &Chat) -> El {
     );
     let menu_open = s.overlays.is_open(crate::rail::CHAT_MENU)
         && s.rail.chat.as_deref() == Some(&chat.session_id);
+    // The "More actions" button is always there for keyboards and screen readers; it shows,
+    // in place of the age, while the row is hovered or its menu is open.
+    let more = row()
+        .key(if menu_open && s.rail.at.is_none() {
+            "chat-menu-trigger"
+        } else {
+            "more"
+        })
+        .role("button")
+        .label(format!("More actions for {}", chat.label()))
+        .size(20.0, 20.0)
+        .center()
+        .radius(4.0)
+        .hover(c.row_hover)
+        .opacity(if hovered { 1.0 } else { 0.0 })
+        .child(icon(glyph("MoreHorizontal"), 14.0).color(c.muted_foreground))
+        .on_press(move |s: &mut State| s.open_chat_dropdown(&more_id));
     let trailing = if hovered {
-        row()
-            .key(if menu_open && s.rail.at.is_none() {
-                "chat-menu-trigger"
-            } else {
-                "more"
-            })
-            .role("button")
-            .label("More actions")
-            .size(20.0, 20.0)
-            .center()
-            .radius(4.0)
-            .hover(c.row_hover)
-            .child(icon(glyph("MoreHorizontal"), 14.0).color(c.muted_foreground))
-            .on_press(move |s: &mut State| s.open_chat_dropdown(&more_id))
+        more
     } else {
-        text(ids::age(ids::now_ms(), chat.last_activity_at))
-            .font(sans(12.0, 400.0, 16.0))
-            .color(c.muted_foreground)
+        el().child(
+            text(ids::age(ids::now_ms(), chat.last_activity_at))
+                .font(sans(12.0, 400.0, 16.0))
+                .color(c.muted_foreground),
+        )
+        .child(more.absolute(0.0, -2.0))
     };
     row()
         .key(format!("rail-chat-{}", chat.session_id))
