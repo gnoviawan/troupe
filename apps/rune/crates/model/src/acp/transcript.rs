@@ -175,7 +175,7 @@ impl HistoryPayload {
 
 /// `splitReadOnlyGuard`: the CAP-6 guard text off the front of a user turn,
 /// and the blocks the user wrote.
-fn split_read_only_guard(mut blocks: Vec<Value>) -> (Option<String>, Vec<Value>) {
+pub(crate) fn split_read_only_guard(mut blocks: Vec<Value>) -> (Option<String>, Vec<Value>) {
     let Some(text) = blocks
         .first()
         .filter(|first| first.get("type").and_then(Value::as_str) == Some("text"))
@@ -205,7 +205,7 @@ fn split_read_only_guard(mut blocks: Vec<Value>) -> (Option<String>, Vec<Value>)
 
 /// `stripHandoffPreamble`: the draft after a handoff summary, `None` when
 /// the text is the summary alone. Other text comes back unchanged.
-fn strip_handoff_preamble(text: &str) -> Option<String> {
+pub(crate) fn strip_handoff_preamble(text: &str) -> Option<String> {
     if !text.starts_with(HANDOFF_PREFIX) {
         return Some(text.to_owned());
     }

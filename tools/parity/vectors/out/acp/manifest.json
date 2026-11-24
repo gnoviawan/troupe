@@ -17,7 +17,10 @@
         "src/renderer/stores/acp-store/child-approvals.ts": "c0f312dcbacdca1535eac1450397a2b6f0410bda",
         "src/renderer/stores/acp-store/slices/prompt.ts": "466934a39bbe4c9948a860732187288542c223e5",
         "src/renderer/stores/acp-store/slices/agent.ts": "325ac0c5b875c85f561f67c83c27a138687d9d36",
-        "src/renderer/lib/browser-consent-api.ts": "653bc724d545e28af1b1a4b8e822138534f61acf"
+        "src/renderer/lib/browser-consent-api.ts": "653bc724d545e28af1b1a4b8e822138534f61acf",
+        "src/renderer/stores/acp-store/host-session-reports.ts": "8ae4f30faff5eacf60c377f3e4913395e9d5ba3e",
+        "src/renderer/lib/agent-chat-notify.ts": "e702d4fcb64619f0d8458f793786e49a46c83cbd",
+        "src/renderer/components/chat/background-commands.ts": "a3b2fed0cbddc14463d2cc8c628672ac6a284147"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -75,7 +78,25 @@
         "questions_keep_the_first_and_cancel_by_id",
         "elicitations_normalize_string_options",
         "browser_consent_tickets_ride_the_permission_contract",
-        "a_settled_orchestrated_run_dismisses_its_prompts"
+        "a_settled_orchestrated_run_dismisses_its_prompts",
+        "prompt_complete_closes_the_turn_and_finalizes",
+        "stop_reasons_set_their_note",
+        "a_failed_turn_keeps_the_agent_error",
+        "a_turn_ends_once_per_turn_id",
+        "end_turn_clears_a_rejected_rate_limit",
+        "the_plan_settles_and_snapshots_onto_the_reply",
+        "a_settled_plan_still_snapshots",
+        "turn_end_drops_only_its_agents_prompts",
+        "prompt_complete_for_an_unknown_session",
+        "a_covered_prompt_complete_is_history",
+        "an_active_turn_without_an_id_closes",
+        "an_idle_session_schedules_no_close",
+        "prompt_complete_clears_the_opencode_line_and_persists",
+        "a_streaming_user_bubble_is_normalized_at_the_end",
+        "a_suppressed_queue_does_not_flush",
+        "agent_working_marks_the_session_busy",
+        "background_commands_keep_the_newest_list",
+        "background_commands_of_another_agent_are_replaced"
       ]
     }
   }

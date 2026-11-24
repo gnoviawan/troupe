@@ -6,7 +6,7 @@
 mod common;
 
 use common::{Replay, diff, out_dir, parse, read_json, source_hash, to_value};
-use model::acp::{self, Env, Event, State};
+use model::acp::{self, Effect, Env, Event, State};
 use serde_json::{Value, json};
 
 /// The vector clock: `context.now` while seeding, 1 s later at every step.
@@ -48,11 +48,22 @@ fn replay(vector: &Value) -> Result<usize, String> {
             ids: &mut ids,
             server_history,
         };
-        let effects = acp::step(
+        let mut effects = acp::step(
             &mut state,
             event(&recorded["event"]).map_err(|e| at(&e))?,
             &mut env,
         );
+        // The recorder drains the deferred turn end after every step; so does
+        // the replay, the way the app feeds the close back.
+        while let Some(index) = effects
+            .iter()
+            .position(|effect| matches!(effect, Effect::EndTurn(_)))
+        {
+            let Effect::EndTurn(end) = effects.remove(index) else {
+                unreachable!()
+            };
+            effects.extend(acp::step(&mut state, Event::TurnEnd(end), &mut env));
+        }
         if !ids.ids.is_empty() || ids.overdrawn > 0 {
             return Err(at(&format!(
                 "drew {} ids too few or {} too many",

@@ -2,7 +2,7 @@
 //! Codex `update_plan`, Claude `TodoWrite`, Cursor `updateTodos`). Port of
 //! `src/renderer/lib/plan-session.ts`; that file's header states the rules.
 
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use super::types::{Object, PlanEntry};
 use crate::js_trim;
@@ -106,20 +106,27 @@ fn entry_from_item(item: &Value) -> Option<PlanEntry> {
     let content = ["content", "step", "text"]
         .into_iter()
         .find_map(|key| non_empty(record.get(key)))?;
+    let mut entry = Object::new();
+    entry.insert("content".into(), json!(content));
+    if let Some(id) = non_empty(record.get("id")) {
+        entry.insert("id".into(), json!(id));
+    }
+    if let Some(status) = non_empty(record.get("status")) {
+        entry.insert("status".into(), json!(normalize_status(status)));
+    }
     let priority = non_empty(record.get("priority"))
         .map(str::to_lowercase)
         .filter(|p| matches!(p.as_str(), "high" | "medium" | "low"));
+    if let Some(priority) = priority {
+        entry.insert("priority".into(), json!(priority));
+    }
     let detail = non_empty(record.get("detail"))
         .or_else(|| non_empty(record.get("description")))
         .filter(|detail| *detail != content);
-    Some(PlanEntry {
-        content: content.to_owned(),
-        id: non_empty(record.get("id")).map(|id| Value::String(id.to_owned())),
-        status: non_empty(record.get("status")).map(normalize_status),
-        priority,
-        detail: detail.map(str::to_owned),
-        rest: Object::new(),
-    })
+    if let Some(detail) = detail {
+        entry.insert("detail".into(), json!(detail));
+    }
+    Some(PlanEntry(entry))
 }
 
 fn list_from_input(input: &Object) -> Option<Vec<PlanEntry>> {
@@ -132,22 +139,14 @@ fn list_from_input(input: &Object) -> Option<Vec<PlanEntry>> {
 fn merge(current: Option<&Vec<PlanEntry>>, incoming: Vec<PlanEntry>) -> Vec<PlanEntry> {
     let mut next = current.cloned().unwrap_or_default();
     for item in incoming {
-        let id = item.id_str().unwrap_or_default().to_owned();
-        let index = if id.is_empty() {
-            next.iter().position(|entry| entry.content == item.content)
-        } else {
-            next.iter()
-                .position(|entry| entry.id_str() == Some(id.as_str()))
+        let index = match item.text("id").filter(|id| !id.is_empty()) {
+            Some(id) => next.iter().position(|entry| entry.text("id") == Some(id)),
+            None => next
+                .iter()
+                .position(|entry| entry.get("content") == item.get("content")),
         };
         match index {
-            Some(index) => {
-                let entry = &mut next[index];
-                entry.content = item.content;
-                entry.id = item.id.or(entry.id.take());
-                entry.status = item.status.or(entry.status.take());
-                entry.priority = item.priority.or(entry.priority.take());
-                entry.detail = item.detail.or(entry.detail.take());
-            }
+            Some(index) => next[index].0.extend(item.0),
             None => next.push(item),
         }
     }
@@ -155,8 +154,8 @@ fn merge(current: Option<&Vec<PlanEntry>>, incoming: Vec<PlanEntry>) -> Vec<Plan
 }
 
 fn keys(entry: &PlanEntry) -> Vec<String> {
-    let mut keys = vec![format!("content:{}", js_trim(&entry.content))];
-    if let Some(id) = entry.id_str().map(js_trim).filter(|id| !id.is_empty()) {
+    let mut keys = vec![format!("content:{}", js_trim(entry.content()))];
+    if let Some(id) = entry.text("id").map(js_trim).filter(|id| !id.is_empty()) {
         keys.push(format!("id:{id}"));
     }
     keys
@@ -186,11 +185,9 @@ fn same(current: Option<&Vec<PlanEntry>>, next: &[PlanEntry]) -> bool {
     current.is_some_and(|current| {
         current.len() == next.len()
             && current.iter().zip(next).all(|(a, b)| {
-                a.content == b.content
-                    && a.status == b.status
-                    && a.priority == b.priority
-                    && a.id == b.id
-                    && a.detail == b.detail
+                ["content", "status", "priority", "id", "detail"]
+                    .iter()
+                    .all(|key| a.get(key) == b.get(key))
             })
     })
 }

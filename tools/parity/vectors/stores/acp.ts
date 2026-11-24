@@ -11,11 +11,12 @@ import {
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
+import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
 import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
-import { FRESH } from '../../../../src/renderer/stores/acp-store/testkit'
+import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
 import type { StoreRecorder } from '../record'
 
 /**
@@ -39,7 +40,11 @@ const DATA_KEYS = [
   'pendingPermissions',
   'pendingQuestions',
   'pendingElicitations',
-  'pendingBrowserConsents'
+  'pendingBrowserConsents',
+  'agentStatus',
+  'turnEndNotices',
+  'promptQueues',
+  'suppressQueueFlush'
 ] as const
 
 /** Module functions a step may call besides the store's actions. */
@@ -66,10 +71,16 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/child-approvals.ts',
     'src/renderer/stores/acp-store/slices/prompt.ts',
     'src/renderer/stores/acp-store/slices/agent.ts',
-    'src/renderer/lib/browser-consent-api.ts'
+    'src/renderer/lib/browser-consent-api.ts',
+    'src/renderer/stores/acp-store/host-session-reports.ts',
+    'src/renderer/lib/agent-chat-notify.ts',
+    'src/renderer/components/chat/background-commands.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
+    for (const sessionId of new Set([...SCENARIO_SESSIONS, ...Object.keys(state.sessions)])) {
+      forgetHostReports(sessionId)
+    }
     // Forgets each session's clamp-log ids, so a vector logs its own clamps.
     for (const sessionId of Object.keys(state.toolCalls)) {
       dropSessionTranscriptState(state, sessionId)
@@ -78,6 +89,7 @@ export const acpRecorder: StoreRecorder = {
     _resetHistorySeqWatermarksForTesting()
     _resetSubagentRecordLogsForTesting()
     _resetSubagentTranscriptLogsForTesting()
+    shared._resetPromptReconcileForTesting()
     // The counter only moves up; each vector starts on the next hundred.
     shared.rebaseSeqCounter(Math.ceil((peekSeq() + 1) / 100) * 100)
     if (context.serverHistory) {
@@ -104,15 +116,20 @@ export const acpRecorder: StoreRecorder = {
       }
     }
   },
-  dispatch({ action, args }) {
+  async dispatch({ action, args }) {
     clock += 1000
     const call =
       MODULE_CALLS[action] ??
       (useAcpStore.getState() as unknown as Record<string, (...a: unknown[]) => void>)[action]
     ;(call as (...a: unknown[]) => void)(...args)
     _flushCoalescedForTesting()
+    // The deferred turn end (`scheduleTurnEnd`) runs on the next macrotask.
+    await flushTurnEnd()
   }
 }
+
+/** Sessions the scenarios name, whose host reports outlive a vector. */
+const SCENARIO_SESSIONS = ['s1', 's9']
 
 /** The live `seqCounter`, through the hook `record-acp.test.ts` mocks in. */
 function peekSeq(): number {
@@ -121,5 +138,6 @@ function peekSeq(): number {
 
 import { transcriptScenarios } from './acp-scenarios'
 import { subagentScenarios } from './acp-scenarios-subagents'
+import { turnScenarios } from './acp-scenarios-turn'
 
-export const acpScenarios = [...transcriptScenarios, ...subagentScenarios]
+export const acpScenarios = [...transcriptScenarios, ...subagentScenarios, ...turnScenarios]

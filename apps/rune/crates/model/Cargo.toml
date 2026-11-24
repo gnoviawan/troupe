@@ -7,7 +7,9 @@ description = "Troupe's client state for the Rune shell: plain state types and s
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-serde_json = { workspace = true }
+# Objects keep their key order, as JavaScript's do: an agent's plan entry
+# shows in the snapshot fence as it was sent.
+serde_json = { workspace = true, features = ["preserve_order"] }
 
 [dev-dependencies]
 sha1 = "0.10"

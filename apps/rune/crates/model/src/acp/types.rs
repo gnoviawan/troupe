@@ -77,6 +77,14 @@ pub struct Session {
     pub replaying: Option<Option<Replaying>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub opencode_notice: Option<OpencodeNotice>,
+    pub last_error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "nullable")]
+    pub last_error_code: Option<Option<f64>>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "nullable")]
+    pub last_error_data: Option<Option<Value>>,
+    /// The commands the agent that reported them left running.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub background_commands: Option<Value>,
     #[serde(flatten)]
     pub rest: Object,
 }
@@ -174,26 +182,23 @@ pub struct Usage {
     pub source: String,
 }
 
-/// One row of a session's plan.
+/// One row of a session's plan. An agent sends it as an open object, and
+/// its key order shows in the snapshot fence, so it stays one.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PlanEntry {
-    pub content: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub priority: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub detail: Option<String>,
-    #[serde(flatten)]
-    pub rest: Object,
-}
+#[serde(transparent)]
+pub struct PlanEntry(pub Object);
 
 impl PlanEntry {
-    /// The id when it is a string, as `typeof entry.id === 'string'`.
-    pub fn id_str(&self) -> Option<&str> {
-        self.id.as_ref().and_then(Value::as_str)
+    pub fn get(&self, key: &str) -> Option<&Value> {
+        self.0.get(key)
+    }
+
+    /// A string field, as `typeof entry[key] === 'string'`.
+    pub fn text(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(Value::as_str)
+    }
+
+    pub fn content(&self) -> &str {
+        self.text("content").unwrap_or_default()
     }
 }

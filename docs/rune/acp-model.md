@@ -56,6 +56,10 @@ character of a float field, so the difference is recorded, not handled.
 | Effect | A call outside the store: a socket command (`send_prompt`, `cancel`, `set_mode`, `respond_permission`), a persistence write (session index, payload, composer record), a log line, a timer (deferred turn end, reconcile resend, flush clock), a toast, a route or workspace-tab change | an `acp::Effect` the app crate runs |
 | Glue | React and browser plumbing: the rAF flush clock, `visibilitychange`, the coalescing buffer and its text-delta sealing, `useAcpStore` selectors, `initAcpEventListeners` wiring | not ported; Rune applies each event at once and redraws on its own clock |
 
+Plan entries and the other open payloads keep their key order
+(`serde_json`'s `preserve_order`), as JavaScript objects do: the plan
+snapshot fence is `JSON.stringify` of the entries as the agent sent them.
+
 The coalescing buffer is glue because the vectors flush after every step: the
 state after a flush equals the state after applying the same events at once.
 Its window trim (`trimLiveWindow`) is not glue. It needs the payload cache, so
@@ -83,14 +87,14 @@ TypeScript lines are whole files, comments included. Every path below is under
 | `shared-state.ts` (seq counter, watermarks, replay floors) | 1,149 | `acp/book.rs` (`State::book`) | state | 1 |
 | `shared-state.ts` (`persistSession`, collectors, warm pool, spawn signatures, `ensureLiveAgent`) | (same file) | effects; the warm-pool and spawn maps go to `launch.rs` | effect | 6, 7 |
 | `subagent-transcript.ts`, `subagent-lifecycle.ts` (record parse, ingest, child text) | 524 | `acp/subagent.rs` | state | 2 |
-| `subagent-lifecycle.ts` `cancelRunningSubagents` | (same) | `acp/subagent.rs` | state | 3 |
+| `subagent-lifecycle.ts` `cancelRunningSubagents` | (same) | `acp/subagent.rs` | state | 5 |
 | `child-approvals.ts` | 66 | `acp/approvals.rs` | state | 2 |
-| `live-turn.ts` | 153 | `acp/turn.rs` | state | 3 |
+| `live-turn.ts` | 153 | `acp/session.rs` | state | 5 |
 | `slices/prompt.ts` permission, question and elicitation handlers | 1,671 | `acp/approvals.rs` | state; `respond_*` are socket effects | 2 |
-| `slices/prompt.ts` (`_onPromptComplete`, `_onAgentWorking`, `_onBackgroundCommands`) | (same) | `acp/turn.rs` | state; the queue flush is an effect | 3 |
+| `slices/prompt.ts` (`_onPromptComplete`, `scheduleTurnEnd`, `_onAgentWorking`, `_onBackgroundCommands`) and `lib/agent-chat-notify.ts` `bumpTurnEndNotice` | (same) | `acp/turn.rs` | state; the deferred close and the queued send are effects | 3 |
 | `slices/prompt.ts` (send, cancel, queue, send-now) and `../prompt-queue-orchestration.ts` | (same) + 277 | `acp/prompt.rs`, `acp/queue.rs` | state; `send_prompt`/`cancel` are ledgered socket effects | 4 |
 | `slices/prompt-reconcile.ts` | 173 | `acp/prompt.rs` | state plus a resend timer effect | 4 |
-| `pending-permission-sync.ts` | 146 | `acp/approvals.rs` | state | 3 |
+| `pending-permission-sync.ts` | 146 | `acp/approvals.rs` | state | 5 |
 | `host-session-reports.ts` | 62 | `acp/turn.rs` | state | 3 |
 | `rate-limit.ts` | 34 | `acp/usage.rs` | state | 1 |
 | `session-controls.ts`, `composer-options.ts`, `model-catalog.ts` | 534 | `acp/controls.rs` | state; the composer record is a persistence effect | 4 |
@@ -129,7 +133,8 @@ names its source test.
 | `core.test.ts` | clamps of oversized tool fields and content blocks | 1 |
 | `subagent-transcript.test.ts`, `subagent-lifecycle.test.ts` | record parse, child chunks, dispatch cards | 2 |
 | `child-approvals.test.ts`, `browser-consent.test.ts`, `events.test.ts` (requests) | approval ownership, consent tickets | 2 |
-| `pending-permission-sync.test.ts`, `live-turn.test.ts`, `live-turn-attach-replay.test.ts`, `derive-open-turn.test.ts`, `events.test.ts` (turn end) | resubscribe install, turn end, reattach | 3 |
+| `events.test.ts` (turn end), `prompting.test.ts` (turn end), `plans-commands.test.ts` (plan snapshot) | turn end, stop notes, plan settle and snapshot, agent working, background commands | 3 |
+| `pending-permission-sync.test.ts`, `live-turn.test.ts`, `live-turn-attach-replay.test.ts`, `derive-open-turn.test.ts` | resubscribe install, reattach | 5 |
 | `prompting.test.ts`, `prompt-reconcile.test.ts`, `composer.test.ts` | send, queue, flush, reconcile | 4 |
 | `session-controls.test.ts`, `options-cache-hydration.test.ts`, `model-catalog.test.ts` | controls, echo guard | 4 |
 | `transcript-window.test.ts`, `closed-transcript-eviction.test.ts` | live window, backfill, eviction | 5 |
@@ -153,13 +158,16 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
    subagent's text kept on its dispatch call, permission, question and
    elicitation requests, browser consent tickets, and the dismissal of a
    settled orchestrated run's prompts.
-3. Turn end. `_onPromptComplete`, agent working, background commands and the
-   host session reports, the resubscribe install of pending prompts, the
-   cancel of running subagents, live-turn reattach.
+3. Turn end. `_onPromptComplete` and the deferred close it schedules (an
+   `endTurn` effect the app feeds back as the `turnEnd` event), stop-reason
+   notes, the plan settle and snapshot fence, agent working, background
+   commands and the host session reports. A queued prompt is handed over as
+   a `sendQueuedPrompt` effect; sending it is PR 4's.
 4. Prompt and queue, session controls. Send, cancel, queue mutations,
    reconcile, mode, model and config options with the echo guard.
 5. Session lifecycle and history. Created, closed, index load, history open,
-   live window, eviction.
+   live window, eviction, the resubscribe install of pending prompts, the
+   cancel of running subagents, live-turn reattach.
 6. Agent roster, auth and browser.
 7. Launch, prepare and warm pool, agent configs.
 8. In-chat agent switch.
@@ -177,6 +185,11 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
   commit-message, terminal assist and bug-report sessions. PR 9.
 - The live-window trim and the tool-call trim at flush. PR 5.
 - Switch markers in `maxPayloadSeq`. PR 8.
+- On `prompt_complete`: the check against this client's open wire turn and
+  the prompt-reconcile clear (PR 4), and the update of the in-memory payload
+  cache (PR 5).
+- The send of a queued prompt (`runPromptTurn`). The model pops it and
+  returns `sendQueuedPrompt`; PR 4 ports what the send does to the state.
 
 ## Recorder limits
 

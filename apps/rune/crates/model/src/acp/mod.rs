@@ -13,6 +13,7 @@ mod plan;
 pub mod subagent;
 mod tool_call;
 mod transcript;
+pub mod turn;
 pub mod types;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -29,6 +30,7 @@ pub use transcript::{
     CommandsUpdateEvent, HistoryPayload, MessageChunkEvent, PlanUpdateEvent,
     SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent, UsageUpdateEvent, UserPromptEvent,
 };
+use turn::{AgentWorkingEvent, BackgroundCommandsEvent, HostReports, PromptCompleteEvent, TurnEnd};
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 
 /// What the store holds. Field names follow the TypeScript store's.
@@ -51,6 +53,14 @@ pub struct State {
     pub pending_elicitations: BTreeMap<String, PendingElicitation>,
     /// The host's browser consent tickets, keyed by request id.
     pub pending_browser_consents: BTreeMap<String, Value>,
+    /// Per agent: `idle`, `spawning`, `connected` or `error`.
+    pub agent_status: BTreeMap<String, Value>,
+    /// Per session, the count and stop reason of the turns that closed.
+    pub turn_end_notices: BTreeMap<String, Value>,
+    /// Per session, the prompts waiting for the turn to end, oldest first.
+    pub prompt_queues: BTreeMap<String, Vec<Value>>,
+    /// Sessions whose queue must not flush (a cancel and send-now).
+    pub suppress_queue_flush: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -77,9 +87,22 @@ pub struct Book {
     /// Unknown dispatch ids whose subagent text was dropped and logged.
     #[serde(skip)]
     pub orphans_logged: BTreeSet<String>,
+    /// Turn ids whose end already applied, oldest first, capped.
+    #[serde(skip)]
+    pub ended_prompt_turns: VecDeque<String>,
+    /// The newest host report per (session, agent).
+    #[serde(skip)]
+    pub host_reports: BTreeMap<(String, String), HostReports>,
+    #[serde(skip)]
+    pub report_seq: u64,
 }
 
 impl Book {
+    pub(crate) fn next_report(&mut self) -> u64 {
+        self.report_seq += 1;
+        self.report_seq
+    }
+
     pub(crate) fn next_seq(&mut self) -> f64 {
         self.seq += 1.0;
         self.seq
@@ -169,6 +192,15 @@ pub enum Event {
     ElicitationRequest(ElicitationRequestEvent, #[serde(default)] Option<f64>),
     #[serde(rename = "_onBrowserTicketClosed")]
     BrowserTicketClosed(BrowserTicketClosedEvent),
+    #[serde(rename = "_onPromptComplete")]
+    PromptComplete(PromptCompleteEvent, #[serde(default)] Option<f64>),
+    #[serde(rename = "_onAgentWorking")]
+    AgentWorking(AgentWorkingEvent),
+    #[serde(rename = "_onBackgroundCommands")]
+    BackgroundCommands(BackgroundCommandsEvent),
+    /// The deferred close an [`Effect::EndTurn`] asked for.
+    #[serde(rename = "turnEnd")]
+    TurnEnd(TurnEnd),
     /// A history payload was installed for the session.
     #[serde(rename = "noteHistoryWatermark")]
     NoteHistoryWatermark(String, HistoryPayload),
@@ -196,6 +228,11 @@ pub enum Effect {
     /// Bring the session's chat tab forward if another tab in its pane
     /// hides it, so a consent card is on screen.
     RevealChatTab { session_id: String },
+    /// Send `Event::TurnEnd` with this close once the events already queued
+    /// have been applied, so chunks racing the terminator join the turn.
+    EndTurn(TurnEnd),
+    /// Send this queued prompt now: the chat went idle.
+    SendQueuedPrompt { session_id: String, prompt: Value },
 }
 
 impl Effect {
@@ -233,6 +270,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::QuestionCancelled(event) => state.on_question_cancelled(event),
         Event::ElicitationRequest(event, seq) => state.on_elicitation_request(event, seq),
         Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
+        Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, &mut fx),
+        Event::AgentWorking(event) => state.on_agent_working(event, &mut fx),
+        Event::BackgroundCommands(event) => state.on_background_commands(event),
+        Event::TurnEnd(end) => state.on_turn_end(end, &mut fx),
         Event::NoteHistoryWatermark(session_id, payload) => {
             state.note_history_watermark(&session_id, &payload);
         }
