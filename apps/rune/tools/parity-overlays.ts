@@ -6,7 +6,8 @@
 //   bun apps/rune/tools/parity-overlays.ts --dump /tmp/overlay-dump --bin <gallery> --out <dir>
 //     [--ids dialog,select] [--scale 2]
 // Linux without a GPU needs VK_ICD_FILENAMES pointing at lavapipe.
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { diffImages, type PartRects, type Rect } from '../../../tools/parity/diff'
 import { blankImage, blit, readPng, writePng } from '../../../tools/parity/png'
@@ -19,7 +20,7 @@ function arg(name: string, fallback: string): string {
 
 const dump = arg('dump', '/tmp/overlay-dump')
 const bin = arg('bin', '')
-const out = arg('out', '/tmp/overlay-parity')
+const out = arg('out', '') || mkdtempSync(join(tmpdir(), 'overlay-parity-'))
 const scale = Number(arg('scale', '2'))
 if (!bin) throw new Error('--bin <path to the gallery binary> is required')
 const ids = arg('ids', '')

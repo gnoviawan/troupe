@@ -1,9 +1,10 @@
 // Opens overlays in the wasm gallery in Chromium and reads Chrome's accessibility tree (CDP
 // Accessibility.getFullAXTree) for each, to check what Rune's web mirror says about the
 // overlay roles: dialog, alertdialog, menu, menuitem, combobox, listbox, option and tooltip.
-//   bun apps/rune/tools/web-a11y.ts --web <web-build dir> [--port 8191] [--out /tmp/web-a11y]
+//   bun apps/rune/tools/web-a11y.ts --web <web-build dir> [--port 8191] [--out DIR, default a fresh temp dir]
 // Writes <out>/<case>.json (role, name and properties of every node) and <out>/<case>.png.
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, type Page } from 'playwright'
 
@@ -14,7 +15,7 @@ function arg(name: string, fallback: string): string {
 
 const web = arg('web', '')
 const port = Number(arg('port', '8191'))
-const out = arg('out', '/tmp/web-a11y')
+const out = arg('out', '') || mkdtempSync(join(tmpdir(), 'web-a11y-'))
 if (!web) throw new Error('--web <dir that web-build.sh wrote> is required')
 mkdirSync(out, { recursive: true })
 
