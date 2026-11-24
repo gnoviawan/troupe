@@ -368,7 +368,7 @@ pub enum Event {
     /// snapshot, when the agent sent one.
     #[serde(skip_deserializing)]
     ControlSet(Effect, Option<Vec<Value>>),
-    /// The agent rejected a set command; the text is the error.
+    /// The agent rejected a set command; the text is the error's message.
     #[serde(skip_deserializing)]
     ControlFailed(Effect, String),
     /// The saved picks an [`Effect::ReadComposerOptions`] read; null when
@@ -623,6 +623,14 @@ impl Effect {
         }
     }
 
+    /// The user's action failed with this error message; shown the way
+    /// `String(error)` prints an `Error`.
+    pub(crate) fn rejected(message: impl std::fmt::Display) -> Self {
+        Self::ActionRejected {
+            message: format!("Error: {message}"),
+        }
+    }
+
     pub(crate) fn info(source: &str, message: String) -> Self {
         Self::Log {
             level: Level::Info,
@@ -685,7 +693,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ControlFailed(command, message) => match command.run() {
             Some(run) => state.on_run_command(run, Some(message), &mut fx),
-            None => fx.push(Effect::ActionRejected { message }),
+            None => fx.push(Effect::rejected(message)),
         },
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {
