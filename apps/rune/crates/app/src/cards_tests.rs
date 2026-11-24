@@ -39,6 +39,13 @@ fn tool(rt: &mut Runtime<State>, call: Value) {
     ask(rt, json!({ "_onToolCall": [{ "agentId": "agent-1", "sessionId": "chat-1", "toolCall": call }, 3] }));
 }
 
+/// Frames until the transcript's rows have their heights and the end is in view again.
+fn settle(rt: &mut Runtime<State>) {
+    for n in 1..=20 {
+        rt.frame(0.2 + f64::from(n) * 0.05);
+    }
+}
+
 fn sent(s: &State, kind: WsRequestType) -> Vec<Value> {
     s.sync
         .sent
@@ -55,6 +62,10 @@ fn a_tool_call_opens_to_its_output_and_an_edit_shows_its_diff() {
     let mut rt = chat();
     prompt(&mut rt, "run the tests");
     tool(&mut rt, json!({ "toolCallId": "run-1", "title": "Run tests", "kind": "execute", "status": "completed", "rawInput": { "command": "bun test" }, "rawOutput": { "stdout": "6 passed" } }));
+    assert!(present(&rt, "run-run-1-toggle"), "the turn's calls fold into a work run");
+    assert!(!present(&rt, "tool-run-1-toggle"), "the run starts folded");
+    tap(&mut rt, "run-run-1-toggle");
+    settle(&mut rt);
     assert!(present(&rt, "tool-run-1-toggle"), "the call is a row");
     assert!(!present(&rt, "tool-run-1-detail"), "folded by default");
     tap(&mut rt, "tool-run-1-toggle");
@@ -67,8 +78,10 @@ fn a_tool_call_opens_to_its_output_and_an_edit_shows_its_diff() {
     assert!(present(&rt, "tool-edit-1-diff-0"), "an edit draws its diff inline");
     assert!(!present(&rt, "tool-edit-1-toggle"), "a diff-only edit has no row");
     assert!(!rt.state.chat.reader.is_diff_open("tool-edit-1-diff-0"));
+    settle(&mut rt);
     tap(&mut rt, "tool-edit-1-diff-0-rows");
     assert!(rt.state.chat.reader.is_diff_open("tool-edit-1-diff-0"), "a press on the rows shows the whole diff");
+    settle(&mut rt);
     tap(&mut rt, "tool-edit-1-diff-0-head");
     let active = model::workspace::query(&rt.state.workspace.store, model::workspace::Query::GetActiveTab);
     assert!(matches!(active, model::workspace::Reply::Tab(Some(model::workspace::Tab::Editor { .. }))), "the header opens the file");

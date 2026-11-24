@@ -387,3 +387,61 @@ pub fn card<S: 'static>(t: &'static Tokens, key: &str, tool: &Object, shown: Sho
         None => body,
     }
 }
+
+/// `ACTIVITY_PHRASES`: the one and many forms of each category, in `ACTIVITY_CATEGORY_RULES`
+/// order of first match.
+fn category(tool: &Object) -> (&'static str, &'static str) {
+    let created = || {
+        let diffs: Vec<&Value> = content(tool).iter().filter(|c| is_diff(c)).collect();
+        !diffs.is_empty() && diffs.iter().all(|d| d.get("oldText").is_none_or(Value::is_null))
+    };
+    let background = tool.get("subagent").and_then(|s| s.get("background")).and_then(Value::as_bool) == Some(true);
+    match kind(tool) {
+        _ if is_subagent_control(tool) => ("sent 1 agent command", "sent {} agent commands"),
+        _ if background => ("ran 1 background agent", "ran {} background agents"),
+        _ if is_subagent(tool) => ("ran 1 agent", "ran {} agents"),
+        "execute" => ("ran 1 command", "ran {} commands"),
+        "read" => ("read 1 file", "read {} files"),
+        "edit" if created() => ("created 1 file", "created {} files"),
+        "edit" => ("edited 1 file", "edited {} files"),
+        "delete" => ("deleted 1 file", "deleted {} files"),
+        "move" => ("moved 1 file", "moved {} files"),
+        "search" => ("ran 1 search", "ran {} searches"),
+        "fetch" => ("fetched 1 page", "fetched {} pages"),
+        "switch_mode" => ("switched mode", "switched mode {} times"),
+        _ => ("used 1 tool", "used {} tools"),
+    }
+}
+
+/// `summarizeToolActivity`: "Thought 2 times, ran 3 commands" and the summed `+N −M`; past
+/// four phrases the rest count as "and N more". None with neither calls nor thoughts.
+pub fn summarize(calls: &[&Object], thoughts: usize) -> Option<(String, usize, usize)> {
+    if calls.is_empty() && thoughts == 0 {
+        return None;
+    }
+    let mut counts: Vec<((&str, &str), usize)> = Vec::new();
+    let (mut added, mut removed) = (0, 0);
+    for call in calls {
+        let cat = category(call);
+        match counts.iter_mut().find(|(c, _)| *c == cat) {
+            Some((_, n)) => *n += 1,
+            None => counts.push((cat, 1)),
+        }
+        if let Some((a, r)) = describe(call).diff_stat {
+            added += a;
+            removed += r;
+        }
+    }
+    if thoughts > 0 {
+        counts.insert(0, (("thought", "thought {} times"), thoughts));
+    }
+    let phrase = |((one, many), n): &((&str, &str), usize)| if *n == 1 { (*one).to_owned() } else { many.replace("{}", &n.to_string()) };
+    let mut label = counts.iter().take(4).map(phrase).collect::<Vec<_>>().join(", ");
+    let hidden: usize = counts.iter().skip(4).map(|(_, n)| n).sum();
+    if hidden > 0 {
+        label.push_str(&format!(", and {hidden} more"));
+    }
+    let mut chars = label.chars();
+    let label = chars.next().map(|c| c.to_uppercase().chain(chars).collect()).unwrap_or_default();
+    Some((label, added, removed))
+}

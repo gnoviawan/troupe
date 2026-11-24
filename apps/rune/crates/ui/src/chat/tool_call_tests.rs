@@ -39,3 +39,22 @@ fn readable_output_skips_the_envelope() {
     assert_eq!(readable_output(Some(&json!({ "id": 3 }))), "");
     assert_eq!(readable_output(None), "");
 }
+
+#[test]
+fn a_run_rolls_up_by_category() {
+    let calls: Vec<model::acp::types::Object> = [
+        json!({ "toolCallId": "a", "kind": "read" }),
+        json!({ "toolCallId": "b", "kind": "edit", "content": [{ "type": "diff", "path": "a", "oldText": "x\n", "newText": "y\n" }] }),
+        json!({ "toolCallId": "c", "kind": "execute" }),
+        json!({ "toolCallId": "d", "kind": "execute" }),
+        json!({ "toolCallId": "e", "kind": "search" }),
+        json!({ "toolCallId": "f", "kind": "fetch" }),
+    ]
+    .into_iter()
+    .map(obj)
+    .collect();
+    let refs: Vec<&model::acp::types::Object> = calls.iter().collect();
+    assert_eq!(super::tool_call::summarize(&refs[..5], 0), Some(("Read 1 file, edited 1 file, ran 2 commands, ran 1 search".into(), 1, 1)));
+    assert_eq!(super::tool_call::summarize(&refs, 2), Some(("Thought 2 times, read 1 file, edited 1 file, ran 2 commands, and 2 more".into(), 1, 1)));
+    assert_eq!(super::tool_call::summarize(&[], 0), None);
+}

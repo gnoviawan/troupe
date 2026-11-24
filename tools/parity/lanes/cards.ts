@@ -59,6 +59,7 @@ async function run(client: Client): Promise<string[]> {
   await client.send(MATRIX_PROMPTS.tools)
   await client.sees(TOOLS_REPLY)
   await tryClick('Worked for', false)
+  await tryClick('Read 1 file, edited 1 file', false)
   await step('tools', 'bun test router')
   await tryClick('Ran bun test router')
   await step('output', '6 pass')
@@ -67,7 +68,7 @@ async function run(client: Client): Promise<string[]> {
 
   await client.send(MATRIX_PROMPTS.plan)
   await step('plan', PLAN_ENTRIES[2])
-  await tryClick('Plan, 1 of 3 tasks, task in progress')
+  await tryClick('Plan, 1 of 3 tasks', false)
   await client.page.waitForTimeout(400)
   const folded = !(await client.sees(PLAN_ENTRIES[2], 1500))
   if (folded) seen.push('plan-folded')
