@@ -235,12 +235,18 @@ function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
   emit(effect)
   return answer(agentReplies.shift() ?? null)
 }
-// `{ reject }` fails, `{ hold: true }` stays in flight for the rest of the
-// vector, and `{ hold: true, release }` until a `releaseHeld` step answers it
-// with `release`. Anything else is the reply.
+// `{ reject }` fails (an `AcpTransportError` with `code`), `{ hold: true }`
+// stays in flight for the rest of the vector, and `{ hold: true, release }`
+// until a `releaseHeld` step answers it with `release`. Anything else is the
+// reply.
 function answer(reply: unknown): Promise<unknown> {
   if (typeof reply === 'object' && reply !== null) {
-    if ('reject' in reply) return Promise.reject(new Error(String(reply.reject)))
+    if ('reject' in reply) {
+      const message = String(reply.reject)
+      return Promise.reject(
+        'code' in reply ? new AcpTransportError(String(reply.code), message) : new Error(message)
+      )
+    }
     if ('hold' in reply) {
       if (!('release' in reply)) return new Promise(() => {})
       return new Promise((resolve, reject) =>
@@ -317,13 +323,16 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
-      listSessions: (agentId: string, cwd?: string, cursor?: string) =>
+      listSessions: (agentId: string, cwd?: string, cursor?: string, projectId?: string) =>
         agentCommand({
           kind: 'listSessions',
           agentId,
           ...(cwd === undefined ? {} : { cwd }),
-          ...(cursor === undefined ? {} : { cursor })
+          ...(cursor === undefined ? {} : { cursor }),
+          ...(projectId === undefined ? {} : { projectId })
         }),
+      importAgentSession: (input: Record<string, unknown>) =>
+        agentCommand({ kind: 'importAgentSession', ...input }),
       closeSession: (agentId: string, sessionId: string) =>
         agentCommand({ kind: 'closeAgentSession', agentId, sessionId }),
       deleteAgentSession: (agentId: string, sessionId: string) =>
@@ -391,6 +400,7 @@ vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) 
 }))
 
 const { McpOAuthError } = await import('../../../src/renderer/lib/acp-api')
+const { AcpTransportError } = await import('../../../src/renderer/lib/acp-transport/types')
 const { acpRecorder, acpScenarios } = await import('./stores/acp')
 
 const ACP_OUT = join(OUT_DIR, 'acp')

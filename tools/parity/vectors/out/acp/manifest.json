@@ -27,6 +27,7 @@
         "src/renderer/stores/acp-reuse-keys.ts": "692f963dd62d1fa3e871c9db8470690a46c506f7",
         "src/renderer/lib/command-engine.ts": "e5864037def9d4dbbbd68550758302d551b04c01",
         "src/renderer/stores/acp-store/slices/session.ts": "11815dff39f69c37607689ddc5f3f501b8aa1721",
+        "src/renderer/stores/acp-store/slices/import-sessions.ts": "154ca3fb722c5a7edd86d883b335f2d530e963c7",
         "src/renderer/components/chat/subagent-strip.ts": "3ff49b0b3e7cae00bb9b03d6574ac872f0eec32b",
         "src/renderer/components/chat/tool-call-summary.ts": "dd533b9f18653865f0c872a940e2a90adabb558c",
         "src/renderer/lib/agents/acp-spawn-errors.ts": "1cd433ce6db28c38bcbe6560e4f11d003004bac1",
@@ -326,7 +327,25 @@
         "discover_sessions_failure_clears_the_old_result",
         "discover_sessions_drops_a_result_after_a_disconnect",
         "discover_sessions_stops_after_ten_pages",
-        "discover_sessions_signs_in_on_demand_and_lists_again"
+        "discover_sessions_signs_in_on_demand_and_lists_again",
+        "list_importable_sessions_reuses_the_live_agent_and_skips_known_chats",
+        "list_importable_sessions_spawns_an_agent_for_the_project",
+        "list_importable_sessions_replaces_an_agent_on_an_old_launch",
+        "list_importable_sessions_needs_load_and_list",
+        "list_importable_sessions_needs_session_list",
+        "list_importable_sessions_lists_through_an_agent_a_chat_holds",
+        "list_importable_sessions_spawns_past_a_disconnected_agent",
+        "list_importable_sessions_without_an_agent_is_unavailable",
+        "list_importable_sessions_stops_on_a_repeated_cursor",
+        "list_importable_sessions_stops_at_the_page_cap",
+        "list_importable_sessions_drops_a_listing_whose_agent_disconnected",
+        "list_importable_sessions_failure_rejects",
+        "list_importable_sessions_signs_in_on_demand",
+        "import_agent_sessions_reports_each_outcome_then_reloads_the_index",
+        "import_agent_sessions_of_nothing_still_reloads_the_index",
+        "import_agent_sessions_stops_before_the_next_session",
+        "import_agent_sessions_without_a_sign_in_keeps_the_first_error",
+        "import_agent_sessions_signs_in_on_demand"
       ]
     }
   }

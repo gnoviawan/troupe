@@ -71,6 +71,7 @@ pub(crate) struct EnsureOptions {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Caller {
     Prewarm,
+    ImportList(super::import::ImportId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -211,6 +212,22 @@ impl State {
             env,
             signature,
         })
+    }
+
+    /// `runsCurrentLaunch`: an agent the model did not spawn counts as
+    /// current.
+    pub(crate) fn runs_current_launch(
+        &self,
+        agent_id: &str,
+        config_id: &str,
+        cwd: &str,
+        project_id: Option<&str>,
+    ) -> bool {
+        let Some(recorded) = self.book.ensure.signatures.get(agent_id) else {
+            return true;
+        };
+        self.current_launch(config_id, crate::js_trim(cwd), project_id, None)
+            .is_some_and(|launch| launch.signature == *recorded)
     }
 
     fn hold_agent(&mut self, agent_id: &str, holder: Holder) {
@@ -537,6 +554,8 @@ impl State {
         match (waiter.caller, outcome) {
             (Caller::Prewarm, Ok(_)) => {}
             (Caller::Prewarm, Err(message)) => fx.push(Effect::rejected(message)),
+            (Caller::ImportList(id), Ok(agent_id)) => self.on_import_agent(id, agent_id, fx),
+            (Caller::ImportList(id), Err(message)) => self.on_import_list_failed(id, message, fx),
         }
     }
 }

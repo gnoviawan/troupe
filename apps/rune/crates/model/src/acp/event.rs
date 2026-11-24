@@ -24,7 +24,7 @@ use super::transcript::{
 use super::turn::{AgentWorkingEvent, BackgroundCommandsEvent, PromptCompleteEvent, TurnEnd};
 use super::types::{LogPoint, Object};
 use super::window::PayloadReadOutcome;
-use super::{Effect, RunId, launch};
+use super::{Effect, RunId, import, launch};
 
 /// One store action. The variant names are the TypeScript action names; an
 /// optional trailing argument is the event's host seq or log point.
@@ -130,6 +130,19 @@ pub enum Event {
     KillAgent(String),
     #[serde(rename = "discoverSessions")]
     DiscoverSessions(String, String),
+    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`.
+    #[serde(rename = "listImportableSessions")]
+    ListImportableSessions(String, String, #[serde(default)] Option<String>),
+    /// Each session's outcome is an `importProgress`; the outcomes are
+    /// answered once the reloaded index arrives.
+    #[serde(rename = "importAgentSessions")]
+    ImportAgentSessions(import::ImportRequest),
+    /// The running imports start no other session.
+    #[serde(rename = "stopImport")]
+    StopImport,
+    /// The index reload a [`Effect::RefreshSessionIndex`] asked for failed.
+    #[serde(rename = "sessionIndexReloadFailed")]
+    SessionIndexReloadFailed(String),
     #[serde(rename = "prewarmAgent")]
     PrewarmAgent(String, String),
     /// `renewAgentCredentials`: the Project's account for the config changed.
@@ -156,7 +169,7 @@ pub enum Event {
     /// The command an agent command effect sent failed; the text is the
     /// error's message.
     #[serde(skip_deserializing)]
-    AgentCommandFailed(Effect, String),
+    AgentCommandFailed(Effect, String, #[serde(default)] Option<String>),
     #[serde(rename = "pickModel")]
     PickModel(
         String,

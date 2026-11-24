@@ -13,6 +13,7 @@
 use serde_json::{Map, Value, json};
 
 use super::auth_retry::AuthFailure;
+use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::types::SessionStatus;
 use super::{Effect, State};
@@ -231,9 +232,20 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         match command {
-            Effect::ListSessions { ref key, .. } => {
+            Effect::ListSessions { ref list, .. } => {
                 super::auth_retry::note_retry_succeeded(&command, fx);
-                self.on_session_list_page(key, &reply, fx);
+                match list {
+                    SessionList::Discovery(key) => self.on_discovery_page(key, &reply, fx),
+                    SessionList::Import(import) => self.on_import_list_page(*import, &reply, fx),
+                }
+            }
+            Effect::ImportAgentSession {
+                import,
+                ref session_id,
+                ..
+            } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_session_imported(import, session_id, fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
@@ -275,18 +287,20 @@ impl State {
         }
     }
 
-    /// The command an agent command effect sent failed with `message`.
+    /// The command an agent command effect sent failed with `message` and
+    /// the host's error `code`.
     pub(crate) fn on_agent_command_failed(
         &mut self,
         command: Effect,
         message: String,
+        code: Option<String>,
         fx: &mut Vec<Effect>,
     ) {
         let mut waiters = 0;
         let mut message = message;
         match command {
-            Effect::ListSessions { .. } => {
-                return self.on_session_call_failed(command, message, fx);
+            Effect::ListSessions { .. } | Effect::ImportAgentSession { .. } => {
+                return self.on_session_call_failed(command, message, code, fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));

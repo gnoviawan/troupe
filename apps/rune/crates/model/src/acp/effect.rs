@@ -7,7 +7,9 @@ use serde_json::Value;
 
 use super::FlightId;
 use super::auth_retry::{AuthRetryId, OnDemand};
+use super::discovery::SessionList;
 use super::ensure::EnsureId;
+use super::import::ImportId;
 use super::mcp::TokenCheck;
 use super::restore::RunId;
 use super::turn::TurnEnd;
@@ -298,12 +300,37 @@ pub enum Effect {
         cwd: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         cursor: Option<String>,
-        /// The discovery (`agent\0cwd`) the page belongs to.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        /// The listing the page belongs to.
         #[serde(skip_serializing)]
-        key: String,
+        list: SessionList,
         #[serde(skip_serializing)]
         retried: bool,
     },
+    /// Load one of the agent's own sessions into the chat history; then
+    /// `AgentCommandDone`, or `AgentCommandFailed` (code `duplicate` when
+    /// the history has it).
+    ImportAgentSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<Value>,
+        /// Unix ms.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        updated_at: Option<i64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        #[serde(skip_serializing)]
+        import: ImportId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// An import finished its `done`-th session with `outcome`.
+    ImportProgress { done: usize, outcome: Value },
+    /// The user's action answered `value`.
+    ActionResolved { value: Value },
     /// Whether the host stores a Factory API key; then
     /// `Event::FactoryKeyStatus` with this effect and the answer, or false
     /// with `failed` when it could not be read.
@@ -337,6 +364,7 @@ impl Effect {
             Self::SetMode { retried: true, .. }
                 | Self::SetModel { retried: true, .. }
                 | Self::ListSessions { retried: true, .. }
+                | Self::ImportAgentSession { retried: true, .. }
         )
     }
 

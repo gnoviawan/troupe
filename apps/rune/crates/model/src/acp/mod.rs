@@ -22,6 +22,9 @@ mod discovery;
 mod effect;
 mod ensure;
 mod event;
+mod import;
+#[cfg(test)]
+mod import_tests;
 mod index;
 pub mod js;
 #[cfg(test)]
@@ -291,6 +294,9 @@ pub struct Book {
     /// The `session/list` discoveries in flight, by key.
     #[serde(skip)]
     pub(crate) discoveries: BTreeMap<String, discovery::Discovery>,
+    /// The import listings and imports in flight.
+    #[serde(skip)]
+    pub(crate) imports: import::ImportBook,
     /// Session calls waiting on an authenticate on demand.
     #[serde(skip)]
     pub(crate) auth_retry: auth_retry::AuthRetryBook,
@@ -413,7 +419,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentsWatchState(state_) => state.on_agents_watch_state(state_, env, &mut fx),
         Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
-        Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
+        Event::ApplySessionIndexSnapshot(entries) => {
+            state.apply_session_index(entries, &mut fx);
+            state.on_index_reloaded(&mut fx);
+        }
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
             state.set_model(session_id, model_id, options, None, &mut fx);
@@ -430,9 +439,15 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             }
         }
         Event::ControlFailed(command, message) => {
-            state.on_session_call_failed(command, message, &mut fx)
+            state.on_session_call_failed(command, message, None, &mut fx)
         }
         Event::DiscoverSessions(agent_id, cwd) => state.discover_sessions(agent_id, cwd, &mut fx),
+        Event::ListImportableSessions(config_id, cwd, project_id) => {
+            state.list_importable_sessions(&config_id, &cwd, project_id, &mut fx);
+        }
+        Event::ImportAgentSessions(request) => state.import_agent_sessions(request, &mut fx),
+        Event::StopImport => state.stop_imports(),
+        Event::SessionIndexReloadFailed(message) => state.on_index_reload_failed(&message, &mut fx),
         Event::FactoryKeyStatus(read, stored) => state.on_factory_key_status(read, stored, &mut fx),
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {
@@ -468,8 +483,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentCommandDone(command, reply) => {
             state.on_agent_command_done(command, reply, &mut fx);
         }
-        Event::AgentCommandFailed(command, message) => {
-            state.on_agent_command_failed(command, message, &mut fx);
+        Event::AgentCommandFailed(command, message, code) => {
+            state.on_agent_command_failed(command, message, code, &mut fx);
         }
         Event::PickModel(session_id, model_id, values) => {
             state.pick_model(session_id, model_id, values, &mut fx);

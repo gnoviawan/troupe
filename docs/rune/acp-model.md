@@ -361,7 +361,25 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       sign-in goes through `withAuthRetry` (`session/list`); a failure
       clears the folder's old result, and a result whose agent
       disconnected meanwhile is dropped.
-    - 10b, rest. Import and the one-shot collectors.
+    - 10b, import (R6a-5, `acp/import.rs`). `listImportableSessions`
+      lists through a live agent of the launch a new chat would get
+      (`runsCurrentLaunch`), else through `ensureLiveAgent`: up to 200
+      `listSessions` pages, ended early by a repeated cursor, keeping the
+      sessions the index lacks. It answers `actionResolved` with
+      `{ status, agentId, sessions }` (`unavailable` without an agent or
+      after a disconnect, `unsupported` without `loadSession` and
+      `session/list`). `importAgentSessions` sends one
+      `importAgentSession` per session through the sign-in retry
+      (`session/load`), reports each outcome as `importProgress`
+      (`imported`, `duplicate` on the host's `duplicate` code, or
+      `failed`), and stops before the next session after `stopImport`.
+      Then it logs, emits `refreshSessionIndex`, and answers its outcomes
+      once `applySessionIndexSnapshot` arrives, or after
+      `sessionIndexReloadFailed`. `agentCommandFailed` carries the host's
+      error code. `updatedAt` goes through a `Date.parse` port of the ISO
+      forms; a time without an offset, which JavaScript reads in the local
+      zone, is not parsed.
+    - 10b, rest. The one-shot collectors (they need `createSession`).
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -493,6 +511,13 @@ its pinned sources match a path glob of both workflows.
   `renewAgentCredentials` calls the module function. The spawn bookkeeping
   (`inFlightWarms`, the definite rejections, the signatures) is reset per
   vector.
+- An action whose answer its caller reads (`listImportableSessions`,
+  `importAgentSessions`) records it as `actionResolved`. The recorder's
+  index reload never settles, so an import's answer is not recorded;
+  `import_tests.rs` checks it. The import's progress callback is
+  `importProgress`, and a `stopImport` step makes its stop poll true. An
+  `agentReplies` entry `{ "reject": text, "code": c }` fails with an
+  `AcpTransportError` of that code.
 - `context.setReplies` answers `setMode` and `setModel` in order, as the
   agent commands do; `context.factoryKey` is the stored-key answer (`true`,
   `false`, or `{ "reject": text }`).

@@ -65,6 +65,7 @@ on:
       - 'src/renderer/stores/acp-store/slices/agent.ts'
       - 'src/renderer/stores/acp-store/slices/launch.ts'
       - 'src/renderer/stores/acp-store/slices/config.ts'
+      - 'src/renderer/stores/acp-store/slices/import-sessions.ts'
       - 'src/renderer/lib/env-parser.ts'
       - 'src/renderer/lib/agents/agent-aliases.ts'
       - 'src/shared/acp-agent-aliases.json'

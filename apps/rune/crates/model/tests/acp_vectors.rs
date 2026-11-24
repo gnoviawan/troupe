@@ -24,6 +24,7 @@ fn event(recorded: &Value) -> Result<Event, String> {
     let action = recorded["action"].as_str().ok_or("event without action")?;
     let args = recorded["args"].as_array().cloned().unwrap_or_default();
     let shape = match args.as_slice() {
+        [] => json!(action),
         [only] => json!({ action: only }),
         _ => json!({ action: args }),
     };
@@ -155,6 +156,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::SpawnAgent { .. }
                         | Effect::KillAgent { .. }
                         | Effect::ListSessions { .. }
+                        | Effect::ImportAgentSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
@@ -434,7 +436,10 @@ fn answer(command: Effect, reply: Value) -> Event {
             None => Event::SessionCommandDone(command, reply),
         },
         _ => match rejected {
-            Some(reason) => Event::AgentCommandFailed(command, reason),
+            Some(reason) => {
+                let code = reply.get("code").map(|code| js_string(Some(code)));
+                Event::AgentCommandFailed(command, reason, code)
+            }
             None => Event::AgentCommandDone(command, reply),
         },
     }

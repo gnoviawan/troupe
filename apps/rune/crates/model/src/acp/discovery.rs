@@ -13,6 +13,15 @@ use super::{Effect, State};
 /// `session/list` pages read at most.
 const MAX_PAGES: usize = 10;
 
+/// Who reads a `session/list` page.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SessionList {
+    /// The discovery of this `agent\0cwd` key.
+    Discovery(String),
+    /// The import listing.
+    Import(super::import::ImportId),
+}
+
 /// A discovery in flight, by its key.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Discovery {
@@ -96,10 +105,10 @@ impl State {
 
     /// A page came back: keep its new sessions, then read the next page or
     /// finish.
-    pub(crate) fn on_session_list_page(&mut self, key: &str, reply: &Value, fx: &mut Vec<Effect>) {
+    pub(crate) fn on_discovery_page(&mut self, key: &str, reply: &Value, fx: &mut Vec<Effect>) {
         // Reading a page that is not there throws, which fails the discovery.
         if reply.is_null() {
-            return self.on_session_list_failed(key);
+            return self.on_discovery_failed(key);
         }
         let Some(discovery) = self.book.discoveries.get_mut(key) else {
             return;
@@ -133,7 +142,7 @@ impl State {
     }
 
     /// The list failed for good: the folder's old result goes too.
-    pub(crate) fn on_session_list_failed(&mut self, key: &str) {
+    pub(crate) fn on_discovery_failed(&mut self, key: &str) {
         self.book.discoveries.remove(key);
         self.discovered_sessions.remove(key);
         self.discovering_keys.remove(key);
@@ -145,7 +154,8 @@ fn list_page(key: &str, discovery: &Discovery, cursor: Option<String>) -> Effect
         agent_id: discovery.agent_id.clone(),
         cwd: Some(discovery.cwd.clone()).filter(|cwd| !cwd.is_empty()),
         cursor,
-        key: key.to_owned(),
+        project_id: None,
+        list: SessionList::Discovery(key.to_owned()),
         retried: false,
     }
 }

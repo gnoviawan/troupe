@@ -148,8 +148,25 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
     useProjectStore.setState({ projects } as Parameters<typeof useProjectStore.setState>[0]),
   agentConfigsChanged: (agentConfigs: unknown) =>
     useAcpStore.setState({ agentConfigs } as Partial<AcpState>),
-  releaseHeld: () => heldReplies.shift()?.()
+  releaseHeld: () => heldReplies.shift()?.(),
+  // The import's progress callback is the model's `importProgress` effect,
+  // and its stop poll reads what a `stopImport` step set.
+  importAgentSessions: (request: object) =>
+    useAcpStore.getState().importAgentSessions({
+      ...(request as Parameters<AcpState['importAgentSessions']>[0]),
+      onProgress: (done, outcome) => emit({ kind: 'importProgress', done, outcome }),
+      shouldStop: () => importStop.requested
+    }),
+  stopImport: () => {
+    importStop.requested = true
+  }
 }
+
+/** A `stopImport` step asked the running import to stop. */
+const importStop = { requested: false }
+
+/** Actions whose answer the caller reads: it is the `actionResolved` effect. */
+const RESOLVES = new Set(['listImportableSessions', 'importAgentSessions'])
 
 export const acpRecorder: StoreRecorder = {
   store: 'acp',
@@ -179,6 +196,7 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-reuse-keys.ts',
     'src/renderer/lib/command-engine.ts',
     'src/renderer/stores/acp-store/slices/session.ts',
+    'src/renderer/stores/acp-store/slices/import-sessions.ts',
     'src/renderer/components/chat/subagent-strip.ts',
     'src/renderer/components/chat/tool-call-summary.ts',
     'src/renderer/lib/agents/acp-spawn-errors.ts',
@@ -240,6 +258,7 @@ export const acpRecorder: StoreRecorder = {
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
     mcpReplies.splice(0, mcpReplies.length, ...((context.mcpReplies as unknown[]) ?? []))
     heldReplies.length = 0
+    importStop.requested = false
     setReplies.splice(0, setReplies.length, ...((context.setReplies as unknown[]) ?? []))
     factoryKey.stored = context.factoryKey ?? false
     _resetAcpAuthForTesting()
@@ -299,7 +318,12 @@ export const acpRecorder: StoreRecorder = {
     const rejected = (error: unknown) => emit({ kind: 'actionRejected', message: String(error) })
     try {
       const result = (call as (...a: unknown[]) => unknown)(...args)
-      if (result instanceof Promise) result.catch(rejected)
+      if (result instanceof Promise) {
+        result.then(
+          (value: unknown) => RESOLVES.has(action) && emit({ kind: 'actionResolved', value }),
+          rejected
+        )
+      }
     } catch (error) {
       rejected(error)
     }
@@ -325,6 +349,7 @@ import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
 import { discoveryScenarios } from './acp-scenarios-discovery'
 import { ensureScenarios } from './acp-scenarios-ensure'
+import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
 import { mcpScenarios } from './acp-scenarios-mcp'
@@ -356,5 +381,6 @@ export const acpScenarios = [
   ...closeScenarios,
   ...ensureScenarios,
   ...authRetryScenarios,
-  ...discoveryScenarios
+  ...discoveryScenarios,
+  ...importScenarios
 ]

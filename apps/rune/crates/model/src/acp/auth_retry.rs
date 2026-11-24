@@ -1,6 +1,6 @@
 //! `withAuthRetry` and `authenticateBeforeSession` (`slices/agent.ts`) for
-//! the session calls the model sends: `session/set_mode` and
-//! `session/set_model`.
+//! the session calls the model sends: `session/set_mode`,
+//! `session/set_model`, `session/list` and the import's `session/load`.
 //!
 //! A call that fails because the agent wants a sign-in runs the
 //! authenticate the agent's methods allow, then is sent once more. The
@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
+use super::discovery::SessionList;
 use super::{Effect, FlightId, State};
 
 /// Names one session call waiting on an authenticate on demand.
@@ -65,6 +66,7 @@ impl AuthFailure {
 pub(crate) struct AuthRetry {
     command: Effect,
     first_error: String,
+    first_code: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -81,6 +83,7 @@ fn auth_op(command: &Effect) -> Option<&'static str> {
         Effect::SetMode { .. } => Some("session/set_mode"),
         Effect::SetModel { .. } => Some("session/set_model"),
         Effect::ListSessions { .. } => Some("session/list"),
+        Effect::ImportAgentSession { .. } => Some("session/load"),
         _ => None,
     }
 }
@@ -89,7 +92,8 @@ fn agent_of(command: &Effect) -> &str {
     match command {
         Effect::SetMode { agent_id, .. }
         | Effect::SetModel { agent_id, .. }
-        | Effect::ListSessions { agent_id, .. } => agent_id,
+        | Effect::ListSessions { agent_id, .. }
+        | Effect::ImportAgentSession { agent_id, .. } => agent_id,
         _ => "",
     }
 }
@@ -97,7 +101,8 @@ fn agent_of(command: &Effect) -> &str {
 fn mark_retried(mut command: Effect) -> Effect {
     if let Effect::SetMode { retried, .. }
     | Effect::SetModel { retried, .. }
-    | Effect::ListSessions { retried, .. } = &mut command
+    | Effect::ListSessions { retried, .. }
+    | Effect::ImportAgentSession { retried, .. } = &mut command
     {
         *retried = true;
     }
@@ -261,6 +266,7 @@ impl State {
         &mut self,
         command: Effect,
         message: String,
+        code: Option<String>,
         fx: &mut Vec<Effect>,
     ) {
         if let Some(op) = auth_op(&command) {
@@ -276,16 +282,33 @@ impl State {
                     self.forget_auth_method(&config_id, fx);
                 }
             } else if is_auth_retriable(&message) {
-                return self.reauthenticate(command, message, fx);
+                return self.reauthenticate(command, message, code, fx);
             }
         }
-        self.control_rejected(command, message, fx);
+        self.control_rejected(command, message, code, fx);
     }
 
     /// The session call's failure reaches its caller.
-    fn control_rejected(&mut self, command: Effect, message: String, fx: &mut Vec<Effect>) {
-        if let Effect::ListSessions { key, .. } = &command {
-            return self.on_session_list_failed(key);
+    fn control_rejected(
+        &mut self,
+        command: Effect,
+        message: String,
+        code: Option<String>,
+        fx: &mut Vec<Effect>,
+    ) {
+        match command {
+            Effect::ListSessions {
+                list: SessionList::Discovery(key),
+                ..
+            } => return self.on_discovery_failed(&key),
+            Effect::ListSessions {
+                list: SessionList::Import(import),
+                ..
+            } => return self.on_import_list_failed(import, message, fx),
+            Effect::ImportAgentSession {
+                import, session_id, ..
+            } => return self.on_import_session_failed(import, session_id, message, code, fx),
+            _ => {}
         }
         match command.run() {
             Some(run) => self.on_run_command(run, Some(message), fx),
@@ -294,7 +317,13 @@ impl State {
     }
 
     /// `reauthenticateOnDemand`.
-    fn reauthenticate(&mut self, command: Effect, first_error: String, fx: &mut Vec<Effect>) {
+    fn reauthenticate(
+        &mut self,
+        command: Effect,
+        first_error: String,
+        first_code: Option<String>,
+        fx: &mut Vec<Effect>,
+    ) {
         let op = auth_op(&command).unwrap_or_default();
         fx.push(Effect::info(
             SOURCE,
@@ -311,6 +340,7 @@ impl State {
             AuthRetry {
                 command,
                 first_error,
+                first_code,
             },
         );
         self.authenticate_before_session(retry, &agent_id, None, fx);
@@ -577,11 +607,15 @@ impl State {
         };
         match outcome {
             Ok(true) => fx.push(mark_retried(waiting.command)),
-            Ok(false) => self.control_rejected(waiting.command, waiting.first_error, fx),
-            Err(AuthFailure::Ambiguous(_)) => {
-                self.control_rejected(waiting.command, PICKER_UNAVAILABLE.into(), fx);
+            Ok(false) => {
+                self.control_rejected(waiting.command, waiting.first_error, waiting.first_code, fx)
             }
-            Err(AuthFailure::Other(message)) => self.control_rejected(waiting.command, message, fx),
+            Err(AuthFailure::Ambiguous(_)) => {
+                self.control_rejected(waiting.command, PICKER_UNAVAILABLE.into(), None, fx);
+            }
+            Err(AuthFailure::Other(message)) => {
+                self.control_rejected(waiting.command, message, None, fx);
+            }
         }
     }
 }
