@@ -75,6 +75,8 @@ pub(crate) enum Pending {
     ReadLastAgent,
     /// A prompt the model dispatched; its reply settles the turn.
     Prompt { session_id: String, turn_id: String },
+    /// The user's answer to a permission request, question or elicitation.
+    Answer(model::acp::answer::Answer),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
@@ -122,6 +124,14 @@ pub struct Uuid;
 impl Ids for Uuid {
     fn next_id(&mut self) -> String {
         crate::ids::uuid()
+    }
+}
+
+impl Sync {
+    /// The id the last call went out under.
+    #[cfg(test)]
+    pub(crate) fn last_call(&self) -> CallId {
+        self.next_call
     }
 }
 
@@ -383,6 +393,7 @@ impl State {
                 }
             },
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
+            Pending::Answer(answer) => self.answer_settled(answer, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ListChats => {

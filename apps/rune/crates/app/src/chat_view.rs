@@ -12,11 +12,12 @@ use ui::type_::sans;
 
 use crate::State;
 
-fn lenses() -> Lenses<State> {
+pub(crate) fn lenses() -> Lenses<State> {
     Lenses {
         acp: |s: &State| &s.chat.acp,
         reader: |s: &State| &s.chat.reader,
         reader_mut: |s: &mut State| -> &mut Reader { &mut s.chat.reader },
+        step: |s: &mut State, e| s.acp_step(e),
     }
 }
 
@@ -53,7 +54,10 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
         )
     };
-    let composer = crate::composer_view::chat_dock(s, t, session_id, place);
+    let composer = match pending_question(s, session_id) {
+        Some(q) => question_dock(s, t, q, place),
+        None => crate::composer_view::chat_dock(s, t, session_id, place),
+    };
     Some(
         col()
             .key(format!("tab-body-{}", tab.id()))
@@ -63,6 +67,31 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
             .child(body)
             .child(composer),
     )
+}
+
+/// The oldest question waiting in the chat (`pendingQuestion`).
+fn pending_question<'s>(s: &'s State, session_id: &str) -> Option<&'s model::acp::approvals::PendingQuestion> {
+    s.chat.acp.pending_questions.values().find(|q| q.session_id == session_id)
+}
+
+/// The chat's dock while a question waits: the composer turned into the question card, in the
+/// transcript's column, 12 points above and 24 below.
+fn question_dock(s: &State, t: &'static Tokens, q: &model::acp::approvals::PendingQuestion, place: ui::composer::view::Place) -> El {
+    let phone = place == ui::composer::view::Place::Phone;
+    let picked = s.chat.reader.picks.of(&q.question_id);
+    col()
+        .key(format!("question-dock-{}", q.session_id))
+        .w_full()
+        .items_center()
+        .px(if phone { 16.0 } else { 20.0 })
+        .pt(12.0)
+        .pb(24.0)
+        .child(
+            col()
+                .w_full()
+                .max_w(ui::chat::COLUMN_MAX_W)
+                .child(ui::chat::approvals::question_card(t, q, picked, phone, lenses())),
+        )
 }
 
 /// A chat tab's label: the chat's title as the rail lists it.

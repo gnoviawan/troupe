@@ -12,6 +12,9 @@
 
 #![forbid(unsafe_code)]
 
+mod answers;
+#[cfg(test)]
+mod answers_tests;
 mod chat;
 mod chat_images;
 mod chat_view;

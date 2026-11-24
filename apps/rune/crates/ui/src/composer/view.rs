@@ -150,6 +150,8 @@ pub struct Spec<'a> {
     /// The chat's queued prompts, sent top to bottom after the running turn.
     pub queue: Vec<QueueRow>,
     pub queue_open: bool,
+    /// The approval the chat waits on (`PermissionPrompt`), drawn under the queue.
+    pub prompt: Option<El>,
 }
 
 pub const PLACEHOLDER: &str = "Ask anything… (/ for commands, @ for files and chats)";
@@ -650,7 +652,7 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
 
 /// The composer: the open menu over the tray, then the tray, with the add menu's surface
 /// anchored out of flow (no ancestor of a composer clips).
-pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) -> El {
+pub fn composer<S: 'static>(t: &'static Tokens, mut spec: Spec, hooks: &Hooks<S>) -> El {
     let mut layer = Vec::new();
     let layer = &mut layer;
     let c = &t.colors;
@@ -699,6 +701,9 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
     let mut card = col().key(format!("{}-card", spec.key)).w_full();
     if let Some(queue) = queue_panel(t, &spec, hooks) {
         card = card.child(queue);
+    }
+    if let Some(prompt) = spec.prompt.take() {
+        card = card.child(prompt);
     }
     if let Some(row) = attachments(t, &spec, hooks) {
         card = card.child(row);

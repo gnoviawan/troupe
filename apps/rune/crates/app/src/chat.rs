@@ -262,6 +262,7 @@ impl State {
                 Effect::RetryQueueAfter { session_id, delay_ms, generation } => {
                     self.chat.retries.push((self.now + delay_ms / 1000.0, session_id, generation));
                 }
+                Effect::Answer(answer) => self.send_answer(answer),
                 other => log::info!("[chat] effect not wired in the Rune client yet: {other:?}"),
             }
         }

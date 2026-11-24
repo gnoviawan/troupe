@@ -7,6 +7,7 @@
 //! The inline cards (tool calls, approvals, the plan, subagents) are later units; each draws a
 //! placeholder row here so the transcript shows where it goes.
 
+pub mod approvals;
 mod rows;
 pub mod timeline;
 
@@ -44,6 +45,8 @@ pub fn scroll_key(session_id: &str) -> String {
 pub struct Reader {
     folds: BTreeMap<String, bool>,
     away: BTreeSet<String>,
+    /// The options picked in the open questions.
+    pub picks: approvals::Picks,
 }
 
 impl Reader {
@@ -79,6 +82,8 @@ pub struct Lenses<S> {
     pub acp: fn(&S) -> &acp::State,
     pub reader: fn(&S) -> &Reader,
     pub reader_mut: fn(&mut S) -> &mut Reader,
+    /// Applies one model action and runs its effects; the cards answer through it.
+    pub step: fn(&mut S, acp::Event),
 }
 
 impl<S> Clone for Lenses<S> {

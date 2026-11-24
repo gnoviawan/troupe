@@ -8,6 +8,14 @@ use serde_json::json;
 use super::{Lenses, Reader, transcript};
 use crate::markdown::Hooks;
 
+struct NoIds;
+
+impl model::Ids for NoIds {
+    fn next_id(&mut self) -> String {
+        String::new()
+    }
+}
+
 #[derive(Default)]
 struct S {
     acp: acp::State,
@@ -15,7 +23,9 @@ struct S {
 }
 
 fn view(s: &S, _cx: &mut Cx<S>) -> El {
-    let lenses = Lenses { acp: |s: &S| &s.acp, reader: |s: &S| &s.reader, reader_mut: |s: &mut S| &mut s.reader };
+    let lenses = Lenses { acp: |s: &S| &s.acp, reader: |s: &S| &s.reader, reader_mut: |s: &mut S| &mut s.reader, step: |s: &mut S, e| {
+        acp::step(&mut s.acp, e, &mut acp::Env { now: 0.0, ids: &mut NoIds, server_history: true });
+    } };
     transcript(theme::tokens("termul", true), s, "c1", lenses, Hooks::default())
 }
 
