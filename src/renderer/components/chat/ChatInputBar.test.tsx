@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import type { SessionConfigOption } from '@/lib/acp-api'
-import { findBundledIconByKey } from '@/lib/agents/agent-icon-catalog'
+import { getAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import type { SupportedAcpAgentEntry } from '@/lib/agents/supported-acp-agents'
 import { SKILL_PAD_DEFAULT } from '@/lib/composer/doc-to-prompt'
 import { selectionContextToken } from '@/lib/composer/selection-context'
@@ -880,8 +880,8 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     // The armed target (claude-acp) has a bundled icon distinct from the
     // source (cursor); whichever SVG rendered, it must be the claude one —
     // assert via the catalog's own fetch so the check survives icon edits.
-    const claudeSvg = findBundledIconByKey('acp:claude-acp')?.svg ?? ''
-    const cursorSvg = findBundledIconByKey('acp:cursor')?.svg ?? ''
+    const claudeSvg = getAgentIconCatalog().byKey('acp:claude-acp')?.svg ?? ''
+    const cursorSvg = getAgentIconCatalog().byKey('acp:cursor')?.svg ?? ''
     expect(claudeSvg.length).toBeGreaterThan(0)
     expect(modelChip.innerHTML).toContain('svg')
     // Claude's SVG must be the one painted inside the chip.
@@ -905,7 +905,7 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     renderInputBar({ session: s })
 
     const modelChip = await screen.findByRole('button', { name: /Model One/ })
-    const claudePathSig = (findBundledIconByKey('acp:claude-acp')?.svg ?? '').match(
+    const claudePathSig = (getAgentIconCatalog().byKey('acp:claude-acp')?.svg ?? '').match(
       /d="([^"]{20,60})/
     )?.[1]
     expect(claudePathSig).toBeTruthy()
@@ -918,7 +918,7 @@ describe('ChatInputBar agent switch chip (Story 4, spec-in-chat-agent-switch)', 
     renderInputBar({ session: { ...session(), agentId: '', modes: null, models: null } })
 
     const trigger = await screen.findByTestId('agent-model-selector-trigger')
-    const claudePathSig = (findBundledIconByKey('acp:claude-acp')?.svg ?? '').match(
+    const claudePathSig = (getAgentIconCatalog().byKey('acp:claude-acp')?.svg ?? '').match(
       /d="([^"]{20,60})/
     )?.[1]
     expect(claudePathSig).toBeTruthy()

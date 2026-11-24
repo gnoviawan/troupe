@@ -23,6 +23,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { WhatsNewModal } from './components/WhatsNewModal'
 import { useAcpUpdateChecks } from './hooks/use-acp-update-checks'
 import { useAgentChatNotification } from './hooks/use-agent-chat-notification'
+import { useAgentOverlayLoader } from './hooks/use-agent-overlay'
 import { useAppSettingsLoader } from './hooks/use-app-settings'
 import { useAutomationProposals } from './hooks/use-automation-proposals'
 import { useAppliedColorThemeSync } from './hooks/use-color-theme'
@@ -145,6 +146,8 @@ function AppEffects(): null {
   // Background Update Check: advisory only, never auto-applies (Q8/Q10).
   // Same cadence as the desktop root; failures are silent on both surfaces.
   useAcpUpdateChecks()
+  // Agent names, logos and brand colours from Troupe's registry. Both roots.
+  useAgentOverlayLoader()
   // One-shot: prime the server write-admission capability cache from
   // `GET /health` so write-gated web surfaces (e.g. the worktree picker) reflect
   // the server's actual admission policy instead of a hostname guess. No-op on
