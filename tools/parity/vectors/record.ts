@@ -70,6 +70,9 @@ export const reads = new Map<string, unknown>()
 /** How the mocked prompt dispatches answer, in order; a vector's `context.dispatch`. */
 export const dispatchOutcomes: unknown[] = []
 
+/** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
+export const openChatTabs = new Set<string>()
+
 /** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
 export const readFailures = new Map<string, string>()
 

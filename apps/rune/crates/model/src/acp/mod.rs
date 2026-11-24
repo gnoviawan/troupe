@@ -14,6 +14,7 @@ pub mod js;
 mod js_tests;
 mod plan;
 pub mod prompt;
+pub mod session;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -32,6 +33,7 @@ use approvals::{
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
+use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
@@ -73,6 +75,12 @@ pub struct State {
     /// Reuse key (config, cwd, project) to the live agent running it, in the
     /// order the keys were added.
     pub config_to_live_agent: Object,
+    /// The chat the window shows.
+    pub active_session_id: Option<String>,
+    /// Warm-slot key to the prepared session it holds.
+    pub prepared_sessions: BTreeMap<String, String>,
+    /// Per session, the durable in-chat agent switch markers.
+    pub agent_switches: BTreeMap<String, Vec<Value>>,
     pub book: Book,
 }
 
@@ -120,6 +128,10 @@ pub struct Book {
     /// Send-nows waiting for the turn they stopped, by session.
     #[serde(skip)]
     pub send_now: BTreeMap<String, SendNow>,
+    /// Sessions a chat tab shows, in any project's tree. The app keeps this
+    /// equal to the workspace; a closed session it lists keeps its transcript.
+    #[serde(skip)]
+    pub open_chat_tabs: BTreeSet<String>,
 }
 
 impl Book {
@@ -227,6 +239,14 @@ pub enum Event {
     AgentWorking(AgentWorkingEvent),
     #[serde(rename = "_onBackgroundCommands")]
     BackgroundCommands(BackgroundCommandsEvent),
+    #[serde(rename = "_onSessionCreated")]
+    SessionCreated(SessionCreatedEvent),
+    #[serde(rename = "_onSessionClosed")]
+    SessionClosed(SessionClosedEvent),
+    #[serde(rename = "setActiveSession")]
+    SetActiveSession(Option<String>),
+    #[serde(rename = "markResumeFailed")]
+    MarkResumeFailed(String, String),
     #[serde(rename = "sendPrompt")]
     SendPrompt(String, String),
     #[serde(rename = "sendPromptBlocks")]
@@ -306,6 +326,9 @@ pub enum Effect {
     },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
+    /// Reload the chat index from the desktop's history store, then send
+    /// what it read as `applySessionIndexSnapshot`.
+    RefreshSessionIndex,
     /// Read the user's saved picks for the config and apply the ones the
     /// session still offers.
     ReapplyComposerOptions {
@@ -355,6 +378,12 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, env, &mut fx),
         Event::AgentWorking(event) => state.on_agent_working(event, env, &mut fx),
         Event::BackgroundCommands(event) => state.on_background_commands(event),
+        Event::SessionCreated(event) => state.on_session_created(event, env, &mut fx),
+        Event::SessionClosed(event) => state.on_session_closed(event, env, &mut fx),
+        Event::SetActiveSession(session_id) => state.active_session_id = session_id,
+        Event::MarkResumeFailed(session_id, reason) => {
+            state.mark_resume_failed(&session_id, &reason);
+        }
         Event::TurnEnd(end) => state.on_turn_end(end, env, &mut fx),
         Event::SendPrompt(session_id, text) => {
             let blocks = vec![serde_json::json!({ "type": "text", "text": text })];

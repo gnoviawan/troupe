@@ -394,7 +394,7 @@ impl State {
 
     /// `cacheOptionsFromSession`: remember the session's options for its
     /// agent's config, save the model list, and heal the user's saved picks.
-    fn cache_options_from_session(
+    pub(crate) fn cache_options_from_session(
         &mut self,
         session_id: &str,
         env: &mut Env<'_>,

@@ -174,7 +174,17 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
    "Sending as two steps" below.
 6. Session lifecycle and history. Created, closed, index load, history open,
    live window, eviction, the resubscribe install of pending prompts, the
-   cancel of running subagents, live-turn reattach.
+   cancel of running subagents, live-turn reattach. Split in two:
+   - 6a (R6a-2). `session_created` (the stub, the advertised options added
+     to a known session, the creation baseline, the options cache),
+     `session_closed` (the old-process guard, the cancel of running
+     subagents, prompts and warm slots dropped, the transcript kept for an
+     open tab or freed), `setActiveSession` and `markResumeFailed`. The
+     desktop's index reload is the `refreshSessionIndex` effect; the tabs a
+     chat shows are `Book::open_chat_tabs`, which the app keeps equal to the
+     workspace.
+   - 6b. Index load and snapshot merge, history open, live window and
+     eviction, the resubscribe install, live-turn reattach.
 7. Agent roster, auth and browser.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
@@ -230,11 +240,29 @@ so the replay drops `retryQueueAfter` before it compares.
   re-auth after an expired token, the armed agent switch (PR 9), and
   send-now's 5 s wait timeout.
 
+On a closed session the model does not yet run the reload hand-off
+(`reloadInFlight`, PR 9), the one-shot collectors (PR 10) or the drop of an
+empty warm-pool session (`ephemeralSessionIds`, PR 8).
+
+## CI
+
+`.github/workflows/parity-vectors.yml` records every store's vectors on a PR
+that touches `src/renderer/**`, `src/shared/**`, the lockfile or the vectors,
+and fails when `out/` is stale. A renderer change that changes what a store
+does fails its own PR there; the re-recorded files then trigger the Rune
+workflow, whose replay fails until the Rust follows. Each recorder checks
+that its pinned sources match one of the workflow's path globs.
+
 ## Recorder limits
 
 - The TypeScript clamp log remembers ids across vectors, and only a stored
   call's id can be forgotten from outside. Vectors that log a clamp use ids
   no other vector uses.
+- The recorder's transport is a stub whose `historyMode` is `tauri_store`
+  (the desktop) or, with `context.serverHistory`, `server`. A relay
+  (`live_only`) client skips the index reload the way the server one does;
+  the model folds both into `Env::server_history`.
+- `context.openChatTabs` lists the sessions a chat tab shows.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.

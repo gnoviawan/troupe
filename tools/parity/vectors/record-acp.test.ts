@@ -8,6 +8,7 @@ import {
   type Manifest,
   manifestEntry,
   OUT_DIR,
+  openChatTabs,
   recordVector,
   sourcesOutsideWorkflow,
   storeText,
@@ -42,7 +43,11 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     await importOriginal<typeof import('../../../src/renderer/lib/acp-history-persistence')>()
   return {
     ...actual,
-    loadSessionIndex: async () => [],
+    // The index reload is the host's; its answer arrives as its own event.
+    loadSessionIndex: () => {
+      emit({ kind: 'refreshSessionIndex' })
+      return new Promise(() => {})
+    },
     saveSessionIndex: async () => {},
     saveSessionPayload: async () => {},
     queueSessionPayloadSave: async () => {},
@@ -81,7 +86,7 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     return null
   },
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
-  getAgentChatSessionIdsInAllTrees: () => new Set<string>(),
+  getAgentChatSessionIdsInAllTrees: () => new Set(openChatTabs),
   useWorkspaceStore: {
     subscribe: () => () => {},
     getState: () => ({

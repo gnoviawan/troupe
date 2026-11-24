@@ -67,6 +67,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
     }
+    state.book.open_chat_tabs = context
+        .get("openChatTabs")
+        .map(parse)
+        .transpose()?
+        .unwrap_or_default();
     let steps = vector["steps"].as_array().ok_or("no steps")?;
     for (index, recorded) in steps.iter().enumerate() {
         let at = |what: &str| format!("step {index} ({}) {what}", recorded["event"]["action"]);

@@ -1,6 +1,5 @@
 import { vi } from 'vitest'
 import {
-  _resetAcpTransportForTests,
   _setAcpTransportForTests,
   type AcpTransport
 } from '../../../../src/renderer/lib/acp-transport'
@@ -17,7 +16,7 @@ import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
-import { dispatchOutcomes, emit, type StoreRecorder } from '../record'
+import { dispatchOutcomes, emit, openChatTabs, type StoreRecorder } from '../record'
 
 /**
  * Wall clock of a vector: `context.now` (default {@link NOW}) while seeding,
@@ -46,7 +45,10 @@ const DATA_KEYS = [
   'promptQueues',
   'suppressQueueFlush',
   'agentOptionsCache',
-  'configToLiveAgent'
+  'configToLiveAgent',
+  'activeSessionId',
+  'preparedSessions',
+  'agentSwitches'
 ] as const
 
 /** Module functions a step may call besides the store's actions. */
@@ -81,7 +83,11 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/components/chat/agent-model-selector/selector-model.ts',
     'src/renderer/stores/acp-store/model-catalog.ts',
     'src/renderer/stores/acp-reuse-keys.ts',
-    'src/renderer/lib/command-engine.ts'
+    'src/renderer/lib/command-engine.ts',
+    'src/renderer/stores/acp-store/slices/session.ts',
+    'src/renderer/components/chat/subagent-strip.ts',
+    'src/renderer/components/chat/tool-call-summary.ts',
+    'src/renderer/lib/agents/acp-spawn-errors.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -99,16 +105,16 @@ export const acpRecorder: StoreRecorder = {
     shared._resetPromptReconcileForTesting()
     shared._resetBusyQueueRetriesForTesting()
     dispatchOutcomes.splice(0, dispatchOutcomes.length, ...((context.dispatch as unknown[]) ?? []))
+    openChatTabs.clear()
+    for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
     // The counter only moves up; each vector starts on the next hundred.
     shared.rebaseSeqCounter(Math.ceil((peekSeq() + 1) / 100) * 100)
-    if (context.serverHistory) {
-      _setAcpTransportForTests({
-        historyMode: () => 'server',
-        dispose: () => {}
-      } as unknown as AcpTransport)
-    } else {
-      _resetAcpTransportForTests(null)
-    }
+    // The desktop keeps history in its own store and reloads the index after
+    // a lifecycle event; the web client's host owns it (`serverHistory`).
+    _setAcpTransportForTests({
+      historyMode: () => (context.serverHistory ? 'server' : 'tauri_store'),
+      dispose: () => {}
+    } as unknown as AcpTransport)
     clock = typeof context.now === 'number' ? context.now : NOW
     useAcpStore.setState({ ...FRESH, pendingBrowserConsents: {} } as Partial<AcpState>)
   },
@@ -156,6 +162,7 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { controlScenarios } from './acp-scenarios-controls'
 import { promptScenarios } from './acp-scenarios-prompt'
+import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
 
@@ -164,5 +171,6 @@ export const acpScenarios = [
   ...subagentScenarios,
   ...turnScenarios,
   ...controlScenarios,
-  ...promptScenarios
+  ...promptScenarios,
+  ...sessionScenarios
 ]
