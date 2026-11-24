@@ -727,6 +727,18 @@ pub(super) async fn drive_connection(
                     options,
                     ..
                 } = request;
+                let approved = perm_state
+                    .lock()
+                    .auto_approval(session_id.0.as_ref(), &options);
+                if let Some(outcome) = approved {
+                    log::info!(
+                        "[acp] {perm_agent_id} sub-agent session {}: tool call {} allowed once by its profile",
+                        crate::logging::redact_session_id(session_id.0.as_ref()),
+                        tool_call.tool_call_id.0
+                    );
+                    let _ = responder.respond(RequestPermissionResponse::new(outcome));
+                    return Ok(());
+                }
                 let session_string = perm_state.lock().chat_session_for(session_id.0.as_ref());
                 if perm_state.lock().is_ephemeral(&session_string) {
                     let decision =

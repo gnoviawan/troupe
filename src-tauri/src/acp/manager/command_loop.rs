@@ -283,6 +283,9 @@ pub(super) async fn run_command_loop(
                                 // supplies every id, so no parent walk.
                                 if let Some(origin) = &child_origin {
                                     state.seed_child_route(origin, &session_id.0);
+                                    if origin.auto_approve {
+                                        state.auto_approve(session_id.0.clone());
+                                    }
                                 }
                             }
 

@@ -176,6 +176,45 @@ fn missing_options_fall_back_to_a_refusal_or_a_cancel() {
     );
 }
 
+fn selected(outcome: Option<RequestPermissionOutcome>) -> Option<String> {
+    outcome.map(|outcome| match outcome {
+        RequestPermissionOutcome::Selected(selected) => selected.option_id.0.to_string(),
+        _ => "cancelled".to_string(),
+    })
+}
+
+#[test]
+fn an_auto_approved_session_gets_allow_once_and_never_allow_always() {
+    let mut policies = ToolPolicies::default();
+    policies.auto_approve("child-1".to_string());
+    assert_eq!(
+        selected(policies.auto_approval(
+            "child-1",
+            &options(&[("always", "allow_always"), ("once", "allow_once"), ("no", "reject_once")])
+        )),
+        Some("once".into())
+    );
+    assert_eq!(
+        selected(policies.auto_approval(
+            "child-1",
+            &options(&[("always", "allow_always"), ("no", "reject_once")])
+        )),
+        None,
+        "a request without allow-once goes to the user"
+    );
+    assert_eq!(
+        selected(policies.auto_approval("chat-1", &all_options())),
+        None,
+        "only the approved session"
+    );
+    policies.forget("child-1");
+    assert_eq!(
+        selected(policies.auto_approval("child-1", &all_options())),
+        None,
+        "a closed session's approval is forgotten"
+    );
+}
+
 #[test]
 fn a_session_without_an_allowlist_gets_no_answer() {
     let mut f = Fixture::new(&[ToolKind::Fetch]);

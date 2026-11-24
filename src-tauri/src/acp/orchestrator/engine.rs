@@ -524,6 +524,7 @@ impl OrchestratorEngine {
             parent_dispatch_id,
             dispatch_id: run.dispatch_id(),
             depth,
+            auto_approve: false,
         };
         let created = self
             .manager

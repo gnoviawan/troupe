@@ -20,8 +20,12 @@
 //! Claude's adapter sends the kind and the paths only on the `tool_call`
 //! update that precedes the request, so both are kept here per tool call. A
 //! request whose kind the host never saw is refused.
+//!
+//! An orchestrated child whose sub-agent profile allows every tool is
+//! answered here too: its requests get their allow-once option before they
+//! would reach the chat, and a request without one still goes to the chat.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path, PathBuf};
 
 use agent_client_protocol::schema::v1::{
@@ -74,6 +78,9 @@ pub(crate) struct ToolDecision {
 #[derive(Default)]
 pub(super) struct ToolPolicies {
     sessions: HashMap<String, SessionPolicy>,
+    /// Orchestrated child sessions whose sub-agent profile allows every
+    /// tool, keyed by the child's own session id.
+    auto_approved: HashSet<String>,
 }
 
 struct SessionPolicy {
@@ -100,6 +107,30 @@ impl ToolPolicies {
 
     pub(super) fn forget(&mut self, session_id: &str) {
         self.sessions.remove(session_id);
+        self.auto_approved.remove(session_id);
+    }
+
+    pub(super) fn auto_approve(&mut self, session_id: String) {
+        self.auto_approved.insert(session_id);
+    }
+
+    /// The allow-once answer to a permission request of an auto-approved
+    /// session. `None` when the session is not auto-approved or the request
+    /// offers no allow-once option, so it goes to the user as usual.
+    pub(super) fn auto_approval(
+        &self,
+        session_id: &str,
+        options: &[PermissionOption],
+    ) -> Option<RequestPermissionOutcome> {
+        if !self.auto_approved.contains(session_id) {
+            return None;
+        }
+        let allow_once = options
+            .iter()
+            .find(|o| o.kind == PermissionOptionKind::AllowOnce)?;
+        Some(RequestPermissionOutcome::Selected(
+            SelectedPermissionOutcome::new(allow_once.option_id.clone()),
+        ))
     }
 
     /// Record what a `tool_call` or `tool_call_update` said about a call.
