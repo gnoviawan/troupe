@@ -46,7 +46,7 @@ The reusable Homebrew workflow generates `SHA256SUMS.txt` before this token is c
 
 ## Release Workflow
 
-`.github/workflows/release.yml` is triggered by `v*` tags, and every such tag publishes a stable release. Tags must be full SemVer, for example `v1.2.3`. There is no release-candidate channel: a tag with a prerelease suffix such as `-rc.1` still publishes as a stable release and moves `latest`. Prerelease builds come from the nightly workflow.
+`.github/workflows/release.yml` is triggered by `v*` tags, and every such tag publishes a stable release. Tags must be plain `vX.Y.Z`, for example `v1.2.0`; the workflow fails on a prerelease suffix such as `-rc.1` or build metadata. There is no release-candidate channel. Pre-stable builds come from the nightly workflow.
 
 The workflow order is:
 
