@@ -202,7 +202,10 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider
-     failure text, the rejected rate limit, an auth-required agent marked),
+     failure text, the rejected rate limit, an auth-required agent marked;
+     since #2032 an Antigravity plan limit counts only for a chat whose
+     config, by reuse key or index row, is Antigravity's, and carries its
+     reset time),
      `agent_crashed` (the chats die, launch markers and warm slots go,
      running subagents end), `agent_disconnected` (a kill, reap or close
      drops the agent and its reuse keys; a crash keeps `error`), the
@@ -335,7 +338,11 @@ its pinned sources match a path glob of both workflows.
   in flight for the rest of the vector.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
-  `{ "reject": text }` fails that `setConfigOption` with `Error: text`.
+  `{ "reject": text }` fails that `setConfigOption` with `text`.
+- A failed command comes back with the error's raw message
+  (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
+  model adds the `Error: ` prefix `String(error)` prints wherever the store
+  shows or keeps it.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.
