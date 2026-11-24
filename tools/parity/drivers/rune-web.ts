@@ -66,7 +66,7 @@ export const runeWebArgs = (args: string[]) => (runeWebGpu() ? [...args, ...WEBG
  * `exact` is false, with its centre inside `within` when given. Null while
  * no element matches.
  */
-function mirrorPoint(
+export function mirrorPoint(
   page: Page,
   want: string,
   exact: boolean,
