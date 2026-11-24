@@ -42,7 +42,7 @@
         "src/renderer/stores/acp-store/slices/mcp.ts": "a0c6e6daa0b96171edd28c548d539f808aee1626",
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
         "src/renderer/lib/mcp-install-request.ts": "39fbc1fb23e5bf1a8704eaa8450de163df2c9647",
-        "src/renderer/stores/acp-store/slices/launch.ts": "70113a1fd38d4a0e9322f295a83c897803ab67dc"
+        "src/renderer/stores/acp-store/slices/launch.ts": "1eef03ff68823194a8e5b8894318c5da905b07cd"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
