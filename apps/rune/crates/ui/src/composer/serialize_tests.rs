@@ -98,6 +98,10 @@ fn every_recorded_document_serializes_and_sends_as_the_web_client_does() {
         if super::parse_display(&display).display_text() != display {
             failures.push(format!("{name}: the display string does not parse back to itself"));
         }
+        let copy = super::wire::copy_text(&display);
+        if copy != vector["copy"] {
+            failures.push(format!("{name}: copy\n  want {:?}\n  got  {copy:?}", vector["copy"]));
+        }
         let send = send_json(vector);
         if send != vector["send"] {
             failures.push(format!("{name}: send\n  want {}\n  got  {send}", vector["send"]));
