@@ -24,7 +24,8 @@ fn lenses() -> Lenses<State> {
     }
 }
 
-fn hooks() -> Hooks<State> {
+fn hooks(s: &State) -> Hooks<State> {
+    let images = s.chat.images.clone();
     Hooks {
         on_link: Rc::new(|s: &mut State, target: LinkTarget, tx: &mut rune::Tx| match target {
             LinkTarget::File(path) => s.open_file_link(&path),
@@ -39,7 +40,7 @@ fn hooks() -> Hooks<State> {
             s.chat.zoomed_table = Some(table);
             s.overlays.open(TABLE_ZOOM);
         }),
-        images: Rc::new(|_| None),
+        images: Rc::new(move |src: &str| images.as_ref().and_then(|store| store.get(src))),
     }
 }
 
@@ -50,7 +51,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
     };
     let c = &t.colors;
     let body = if s.chat.loaded.contains(session_id) {
-        ui::chat::transcript(t, s, session_id, lenses(), hooks())
+        ui::chat::transcript(t, s, session_id, lenses(), hooks(s))
     } else {
         col().key(format!("chat-loading-{session_id}")).w_full().grow(1.0).min_h(0.0).center().child(
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
@@ -87,7 +88,7 @@ pub fn layer(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     let Some(table) = s.chat.zoomed_table.as_deref().filter(|_| open) else {
         return;
     };
-    ui::markdown::table_zoom(t, table, true, &hooks(), |s: &mut State| {
+    ui::markdown::table_zoom(t, table, true, &hooks(s), |s: &mut State| {
         s.overlays.close(TABLE_ZOOM);
     }, layer);
 }

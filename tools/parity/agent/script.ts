@@ -4,6 +4,7 @@
  * so tool locations and the bare path in the prose open real files.
  */
 
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 export type ToolKind = 'read' | 'edit' | 'execute' | 'search'
@@ -210,7 +211,36 @@ function turnFollowUp(cwd: string): Step[] {
   ]
 }
 
-const TURNS = [turnExplain, turnEdit, turnFollowUp]
+/** The repo's touch icon as a data URL: an image any client can draw without a file route. */
+function iconDataUrl(): string {
+  const png = readFileSync(
+    path.join(import.meta.dir, '../../../landing/public/apple-touch-icon.png')
+  )
+  return `data:image/png;base64,${png.toString('base64')}`
+}
+
+/**
+ * Not part of the seeded chat (the world sends three prompts): a fourth prompt streams an
+ * image and a plan snapshot fence, which the transcript hides.
+ */
+function turnMedia(_cwd: string): Step[] {
+  return [
+    {
+      step: 'say',
+      text: `Here is the app icon the router serves:
+
+![Troupe icon](${iconDataUrl()})
+
+The plan for the follow-up is saved with this reply.
+${fence}termul-plan
+{"entries":[{"content":"Align ChatRoute with CHAT_ROUTE","status":"pending"}]}
+${fence}
+`
+    }
+  ]
+}
+
+const TURNS = [turnExplain, turnEdit, turnFollowUp, turnMedia]
 
 /** The scripted turn for the `index`-th prompt of a session (wraps around). */
 export function scriptedTurn(index: number, cwd: string): Step[] {

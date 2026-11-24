@@ -13,6 +13,7 @@
 #![forbid(unsafe_code)]
 
 mod chat;
+mod chat_images;
 mod chat_view;
 mod host;
 mod ids;
@@ -214,6 +215,7 @@ fn seed() -> u64 {
 
 fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
+    state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
         state.connect(Host::connect(config, wake));
     }

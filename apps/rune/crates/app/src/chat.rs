@@ -34,6 +34,8 @@ pub struct ChatUi {
     pub zoomed_table: Option<String>,
     /// Turn ends the model asked for, run after the events already delivered.
     deferred: Vec<Event>,
+    /// Pictures for images in replies; set up with the app's waker.
+    pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
 
 /// `ACP_EVENTS` to store action, for the session events the model handles.
@@ -213,7 +215,7 @@ impl State {
     /// Applies one model event and runs its effects.
     pub fn acp_step(&mut self, event: Event) {
         let mut ids = Uuid;
-        let mut env = Env { now: crate::ids::now_ms() as f64, ids: &mut ids, server_history: true };
+        let mut env = Env { now: crate::ids::now_ms(), ids: &mut ids, server_history: true };
         for effect in acp::step(&mut self.chat.acp, event, &mut env) {
             match effect {
                 Effect::Log { level, source, message } => match level {
