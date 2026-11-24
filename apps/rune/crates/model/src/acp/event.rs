@@ -110,7 +110,7 @@ pub enum Event {
     /// snapshot, when the agent sent one.
     #[serde(skip_deserializing)]
     ControlSet(Effect, Option<Vec<Value>>),
-    /// The agent rejected a set command; the text is the error.
+    /// The agent rejected a set command; the text is the error's message.
     #[serde(skip_deserializing)]
     ControlFailed(Effect, String),
     /// The saved picks an [`Effect::ReadComposerOptions`] read; null when

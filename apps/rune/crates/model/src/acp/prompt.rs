@@ -26,8 +26,8 @@ pub enum DispatchOutcome {
     Answered(Value),
     /// The host already runs a turn on the session (`ACP_TURN_IN_PROGRESS`).
     Busy,
-    /// A definite rejection. `agent_dead` when the agent process went away,
-    /// whose own crash event reports it.
+    /// A definite rejection with the error's message. `agent_dead` when the
+    /// agent process went away, whose own crash event reports it.
     Failed { message: String, agent_dead: bool },
 }
 
@@ -130,17 +130,17 @@ impl State {
     ) {
         let reject = |fx: &mut Vec<Effect>, message: String| {
             if turn.caller == Caller::User {
-                fx.push(Effect::ActionRejected { message });
+                fx.push(Effect::rejected(message));
             }
         };
         let Some(session) = self.sessions.get(session_id) else {
-            return reject(fx, format!("Error: unknown session {session_id}"));
+            return reject(fx, format!("unknown session {session_id}"));
         };
         if session.status == SessionStatus::Closed {
-            return reject(fx, "Error: session is closed".into());
+            return reject(fx, "session is closed".into());
         }
         if turn.blocks.is_empty() {
-            return reject(fx, "Error: prompt content must not be empty".into());
+            return reject(fx, "prompt content must not be empty".into());
         }
         let turn_id = env.ids.next_id();
         let busy = session.turn_busy();
@@ -292,6 +292,8 @@ impl State {
                 message,
                 agent_dead,
             } => {
+                // `String(error)`, as the store keeps and shows it.
+                let message = format!("Error: {message}");
                 self.reset_busy_retry(&session_id);
                 self.forget_wire_turn(&session_id);
                 super::turn::finalize_streaming(self.messages.get_mut(&session_id));
@@ -550,19 +552,13 @@ impl State {
             .and_then(|queue| queue.iter().find(|item| item.get("id") == Some(queue_id)))
             .cloned();
         let Some(item) = item else {
-            return fx.push(Effect::ActionRejected {
-                message: "Error: queued prompt not found".into(),
-            });
+            return fx.push(Effect::rejected("queued prompt not found"));
         };
         let Some(session) = self.sessions.get(session_id) else {
-            return fx.push(Effect::ActionRejected {
-                message: format!("Error: unknown session {session_id}"),
-            });
+            return fx.push(Effect::rejected(format!("unknown session {session_id}")));
         };
         if session.status == SessionStatus::Closed {
-            return fx.push(Effect::ActionRejected {
-                message: "Error: session is closed".into(),
-            });
+            return fx.push(Effect::rejected("session is closed"));
         }
         let busy = session.turn_busy();
         let agent_id = session.agent_id.clone();

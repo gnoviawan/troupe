@@ -136,13 +136,6 @@ impl State {
     }
 }
 
-/// A plain `Error` the action rejects with.
-pub(super) fn plain_rejection(message: impl std::fmt::Display) -> Effect {
-    Effect::ActionRejected {
-        message: format!("Error: {message}"),
-    }
-}
-
 /// `uniqueName`.
 fn unique_name(proposed: &str, taken: &[Object]) -> String {
     let taken = |name: &str| {
