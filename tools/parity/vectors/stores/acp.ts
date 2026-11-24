@@ -289,6 +289,7 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
+import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
@@ -317,5 +318,6 @@ export const acpScenarios = [
   ...rosterScenarios,
   ...windowScenarios,
   ...mcpScenarios,
-  ...launchScenarios
+  ...launchScenarios,
+  ...closeScenarios
 ]

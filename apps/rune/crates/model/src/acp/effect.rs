@@ -169,6 +169,23 @@ pub enum Effect {
     },
     /// Close the agent's browser tab and its browser session (desktop only).
     CloseAgentBrowserTab { tab_id: String },
+    /// End the agent's session; then `Event::SessionCommandDone` or
+    /// `SessionCommandFailed`.
+    CloseAgentSession {
+        agent_id: String,
+        session_id: String,
+    },
+    /// Delete the files the app staged for the session (pasted images).
+    DeleteSessionTempFiles { session_id: String },
+    /// Ask the agent to delete its own session (`session/delete`); then
+    /// `SessionCommandDone` or `SessionCommandFailed`.
+    DeleteAgentSession {
+        agent_id: String,
+        session_id: String,
+    },
+    /// Delete the session's durable history and index row; then
+    /// `SessionCommandDone` or `SessionCommandFailed`.
+    DeleteSessionPayload { session_id: String },
     /// Read the MCP registry, then send `Event::McpCommandDone` with the
     /// list as the app normalized it, or `McpCommandFailed`.
     LoadMcpServers {

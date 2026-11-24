@@ -279,7 +279,11 @@
         "mcp_registry_change_reloads_the_list",
         "launch_placeholder_shows_the_chat_before_its_session",
         "launch_placeholder_is_discarded_with_its_queue",
-        "seed_launch_user_message_opens_the_turn_once"
+        "seed_launch_user_message_opens_the_turn_once",
+        "close_session_ends_the_agent_session_then_frees_the_chat",
+        "close_session_keeps_the_transcript_an_open_tab_shows",
+        "delete_history_session_asks_the_agent_that_can_delete",
+        "delete_history_session_keeps_the_chat_when_the_history_stays"
       ]
     }
   }

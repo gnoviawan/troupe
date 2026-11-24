@@ -137,6 +137,9 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
                         | Effect::ReadSessionPayload { .. }
+                        | Effect::CloseAgentSession { .. }
+                        | Effect::DeleteAgentSession { .. }
+                        | Effect::DeleteSessionPayload { .. }
                         | Effect::LoadMcpServers { .. }
                         | Effect::SaveMcpServers { .. }
                         | Effect::ProbeMcpServer { .. }
@@ -214,6 +217,17 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             continue;
                         } else {
                             Event::McpCommandDone(command, reply)
+                        }
+                    }
+                    // A close or delete command answers the next
+                    // `agentReplies` entry, as the agent commands do.
+                    Effect::CloseAgentSession { .. }
+                    | Effect::DeleteAgentSession { .. }
+                    | Effect::DeleteSessionPayload { .. } => {
+                        let reply = agent_replies.pop_front().unwrap_or(Value::Null);
+                        match reply.get("reject").and_then(Value::as_str) {
+                            Some(reason) => Event::SessionCommandFailed(command, reason.to_owned()),
+                            None => Event::SessionCommandDone(command, reply),
                         }
                     }
                     // An agent command answers the next `agentReplies` entry:

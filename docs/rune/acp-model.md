@@ -213,6 +213,20 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      at once. The payload cache and its pins are the app's: the model only
      remembers which sessions are durable, so a cache eviction does not make
      it probe again where the TypeScript would.
+   - 6b, close and delete (R6a-4, `acp/close.rs`). `closeSession` ends an
+     open chat's agent session (`closeAgentSession`), then closes the chat,
+     drops its warm slot, its prompts, its queue and its queue hold,
+     persists it and frees its transcript. `deleteHistorySession` asks an
+     agent that advertises `session/delete` (or one the model knows nothing
+     about, for a chat only the index holds) to delete it
+     (`deleteAgentSession`), deletes the durable history
+     (`deleteSessionPayload`) and only then drops the chat, its index row,
+     its warm slot, its transcript and its tab. Both, and `_onSessionClosed`,
+     delete the app's staged files for the chat (`deleteSessionTempFiles`).
+     Not here: the warm-pool session that closes empty (`ephemeralSessionIds`,
+     PR 8), the reopen and restore invalidation (history open), and the
+     launch cancellation a delete during a launch leaves (`finalizeChatLaunch`,
+     PR 8).
    - 6b, rest. History open, `loadOlderMessages` (it needs the composer
      unit's wire-to-display reversal for its twin folding and the switch
      bands of PR 9), the resubscribe install, live-turn reattach.

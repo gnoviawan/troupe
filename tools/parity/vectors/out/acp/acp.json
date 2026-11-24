@@ -36705,6 +36705,10 @@
     "ids": [],
     "effects": [
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -36810,6 +36814,10 @@
     },
     "ids": [],
     "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s9"
+     },
      {
       "kind": "persistSession",
       "sessionId": "s9"
@@ -37220,6 +37228,10 @@
     "ids": [],
     "effects": [
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -37482,6 +37494,10 @@
     },
     "ids": [],
     "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
      {
       "kind": "persistSession",
       "sessionId": "s1"
@@ -37923,6 +37939,10 @@
     "ids": [],
     "effects": [
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -38244,6 +38264,10 @@
     "ids": [],
     "effects": [
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -38476,6 +38500,10 @@
     "ids": [],
     "effects": [
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "refreshSessionIndex"
      }
     ],
@@ -38545,6 +38573,10 @@
     },
     "ids": [],
     "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s9"
+     },
      {
       "kind": "refreshSessionIndex"
      }
@@ -38827,6 +38859,10 @@
       "level": "info",
       "source": "acp-store.subagentRecord",
       "message": "Cancelled 3 running subagents on chat s1: the agent process is gone"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
      },
      {
       "kind": "persistSession",
@@ -39257,6 +39293,10 @@
       "message": "Cancelled 2 running subagents on chat s1: the agent process is gone"
      },
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -39580,6 +39620,10 @@
       "message": "Cancelled 1 running subagents on chat s1: the agent process is gone"
      },
      {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
       "kind": "persistSession",
       "sessionId": "s1"
      },
@@ -39807,6 +39851,10 @@
     },
     "ids": [],
     "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
      {
       "kind": "persistSession",
       "sessionId": "s1"
@@ -144685,6 +144733,2339 @@
      "discoveredSessions": {},
      "book": {
       "seq": 31202,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "close_session_ends_the_agent_session_then_frees_the_chat",
+  "context": {
+   "agentReplies": [
+    null,
+    {
+     "reject": "gone"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "done"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s2": [
+     {
+      "id": "u2",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "hi"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    },
+    {
+     "id": "s2"
+    },
+    {
+     "id": "s3"
+    },
+    {
+     "id": "s8",
+     "agentId": "agent-gone"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p2": {
+     "requestId": "p2",
+     "agentId": "agent-1",
+     "sessionId": "s2",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {
+    "s1": true
+   },
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s1",
+    "prep-2": "s2"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "sessionCapabilities": {
+       "delete": {}
+      }
+     },
+     "authMethods": []
+    },
+    "agent-2": {
+     "id": "agent-2",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeAgentSession",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeAgentSession",
+      "agentId": "agent-1",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.closeSession",
+      "message": "Failed to close session s2: Error: gone"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s2"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s3"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s3"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      }
+     },
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s9"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s9"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      }
+     },
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "close_session_keeps_the_transcript_an_open_tab_shows",
+  "context": {
+   "agentReplies": [
+    null
+   ],
+   "openChatTabs": [
+    "s1"
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "done"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s2": [
+     {
+      "id": "u2",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "hi"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    },
+    {
+     "id": "s2"
+    },
+    {
+     "id": "s3"
+    },
+    {
+     "id": "s8",
+     "agentId": "agent-gone"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p2": {
+     "requestId": "p2",
+     "agentId": "agent-1",
+     "sessionId": "s2",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {
+    "s1": true
+   },
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s1",
+    "prep-2": "s2"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "sessionCapabilities": {
+       "delete": {}
+      }
+     },
+     "authMethods": []
+    },
+    "agent-2": {
+     "id": "agent-2",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeAgentSession",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "switching": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "delete_history_session_asks_the_agent_that_can_delete",
+  "context": {
+   "agentReplies": [
+    null,
+    null,
+    {
+     "reject": "unsupported"
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "done"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s2": [
+     {
+      "id": "u2",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "hi"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    },
+    {
+     "id": "s2"
+    },
+    {
+     "id": "s3"
+    },
+    {
+     "id": "s8",
+     "agentId": "agent-gone"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p2": {
+     "requestId": "p2",
+     "agentId": "agent-1",
+     "sessionId": "s2",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {
+    "s1": true
+   },
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s1",
+    "prep-2": "s2"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "sessionCapabilities": {
+       "delete": {}
+      }
+     },
+     "authMethods": []
+    },
+    "agent-2": {
+     "id": "agent-2",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "deleteHistorySession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteAgentSession",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "launchFirstTurnBlocks": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "q1",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ]
+       }
+      ]
+     },
+     "suppressQueueFlush": {
+      "s1": true
+     },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "deleteHistorySession",
+     "args": [
+      "s8"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteAgentSession",
+      "agentId": "agent-gone",
+      "sessionId": "s8"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.deleteHistorySession",
+      "message": "session/delete failed for s8: unsupported"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "s8"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "s8"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s8"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "replaying": null,
+       "launchFirstTurnBlocks": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "q1",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ]
+       }
+      ]
+     },
+     "suppressQueueFlush": {
+      "s1": true
+     },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "sessionCapabilities": {
+         "delete": {}
+        }
+       },
+       "authMethods": []
+      },
+      "agent-2": {
+       "id": "agent-2",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "delete_history_session_keeps_the_chat_when_the_history_stays",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "disk full"
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "done"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ],
+    "s2": [
+     {
+      "id": "u2",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "hi"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1
+     }
+    ]
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    },
+    {
+     "id": "s2"
+    },
+    {
+     "id": "s3"
+    },
+    {
+     "id": "s8",
+     "agentId": "agent-gone"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p2": {
+     "requestId": "p2",
+     "agentId": "agent-1",
+     "sessionId": "s2",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {
+    "s1": [
+     {
+      "id": "q1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "later"
+       }
+      ]
+     }
+    ]
+   },
+   "suppressQueueFlush": {
+    "s1": true
+   },
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s1",
+    "prep-2": "s2"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 31600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "deleteHistorySession",
+     "args": [
+      "s2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.deleteHistorySession",
+      "message": "failed to delete session history"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "done"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "q1",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ]
+       }
+      ]
+     },
+     "suppressQueueFlush": {
+      "s1": true
+     },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s1",
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "deleteHistorySession",
+     "args": [
+      "s7"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "s7"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "s7"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s7"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "done"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ],
+      "s2": [
+       {
+        "id": "u2",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      },
+      {
+       "id": "s3"
+      },
+      {
+       "id": "s8",
+       "agentId": "agent-gone"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p2": {
+       "requestId": "p2",
+       "agentId": "agent-1",
+       "sessionId": "s2",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {
+      "s1": [
+       {
+        "id": "q1",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "later"
+         }
+        ]
+       }
+      ]
+     },
+     "suppressQueueFlush": {
+      "s1": true
+     },
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s1",
+      "prep-2": "s2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 31600,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }

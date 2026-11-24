@@ -69,7 +69,9 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     saveSessionIndex: async () => {},
     saveSessionPayload: async () => {},
     queueSessionPayloadSave: async () => {},
-    queueSessionPayloadDelete: async () => {},
+    // The history delete is the model's `deleteSessionPayload` command.
+    queueSessionPayloadDelete: (sessionId: string) =>
+      agentCommand({ kind: 'deleteSessionPayload', sessionId }),
     // A payload read is the model's `readSessionPayload` effect; it answers
     // `context.payloads`.
     loadSessionPayload: async (id: string) => {
@@ -175,6 +177,11 @@ vi.mock(`${renderer}/lib/automation-api`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   requestAutomationResync: () => emit({ kind: 'requestAutomationResync' }),
   publishAutomationChange: (payload: unknown) => emit({ kind: 'publishAutomationChange', payload })
+}))
+vi.mock(`${renderer}/lib/attachment-temp-cleanup`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  deleteSessionTempFiles: async (sessionId: string) =>
+    emit({ kind: 'deleteSessionTempFiles', sessionId })
 }))
 vi.mock(`${renderer}/lib/web-tab-session`, () => ({
   setTabFocusedSessionId: () => {},
@@ -292,6 +299,10 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      closeSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'closeAgentSession', agentId, sessionId }),
+      deleteAgentSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'deleteAgentSession', agentId, sessionId }),
       probeMcpServer: (config: unknown) => mcpCommand({ kind: 'probeMcpServer', config }),
       startMcpOAuth: (
         projectId: string,
