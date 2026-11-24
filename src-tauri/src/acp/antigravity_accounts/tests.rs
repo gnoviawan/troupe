@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use super::{chosen_account, links, AntigravityAccountStore, RemovedAccount, BUILTIN_ACCOUNT_ID};
 
 const CONVERSATIONS: &str = "antigravity-acp/conversations";
-// Only the link tests use it, and they run on Unix only.
 #[cfg(unix)]
 const BRAIN: &str = "antigravity-acp/brain";
 
