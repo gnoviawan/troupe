@@ -206157,5 +206157,9111 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_fills_a_warm_slot",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 47900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 47900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_records_a_spawn_failure_and_toasts",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "reject": "spawn gemini-acp ENOENT"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Could not start \"gemini-acp\". Check that the binary exists and is on your PATH."
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "Gemini": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "prepareChatErrors": {
+      "gemini\u0000/work\u0000": {
+       "category": "spawn",
+       "label": "Agent unavailable",
+       "detail": "Could not start \"gemini-acp\". Check that the binary exists and is on your PATH."
+      }
+     },
+     "book": {
+      "seq": 48000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_in_the_background_does_not_toast",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "reject": "spawn gemini-acp ENOENT"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1",
+      {
+       "silent": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "Gemini": "error"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "prepareChatErrors": {
+      "gemini\u0000/work\u0000": {
+       "category": "spawn",
+       "label": "Agent unavailable",
+       "detail": "Could not start \"gemini-acp\". Check that the binary exists and is on your PATH."
+      }
+     },
+     "book": {
+      "seq": 48100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_in_the_background_skips_a_definite_rejection",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "prepareChatErrors": {
+    "gemini\u0000/work\u0000": {
+     "category": "spawn",
+     "label": "Agent unavailable",
+     "detail": "gone",
+     "definite": true
+    }
+   },
+   "book": {
+    "seq": 48200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1",
+      {
+       "silent": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "prepareChatErrors": {
+      "gemini\u0000/work\u0000": {
+       "category": "spawn",
+       "label": "Agent unavailable",
+       "detail": "gone",
+       "definite": true
+      }
+     },
+     "book": {
+      "seq": 48200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_classifies_a_session_failure",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "reject": "session/new timed out"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "prepareChatErrors": {
+      "gemini\u0000/work\u0000": {
+       "category": "timeout",
+       "label": "Session setup timed out",
+       "detail": "session/new timed out"
+      }
+     },
+     "book": {
+      "seq": 48300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_keeps_a_live_slot",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "w1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "gemini\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_reaps_a_stale_slot",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "w1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "gemini\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.preparedSlot.stale",
+      "message": "Dropped stale prepared slot w1 (session closed)"
+     },
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": null
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_promotes_and_seeds_the_next",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null,
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "w2",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "promoteSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Detached agent agent-1 so the next Agent chat gets its own process"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "w1"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-9",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      },
+      "w2": {
+       "id": "w2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": [],
+      "w2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1\u0000agent-1": "agent-1",
+      "gemini\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      },
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_refuses_another_project",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionResolved",
+      "value": null
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "missing",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "actionResolved",
+      "value": null
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_warns_when_the_promotion_fails",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    {
+     "reject": "promote refused"
+    },
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "w2",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "promoteSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Detached agent agent-1 so the next Agent chat gets its own process"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "w1"
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Chat history will not be saved for this session"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-9",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      },
+      "w2": {
+       "id": "w2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": [],
+      "w2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1\u0000agent-1": "agent-1",
+      "gemini\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      },
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "cancel_prepared_chat_reaps_the_warm_session",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 48900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 48900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "cancel_prepared_chat_logs_a_failed_dispose",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    {
+     "reject": "dispose refused"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.reapOrphanPreparedSession",
+      "message": "Failed to dispose warm session w1: dispose refused"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "cancel_prepared_chat_during_the_prepare_reaps_its_session",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "w1",
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      }
+     }
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000003000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000003000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "an_empty_warm_session_closed_by_the_host_is_dropped",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionClosed",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "w1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "an_empty_warm_session_goes_with_its_agent",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentDisconnected",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "reason": "killed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_warm_session_outdated_during_the_prepare_is_prepared_again",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "w1",
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      }
+     }
+    },
+    null,
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "w2",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "renewAgentCredentials",
+     "args": [
+      "gemini",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000003000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000003000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000003000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000003000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_joins_the_prepare_in_flight",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_cancelled_while_its_agent_spawns_opens_nothing",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "agentId": "agent-9",
+      "capabilities": {},
+      "authMethods": []
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "Gemini": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "Gemini": "spawning"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      },
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "prepare_chat_drops_a_session_whose_agent_died_meanwhile",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "w1",
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentDisconnected",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "reason": "killed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "preparingChatKeys": {
+      "gemini\u0000/work\u0000": true
+     },
+     "book": {
+      "seq": 49700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_reaped_warm_session_frees_its_agent_for_a_chat",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null,
+    {}
+   ],
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "agentId": "agent-1",
+      "agentConfigId": "gemini",
+      "cwd": "/work",
+      "projectId": "p1",
+      "title": "Old chat",
+      "status": "closed",
+      "createdAt": 5,
+      "lastSeq": 2
+     },
+     "messages": [],
+     "toolCalls": []
+    }
+   }
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "openHistorySession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.openHistorySession.mcpAttach",
+      "message": "Reopen of session s1 attaches 0 mcp server(s)"
+     },
+     {
+      "kind": "loadSession",
+      "agentId": "agent-1",
+      "sessionId": "s1",
+      "cwd": "/work",
+      "additionalDirectories": [],
+      "mcpServers": []
+     },
+     {
+      "kind": "actionResolved",
+      "value": null
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": "Old chat",
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 5,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {
+      "s1": []
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {
+      "s1": []
+     },
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49800,
+      "historyWatermarks": {
+       "s1": 2
+      },
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "cancel_prepared_chat_keeps_the_active_chat",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "w1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": "w1",
+   "preparedSessions": {
+    "gemini\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 49900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": "w1",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 49900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "cancel_prepared_chat_clears_the_slot_error",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "prepareChatErrors": {
+    "gemini\u0000/work\u0000": {
+     "category": "spawn",
+     "label": "Agent unavailable",
+     "detail": "gone",
+     "definite": true
+    }
+   },
+   "book": {
+    "seq": 50000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "cancelPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_does_not_seed_an_isolating_agent",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "factory-droid\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "factory-droid",
+     "name": "Droid",
+     "command": "droid"
+    }
+   ],
+   "selectedAgentConfigId": "factory-droid",
+   "book": {
+    "seq": 50100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "factory-droid",
+      "/work",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "factory-droid",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "factory-droid"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "factory-droid",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "factory-droid"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "factory-droid": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "factory-droid\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "factory-droid\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "factory-droid",
+       "name": "Droid",
+       "command": "droid"
+      }
+     ],
+     "selectedAgentConfigId": "factory-droid",
+     "book": {
+      "seq": 50100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "factory-droid\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "promoteSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "factory-droid": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "factory-droid\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "factory-droid",
+       "name": "Droid",
+       "command": "droid"
+      }
+     ],
+     "selectedAgentConfigId": "factory-droid",
+     "book": {
+      "seq": 50100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_with_its_own_mcp_servers_does_not_seed",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 50200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      "/work",
+      [
+       {
+        "name": "docs",
+        "command": "docs-mcp",
+        "args": [],
+        "env": []
+       }
+      ],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [
+       {
+        "name": "docs",
+        "command": "docs-mcp",
+        "args": [],
+        "env": []
+       }
+      ],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000{\"name\":\"docs\",\"command\":\"docs-mcp\",\"args\":[],\"env\":[]}": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000{\"name\":\"docs\",\"command\":\"docs-mcp\",\"args\":[],\"env\":[]}",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "promoteSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_chat_whose_promotion_failed_goes_with_its_agent",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    {
+     "reject": "promote refused"
+    },
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "w2",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 50300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "promoteSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.ensureLiveAgent",
+      "message": "Detached agent agent-1 so the next Agent chat gets its own process"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "w1"
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Chat history will not be saved for this session"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-9",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      },
+      "w2": {
+       "id": "w2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": [],
+      "w2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1\u0000agent-1": "agent-1",
+      "gemini\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      },
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentDisconnected",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "reason": "killed"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "w2": {
+       "id": "w2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_drops_a_slot_whose_mcp_list_changed",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    null
+   ],
+   "mcpReplies": [
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "mcpServers": [
+    {
+     "id": "a",
+     "type": "stdio",
+     "name": "cmd-a",
+     "command": "npx",
+     "args": [],
+     "env": [],
+     "enabled": true
+    }
+   ],
+   "mcpServersLoaded": true,
+   "book": {
+    "seq": 50400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [
+       {
+        "type": "stdio",
+        "name": "cmd-a",
+        "command": "npx",
+        "args": [],
+        "env": []
+       }
+      ],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "stdio",
+       "name": "cmd-a",
+       "command": "npx",
+       "args": [],
+       "env": [],
+       "enabled": true
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 50400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setMcpServerEnabled",
+     "args": [
+      "a",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveMcpServers",
+      "servers": [
+       {
+        "id": "a",
+        "type": "stdio",
+        "name": "cmd-a",
+        "command": "npx",
+        "args": [],
+        "env": [],
+        "enabled": false
+       }
+      ]
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "stdio",
+       "name": "cmd-a",
+       "command": "npx",
+       "args": [],
+       "env": [],
+       "enabled": false
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 50400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.preparedSlot.stale",
+      "message": "Dropped warm session w1: its agent agent-1 started with an outdated launch (env, Claude account or MCP servers)"
+     },
+     {
+      "kind": "disposeEphemeralSession",
+      "agentId": "agent-1",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "actionResolved",
+      "value": null
+     },
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "w1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "w1"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "mcpServers": [
+      {
+       "id": "a",
+       "type": "stdio",
+       "name": "cmd-a",
+       "command": "npx",
+       "args": [],
+       "env": [],
+       "enabled": false
+      }
+     ],
+     "mcpServersLoaded": true,
+     "book": {
+      "seq": 50400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "claim_prepared_chat_never_reaps_an_indexed_chat",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "w1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "w1"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "gemini\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 50500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "claimPreparedChat",
+     "args": [
+      "gemini\u0000/work\u0000",
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.preparedSlot.stale",
+      "message": "Dropped stale prepared slot w1 (session closed)"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.reapOrphanPreparedSession",
+      "message": "Skipped teardown of indexed session w1; orphan reap must not close or delete a persisted chat"
+     },
+     {
+      "kind": "actionResolved",
+      "value": null
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "w1"
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "a_second_warm_key_shares_an_agent_that_only_holds_a_warm_session",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "w1",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    },
+    {
+     "sessionId": "w2",
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    }
+   ],
+   "selectedAgentConfigId": "gemini",
+   "book": {
+    "seq": 50600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      " /work ",
+      null,
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "prepareChat",
+     "args": [
+      "gemini",
+      "/work",
+      [
+       {
+        "name": "docs",
+        "command": "docs-mcp",
+        "args": [],
+        "env": []
+       }
+      ],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [
+       {
+        "name": "docs",
+        "command": "docs-mcp",
+        "args": [],
+        "env": []
+       }
+      ],
+      "ephemeral": true,
+      "promotable": true,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "gemini",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000002000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "gemini"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      },
+      "w2": {
+       "id": "w2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": null,
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modelId": "m1",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "w1": [],
+      "w2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "gemini": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": null,
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "gemini\u0000/work\u0000": "w1",
+      "gemini\u0000/work\u0000{\"name\":\"docs\",\"command\":\"docs-mcp\",\"args\":[],\"env\":[]}": "w2"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      }
+     ],
+     "selectedAgentConfigId": "gemini",
+     "book": {
+      "seq": 50600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

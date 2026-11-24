@@ -13,7 +13,7 @@ use super::history::OpenId;
 use super::host_error::HostError;
 use super::import::{ImportId, RequestId};
 use super::mcp::TokenCheck;
-use super::oneshot::OneShotId;
+use super::oneshot::{Disposer, OneShotId};
 use super::restore::RunId;
 use super::turn::TurnEnd;
 use super::types::Object;
@@ -366,7 +366,13 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         #[serde(skip_serializing)]
-        oneshot: OneShotId,
+        by: Disposer,
+    },
+    /// Make a claimed warm session durable (`promote_session`); then
+    /// `AgentCommandDone` or `AgentCommandFailed`.
+    PromoteSession {
+        agent_id: String,
+        session_id: String,
     },
     /// Send `Event::ReplayEnd` with this effect once the events already
     /// queued have been applied, so replayed chunks racing the reply still

@@ -12,7 +12,8 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 use super::discovery::SessionList;
-use super::host_error::{self, HostError};
+use super::host_error::HostError;
+use super::setup_error::{SetupCategory, setup_category};
 use super::{Effect, FlightId, State};
 
 /// Names one session call waiting on an authenticate on demand.
@@ -118,146 +119,10 @@ fn mark_retried(mut command: Effect) -> Effect {
     command
 }
 
-const ENOENT: [&str; 5] = [
-    "enoent",
-    "no such file",
-    "program not found",
-    "command not found",
-    "failed to spawn",
-];
-
-const TRANSPORT: [&str; 18] = [
-    "destroyed",
-    "broken pipe",
-    "econnreset",
-    "econnrefused",
-    "disconnected",
-    "connection closed",
-    "connection lost",
-    "connection reset",
-    "connection refused",
-    "connection aborted",
-    "stream closed",
-    "stream ended",
-    "stream destroyed",
-    "stream error",
-    "transport",
-    "agent thread is no longer running",
-    "agent thread dropped",
-    "pipe",
-];
-
-const AUTH: [&str; 7] = [
-    "auth",
-    "login",
-    "credential",
-    "unauthoris",
-    "unauthoriz",
-    "logged out",
-    "forbidden",
-];
-
-fn word(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_'
-}
-
-/// `needle` starts somewhere in `text` and the test accepts what follows.
-fn find_with(text: &str, needle: &str, rest: impl Fn(&str) -> bool) -> bool {
-    text.match_indices(needle)
-        .any(|(at, _)| rest(&text[at + needle.len()..]))
-}
-
-/// `a.*b` on one line, as `.` stops at a line break.
-fn on_a_line(text: &str, a: &str, b: &str) -> bool {
-    text.split(['\n', '\r', '\u{2028}', '\u{2029}'])
-        .any(|line| find_with(line, a, |rest| rest.contains(b)))
-}
-
-/// `word[\s-]?word`.
-fn joined(text: &str, head: &str, tail: &str) -> bool {
-    find_with(text, head, |rest| {
-        let rest = rest
-            .strip_prefix(|c: char| c == '-' || c.is_whitespace())
-            .unwrap_or(rest);
-        rest.starts_with(tail)
-    }) || text.contains(&format!("{head}{tail}"))
-}
-
-/// `\bcode\b`.
-fn whole_number(text: &str, code: &str) -> bool {
-    text.match_indices(code).any(|(at, _)| {
-        let before = text[..at].chars().next_back().is_none_or(|c| !word(c));
-        let after = text[at + code.len()..]
-            .chars()
-            .next()
-            .is_none_or(|c| !word(c));
-        before && after
-    })
-}
-
-/// The `classifySetupError` categories the model acts on.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum SetupCategory {
-    /// Several sign-in methods and none chosen.
-    MultiAuth,
-    Auth,
-    Spawn,
-    Provider,
-    /// A broken stream or connection: the process cannot be reused.
-    Transport,
-    Other,
-}
-
-/// `classifySetupError`'s category, in its order: the ambiguous code, the
-/// auth-required signal, a signed-out Account, a definite rejection, a
-/// provider code, then the wording.
-pub(crate) fn setup_category(error: &HostError) -> SetupCategory {
-    let code = error.code.as_deref();
-    if code == Some(host_error::AMBIGUOUS_AUTH) {
-        return SetupCategory::MultiAuth;
-    }
-    if code == Some(host_error::AUTH_REQUIRED) || error.message.starts_with("ACP_AUTH_REQUIRED") {
-        return SetupCategory::Auth;
-    }
-    if error.is(&host_error::SIGNED_OUT) {
-        return SetupCategory::Auth;
-    }
-    if error.is(&host_error::DEFINITE_SPAWN_REJECTION) {
-        return SetupCategory::Spawn;
-    }
-    if code.is_some_and(|code| host_error::PROVIDER.contains(&code)) {
-        return SetupCategory::Provider;
-    }
-    let text = error.message.to_ascii_lowercase();
-    if ENOENT.iter().any(|needle| text.contains(needle)) || on_a_line(&text, "spawn", "fail") {
-        return SetupCategory::Spawn;
-    }
-    let pipe = find_with(&text, "pipe", |rest| {
-        rest.chars().next().is_none_or(|c| !word(c))
-    });
-    let transport = TRANSPORT[..17].iter().any(|needle| text.contains(needle))
-        || pipe
-        || on_a_line(&text, "connection", "timed out");
-    if transport {
-        return SetupCategory::Transport;
-    }
-    let auth = AUTH.iter().any(|needle| text.contains(needle))
-        || joined(&text, "sign", "in")
-        || joined(&text, "api", "key")
-        || text.contains("not logged in")
-        || whole_number(&text, "401")
-        || whole_number(&text, "403");
-    if auth {
-        SetupCategory::Auth
-    } else {
-        SetupCategory::Other
-    }
-}
-
 /// `isAuthRetriableSessionError`: a failure `classifySetupError` files
 /// under `auth`.
 pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
-    setup_category(error) == SetupCategory::Auth
+    setup_category(error, None) == SetupCategory::Auth
 }
 
 /// `withAuthRetry` logs a retry that went through.

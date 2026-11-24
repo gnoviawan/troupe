@@ -387,8 +387,34 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `renewAgentCredentials` bumps a Project's credential epoch. Not
      exercised yet: the `chat` and `warm` holders and
      `surfaceDefiniteRejection`, which only the callers still to port pass.
-   - 8, rest. `prepareChat`, `claimPreparedChat`,
-     `cancelPreparedChat` and the warm-pool promotion; `startChat`,
+   - 8c, warm pool (R6a-6, `acp/warm.rs`, `acp/setup_error.rs`).
+     `prepareChat` gets the config's agent (`ensureLiveAgent`, warm
+     holder) and opens an ephemeral, promotable session into the key's slot
+     (`preparedSessions`, keyed by config, trimmed cwd and the MCP list's
+     fingerprint), marking the key in `preparingChatKeys` meanwhile. A
+     failure is classified for the launcher (`prepareChatErrors`, through
+     a port of `classifySetupError` with its labels and detail text,
+     checked against the TypeScript classifier's answers in
+     `setup_error_tests.rs`); a spawn failure the user asked for toasts, and
+     a background seed skips a key the host refused for good. A session
+     whose agent died meanwhile is dropped, one whose prepare was
+     cancelled or replaced is reaped, and one on an outdated launch is
+     reaped and prepared again. `claimPreparedChat` answers the slot's
+     session when it is live, on the current launch (`runsCurrentLaunch`,
+     and the registry MCP servers it took, `registryMcpServersMatch`) and
+     in the claiming Project; it promotes it (`promoteSession`, a failure
+     toasts and keeps it ephemeral), saves the chat, clears the slot and
+     seeds the next warm session for the selected config. A stale slot is
+     dropped and its session reaped (`reapOrphanPreparedSession`: dispose,
+     then delete; an indexed chat is never reaped). `cancelPreparedChat`
+     reaps the slot's session unless it is the active chat. The ephemeral
+     sessions (`Book::ephemeral_sessions`) are not chats to the agent
+     holder check, and a close or disconnect drops one without a
+     transcript. Not here: `startChat`, `startQuickChat`,
+     `finalizeChatLaunch`, `applyPendingLauncherOptions`, the config slice,
+     the promotion wait before a first prompt (`inFlightPromotions`) and
+     `stoppingAgentIds`.
+   - 8, rest. `startChat`,
      `startQuickChat`, `finalizeChatLaunch` and `applyPendingLauncherOptions`;
      the config slice. History open, import, the one-shots and the agent
      switch all wait on `ensureLiveAgent`.

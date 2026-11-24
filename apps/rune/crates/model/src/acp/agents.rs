@@ -466,17 +466,31 @@ impl State {
         self.drop_agent_launch_state(agent_id);
         let mut retired = Vec::new();
         let mut emptied = Vec::new();
-        // A one-shot's temporary session goes, transcript and all.
-        let oneshots: Vec<String> = self
+        // A one-shot's temporary session, or a warm one with no transcript,
+        // goes, transcript and all; a warm one that held a chat stays.
+        let dropped: Vec<String> = self
             .sessions
             .values()
             .filter(|s| s.agent_id == agent_id && s.status != SessionStatus::Closed)
-            .filter(|s| self.is_oneshot_session(&s.id))
+            .filter(|s| {
+                self.is_oneshot_session(&s.id)
+                    || (self.book.ephemeral_sessions.contains(&s.id)
+                        && self.messages.get(&s.id).is_none_or(Vec::is_empty))
+            })
             .map(|s| s.id.clone())
             .collect();
-        for id in &oneshots {
+        for id in &dropped {
             self.sessions.remove(id);
             emptied.push(id.clone());
+        }
+        let gone_ephemeral: Vec<String> = self
+            .sessions
+            .values()
+            .filter(|s| s.agent_id == agent_id && s.status != SessionStatus::Closed)
+            .map(|s| s.id.clone())
+            .collect();
+        for id in gone_ephemeral.iter().chain(&dropped) {
+            self.book.ephemeral_sessions.remove(id);
         }
         for (id, session) in &mut self.sessions {
             if session.agent_id != agent_id || session.status == SessionStatus::Closed {

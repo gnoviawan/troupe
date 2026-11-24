@@ -51,7 +51,9 @@
         "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c",
         "src/renderer/lib/agents/acp-registry.ts": "145840484d1acea7d0b4cd8a44b635a3fff83647",
         "src/renderer/stores/acp-store/slices/misc.ts": "6dfd2232c8de812b253b6dbc2785d632c36d607d",
-        "src/renderer/stores/acp-store/slices/switch.ts": "9d7e958c35907b82f807990d022df8b63de38152"
+        "src/renderer/stores/acp-store/slices/switch.ts": "9d7e958c35907b82f807990d022df8b63de38152",
+        "src/renderer/stores/acp-store/registry-mcp-fingerprints.ts": "7626335c928a55bab4e0a460f23a8ceaa837a434",
+        "src/renderer/stores/acp-store/ephemeral-ids.ts": "60d8281e7c6d76945ba08760580aa441605644f7"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -454,7 +456,35 @@
         "agent_switch_keeps_an_existing_continuation",
         "agent_switch_never_stamps_across_projects",
         "cancel_agent_switch_clears_the_armed_switch",
-        "history_watermark_counts_switch_markers"
+        "history_watermark_counts_switch_markers",
+        "prepare_chat_fills_a_warm_slot",
+        "prepare_chat_records_a_spawn_failure_and_toasts",
+        "prepare_chat_in_the_background_does_not_toast",
+        "prepare_chat_in_the_background_skips_a_definite_rejection",
+        "prepare_chat_classifies_a_session_failure",
+        "prepare_chat_keeps_a_live_slot",
+        "claim_prepared_chat_reaps_a_stale_slot",
+        "claim_prepared_chat_promotes_and_seeds_the_next",
+        "claim_prepared_chat_refuses_another_project",
+        "claim_prepared_chat_warns_when_the_promotion_fails",
+        "cancel_prepared_chat_reaps_the_warm_session",
+        "cancel_prepared_chat_logs_a_failed_dispose",
+        "cancel_prepared_chat_during_the_prepare_reaps_its_session",
+        "an_empty_warm_session_closed_by_the_host_is_dropped",
+        "an_empty_warm_session_goes_with_its_agent",
+        "a_warm_session_outdated_during_the_prepare_is_prepared_again",
+        "prepare_chat_joins_the_prepare_in_flight",
+        "prepare_chat_cancelled_while_its_agent_spawns_opens_nothing",
+        "prepare_chat_drops_a_session_whose_agent_died_meanwhile",
+        "a_reaped_warm_session_frees_its_agent_for_a_chat",
+        "cancel_prepared_chat_keeps_the_active_chat",
+        "cancel_prepared_chat_clears_the_slot_error",
+        "claim_prepared_chat_does_not_seed_an_isolating_agent",
+        "claim_prepared_chat_with_its_own_mcp_servers_does_not_seed",
+        "a_chat_whose_promotion_failed_goes_with_its_agent",
+        "claim_prepared_chat_drops_a_slot_whose_mcp_list_changed",
+        "claim_prepared_chat_never_reaps_an_indexed_chat",
+        "a_second_warm_key_shares_an_agent_that_only_holds_a_warm_session"
       ]
     }
   }

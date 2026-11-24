@@ -11,10 +11,10 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::auth_retry::{SetupCategory, setup_category};
 use super::host_error::HostError;
 use super::import::RequestId;
 use super::session::{SessionCreatedEvent, add_advertised_options, creation_option_defaults};
+use super::setup_error::{SetupCategory, setup_category};
 use super::types::{Session, SessionStatus};
 use super::{Effect, Env, State, js};
 
@@ -68,6 +68,7 @@ pub(crate) enum CreateCaller {
     /// The user's action, by the app's request id.
     Action(RequestId),
     OneShot(super::oneshot::OneShotId),
+    Prepare(super::warm::PrepareId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -78,6 +79,9 @@ pub(crate) struct Create {
     project_id: Option<String>,
     options: CreateOptions,
     mcp_server_count: usize,
+    /// The registry servers the session took (`recordRegistryMcpServers`),
+    /// when the caller named none.
+    registry_fingerprint: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -206,6 +210,7 @@ impl State {
     ) {
         let CreateRequest(agent_id, cwd, mcp_servers, project_id, options, _) = request;
         let options = options.unwrap_or_default();
+        let from_registry = mcp_servers.is_none();
         let servers = match mcp_servers {
             Some(servers) => servers,
             None => {
@@ -238,6 +243,7 @@ impl State {
                 project_id: project_id.clone(),
                 options: options.clone(),
                 mcp_server_count: servers.len(),
+                registry_fingerprint: from_registry.then(|| super::warm::mcp_fingerprint(&servers)),
             },
         );
         let present = |value: Option<String>| value.filter(|value| !value.is_empty());
@@ -270,6 +276,11 @@ impl State {
             return;
         };
         let session_id = js::string_of(reply.get("sessionId"));
+        if let Some(fingerprint) = &call.registry_fingerprint {
+            self.book
+                .registry_mcp
+                .insert(session_id.clone(), fingerprint.clone());
+        }
         if reply.get("lookup").is_some_and(js::truthy) {
             let agent_id = &call.agent_id;
             if call.options.ephemeral || call.options.backend_ephemeral {
@@ -291,6 +302,9 @@ impl State {
         }
         self.invalidate_session_reopen(&session_id);
         self.add_created_session(&call, &session_id, reply, env);
+        if call.options.ephemeral {
+            self.book.ephemeral_sessions.insert(session_id.clone());
+        }
         if !call.options.ephemeral {
             fx.push(Effect::PersistSession {
                 session_id: session_id.clone(),
@@ -440,6 +454,7 @@ impl State {
                 value: json!(session_id),
             }),
             Some(CreateCaller::OneShot(id)) => self.on_oneshot_session(id, session_id, env, fx),
+            Some(CreateCaller::Prepare(id)) => self.on_prepare_session(id, session_id, env, fx),
             None => {}
         }
     }
@@ -457,7 +472,7 @@ impl State {
             return;
         };
         let agent_id = call.agent_id.clone();
-        match setup_category(&error) {
+        match setup_category(&error, None) {
             SetupCategory::Transport => {
                 // `evictAgentForTransport`: forget the sign-in, then kill.
                 let book = &mut self.book;
@@ -499,6 +514,7 @@ impl State {
                 let message = super::effect::error_text(error);
                 self.on_oneshot_session_failed(id, message, fx);
             }
+            Some(CreateCaller::Prepare(id)) => self.on_prepare_session_failed(id, error, fx),
             None => {}
         }
     }

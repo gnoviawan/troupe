@@ -17,6 +17,7 @@ use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::host_error::HostError;
+use super::oneshot::Disposer;
 use super::types::SessionStatus;
 use super::{Effect, State};
 
@@ -42,6 +43,8 @@ pub enum Killer {
     Ensure(EnsureId),
     /// The `createSession` whose broken connection discards the process.
     Evict(CreateId),
+    /// A cleanup whose failure nobody sees.
+    Quiet,
 }
 
 impl State {
@@ -264,9 +267,10 @@ impl State {
                 super::auth_retry::note_retry_succeeded(&command, fx);
                 self.on_reopen_done(&command, &reply, fx);
             }
-            Effect::DisposeEphemeralSession { oneshot, .. } => {
-                self.on_oneshot_disposed(oneshot, None, fx);
-            }
+            Effect::DisposeEphemeralSession { by, .. } => match by {
+                Disposer::OneShot(oneshot) => self.on_oneshot_disposed(oneshot, None, fx),
+                reap @ Disposer::Reap { .. } => self.on_reaped(reap, None, fx),
+            },
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
@@ -276,7 +280,7 @@ impl State {
             Effect::KillAgent { agent_id, by } => {
                 self.on_agent_killed(&agent_id);
                 match by {
-                    Killer::User => {}
+                    Killer::User | Killer::Quiet => {}
                     Killer::Ensure(ensure) => self.finish_spawn(ensure, Ok(None), fx),
                     Killer::Evict(create) => self.on_create_evicted(create, fx),
                 }
@@ -344,6 +348,9 @@ impl State {
                 by: Killer::Evict(create),
                 ..
             } => return self.on_create_evicted(create, fx),
+            Effect::KillAgent {
+                by: Killer::Quiet, ..
+            } => return,
             Effect::Authenticate {
                 agent_id,
                 method_id,
@@ -379,9 +386,17 @@ impl State {
                 }
                 return self.settle_auth_retries(flight, Err(AuthFailure::Other(message)), fx);
             }
-            Effect::DisposeEphemeralSession { oneshot, .. } => {
-                let error = super::effect::error_text(&HostError::new(message, code));
-                return self.on_oneshot_disposed(oneshot, Some(error), fx);
+            Effect::DisposeEphemeralSession { by, .. } => {
+                return match by {
+                    Disposer::OneShot(oneshot) => {
+                        let error = super::effect::error_text(&HostError::new(message, code));
+                        self.on_oneshot_disposed(oneshot, Some(error), fx)
+                    }
+                    reap @ Disposer::Reap { .. } => self.on_reaped(reap, Some(message), fx),
+                };
+            }
+            Effect::PromoteSession { session_id, .. } => {
+                return self.on_promotion_failed(&session_id, fx);
             }
             Effect::Logout { agent_id } => fx.push(Effect::warn(
                 "acp.logoutAgent",

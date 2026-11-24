@@ -59,6 +59,7 @@ pub(crate) enum Caller {
     ImportList(super::import::ImportId),
     HistoryOpen(super::history::OpenId),
     OneShot(super::oneshot::OneShotId),
+    Prepare(super::warm::PrepareId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -232,13 +233,25 @@ impl State {
         }
     }
 
-    /// `agentHolder`: what the agent serves now. Warm-pool sessions are not
-    /// ported yet (PR 8), so every session counts as a chat.
+    /// `releaseWarmAgent`: a warm prepare no longer holds the agent.
+    pub(crate) fn release_warm_agent(&mut self, agent_id: &str) {
+        let warm = &mut self.book.ensure.pending_warm_agents;
+        match warm.get_mut(agent_id) {
+            Some(count) if *count > 1 => *count -= 1,
+            _ => {
+                warm.remove(agent_id);
+            }
+        }
+    }
+
+    /// `agentHolder`: what the agent serves now. An ephemeral session (a
+    /// warm or one-shot one) is not a chat.
     fn agent_holder(&mut self, agent_id: &str) -> Option<Holder> {
+        let ephemeral = &self.book.ephemeral_sessions;
         let mut chats = self
             .sessions
             .values()
-            .filter(|session| session.agent_id == agent_id)
+            .filter(|session| session.agent_id == agent_id && !ephemeral.contains(&session.id))
             .peekable();
         let book = &mut self.book.ensure;
         if chats.peek().is_some() {
@@ -546,6 +559,7 @@ impl State {
             }
             (Caller::HistoryOpen(id), outcome) => self.on_history_agent(id, outcome, fx),
             (Caller::OneShot(id), outcome) => self.on_oneshot_agent(id, outcome, fx),
+            (Caller::Prepare(id), outcome) => self.on_prepare_agent(id, outcome, fx),
         }
     }
 }

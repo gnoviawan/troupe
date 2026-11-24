@@ -363,6 +363,18 @@ impl State {
         fx.push(Effect::DeleteSessionTempFiles {
             session_id: id.clone(),
         });
+        if self.book.ephemeral_sessions.remove(&id)
+            && self.messages.get(&id).is_none_or(Vec::is_empty)
+        {
+            // A warm session that never held a chat goes without a trace.
+            self.sessions.remove(&id);
+            self.prepared_sessions.retain(|_, prepared| *prepared != id);
+            self.pending_permissions
+                .retain(|_, pending| pending.session_id != id);
+            self.pending_questions
+                .retain(|_, pending| pending.session_id != id);
+            return self.drop_session_transcript(&id);
+        }
         self.pending_permissions
             .retain(|_, pending| pending.session_id != id);
         self.pending_questions

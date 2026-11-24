@@ -163,6 +163,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::NewSession { .. }
                         | Effect::LoadSession { .. }
                         | Effect::DisposeEphemeralSession { .. }
+                        | Effect::PromoteSession { .. }
                         | Effect::ResumeSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }

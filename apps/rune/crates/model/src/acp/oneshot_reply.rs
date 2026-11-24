@@ -78,6 +78,7 @@ pub(crate) fn parse_bug_report(raw: &str) -> Result<Value, String> {
 impl State {
     /// `dropEphemeralSessionState`.
     pub(crate) fn drop_ephemeral_session(&mut self, session_id: &str) {
+        self.book.ephemeral_sessions.remove(session_id);
         self.sessions.remove(session_id);
         self.messages.remove(session_id);
         self.tool_calls.remove(session_id);

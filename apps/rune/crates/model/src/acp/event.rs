@@ -157,6 +157,13 @@ pub enum Event {
     ),
     #[serde(rename = "cancelAgentSwitch")]
     CancelAgentSwitch(String),
+    #[serde(rename = "prepareChat")]
+    PrepareChat(super::warm::PrepareRequest),
+    #[serde(rename = "cancelPreparedChat")]
+    CancelPreparedChat(String),
+    /// Answered by `actionResolved` with the claimed session id, or null.
+    #[serde(rename = "claimPreparedChat")]
+    ClaimPreparedChat(String, String, #[serde(default)] super::import::RequestId),
     #[serde(rename = "createSession")]
     CreateSession(super::create::CreateRequest),
     #[serde(rename = "killAgent")]

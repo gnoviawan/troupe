@@ -15,6 +15,7 @@ import {
 import { attachAgentRosterWatch } from '../../../../src/renderer/stores/acp-store/agent-roster-watch'
 import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
+import { _resetRegistryMcpFingerprintsForTesting } from '../../../../src/renderer/stores/acp-store/registry-mcp-fingerprints'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
 import {
   _resetAcpAuthForTesting,
@@ -97,6 +98,8 @@ attachAgentRosterWatch(
 const MCP_KEYS = [
   'agentConfigs',
   'selectedAgentConfigId',
+  'preparingChatKeys',
+  'prepareChatErrors',
   'warmingConfigs',
   'discoveringKeys',
   'mcpServers',
@@ -115,6 +118,8 @@ const MCP_KEYS = [
 const MCP_FRESH = {
   agentConfigs: [],
   selectedAgentConfigId: null,
+  preparingChatKeys: {},
+  prepareChatErrors: {},
   warmingConfigs: {},
   discoveringKeys: {},
   mcpServers: [],
@@ -167,6 +172,9 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
 
 /** A `stopImport` step asked the running import to stop. */
 const importStop = { requested: false }
+
+/** Actions that return their answer at once: it is the `actionResolved` effect. */
+const SYNC_RESOLVES = new Set(['claimPreparedChat'])
 
 /** Actions whose answer the caller reads: it is the `actionResolved` effect. */
 const RESOLVES = new Set([
@@ -231,7 +239,9 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/acp-transport/tauri-verdicts.ts',
     'src/renderer/lib/agents/acp-registry.ts',
     'src/renderer/stores/acp-store/slices/misc.ts',
-    'src/renderer/stores/acp-store/slices/switch.ts'
+    'src/renderer/stores/acp-store/slices/switch.ts',
+    'src/renderer/stores/acp-store/registry-mcp-fingerprints.ts',
+    'src/renderer/stores/acp-store/ephemeral-ids.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -263,6 +273,9 @@ export const acpRecorder: StoreRecorder = {
     shared._resetBusyQueueRetriesForTesting()
     shared._resetDefiniteSpawnRejectionsForTesting()
     shared._resetInFlightPreparedForTesting()
+    shared._resetEphemeralSessionIdsForTesting()
+    shared._resetInFlightPromotionsForTesting()
+    _resetRegistryMcpFingerprintsForTesting()
     shared.inFlightWarms.clear()
     useProjectStore.setState({
       projects: (context.projects as unknown[]) ?? []
@@ -333,6 +346,7 @@ export const acpRecorder: StoreRecorder = {
     const rejected = (error: unknown) => emit({ kind: 'actionRejected', message: String(error) })
     try {
       const result = (call as (...a: unknown[]) => unknown)(...args)
+      if (SYNC_RESOLVES.has(action)) emit({ kind: 'actionResolved', value: result ?? null })
       if (result instanceof Promise) {
         result.then(
           (value: unknown) =>
@@ -380,6 +394,7 @@ import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { switchScenarios } from './acp-scenarios-switch'
 import { turnScenarios } from './acp-scenarios-turn'
+import { warmScenarios } from './acp-scenarios-warm'
 import { windowScenarios } from './acp-scenarios-window'
 
 export const acpScenarios = [
@@ -406,5 +421,6 @@ export const acpScenarios = [
   ...createScenarios,
   ...historyScenarios,
   ...oneShotScenarios,
-  ...switchScenarios
+  ...switchScenarios,
+  ...warmScenarios
 ]

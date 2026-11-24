@@ -376,6 +376,8 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           additionalDirectories,
           mcpServers
         }),
+      promoteSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'promoteSession', agentId, sessionId }),
       disposeEphemeralSession: (agentId: string, sessionId: string) =>
         agentCommand({ kind: 'disposeEphemeralSession', agentId, sessionId }),
       importAgentSession: (input: Record<string, unknown>) =>

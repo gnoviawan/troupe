@@ -54,6 +54,9 @@ pub mod roster;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
+mod setup_error;
+#[cfg(test)]
+mod setup_error_tests;
 mod spawn_env;
 pub mod subagent;
 mod switch;
@@ -63,6 +66,7 @@ mod tool_call;
 mod transcript;
 pub mod turn;
 pub mod types;
+mod warm;
 pub mod window;
 #[cfg(test)]
 mod window_tests;
@@ -147,6 +151,12 @@ pub struct State {
     pub discovering_keys: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// Warm-pool keys whose prepare is running.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub preparing_chat_keys: BTreeMap<String, Value>,
+    /// Warm-pool keys whose prepare failed, classified for the launcher.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub prepare_chat_errors: BTreeMap<String, Value>,
     /// The agent config the one-shots run on (`selectedAgentConfigId`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selected_agent_config_id: Option<String>,
@@ -314,6 +324,16 @@ pub struct Book {
     /// The `session/new` calls in flight.
     #[serde(skip)]
     pub(crate) creates: create::CreateBook,
+    /// The warm-pool prepares in flight.
+    #[serde(skip)]
+    pub(crate) warm: warm::WarmBook,
+    /// Sessions not yet a chat, which a close or disconnect drops instead of
+    /// keeping (`ephemeralSessionIds`).
+    #[serde(skip)]
+    pub(crate) ephemeral_sessions: BTreeSet<String>,
+    /// Per session, the registry MCP servers it took, as a fingerprint.
+    #[serde(skip)]
+    pub(crate) registry_mcp: BTreeMap<String, String>,
     /// The one-shot runs in flight.
     #[serde(skip)]
     pub(crate) oneshots: oneshot::OneShotBook,
@@ -490,6 +510,11 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::KillAgent(agent_id) => state.kill_agent(agent_id, Killer::User, &mut fx),
         Event::CreateSession(request) => state.create_session(request, &mut fx),
+        Event::PrepareChat(request) => state.prepare_chat(request, &mut fx),
+        Event::CancelPreparedChat(key) => state.cancel_prepared_chat(&key, &mut fx),
+        Event::ClaimPreparedChat(key, project_id, request) => {
+            state.claim_prepared_chat(&key, &project_id, request, &mut fx);
+        }
         Event::AgentSwitch(event, seq) => state.on_agent_switch(event, seq, env),
         Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
         Event::OpenHistorySession(request) => state.open_history_session(request, &mut fx),

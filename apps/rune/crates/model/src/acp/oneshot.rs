@@ -31,6 +31,18 @@ const UNAVAILABLE: &str =
 /// The recorder's busy rejection (`ACP_TURN_IN_PROGRESS`).
 const BUSY: &str = "Error: ACP_TURN_IN_PROGRESS: a prompt turn is already in progress";
 
+/// Who a [`Effect::DisposeEphemeralSession`] disposes for.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Disposer {
+    OneShot(OneShotId),
+    /// `reapOrphanPreparedSession`; `then_stop` is an agent on an outdated
+    /// launch, stopped once the session is gone.
+    Reap {
+        session_id: String,
+        then_stop: Option<String>,
+    },
+}
+
 /// Which one-shot runs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Kind {
@@ -629,7 +641,7 @@ impl State {
         fx.push(Effect::DisposeEphemeralSession {
             agent_id,
             session_id,
-            oneshot: id,
+            by: Disposer::OneShot(id),
         });
         fx.push(Effect::StartOneShotTimer {
             delay_ms: CLEANUP_TIMEOUT_MS,
@@ -737,7 +749,7 @@ impl State {
         fx.push(Effect::DisposeEphemeralSession {
             agent_id,
             session_id,
-            oneshot: id,
+            by: Disposer::OneShot(id),
         });
         fx.push(Effect::StartOneShotTimer {
             delay_ms: CLEANUP_TIMEOUT_MS,
