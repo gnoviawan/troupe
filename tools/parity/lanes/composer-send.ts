@@ -81,8 +81,9 @@ async function compose(
 }
 
 const world = await createWorld({ port: Number(values.port), root, binary: values['server-bin'] })
-const browser = await chromium.launch({ args: runeWebArgs(REFERENCE_ARGS) })
+let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
 try {
+  browser = await chromium.launch({ args: runeWebArgs(REFERENCE_ARGS) })
   const seeded = prompts().length
   const dist = path.resolve(values.dist as string)
   await prepareDevice(world, 'lane4-react')
@@ -166,7 +167,7 @@ try {
   console.log(same ? 'PASS: the prompts are byte for byte equal' : 'FAIL: the prompts differ')
   process.exitCode = same ? 0 : 1
 } finally {
-  await browser.close()
+  await browser?.close()
   world.ws.close()
   await world.server.stop()
 }
