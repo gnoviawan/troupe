@@ -1699,6 +1699,13 @@ describe('AgentChatPanel failed-launch retry (story 5)', () => {
 describe('AgentChatPanel changed files', () => {
   beforeEach(() => {
     changedFilesArgsRef.current = []
+    // Earlier tests (e.g. the seamless-resume ones) can leave `s1` marked as
+    // opening/restoring; a restoring chat renders the preload instead of the
+    // status chips, so the changed-files read never runs.
+    openingRef.current = {}
+    restoringRef.current = {}
+    launchingRef.current = {}
+    toolCallsRef.current = {}
   })
 
   it('reads the changed files of the session cwd and tool calls', () => {
