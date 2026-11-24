@@ -69,6 +69,7 @@ pub(crate) enum CreateCaller {
     Action(RequestId),
     OneShot(super::oneshot::OneShotId),
     Prepare(super::warm::PrepareId),
+    Switch(super::switch_run::SwitchId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -455,6 +456,7 @@ impl State {
             }),
             Some(CreateCaller::OneShot(id)) => self.on_oneshot_session(id, session_id, env, fx),
             Some(CreateCaller::Prepare(id)) => self.on_prepare_session(id, session_id, env, fx),
+            Some(CreateCaller::Switch(id)) => self.on_switch_session(id, Ok(session_id), fx),
             None => {}
         }
     }
@@ -515,6 +517,7 @@ impl State {
                 self.on_oneshot_session_failed(id, message, fx);
             }
             Some(CreateCaller::Prepare(id)) => self.on_prepare_session_failed(id, error, fx),
+            Some(CreateCaller::Switch(id)) => self.on_switch_session(id, Err(error.clone()), fx),
             None => {}
         }
     }

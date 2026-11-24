@@ -26,6 +26,7 @@ mod discovery;
 mod effect;
 mod ensure;
 mod event;
+mod handoff;
 mod history;
 mod history_install;
 mod host_error;
@@ -68,8 +69,10 @@ mod setup_error;
 #[cfg(test)]
 mod setup_error_tests;
 mod spawn_env;
+mod splice;
 pub mod subagent;
 mod switch;
+mod switch_run;
 #[cfg(test)]
 mod switch_tests;
 mod tool_call;
@@ -284,6 +287,12 @@ pub struct Book {
     /// Per session, the newest model pick still running (`latestModelPick`).
     #[serde(skip)]
     pub(crate) latest_model_pick: BTreeMap<String, RunId>,
+    /// The agent switches in flight.
+    #[serde(skip)]
+    pub(crate) switch: switch_run::SwitchBook,
+    /// Summary-only handoff turns whose echo shows no user bubble.
+    #[serde(skip)]
+    pub(crate) handoff_only_turns: BTreeSet<String>,
     /// The launcher picks being applied to a new session.
     #[serde(skip)]
     pub(crate) launchers: BTreeMap<RunId, launcher_options::LauncherRun>,
@@ -580,6 +589,15 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.respond_agent_sign_in(agent_id, action, &mut fx);
         }
         Event::CompleteBrowserAuth(agent_id) => state.complete_browser_auth(&agent_id, &mut fx),
+        Event::AgentCommandDone(Effect::RecordAgentSwitch { switch, .. }, _) => {
+            state.on_switch_marker(switch, None, env, &mut fx);
+        }
+        Event::AgentCommandFailed(Effect::RecordAgentSwitch { switch, .. }, message, _) => {
+            state.on_switch_marker(switch, Some(message), env, &mut fx);
+        }
+        Event::SwitchAgent(request) => {
+            state.switch_agent(request, true, &mut fx);
+        }
         Event::AgentCommandDone(command, reply) => {
             state.on_agent_command_done(command, reply, env, &mut fx);
         }
@@ -597,16 +615,27 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::TurnEnd(end) => state.on_turn_end(end, env, &mut fx),
         Event::SendPrompt(session_id, text) => {
             let blocks = vec![serde_json::json!({ "type": "text", "text": text })];
-            state.send_prompt(&session_id, blocks, SendOptions::default(), env, &mut fx);
+            let pending = switch_run::SwitchPending {
+                pending_text: Some(text),
+                wire_blocks: Some(blocks.clone()),
+                display_blocks: Some(blocks.clone()),
+                account_chat_id: None,
+            };
+            if !state.send_into_armed_switch(&session_id, pending, &mut fx) {
+                state.send_prompt(&session_id, blocks, SendOptions::default(), env, &mut fx);
+            }
         }
         Event::SendPromptBlocks(session_id, blocks, options) => {
-            state.send_prompt(
-                &session_id,
-                blocks,
-                options.unwrap_or_default(),
-                env,
-                &mut fx,
-            );
+            let options = options.unwrap_or_default();
+            let pending = switch_run::SwitchPending {
+                pending_text: None,
+                wire_blocks: Some(blocks.clone()),
+                display_blocks: Some(options.display_blocks.clone().unwrap_or(blocks.clone())),
+                account_chat_id: None,
+            };
+            if !state.send_into_armed_switch(&session_id, pending, &mut fx) {
+                state.send_prompt(&session_id, blocks, options, env, &mut fx);
+            }
         }
         Event::CancelPrompt(session_id) => state.cancel_prompt(&session_id, &mut fx),
         Event::RemoveQueuedPrompt(session_id, id) => state.remove_queued_prompt(&session_id, &id),

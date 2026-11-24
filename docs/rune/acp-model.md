@@ -457,7 +457,8 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      options cache) and saves it under the target config, with the scoped
      values under the armed model (`modelValuesPatch`). Nothing goes to the
      chat's current agent. A pick with no switch armed is logged and dropped.
-     Not here: the drop once `switchAgent` runs, which needs 9d.
+     Once `switchAgent` runs, a pick is logged and dropped: the switch
+     already read the picks for its new session.
    - 8d, launcher picks (R6a-7, `acp/launcher_options.rs`).
      `applyPendingLauncherOptions` sets a launcher's or an armed switch's
      picks on the new session, one set command at a time on a `Book::runs`
@@ -469,9 +470,37 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      re-advertise (`waitForReadvertisedOptions`); the recorder cannot reach
      that wait, whose loop only ends on the mocked clock. Not here: the
      `restore` form the reopened chat's model restore uses.
-     Not here: `switchAgent` (the handoff summary, the transcript splice, the
-     new session and the first prompt) and the reopen's switch redirect and
-     re-splice.
+   - 9d, the switch (R6a-7, `acp/switch_run.rs`, `acp/handoff.rs`,
+     `acp/splice.rs`). `switchAgent`, and a `sendPrompt` or
+     `sendPromptBlocks` on an armed chat, which runs it with the draft and
+     gets no answer. The busy gate, an unknown config and the owning agent
+     refuse as arming does; a stopped chat may continue on its own config.
+     A second switch of the same chat while one runs answers null. The
+     handoff summary (`buildHandoffSummary`: the last 12 turns, the first
+     user line kept as the intent, an omission note, a 4000-character body
+     with the newest lines kept, tool one-liners from `describeToolCall`,
+     plan fences stripped) goes before the draft; the composer's own blocks
+     follow it swept of token sentinels. The draft record is deleted
+     (`deletePersisted`). Then `ensureLiveAgent` (`Caller::Switch`),
+     `createSession` (`CreateCaller::Switch`, with the chat's worktree), the
+     armed picks (8d), and the marker (`recordAgentSwitch`, answered like an
+     agent command; a failure toasts and the switch goes on). The old
+     transcript is spliced in front of the new session's (`switch-splice:`
+     ids, a negative seq band, one separator, fabricated when the host's
+     marker has not arrived; streaming bubbles settle and running tool
+     cards fail), the plan follows, and the live window trims. An open tab
+     is remapped (`remapChatTab`). The handoff prompt takes over no bubble
+     of its own: a draft shows as one, a summary-only prompt shows none and
+     its echo is dropped (`handoffOnlyTurnIds`). Its answer, a busy host or
+     a lost reply finish the switch; a definite failure banners the new
+     session (`Could not deliver the handoff prompt: …`). Finishing detaches
+     the old agent's reuse keys, appends the target to the old row's
+     `agents`, stamps the continuation and clears `switching`. A failure
+     before the new session exists rolls back: the old chat shows
+     `Could not switch agent: …`, and an agent spawned for the switch alone
+     is killed. Not here: the composer's token rendering in the summary
+     (`sanitizeDisplayText`, `serializeSelectionContexts`, composer unit),
+     and the reopen's switch redirect and re-splice.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
       effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
@@ -628,13 +657,12 @@ so the replay drops `retryQueueAfter` before it compares.
   wire framing (skill paths, file tokens, conversation envelopes) and belongs
   to the composer unit, which ports `lib/composer/`. The model keeps the
   echo's blocks as sent; the vectors use prompts without framing.
-- `handoffOnlyTurnIds` on the echo. PR 9.
 - On `prompt_complete`: the update of the in-memory payload cache (PR 6).
 - In sending: the warm-pool promotion
   wait and the launch's `skipUserAppend` and `leadsQueue` (PR 8), the
   history-open wait (`openingHistoryIds`, PR 6), the read-only guard from the
   chat's GitHub link (the model reads it from the transcript only), the
-  re-auth after an expired token, the armed agent switch (PR 9), and
+  re-auth after an expired token, and
   send-now's 5 s wait timeout.
 
 On a closed session the model does not yet run the reload hand-off
@@ -690,6 +718,11 @@ its pinned sources match a path glob of both workflows.
   `releaseHeld` step, which answers the oldest held command with `reply`;
   that is how a vector interleaves a close with a delete, or a durability
   probe with a close.
+- `context.openChatTabs` also decides which tabs a pane shows: a consent
+  ticket brings an open chat's tab forward (`revealChatTab`, logged), and a
+  switch remaps an open tab (`remapChatTab`). The model cannot see which
+  tab is active, so the app skips an active one.
+- A persisted record's delete is `deletePersisted`.
 - `context.projects` is the project store's list; a `setProjects` step
   replaces it, `agentConfigsChanged` replaces `agentConfigs`, and
   `renewAgentCredentials` calls the module function. The spawn bookkeeping

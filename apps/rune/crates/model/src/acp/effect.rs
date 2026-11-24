@@ -131,6 +131,18 @@ pub enum Effect {
     /// Close the chat tab of this session in every project's tree: the chat
     /// is neither live nor in the index, so the tab could show nothing.
     CloseChatTab { session_id: String },
+    /// Write the durable switch marker on the old session's log, then send
+    /// `Event::AgentCommandDone` or `AgentCommandFailed` with this effect.
+    RecordAgentSwitch {
+        session_id: String,
+        marker: Value,
+        #[serde(skip)]
+        switch: super::switch_run::SwitchId,
+    },
+    /// Delete this key from the app's persisted records.
+    DeletePersisted { key: String },
+    /// Point the chat tab of `from` at `to`, in the pane that shows it.
+    RemapChatTab { from: String, to: String },
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send

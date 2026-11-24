@@ -360,6 +360,12 @@ const promptScenarios: Scenario[] = [
     ]
   },
   {
+    name: 'browser_consent_ticket_brings_its_open_chat_tab_forward',
+    context: { openChatTabs: [S] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', { origin: 'https://example.com' })]
+  },
+  {
     name: 'a_settled_orchestrated_run_dismisses_its_prompts',
     initial: seeded(),
     steps: [

@@ -355,6 +355,12 @@ impl State {
         if self.book.history_covered(&session_id, event_seq) {
             return;
         }
+        // The echo of a summary-only handoff shows no user bubble.
+        if let Some(turn_id) = event.turn_id.as_deref()
+            && self.book.handoff_only_turns.remove(turn_id)
+        {
+            return;
+        }
         let (guard, blocks) = split_read_only_guard(event.content.unwrap_or_default());
         let mut content: Vec<Value> = blocks.into_iter().map(clamp::content_block).collect();
         if let Some(first) = content

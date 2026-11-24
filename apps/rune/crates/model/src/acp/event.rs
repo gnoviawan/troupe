@@ -165,6 +165,9 @@ pub enum Event {
         #[serde(default)] Option<super::switch::LauncherPicks>,
         #[serde(default)] super::import::RequestId,
     ),
+    /// Answered by `actionResolved` with the new session id, or null.
+    #[serde(rename = "switchAgent")]
+    SwitchAgent(super::switch_run::SwitchRequest),
     #[serde(rename = "setSwitchPendingOption")]
     SetSwitchPendingOption(String, super::switch::LauncherPicks),
     /// Answered by `actionResolved` with whether the switch armed.

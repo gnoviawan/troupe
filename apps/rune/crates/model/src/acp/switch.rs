@@ -137,7 +137,7 @@ impl State {
     /// `switchBlockedReason`: the busy gate. A switch never stops a live
     /// turn, a restore, a launch, queued prompts, a wait on the user, or
     /// background work a new agent process would kill.
-    fn switch_blocked_reason(&self, session_id: &str) -> Option<&'static str> {
+    pub(crate) fn switch_blocked_reason(&self, session_id: &str) -> Option<&'static str> {
         let Some(session) = self.sessions.get(session_id) else {
             return Some("session not found");
         };
@@ -193,7 +193,7 @@ impl State {
     }
 
     /// `setSwitchRejection`: the banner of the old chat says why.
-    fn reject_switch(&mut self, session_id: &str, reason: &str) {
+    pub(crate) fn reject_switch(&mut self, session_id: &str, reason: &str) {
         if let Some(session) = self.sessions.get_mut(session_id) {
             session.rest.insert("switching".into(), Value::Null);
             session.last_error = Some(Some(format!("Could not switch agent: {reason}")));
@@ -314,6 +314,16 @@ impl State {
             ));
             return;
         };
+        // The switch already read the picks for its new session.
+        if self.book.switch.in_flight.contains(session_id) {
+            fx.push(Effect::warn(
+                PICK_SOURCE,
+                format!(
+                    "Dropped a composer pick for session {session_id}: the agent switch is already executing"
+                ),
+            ));
+            return;
+        }
         let to_config_id = js::string_of(switching.get("toConfigId"));
         let cwd = js::string_of(self.sessions[session_id].rest.get("cwd"));
         let key = super::warm::prepare_chat_key(&to_config_id, &cwd, None);

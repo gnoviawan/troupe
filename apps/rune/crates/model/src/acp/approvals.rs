@@ -295,13 +295,23 @@ impl State {
         );
     }
 
-    /// `_onBrowserConsentTicket`: hold the ticket and ask the workspace to
-    /// bring the session's chat tab forward if another tab hides it.
+    /// `_onBrowserConsentTicket`: hold the ticket and, when a pane shows the
+    /// session's chat tab, ask the workspace to bring it forward. The model
+    /// does not know which tab is active, so the app skips an active one.
     fn on_browser_consent_ticket(&mut self, ticket: Value, fx: &mut Vec<Effect>) {
         let request_id = ticket["requestId"].as_str().unwrap_or_default().to_owned();
         let session_id = ticket["sessionId"].as_str().unwrap_or_default().to_owned();
-        self.pending_browser_consents.insert(request_id, ticket);
-        fx.push(Effect::RevealChatTab { session_id });
+        self.pending_browser_consents
+            .insert(request_id.clone(), ticket);
+        if self.book.open_chat_tabs.contains(&session_id) {
+            fx.push(Effect::info(
+                "acp-store:_onBrowserConsentTicket",
+                format!(
+                    "[acp] browser consent ticket activated chat tab (requestId={request_id}, sessionId={session_id})"
+                ),
+            ));
+            fx.push(Effect::RevealChatTab { session_id });
+        }
     }
 
     pub(crate) fn on_browser_ticket_closed(&mut self, event: BrowserTicketClosedEvent) {

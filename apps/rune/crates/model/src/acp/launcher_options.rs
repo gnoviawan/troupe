@@ -26,6 +26,8 @@ const SOURCE: &str = "acp.applyPendingLauncherOptions";
 pub(crate) enum LauncherCaller {
     /// The app's `applyPendingLauncherOptions`, answered `actionResolved`.
     Action(RequestId),
+    /// The switch whose new session takes the armed picks.
+    Switch(super::switch_run::SwitchId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -385,6 +387,7 @@ impl State {
                 request,
                 value: Value::Null,
             }),
+            LauncherCaller::Switch(id) => self.record_switch_marker(id, fx),
         }
     }
 }

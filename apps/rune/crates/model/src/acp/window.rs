@@ -280,7 +280,7 @@ fn file_change_summary(call: &Object) -> Option<Object> {
 
 /// `describeToolCall(call).diffStat`: an edit's line counts, from its diff
 /// items or else the host's durable counts.
-fn diff_stat(call: &Object, kind: &str) -> Option<Value> {
+pub(super) fn diff_stat(call: &Object, kind: &str) -> Option<Value> {
     if kind != "edit" || call.contains_key("subagentControl") {
         return None;
     }
@@ -324,7 +324,7 @@ fn diff_items(call: &Object) -> impl Iterator<Item = &Value> {
 
 /// `toolCallPath`: the first location, a path field of the input, or the
 /// first diff item's path.
-fn call_path(call: &Object) -> Option<&str> {
+pub(super) fn call_path(call: &Object) -> Option<&str> {
     let first_location = call
         .get("locations")
         .and_then(Value::as_array)
