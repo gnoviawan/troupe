@@ -237,7 +237,9 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_chats();
     state.read_agents();
     changed |= state.flush_chat();
-    if let Some(due) = state.toasts.next_expiry() {
+    let (retried, next_retry) = state.fire_retries(now);
+    changed |= retried;
+    for due in [state.toasts.next_expiry(), next_retry].into_iter().flatten() {
         tx.wake_at(due);
     }
     state.persist_workspace();

@@ -129,7 +129,7 @@ impl State {
             Host::Chat(id) => self.composer.namespaces.get(id).and_then(|ns| {
                 agents
                     .iter()
-                    .find(|a| ns == &a.id || ns.ends_with(&a.id) || ns.contains(&a.id))
+                    .find(|a| ns.strip_prefix("config:").unwrap_or(ns) == a.id)
             }),
             Host::Launcher(_) => None,
         };
@@ -445,9 +445,9 @@ impl State {
         if let Some(display) = display {
             payload["displayContent"] = Value::Array(display);
         }
-        // Outside the ledger: the host takes a prompt's turn id as its command id and refuses
-        // the ledger's own (`invalid_command_id`).
-        self.call(
+        // Ledgered under its turn id, so a dropped socket resends it and the host answers with
+        // a receipt instead of running the turn twice.
+        self.command(
             WsRequestType::SendPrompt,
             payload,
             Pending::Prompt { session_id, turn_id },

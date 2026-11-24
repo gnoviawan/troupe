@@ -89,11 +89,21 @@ impl<K: Clone> Ledger<K> {
     /// `false`, and keeps the earlier request, when `call` is already in use.
     #[must_use]
     pub fn add(&mut self, call: CallId, kind: K, payload: Value, ledgered: bool) -> bool {
+        let minted = ledgered.then(|| format!("{}-{}", self.prefix, self.added + 1));
+        self.insert(call, kind, payload, minted)
+    }
+
+    /// [`Ledger::add`] with the `commandId` the request must carry (a prompt's turn id).
+    #[must_use]
+    pub fn add_as(&mut self, call: CallId, kind: K, payload: Value, command_id: String) -> bool {
+        self.insert(call, kind, payload, Some(command_id))
+    }
+
+    fn insert(&mut self, call: CallId, kind: K, payload: Value, command_id: Option<String>) -> bool {
         if self.calls.contains_key(&call) {
             return false;
         }
         self.added += 1;
-        let command_id = ledgered.then(|| format!("{}-{}", self.prefix, self.added));
         self.calls.insert(
             call,
             Call {

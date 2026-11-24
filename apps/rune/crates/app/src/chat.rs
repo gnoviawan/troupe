@@ -24,6 +24,12 @@ use crate::sync::{Pending, Uuid};
 /// `AGENT_DEAD_MARKERS`: a refusal that means the agent process went away.
 const AGENT_DEAD: [&str; 2] = ["agent thread is no longer running", "agent thread dropped the reply"];
 
+/// `isPromptTurnInProgressError`: the relay reports a busy turn as `rate_limited`, its message
+/// keeping the `ACP_TURN_IN_PROGRESS` prefix or not.
+fn is_turn_in_progress(e: &WsError) -> bool {
+    e.code == "rate_limited" || e.message.contains("ACP_TURN_IN_PROGRESS")
+}
+
 /// The chat side of the app state.
 #[derive(Default)]
 pub struct ChatUi {
@@ -39,6 +45,8 @@ pub struct ChatUi {
     pub zoomed_table: Option<String>,
     /// Turn ends the model asked for, run after the events already delivered.
     deferred: Vec<Event>,
+    /// Busy-queue retries the model asked for: (due on the frame clock, session, generation).
+    retries: Vec<(f64, String, u64)>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
@@ -248,6 +256,9 @@ impl State {
                     Pending::Host("Could not stop the turn"),
                 ),
                 Effect::ActionRejected { message } => self.toast_error("Could not send your message", &message),
+                Effect::RetryQueueAfter { session_id, delay_ms, generation } => {
+                    self.chat.retries.push((self.now + delay_ms / 1000.0, session_id, generation));
+                }
                 other => log::info!("[chat] effect not wired in the Rune client yet: {other:?}"),
             }
         }
@@ -257,7 +268,7 @@ impl State {
     pub(crate) fn prompt_settled(&mut self, session_id: String, turn_id: String, result: Result<Option<Value>, WsError>) {
         let outcome = match result {
             Ok(reply) => DispatchOutcome::Answered(reply.unwrap_or(Value::Null)),
-            Err(e) if e.code == "ACP_TURN_IN_PROGRESS" => DispatchOutcome::Busy,
+            Err(e) if is_turn_in_progress(&e) => DispatchOutcome::Busy,
             Err(e) => {
                 log::warn!("[chat] the prompt for {session_id} was refused: {}: {}", e.code, e.message);
                 let agent_dead = AGENT_DEAD.iter().any(|m| e.message.contains(m));
@@ -265,6 +276,18 @@ impl State {
             }
         };
         self.acp_step(Event::PromptSettled(PromptSettled { session_id, turn_id, outcome }));
+    }
+
+    /// Fires the busy-queue retries that came due; returns when the next one is due.
+    pub(crate) fn fire_retries(&mut self, now: f64) -> (bool, Option<f64>) {
+        let (due, waiting): (Vec<_>, Vec<_>) =
+            std::mem::take(&mut self.chat.retries).into_iter().partition(|r| r.0 <= now);
+        self.chat.retries = waiting;
+        let fired = !due.is_empty();
+        for (_, session_id, generation) in due {
+            self.acp_step(Event::QueueRetryDue(session_id, generation));
+        }
+        (fired, self.chat.retries.iter().map(|r| r.0).reduce(f64::min))
     }
 
     /// Runs the turn ends the events of this pump asked for.

@@ -261,3 +261,58 @@ fn a_phone_shows_the_chat_the_launcher_started() {
         "the new chat's composer shows"
     );
 }
+
+#[test]
+fn a_prompt_goes_out_ledgered_so_a_reconnect_resends_it() {
+    let (mut s, host) = chat();
+    s.draft_mut(&host).edit.insert("hello");
+    s.composer_send(&host);
+    let ledgered: Vec<bool> = s
+        .sync
+        .sent
+        .iter()
+        .filter_map(|c| match c {
+            Command::Call {
+                kind: WsRequestType::SendPrompt,
+                ledgered,
+                ..
+            } => Some(*ledgered),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(ledgered, [true]);
+}
+
+#[test]
+fn a_busy_host_queues_the_prompt_and_the_retry_sends_it() {
+    let (mut s, host) = chat();
+    s.draft_mut(&host).edit.insert("hello");
+    s.composer_send(&host);
+    let turn = prompts(&s)[0]["turnId"].as_str().expect("turn id").to_owned();
+    let busy = troupe_protocol::ws::WsError {
+        code: "rate_limited".into(),
+        message: "a prompt turn is already in progress".into(),
+        details: None,
+    };
+    s.prompt_settled("chat-1".into(), turn, Err(busy));
+    assert_eq!(s.chat.acp.sessions["chat-1"].last_error, None, "busy is not a failure");
+    assert!(s.toasts.visible().is_empty(), "no failure toast");
+
+    let (fired, next) = s.fire_retries(s.now + 1.0);
+    assert!(!fired, "the first retry waits two seconds");
+    assert_eq!(next, Some(s.now + 2.0));
+    let (fired, _) = s.fire_retries(s.now + 2.0);
+    assert!(fired);
+    let sent = prompts(&s);
+    assert_eq!(sent.len(), 2, "the retry sends the queued prompt");
+    assert_eq!(sent[1]["content"], json!([{ "type": "text", "text": "hello" }]));
+}
+
+#[test]
+fn the_chip_names_the_agent_of_the_chat_config_exactly() {
+    let (mut s, host) = chat();
+    let agent = |id: &str, name: &str| crate::composer::AgentConfig { id: id.into(), name: name.into(), raw: Value::Null };
+    s.composer.agents = vec![agent("claude", "Claude"), agent("claude-code", "Claude Code")];
+    s.composer.namespaces.insert("chat-1".into(), "config:claude-code".into());
+    assert_eq!(s.agent_label(&host).as_deref(), Some("Claude Code"));
+}
