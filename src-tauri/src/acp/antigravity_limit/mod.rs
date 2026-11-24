@@ -6,6 +6,7 @@
 //! it when the limit resets. The renderer only shows what happened
 //! (`acp:antigravity_limit_action`).
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -62,6 +63,7 @@ enum Input {
 pub struct AntigravityLimitHandle {
     tx: mpsc::UnboundedSender<Input>,
     clock: Arc<TurnClock>,
+    limited: Arc<LimitedAccounts>,
 }
 
 pub struct AntigravityLimitInbox {
@@ -80,6 +82,7 @@ impl AntigravityLimitHandle {
             Self {
                 tx,
                 clock: Arc::clone(&clock),
+                limited: Arc::clone(&limited),
             },
             AntigravityLimitInbox { rx, clock, limited },
         )
@@ -109,6 +112,12 @@ impl AntigravityLimitHandle {
         answer
             .await
             .map_err(|_| "the Antigravity limit supervisor stopped".to_string())?
+    }
+
+    /// The Accounts the supervisor saw reach a limit, and when each resets.
+    #[must_use]
+    pub(crate) fn limited_until(&self) -> HashMap<String, SystemTime> {
+        self.limited.snapshot()
     }
 
     /// A turn of the chat started: its scheduled resume no longer applies.

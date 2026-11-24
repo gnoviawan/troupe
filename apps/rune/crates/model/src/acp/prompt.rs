@@ -315,10 +315,18 @@ impl State {
                         }
                         fx.push(Effect::ActionRejected { message });
                     }
-                    Caller::QueueFlush if !agent_dead => fx.push(Effect::warn(
-                        "acp-store.flushNextQueuedPrompt",
-                        format!("Queued prompt on session {session_id} failed to send: {message}"),
-                    )),
+                    Caller::QueueFlush if !agent_dead => {
+                        fx.push(Effect::warn(
+                            "acp-store.flushNextQueuedPrompt",
+                            format!(
+                                "Queued prompt on session {session_id} failed to send: {message}"
+                            ),
+                        ));
+                        fx.push(Effect::Toast {
+                            level: "error".into(),
+                            message: format!("Failed to send queued message: {message}"),
+                        });
+                    }
                     Caller::QueueFlush => {}
                 }
             }

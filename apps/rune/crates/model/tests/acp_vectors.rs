@@ -8,6 +8,7 @@ mod common;
 use common::{Replay, diff, out_dir, parse, read_json, source_hash, to_value};
 use std::collections::VecDeque;
 
+use model::acp::mcp::McpError;
 use model::acp::prompt::{DispatchOutcome, PromptSettled};
 use model::acp::{self, Effect, Env, Event, State};
 use serde_json::{Value, json};
@@ -57,6 +58,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
     let context = vector.get("context").cloned().unwrap_or(json!({}));
     let start = context.get("now").and_then(Value::as_f64).unwrap_or(NOW);
     let server_history = context.get("serverHistory") == Some(&Value::Bool(true));
+    let desktop = context.get("desktop") == Some(&Value::Bool(true));
     let mut config_replies: VecDeque<Value> = context
         .get("configReplies")
         .and_then(Value::as_array)
@@ -73,16 +75,24 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .cloned()
         .unwrap_or_default()
         .into();
+    let mut mcp_replies: VecDeque<Value> = context
+        .get("mcpReplies")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default()
         .into();
+    let payloads = context.get("payloads").cloned().unwrap_or(json!({}));
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
     }
+    state.book.desktop = desktop;
     state.book.open_chat_tabs = context
         .get("openChatTabs")
         .map(parse)
@@ -126,6 +136,18 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
+                        | Effect::ReadSessionPayload { .. }
+                        | Effect::CloseAgentSession { .. }
+                        | Effect::DeleteAgentSession { .. }
+                        | Effect::DeleteSessionPayload { .. }
+                        | Effect::LoadMcpServers { .. }
+                        | Effect::SaveMcpServers { .. }
+                        | Effect::ProbeMcpServer { .. }
+                        | Effect::StartMcpOAuth { .. }
+                        | Effect::CompleteMcpOAuth { .. }
+                        | Effect::HasMcpOAuthToken { .. }
+                        | Effect::DisconnectMcpOAuth { .. }
+                        | Effect::AnswerMcpInstall { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
@@ -152,6 +174,61 @@ fn replay(vector: &Value) -> Result<usize, String> {
                     }
                     Effect::SetMode { .. } | Effect::SetModel { .. } => {
                         Event::ControlSet(command, None)
+                    }
+                    // A payload read answers `context.payloads`: `{ reject }`
+                    // fails it, a session it does not list has none.
+                    Effect::ReadSessionPayload { ref session_id, .. } => {
+                        let outcome = match payloads.get(session_id) {
+                            None | Some(Value::Null) => Ok(None),
+                            Some(payload) => match payload.get("reject").and_then(Value::as_str) {
+                                Some(reason) => Err(reason.to_owned()),
+                                None => Ok(Some(payload.clone())),
+                            },
+                        };
+                        Event::SessionPayloadRead(command, outcome)
+                    }
+                    // An MCP command answers the next `mcpReplies` entry:
+                    // `{ reject, code }` fails it, `{ hold }` leaves it in
+                    // flight, and a start's `authUrl` reaches the model first.
+                    Effect::LoadMcpServers { .. }
+                    | Effect::SaveMcpServers { .. }
+                    | Effect::ProbeMcpServer { .. }
+                    | Effect::StartMcpOAuth { .. }
+                    | Effect::CompleteMcpOAuth { .. }
+                    | Effect::HasMcpOAuthToken { .. }
+                    | Effect::DisconnectMcpOAuth { .. }
+                    | Effect::AnswerMcpInstall { .. } => {
+                        let reply = mcp_replies.pop_front().unwrap_or(Value::Null);
+                        if let (Effect::StartMcpOAuth { .. }, Some(url)) =
+                            (&command, reply.get("authUrl").and_then(Value::as_str))
+                        {
+                            let redirect = js_string(reply.get("redirectUri"));
+                            let event =
+                                Event::McpOAuthAuthUrl(command.clone(), url.into(), redirect);
+                            effects.extend(acp::step(&mut state, event, &mut env));
+                        }
+                        if let Some(reason) = reply.get("reject") {
+                            let error = McpError {
+                                message: js_string(Some(reason)),
+                                code: reply.get("code").and_then(Value::as_str).map(str::to_owned),
+                            };
+                            Event::McpCommandFailed(command, error)
+                        } else if reply.get("hold").is_some() {
+                            continue;
+                        } else {
+                            Event::McpCommandDone(command, reply)
+                        }
+                    }
+                    // A close or delete command answers the next
+                    // `agentReplies` entry, as the agent commands do.
+                    Effect::CloseAgentSession { .. }
+                    | Effect::DeleteAgentSession { .. }
+                    | Effect::DeleteSessionPayload { .. } => {
+                        let reply = agent_replies.pop_front().unwrap_or(Value::Null);
+                        match reply.get("reject").and_then(Value::as_str) {
+                            Some(reason) => Event::SessionCommandFailed(command, reason.to_owned()),
+                            None => Event::SessionCommandDone(command, reply),
+                        }
                     }
                     // An agent command answers the next `agentReplies` entry:
                     // `{ reject }` fails it, `{ hold }` leaves it in flight.
@@ -285,4 +362,9 @@ fn acp_vectors_are_not_older_than_their_sources() {
         "TypeScript changed after the acp vectors were recorded; rerun \
          `RECORD_VECTORS=1 bun run test tools/parity/vectors` and port the change: {stale:?}"
     );
+}
+
+/// `String(value)` of a recorded reply field.
+fn js_string(value: Option<&Value>) -> String {
+    model::acp::js::string_of(value)
 }

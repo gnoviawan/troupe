@@ -12,17 +12,28 @@ mod agent_commands_tests;
 pub mod agents;
 pub mod approvals;
 mod clamp;
+mod close;
 pub mod controls;
+mod diff_stat;
+mod effect;
+mod event;
 mod index;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
+mod launch;
+pub mod mcp;
+mod mcp_install;
+mod mcp_oauth;
+#[cfg(test)]
+mod mcp_tests;
 mod picks;
 mod plan;
 pub mod prompt;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
+pub mod roster;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
@@ -31,35 +42,31 @@ mod tool_call;
 mod transcript;
 pub mod turn;
 pub mod types;
+pub mod window;
+#[cfg(test)]
+mod window_tests;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{Ids, Level};
+use crate::Ids;
 pub use agent_commands::FlightId;
-use agents::{
-    AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
-    AgentSpawnedEvent, BrowserOpenRequestEvent,
-};
-use approvals::{
-    BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
-    PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
-};
-use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
-use picks::PickOptions;
-use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
+use approvals::{PendingElicitation, PendingPermission, PendingQuestion};
+pub use effect::Effect;
+pub use event::Event;
+use mcp::{McpBook, RegistryOp};
+pub use plan::is_plan_tool;
+use prompt::{BusyRetry, Dispatch, SendNow, SendOptions};
 use restore::Run;
 pub use restore::RunId;
-use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
     UsageUpdateEvent, UserPromptEvent,
 };
-pub use plan::is_plan_tool;
-use turn::{AgentWorkingEvent, BackgroundCommandsEvent, HostReports, PromptCompleteEvent, TurnEnd};
+use turn::HostReports;
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 
 /// What the store holds. Field names follow the TypeScript store's.
@@ -112,6 +119,45 @@ pub struct State {
     pub launching_session_ids: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// The user's MCP servers, as the registry saved them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mcp_servers: Vec<Object>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub mcp_servers_loaded: bool,
+    /// The agent's MCP install requests, by request id.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub pending_mcp_installs: BTreeMap<String, Value>,
+    /// Per server id, what Troupe's own probe reached.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probe_status: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_tools: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_tools_loaded: BTreeMap<String, Value>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probing: BTreeMap<String, Value>,
+    /// Per server id, the redacted reason a probe could not connect.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub mcp_probe_error: BTreeMap<String, Value>,
+    #[serde(
+        default,
+        rename = "mcpOAuthConnecting",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_connecting: BTreeMap<String, Value>,
+    #[serde(
+        default,
+        rename = "mcpOAuthConnected",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_connected: BTreeMap<String, Value>,
+    /// Per server id, the web sign-in whose callback the user pastes back.
+    #[serde(
+        default,
+        rename = "mcpOAuthPasteBack",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub mcp_oauth_paste_back: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -166,6 +212,10 @@ pub struct Book {
     /// Browser-open URLs caught before their agent registered, oldest first.
     #[serde(skip)]
     pub early_browser_opens: VecDeque<(String, String)>,
+    /// The app shows native panes, such as an agent's browser tab
+    /// (`isTauriContext`). The app sets it once.
+    #[serde(skip)]
+    pub desktop: bool,
     /// Option restores in flight: model picks and heals.
     #[serde(skip)]
     pub(crate) runs: BTreeMap<RunId, Run>,
@@ -201,6 +251,24 @@ pub struct Book {
     /// Per agent, the flight whose first browser open was let open by itself.
     #[serde(skip)]
     pub(crate) auto_open_granted: BTreeMap<String, FlightId>,
+    /// Per session, the older messages the reader paged in, which the live
+    /// window keeps on top of its bound.
+    #[serde(skip)]
+    pub(crate) backfill_counts: BTreeMap<String, usize>,
+    /// Sessions whose history is known durable, so their window may trim.
+    #[serde(skip)]
+    pub(crate) durable_history: BTreeSet<String>,
+    /// Sessions with no durable history: their window never trims.
+    #[serde(skip)]
+    pub(crate) untrimmable: BTreeSet<String>,
+    /// Sessions whose durability probe is in flight.
+    #[serde(skip)]
+    pub(crate) durability_probes: BTreeSet<String>,
+    /// The shared MCP registry watch started; the store starts it once.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub mcp_shared_sync: bool,
+    #[serde(skip)]
+    pub(crate) mcp: McpBook,
 }
 
 impl Book {
@@ -278,333 +346,10 @@ impl Env<'_> {
     }
 }
 
-/// One store action. The variant names are the TypeScript action names; an
-/// optional trailing argument is the event's host seq or log point.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-pub enum Event {
-    #[serde(rename = "_onUserPrompt")]
-    UserPrompt(UserPromptEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onMessageChunk")]
-    MessageChunk(MessageChunkEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onToolCall")]
-    ToolCall(ToolCallEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onToolCallUpdate")]
-    ToolCallUpdate(ToolCallUpdateEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onPlanUpdate")]
-    PlanUpdate(PlanUpdateEvent),
-    #[serde(rename = "_onCommandsUpdate")]
-    CommandsUpdate(CommandsUpdateEvent, #[serde(default)] Option<LogPoint>),
-    #[serde(rename = "_onSessionInfoUpdate")]
-    SessionInfoUpdate(SessionInfoUpdateEvent),
-    #[serde(rename = "_onUsageUpdate")]
-    UsageUpdate(UsageUpdateEvent),
-    #[serde(rename = "_onPermissionRequest")]
-    PermissionRequest(PermissionRequestEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onQuestionRequest")]
-    QuestionRequest(QuestionRequestEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onQuestionCancelled")]
-    QuestionCancelled(QuestionCancelledEvent),
-    #[serde(rename = "_onElicitationRequest")]
-    ElicitationRequest(ElicitationRequestEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onBrowserTicketClosed")]
-    BrowserTicketClosed(BrowserTicketClosedEvent),
-    #[serde(rename = "_onModeUpdate")]
-    ModeUpdate(ModeUpdateEvent),
-    #[serde(rename = "_onConfigOptionsUpdate")]
-    ConfigOptionsUpdate(ConfigOptionsUpdateEvent),
-    #[serde(rename = "_onPromptComplete")]
-    PromptComplete(PromptCompleteEvent, #[serde(default)] Option<f64>),
-    #[serde(rename = "_onAgentWorking")]
-    AgentWorking(AgentWorkingEvent),
-    #[serde(rename = "_onBackgroundCommands")]
-    BackgroundCommands(BackgroundCommandsEvent),
-    #[serde(rename = "_onSessionCreated")]
-    SessionCreated(SessionCreatedEvent),
-    #[serde(rename = "_onSessionClosed")]
-    SessionClosed(SessionClosedEvent),
-    #[serde(rename = "_onAgentSpawned")]
-    AgentSpawned(AgentSpawnedEvent),
-    #[serde(rename = "_onAgentError")]
-    AgentError(AgentFailureEvent),
-    #[serde(rename = "_onAgentCrashed")]
-    AgentCrashed(AgentFailureEvent),
-    #[serde(rename = "_onAgentDisconnected")]
-    AgentDisconnected(AgentDisconnectedEvent),
-    #[serde(rename = "_onBrowserOpenRequest")]
-    BrowserOpenRequest(BrowserOpenRequestEvent),
-    #[serde(rename = "_onAgentSignInRequest")]
-    AgentSignInRequest(AgentSignInRequestEvent),
-    #[serde(rename = "_onAgentSignInResolved")]
-    AgentSignInResolved(AgentSignInResolvedEvent),
-    /// The persist a [`Effect::DropSessionTranscript`] waited for ran.
-    #[serde(rename = "dropSessionTranscript")]
-    DropSessionTranscript(String),
-    #[serde(rename = "applySessionIndexSnapshot")]
-    ApplySessionIndexSnapshot(Vec<Object>),
-    #[serde(rename = "setMode")]
-    SetMode(String, String),
-    #[serde(rename = "setModel")]
-    SetModel(String, String, #[serde(default)] Option<PickOptions>),
-    #[serde(rename = "setConfigOption")]
-    SetConfigOption(String, String, Value, #[serde(default)] Option<PickOptions>),
-    /// The agent acknowledged a set command an `Effect::SetMode`, `SetModel`
-    /// or `SetConfigOption` sent; the reply is a `SetConfigOption`'s option
-    /// snapshot, when the agent sent one.
-    #[serde(skip_deserializing)]
-    ControlSet(Effect, Option<Vec<Value>>),
-    /// The agent rejected a set command; the text is the error's message.
-    #[serde(skip_deserializing)]
-    ControlFailed(Effect, String),
-    /// The saved picks an [`Effect::ReadComposerOptions`] read; null when
-    /// none are saved.
-    #[serde(skip_deserializing)]
-    ComposerOptionsRead(Effect, Value),
-    /// The wait an [`Effect::WaitForReadvertisedOptions`] started ran out.
-    #[serde(skip_deserializing)]
-    ReadvertiseWaitOver(RunId),
-    #[serde(rename = "spawnAgent")]
-    SpawnAgent(Value, Value, #[serde(default)] Option<String>),
-    #[serde(rename = "killAgent")]
-    KillAgent(String),
-    #[serde(rename = "authenticateAgent")]
-    AuthenticateAgent(String, String, #[serde(default)] Option<Value>),
-    #[serde(rename = "logoutAgent")]
-    LogoutAgent(String),
-    #[serde(rename = "respondAgentSignIn")]
-    RespondAgentSignIn(String, String),
-    #[serde(rename = "completeBrowserAuth")]
-    CompleteBrowserAuth(String),
-    /// The command an agent command effect sent answered with this reply.
-    #[serde(skip_deserializing)]
-    AgentCommandDone(Effect, Value),
-    /// The command an agent command effect sent failed; the text is the
-    /// error's message.
-    #[serde(skip_deserializing)]
-    AgentCommandFailed(Effect, String),
-    #[serde(rename = "pickModel")]
-    PickModel(
-        String,
-        String,
-        #[serde(default)] Option<serde_json::Map<String, Value>>,
-    ),
-    #[serde(rename = "clearPendingSignIn")]
-    ClearPendingSignIn(String),
-    #[serde(rename = "setActiveSession")]
-    SetActiveSession(Option<String>),
-    #[serde(rename = "markResumeFailed")]
-    MarkResumeFailed(String, String),
-    #[serde(rename = "sendPrompt")]
-    SendPrompt(String, String),
-    #[serde(rename = "sendPromptBlocks")]
-    SendPromptBlocks(String, Vec<Value>, #[serde(default)] Option<SendOptions>),
-    #[serde(rename = "cancelPrompt")]
-    CancelPrompt(String),
-    #[serde(rename = "removeQueuedPrompt")]
-    RemoveQueuedPrompt(String, Value),
-    #[serde(rename = "moveQueuedPrompt")]
-    MoveQueuedPrompt(String, Value, f64),
-    #[serde(rename = "clearQueuedPrompts")]
-    ClearQueuedPrompts(String),
-    #[serde(rename = "sendQueuedPromptNow")]
-    SendQueuedPromptNow(String, Value),
-    /// The command an [`Effect::DispatchPrompt`] sent has settled.
-    #[serde(rename = "promptSettled")]
-    PromptSettled(PromptSettled),
-    /// The timer an [`Effect::RetryQueueAfter`] started ran out.
-    #[serde(rename = "queueRetryDue")]
-    QueueRetryDue(String, u64),
-    /// The deferred close an [`Effect::EndTurn`] asked for.
-    #[serde(rename = "turnEnd")]
-    TurnEnd(TurnEnd),
-    /// A history payload was installed for the session.
-    #[serde(rename = "noteHistoryWatermark")]
-    NoteHistoryWatermark(String, HistoryPayload),
-    /// The live-turn reattach lowered the session's subscribe cursor.
-    #[serde(rename = "noteLiveTurnReplayFloor")]
-    NoteLiveTurnReplayFloor(String, f64),
-}
-
-/// What a step asks the world to do. The caller runs these in order.
-#[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub enum Effect {
-    /// A boundary log line for the host log.
-    Log {
-        level: Level,
-        source: String,
-        message: String,
-    },
-    /// Write the session's index entry and payload (`persistSession`).
-    PersistSession { session_id: String },
-    /// Bring the session's chat tab forward if another tab in its pane
-    /// hides it, so a consent card is on screen.
-    RevealChatTab { session_id: String },
-    /// Send `Event::TurnEnd` with this close once the events already queued
-    /// have been applied, so chunks racing the terminator join the turn.
-    EndTurn(TurnEnd),
-    /// Send the prompt command with this turn id through the client's
-    /// ledger, then send `Event::PromptSettled` with its outcome.
-    DispatchPrompt {
-        agent_id: String,
-        session_id: String,
-        turn_id: String,
-        blocks: Vec<Value>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        display_blocks: Option<Vec<Value>>,
-    },
-    /// Send `session/cancel` for the session's turn or the agent's own work.
-    CancelPrompt {
-        agent_id: String,
-        session_id: String,
-    },
-    /// The action the user took failed; show this.
-    ActionRejected { message: String },
-    /// Send `Event::QueueRetryDue` with this generation after `delay_ms`.
-    RetryQueueAfter {
-        session_id: String,
-        delay_ms: f64,
-        #[serde(skip_serializing)]
-        generation: u64,
-    },
-    /// Save the config's model list, so the pickers show it after a restart.
-    PersistModelCatalog { config_id: String, catalog: Value },
-    /// Send `session/set_mode`, then `Event::ControlSet` with this effect.
-    SetMode {
-        agent_id: String,
-        session_id: String,
-        mode_id: String,
-    },
-    /// Send `session/set_model`, then `Event::ControlSet` with this effect.
-    SetModel {
-        agent_id: String,
-        session_id: String,
-        model_id: String,
-        #[serde(skip_serializing)]
-        persist: bool,
-        /// The id of the session's model-category option when it was sent.
-        #[serde(skip_serializing)]
-        model_option: Option<Value>,
-        /// The restore that sent it, which its outcome moves on.
-        #[serde(skip_serializing)]
-        run: Option<RunId>,
-    },
-    /// Send `session/set_config_option`, then `Event::ControlSet` with this
-    /// effect and the agent's option snapshot.
-    SetConfigOption {
-        agent_id: String,
-        session_id: String,
-        config_id: String,
-        value: Value,
-        #[serde(skip_serializing)]
-        persist: bool,
-        /// The model the session ran when the value was sent.
-        #[serde(skip_serializing)]
-        model_at_request: Option<String>,
-        #[serde(skip_serializing)]
-        is_model: bool,
-        #[serde(skip_serializing)]
-        run: Option<RunId>,
-    },
-    /// Free the session's transcript once the `PersistSession` before this
-    /// effect has read it: send `Event::DropSessionTranscript` before the
-    /// next event.
-    DropSessionTranscript { session_id: String },
-    /// Close the chat tab of this session in every project's tree: the chat
-    /// is neither live nor in the index, so the tab could show nothing.
-    CloseChatTab { session_id: String },
-    /// Merge this patch into the config's saved composer picks.
-    PersistComposerOptions { config_id: String, patch: Value },
-    /// Reload the chat index from the desktop's history store, then send
-    /// what it read as `applySessionIndexSnapshot`.
-    RefreshSessionIndex,
-    /// Read the user's saved picks for the config, then send
-    /// `Event::ComposerOptionsRead` with this effect and the record.
-    ReadComposerOptions {
-        config_id: String,
-        #[serde(skip_serializing)]
-        run: RunId,
-    },
-    /// Start an agent process for the config; then `Event::AgentCommandDone`
-    /// with the spawn reply, or `AgentCommandFailed`.
-    SpawnAgent {
-        config: Value,
-        project_id: Value,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        session_id: Option<String>,
-    },
-    /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
-    KillAgent { agent_id: String },
-    /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
-    Authenticate {
-        agent_id: String,
-        method_id: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        input: Option<Value>,
-        #[serde(skip_serializing)]
-        flight: FlightId,
-    },
-    /// Sign the agent out; then `AgentCommandDone` or `AgentCommandFailed`.
-    Logout { agent_id: String },
-    /// Answer the agent's own sign-in prompt; then `AgentCommandDone` or
-    /// `AgentCommandFailed`.
-    RespondElicitation {
-        agent_id: String,
-        request_id: String,
-        action: String,
-    },
-    /// Save the remembered auth method per config.
-    PersistAuthMethods { methods: BTreeMap<String, String> },
-    /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
-    /// the agent re-advertised the session's options first.
-    WaitForReadvertisedOptions {
-        session_id: String,
-        delay_ms: f64,
-        #[serde(skip_serializing)]
-        run: RunId,
-    },
-}
-
-impl Effect {
-    pub(crate) fn warn(source: &str, message: String) -> Self {
-        Self::Log {
-            level: Level::Warn,
-            source: source.to_owned(),
-            message,
-        }
-    }
-
-    /// The restore a set command belongs to.
-    fn run(&self) -> Option<RunId> {
-        match self {
-            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
-            _ => None,
-        }
-    }
-
-    /// The user's action failed with this error message; shown the way
-    /// `String(error)` prints an `Error`.
-    pub(crate) fn rejected(message: impl std::fmt::Display) -> Self {
-        Self::ActionRejected {
-            message: format!("Error: {message}"),
-        }
-    }
-
-    pub(crate) fn info(source: &str, message: String) -> Self {
-        Self::Log {
-            level: Level::Info,
-            source: source.to_owned(),
-            message,
-        }
-    }
-}
-
 /// Apply one event.
 pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     let mut fx = Vec::new();
+    let flushed = event.coalesced_session(state);
     match event {
         Event::UserPrompt(event, seq) => state.on_user_prompt(event, seq, env),
         Event::MessageChunk(event, seq) => state.on_message_chunk(event, seq, env, &mut fx),
@@ -633,6 +378,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::BrowserAgentTab(event, seq) => state.on_browser_agent_tab(event, seq, &mut fx),
+        Event::AgentBrowserTabClosed(event) => state.on_browser_tab_closed(event, &mut fx),
+        Event::AgentsWatchState(state_) => state.on_agents_watch_state(state_, env, &mut fx),
+        Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
         Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
@@ -718,6 +467,87 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::NoteLiveTurnReplayFloor(session_id, floor) => {
             state.book.live_turn_replay_floors.insert(session_id, floor);
         }
+        Event::ClearSessionBackfill(session_id) => {
+            state.clear_session_backfill(&session_id, &mut fx);
+        }
+        Event::CloseSession(session_id) => state.close_session(session_id, &mut fx),
+        Event::DeleteHistorySession(session_id) => {
+            state.delete_history_session(session_id, &mut fx);
+        }
+        Event::SessionCommandDone(command, _) => state.on_session_command(command, None, &mut fx),
+        Event::SessionCommandFailed(command, message) => {
+            state.on_session_command(command, Some(message), &mut fx);
+        }
+        Event::CreateLaunchPlaceholder(launch) => state.create_launch_placeholder(launch, env),
+        Event::DiscardLaunchPlaceholder(session_id) => {
+            state.discard_launch_placeholder(&session_id);
+        }
+        Event::SeedLaunchUserMessage(session_id, blocks) => {
+            state.seed_launch_user_message(&session_id, blocks, env);
+        }
+        Event::ClearLaunchingSession(session_id) => {
+            state.launching_session_ids.remove(&session_id);
+        }
+        Event::LoadMcpServers(_) => state.load_mcp_servers(&mut fx),
+        Event::SaveMcpServer(server) => {
+            state.queue_mcp_write(RegistryOp::Save(server), env, &mut fx);
+        }
+        Event::ImportMcpServers(servers) => {
+            state.queue_mcp_write(RegistryOp::Import(servers), env, &mut fx);
+        }
+        Event::SaveCatalogInstall(result) => {
+            state.queue_mcp_write(RegistryOp::Catalog(result), env, &mut fx);
+        }
+        Event::SetMcpServerEnabled(id, enabled) => {
+            state.queue_mcp_write(RegistryOp::SetEnabled(id, enabled), env, &mut fx);
+        }
+        Event::DeleteMcpServer(id) => state.queue_mcp_write(RegistryOp::Delete(id), env, &mut fx),
+        Event::McpRegistryChanged(_) => state.queue_mcp_write(RegistryOp::Reload, env, &mut fx),
+        Event::ProbeMcpServer(id) => state.probe_mcp_server(&id, &mut fx),
+        Event::LoadMcpTools(id) => state.load_mcp_tools(&id, &mut fx),
+        Event::ConnectMcpOAuth(project_id, id) => state.connect_mcp_oauth(project_id, id, &mut fx),
+        Event::CompleteMcpOAuthPaste(id, callback_url) => {
+            state.complete_mcp_oauth_paste(id, callback_url, &mut fx);
+        }
+        Event::CancelMcpOAuth(id) => state.cancel_mcp_oauth(&id, &mut fx),
+        Event::CheckMcpOAuthStatus(project_id, id) => {
+            state.check_mcp_oauth_status(project_id, id, &mut fx);
+        }
+        Event::DisconnectMcpOAuth(project_id, id) => {
+            state.disconnect_mcp_oauth(project_id, id, &mut fx);
+        }
+        Event::AnswerMcpInstall(request_id, decision, inputs, secrets, plan_id, digest) => {
+            let answer = mcp::InstallAnswer {
+                request_id,
+                decision,
+                inputs,
+                secrets,
+                plan_id,
+                digest,
+            };
+            state.answer_mcp_install(answer, &mut fx);
+        }
+        Event::DismissMcpInstall(request_id) => {
+            state.pending_mcp_installs.remove(&request_id);
+        }
+        Event::McpInstallRequest(event) => state.on_mcp_install_request(event),
+        Event::McpInstallResolved(event) => state.on_mcp_install_resolved(event),
+        Event::McpSharedChanged(change) => state.on_mcp_shared_changed(change, &mut fx),
+        Event::McpCommandDone(command, reply) => {
+            state.on_mcp_command(command, Ok(reply), env, &mut fx);
+        }
+        Event::McpCommandFailed(command, error) => {
+            state.on_mcp_command(command, Err(error), env, &mut fx);
+        }
+        Event::McpOAuthAuthUrl(start, auth_url, redirect_uri) => {
+            state.on_mcp_oauth_auth_url(start, auth_url, redirect_uri);
+        }
+        Event::SessionPayloadRead(read, outcome) => {
+            state.on_session_payload_read(read, outcome, &mut fx);
+        }
+    }
+    if let Some(session_id) = flushed {
+        state.trim_flushed(&session_id, &mut fx);
     }
     // A run waiting for re-advertised options moves on once an event changed
     // them, as the TypeScript poll would see.
