@@ -27,7 +27,8 @@ export function useQuickChatRouteSync(pathname: string): void {
     const view = useQuickChatStore.getState().view
     if (view.mode === 'closed') return
     const sessionId = routeSessionId(pathname)
-    if (sessionId === view.sessionId) return
+    // The launcher has no chat route: it stays on the workspace root.
+    if (view.mode === 'launcher' ? pathname === '/' : sessionId === view.sessionId) return
     // Back/Forward to another quick or older chat: show that one.
     if (sessionId && openNoProjectChat(sessionId, 'quick-chat.route')) return
     // A project chat, the workspace root or a routed page: the project view

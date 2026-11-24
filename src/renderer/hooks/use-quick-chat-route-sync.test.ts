@@ -62,4 +62,23 @@ describe('useQuickChatRouteSync', () => {
     rerender({ path: '/c/q1' })
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
   })
+
+  it('keeps the quick chat launcher on the workspace root, which is its route', () => {
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    const { rerender } = renderSync('/')
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    // Forward to a quick chat shows it.
+    rerender({ path: '/c/q2' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'q2' })
+  })
+
+  it('closes the quick chat launcher for a routed page or a project chat', () => {
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    const { rerender } = renderSync('/')
+    rerender({ path: '/snapshots' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    rerender({ path: '/c/p1' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+  })
 })

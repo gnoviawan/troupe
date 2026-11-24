@@ -4,6 +4,11 @@ import { clearChatRoute } from '@/lib/router-navigate'
 /** What the main area shows for a quick chat. */
 export type QuickChatView =
   | { mode: 'closed' }
+  /**
+   * The agent launcher for a new quick chat. No session exists until Send,
+   * so it owns no `#/c/<id>` route.
+   */
+  | { mode: 'launcher' }
   | {
       mode: 'chat'
       sessionId: string
@@ -18,6 +23,7 @@ export type QuickChatView =
 
 interface QuickChatState {
   view: QuickChatView
+  openLauncher: () => void
   openChat: (sessionId: string) => void
   /** An older no-project chat. History can be read. New prompts are refused. */
   openOlderChat: (sessionId: string) => void
@@ -36,6 +42,7 @@ interface QuickChatState {
  */
 export const useQuickChatStore = create<QuickChatState>((set) => ({
   view: { mode: 'closed' },
+  openLauncher: () => set({ view: { mode: 'launcher' } }),
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
   openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
   adoptChat: (from, to) =>
@@ -47,12 +54,12 @@ export const useQuickChatStore = create<QuickChatState>((set) => ({
   close: () => set({ view: { mode: 'closed' } })
 }))
 
-/** `true` while a quick chat owns the main area. */
+/** `true` while a quick chat or its launcher owns the main area. */
 export function useQuickChatOpen(): boolean {
   return useQuickChatStore((state) => state.view.mode !== 'closed')
 }
 
-/** The session id of the open quick chat, or `null`. */
+/** The session id of the open quick chat, or `null` (also for the launcher). */
 export function useQuickChatSessionId(): string | null {
   return useQuickChatStore((state) => (state.view.mode === 'chat' ? state.view.sessionId : null))
 }
@@ -65,10 +72,13 @@ export function isQuickChatLeaving(sessionId: string): boolean {
   return leavingSessionId === sessionId
 }
 
+/** The quick view as it was before {@link closeQuickChatView} closed it. */
+export type ClosedQuickChatView = Exclude<QuickChatView, { mode: 'closed' }>
+
 /**
- * Close the quick view for a project view and return the chat's id (`null`
- * when it was closed). The route leaves `#/c/<id>` on the next task, and only
- * when nothing else changed it first.
+ * Close the quick view for a project view and return what it showed (`null`
+ * when it was closed). A chat's route leaves `#/c/<id>` on the next task, and
+ * only when nothing else changed it first. The launcher has no route.
  *
  * The router commits a navigation some microtasks later. A route change made
  * here at once and the caller's own change (Alt+T adds `#/c/<new>`, a project
@@ -76,11 +86,12 @@ export function isQuickChatLeaving(sessionId: string): boolean {
  * extra `#/`. While the route still names the closed chat, `ChatRoute` checks
  * {@link isQuickChatLeaving} and does not open it again.
  */
-export function closeQuickChatView(): string | null {
+export function closeQuickChatView(): ClosedQuickChatView | null {
   const view = useQuickChatStore.getState().view
   if (view.mode === 'closed') return null
-  const sessionId = view.sessionId
   useQuickChatStore.getState().close()
+  if (view.mode === 'launcher') return view
+  const sessionId = view.sessionId
   leavingSessionId = sessionId
   setTimeout(() => {
     if (leavingSessionId === sessionId) leavingSessionId = null
@@ -89,7 +100,12 @@ export function closeQuickChatView(): string | null {
     if (now.mode === 'chat' && now.sessionId === sessionId) return
     clearChatRoute(sessionId)
   }, 0)
-  return sessionId
+  return view
+}
+
+/** What a closed quick view showed, for logs. */
+export function describeQuickChatView(view: ClosedQuickChatView): string {
+  return view.mode === 'launcher' ? 'the quick chat launcher' : `quick chat ${view.sessionId}`
 }
 
 /** The React key of the open quick chat's panel. */

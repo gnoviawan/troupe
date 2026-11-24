@@ -3,11 +3,16 @@ import { toast } from 'sonner'
 import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { focusComposerWhenReady } from '@/lib/focus-composer'
 import { logFrontendError } from '@/lib/log-api'
-import { isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
+import {
+  isChatRouteCurrent,
+  navigateToChatSession,
+  navigateToWorkspaceRoot
+} from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
 import {
   closeQuickChatView,
+  describeQuickChatView,
   useQuickChatSessionId,
   useQuickChatStore
 } from '@/stores/quick-chat-store'
@@ -40,6 +45,21 @@ export function showNoProjectChat(sessionId: string, kind: NoProjectChat, source
     level: 'info',
     source,
     message: `Opened ${kind} chat ${sessionId} in the quick chat view`
+  })
+}
+
+/**
+ * Show the agent launcher for a new quick chat in the quick view. No session
+ * starts: Send in the launcher starts the chat with its first message. The
+ * launcher owns no `#/c/<id>` route, so the route goes to `#/`.
+ */
+export function showQuickChatLauncher(source: string): void {
+  useQuickChatStore.getState().openLauncher()
+  navigateToWorkspaceRoot()
+  void logFrontendError({
+    level: 'info',
+    source,
+    message: 'Opened the quick chat launcher'
   })
 }
 
@@ -101,22 +121,24 @@ export function openNoProjectChat(sessionId: string, source: string): boolean {
  * project change is not visible. A no-op when the view is closed.
  */
 export function leaveQuickChatView(source: string): void {
-  const sessionId = closeQuickChatView()
-  if (!sessionId) return
+  const closed = closeQuickChatView()
+  if (!closed) return
   void logFrontendError({
     level: 'info',
     source,
-    message: `Closed the quick chat view (${sessionId}) for a project view`
+    message: `Closed ${describeQuickChatView(closed)} for a project view`
   })
 }
 
 /**
- * Put focus in the open quick chat's composer. The composer focuses itself
- * only on mount in some layouts, so `+` (a new chat, or the empty one already
- * on screen) needs this.
+ * Put focus in the quick chat launcher's composer. The launcher focuses itself
+ * only on mount, and mounts read-only until its agent resolves, so `+` (a new
+ * launcher, or the one already on screen) needs this.
  */
-export function focusQuickChatComposer(): void {
-  focusComposerWhenReady('[data-testid="quick-chat-main"] [contenteditable="true"]')
+export function focusQuickLauncherComposer(): void {
+  focusComposerWhenReady(
+    '[data-testid="quick-chat-main"] [aria-label="Agent prompt"][contenteditable="true"]'
+  )
 }
 
 /** The open quick chat's title (live, then index), or `undefined` when none is open. */

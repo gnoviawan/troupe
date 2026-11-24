@@ -13,7 +13,8 @@ import {
   leaveQuickChatView,
   noProjectChatKind,
   openNoProjectChat,
-  showNoProjectChat
+  showNoProjectChat,
+  showQuickChatLauncher
 } from './no-project-chat'
 
 describe('no-project-chat', () => {
@@ -50,6 +51,21 @@ describe('no-project-chat', () => {
       sessionId: 'old',
       readOnly: true
     })
+  })
+
+  it('shows the quick chat launcher on the workspace root, with no chat route', () => {
+    window.location.hash = '#/snapshots'
+    showQuickChatLauncher('test')
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    expect(navigate).toHaveBeenCalledWith('/')
+  })
+
+  it('closes the launcher for a project view without touching the route', async () => {
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    leaveQuickChatView('test')
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(navigate).not.toHaveBeenCalled()
   })
 
   it('leaves a project chat alone', () => {

@@ -5,10 +5,12 @@ import {
 } from '@/components/agents/launcher/prepare-launch-worktree'
 import type { ContentBlock, SessionId } from '@/lib/acp-api'
 import { logFrontendError } from '@/lib/log-api'
+import { adoptQuickChat, leaveQuickChatView, showNoProjectChat } from '@/lib/no-project-chat'
 import { randomUUID } from '@/lib/uuid'
 import { worktreeApi } from '@/lib/worktree-api'
 import { reconcileProjectWorktrees } from '@/lib/worktree-reconciler'
 import { useAcpStore } from '@/stores/acp-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { agentChatTabId, useWorkspaceStore } from '@/stores/workspace-store'
 import { useWorktreeProgressStore } from '@/stores/worktree-progress-store'
 
@@ -29,11 +31,17 @@ export interface LaunchFirstTurn {
   worktreeBranch?: string
 }
 
+/**
+ * Where the new chat opens: a chat tab in a pane (absent `paneId` means the
+ * focused pane), or the quick chat view for a quick chat (no project; the
+ * host owns its folder).
+ */
+export type LaunchSurface = { kind: 'pane'; paneId?: string } | { kind: 'quick' }
+
 export interface ChatLaunchRequest {
   configId: string
   projectId: string
-  /** The pane the chat tab opens in; absent means the focused pane. */
-  paneId?: string
+  surface: LaunchSurface
   /**
    * The checkout the chat runs in when no new worktree is made: the current
    * checkout, or a listed worktree already resolved by the caller.
@@ -51,7 +59,7 @@ export interface ChatLaunchRequest {
    * Throwing {@link LaunchAbort} calls the launch off.
    */
   beforeStart?: (checkout: LaunchCheckout) => Promise<LaunchFirstTurn | undefined>
-  /** The chat tab is open on the placeholder (runs synchronously inside {@link launchChat}). */
+  /** The chat is open on the placeholder (runs synchronously inside {@link launchChat}). */
   onOpened?: (placeholderId: SessionId) => void
   onWorktreeCreating?: (creating: boolean) => void
   /** The new worktree failed. The tab is already closed and the placeholder discarded; the error is rethrown. */
@@ -85,12 +93,44 @@ export class LaunchAbort extends Error {
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string): void {
-  void logFrontendError({ level, source: 'launch-chat.launchChat', message })
+  void logFrontendError({ level, source: SOURCE, message })
 }
 
-/** Close a launch's chat tab and forget its placeholder (and its worktree progress card). */
-function rollbackLaunchPlaceholder(placeholderId: SessionId, progressId?: string): void {
-  useWorkspaceStore.getState().removeTab(agentChatTabId(placeholderId))
+/** How a surface shows a launch: open the placeholder, follow it to its session, close it. */
+interface SurfaceOps {
+  open: (placeholderId: SessionId) => void
+  adopt: (placeholderId: SessionId, sessionId: SessionId) => void
+  close: (placeholderId: SessionId) => void
+}
+
+const SOURCE = 'launch-chat.launchChat'
+
+function surfaceOps(surface: LaunchSurface): SurfaceOps {
+  if (surface.kind === 'quick') {
+    return {
+      open: (id) => showNoProjectChat(id, 'quick', SOURCE),
+      adopt: (from, to) => adoptQuickChat(from, to, SOURCE),
+      close: (id) => {
+        const view = useQuickChatStore.getState().view
+        if (view.mode === 'chat' && view.sessionId === id) leaveQuickChatView(SOURCE)
+      }
+    }
+  }
+  const { paneId } = surface
+  return {
+    open: (id) => useWorkspaceStore.getState().addAgentChatTab(id, paneId),
+    adopt: (from, to) => useWorkspaceStore.getState().remapAgentChatSession(from, to, paneId),
+    close: (id) => useWorkspaceStore.getState().removeTab(agentChatTabId(id))
+  }
+}
+
+/** Close a launch's chat and forget its placeholder (and its worktree progress card). */
+function rollbackLaunchPlaceholder(
+  ops: SurfaceOps,
+  placeholderId: SessionId,
+  progressId?: string
+): void {
+  ops.close(placeholderId)
   useAcpStore.getState().discardLaunchPlaceholder(placeholderId)
   if (progressId) useWorktreeProgressStore.getState().clear(progressId)
 }
@@ -127,7 +167,8 @@ async function removeLaunchWorktree(
  * own UI in the same tick.
  */
 export function launchChat(request: ChatLaunchRequest): ChatLaunch {
-  const { configId, projectId, paneId, newWorktree } = request
+  const { configId, projectId, surface, newWorktree } = request
+  const ops = surfaceOps(surface)
   const progressId = newWorktree ? randomUUID() : undefined
   const store = useAcpStore.getState()
   const placeholderId = store.createLaunchPlaceholder({
@@ -135,13 +176,15 @@ export function launchChat(request: ChatLaunchRequest): ChatLaunch {
     configId,
     cwd: newWorktree ? newWorktree.projectRoot : request.checkout.launchCwd,
     projectId,
-    worktreeProgressId: progressId
+    worktreeProgressId: progressId,
+    // `finalizeChatLaunch` starts a quick placeholder with `startQuickChat`.
+    ...(surface.kind === 'quick' ? { kind: 'quick' as const } : {})
   })
-  useWorkspaceStore.getState().addAgentChatTab(placeholderId, paneId)
+  ops.open(placeholderId)
   request.onOpened?.(placeholderId)
   log(
     'info',
-    `Chat launch ${placeholderId} opened for agent ${configId}${newWorktree ? ' in a new worktree' : ''}`
+    `Chat launch ${placeholderId} opened for agent ${configId}${newWorktree ? ' in a new worktree' : ''}${surface.kind === 'quick' ? ' as a quick chat' : ''}`
   )
 
   const started = (async (): Promise<SessionId> => {
@@ -159,7 +202,7 @@ export function launchChat(request: ChatLaunchRequest): ChatLaunch {
         })
       } catch (err) {
         request.onRollback?.(placeholderId)
-        rollbackLaunchPlaceholder(placeholderId, progressId)
+        rollbackLaunchPlaceholder(ops, placeholderId, progressId)
         request.onWorktreeFailed?.(err)
         throw err
       } finally {
@@ -172,7 +215,7 @@ export function launchChat(request: ChatLaunchRequest): ChatLaunch {
     } catch (err) {
       if (err instanceof LaunchAbort) {
         request.onRollback?.(placeholderId)
-        rollbackLaunchPlaceholder(placeholderId, progressId)
+        rollbackLaunchPlaceholder(ops, placeholderId, progressId)
         if (newWorktree && checkout.worktreePath) {
           await removeLaunchWorktree(projectId, newWorktree.projectRoot, checkout.worktreePath)
         }
@@ -189,7 +232,7 @@ export function launchChat(request: ChatLaunchRequest): ChatLaunch {
       initialText: null,
       initialBlocks: firstTurn.blocks && firstTurn.blocks.length > 0 ? firstTurn.blocks : null,
       adoptSession: (from, to) => {
-        useWorkspaceStore.getState().remapAgentChatSession(from, to, paneId)
+        ops.adopt(from, to)
         request.onAdopt?.(from, to)
       },
       worktreePath: checkout.worktreePath,

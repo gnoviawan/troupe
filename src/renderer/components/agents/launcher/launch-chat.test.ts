@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setRouterNavigate } from '@/lib/router-navigate'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { LaunchAbort, launchChat } from './launch-chat'
 
 const seams = vi.hoisted(() => ({
@@ -10,6 +12,7 @@ const seams = vi.hoisted(() => ({
   discardLaunchPlaceholder: vi.fn(),
   finalizeChatLaunch: vi.fn(),
   addAgentChatTab: vi.fn(),
+  remapAgentChatSession: vi.fn(),
   removeTab: vi.fn(),
   clearProgress: vi.fn()
 }))
@@ -33,7 +36,11 @@ vi.mock('@/stores/acp-store', () => ({
 vi.mock('@/stores/workspace-store', () => ({
   agentChatTabId: (id: string) => `chat-tab:${id}`,
   useWorkspaceStore: {
-    getState: () => ({ addAgentChatTab: seams.addAgentChatTab, removeTab: seams.removeTab })
+    getState: () => ({
+      addAgentChatTab: seams.addAgentChatTab,
+      remapAgentChatSession: seams.remapAgentChatSession,
+      removeTab: seams.removeTab
+    })
   }
 }))
 vi.mock('@/stores/worktree-progress-store', () => ({
@@ -50,6 +57,7 @@ function launchInWorktree(beforeStart: () => Promise<never>) {
   return launchChat({
     configId: 'claude',
     projectId: 'p1',
+    surface: { kind: 'pane' },
     checkout: { launchCwd: '/repo' },
     newWorktree: { projectRoot: '/repo', baseBranch: 'main' },
     beforeStart
@@ -102,7 +110,12 @@ describe('launchChat', () => {
 
   it('logs where a launch opened', () => {
     seams.finalizeChatLaunch.mockResolvedValue('chat-1')
-    launchChat({ configId: 'claude', projectId: 'p1', checkout: { launchCwd: '/repo' } })
+    launchChat({
+      configId: 'claude',
+      projectId: 'p1',
+      surface: { kind: 'pane' },
+      checkout: { launchCwd: '/repo' }
+    })
 
     expect(seams.addAgentChatTab).toHaveBeenCalledWith('ph-1', undefined)
     expect(seams.log).toHaveBeenCalledWith({
@@ -110,5 +123,58 @@ describe('launchChat', () => {
       source: 'launch-chat.launchChat',
       message: 'Chat launch ph-1 opened for agent claude'
     })
+  })
+
+  it('opens a quick chat in the quick view with its first message and follows it to its session', async () => {
+    const navigate = vi.fn()
+    setRouterNavigate(navigate)
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    let adopt: ((from: string, to: string) => void) | undefined
+    seams.finalizeChatLaunch.mockImplementation(
+      async (args: { adoptSession: (from: string, to: string) => void }) => {
+        adopt = args.adoptSession
+        return 'sess-q'
+      }
+    )
+    const first = [{ type: 'text' as const, text: 'hello' }]
+
+    const { started } = launchChat({
+      configId: 'claude',
+      projectId: '__unassigned__',
+      surface: { kind: 'quick' },
+      checkout: { launchCwd: '' },
+      placeholder: { initialUserBlocks: first },
+      beforeStart: async () => ({ blocks: [{ type: 'text', text: 'hello (wire)' }] })
+    })
+
+    expect(seams.createLaunchPlaceholder).toHaveBeenCalledWith({
+      initialUserBlocks: first,
+      configId: 'claude',
+      cwd: '',
+      projectId: '__unassigned__',
+      worktreeProgressId: undefined,
+      kind: 'quick'
+    })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'ph-1' })
+    expect(navigate).toHaveBeenCalledWith('/c/ph-1')
+    expect(seams.addAgentChatTab).not.toHaveBeenCalled()
+
+    await expect(started).resolves.toBe('sess-q')
+    expect(seams.finalizeChatLaunch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        placeholderId: 'ph-1',
+        cwd: '',
+        projectId: '__unassigned__',
+        initialBlocks: [{ type: 'text', text: 'hello (wire)' }]
+      })
+    )
+    adopt?.('ph-1', 'sess-q')
+    expect(useQuickChatStore.getState().view).toEqual({
+      mode: 'chat',
+      sessionId: 'sess-q',
+      panelKey: 'ph-1'
+    })
+    expect(seams.remapAgentChatSession).not.toHaveBeenCalled()
+    setRouterNavigate(null)
   })
 })
