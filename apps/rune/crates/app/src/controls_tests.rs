@@ -106,3 +106,37 @@ fn the_context_ring_shows_once_the_conversation_uses_the_window() {
     tap(&mut rt, "composer-chat-chat-1-context");
     assert!(present(&rt, "composer-chat-chat-1-context-card"), "the ring opens the context card");
 }
+
+#[test]
+fn picks_merge_into_the_saved_record_like_the_web_client() {
+    let saved = json!({ "modelId": "a", "configValues": { "effort": "low", "speed": "fast" }, "modelValues": { "a": { "effort": "low" }, "b": { "effort": "high" } } });
+    let patch = json!({ "modeId": "plan", "modelId": null, "configValues": { "effort": "high" }, "modelValues": { "a": { "verbosity": "terse" } } });
+    assert_eq!(
+        crate::controls::merge_picks(&saved, &patch),
+        json!({ "modeId": "plan", "modelId": "a", "configValues": { "effort": "high", "speed": "fast" }, "modelValues": { "a": { "effort": "low", "verbosity": "terse" }, "b": { "effort": "high" } } })
+    );
+}
+
+#[test]
+fn picks_are_saved_once_the_record_is_read() {
+    let mut rt = chat_with_options();
+    rt.update_if(|s, _| {
+        s.save_picks("cfg-1".into(), json!({ "modeId": "acceptEdits" }));
+        s.save_picks("cfg-1".into(), json!({ "modelId": "matrix-fast" }));
+        true
+    });
+    let read = sent(&rt.state, WsRequestType::StoreRead).last().and_then(|r| r["key"].as_str().map(str::to_owned));
+    assert!(read.is_some_and(|k| k.ends_with("agents/composer-options/cfg-1")), "the first pick reads the saved record");
+    assert!(sent(&rt.state, WsRequestType::StoreWrite).iter().all(|w| !w["key"].as_str().unwrap_or("").contains("composer-options")), "nothing is written before the read");
+    reply(&mut rt, json!({ "revision": 3, "value": { "modelId": "matrix-large", "configValues": { "effort": "low" } } }));
+    let writes: Vec<Value> = sent(&rt.state, WsRequestType::StoreWrite).into_iter().filter(|w| w["key"].as_str().unwrap_or("").contains("composer-options/cfg-1")).collect();
+    assert_eq!(writes.len(), 1, "one write for both picks");
+    let value = model::persistence::unwrap_stored(writes[0]["value"].clone());
+    assert_eq!(value, json!({ "modelId": "matrix-fast", "modeId": "acceptEdits", "configValues": { "effort": "low" } }));
+    rt.update_if(|s, _| {
+        s.save_picks("cfg-1".into(), json!({ "modeId": "plan" }));
+        true
+    });
+    let writes = sent(&rt.state, WsRequestType::StoreWrite).into_iter().filter(|w| w["key"].as_str().unwrap_or("").contains("composer-options/cfg-1")).count();
+    assert_eq!(writes, 2, "a later pick writes at once");
+}
