@@ -155,7 +155,7 @@ fn the_chat_menu_copies_the_reference_and_deletes_after_confirming() {
         reference,
         "Troupe chat: How does the web client decide\nChat ID: chat-1\nProject: alpha (ID p-a)\nRead it with the Troupe read_chat tool."
     );
-    tap(&mut rt, "chat-menu-item8");
+    tap(&mut rt, "chat-menu-item10");
     assert_eq!(rt.state.overlays.top(), Some(DELETE_CHAT));
     tap(&mut rt, "confirm");
     assert_eq!(

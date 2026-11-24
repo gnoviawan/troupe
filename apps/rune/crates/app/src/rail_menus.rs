@@ -231,6 +231,7 @@ fn chat_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
         return;
     }
     let reference = chat_reference(s, &chat.session_id);
+    let cwd = chat.cwd.clone().filter(|c| !c.is_empty());
     let (id_copy, id) = (chat.session_id.clone(), chat.session_id.clone());
     let menu = Menu::new(CHAT_MENU)
         .width(224.0)
@@ -238,12 +239,10 @@ fn chat_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
         .placement(ui::overlay::Placement::BottomEnd)
         .open(true)
         .item(
+            // Reload needs the chat's live agent, which ports with the chat view (R6).
             MenuItem::new("Reload this chat")
                 .icon(glyph("RotateCcw"))
-                .on_select(|s: &mut State| {
-                    s.close(CHAT_MENU);
-                    s.toast_later("Reload this chat");
-                }),
+                .disabled(true),
         )
         .item(
             MenuItem::new("Open in split")
@@ -260,6 +259,26 @@ fn chat_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
                 .on_select(|s: &mut State| {
                     s.close(CHAT_MENU);
                     s.toast_later("Open terminal here");
+                }),
+        )
+        .item(
+            MenuItem::new("Open in file explorer")
+                .icon(glyph("FolderOpen"))
+                .disabled(cwd.is_none())
+                .on_select(|s: &mut State| {
+                    s.close(CHAT_MENU);
+                    s.toast_later("Open in file explorer");
+                }),
+        )
+        .item(
+            MenuItem::new("Copy path")
+                .icon(glyph("Copy"))
+                .disabled(cwd.is_none())
+                .on_select_tx(move |s: &mut State, tx: &mut Tx| {
+                    if let Some(cwd) = &cwd {
+                        tx.copy(cwd.clone());
+                    }
+                    s.close(CHAT_MENU);
                 }),
         )
         .separator()

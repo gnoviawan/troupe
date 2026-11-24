@@ -13,7 +13,10 @@ fn reply() -> Vec<Chat> {
 fn a_reply_lists_newest_first_and_splits_quick_chats() {
     let mut chats = Chats::default();
     chats.replace(reply());
-    let alpha: Vec<&str> = chats.of_project("matrix-alpha").map(|c| c.session_id.as_str()).collect();
+    let alpha: Vec<&str> = chats
+        .of_project("matrix-alpha")
+        .map(|c| c.session_id.as_str())
+        .collect();
     assert_eq!(alpha, ["new", "old"]);
     let quick: Vec<&str> = chats.quick().map(Chat::label).collect();
     assert_eq!(quick, ["New chat"]);

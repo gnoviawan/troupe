@@ -16,6 +16,9 @@ pub struct Chat {
     /// Epoch milliseconds.
     #[serde(default)]
     pub last_activity_at: f64,
+    /// The folder the chat's agent runs in.
+    #[serde(default)]
+    pub cwd: Option<String>,
 }
 
 impl Chat {
