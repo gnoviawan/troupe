@@ -117,7 +117,7 @@ jobs:
 
       - name: Run e2e suite
         env:
-          E2E_SPECS: ${{ inputs.specs || 'agent-survival crash-recovery elicitation switch-responsiveness web-reopen-live-turn-tool-cards composer-at-menu subagent-history automation-canvas-edit automation-run-overlay' }}
+          E2E_SPECS: ${{ inputs.specs || 'agent-survival crash-recovery elicitation switch-responsiveness web-reopen-live-turn-tool-cards composer-at-menu subagent-history automation-canvas-edit automation-run-overlay background-subagents subagent-stop fake-agent-markers' }}
           # These seven tests fail on dev for reasons outside the harness. In four of
           # them a project switch opens the Project Settings dialog, which then
           # covers the New chat button. The other three fail or flake on chat tab and
