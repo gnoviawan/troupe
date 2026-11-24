@@ -361,7 +361,10 @@ impl State {
             },
             Pending::ReadLastAgent => match result {
                 Ok(reply) => self.last_agent_loaded(stored_value(reply)),
-                Err(e) => log::warn!("[app] reading the last agent failed: {}", e.code),
+                Err(e) => {
+                    log::warn!("[app] reading the last agent failed: {}", e.code);
+                    self.last_agent_loaded(None);
+                }
             },
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
