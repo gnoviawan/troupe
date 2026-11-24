@@ -1,10 +1,12 @@
-//! The chain edges a history open heals (`healChainEdges`). The recorder
-//! cannot show them: a payload with switch markers or a continuation runs
-//! the switch redirect and re-splice, which are not ported.
+//! What the recorder cannot show. The chain edges a history open heals
+//! (`healChainEdges`): a payload with switch markers or a continuation runs
+//! the switch redirect and re-splice, which are not ported. An arm on a chat
+//! with no folder: the TypeScript fails with the engine's `TypeError` text.
 
 use serde_json::{Value, json};
 
-use super::State;
+use super::{Effect, Env, Event, State, step};
+use crate::Ids;
 
 fn state_with_index(ids: &[(&str, &str)]) -> State {
     let session_index = ids
@@ -59,4 +61,51 @@ fn a_history_install_stamps_its_own_edge_and_its_markers_edges() {
         ]
     );
     assert_eq!(state.book.history_watermarks.get("s1"), Some(&10.0));
+}
+
+struct NoIds;
+
+impl Ids for NoIds {
+    fn next_id(&mut self) -> String {
+        unreachable!("an arm draws no id")
+    }
+}
+
+#[test]
+fn an_arm_on_a_chat_with_no_folder_arms_and_then_fails() {
+    let mut state: State = serde_json::from_value(json!({
+        "sessions": { "s1": {
+            "id": "s1", "agentId": "agent-1", "status": "active", "title": null,
+            "activeTurn": false, "openTurnId": null, "createdAt": 1
+        } },
+        "messages": { "s1": [] }, "toolCalls": {}, "plans": {}, "commands": {},
+        "commandsSeq": {}, "sessionUsage": {}, "sessionIndex": [],
+        "pendingPermissions": {}, "pendingQuestions": {}, "pendingElicitations": {},
+        "pendingBrowserConsents": {}, "agentStatus": {}, "turnEndNotices": {},
+        "promptQueues": {}, "suppressQueueFlush": {}, "agentOptionsCache": {},
+        "configToLiveAgent": {}, "activeSessionId": "s1", "preparedSessions": {},
+        "agentSwitches": {}, "agents": {}, "pendingSignIn": {}, "autoOpenBrowserUrl": {},
+        "launchingSessionIds": {}, "discoveredSessions": {},
+        "agentConfigs": [{ "id": "codex", "name": "Codex", "command": "codex-acp" }],
+        "book": { "seq": 0, "historyWatermarks": {} }
+    }))
+    .expect("a state");
+    let mut env = Env {
+        now: 1_000.0,
+        ids: &mut NoIds,
+        server_history: false,
+    };
+    let event = Event::ArmAgentSwitch("s1".into(), "codex".into(), 4);
+    let effects = step(&mut state, event, &mut env);
+    assert_eq!(
+        effects,
+        vec![Effect::ActionRejected {
+            message: "TypeError: session s1 has no cwd to warm codex in".into()
+        }]
+    );
+    assert_eq!(
+        state.sessions["s1"].rest.get("switching"),
+        Some(&json!({ "toConfigId": "codex", "status": "pending" }))
+    );
+    assert!(state.preparing_chat_keys.is_empty());
 }

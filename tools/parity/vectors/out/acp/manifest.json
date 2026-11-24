@@ -541,7 +541,18 @@
         "arm_agent_switch_ignores_background_commands_that_finished",
         "arm_agent_switch_ignores_the_commands_of_a_failed_chat",
         "arm_agent_switch_on_a_missing_chat_is_refused",
-        "cancel_agent_switch_drops_an_armed_switch"
+        "cancel_agent_switch_drops_an_armed_switch",
+        "set_switch_pending_option_queues_picks_for_the_target",
+        "set_switch_pending_option_saves_scoped_values_under_the_warm_model",
+        "set_switch_pending_option_model_pick_keeps_only_agent_wide_values",
+        "set_switch_pending_option_model_pick_drops_the_last_models_values",
+        "set_switch_pending_option_after_a_cancel_is_dropped",
+        "set_switch_pending_option_model_pick_keeps_every_value_with_no_options",
+        "set_switch_pending_option_value_pick_keeps_the_armed_model",
+        "set_switch_pending_option_reads_the_cached_native_model",
+        "set_switch_pending_option_prefers_the_warm_session_over_the_cache",
+        "set_switch_pending_option_without_a_pick_only_sets_the_overlay",
+        "set_switch_pending_option_drops_picks_when_no_switch_is_armed"
       ]
     }
   }

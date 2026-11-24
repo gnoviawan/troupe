@@ -447,9 +447,19 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      agent that already owns the chat, and an unknown config each stamp
      `Could not switch agent: …` on the chat. An armed chat gets
      `switching: { toConfigId, status: 'pending' }` and its target warms
-     through `prepareChat` (silent). Not here: `setSwitchPendingOption`,
-     `switchAgent` (the handoff summary, the transcript splice, the new
-     session and the first prompt) and the reopen's switch redirect and
+     through `prepareChat` (silent). A chat with no `cwd` arms and then
+     fails with `actionRejected`, where the TypeScript throws the engine's
+     `TypeError` from `cwd.trim()` (a unit test, since the text differs per
+     engine).
+   - 9c, armed picks (R6a-7). `setSwitchPendingOption` merges a composer
+     pick into `switching.pendingOptions` (a model pick keeps only the
+     mode-category values, read from the target's warm session or else its
+     options cache) and saves it under the target config, with the scoped
+     values under the armed model (`modelValuesPatch`). Nothing goes to the
+     chat's current agent. A pick with no switch armed is logged and dropped.
+     Not here: the drop once `switchAgent` runs, which needs 9d.
+     Not here: `switchAgent` (the handoff summary, the transcript splice, the
+     new session and the first prompt) and the reopen's switch redirect and
      re-splice.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an

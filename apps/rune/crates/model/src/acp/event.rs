@@ -158,6 +158,8 @@ pub enum Event {
     ),
     #[serde(rename = "cancelAgentSwitch")]
     CancelAgentSwitch(String),
+    #[serde(rename = "setSwitchPendingOption")]
+    SetSwitchPendingOption(String, super::switch::LauncherPicks),
     /// Answered by `actionResolved` with whether the switch armed.
     #[serde(rename = "armAgentSwitch")]
     ArmAgentSwitch(String, String, #[serde(default)] super::import::RequestId),

@@ -230389,5 +230389,3043 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_queues_picks_for_the_target",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "codex\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modeId": "code",
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=- mode=code config=thought_level"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modeId": "code",
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modeId": "code",
+         "configValues": {
+          "thought_level": "max"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "codex\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_saves_scoped_values_under_the_warm_model",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    },
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-9",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ],
+       "category": "model"
+      },
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      },
+      {
+       "id": "permission",
+       "name": "permission",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ],
+       "category": "mode"
+      }
+     ],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "codex\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "configValues": {
+        "thought_level": "max",
+        "permission": "auto",
+        "gone": "x"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=- mode=- config=thought_level,permission,gone"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "configValues": {
+        "thought_level": "max",
+        "permission": "auto",
+        "gone": "x"
+       },
+       "modelValues": {
+        "m1": {
+         "thought_level": "max"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "configValues": {
+          "thought_level": "max",
+          "permission": "auto",
+          "gone": "x"
+         }
+        }
+       }
+      },
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "codex\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_model_pick_keeps_only_agent_wide_values",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending",
+      "pendingOptions": {
+       "modeId": "code",
+       "configValues": {
+        "thought_level": "max",
+        "permission": "auto"
+       }
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "codex": {
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ],
+       "category": "model"
+      },
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      },
+      {
+       "id": "permission",
+       "name": "permission",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ],
+       "category": "mode"
+      }
+     ],
+     "models": null
+    }
+   },
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modelId": "m2",
+       "configValues": {
+        "thought_level": "low"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=m2 mode=- config=thought_level"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modelId": "m2",
+       "configValues": {
+        "thought_level": "low"
+       },
+       "modelValues": {
+        "m2": {
+         "thought_level": "low"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "modeId": "code",
+         "configValues": {
+          "permission": "auto",
+          "thought_level": "low"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "models": null
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_model_pick_drops_the_last_models_values",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending",
+      "pendingOptions": {
+       "modelId": "m1",
+       "configValues": {
+        "thought_level": "max",
+        "permission": "auto"
+       }
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "codex": {
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ],
+       "category": "model"
+      },
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      },
+      {
+       "id": "permission",
+       "name": "permission",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ],
+       "category": "mode"
+      }
+     ],
+     "models": null
+    }
+   },
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modelId": "m2"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=m2 mode=- config=-"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modelId": "m2"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "configValues": {
+          "permission": "auto"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "models": null
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_after_a_cancel_is_dropped",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": null
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modeId": "code"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Dropped a composer pick for session s1: no switch is armed"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": null
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_model_pick_keeps_every_value_with_no_options",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending",
+      "pendingOptions": {
+       "modelId": "m1",
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modelId": "m2"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=m2 mode=- config=-"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modelId": "m2"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "configValues": {
+          "thought_level": "max"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_value_pick_keeps_the_armed_model",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending",
+      "pendingOptions": {
+       "modelId": "m2",
+       "configValues": {
+        "permission": "auto"
+       }
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "codex": {
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ],
+       "category": "model"
+      },
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      },
+      {
+       "id": "permission",
+       "name": "permission",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ],
+       "category": "mode"
+      }
+     ],
+     "models": null
+    }
+   },
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 56900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=- mode=- config=thought_level"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "configValues": {
+        "thought_level": "max"
+       },
+       "modelValues": {
+        "m2": {
+         "thought_level": "max"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "configValues": {
+          "permission": "auto",
+          "thought_level": "max"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "models": null
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modeId": "plan"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=- mode=plan config=-"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modeId": "plan"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "modeId": "plan",
+         "configValues": {
+          "permission": "auto",
+          "thought_level": "max"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "models": null
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 56900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_reads_the_cached_native_model",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "codex": {
+     "configOptions": [
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      }
+     ],
+     "models": {
+      "currentModelId": "gpt-5",
+      "availableModels": [
+       {
+        "modelId": "gpt-5",
+        "name": "GPT-5"
+       }
+      ]
+     }
+    }
+   },
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 57000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=- mode=- config=thought_level"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "configValues": {
+        "thought_level": "max"
+       },
+       "modelValues": {
+        "gpt-5": {
+         "thought_level": "max"
+        }
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "configValues": {
+          "thought_level": "max"
+         }
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        }
+       ],
+       "models": {
+        "currentModelId": "gpt-5",
+        "availableModels": [
+         {
+          "modelId": "gpt-5",
+          "name": "GPT-5"
+         }
+        ]
+       }
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_prefers_the_warm_session_over_the_cache",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    },
+    "w1": {
+     "id": "w1",
+     "agentId": "agent-9",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {
+    "codex": {
+     "configOptions": [
+      {
+       "id": "model",
+       "name": "model",
+       "type": "select",
+       "currentValue": "m1",
+       "options": [
+        {
+         "value": "m1",
+         "name": "M1"
+        },
+        {
+         "value": "m2",
+         "name": "M2"
+        }
+       ],
+       "category": "model"
+      },
+      {
+       "id": "thought_level",
+       "name": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "LOW"
+        },
+        {
+         "value": "max",
+         "name": "MAX"
+        }
+       ]
+      },
+      {
+       "id": "permission",
+       "name": "permission",
+       "type": "select",
+       "currentValue": "ask",
+       "options": [
+        {
+         "value": "ask",
+         "name": "ASK"
+        },
+        {
+         "value": "auto",
+         "name": "AUTO"
+        }
+       ],
+       "category": "mode"
+      }
+     ],
+     "models": null
+    }
+   },
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "codex\u0000/work\u0000": "w1"
+   },
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 57100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modelId": "m2",
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Queued switch pick on session s1 → config codex: model=m2 mode=- config=thought_level"
+     },
+     {
+      "kind": "persistComposerOptions",
+      "configId": "codex",
+      "patch": {
+       "modelId": "m2",
+       "configValues": {
+        "thought_level": "max"
+       }
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modelId": "m2",
+         "configValues": {
+          "thought_level": "max"
+         }
+        }
+       }
+      },
+      "w1": {
+       "id": "w1",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "codex": {
+       "configOptions": [
+        {
+         "id": "model",
+         "name": "model",
+         "type": "select",
+         "currentValue": "m1",
+         "options": [
+          {
+           "value": "m1",
+           "name": "M1"
+          },
+          {
+           "value": "m2",
+           "name": "M2"
+          }
+         ],
+         "category": "model"
+        },
+        {
+         "id": "thought_level",
+         "name": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "LOW"
+          },
+          {
+           "value": "max",
+           "name": "MAX"
+          }
+         ]
+        },
+        {
+         "id": "permission",
+         "name": "permission",
+         "type": "select",
+         "currentValue": "ask",
+         "options": [
+          {
+           "value": "ask",
+           "name": "ASK"
+          },
+          {
+           "value": "auto",
+           "name": "AUTO"
+          }
+         ],
+         "category": "mode"
+        }
+       ],
+       "models": null
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "codex\u0000/work\u0000": "w1"
+     },
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_without_a_pick_only_sets_the_overlay",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending",
+      "pendingOptions": {
+       "modeId": "code"
+      }
+     }
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 57200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {}
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modeId": "code",
+         "configValues": {}
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "configValues": {}
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending",
+        "pendingOptions": {
+         "modeId": "code",
+         "configValues": {}
+        }
+       }
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "set_switch_pending_option_drops_picks_when_no_switch_is_armed",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 57300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s1",
+      {
+       "modeId": "code"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Dropped a composer pick for session s1: no switch is armed"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setSwitchPendingOption",
+     "args": [
+      "s9",
+      {
+       "modeId": "code"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.setSwitchPendingOption",
+      "message": "Dropped a composer pick for session s9: no switch is armed"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 57300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

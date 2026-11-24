@@ -414,7 +414,7 @@ import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
-import { armScenarios, switchScenarios } from './acp-scenarios-switch'
+import { armScenarios, pendingPickScenarios, switchScenarios } from './acp-scenarios-switch'
 import { turnScenarios } from './acp-scenarios-turn'
 import { warmScenarios } from './acp-scenarios-warm'
 import { windowScenarios } from './acp-scenarios-window'
@@ -447,5 +447,6 @@ export const acpScenarios = [
   ...warmScenarios,
   ...reconcileScenarios,
   ...olderScenarios,
-  ...armScenarios
+  ...armScenarios,
+  ...pendingPickScenarios
 ]

@@ -535,6 +535,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::AgentSwitch(event, seq) => state.on_agent_switch(event, seq, env),
         Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
+        Event::SetSwitchPendingOption(session_id, patch) => {
+            state.set_switch_pending_option(&session_id, patch, &mut fx);
+        }
         Event::ArmAgentSwitch(session_id, to_config_id, request) => {
             state.arm_agent_switch(&session_id, &to_config_id, request, &mut fx);
         }
