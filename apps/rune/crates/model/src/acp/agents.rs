@@ -108,6 +108,19 @@ const PROVIDER_FAILURES: [(&str, &str); 3] = [
     ),
 ];
 
+/// `describeProviderFailure` for a known provider code, else `None`.
+pub(crate) fn describe_provider_failure(provider: Option<&str>, own: &str) -> Option<String> {
+    let (code, plain) = PROVIDER_FAILURES
+        .iter()
+        .find(|(code, _)| Some(*code) == provider)?;
+    let trimmed = own.trim();
+    Some(if trimmed.is_empty() || trimmed == *code {
+        (*plain).to_owned()
+    } else {
+        format!("{plain} ({trimmed})")
+    })
+}
+
 impl ErrorDetail {
     fn of(event: &AgentFailureEvent) -> Self {
         let code = js::finite(event.code.as_ref()).filter(|code| code.fract() == 0.0);

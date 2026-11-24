@@ -255,6 +255,43 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      claim), `ephemeralSessionIds` (PR 8), the reopen generation
      (`invalidateSessionReopen`, history open) and `pendingRestartVersions`
      (the agent update slice).
+   - 6d, history open (R6a-6, `acp/history.rs`, `acp/history_install.rs`).
+     `openHistorySession` on the desktop path. A live chat (not closed, not
+     in error) answers at once; a second open of the same chat joins the one
+     in flight. The open reads the full payload (`readSessionPayload`) and
+     installs the chat closed: the controls the client lacks come from the
+     payload, hidden turns and their tool cards are dropped, user bubbles
+     lose the read-only guard and a handoff preamble, the open turn comes
+     from `turnActive` or a trailing unanswered prompt, the last turn's
+     error (provider wording, stop-reason note) shows, a placeholder title
+     gives way to the index's, the payload's commands apply, and the newest
+     `termul-plan` fence becomes the plan (settled unless the turn runs; a
+     malformed one is logged). A turn the persisted agent still runs is
+     attached (`acp.attachLiveTurn`, with the replay floor below its
+     prompt); a turn no agent runs is cleared. Otherwise `ensureLiveAgent`
+     (`Caller::HistoryOpen`, silent, chat holder) gives the agent, and
+     `decideResume` picks `resumeSession`, `loadSession` or nothing. Both
+     go through `withAuthRetry` on the text surface. The reply's controls
+     apply where no event changed them meanwhile; a load that replayed
+     nothing closes its window at once. A failure restores the payload's
+     transcript and shows `Resume failed: …`; the host's
+     `ACP_REOPEN_TURN_ACTIVE` attaches instead; a resume that misses the
+     session falls back to one load. The replay window closes on
+     `endReplay`, which the app sends back as `replayEnd` after the queued
+     events, and a titled chat in the index is persisted then.
+     `Book::history` keeps the reopen generation per session
+     (`invalidateSessionReopen`, also bumped by `createSession`), and a
+     prompt queued meanwhile goes out when the open ends. Not here: the
+     tail-first fetch (`loadSessionPayloadTail`; the full payload is read),
+     the web client's adoption of a host-owned agent and
+     `ACP_SESSION_OWNED_BY_OTHER`, the switch redirect and re-splice, the
+     config reload, the Claude, Codex and Antigravity account reuse scope,
+     the reopened chat's own model restore (`restoreReopenedChatSelection`,
+     it needs `applyPendingLauncherOptions`), the 3 s capability wait (an
+     agent without capabilities reopens locally), the durable plan replay
+     from plan tool calls, the switch chain edges and the restore preload
+     marks. `createSession`'s `lookup` branch still does not open the
+     session it names.
    - 6b, rest. History open, `loadOlderMessages` (it needs the composer
      unit's wire-to-display reversal for its twin folding and the switch
      bands of PR 9), the resubscribe install, live-turn reattach.
@@ -578,6 +615,13 @@ its pinned sources match a path glob of both workflows.
   (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
   model adds the `Error: ` prefix `String(error)` prints wherever the store
   shows or keeps it.
+- A history open's replay window closes on a timer the recorder's step
+  does not wait for, so its effects land in the next step, after that
+  step's own commands; the replay carries `endReplay` over the same way and
+  drops it from the compared effects. The history vectors end with a no-op
+  step (`clearPendingSignIn`) for that. An action that resolves with no
+  value records `actionResolved` with `null`. The in-flight history opens
+  are reset per vector.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.

@@ -18,7 +18,7 @@ const UNTITLED: &str = "Untitled Chat";
 const HANDOFF_HEADER: &str = "# Conversation handoff";
 
 /// `isUntitledTitle`: `Untitled Chat` or `Untitled Chat <n>`.
-fn is_untitled(title: Option<&str>) -> bool {
+pub(crate) fn is_untitled(title: Option<&str>) -> bool {
     let Some(title) = title else {
         return false;
     };

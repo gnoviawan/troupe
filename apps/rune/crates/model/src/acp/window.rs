@@ -37,6 +37,8 @@ const PATH_KEYS: [&str; 10] = [
 pub enum PayloadRead {
     /// The durability probe of the live window trim.
     Probe,
+    /// A history open's payload.
+    History(super::history::OpenId),
 }
 
 /// How a [`Effect::ReadSessionPayload`] ended: the payload, `None` when the
@@ -149,6 +151,7 @@ impl State {
         };
         match read {
             PayloadRead::Probe => self.on_durability_probe(session_id, outcome, fx),
+            PayloadRead::History(open) => self.on_history_payload(open, outcome, fx),
         }
     }
 

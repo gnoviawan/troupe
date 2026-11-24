@@ -63,7 +63,7 @@ pub struct HostReports {
 }
 
 /// `noteForStopReason`: the line a stop reason other than a normal end shows.
-fn note_for_stop_reason(reason: &str) -> Option<String> {
+pub(crate) fn note_for_stop_reason(reason: &str) -> Option<String> {
     Some(match reason {
         "refusal" => "The agent refused to continue.".into(),
         "max_tokens" => "Response stopped: token limit reached.".into(),
@@ -78,7 +78,7 @@ fn note_for_stop_reason(reason: &str) -> Option<String> {
 }
 
 /// `settleRunningPlan`: nothing runs once the turn is over.
-fn settle_running_plan(entries: &[PlanEntry]) -> Option<Vec<PlanEntry>> {
+pub(crate) fn settle_running_plan(entries: &[PlanEntry]) -> Option<Vec<PlanEntry>> {
     let running = |entry: &PlanEntry| entry.text("status") == Some("in_progress");
     if !entries.iter().any(running) {
         return None;
@@ -148,7 +148,7 @@ fn append_plan_snapshot(messages: &mut [ChatMessage], plan: &[PlanEntry]) {
 
 /// `normalizeUserMessageBlocks` without the composer's wire reverse (ported
 /// with the composer): the read-only guard and a handoff preamble come off.
-fn normalize_user_message(message: &mut ChatMessage) {
+pub(crate) fn normalize_user_message(message: &mut ChatMessage) {
     if message.role != Role::User {
         return;
     }

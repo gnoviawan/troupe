@@ -57,6 +57,7 @@ pub(crate) struct EnsureOptions {
 pub(crate) enum Caller {
     Prewarm,
     ImportList(super::import::ImportId),
+    HistoryOpen(super::history::OpenId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -542,6 +543,7 @@ impl State {
             (Caller::ImportList(id), Err(error)) => {
                 self.on_import_list_failed(id, &error, fx);
             }
+            (Caller::HistoryOpen(id), outcome) => self.on_history_agent(id, outcome, fx),
         }
     }
 }

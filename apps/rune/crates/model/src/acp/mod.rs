@@ -23,6 +23,8 @@ mod discovery;
 mod effect;
 mod ensure;
 mod event;
+mod history;
+mod history_install;
 mod host_error;
 mod import;
 #[cfg(test)]
@@ -70,6 +72,7 @@ pub use create::{CreateOptions, CreateRequest};
 pub use effect::Effect;
 pub use ensure::{EnsureId, Holder};
 pub use event::Event;
+pub use history::{OpenHistoryOptions, OpenHistoryRequest};
 pub use import::RequestId;
 use mcp::{McpBook, RegistryOp};
 pub use plan::is_plan_tool;
@@ -301,6 +304,9 @@ pub struct Book {
     /// The `session/new` calls in flight.
     #[serde(skip)]
     pub(crate) creates: create::CreateBook,
+    /// The history opens in flight and the reopen generations.
+    #[serde(skip)]
+    pub(crate) history: history::HistoryBook,
     /// The import listings and imports in flight.
     #[serde(skip)]
     pub(crate) imports: import::ImportBook,
@@ -471,6 +477,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::KillAgent(agent_id) => state.kill_agent(agent_id, Killer::User, &mut fx),
         Event::CreateSession(request) => state.create_session(request, &mut fx),
+        Event::OpenHistorySession(request) => state.open_history_session(request, &mut fx),
+        Event::ReplayEnd(end) => state.on_replay_end(&end, &mut fx),
         Event::PrewarmAgent(config_id, cwd) => {
             let options = ensure::EnsureOptions {
                 register_warm_ui: true,
@@ -620,6 +628,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     }
     if let Some(session_id) = flushed {
         state.trim_flushed(&session_id, &mut fx);
+    }
+    // A prompt typed while a history open ran goes out once it ends.
+    for session_id in std::mem::take(&mut state.book.history.flush) {
+        state.flush_next_queued_prompt(&session_id, env, &mut fx);
     }
     // A run waiting for re-advertised options moves on once an event changed
     // them, as the TypeScript poll would see.

@@ -102,6 +102,9 @@ fn replay(vector: &Value) -> Result<usize, String> {
     // Commands a `{ hold, release }` reply keeps in flight, oldest first,
     // with the reply a `releaseHeld` step answers them with.
     let mut held: VecDeque<(Effect, Value)> = VecDeque::new();
+    // A replay window's end runs on a timer the recorder's step does not
+    // wait for: it lands in the next step, after that step's own commands.
+    let mut replay_ends: Vec<Effect> = Vec::new();
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
@@ -158,6 +161,8 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::ListSessions { .. }
                         | Effect::ImportAgentSession { .. }
                         | Effect::NewSession { .. }
+                        | Effect::LoadSession { .. }
+                        | Effect::ResumeSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
@@ -308,6 +313,12 @@ fn replay(vector: &Value) -> Result<usize, String> {
                 effects.extend(more);
                 continue;
             }
+            if !replay_ends.is_empty() {
+                for end in std::mem::take(&mut replay_ends) {
+                    effects.extend(acp::step(&mut state, Event::ReplayEnd(end), &mut env));
+                }
+                continue;
+            }
             if let Some(index) = effects.iter().position(|e| matches!(e, Effect::EndTurn(_))) {
                 let Effect::EndTurn(end) = effects.remove(index) else {
                     unreachable!()
@@ -319,6 +330,13 @@ fn replay(vector: &Value) -> Result<usize, String> {
         }
         // The recorder cannot see the busy-retry timer (`setTimeout`).
         effects.retain(|effect| !matches!(effect, Effect::RetryQueueAfter { .. }));
+        replay_ends.extend(
+            effects
+                .iter()
+                .filter(|effect| matches!(effect, Effect::EndReplay { .. }))
+                .cloned(),
+        );
+        effects.retain(|effect| !matches!(effect, Effect::EndReplay { .. }));
         if !ids.ids.is_empty() || ids.overdrawn > 0 {
             return Err(at(&format!(
                 "drew {} ids too few or {} too many",

@@ -8,6 +8,7 @@ import {
   _flushCoalescedForTesting,
   _resetCoalesceForTesting,
   _resetHistorySeqWatermarksForTesting,
+  _resetInFlightHistoryOpensForTesting,
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
@@ -166,7 +167,12 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
 const importStop = { requested: false }
 
 /** Actions whose answer the caller reads: it is the `actionResolved` effect. */
-const RESOLVES = new Set(['listImportableSessions', 'importAgentSessions', 'createSession'])
+const RESOLVES = new Set([
+  'listImportableSessions',
+  'importAgentSessions',
+  'createSession',
+  'openHistorySession'
+])
 
 export const acpRecorder: StoreRecorder = {
   store: 'acp',
@@ -242,6 +248,8 @@ export const acpRecorder: StoreRecorder = {
     }
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
+    // A vector may leave a history open in flight; the next one starts clean.
+    _resetInFlightHistoryOpensForTesting()
     _resetSubagentRecordLogsForTesting()
     _resetSubagentTranscriptLogsForTesting()
     shared._resetPromptReconcileForTesting()
@@ -320,7 +328,8 @@ export const acpRecorder: StoreRecorder = {
       const result = (call as (...a: unknown[]) => unknown)(...args)
       if (result instanceof Promise) {
         result.then(
-          (value: unknown) => RESOLVES.has(action) && emit({ kind: 'actionResolved', value }),
+          (value: unknown) =>
+            RESOLVES.has(action) && emit({ kind: 'actionResolved', value: value ?? null }),
           rejected
         )
       }
@@ -350,6 +359,7 @@ import { controlScenarios } from './acp-scenarios-controls'
 import { createScenarios } from './acp-scenarios-create'
 import { discoveryScenarios } from './acp-scenarios-discovery'
 import { ensureScenarios } from './acp-scenarios-ensure'
+import { historyScenarios } from './acp-scenarios-history'
 import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
@@ -384,5 +394,6 @@ export const acpScenarios = [
   ...authRetryScenarios,
   ...discoveryScenarios,
   ...importScenarios,
-  ...createScenarios
+  ...createScenarios,
+  ...historyScenarios
 ]

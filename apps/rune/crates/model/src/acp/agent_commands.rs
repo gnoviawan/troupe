@@ -260,6 +260,10 @@ impl State {
                 super::auth_retry::note_retry_succeeded(&command, fx);
                 self.on_session_new(create, &reply, env, fx);
             }
+            Effect::LoadSession { .. } | Effect::ResumeSession { .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_reopen_done(&command, &reply, fx);
+            }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
@@ -316,7 +320,9 @@ impl State {
         match command {
             Effect::ListSessions { .. }
             | Effect::ImportAgentSession { .. }
-            | Effect::NewSession { .. } => {
+            | Effect::NewSession { .. }
+            | Effect::LoadSession { .. }
+            | Effect::ResumeSession { .. } => {
                 return self.on_session_call_failed(command, HostError::new(message, code), fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {

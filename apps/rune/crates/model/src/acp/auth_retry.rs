@@ -85,6 +85,8 @@ fn auth_op(command: &Effect) -> Option<&'static str> {
         Effect::ListSessions { .. } => Some("session/list"),
         Effect::ImportAgentSession { .. } => Some("session/load"),
         Effect::NewSession { .. } => Some("session/new"),
+        Effect::LoadSession { .. } => Some("session/load"),
+        Effect::ResumeSession { .. } => Some("session/resume"),
         _ => None,
     }
 }
@@ -95,7 +97,9 @@ fn agent_of(command: &Effect) -> &str {
         | Effect::SetModel { agent_id, .. }
         | Effect::ListSessions { agent_id, .. }
         | Effect::ImportAgentSession { agent_id, .. }
-        | Effect::NewSession { agent_id, .. } => agent_id,
+        | Effect::NewSession { agent_id, .. }
+        | Effect::LoadSession { agent_id, .. }
+        | Effect::ResumeSession { agent_id, .. } => agent_id,
         _ => "",
     }
 }
@@ -105,7 +109,9 @@ fn mark_retried(mut command: Effect) -> Effect {
     | Effect::SetModel { retried, .. }
     | Effect::ListSessions { retried, .. }
     | Effect::ImportAgentSession { retried, .. }
-    | Effect::NewSession { retried, .. } = &mut command
+    | Effect::NewSession { retried, .. }
+    | Effect::LoadSession { retried, .. }
+    | Effect::ResumeSession { retried, .. } = &mut command
     {
         *retried = true;
     }
@@ -321,6 +327,9 @@ impl State {
                 import, session_id, ..
             } => self.on_import_session_failed(import, session_id, error, fx),
             Effect::NewSession { create, .. } => self.on_create_failed(create, error, fx),
+            command @ (Effect::LoadSession { .. } | Effect::ResumeSession { .. }) => {
+                self.on_reopen_failed(command, error, fx);
+            }
             command => match command.run() {
                 Some(run) => self.on_run_command(run, Some(error.message), fx),
                 None => fx.push(Effect::rejected_by(&error)),

@@ -127,6 +127,11 @@ pub enum Event {
     ReadvertiseWaitOver(RunId),
     #[serde(rename = "spawnAgent")]
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
+    #[serde(rename = "openHistorySession")]
+    OpenHistorySession(super::history::OpenHistoryRequest),
+    /// The replay window an [`Effect::EndReplay`] asked to close.
+    #[serde(skip_deserializing)]
+    ReplayEnd(Effect),
     #[serde(rename = "createSession")]
     CreateSession(super::create::CreateRequest),
     #[serde(rename = "killAgent")]

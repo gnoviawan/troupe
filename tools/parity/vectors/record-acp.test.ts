@@ -346,6 +346,36 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...options,
           ...(kind === undefined ? {} : { sessionKind: kind })
         }),
+      loadSession: (
+        agentId: string,
+        sessionId: string,
+        cwd: string,
+        additionalDirectories: unknown[],
+        mcpServers: unknown[]
+      ) =>
+        agentCommand({
+          kind: 'loadSession',
+          agentId,
+          sessionId,
+          cwd,
+          additionalDirectories,
+          mcpServers
+        }),
+      resumeSession: (
+        agentId: string,
+        sessionId: string,
+        cwd: string,
+        additionalDirectories: unknown[],
+        mcpServers: unknown[]
+      ) =>
+        agentCommand({
+          kind: 'resumeSession',
+          agentId,
+          sessionId,
+          cwd,
+          additionalDirectories,
+          mcpServers
+        }),
       importAgentSession: (input: Record<string, unknown>) =>
         agentCommand({ kind: 'importAgentSession', ...input }),
       closeSession: (agentId: string, sessionId: string) =>

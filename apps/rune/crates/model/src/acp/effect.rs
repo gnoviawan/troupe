@@ -9,6 +9,7 @@ use super::auth_retry::{AuthRetryId, OnDemand};
 use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
+use super::history::OpenId;
 use super::host_error::HostError;
 use super::import::{ImportId, RequestId};
 use super::mcp::TokenCheck;
@@ -322,6 +323,41 @@ pub enum Effect {
         #[serde(skip_serializing)]
         retried: bool,
     },
+    /// Send `session/load` to bring the chat's session back on the agent,
+    /// which replays it; then `AgentCommandDone` with the agent's controls,
+    /// or `AgentCommandFailed`.
+    LoadSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        additional_directories: Vec<Value>,
+        mcp_servers: Vec<Value>,
+        #[serde(skip_serializing)]
+        open: OpenId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Send `session/resume`, which brings the session back without a
+    /// replay; answered as `LoadSession` is.
+    ResumeSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        additional_directories: Vec<Value>,
+        mcp_servers: Vec<Value>,
+        #[serde(skip_serializing)]
+        open: OpenId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Send `Event::ReplayEnd` with this effect once the events already
+    /// queued have been applied, so replayed chunks racing the reply still
+    /// land in the replay window.
+    EndReplay {
+        session_id: String,
+        #[serde(skip_serializing)]
+        generation: u64,
+    },
     /// Send `session/list` for one page of the agent's sessions in `cwd`;
     /// then `AgentCommandDone` with the page, or `AgentCommandFailed`.
     ListSessions {
@@ -405,6 +441,8 @@ impl Effect {
                 | Self::ListSessions { retried: true, .. }
                 | Self::ImportAgentSession { retried: true, .. }
                 | Self::NewSession { retried: true, .. }
+                | Self::LoadSession { retried: true, .. }
+                | Self::ResumeSession { retried: true, .. }
         )
     }
 
@@ -433,16 +471,10 @@ impl Effect {
     }
 
     /// The user's action failed with this host error, shown the way
-    /// `String(error)` prints it: an `AcpTransportError` when the host sent
-    /// a code, else an `Error`.
+    /// `String(error)` prints it.
     pub(crate) fn rejected_by(error: &HostError) -> Self {
-        let name = match (error.name, &error.code) {
-            (Some(name), _) => name,
-            (None, Some(_)) => "AcpTransportError",
-            (None, None) => "Error",
-        };
         Self::ActionRejected {
-            message: format!("{name}: {}", error.message),
+            message: error_text(error),
         }
     }
 
@@ -453,4 +485,15 @@ impl Effect {
             message,
         }
     }
+}
+
+/// `String(error)` of a host error: an `AcpTransportError` when the host sent
+/// a code, a model-made error by its class, else an `Error`.
+pub(crate) fn error_text(error: &HostError) -> String {
+    let name = match (error.name, &error.code) {
+        (Some(name), _) => name,
+        (None, Some(_)) => "AcpTransportError",
+        (None, None) => "Error",
+    };
+    format!("{name}: {}", error.message)
 }

@@ -83,7 +83,7 @@ pub(crate) struct CreateBook {
 
 /// `selectMcpServersForAgent`: the enabled registry servers the agent can
 /// start, as the wire sends them, and the names of the ones it cannot.
-fn select_mcp_servers(
+pub(crate) fn select_mcp_servers(
     registry: &[super::types::Object],
     capabilities: Option<&Value>,
 ) -> (Vec<Value>, Vec<String>) {
@@ -144,7 +144,7 @@ fn is_absolute(path: &str) -> bool {
 impl State {
     /// `additionalWorkspaceRoots`: the Project's folder and its worktrees,
     /// for an agent that advertises `additionalDirectories`.
-    fn additional_workspace_roots(
+    pub(crate) fn additional_workspace_roots(
         &self,
         agent_id: &str,
         cwd: &str,
@@ -270,6 +270,7 @@ impl State {
             ));
             return self.resolve_create(create, session_id, fx);
         }
+        self.invalidate_session_reopen(&session_id);
         self.add_created_session(&call, &session_id, reply, env);
         if !call.options.ephemeral {
             fx.push(Effect::PersistSession {
