@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { MobileDrawerSectionList } from './MobileDrawerSectionList'
 
 const {
@@ -280,6 +281,22 @@ describe('MobileDrawerSectionList terminals', () => {
 
     expect(workspaceRef.current.setActiveTab).toHaveBeenCalledWith('pane-1', 'term-t1')
     expect(onNavigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('with the quick chat launcher open, choosing a terminal closes the launcher and shows the terminal', () => {
+    useQuickChatStore.getState().openLauncher()
+    try {
+      renderList()
+
+      fireEvent.click(screen.getByRole('button', { name: 'zsh' }))
+
+      expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+      expect(workspaceRef.current.setActiveTab).toHaveBeenCalledWith('pane-1', 'term-t1')
+      // The launcher's route is the workspace root, where the terminal shows.
+      expect(mockNavigate).not.toHaveBeenCalled()
+    } finally {
+      useQuickChatStore.setState({ view: { mode: 'closed' } })
+    }
   })
 
   it('routes a close through the existing terminal close flow', () => {
