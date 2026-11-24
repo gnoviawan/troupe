@@ -354,6 +354,10 @@ impl State {
             return;
         }
         self.cancel_running_subagents(std::slice::from_ref(&id), env.now, fx);
+        // The app's staged files for the chat (pasted images) go with it.
+        fx.push(Effect::DeleteSessionTempFiles {
+            session_id: id.clone(),
+        });
         self.pending_permissions
             .retain(|_, pending| pending.session_id != id);
         self.pending_questions
@@ -399,6 +403,9 @@ impl State {
     pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
         self.book.history_watermarks.remove(session_id);
         self.book.active_wire_turns.remove(session_id);
+        self.book.backfill_counts.remove(session_id);
+        self.book.durability_probes.remove(session_id);
+        self.book.untrimmable.remove(session_id);
         self.forget_composer_session(session_id);
     }
 

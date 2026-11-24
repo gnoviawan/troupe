@@ -74,7 +74,7 @@ TypeScript lines are whole files, comments included. Every path below is under
 |---|---:|---|---|---|
 | `types.ts` | 1,279 | `acp/types.rs` (records), `acp/mod.rs` (`State`, `Event`, `Effect`) | state types; the action signatures become `Event` variants | 1, grows per PR |
 | `slices/transcript.ts` event handlers (`_onUserPrompt`, `_onMessageChunk`, `_onToolCall`, `_onToolCallUpdate`, `_onPlanUpdate`, `_onCommandsUpdate`, `_onSessionInfoUpdate`, `_onUsageUpdate`) and the live clamps | 1,788 | `acp/transcript.rs`, `acp/tool_call.rs`, `acp/clamp.rs` | state; logs and `persistSession` are effects | 1 |
-| `slices/transcript.ts` window (`loadOlderMessages`, `trimLiveWindow`, backfill counts) | (same file) | `acp/window.rs` | state plus a payload-read effect | 6 |
+| `slices/transcript.ts` window (`loadOlderMessages`, `trimLiveWindow`, backfill counts); `helpers.ts` `trimLiveToolCalls` | (same file) | `acp/window.rs`, `acp/diff_stat.rs` | state plus a payload-read effect | 6 |
 | `slices/transcript.ts` `_onModeUpdate`, `_onConfigOptionsUpdate`; `helpers.ts` `mergeAgentConfigOptions`, `cacheOptionsFromSession`, `writeAgentOptionsCache`; `model-catalog.ts` `modelCatalogFromOptions`; the model helpers of `components/chat/chat-input-bar-config.ts` | (parts) | `acp/controls.rs` | state; the model list save and the saved-pick heal are effects | 4 |
 | `slices/transcript-flush-clock.ts` | 149 | none | glue | none |
 | `lib/plan-session.ts` (plan tool, merge, classify) | 388 | `acp/plan.rs` | state | 1 |
@@ -101,12 +101,13 @@ TypeScript lines are whole files, comments included. Every path below is under
 | `slices/session.ts` (`_onSessionCreated`, `_onSessionClosed`, `createSession`, `closeSession`, index load and snapshot, history open, retry) | 2,879 | `acp/session.rs`, `acp/history.rs` | state; payload reads, index writes, `session/load` are effects | 6 |
 | `slices/agent.ts` (roster events, browser consent) and `agent-roster-watch.ts` | 1,554 | `acp/agents.rs` | state | 7a |
 | `slices/agent.ts` (spawn, kill, sign-in, sign-out, the sign-in prompt answer, the auth bookkeeping) | (same file) | `acp/agent_commands.rs` | state; each command is an effect with an outcome event | 7b |
-| `browser-agent-tabs.ts` | 77 | `acp/agents.rs` | state; the workspace tab is an effect | 7 |
+| `agent-roster-watch.ts` | 127 | `acp/roster.rs` | state; the policy and automation hints and the toasts are effects | 7 |
+| `browser-agent-tabs.ts` | 77 | `acp/roster.rs` | effects: the Stop owner, and on the desktop the workspace tab | 7 |
 | `slices/agent.ts` `_onBrowserConsentTicket`, `_onBrowserTicketClosed` and `lib/browser-consent-api.ts` `parseBrowserConsentTicket` | (part) | `acp/approvals.rs` | state; revealing the chat tab is an effect | 2 |
 | `slices/launch.ts`, `chat-reuse-scope.ts`, `ephemeral-ids.ts`, `registry-mcp-fingerprints.ts` | 1,139 | `acp/launch.rs` | state; prepare and claim are socket effects | 8 |
 | `slices/config.ts` | 344 | `acp/launch.rs` | state; config writes are persistence effects | 8 |
 | `slices/switch.ts`, `slices/switch-seam.ts` | 943 | `acp/switch.rs` | state; `record_agent_switch` and payload reads are effects | 9 |
-| `slices/mcp.ts` | 682 | `acp/mcp.rs` | state; probe, OAuth and writes are effects | 10 |
+| `slices/mcp.ts`; `lib/acp-mcp-persistence.ts` `catalogInstallEntry`; `lib/mcp-install-request.ts` | 682 | `acp/mcp.rs` (registry, probes), `acp/mcp_oauth.rs`, `acp/mcp_install.rs` | state; probe, OAuth and writes are effects | 10 |
 | `slices/import-sessions.ts` | 168 | `acp/history.rs` | effect-driven (a host loop); the candidate filter is state | 10 |
 | `slices/misc.ts` (commit message, terminal assist, bug report collectors) | 537 | `acp/oneshot.rs` | one-shot sessions whose chunks feed a collector, never a transcript | 10 |
 | `reload-guard.ts`, `chat-tab-prune.ts` | 63 | `acp/session.rs` | state; the tab prune is a workspace effect | 6 |
@@ -197,8 +198,38 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      names chats `createSession` makes, PR 8) and the dropped-launch
      recovery (PR 8). Events apply in order, so the load generation guard
      has no counterpart.
-   - 6b, rest. History open, live window and eviction, the resubscribe
-     install, live-turn reattach.
+   - 6b, live window (R6a-4). `acp/window.rs`: the trims a flush runs on
+     the session a chunk, tool call or tool update coalesced into (not a
+     replaying session, not a covered event). Messages over 300 keep the
+     newest and the streaming tail, but only once the session's history is
+     known durable: the first time over the bound the model sends
+     `readSessionPayload` (the durability probe), and its answer
+     (`sessionPayloadRead`) marks the session durable, untrimmable (no
+     history, logged) or neither (a failed read, logged, probed again on the
+     next flush). Tool calls over 500 drop the oldest finished ones, never a
+     subagent dispatch; a dropped edit, delete or move leaves a path-only
+     summary with its line counts (`acp/diff_stat.rs`, a copy of the host's
+     `diff_stat.rs`). `clearSessionBackfill` forgets the backfill and trims
+     at once. The payload cache and its pins are the app's: the model only
+     remembers which sessions are durable, so a cache eviction does not make
+     it probe again where the TypeScript would.
+   - 6b, close and delete (R6a-4, `acp/close.rs`). `closeSession` ends an
+     open chat's agent session (`closeAgentSession`), then closes the chat,
+     drops its warm slot, its prompts, its queue and its queue hold,
+     persists it and frees its transcript. `deleteHistorySession` asks an
+     agent that advertises `session/delete` (or one the model knows nothing
+     about, for a chat only the index holds) to delete it
+     (`deleteAgentSession`), deletes the durable history
+     (`deleteSessionPayload`) and only then drops the chat, its index row,
+     its warm slot, its transcript and its tab. Both, and `_onSessionClosed`,
+     delete the app's staged files for the chat (`deleteSessionTempFiles`).
+     Not here: the warm-pool session that closes empty (`ephemeralSessionIds`,
+     PR 8), the reopen and restore invalidation (history open), and the
+     launch cancellation a delete during a launch leaves (`finalizeChatLaunch`,
+     PR 8).
+   - 6b, rest. History open, `loadOlderMessages` (it needs the composer
+     unit's wire-to-display reversal for its twin folding and the switch
+     bands of PR 9), the resubscribe install, live-turn reattach.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider
@@ -230,10 +261,53 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `prepareChat`, PR 8), `stoppingAgentIds` (read only by the warm-pool
      reap, PR 8), and the sign-in before a session call
      (`authenticateBeforeSession`, `withAuthRetry`, PR 8).
-   - 7b, rest. The roster watch and the browser tabs.
+   - 7b, rest (R6a-4). The host's `agents` watch and the agent browser
+     tabs (`acp/roster.rs`). The watch's full state (`agentsWatchState`)
+     spawns the agents the model lacks, disconnects the connected ones the
+     host dropped, and asks the policy and automation views to re-read. A
+     delta (`agentsWatchDelta`) goes to the handler the desktop event
+     reaches; a crash or error also toasts. The browser policy and
+     automation hints pass through as effects. `_onBrowserAgentTab` and
+     `_onBrowserTabClosed` track the tab's Stop owner and, when
+     `Book::desktop`, open or close the workspace tab; an open the history
+     covers is skipped. A delta whose payload its handler cannot read is
+     logged and dropped, where the TypeScript hands it on unchecked.
 8. Launch, prepare and warm pool, agent configs.
+   - 8a (R6a-4). The launch placeholder (`acp/launch.rs`):
+     `createLaunchPlaceholder` (an initializing chat, with the launcher's
+     first prompt shown and its turn open), `discardLaunchPlaceholder` (the
+     chat, its transcript, its queue and the active mark go),
+     `seedLaunchUserMessage` (the first prompt opens the turn once; a chat
+     already showing a prompt only reopens it) and `clearLaunchingSession`.
+   - 8, rest. `ensureLiveAgent` with its spawn signatures, holders and
+     credential epochs; `prepareChat`, `claimPreparedChat`,
+     `cancelPreparedChat` and the warm-pool promotion; `startChat`,
+     `startQuickChat`, `finalizeChatLaunch` and `applyPendingLauncherOptions`;
+     the config slice. History open, import, the one-shots and the agent
+     switch all wait on `ensureLiveAgent`.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
+    - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
+      effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
+      `startMcpOAuth`, `completeMcpOAuth`, `hasMcpOAuthToken`,
+      `disconnectMcpOAuth`, `answerMcpInstall`) the app answers with
+      `mcpCommandDone` or `mcpCommandFailed` (the raw message and an
+      `McpOAuthError` code). Registry writes run one at a time through
+      `Book::mcp`, as the TypeScript promise queue runs them, and a failed
+      save puts the list back. A probe whose server was edited, deleted or
+      signed in or out meanwhile does not land; it probes again. The first
+      successful load starts the shared registry watch
+      (`watchSharedMcpServers`, answered by `mcpSharedChanged` with the list
+      the app normalized); `Book::mcp_shared_sync` remembers it, as the
+      module flag does. An OAuth flow the model aborts (a newer flow, a
+      cancel, a delete) ends as cancelled at once, after the step's own
+      effects: the web rejects it that way, and the app's later answer is
+      ignored. On the desktop, whose sign-in ignores the abort, the
+      TypeScript logs the cancel only if the old flow later fails. The
+      registry normalization and the legacy canvas entry migration stay in
+      the app's persistence layer. Not here: the answering marks of
+      `pending-permission-sync` (the resubscribe install, PR 6).
+    - 10b, rest. Import, discovery and the one-shot collectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -297,7 +371,6 @@ so the replay drops `retryQueueAfter` before it compares.
   `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
 - The one-shot collectors that swallow chunks, tool calls and requests of
   commit-message, terminal assist and bug-report sessions. PR 10.
-- The live-window trim and the tool-call trim at flush. PR 6.
 - Switch markers in `maxPayloadSeq`. PR 9.
 - On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
   the in-memory payload cache (PR 6).
@@ -333,12 +406,37 @@ its pinned sources match a path glob of both workflows.
   (`live_only`) client skips the index reload the way the server one does;
   the model folds both into `Env::server_history`.
 - `context.openChatTabs` lists the sessions a chat tab shows.
+- `context.desktop` makes `isTauriContext` true, as `Book::desktop` does.
+- `context.payloads` is each session's durable history: every
+  `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
+  session it does not list, and `{ "reject": text }` fails the read. The
+  payload cache is cleared per vector.
+- `context.mcpReplies` answers the MCP commands in order: an entry is the
+  reply, `{ "reject": text, "code": c }` fails it (an `McpOAuthError` when
+  `code` is set), `{ "hold": true }` leaves it in flight, and a start's
+  `authUrl` reaches the paste-back callback first. A held start rejects as
+  cancelled when its signal aborts. The MCP fields are snapshotted only once
+  a vector set one. The store's OAuth flows and its shared-watch flag are
+  module state no reset reaches, so a vector that leaves a flow in flight
+  uses a server id no other vector does, and every vector after the first
+  load starts with `book.mcpSharedSync`.
+- Logs without a level record the `error` that `logFrontendError` defaults
+  to.
+- Vectors over the live bounds keep their records small: every step
+  snapshots the whole state.
+- Toasts are effects (`toast`, with the level). The roster watch is attached
+  once to a stub watch client; `agentsWatchState` and `agentsWatchDelta` call
+  its handlers.
 - `context.agentReplies` answers the agent commands in order: an entry is
   the reply, `{ "reject": text }` fails it, and `{ "hold": true }` leaves it
   in flight for the rest of the vector.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
-  `{ "reject": text }` fails that `setConfigOption` with `Error: text`.
+  `{ "reject": text }` fails that `setConfigOption` with `text`.
+- A failed command comes back with the error's raw message
+  (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
+  model adds the `Error: ` prefix `String(error)` prints wherever the store
+  shows or keeps it.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.

@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { _clearPayloadCacheForTesting } from '../../../../src/renderer/lib/acp-history-persistence'
 import {
   _setAcpTransportForTests,
   type AcpTransport
@@ -10,6 +11,7 @@ import {
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
+import { attachAgentRosterWatch } from '../../../../src/renderer/stores/acp-store/agent-roster-watch'
 import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
@@ -28,8 +30,12 @@ import {
   configReplies,
   dispatchOutcomes,
   emit,
+  mcpReplies,
+  mcpSharedSync,
   openChatTabs,
-  type StoreRecorder
+  platform,
+  type StoreRecorder,
+  sessionPayloads
 } from '../record'
 
 /**
@@ -70,10 +76,63 @@ const DATA_KEYS = [
   'discoveredSessions'
 ] as const
 
+/** The host's `agents` watch, as `attachAgentRosterWatch` subscribes to it. */
+const agentsWatch: { onState?: (state: unknown) => void; onDelta?: (delta: unknown) => void } = {}
+attachAgentRosterWatch(
+  {
+    subscribe: (_topic: string, handlers: typeof agentsWatch) => {
+      Object.assign(agentsWatch, handlers)
+      return () => {}
+    }
+  } as unknown as Parameters<typeof attachAgentRosterWatch>[0],
+  () => useAcpStore.getState()
+)
+
+/** The MCP fields, snapshotted only once a vector set one. */
+const MCP_KEYS = [
+  'mcpServers',
+  'mcpServersLoaded',
+  'pendingMcpInstalls',
+  'mcpProbeStatus',
+  'mcpOAuthConnecting',
+  'mcpOAuthConnected',
+  'mcpOAuthPasteBack',
+  'mcpTools',
+  'mcpToolsLoaded',
+  'mcpProbing',
+  'mcpProbeError'
+] as const
+
+const MCP_FRESH = {
+  mcpServers: [],
+  mcpServersLoaded: false,
+  pendingMcpInstalls: {},
+  mcpProbeStatus: {},
+  mcpOAuthConnecting: {},
+  mcpOAuthConnected: {},
+  mcpOAuthPasteBack: {},
+  mcpTools: {},
+  mcpToolsLoaded: {},
+  mcpProbing: {},
+  mcpProbeError: {}
+}
+
+/** `value` as JSON keeps it, when that is not empty, `false` or `[]`. */
+function setField(value: unknown): unknown {
+  const plain = value === undefined ? undefined : JSON.parse(JSON.stringify(value))
+  if (plain === false || plain === undefined) return undefined
+  if (typeof plain === 'object' && plain !== null && Object.keys(plain).length === 0)
+    return undefined
+  return plain
+}
+
 /** Module functions a step may call besides the store's actions. */
 const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
   noteHistoryWatermark: shared.noteHistoryWatermark,
-  noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor
+  noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor,
+  mcpSharedChanged: (change: unknown) => mcpSharedSync.apply?.(change),
+  agentsWatchState: (state: unknown) => agentsWatch.onState?.(state),
+  agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta)
 }
 
 export const acpRecorder: StoreRecorder = {
@@ -112,17 +171,34 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/composer-options.ts',
     'src/renderer/stores/acp-store/chat-tab-prune.ts',
     'src/renderer/lib/acp-history-persistence.ts',
+    'src/renderer/stores/acp-store/agent-roster-watch.ts',
+    'src/renderer/stores/acp-store/browser-agent-tabs.ts',
     'src/renderer/stores/acp-store/session-agent-config.ts',
-    'src/shared/types/antigravity-accounts.types.ts'
+    'src/shared/types/antigravity-accounts.types.ts',
+    'src/renderer/stores/acp-store/slices/mcp.ts',
+    'src/renderer/lib/acp-mcp-persistence.ts',
+    'src/renderer/lib/mcp-install-request.ts',
+    'src/renderer/stores/acp-store/slices/launch.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
     for (const sessionId of new Set([...SCENARIO_SESSIONS, ...Object.keys(state.sessions)])) {
       forgetHostReports(sessionId)
     }
-    // Forgets each session's clamp-log ids, so a vector logs its own clamps.
-    for (const sessionId of Object.keys(state.toolCalls)) {
+    // Forgets each session's clamp-log ids and window bookkeeping, so a
+    // vector logs its own clamps and probes its own history.
+    for (const sessionId of new Set([
+      ...Object.keys(state.toolCalls),
+      ...Object.keys(state.messages)
+    ])) {
       dropSessionTranscriptState(state, sessionId)
+    }
+    _clearPayloadCacheForTesting()
+    sessionPayloads.clear()
+    for (const [id, payload] of Object.entries(
+      (context.payloads as Record<string, unknown>) ?? {}
+    )) {
+      sessionPayloads.set(id, payload)
     }
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
@@ -134,8 +210,10 @@ export const acpRecorder: StoreRecorder = {
     configReplies.splice(0, configReplies.length, ...((context.configReplies as unknown[]) ?? []))
     composerRecord.saved = context.composerOptions ?? null
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
+    mcpReplies.splice(0, mcpReplies.length, ...((context.mcpReplies as unknown[]) ?? []))
     _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
+    platform.desktop = context.desktop === true
     openChatTabs.clear()
     for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
     // The counter only moves up; each vector starts on the next hundred.
@@ -147,7 +225,11 @@ export const acpRecorder: StoreRecorder = {
       dispose: () => {}
     } as unknown as AcpTransport)
     clock = typeof context.now === 'number' ? context.now : NOW
-    useAcpStore.setState({ ...FRESH, pendingBrowserConsents: {} } as Partial<AcpState>)
+    useAcpStore.setState({
+      ...FRESH,
+      ...MCP_FRESH,
+      pendingBrowserConsents: {}
+    } as Partial<AcpState>)
   },
   seed(initial) {
     useAcpStore.setState(initial as Partial<AcpState>)
@@ -156,9 +238,16 @@ export const acpRecorder: StoreRecorder = {
     const state = useAcpStore.getState()
     return {
       ...Object.fromEntries(DATA_KEYS.map((key) => [key, state[key]])),
+      ...Object.fromEntries(
+        MCP_KEYS.map((key) => [key, setField(state[key])]).filter(
+          ([, value]) => value !== undefined
+        )
+      ),
       book: {
         seq: peekSeq(),
         historyWatermarks: Object.fromEntries(shared.historySeqWatermarks),
+        // The store starts the shared registry watch once per page.
+        ...(mcpSharedSync.apply ? { mcpSharedSync: true } : {}),
         // The auth bookkeeping, only once a vector touched it.
         ...(authenticatedAgents.size > 0
           ? { authenticatedAgents: [...authenticatedAgents].sort() }
@@ -200,14 +289,19 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
+import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
 import { indexScenarios } from './acp-scenarios-index'
+import { launchScenarios } from './acp-scenarios-launch'
+import { mcpScenarios } from './acp-scenarios-mcp'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { restoreScenarios } from './acp-scenarios-restore'
+import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
+import { windowScenarios } from './acp-scenarios-window'
 
 export const acpScenarios = [
   ...transcriptScenarios,
@@ -220,5 +314,10 @@ export const acpScenarios = [
   ...pickScenarios,
   ...indexScenarios,
   ...restoreScenarios,
-  ...agentCommandScenarios
+  ...agentCommandScenarios,
+  ...rosterScenarios,
+  ...windowScenarios,
+  ...mcpScenarios,
+  ...launchScenarios,
+  ...closeScenarios
 ]

@@ -15,7 +15,7 @@ use std::collections::{BTreeMap, VecDeque};
 use serde_json::{Map, Value, json};
 
 use super::controls::{MODEL_CATEGORY, category, config_options, flatten, option_count};
-use super::picks::{MODE_CATEGORY, PickOptions, rejected};
+use super::picks::{MODE_CATEGORY, PickOptions, unknown_session};
 use super::types::{Session, SessionStatus};
 use super::{Effect, State};
 
@@ -217,7 +217,7 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let Some(session) = self.sessions.get(&session_id) else {
-            fx.push(rejected(&session_id));
+            fx.push(unknown_session(&session_id));
             return;
         };
         let config_id = self.config_id_for_agent(&session.agent_id);
@@ -315,8 +315,8 @@ impl State {
         }
     }
 
-    /// A set command a run sent settled: `failure` is the error it failed
-    /// with.
+    /// A set command a run sent settled: `failure` is the error message it
+    /// failed with.
     pub(crate) fn on_run_command(
         &mut self,
         run: RunId,
@@ -333,7 +333,7 @@ impl State {
             Phase::SettingModel { before } => {
                 if let Some(message) = failure {
                     fx.push(if picking {
-                        Effect::ActionRejected { message }
+                        Effect::rejected(message)
                     } else {
                         Effect::warn(
                             source,

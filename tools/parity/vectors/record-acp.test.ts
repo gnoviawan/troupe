@@ -10,9 +10,13 @@ import {
   emit,
   type Manifest,
   manifestEntry,
+  mcpReplies,
+  mcpSharedSync,
   OUT_DIR,
   openChatTabs,
+  platform,
   recordVector,
+  sessionPayloads,
   sourcesOutsideWorkflow,
   storeText,
   type Vector,
@@ -26,18 +30,29 @@ import {
 
 const renderer = '../../../src/renderer'
 
-vi.mock('sonner', () => ({ toast: { error: () => {}, warning: () => {}, success: () => {} } }))
+vi.mock('sonner', () => ({
+  toast: {
+    error: (message: unknown) => emit({ kind: 'toast', level: 'error', message }),
+    warning: (message: unknown) => emit({ kind: 'toast', level: 'warning', message }),
+    success: (message: unknown) => emit({ kind: 'toast', level: 'success', message })
+  }
+}))
 vi.mock('@tauri-apps/api/core', () => ({ invoke: async () => null }))
 vi.mock('@tauri-apps/api/event', () => ({ listen: async () => () => {} }))
 vi.mock(`${renderer}/lib/tauri-runtime`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  isTauriContext: () => false,
+  isTauriContext: () => platform.desktop,
   cleanupTauriListener: () => {}
 }))
 vi.mock(`${renderer}/lib/log-api`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   logFrontendError: (payload: { level: string; source: string; message: string }) => {
-    emit({ kind: 'log', level: payload.level, source: payload.source, message: payload.message })
+    emit({
+      kind: 'log',
+      level: payload.level ?? 'error',
+      source: payload.source,
+      message: payload.message
+    })
     return Promise.resolve()
   }
 }))
@@ -54,8 +69,19 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     saveSessionIndex: async () => {},
     saveSessionPayload: async () => {},
     queueSessionPayloadSave: async () => {},
-    queueSessionPayloadDelete: async () => {},
-    loadSessionPayload: async (id: string) => actual.getCachedSessionPayload(id) ?? null,
+    // The history delete is the model's `deleteSessionPayload` command.
+    queueSessionPayloadDelete: (sessionId: string) =>
+      agentCommand({ kind: 'deleteSessionPayload', sessionId }),
+    // A payload read is the model's `readSessionPayload` effect; it answers
+    // `context.payloads`.
+    loadSessionPayload: async (id: string) => {
+      emit({ kind: 'readSessionPayload', sessionId: id })
+      const payload = sessionPayloads.get(id)
+      if (typeof payload === 'object' && payload !== null && 'reject' in payload) {
+        throw new Error(String(payload.reject))
+      }
+      return payload ?? null
+    },
     loadSessionPayloadTail: async () => null
   }
 })
@@ -64,10 +90,19 @@ vi.mock(`${renderer}/lib/acp-agents-persistence`, async (importOriginal) => ({
   loadAgentConfigs: async () => [],
   saveAgentConfigs: async () => {}
 }))
+// The MCP registry's disk is the model's `loadMcpServers` and `saveMcpServers`
+// effects; both answer `context.mcpReplies`.
 vi.mock(`${renderer}/lib/acp-mcp-persistence`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  loadMcpServers: async () => [],
-  saveMcpServers: async () => {}
+  loadMcpServers: () => mcpCommand({ kind: 'loadMcpServers' }),
+  saveMcpServers: (servers: unknown) => mcpCommand({ kind: 'saveMcpServers', servers })
+}))
+vi.mock(`${renderer}/lib/shared-key-sync`, () => ({
+  syncSharedKey: (_key: string, apply: (change: unknown) => void) => {
+    emit({ kind: 'watchSharedMcpServers' })
+    mcpSharedSync.apply = apply
+    return () => {}
+  }
 }))
 vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -99,17 +134,54 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     return null
   },
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
+  browserTabId: (tabId: string) => `browser-${tabId}`,
   getAgentChatSessionIdsInAllTrees: () => new Set(openChatTabs),
   useWorkspaceStore: {
     subscribe: () => () => {},
     getState: () => ({
       addAgentChatTab: () => {},
+      // An agent's browser tab opens and closes as one workspace effect; the
+      // browser session store beside it follows the tab.
+      openAgentBrowserTab: (tabId: string, url?: string) =>
+        emit({ kind: 'openAgentBrowserTab', tabId, ...(url ? { url } : {}) }),
       removeTab: (tabId: string) =>
-        emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
+        tabId.startsWith('browser-')
+          ? emit({ kind: 'closeAgentBrowserTab', tabId: tabId.replace(/^browser-/, '') })
+          : emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
       remapAgentChatSession: () => {},
       root: { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
     })
   }
+}))
+vi.mock(`${renderer}/stores/browser-session-store`, () => ({
+  useBrowserSessionStore: { getState: () => ({ createTab: () => {}, removeTab: () => {} }) }
+}))
+// Which session owns an agent browser tab, for the Stop indicator.
+vi.mock(`${renderer}/stores/browser-control-store`, () => ({
+  useBrowserControlStore: {
+    getState: () => ({
+      trackAgentTab: (tabId: string, sessionId: string) =>
+        emit({ kind: 'trackAgentTab', tabId, sessionId }),
+      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId })
+    })
+  }
+}))
+// The roster watch hands policy and automation hints to their own modules.
+vi.mock(`${renderer}/lib/browser-policy-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  requestBrowserPolicyResync: () => emit({ kind: 'requestBrowserPolicyResync' }),
+  publishBrowserPolicyChange: (payload: unknown) =>
+    emit({ kind: 'publishBrowserPolicyChange', payload })
+}))
+vi.mock(`${renderer}/lib/automation-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  requestAutomationResync: () => emit({ kind: 'requestAutomationResync' }),
+  publishAutomationChange: (payload: unknown) => emit({ kind: 'publishAutomationChange', payload })
+}))
+vi.mock(`${renderer}/lib/attachment-temp-cleanup`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  deleteSessionTempFiles: async (sessionId: string) =>
+    emit({ kind: 'deleteSessionTempFiles', sessionId })
 }))
 vi.mock(`${renderer}/lib/web-tab-session`, () => ({
   setTabFocusedSessionId: () => {},
@@ -170,6 +242,41 @@ function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
   }
   return Promise.resolve(reply)
 }
+// An MCP command answers the next `context.mcpReplies` entry: `{ reject }`
+// fails it (an `McpOAuthError` with `code`), `{ hold: true }` leaves it in
+// flight, anything else is the reply. An OAuth start's `authUrl` reaches the
+// paste-back callback first (with `hold`, the dialog stays), and a held start
+// rejects as cancelled once its signal aborts, as on the web.
+function mcpCommand(
+  effect: Record<string, unknown>,
+  options: { signal?: AbortSignal; onAuthUrl?: (url: string, redirect: string) => void } = {}
+): Promise<never> {
+  emit(effect)
+  options.signal?.addEventListener('abort', () => emit({ kind: 'abortMcpOAuth', url: effect.url }))
+  const reply = mcpReplies.shift() ?? null
+  if (typeof reply === 'object' && reply !== null) {
+    const fields = reply as Record<string, unknown>
+    if (typeof fields.authUrl === 'string') {
+      options.onAuthUrl?.(fields.authUrl, String(fields.redirectUri))
+    }
+    if ('reject' in fields) {
+      const message = String(fields.reject)
+      return Promise.reject(
+        typeof fields.code === 'string'
+          ? new McpOAuthError(message, fields.code)
+          : new Error(message)
+      )
+    }
+    if ('hold' in fields) {
+      return new Promise((_resolve, reject) =>
+        options.signal?.addEventListener('abort', () =>
+          reject(new McpOAuthError('OAuth sign-in cancelled', 'OAUTH_CANCELLED'))
+        )
+      )
+    }
+  }
+  return Promise.resolve(reply as never)
+}
 vi.mock(`${renderer}/lib/acp-auth-method-memory`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   saveAuthMethodMemory: async (methods: unknown) => emit({ kind: 'persistAuthMethods', methods })
@@ -178,6 +285,7 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
   const actual = await importOriginal<{ acpApi: object }>()
   return {
     ...actual,
+    answerMcpInstall: (request: unknown) => mcpCommand({ kind: 'answerMcpInstall', request }),
     acpApi: {
       ...actual.acpApi,
       sendPrompt: (agentId: string, sessionId: string, text: string, turnId: string) =>
@@ -191,6 +299,22 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      closeSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'closeAgentSession', agentId, sessionId }),
+      deleteAgentSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'deleteAgentSession', agentId, sessionId }),
+      probeMcpServer: (config: unknown) => mcpCommand({ kind: 'probeMcpServer', config }),
+      startMcpOAuth: (
+        projectId: string,
+        url: string,
+        options: { signal?: AbortSignal; onAuthUrl?: (url: string, redirect: string) => void }
+      ) => mcpCommand({ kind: 'startMcpOAuth', projectId, url }, options),
+      completeMcpOAuth: (projectId: string, callbackUrl: string) =>
+        mcpCommand({ kind: 'completeMcpOAuth', projectId, callbackUrl }),
+      hasMcpOAuthToken: (projectId: string, url: string) =>
+        mcpCommand({ kind: 'hasMcpOAuthToken', projectId, url }),
+      disconnectMcpOAuth: (projectId: string, url: string) =>
+        mcpCommand({ kind: 'disconnectMcpOAuth', projectId, url }),
       authenticate: (agentId: string, methodId: string, input?: unknown) =>
         agentCommand({ kind: 'authenticate', agentId, methodId, ...(input ? { input } : {}) }),
       logout: (agentId: string) => agentCommand({ kind: 'logout', agentId }),
@@ -237,6 +361,7 @@ vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) 
   }
 }))
 
+const { McpOAuthError } = await import('../../../src/renderer/lib/acp-api')
 const { acpRecorder, acpScenarios } = await import('./stores/acp')
 
 const ACP_OUT = join(OUT_DIR, 'acp')
