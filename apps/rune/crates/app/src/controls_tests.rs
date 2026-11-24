@@ -140,3 +140,35 @@ fn picks_are_saved_once_the_record_is_read() {
     let writes = sent(&rt.state, WsRequestType::StoreWrite).into_iter().filter(|w| w["key"].as_str().unwrap_or("").contains("composer-options/cfg-1")).count();
     assert_eq!(writes, 2, "a later pick writes at once");
 }
+
+#[test]
+fn a_failed_read_writes_nothing_and_the_next_pick_reads_again() {
+    let mut rt = chat_with_options();
+    let writes = |rt: &Runtime<State>| sent(&rt.state, WsRequestType::StoreWrite).into_iter().filter(|w| w["key"].as_str().unwrap_or("").contains("composer-options/cfg-1")).collect::<Vec<_>>();
+    let reads = |rt: &Runtime<State>| sent(&rt.state, WsRequestType::StoreRead).into_iter().filter(|r| r["key"].as_str().unwrap_or("").contains("composer-options/cfg-1")).count();
+    rt.update_if(|s, _| {
+        s.save_picks("cfg-1".into(), json!({ "modeId": "acceptEdits" }));
+        true
+    });
+    let call = rt.state.sync.last_call();
+    rt.update_if(|s, _| {
+        let error = troupe_protocol::ws::WsError { code: "internal".into(), message: "store down".into(), details: None };
+        s.apply(Output::Reply { call, result: Err(error) });
+        true
+    });
+    assert!(writes(&rt).is_empty(), "a failed read never writes over the saved record");
+    rt.update_if(|s, _| {
+        s.save_picks("cfg-1".into(), json!({ "modelId": "matrix-fast" }));
+        true
+    });
+    assert_eq!(reads(&rt), 2, "the next pick reads again");
+    assert!(writes(&rt).is_empty());
+    reply(&mut rt, json!({ "revision": 2, "value": { "modelValues": { "matrix-large": { "effort": "high" } } } }));
+    let written = writes(&rt);
+    assert_eq!(written.len(), 1);
+    assert_eq!(
+        model::persistence::unwrap_stored(written[0]["value"].clone()),
+        json!({ "modelValues": { "matrix-large": { "effort": "high" } }, "modeId": "acceptEdits", "modelId": "matrix-fast" }),
+        "both picks merge into the saved record, which keeps its model values"
+    );
+}

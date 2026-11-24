@@ -21,6 +21,9 @@ fn composer_options_key(config_id: &str) -> String {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum SavedPicks {
     Reading(Vec<Value>),
+    /// The read failed: the patches wait, and the next pick reads again before any write, so a
+    /// failed read never overwrites the saved record with a partial one.
+    Unread(Vec<Value>),
     Read(Value),
 }
 
@@ -67,8 +70,13 @@ impl State {
                 log::info!("[chat] saving the composer picks of {config_id}");
                 self.write(&composer_options_key(&config_id), merged, Pending::Write(composer_options_key(&config_id)));
             }
-            None => {
-                self.chat.saved_picks.insert(config_id.clone(), SavedPicks::Reading(vec![patch]));
+            Some(SavedPicks::Unread(_)) | None => {
+                let mut queued = match self.chat.saved_picks.remove(&config_id) {
+                    Some(SavedPicks::Unread(queued)) => queued,
+                    _ => Vec::new(),
+                };
+                queued.push(patch);
+                self.chat.saved_picks.insert(config_id.clone(), SavedPicks::Reading(queued));
                 let key = self.device_key(&composer_options_key(&config_id));
                 self.call(WsRequestType::StoreRead, json!({ "key": key }), Pending::SavedPicks(config_id));
             }
@@ -77,14 +85,15 @@ impl State {
 
     /// The saved picks' first read: merge the waiting patches into it and write once.
     pub(crate) fn saved_picks_read(&mut self, config_id: String, result: Result<Option<Value>, WsError>) {
+        let Some(SavedPicks::Reading(queued)) = self.chat.saved_picks.remove(&config_id) else { return };
         let saved = match result {
             Ok(reply) => stored_value(reply).filter(Value::is_object).unwrap_or_else(|| json!({})),
             Err(e) => {
-                log::warn!("[chat] reading the saved composer picks of {config_id} failed: {}", e.code);
-                json!({})
+                log::warn!("[chat] reading the saved composer picks of {config_id} failed, not saving yet: {}", e.code);
+                self.chat.saved_picks.insert(config_id, SavedPicks::Unread(queued));
+                return;
             }
         };
-        let Some(SavedPicks::Reading(queued)) = self.chat.saved_picks.remove(&config_id) else { return };
         let merged = queued.iter().fold(saved, |acc, patch| merge_picks(&acc, patch));
         self.chat.saved_picks.insert(config_id.clone(), SavedPicks::Read(merged.clone()));
         log::info!("[chat] saving the composer picks of {config_id}");
