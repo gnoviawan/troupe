@@ -354,3 +354,27 @@ async fn discovered_and_imported_sessions_have_no_model() {
         .iter()
         .all(|entry| entry.model_id.is_none() && entry.model_name.is_none()));
 }
+
+/// Legacy model lists usually carry `{modelId, name}` and no `description`
+/// (Hermes Agent); a `models_update` in that shape still sets the index model.
+#[test]
+fn a_models_update_without_descriptions_sets_the_model() {
+    let record = PersistedEventRecord {
+        schema_version: SESSION_SCHEMA_VERSION,
+        session_id: "session-1".to_string(),
+        seq: 1,
+        type_: "models_update".to_string(),
+        recorded_at: now_millis(),
+        payload: json!({"agentId": "a", "sessionId": "session-1", "models": {
+            "currentModelId": "m2",
+            "availableModels": [
+                {"modelId": "m1", "name": "Model One"},
+                {"modelId": "m2", "name": "Model Two"}
+            ]
+        }}),
+    };
+    assert_eq!(
+        snapshot_from_record(&record),
+        Some(snapshot("m2", "Model Two"))
+    );
+}
