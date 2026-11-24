@@ -58,3 +58,23 @@ fn extract_archive_rejects_unknown_extension() {
     assert!(result.is_err());
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn caps_fit_the_antigravity_linux_archive() {
+    let download_bytes = 273_964_075;
+    let unpacked_bytes = 853_578_776;
+    assert!(download_bytes <= MAX_ARCHIVE_BYTES);
+    assert!(unpacked_bytes <= MAX_EXTRACTED_BYTES);
+}
+
+#[test]
+fn archive_too_large_message_names_size_and_cap() {
+    assert_eq!(
+        archive_too_large_message(Some(1_100_000_000)),
+        "archive is 1050 MiB, above the 1024 MiB download cap"
+    );
+    assert_eq!(
+        archive_too_large_message(None),
+        "archive is larger than the 1024 MiB download cap"
+    );
+}

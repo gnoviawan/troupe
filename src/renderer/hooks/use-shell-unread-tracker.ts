@@ -5,7 +5,7 @@ import { resolveMobileActiveLeaf } from '@/hooks/use-mobile-active-leaf'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
 import { startChatActivitySync } from '@/lib/chat-activity-sync'
 import { useChatActivityStore } from '@/stores/chat-activity-store'
-import { useQuickChatSessionId } from '@/stores/quick-chat-store'
+import { type QuickChatView, useQuickChatStore } from '@/stores/quick-chat-store'
 import {
   findPaneById,
   getAllLeafPanes,
@@ -54,21 +54,25 @@ function renderedLeaves(
 }
 
 /**
- * The chats on screen: an open quick chat covers the pane tree, so it is the
- * only one. Otherwise the panes' active chats.
+ * The chats on screen. An open quick view covers the pane tree: its chat is
+ * the only one, and its launcher shows none. Otherwise the panes' active chats.
  */
-export function viewingSessionIds(
-  quickSessionId: string | null,
-  paneSessionIds: string[]
-): string[] {
-  return quickSessionId ? [quickSessionId] : paneSessionIds
+function viewingSessionIds(quickView: QuickChatView, paneSessionIds: string[]): string[] {
+  switch (quickView.mode) {
+    case 'closed':
+      return paneSessionIds
+    case 'launcher':
+      return []
+    case 'chat':
+      return [quickView.sessionId]
+  }
 }
 
 /**
  * The one per-renderer mount of the host's chat activity: it mirrors the
  * `chat_activity` watch every chat list reads, tells the store which chats this
  * renderer shows (their "New activity" dot stays hidden here; an open quick
- * chat is the only one shown), and reports
+ * chat is the only one shown, its launcher shows none), and reports
  * those chats read so the dot clears on every surface. Called from
  * `WorkspaceLayout`, which serves both `TauriApp.tsx` and `App.tsx`.
  */
@@ -77,10 +81,10 @@ export function useShellUnreadTracker(): void {
   const paneSessionIds = useWorkspaceStore(
     useShallow((state) => activeChatSessionIds(state, mobile))
   )
-  const quickSessionId = useQuickChatSessionId()
+  const quickView = useQuickChatStore((state) => state.view)
   const activeSessionIds = useMemo(
-    () => viewingSessionIds(quickSessionId, paneSessionIds),
-    [quickSessionId, paneSessionIds]
+    () => viewingSessionIds(quickView, paneSessionIds),
+    [quickView, paneSessionIds]
   )
   useEffect(() => startChatActivitySync(), [])
   const activeKey = activeSessionIds.join('\u0000')

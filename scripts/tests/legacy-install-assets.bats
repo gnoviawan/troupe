@@ -96,10 +96,10 @@ run_legacy_installer() {
 }
 
 @test "macOS 0.5.0 packs the signed app as Termul Manager.app in a Termul.Manager DMG" {
-  run add_legacy_install_assets macos-aarch64 v0.5.0-rc.1 "$ASSETS" "$APP"
+  run add_legacy_install_assets macos-aarch64 v0.5.0 "$ASSETS" "$APP"
 
   [ "$status" -eq 0 ]
-  [ "$output" = "$ASSETS/Termul.Manager_0.5.0-rc.1_aarch64.dmg" ]
+  [ "$output" = "$ASSETS/Termul.Manager_0.5.0_aarch64.dmg" ]
   [ "$(tar -tf "$output" | grep -c 'Termul Manager.app/Contents/MacOS/troupe$')" -eq 1 ]
   ! tar -tf "$output" | grep -q 'Troupe.app'
   grep -q 'hdiutil create -volname Termul Manager' "$TERMUL_TEST_LOG"

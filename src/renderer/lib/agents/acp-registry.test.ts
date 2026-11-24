@@ -49,8 +49,9 @@ describe('deriveAgentConfig', () => {
   })
 
   it('lists Hermes Agent as a bundled agent that runs `hermes acp` from PATH', () => {
-    // Hermes Agent (Nous Research) is not in the ACP registry; its installer
-    // puts `hermes` on PATH, and `hermes acp` serves ACP over stdio.
+    // Hermes Agent (Nous Research) is not in the ACP registry, so it ships in
+    // the bundled Troupe overlay (troupe.json); its installer puts `hermes` on
+    // PATH, and `hermes acp` serves ACP over stdio.
     const hermes = REGISTRY_AGENTS.find((entry) => entry.id === 'hermes')
     expect(hermes?.name).toBe('Hermes Agent')
     for (const target of ['darwin-aarch64', 'linux-x86_64', 'windows-x86_64']) {
@@ -66,8 +67,8 @@ describe('deriveAgentConfig', () => {
   })
 
   it('bundles a Hermes Agent icon that inherits the text color', async () => {
-    const { findBundledIconByKey } = await import('@/lib/agents/agent-icon-catalog')
-    const icon = findBundledIconByKey('acp:hermes')
+    const { getAgentIconCatalog } = await import('@/lib/agents/agent-icon-catalog')
+    const icon = getAgentIconCatalog().byKey('acp:hermes')
     expect(icon?.label).toBe('Hermes Agent')
     expect(icon?.svg).toContain('fill="currentColor"')
   })

@@ -8,6 +8,8 @@ import {
   dispatchOutcomes,
   drawId,
   emit,
+  factoryKey,
+  heldReplies,
   type Manifest,
   manifestEntry,
   mcpReplies,
@@ -17,6 +19,7 @@ import {
   platform,
   recordVector,
   sessionPayloads,
+  setReplies,
   sourcesOutsideWorkflow,
   storeText,
   type Vector,
@@ -73,14 +76,10 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     queueSessionPayloadDelete: (sessionId: string) =>
       agentCommand({ kind: 'deleteSessionPayload', sessionId }),
     // A payload read is the model's `readSessionPayload` effect; it answers
-    // `context.payloads`.
-    loadSessionPayload: async (id: string) => {
+    // `context.payloads` the way an agent command answers its reply.
+    loadSessionPayload: (id: string) => {
       emit({ kind: 'readSessionPayload', sessionId: id })
-      const payload = sessionPayloads.get(id)
-      if (typeof payload === 'object' && payload !== null && 'reject' in payload) {
-        throw new Error(String(payload.reject))
-      }
-      return payload ?? null
+      return answer(sessionPayloads.get(id) ?? null)
     },
     loadSessionPayloadTail: async () => null
   }
@@ -231,14 +230,29 @@ function dispatchPrompt(
   }
   return Promise.resolve(outcome)
 }
-// An agent command answers the next `context.agentReplies` entry: `{ reject }`
-// fails it, `{ hold: true }` leaves it in flight, anything else is the reply.
+// An agent command answers the next `context.agentReplies` entry.
 function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
   emit(effect)
-  const reply = agentReplies.shift() ?? null
+  return answer(agentReplies.shift() ?? null)
+}
+// `{ reject }` fails (an `AcpTransportError` with `code`), `{ hold: true }`
+// stays in flight for the rest of the vector, and `{ hold: true, release }`
+// until a `releaseHeld` step answers it with `release`. Anything else is the
+// reply.
+function answer(reply: unknown): Promise<unknown> {
   if (typeof reply === 'object' && reply !== null) {
-    if ('reject' in reply) return Promise.reject(new Error(String(reply.reject)))
-    if ('hold' in reply) return new Promise(() => {})
+    if ('reject' in reply) {
+      const message = String(reply.reject)
+      return Promise.reject(
+        'code' in reply ? new AcpTransportError(String(reply.code), message) : new Error(message)
+      )
+    }
+    if ('hold' in reply) {
+      if (!('release' in reply)) return new Promise(() => {})
+      return new Promise((resolve, reject) =>
+        heldReplies.push(() => answer(reply.release).then(resolve, reject))
+      )
+    }
   }
   return Promise.resolve(reply)
 }
@@ -277,6 +291,16 @@ function mcpCommand(
   }
   return Promise.resolve(reply as never)
 }
+// The stored Factory key check is the model's `readFactoryKeyStatus` effect.
+vi.mock(`${renderer}/lib/factory-key-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  factoryKeyApi: {
+    status: () => {
+      emit({ kind: 'readFactoryKeyStatus' })
+      return answer(factoryKey.stored)
+    }
+  }
+}))
 vi.mock(`${renderer}/lib/acp-auth-method-memory`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   saveAuthMethodMemory: async (methods: unknown) => emit({ kind: 'persistAuthMethods', methods })
@@ -299,6 +323,16 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      listSessions: (agentId: string, cwd?: string, cursor?: string, projectId?: string) =>
+        agentCommand({
+          kind: 'listSessions',
+          agentId,
+          ...(cwd === undefined ? {} : { cwd }),
+          ...(cursor === undefined ? {} : { cursor }),
+          ...(projectId === undefined ? {} : { projectId })
+        }),
+      importAgentSession: (input: Record<string, unknown>) =>
+        agentCommand({ kind: 'importAgentSession', ...input }),
       closeSession: (agentId: string, sessionId: string) =>
         agentCommand({ kind: 'closeAgentSession', agentId, sessionId }),
       deleteAgentSession: (agentId: string, sessionId: string) =>
@@ -322,10 +356,14 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
         agentCommand({ kind: 'respondElicitation', agentId, requestId, action }),
       cancelPrompt: async (agentId: string, sessionId: string) =>
         emit({ kind: 'cancelPrompt', agentId, sessionId }),
-      setMode: async (agentId: string, sessionId: string, modeId: string) =>
-        emit({ kind: 'setMode', agentId, sessionId, modeId }),
-      setModel: async (agentId: string, sessionId: string, modelId: string) =>
-        emit({ kind: 'setModel', agentId, sessionId, modelId }),
+      setMode: (agentId: string, sessionId: string, modeId: string) => {
+        emit({ kind: 'setMode', agentId, sessionId, modeId })
+        return answer(setReplies.shift() ?? null)
+      },
+      setModel: (agentId: string, sessionId: string, modelId: string) => {
+        emit({ kind: 'setModel', agentId, sessionId, modelId })
+        return answer(setReplies.shift() ?? null)
+      },
       setConfigOption: async (
         agentId: string,
         sessionId: string,
@@ -362,6 +400,7 @@ vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) 
 }))
 
 const { McpOAuthError } = await import('../../../src/renderer/lib/acp-api')
+const { AcpTransportError } = await import('../../../src/renderer/lib/acp-transport/types')
 const { acpRecorder, acpScenarios } = await import('./stores/acp')
 
 const ACP_OUT = join(OUT_DIR, 'acp')

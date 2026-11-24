@@ -14,7 +14,7 @@
  * `vi.unmock('@/lib/acp-transport/desktop-transport')`.
  */
 
-import type { AcpCatalog } from '@shared/types/acp-catalog.types'
+import type { AcpAgentOverlay, AcpCatalog } from '@shared/types/acp-catalog.types'
 import type {
   AntigravityAccount,
   AntigravityAccountsSnapshot,
@@ -178,6 +178,11 @@ export function createInvokeAcpTransport(): AcpTransport {
     setCatalogOptIn: async (enabled) => {
       const result = await invoke<IpcResult<void>>('acp_set_catalog_opt_in', { enabled })
       if (!result.success) throw new AcpTransportError(result.code, result.error)
+    },
+    getAgentOverlay: async () => {
+      const result = await invoke<IpcResult<AcpAgentOverlay>>('get_acp_agent_overlay')
+      if (result.success) return result.data
+      throw new AcpTransportError(result.code, result.error)
     },
     searchMcpCatalog: async (request) => {
       const result = await invoke<IpcResult<McpCatalogPage>>('search_mcp_catalog', { request })

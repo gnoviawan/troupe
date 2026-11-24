@@ -479,12 +479,12 @@ fn write_access_info_surfaces_update_channel_when_some() {
         8080,
         Path::new("/tmp"),
         false,
-        Some(UpdateChannel::Insider),
+        Some(UpdateChannel::Nightly),
         Path::new("/usr/local/bin/troupe-server"),
         &[],
     );
     let s = String::from_utf8(out).unwrap();
-    assert!(s.contains("insider channel"), "got: {s}");
+    assert!(s.contains("nightly channel"), "got: {s}");
 }
 
 #[test]

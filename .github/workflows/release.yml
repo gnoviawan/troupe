@@ -4,16 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      stable_version:
-        description: Stable version to promote an Insider manifest to (without leading v)
-        required: true
-        type: string
-      rc_version:
-        description: Insider RC version the manifest currently points at (without leading v)
-        required: true
-        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -25,11 +15,9 @@ permissions:
 jobs:
   changelog:
     name: Generate Changelog
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       changelog: ${{ steps.cliff.outputs.content }}
-      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
       normalized_version: ${{ steps.version.outputs.normalized_version }}
     steps:
       - name: Checkout
@@ -54,23 +42,17 @@ jobs:
         run: |
           source scripts/release/homebrew.sh
           VERSION="$(normalize_release_version "$GITHUB_REF_NAME")"
-          echo "normalized_version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Check prerelease
-        id: check
-        shell: bash
-        run: |
-          source scripts/release/homebrew.sh
-          if is_release_prerelease "$GITHUB_REF_NAME"; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          # Every v* tag ships to all Stable users; prereleases and build
+          # metadata belong to the nightly channel.
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tags must be vX.Y.Z; got $GITHUB_REF_NAME." >&2
+            exit 1
           fi
+          echo "normalized_version=$VERSION" >> "$GITHUB_OUTPUT"
 
   create_release:
     name: Create Draft Release
     needs: changelog
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -87,14 +69,12 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           RELEASE_BODY: ${{ needs.changelog.outputs.changelog }}
-          IS_PRERELEASE: ${{ needs.changelog.outputs.is_prerelease }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const tagName = context.ref.replace('refs/tags/', '')
             const releaseName = `Troupe ${tagName}`
             const releaseBody = process.env.RELEASE_BODY || ''
-            const prerelease = process.env.IS_PRERELEASE === 'true'
 
             let release
             try {
@@ -111,7 +91,6 @@ jobs:
                 name: releaseName,
                 body: releaseBody,
                 draft: existing.data.draft,
-                prerelease,
               })
             } catch (error) {
               if (error.status !== 404) throw error
@@ -122,7 +101,6 @@ jobs:
                 name: releaseName,
                 body: releaseBody,
                 draft: true,
-                prerelease,
               })
             }
             core.setOutput('releaseId', String(release.data.id))
@@ -136,7 +114,6 @@ jobs:
   mcp-snapshot:
     name: Fetch MCP registry snapshot
     needs: changelog
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -181,7 +158,6 @@ jobs:
   build:
     name: Build (${{ matrix.platform }})
     needs: [changelog, mcp-snapshot]
-    if: github.event_name == 'push'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -612,7 +588,6 @@ jobs:
   standalone-server:
     name: Build troupe-server (linux-${{ matrix.arch }})
     needs: [changelog, mcp-snapshot]
-    if: github.event_name == 'push'
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -778,7 +753,6 @@ jobs:
   publish_release:
     name: Validate, upload, and publish release
     needs: [changelog, create_release, build, standalone-server]
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -791,9 +765,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # `persist-credentials: true` so the insider moving-tag push below can
-          # authenticate with the GITHUB_TOKEN (contents: write).
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Download all platform workflow artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -805,7 +777,6 @@ jobs:
         env:
           VERSION: ${{ needs.changelog.outputs.normalized_version }}
           RELEASE_BODY: ${{ needs.changelog.outputs.changelog }}
-          IS_PRERELEASE: ${{ needs.changelog.outputs.is_prerelease }}
         run: |
           expected=(windows-x64 linux-x64 macos-aarch64 macos-x64)
           manifests=()
@@ -864,28 +835,15 @@ jobs:
           fi
           cp "$spec" release-assets/openapi.yaml
 
-          # Channel selection: stable (`v*` tag) vs Insider RC (`v*-rc.*` tag).
-          # The merge validator derives the asset URL tag from the channel:
-          # stable/insider → `v<version>` (the triggering tag), nightly → `nightly`.
-          if [[ "$IS_PRERELEASE" == "true" ]]; then
-            CHANNEL="insider"
-            MANIFEST_NAME="latest-insider.json"
-          else
-            CHANNEL="stable"
-            MANIFEST_NAME="latest-stable.json"
-          fi
-
           PUB_DATE="$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')"
           node scripts/release/merge-updater-manifests.mjs \
-            --channel "$CHANNEL" \
-            "$MANIFEST_NAME" "$VERSION" release-notes.md "$PUB_DATE" "${manifests[@]}"
+            --channel stable \
+            latest-stable.json "$VERSION" release-notes.md "$PUB_DATE" "${manifests[@]}"
 
-          # Stable publishes a `latest.json` alias so the Tauri updater plugin's
-          # build-time endpoint (which cannot be overridden per check from the
-          # renderer) keeps resolving for stable users.
-          if [[ "$CHANNEL" == "stable" ]]; then
-            cp "$MANIFEST_NAME" latest.json
-          fi
+          # The `latest.json` alias keeps the Tauri updater plugin's build-time
+          # endpoint (which cannot be overridden per check from the renderer)
+          # resolving for stable users.
+          cp latest-stable.json latest.json
 
           release_file_count=0
           while IFS= read -r -d '' _release_file; do
@@ -900,44 +858,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-          IS_PRERELEASE: ${{ needs.changelog.outputs.is_prerelease }}
         run: |
           assets=()
           while IFS= read -r -d '' asset; do
             assets+=("$asset")
           done < <(find release-assets -maxdepth 1 -type f -print0 | sort -z)
-          if [[ "$IS_PRERELEASE" == "true" ]]; then
-            assets+=(latest-insider.json)
-          else
-            assets+=(latest-stable.json latest.json)
-          fi
+          assets+=(latest-stable.json latest.json)
           gh release upload "$TAG" "${assets[@]}" --clobber
-
-          # Mirror the Insider manifest under the moving `insider` tag so the
-          # desktop facade's `releases/download/insider/latest-insider.json`
-          # URL resolves. The bundles themselves stay under the versioned RC tag.
-          if [[ "$IS_PRERELEASE" == "true" ]]; then
-            SHA="$(git rev-parse HEAD)"
-            if gh release view insider >/dev/null 2>&1; then
-              # `gh release edit --target` only updates release.target_commitish,
-              # not the git tag that `releases/download/insider/...` resolves via.
-              git tag -f insider "$SHA"
-              git push origin insider --force
-              gh release edit insider --target "$SHA" --title "Troupe Insider" --prerelease
-            else
-              gh release create insider --target "$SHA" \
-                --title "Troupe Insider" \
-                --notes "Latest Insider (release candidate) channel. See the versioned RC release for asset details." \
-                --prerelease
-            fi
-            gh release upload insider latest-insider.json --clobber
-          fi
 
       - name: Publish draft release
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           RELEASE_BODY: ${{ needs.changelog.outputs.changelog }}
-          IS_PRERELEASE: ${{ needs.changelog.outputs.is_prerelease }}
           RELEASE_ID: ${{ needs.create_release.outputs.release_id }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -951,13 +883,11 @@ jobs:
               name: `Troupe ${tagName}`,
               body: process.env.RELEASE_BODY || '',
               draft: false,
-              prerelease: process.env.IS_PRERELEASE === 'true',
             })
 
   publish_homebrew:
     name: Publish checksums and Homebrew metadata
     needs: [changelog, publish_release]
-    if: github.event_name == 'push'
     permissions:
       contents: write
     uses: ./.github/workflows/publish-homebrew.yml
@@ -971,17 +901,15 @@ jobs:
   container_image:
     name: Publish container image
     needs: [changelog, publish_release]
-    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/publish-container-image.yml
     with:
       release_tag: ${{ github.ref_name }}
-      # Only a stable release moves `latest`.
       image_tags: |
         ${{ needs.changelog.outputs.normalized_version }}
-        ${{ needs.changelog.outputs.is_prerelease != 'true' && 'latest' || '' }}
+        latest
 
   # Releases are published with GITHUB_TOKEN, which starts no other workflows
   # except through workflow_dispatch, so dispatch the docs deploy to pick up
@@ -989,7 +917,6 @@ jobs:
   refresh_docs:
     name: Refresh the docs API reference
     needs: [changelog, publish_release]
-    if: github.event_name == 'push' && needs.changelog.outputs.is_prerelease != 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -1003,146 +930,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deploy-landing.yml --repo "$GITHUB_REPOSITORY" --ref main
-
-  # Manual Insider→Stable promotion. Copies the moving-tag Insider manifest,
-  # rewrites its version + asset URLs to a stable tag (whose release must
-  # already exist from a normal `v*` tag push), and publishes `latest-stable.json`
-  # + the `latest.json` alias for stable users.
-  promote:
-    name: Promote Insider manifest to Stable
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
-        with:
-          egress-policy: audit
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Promote Insider manifest to Stable
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STABLE_VERSION: ${{ inputs.stable_version }}
-          RC_VERSION: ${{ inputs.rc_version }}
-        run: |
-          STABLE_TAG="v$STABLE_VERSION"
-          RC_TAG="v$RC_VERSION"
-          if ! gh release view "$STABLE_TAG" >/dev/null 2>&1; then
-            echo "Stable release $STABLE_TAG does not exist. Push the stable tag first." >&2
-            exit 1
-          fi
-          if ! gh release view insider >/dev/null 2>&1; then
-            echo "Insider release (moving 'insider' tag) does not exist. Publish an RC first." >&2
-            exit 1
-          fi
-          mkdir -p promote
-          # (patch 16) Verify the stable release's assets are uploaded before
-          # pointing the stable manifest at them — a manifest referencing missing
-          # assets would 404 the updater.
-          gh release view "$STABLE_TAG" --json assets -q '.assets[].name' > promote/stable-assets.txt
-          gh release download insider --pattern latest-insider.json --dir promote
-          node -e '
-            const fs = require("fs");
-            const stable = process.env.STABLE_VERSION;
-            const rc = process.env.RC_VERSION;
-            const stableAssets = new Set(
-              fs.readFileSync("promote/stable-assets.txt", "utf8")
-                .split("\n").map((s) => s.trim()).filter(Boolean)
-            );
-            const from = `/releases/download/v${rc}/`;
-            const to = `/releases/download/v${stable}/`;
-            const m = JSON.parse(fs.readFileSync("promote/latest-insider.json", "utf8"));
-            if (!m.platforms || typeof m.platforms !== "object" || Array.isArray(m.platforms)) {
-              throw new Error("promote: latest-insider.json has no platforms object");
-            }
-            // An RC published before the arm64 server build has no
-            // `linux-aarch64-server` record; promoting it would leave ARM
-            // servers on stable without an update entry. Keep in sync with the
-            // `-server` keys in requiredPlatformKeys
-            // (scripts/release/merge-updater-manifests.mjs).
-            const requiredServerKeys = ["linux-x86_64-server", "linux-aarch64-server"];
-            const missingServerKeys = requiredServerKeys.filter((key) => !m.platforms[key]);
-            if (missingServerKeys.length > 0) {
-              throw new Error(
-                `promote: latest-insider.json is missing ${missingServerKeys.join(", ")}; publish a new RC that includes every server build before promoting`
-              );
-            }
-            m.version = stable;
-            // (patch 15) Refresh pub_date to the promotion timestamp and replace
-            // the RC-flavored notes so the stable manifest does not advertise a
-            // stale RC build time / RC release notes.
-            m.pub_date = new Date().toISOString();
-            m.notes = `Stable ${stable} (promoted from Insider ${rc}).`;
-            for (const key of Object.keys(m.platforms)) {
-              const url = String(m.platforms[key].url || "");
-              // (patch 14) Refuse to ship a URL that does not reference the RC
-              // tag — a mismatched URL would point the stable manifest at the
-              // wrong release asset.
-              if (!url.includes(from)) {
-                throw new Error(
-                  `promote: platform ${key} url ${url} does not reference RC tag v${rc}; refusing to ship a mismatched URL`
-                );
-              }
-              const rewritten = url.split(from).join(to);
-              // (patch 16) The rewritten URL must target an asset that actually
-              // exists in the stable release.
-              let assetName;
-              try {
-                assetName = decodeURIComponent(new URL(rewritten).pathname.split("/").pop());
-              } catch (e) {
-                throw new Error(`promote: platform ${key} url ${rewritten} is not a valid URL: ${e.message}`);
-              }
-              if (!stableAssets.has(assetName)) {
-                throw new Error(
-                  `promote: stable release v${stable} is missing asset ${assetName} (referenced by ${key}); upload assets before promoting`
-                );
-              }
-              m.platforms[key].url = rewritten;
-            }
-            fs.writeFileSync("latest-stable.json", JSON.stringify(m, null, 2) + "\n");
-            fs.copyFileSync("latest-stable.json", "latest.json");
-          '
-          gh release upload "$STABLE_TAG" latest-stable.json latest.json --clobber
-          echo "Promoted Insider $RC_TAG manifest to Stable $STABLE_TAG."
-
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Log in to GitHub Container Registry
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
-        run: printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
-
-      # Retag the stable image as `latest` without rebuilding it, under both
-      # image names. A version published before the rename exists only as
-      # termul-server and has no /usr/local/bin/troupe-server, so it moves only
-      # termul-server:latest.
-      - name: Retag the stable container image as latest
-        env:
-          STABLE_VERSION: ${{ inputs.stable_version }}
-          OWNER: ${{ github.repository_owner }}
-        run: |
-          registry="ghcr.io/${OWNER,,}"
-          version="${STABLE_VERSION//+/-}"
-          if inspect=$(docker buildx imagetools inspect "$registry/troupe-server:$version" 2>&1); then
-            docker buildx imagetools create \
-              --tag "$registry/troupe-server:latest" \
-              --tag "$registry/termul-server:latest" \
-              "$registry/troupe-server:$version"
-          elif grep -qi 'not found' <<< "$inspect"; then
-            docker buildx imagetools create \
-              --tag "$registry/termul-server:latest" \
-              "$registry/termul-server:$version"
-          else
-            echo "$inspect" >&2
-            exit 1
-          fi

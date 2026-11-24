@@ -24,7 +24,7 @@ use super::transcript::{
 use super::turn::{AgentWorkingEvent, BackgroundCommandsEvent, PromptCompleteEvent, TurnEnd};
 use super::types::{LogPoint, Object};
 use super::window::PayloadReadOutcome;
-use super::{Effect, RunId, launch};
+use super::{Effect, RunId, import, launch};
 
 /// One store action. The variant names are the TypeScript action names; an
 /// optional trailing argument is the event's host seq or log point.
@@ -112,9 +112,14 @@ pub enum Event {
     /// snapshot, when the agent sent one.
     #[serde(skip_deserializing)]
     ControlSet(Effect, Option<Vec<Value>>),
-    /// The agent rejected a set command; the text is the error's message.
+    /// The agent rejected a set command with the error's message and the
+    /// host's error code.
     #[serde(skip_deserializing)]
-    ControlFailed(Effect, String),
+    ControlFailed(Effect, String, Option<String>),
+    /// What an [`Effect::ReadFactoryKeyStatus`] read; `None` when the host
+    /// could not say.
+    #[serde(skip_deserializing)]
+    FactoryKeyStatus(Effect, Option<bool>),
     /// The saved picks an [`Effect::ReadComposerOptions`] read; null when
     /// none are saved.
     #[serde(skip_deserializing)]
@@ -126,6 +131,36 @@ pub enum Event {
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
     #[serde(rename = "killAgent")]
     KillAgent(String),
+    #[serde(rename = "discoverSessions")]
+    DiscoverSessions(String, String),
+    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`.
+    #[serde(rename = "listImportableSessions")]
+    ListImportableSessions(String, String, #[serde(default)] Option<String>),
+    /// Each session's outcome is an `importProgress`; the outcomes are
+    /// answered once the reloaded index arrives.
+    #[serde(rename = "importAgentSessions")]
+    ImportAgentSessions(import::ImportRequest),
+    /// The running imports start no other session.
+    #[serde(rename = "stopImport")]
+    StopImport,
+    /// What an import's [`Effect::RefreshSessionIndex`] read.
+    #[serde(skip_deserializing)]
+    SessionIndexReloaded(Effect, Vec<Object>),
+    /// An import's [`Effect::RefreshSessionIndex`] failed with this message.
+    #[serde(skip_deserializing)]
+    SessionIndexReloadFailed(Effect, String),
+    #[serde(rename = "prewarmAgent")]
+    PrewarmAgent(String, String),
+    /// `renewAgentCredentials`: the Project's account for the config changed.
+    #[serde(rename = "renewAgentCredentials")]
+    RenewAgentCredentials(String, String),
+    /// The user's Projects changed (`useProjectStore`).
+    #[serde(rename = "setProjects")]
+    SetProjects(Vec<Value>),
+    /// The saved agent configs changed; stands in for the config slice
+    /// until it is ported (PR 8).
+    #[serde(rename = "agentConfigsChanged")]
+    AgentConfigsChanged(Vec<Object>),
     #[serde(rename = "authenticateAgent")]
     AuthenticateAgent(String, String, #[serde(default)] Option<Value>),
     #[serde(rename = "logoutAgent")]
@@ -140,7 +175,7 @@ pub enum Event {
     /// The command an agent command effect sent failed; the text is the
     /// error's message.
     #[serde(skip_deserializing)]
-    AgentCommandFailed(Effect, String),
+    AgentCommandFailed(Effect, String, #[serde(default)] Option<String>),
     #[serde(rename = "pickModel")]
     PickModel(
         String,

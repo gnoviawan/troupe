@@ -12,6 +12,8 @@ interface UseLauncherExitAnimInput {
   composerCardRef: RefObject<HTMLDivElement | null>
   launchInFlightRef: MutableRefObject<boolean>
   prevActiveTabIdRef: MutableRefObject<string | null | undefined>
+  /** The element around the launcher that the new chat's composer mounts in. */
+  chatHostSelector: string
 }
 
 /** Exit classification and morph measurement for the launcher -> chat handoff. */
@@ -23,7 +25,8 @@ export function useLauncherExitAnim({
   rootRef,
   composerCardRef,
   launchInFlightRef,
-  prevActiveTabIdRef
+  prevActiveTabIdRef,
+  chatHostSelector
 }: UseLauncherExitAnimInput): LauncherExitAnim | null {
   const [exitAnim, setExitAnim] = useState<LauncherExitAnim | null>(null)
   const exitMeasuredRef = useRef(false)
@@ -62,7 +65,7 @@ export function useLauncherExitAnim({
     // in the same pane. Inactive chat tabs stay mounted (invisible but laid
     // out) and their composers can differ in height — prefer the composer in
     // the ACTIVE tab, then any non-invisible one.
-    const paneEl = root.closest('[data-pane-content]')
+    const paneEl = root.closest(chatHostSelector)
     const candidates = paneEl
       ? Array.from(paneEl.querySelectorAll<HTMLElement>('[data-chat-composer="true"]'))
       : []

@@ -52,6 +52,6 @@ export async function landOnboarding(choice: OnboardingChoice, close: () => void
   if (landing.kind === 'launcher') {
     await openNewChat({ projectId: landing.projectId, reason: 'onboarding' })
   } else if (landing.kind === 'quick-chat') {
-    await openNewQuickChat('onboarding')
+    openNewQuickChat('onboarding')
   }
 }

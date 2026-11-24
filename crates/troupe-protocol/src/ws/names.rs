@@ -79,6 +79,10 @@ wire_enum! {
         // 'background' }`, answered with the host's `AcpRegistrySnapshot`
         // (`source: 'cache'` when the registry was unreachable).
         FetchAcpRegistrySnapshot = "fetch_acp_registry_snapshot",
+        // Troupe's own registry overlay: `{}` → `{ overrides, source,
+        // fetchedAt? }`, the display names, logos and brand colours the
+        // renderer draws agents with. A read.
+        GetAcpAgentOverlay = "get_acp_agent_overlay",
         // MCP catalog (spine AD-1): `{ query?, cursor?, limit? }` → one
         // `McpCatalogPage` of the host's converted registry snapshot. A read.
         SearchMcpCatalog = "search_mcp_catalog",

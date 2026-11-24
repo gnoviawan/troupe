@@ -95,8 +95,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     expect(WS_REQUEST_TYPES).toContain('get_session_payload')
   })
 
-  it('exports exactly 101 request types including chat MCP install approval and per-chat Codex and Antigravity account and resume', () => {
-    expect(WS_REQUEST_TYPES).toHaveLength(101)
+  it('exports exactly 102 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, and the agent overlay', () => {
+    expect(WS_REQUEST_TYPES).toHaveLength(102)
     const expected = [
       'send_prompt',
       'cancel_prompt',
@@ -143,6 +143,7 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
       'list_acp_catalog',
       'set_catalog_opt_in',
       'fetch_acp_registry_snapshot',
+      'get_acp_agent_overlay',
       'search_mcp_catalog',
       'get_mcp_catalog_status',
       'set_mcp_catalog_sync',

@@ -1,9 +1,15 @@
 import { create } from 'zustand'
-import { clearChatRoute } from '@/lib/router-navigate'
+import { clearChatRoute, isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
 
 /** What the main area shows for a quick chat. */
 export type QuickChatView =
   | { mode: 'closed' }
+  /**
+   * The agent launcher for a new quick chat. No session exists until Send,
+   * so it owns no `#/c/<id>` route. Each opened launcher gets a new `id`, so a
+   * launch can tell its own launcher from one opened after it closed.
+   */
+  | { mode: 'launcher'; id: number }
   | {
       mode: 'chat'
       sessionId: string
@@ -18,14 +24,11 @@ export type QuickChatView =
 
 interface QuickChatState {
   view: QuickChatView
+  /** Open a new launcher, with a new id. */
+  openLauncher: () => void
   openChat: (sessionId: string) => void
   /** An older no-project chat. History can be read. New prompts are refused. */
   openOlderChat: (sessionId: string) => void
-  /**
-   * The launch placeholder `from` became session `to`. Only when `from` is
-   * the chat on screen: the view moves to `to` and keeps its panel key.
-   */
-  adoptChat: (from: string, to: string) => void
   close: () => void
 }
 
@@ -34,27 +37,59 @@ interface QuickChatState {
  * project pane tree. Selecting a project or opening a project chat closes
  * this view (see {@link closeQuickChatView}).
  */
+let lastLauncherId = 0
+
 export const useQuickChatStore = create<QuickChatState>((set) => ({
   view: { mode: 'closed' },
+  openLauncher: () => set({ view: { mode: 'launcher', id: ++lastLauncherId } }),
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
   openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
-  adoptChat: (from, to) =>
-    set((state) => {
-      const view = state.view
-      if (view.mode !== 'chat' || view.sessionId !== from) return state
-      return { view: { mode: 'chat', sessionId: to, panelKey: view.panelKey ?? from } }
-    }),
   close: () => set({ view: { mode: 'closed' } })
 }))
 
-/** `true` while a quick chat owns the main area. */
+/** `true` while a quick chat or its launcher owns the main area. */
 export function useQuickChatOpen(): boolean {
   return useQuickChatStore((state) => state.view.mode !== 'closed')
 }
 
-/** The session id of the open quick chat, or `null`. */
+/** The id of the quick launcher on screen, or `null` when the quick view shows no launcher. */
+export function quickLauncherOnScreen(): number | null {
+  const view = useQuickChatStore.getState().view
+  return view.mode === 'launcher' ? view.id : null
+}
+
+/** The session id of the open quick chat, or `null` (also for the launcher). */
 export function useQuickChatSessionId(): string | null {
   return useQuickChatStore((state) => (state.view.mode === 'chat' ? state.view.sessionId : null))
+}
+
+/** Quick launch placeholders that became their session off screen: placeholder id to session id. */
+const startedOffScreen = new Map<string, string>()
+
+/**
+ * The quick launch placeholder `from` became session `to`. When `from` is the
+ * chat on screen, the view moves to `to` with the same panel key (the typed
+ * text stays) and the placeholder's route entry is replaced. Otherwise the
+ * user moved on while it started: the placeholder's `#/c/<from>` entry is
+ * still in history and cannot be rewritten from here, so `to` is remembered
+ * for {@link startedQuickLaunch}. Returns whether the view followed.
+ */
+export function followQuickLaunch(from: string, to: string): boolean {
+  const view = useQuickChatStore.getState().view
+  if (view.mode !== 'chat' || view.sessionId !== from) {
+    startedOffScreen.set(from, to)
+    return false
+  }
+  useQuickChatStore.setState({
+    view: { mode: 'chat', sessionId: to, panelKey: view.panelKey ?? from }
+  })
+  navigateToChatSession(to, isChatRouteCurrent(from) ? { replace: true } : undefined)
+  return true
+}
+
+/** The session a quick launch placeholder became after it left the screen, if any. */
+export function startedQuickLaunch(placeholderId: string): string | undefined {
+  return startedOffScreen.get(placeholderId)
 }
 
 /** The quick chat whose view just closed, until its route is settled. */
@@ -65,10 +100,13 @@ export function isQuickChatLeaving(sessionId: string): boolean {
   return leavingSessionId === sessionId
 }
 
+/** The quick view as it was before {@link closeQuickChatView} closed it. */
+export type ClosedQuickChatView = Exclude<QuickChatView, { mode: 'closed' }>
+
 /**
- * Close the quick view for a project view and return the chat's id (`null`
- * when it was closed). The route leaves `#/c/<id>` on the next task, and only
- * when nothing else changed it first.
+ * Close the quick view for a project view and return what it showed (`null`
+ * when it was closed). A chat's route leaves `#/c/<id>` on the next task, and
+ * only when nothing else changed it first. The launcher has no route.
  *
  * The router commits a navigation some microtasks later. A route change made
  * here at once and the caller's own change (Alt+T adds `#/c/<new>`, a project
@@ -76,11 +114,12 @@ export function isQuickChatLeaving(sessionId: string): boolean {
  * extra `#/`. While the route still names the closed chat, `ChatRoute` checks
  * {@link isQuickChatLeaving} and does not open it again.
  */
-export function closeQuickChatView(): string | null {
+export function closeQuickChatView(): ClosedQuickChatView | null {
   const view = useQuickChatStore.getState().view
   if (view.mode === 'closed') return null
-  const sessionId = view.sessionId
   useQuickChatStore.getState().close()
+  if (view.mode === 'launcher') return view
+  const sessionId = view.sessionId
   leavingSessionId = sessionId
   setTimeout(() => {
     if (leavingSessionId === sessionId) leavingSessionId = null
@@ -89,7 +128,12 @@ export function closeQuickChatView(): string | null {
     if (now.mode === 'chat' && now.sessionId === sessionId) return
     clearChatRoute(sessionId)
   }, 0)
-  return sessionId
+  return view
+}
+
+/** What a closed quick view showed, for logs. */
+export function describeQuickChatView(view: ClosedQuickChatView): string {
+  return view.mode === 'launcher' ? 'the quick chat launcher' : `quick chat ${view.sessionId}`
 }
 
 /** The React key of the open quick chat's panel. */

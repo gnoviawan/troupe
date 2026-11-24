@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAcpRegistryCatalog } from '@/hooks/use-acp-registry-catalog'
 import { useResolvedSupportedAcpAgents } from '@/hooks/use-resolved-supported-acp-agents'
 import { agentPolicy } from '@/lib/agents/acp-registry'
-import { findBundledIconByKey } from '@/lib/agents/agent-icon-catalog'
+import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import {
   type AgentUpdate,
   deriveAgentUpdates,
@@ -191,7 +191,8 @@ function AgentRow({ entry, update, latest, onUpdate }: AgentRowProps): React.JSX
   const deleteAgentConfig = useAcpStore((s) => s.deleteAgentConfig)
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removing, setRemoving] = useState(false)
-  const iconEntry = useMemo(() => findBundledIconByKey(`acp:${entry.agent.id}`), [entry.agent.id])
+  const catalog = useAgentIconCatalog()
+  const iconEntry = useMemo(() => catalog.byKey(`acp:${entry.agent.id}`), [catalog, entry.agent.id])
   // Prefer a persisted custom icon (bundled or uploaded) over the catalog.
   const customIcon = entry.config?.icon
 

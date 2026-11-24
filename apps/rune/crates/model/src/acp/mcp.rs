@@ -169,7 +169,7 @@ pub(super) fn id_of(server: &Object) -> &str {
 fn probe_config(server: &Object) -> Object {
     let mut config = server.clone();
     for key in ["id", "enabled", "catalog"] {
-        config.remove(key);
+        config.shift_remove(key);
     }
     config
 }

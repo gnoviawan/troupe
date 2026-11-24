@@ -155,6 +155,7 @@ import {
 import { _resetAcpTransportForTests, AcpTransportError } from '@/lib/acp-transport'
 import { ACP_STREAM_INTERRUPT_MESSAGE } from '@/lib/agents/acp-spawn-errors'
 import { logFrontendError } from '@/lib/log-api'
+import { setRouterNavigate } from '@/lib/router-navigate'
 import {
   _resetAcpAuthForTesting,
   _resetDroppedLaunchPlaceholdersForTesting,
@@ -166,6 +167,7 @@ import {
 } from '@/stores/acp-store'
 import { useAgentChatLifetimeStore } from '@/stores/agent-chat-lifetime-store'
 import { useProjectStore } from '@/stores/project-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { FRESH, seedSession } from './testkit'
 
 describe('failed session lifecycle (story 5)', () => {
@@ -312,6 +314,53 @@ describe('failed session lifecycle (story 5)', () => {
     expect(useAcpStore.getState().sessions['sess-retry-closed'].status).toBe('active')
     expect(workspaceStateRef.current.remapAgentChatSession).not.toHaveBeenCalled()
     expect(addAgentChatTabSpy).not.toHaveBeenCalled()
+  })
+
+  it('RETRY_SUCCESS of a quick chat: the quick view and its route follow the placeholder', async () => {
+    await useAcpStore
+      .getState()
+      .saveAgentConfig({ id: 'cfg-1', name: 'Gemini', command: 'gemini', args: [], env: {} })
+    const placeholderId = useAcpStore.getState().createLaunchPlaceholder({
+      configId: 'cfg-1',
+      cwd: '',
+      projectId: '__unassigned__',
+      kind: 'quick',
+      initialUserBlocks: [{ type: 'text', text: 'hello quick' }]
+    })
+    ;(invoke as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('connection refused'))
+    await expect(
+      useAcpStore.getState().finalizeChatLaunch({
+        placeholderId,
+        configId: 'cfg-1',
+        cwd: '',
+        projectId: '__unassigned__'
+      })
+    ).rejects.toBeTruthy()
+    useQuickChatStore.setState({ view: { mode: 'chat', sessionId: placeholderId } })
+    window.location.hash = `#/c/${placeholderId}`
+    const navigate = vi.fn()
+    setRouterNavigate(navigate)
+    ;(invoke as ReturnType<typeof vi.fn>).mockImplementation(async (command: string) => {
+      if (command === 'acp_spawn_agent')
+        return { agentId: 'agent-retry', capabilities: {}, authMethods: [] }
+      if (command === 'acp_new_session') return { sessionId: 'sess-quick-retry' }
+      if (command === 'acp_send_prompt') return 'end_turn'
+      throw new Error(`unexpected invoke command: ${command}`)
+    })
+
+    try {
+      await useAcpStore.getState().retryFailedLaunch(placeholderId)
+    } finally {
+      setRouterNavigate(null)
+    }
+
+    expect(useQuickChatStore.getState().view).toEqual({
+      mode: 'chat',
+      sessionId: 'sess-quick-retry',
+      panelKey: placeholderId
+    })
+    expect(navigate).toHaveBeenCalledWith('/c/sess-quick-retry', { replace: true })
+    expect(workspaceStateRef.current.remapAgentChatSession).not.toHaveBeenCalled()
   })
 
   it('prompt-phase failure: the real session gets the raw error and no launchConfigId', async () => {

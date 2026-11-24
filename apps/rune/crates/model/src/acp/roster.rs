@@ -143,7 +143,7 @@ impl State {
                 let Some(event) = parse::<super::agents::AgentFailureEvent>(&payload, fx) else {
                     return;
                 };
-                let message = match event.message.as_str() {
+                let message = match event.message.as_deref().unwrap_or_default() {
                     "" if kind == "agent_crashed" => "Agent crashed".to_owned(),
                     "" => "Agent error".to_owned(),
                     message => message.to_owned(),

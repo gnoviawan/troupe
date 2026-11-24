@@ -339,8 +339,7 @@ export const useUpdaterStore = create<UpdaterStoreState>((set, get) => ({
    * `tauri-updater-api.ts` (`pendingTauriUpdate`, `downloadedUpdate`,
    * `manualUpdateInfo`, `downloadedVersion`, `preparedUpdateVersion`,
    * `isManualUpdateMode`) so a stale stable `Update` object — or its in-memory
-   * downloaded bytes — can never be installed after switching to
-   * insider/nightly.
+   * downloaded bytes — can never be installed after switching to nightly.
    *
    * The re-check only fires when `autoUpdateEnabled` is true: switching channel
    * while auto-update is off clears state + persists the preference; the next

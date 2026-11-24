@@ -212,7 +212,8 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `diff_stat.rs`). `clearSessionBackfill` forgets the backfill and trims
      at once. The payload cache and its pins are the app's: the model only
      remembers which sessions are durable, so a cache eviction does not make
-     it probe again where the TypeScript would.
+     it probe again where the TypeScript would. A delete forgets it, as the
+     TypeScript delete evicts the cached payload.
    - 6b, close and delete (R6a-4, `acp/close.rs`). `closeSession` ends an
      open chat's agent session (`closeAgentSession`), then closes the chat,
      drops its warm slot, its prompts, its queue and its queue hold,
@@ -261,6 +262,25 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `prepareChat`, PR 8), `stoppingAgentIds` (read only by the warm-pool
      reap, PR 8), and the sign-in before a session call
      (`authenticateBeforeSession`, `withAuthRetry`, PR 8).
+   - 7c (R6a-5). The sign-in on demand (`acp/auth_retry.rs`):
+     `withAuthRetry` and `authenticateBeforeSession` around `setMode` and
+     `setModel`, the two session calls the model sends so far. A set
+     command that fails with the auth-required prefix, a signed-out
+     Account, or wording `classifySetupError` files under `auth`
+     (`is_auth_retriable`, checked against the TypeScript classifier's
+     answers in `auth_retry_tests.rs`) signs in and is sent once more
+     (`retried`, not serialized). The method: none when the agent is
+     already signed in or the host prepared its auth, the only usable one,
+     or the remembered one (a stale or non-agent memory is forgotten and
+     the user is sent to a new chat's picker). Factory Droid reads whether
+     the host stores its key (`readFactoryKeyStatus`, answered by
+     `factoryKeyStatus`) and otherwise leaves a several-method sign-in to
+     the banner. The authenticate shares the click's in-flight one of the
+     same agent and method, and a click joining it fails with its error.
+     A retry that fails again forgets the remembered method. Not here: the
+     other session calls (`session/new`, `load`, `resume`; discovery wraps `list`), which
+     their slices wrap when they are ported, and the forget tombstone the
+     shared config sync reads.
    - 7b, rest (R6a-4). The host's `agents` watch and the agent browser
      tabs (`acp/roster.rs`). The watch's full state (`agentsWatchState`)
      spawns the agents the model lacks, disconnects the connected ones the
@@ -279,8 +299,31 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      chat, its transcript, its queue and the active mark go),
      `seedLaunchUserMessage` (the first prompt opens the turn once; a chat
      already showing a prompt only reopens it) and `clearLaunchingSession`.
-   - 8, rest. `ensureLiveAgent` with its spawn signatures, holders and
-     credential epochs; `prepareChat`, `claimPreparedChat`,
+   - 8b (R6a-5). `ensureLiveAgent` (`acp/ensure.rs`) and its first caller,
+     `prewarmAgent`. The launch comes from the saved config (a legacy id
+     such as `opencode-v2` launches the config it resolves to,
+     `acp/spawn_env.rs`), the Project that holds the cwd or the one named,
+     and the env the Project adds under the agent's own; its reuse key is
+     `acp/reuse_key.rs`. A connected agent on the key is reused; one whose
+     launch signature is out of date (an edited env, renewed credentials)
+     or that a chat holds is moved to a detached key first. A spawn
+     already running for the key is joined unless it started with another
+     launch or a holder that excludes the caller. A spawn is the
+     `spawnAgent` effect with the ensure's id (`ensure`, not serialized);
+     its answer maps the agent under the key (a detached one when a newer
+     launch took the key meanwhile), and a config deleted meanwhile kills
+     it (`killAgent` with the same id; a failed kill is ignored). Every
+     waiter judges a failure by its own options: a silent caller logs and
+     gets no agent. A definite rejection is read from the message prefix
+     (`ACP_AGENT_UNAVAILABLE: `, `ACP_INVALID_AGENT_CONFIG: `), so the app
+     hands a coded web error back with that prefix. The Projects are
+     `Book::projects`, which the app keeps equal to the project store
+     (`setProjects`); the saved configs are `State::agent_configs`, set by
+     `agentConfigsChanged` until the config slice is ported;
+     `renewAgentCredentials` bumps a Project's credential epoch. Not
+     exercised yet: the `chat` and `warm` holders and
+     `surfaceDefiniteRejection`, which only the callers still to port pass.
+   - 8, rest. `prepareChat`, `claimPreparedChat`,
      `cancelPreparedChat` and the warm-pool promotion; `startChat`,
      `startQuickChat`, `finalizeChatLaunch` and `applyPendingLauncherOptions`;
      the config slice. History open, import, the one-shots and the agent
@@ -307,7 +350,36 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       registry normalization and the legacy canvas entry migration stay in
       the app's persistence layer. Not here: the answering marks of
       `pending-permission-sync` (the resubscribe install, PR 6).
-    - 10b, rest. Import, discovery and the one-shot collectors.
+    - 10b, discovery (R6a-5, `acp/discovery.rs`). `discoverSessions` reads
+      the agent's own sessions in a folder page by page: each page is a
+      `listSessions` effect the app answers with `agentCommandDone` and the
+      page, or `agentCommandFailed`. It runs only for a connected agent
+      that advertises `sessionCapabilities.list`, once per agent and
+      normalized folder (`discoveringKeys`), for at most 10 pages, and
+      drops repeated session ids. An empty-string cursor is a page token;
+      only a missing or null one ends the listing. A page refused for a
+      sign-in goes through `withAuthRetry` (`session/list`); a failure
+      clears the folder's old result, and a result whose agent
+      disconnected meanwhile is dropped.
+    - 10b, import (R6a-5, `acp/import.rs`). `listImportableSessions`
+      lists through a live agent of the launch a new chat would get
+      (`runsCurrentLaunch`), else through `ensureLiveAgent`: up to 200
+      `listSessions` pages, ended early by a repeated cursor, keeping the
+      sessions the index lacks. It answers `actionResolved` with
+      `{ status, agentId, sessions }` (`unavailable` without an agent or
+      after a disconnect, `unsupported` without `loadSession` and
+      `session/list`). `importAgentSessions` sends one
+      `importAgentSession` per session through the sign-in retry
+      (`session/load`), reports each outcome as `importProgress`
+      (`imported`, `duplicate` on the host's `duplicate` code, or
+      `failed`), and stops before the next session after `stopImport`.
+      Then it logs, emits its own `refreshSessionIndex`, and answers its
+      outcomes once the app answers that effect with
+      `sessionIndexReloaded` or `sessionIndexReloadFailed`; another index
+      snapshot does not answer it. A listing answered with no page fails. `updatedAt` goes through a `Date.parse` port of the ISO
+      forms; a time without an offset, which JavaScript reads in the local
+      zone, is not parsed.
+    - 10b, rest. The one-shot collectors (they need `createSession`).
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -408,9 +480,9 @@ its pinned sources match a path glob of both workflows.
 - `context.openChatTabs` lists the sessions a chat tab shows.
 - `context.desktop` makes `isTauriContext` true, as `Book::desktop` does.
 - `context.payloads` is each session's durable history: every
-  `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
-  session it does not list, and `{ "reject": text }` fails the read. The
-  payload cache is cleared per vector.
+  `loadSessionPayload` emits `readSessionPayload` and answers it the way an
+  agent command answers its reply (below), null for a session it does not
+  list. The payload cache is cleared per vector.
 - `context.mcpReplies` answers the MCP commands in order: an entry is the
   reply, `{ "reject": text, "code": c }` fails it (an `McpOAuthError` when
   `code` is set), `{ "hold": true }` leaves it in flight, and a start's
@@ -427,12 +499,48 @@ its pinned sources match a path glob of both workflows.
 - Toasts are effects (`toast`, with the level). The roster watch is attached
   once to a stub watch client; `agentsWatchState` and `agentsWatchDelta` call
   its handlers.
-- `context.agentReplies` answers the agent commands in order: an entry is
-  the reply, `{ "reject": text }` fails it, and `{ "hold": true }` leaves it
-  in flight for the rest of the vector.
+- `context.agentReplies` answers the agent commands and the close and
+  delete commands in order: an entry is the reply, `{ "reject": text }`
+  fails it, and `{ "hold": true }` leaves it in flight for the rest of the
+  vector. `{ "hold": true, "release": reply }` holds it until a
+  `releaseHeld` step, which answers the oldest held command with `reply`;
+  that is how a vector interleaves a close with a delete, or a durability
+  probe with a close.
+- `context.projects` is the project store's list; a `setProjects` step
+  replaces it, `agentConfigsChanged` replaces `agentConfigs`, and
+  `renewAgentCredentials` calls the module function. The spawn bookkeeping
+  (`inFlightWarms`, the definite rejections, the signatures) is reset per
+  vector.
+- An action whose answer its caller reads (`listImportableSessions`,
+  `importAgentSessions`) records it as `actionResolved`. The recorder's
+  index reload never settles, so an import's answer is not recorded;
+  `import_tests.rs` checks it. The import's progress callback is
+  `importProgress`, and a `stopImport` step makes its stop poll true. An
+  `agentReplies` entry `{ "reject": text, "code": c }` fails with an
+  `AcpTransportError` of that code.
+- `context.setReplies` answers `setMode` and `setModel` in order, as the
+  agent commands do; `context.factoryKey` is the stored-key answer (`true`,
+  `false`, or `{ "reject": text }`).
+- The remembered-auth writes (`persistAuthMethods`) go through a promise
+  chain, so where one lands among a step's other effects depends on the
+  chain's queued microtasks. The replay compares them after the other
+  effects, in their own order.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
   `{ "reject": text }` fails that `setConfigOption` with `text`.
+- An `agent_error` or `agent_crashed` without a `message` leaves the chat's
+  `lastError` absent (`undefined`), not null; `Session::last_error` keeps
+  the three states. An `agent_disconnected` without a `reason` counts as a
+  deliberate end.
+- The host's verdict on a failed command (`acp/host_error.rs`). `/ws`
+  sends it as the reply's `code` and drops the message's tag; the desktop
+  keeps the tag (`ACP_AGENT_UNAVAILABLE: …`) and sends no code. So
+  `agentCommandFailed` and `controlFailed` carry the code, and the
+  definite-rejection, signed-out, auth-required, provider and ambiguous
+  checks read both, in `classifySetupError`'s order. A rejected action
+  whose error had a code prints as `AcpTransportError: …`, the way
+  `String(error)` prints it. An `agentReplies` or `setReplies` entry
+  `{ "reject": text, "code": c }` records a `/ws`-shaped error.
 - A failed command comes back with the error's raw message
   (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
   model adds the `Error: ` prefix `String(error)` prints wherever the store

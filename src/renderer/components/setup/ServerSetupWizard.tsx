@@ -110,14 +110,12 @@ function FieldError({ id, message }: { id: string; message?: string }): React.JS
 const CHANNEL_OPTIONS: Array<{ value: 'none' | ServerUpdateChannel; label: string }> = [
   { value: 'none', label: "Don't check for updates" },
   { value: 'stable', label: 'Stable' },
-  { value: 'insider', label: 'Insider' },
   { value: 'nightly', label: 'Nightly' }
 ]
 
 const CHANNEL_HINTS: Record<'none' | ServerUpdateChannel, string> = {
   none: 'Troupe will not look for new versions.',
   stable: 'Recommended — finished, tested releases.',
-  insider: 'New features a little earlier, with occasional rough edges.',
   nightly: 'The very latest changes every day — expect breakage.'
 }
 

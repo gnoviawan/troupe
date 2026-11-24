@@ -429,7 +429,7 @@ impl Reader<'_> {
         {
             call.insert("parentToolCallId".into(), json!(parent));
         }
-        if let Some(raw) = call.remove("subagentMessages")
+        if let Some(raw) = call.shift_remove("subagentMessages")
             && let Some(parsed) = parse_messages(&raw)
         {
             call.insert("subagentMessages".into(), parsed);

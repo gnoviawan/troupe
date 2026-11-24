@@ -52,7 +52,10 @@ fn a_click_sharing_a_sign_in_fails_with_it() {
         .find(|effect| matches!(effect, Effect::Authenticate { .. }))
         .expect("the first click sends authenticate");
 
-    let failed = apply(&mut state, Event::AgentCommandFailed(sent, "denied".into()));
+    let failed = apply(
+        &mut state,
+        Event::AgentCommandFailed(sent, "denied".into(), None),
+    );
     assert_eq!(rejections(&failed), 2, "both clicks fail: {failed:?}");
     let again = click(&mut state);
     assert!(

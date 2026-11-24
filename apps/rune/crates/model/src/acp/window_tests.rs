@@ -155,3 +155,54 @@ fn a_chunk_the_history_covers_is_not_flushed() {
     assert_eq!(probes(&apply(&mut state, chunk(40.0))), 0, "covered");
     assert_eq!(probes(&apply(&mut state, chunk(41.0))), 1, "live");
 }
+
+/// Answer the one command of `kind` among `fx` with `answer`.
+fn answer(
+    state: &mut State,
+    fx: Vec<Effect>,
+    kind: &str,
+    answer: impl Fn(Effect) -> Event,
+) -> Vec<Effect> {
+    let command = fx
+        .into_iter()
+        .find(|effect| serde_json::to_value(effect).expect("an effect")["kind"] == kind)
+        .unwrap_or_else(|| panic!("no {kind}"));
+    let mut ids = Counter(0);
+    let mut env = Env {
+        now: 1_000.0,
+        ids: &mut ids,
+        server_history: false,
+    };
+    step(state, answer(command), &mut env)
+}
+
+#[test]
+fn a_deleted_chat_proves_its_history_again_before_trimming() {
+    let chunk = json!({ "_onMessageChunk": [
+        { "sessionId": "s1", "role": "agent", "content": { "type": "text", "text": "a" } }
+    ] });
+    let mut state = chat(MAX_LIVE_WINDOW_MESSAGES + 1);
+    let fx = apply(&mut state, chunk.clone());
+    answer(&mut state, fx, "readSessionPayload", |read| {
+        Event::SessionPayloadRead(read, Ok(Some(json!({}))))
+    });
+    let fx = apply(&mut state, json!({ "deleteHistorySession": "s1" }));
+    answer(&mut state, fx, "deleteSessionPayload", |delete| {
+        Event::SessionCommandDone(delete, Value::Null)
+    });
+    // The same session id shows a full window again, as a reopen would.
+    let reopened = chat(MAX_LIVE_WINDOW_MESSAGES + 1);
+    state.sessions = reopened.sessions;
+    state.messages = reopened.messages;
+    let fx = apply(&mut state, chunk);
+    assert_eq!(
+        probes(&fx),
+        1,
+        "the deleted history is not durable any more"
+    );
+    assert_eq!(
+        state.messages["s1"].len(),
+        MAX_LIVE_WINDOW_MESSAGES + 2,
+        "nothing trimmed"
+    );
+}

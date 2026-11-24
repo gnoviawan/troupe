@@ -284,6 +284,7 @@ export const WS_COMMAND_CLASSES: Readonly<
   list_acp_catalog: ['read', null],
   set_catalog_opt_in: ['idempotent', null],
   fetch_acp_registry_snapshot: ['read', null],
+  get_acp_agent_overlay: ['read', null],
   search_mcp_catalog: ['read', null],
   get_mcp_catalog_status: ['read', null],
   set_mcp_catalog_sync: ['idempotent', null],

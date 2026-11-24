@@ -798,6 +798,7 @@ impl AcpCatalogService {
     pub(crate) fn with_snapshot_fetcher(root: PathBuf, fetcher: SnapshotFetcher) -> Arc<Self> {
         fs::create_dir_all(&root).unwrap();
         Arc::new(Self {
+            overlay: TroupeOverlayService::open(&root),
             root,
             cache: RwLock::new(None),
             snapshot_fetch: fetcher,
@@ -920,7 +921,7 @@ async fn opt_in_fetch_failure_degrades_to_bundled_only() {
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -935,7 +936,7 @@ async fn opt_out_never_calls_snapshot_fetch() {
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -1044,14 +1045,14 @@ async fn snapshot_fetch_failure_gates_non_forced_retries() {
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     assert_eq!(*calls.lock(), 1);
     // Gated: no second fetch attempt within the retry interval.
     let catalog = service.resolve_catalog(false).await.unwrap();
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     assert_eq!(*calls.lock(), 1);
     // Forced refresh bypasses the gate.
     let _ = service.resolve_catalog(true).await.unwrap();
@@ -1097,7 +1098,7 @@ async fn gated_fetch_serves_on_disk_cache() {
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     assert_eq!(*calls.lock(), 1);
     // Gated resolution: no fetch; the seeded on-disk cache is served.
     let catalog = service.resolve_catalog(false).await.unwrap();
@@ -1182,7 +1183,7 @@ async fn stale_after_failure_sets_retry_gate_for_non_forced() {
     assert!(catalog
         .agents
         .iter()
-        .all(|a| a.source == CatalogSource::Bundled));
+        .all(|a| a.source != CatalogSource::Registry));
     let _ = fs::remove_dir_all(root);
 }
 
@@ -1488,9 +1489,9 @@ async fn list_catalog_without_opt_in_serves_bundled_only() {
     let root = temp_dir("no-opt-in");
     let service = AcpCatalogService::open(root.join("catalog")).await.unwrap();
     let catalog = service.list_catalog(false).await.unwrap();
-    // Every agent is bundled (no CDN entries without opt-in).
+    // No CDN entries without opt-in.
     for agent in &catalog.agents {
-        assert_eq!(agent.source, CatalogSource::Bundled);
+        assert_ne!(agent.source, CatalogSource::Registry);
     }
     let _ = fs::remove_dir_all(root);
 }
@@ -1602,6 +1603,10 @@ fn catalog_source_serializes_lowercase() {
     assert_eq!(
         serde_json::to_value(CatalogSource::Registry).unwrap(),
         "registry"
+    );
+    assert_eq!(
+        serde_json::to_value(CatalogSource::Troupe).unwrap(),
+        "troupe"
     );
 }
 

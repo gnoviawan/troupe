@@ -24,6 +24,7 @@ fn event(recorded: &Value) -> Result<Event, String> {
     let action = recorded["action"].as_str().ok_or("event without action")?;
     let args = recorded["args"].as_array().cloned().unwrap_or_default();
     let shape = match args.as_slice() {
+        [] => json!(action),
         [only] => json!({ action: only }),
         _ => json!({ action: args }),
     };
@@ -81,6 +82,16 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .cloned()
         .unwrap_or_default()
         .into();
+    let mut set_replies: VecDeque<Value> = context
+        .get("setReplies")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
+    let factory_key = context
+        .get("factoryKey")
+        .cloned()
+        .unwrap_or(Value::Bool(false));
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
@@ -88,11 +99,19 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .unwrap_or_default()
         .into();
     let payloads = context.get("payloads").cloned().unwrap_or(json!({}));
+    // Commands a `{ hold, release }` reply keeps in flight, oldest first,
+    // with the reply a `releaseHeld` step answers them with.
+    let mut held: VecDeque<(Effect, Value)> = VecDeque::new();
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
     }
     state.book.desktop = desktop;
+    state.book.projects = context
+        .get("projects")
+        .map(parse)
+        .transpose()?
+        .unwrap_or_default();
     state.book.open_chat_tabs = context
         .get("openChatTabs")
         .map(parse)
@@ -110,11 +129,13 @@ fn replay(vector: &Value) -> Result<usize, String> {
             ids: &mut ids,
             server_history,
         };
-        let mut effects = acp::step(
-            &mut state,
-            event(&recorded["event"]).map_err(|e| at(&e))?,
-            &mut env,
-        );
+        let event = if recorded["event"]["action"] == "releaseHeld" {
+            let (command, reply) = held.pop_front().ok_or_else(|| at("nothing held"))?;
+            answer(command, reply)
+        } else {
+            event(&recorded["event"]).map_err(|e| at(&e))?
+        };
+        let mut effects = acp::step(&mut state, event, &mut env);
         // The recorder awaits each dispatched command (a microtask) and then
         // the deferred turn end (a macrotask) after every step; the replay
         // feeds both back in that order, the way the app does.
@@ -131,8 +152,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::SetModel { .. }
                         | Effect::SetConfigOption { .. }
                         | Effect::ReadComposerOptions { .. }
+                        | Effect::ReadFactoryKeyStatus { .. }
                         | Effect::SpawnAgent { .. }
                         | Effect::KillAgent { .. }
+                        | Effect::ListSessions { .. }
+                        | Effect::ImportAgentSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
@@ -162,6 +186,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             Some(reason) => Event::ControlFailed(
                                 command,
                                 reason.as_str().unwrap_or_default().to_owned(),
+                                None,
                             ),
                             None => Event::ControlSet(
                                 command,
@@ -172,20 +197,34 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             ),
                         }
                     }
+                    // `setReplies`: `{ reject }` fails the set, else it is acknowledged.
                     Effect::SetMode { .. } | Effect::SetModel { .. } => {
-                        Event::ControlSet(command, None)
+                        let reply = set_replies.pop_front().unwrap_or(Value::Null);
+                        match reply.get("reject") {
+                            Some(reason) => Event::ControlFailed(
+                                command,
+                                js_string(Some(reason)),
+                                reply.get("code").map(|code| js_string(Some(code))),
+                            ),
+                            None => Event::ControlSet(command, None),
+                        }
                     }
-                    // A payload read answers `context.payloads`: `{ reject }`
-                    // fails it, a session it does not list has none.
-                    Effect::ReadSessionPayload { ref session_id, .. } => {
-                        let outcome = match payloads.get(session_id) {
-                            None | Some(Value::Null) => Ok(None),
-                            Some(payload) => match payload.get("reject").and_then(Value::as_str) {
-                                Some(reason) => Err(reason.to_owned()),
-                                None => Ok(Some(payload.clone())),
-                            },
+                    // `factoryKey`: the stored-key answer, `{ reject }` when unread.
+                    Effect::ReadFactoryKeyStatus { .. } => {
+                        let stored = match factory_key.get("reject") {
+                            Some(_) => None,
+                            None => Some(model::acp::js::truthy(&factory_key)),
                         };
-                        Event::SessionPayloadRead(command, outcome)
+                        Event::FactoryKeyStatus(command, stored)
+                    }
+                    // A payload read answers `context.payloads` the way an
+                    // agent command answers its reply.
+                    Effect::ReadSessionPayload { ref session_id, .. } => {
+                        let reply = payloads.get(session_id).cloned().unwrap_or(Value::Null);
+                        match hold(command, reply, &mut held) {
+                            Some((command, reply)) => answer(command, reply),
+                            None => continue,
+                        }
                     }
                     // An MCP command answers the next `mcpReplies` entry:
                     // `{ reject, code }` fails it, `{ hold }` leaves it in
@@ -219,27 +258,13 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             Event::McpCommandDone(command, reply)
                         }
                     }
-                    // A close or delete command answers the next
-                    // `agentReplies` entry, as the agent commands do.
-                    Effect::CloseAgentSession { .. }
-                    | Effect::DeleteAgentSession { .. }
-                    | Effect::DeleteSessionPayload { .. } => {
-                        let reply = agent_replies.pop_front().unwrap_or(Value::Null);
-                        match reply.get("reject").and_then(Value::as_str) {
-                            Some(reason) => Event::SessionCommandFailed(command, reason.to_owned()),
-                            None => Event::SessionCommandDone(command, reply),
-                        }
-                    }
-                    // An agent command answers the next `agentReplies` entry:
-                    // `{ reject }` fails it, `{ hold }` leaves it in flight.
+                    // An agent, close or delete command answers the next
+                    // `agentReplies` entry.
                     _ => {
                         let reply = agent_replies.pop_front().unwrap_or(Value::Null);
-                        if reply.get("hold").is_some() {
-                            continue;
-                        }
-                        match reply.get("reject").and_then(Value::as_str) {
-                            Some(reason) => Event::AgentCommandFailed(command, reason.to_owned()),
-                            None => Event::AgentCommandDone(command, reply),
+                        match hold(command, reply, &mut held) {
+                            Some((command, reply)) => answer(command, reply),
+                            None => continue,
                         }
                     }
                 };
@@ -301,7 +326,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
             )));
         }
         for (what, want, got) in [
-            ("effects", &recorded["effects"], &to_value(&effects)),
+            (
+                "effects",
+                &writes_last(&recorded["effects"]),
+                &writes_last(&to_value(&effects)),
+            ),
             ("state", &recorded["state"], &to_value(&state)),
         ] {
             if let Some(problem) = diff(what, want, got) {
@@ -362,6 +391,63 @@ fn acp_vectors_are_not_older_than_their_sources() {
         "TypeScript changed after the acp vectors were recorded; rerun \
          `RECORD_VECTORS=1 bun run test tools/parity/vectors` and port the change: {stale:?}"
     );
+}
+
+/// The effects with the remembered-auth writes moved to the end, in their
+/// own order. The TypeScript saves them through a promise chain, so where a
+/// save lands among the other calls depends on how many microtasks the chain
+/// still has queued; the model does not count them.
+fn writes_last(effects: &Value) -> Value {
+    let (writes, rest): (Vec<&Value>, Vec<&Value>) = effects
+        .as_array()
+        .into_iter()
+        .flatten()
+        .partition(|effect| effect["kind"] == "persistAuthMethods");
+    Value::Array(rest.into_iter().chain(writes).cloned().collect())
+}
+
+/// A `{ hold }` reply keeps the command in flight: for the rest of the
+/// vector, or with `release` until a `releaseHeld` step. `None` when held.
+fn hold(
+    command: Effect,
+    reply: Value,
+    held: &mut VecDeque<(Effect, Value)>,
+) -> Option<(Effect, Value)> {
+    if reply.get("hold").is_none() {
+        return Some((command, reply));
+    }
+    if let Some(release) = reply.get("release") {
+        held.push_back((command, release.clone()));
+    }
+    None
+}
+
+/// The event that answers an agent, session or payload-read command with
+/// `reply`: `{ reject }` fails it, anything else is the reply.
+fn answer(command: Effect, reply: Value) -> Event {
+    let rejected = reply.get("reject").map(|reason| js_string(Some(reason)));
+    match command {
+        Effect::ReadSessionPayload { .. } => {
+            let outcome = match rejected {
+                Some(reason) => Err(reason),
+                None => Ok(Some(reply).filter(|reply| !reply.is_null())),
+            };
+            Event::SessionPayloadRead(command, outcome)
+        }
+        Effect::CloseAgentSession { .. }
+        | Effect::DeleteAgentSession { .. }
+        | Effect::DeleteSessionPayload { .. } => match rejected {
+            Some(reason) => Event::SessionCommandFailed(command, reason),
+            None => Event::SessionCommandDone(command, reply),
+        },
+        _ => match rejected {
+            Some(reason) => {
+                let code = reply.get("code").map(|code| js_string(Some(code)));
+                Event::AgentCommandFailed(command, reason, code)
+            }
+            None => Event::AgentCommandDone(command, reply),
+        },
+    }
 }
 
 /// `String(value)` of a recorded reply field.

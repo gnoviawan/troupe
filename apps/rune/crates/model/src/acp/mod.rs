@@ -11,12 +11,21 @@ mod agent_commands;
 mod agent_commands_tests;
 pub mod agents;
 pub mod approvals;
+mod auth_retry;
+#[cfg(test)]
+mod auth_retry_tests;
 mod clamp;
 mod close;
 pub mod controls;
 mod diff_stat;
+mod discovery;
 mod effect;
+mod ensure;
 mod event;
+mod host_error;
+mod import;
+#[cfg(test)]
+mod import_tests;
 mod index;
 pub mod js;
 #[cfg(test)]
@@ -33,10 +42,12 @@ pub mod prompt;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
+mod reuse_key;
 pub mod roster;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
+mod spawn_env;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -55,6 +66,7 @@ use crate::Ids;
 pub use agent_commands::FlightId;
 use approvals::{PendingElicitation, PendingPermission, PendingQuestion};
 pub use effect::Effect;
+pub use ensure::{EnsureId, Holder};
 pub use event::Event;
 use mcp::{McpBook, RegistryOp};
 pub use plan::is_plan_tool;
@@ -117,8 +129,17 @@ pub struct State {
     pub auto_open_browser_url: BTreeMap<String, Value>,
     /// Sessions whose launch is in flight.
     pub launching_session_ids: BTreeMap<String, Value>,
+    /// Per `agentId\0cwd`, a discovery in flight.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub discovering_keys: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
+    /// The saved agent configs (`agentConfigs`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub agent_configs: Vec<Object>,
+    /// Reuse keys whose prewarm spawn is in flight, for the warm-up UI.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub warming_configs: BTreeMap<String, Value>,
     /// The user's MCP servers, as the registry saved them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mcp_servers: Vec<Object>,
@@ -264,6 +285,22 @@ pub struct Book {
     /// Sessions whose durability probe is in flight.
     #[serde(skip)]
     pub(crate) durability_probes: BTreeSet<String>,
+    /// The user's Projects (`useProjectStore`), which the app keeps current:
+    /// a spawn takes its Project, its env and its reuse key from them.
+    #[serde(skip)]
+    pub projects: Vec<Value>,
+    /// The spawns `ensureLiveAgent` runs and what it remembers about them.
+    #[serde(skip)]
+    pub(crate) ensure: ensure::EnsureBook,
+    /// The `session/list` discoveries in flight, by key.
+    #[serde(skip)]
+    pub(crate) discoveries: BTreeMap<String, discovery::Discovery>,
+    /// The import listings and imports in flight.
+    #[serde(skip)]
+    pub(crate) imports: import::ImportBook,
+    /// Session calls waiting on an authenticate on demand.
+    #[serde(skip)]
+    pub(crate) auth_retry: auth_retry::AuthRetryBook,
     /// The shared MCP registry watch started; the store starts it once.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub mcp_shared_sync: bool,
@@ -385,6 +422,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
         Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
+        Event::SessionIndexReloaded(reload, entries) => {
+            state.apply_session_index(entries, &mut fx);
+            state.on_import_reloaded(&reload, None, &mut fx);
+        }
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
             state.set_model(session_id, model_id, options, None, &mut fx);
@@ -393,16 +434,27 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.set_config_option(session_id, config_id, value, options, None, &mut fx);
         }
         Event::ControlSet(command, reply) => {
+            auth_retry::note_retry_succeeded(&command, &mut fx);
             let run = command.run();
             state.on_control_set(command, reply, env, &mut fx);
             if let Some(run) = run {
                 state.on_run_command(run, None, &mut fx);
             }
         }
-        Event::ControlFailed(command, message) => match command.run() {
-            Some(run) => state.on_run_command(run, Some(message), &mut fx),
-            None => fx.push(Effect::rejected(message)),
-        },
+        Event::ControlFailed(command, message, code) => {
+            let error = host_error::HostError::new(message, code);
+            state.on_session_call_failed(command, error, &mut fx)
+        }
+        Event::DiscoverSessions(agent_id, cwd) => state.discover_sessions(agent_id, cwd, &mut fx),
+        Event::ListImportableSessions(config_id, cwd, project_id) => {
+            state.list_importable_sessions(&config_id, &cwd, project_id, &mut fx);
+        }
+        Event::ImportAgentSessions(request) => state.import_agent_sessions(request, &mut fx),
+        Event::StopImport => state.stop_imports(),
+        Event::SessionIndexReloadFailed(reload, message) => {
+            state.on_import_reloaded(&reload, Some(&message), &mut fx);
+        }
+        Event::FactoryKeyStatus(read, stored) => state.on_factory_key_status(read, stored, &mut fx),
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {
                 state.on_composer_options_read(run, saved, &mut fx);
@@ -410,9 +462,22 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::ReadvertiseWaitOver(run) => state.poll_readvertise(Some(run), &mut fx),
         Event::SpawnAgent(config, project_id, session_id) => {
-            state.spawn_agent(config, project_id, session_id, &mut fx);
+            state.spawn_agent(config, Some(project_id), session_id, None, &mut fx);
         }
-        Event::KillAgent(agent_id) => state.kill_agent(agent_id, &mut fx),
+        Event::KillAgent(agent_id) => state.kill_agent(agent_id, None, &mut fx),
+        Event::PrewarmAgent(config_id, cwd) => {
+            let options = ensure::EnsureOptions {
+                register_warm_ui: true,
+                silent: true,
+                ..Default::default()
+            };
+            state.ensure_live_agent(&config_id, &cwd, options, ensure::Caller::Prewarm, &mut fx);
+        }
+        Event::RenewAgentCredentials(config_id, project_id) => {
+            state.renew_agent_credentials(&config_id, &project_id);
+        }
+        Event::SetProjects(projects) => state.book.projects = projects,
+        Event::AgentConfigsChanged(configs) => state.agent_configs = configs,
         Event::AuthenticateAgent(agent_id, method_id, input) => {
             state.authenticate_agent(agent_id, &method_id, input, &mut fx);
         }
@@ -424,8 +489,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentCommandDone(command, reply) => {
             state.on_agent_command_done(command, reply, &mut fx);
         }
-        Event::AgentCommandFailed(command, message) => {
-            state.on_agent_command_failed(command, message, &mut fx);
+        Event::AgentCommandFailed(command, message, code) => {
+            state.on_agent_command_failed(command, message, code, &mut fx);
         }
         Event::PickModel(session_id, model_id, values) => {
             state.pick_model(session_id, model_id, values, &mut fx);

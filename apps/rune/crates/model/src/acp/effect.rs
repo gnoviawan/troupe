@@ -6,6 +6,11 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::FlightId;
+use super::auth_retry::{AuthRetryId, OnDemand};
+use super::discovery::SessionList;
+use super::ensure::EnsureId;
+use super::host_error::HostError;
+use super::import::ImportId;
 use super::mcp::TokenCheck;
 use super::restore::RunId;
 use super::turn::TurnEnd;
@@ -66,6 +71,9 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         mode_id: String,
+        /// Sent again after an authenticate on demand (`withAuthRetry`).
+        #[serde(skip_serializing)]
+        retried: bool,
     },
     /// Send `session/set_model`, then `Event::ControlSet` with this effect.
     SetModel {
@@ -80,6 +88,9 @@ pub enum Effect {
         /// The restore that sent it, which its outcome moves on.
         #[serde(skip_serializing)]
         run: Option<RunId>,
+        /// Sent again after an authenticate on demand (`withAuthRetry`).
+        #[serde(skip_serializing)]
+        retried: bool,
     },
     /// Send `session/set_config_option`, then `Event::ControlSet` with this
     /// effect and the agent's option snapshot.
@@ -108,8 +119,13 @@ pub enum Effect {
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
-    /// what it read as `applySessionIndexSnapshot`.
-    RefreshSessionIndex,
+    /// what it read as `applySessionIndexSnapshot`. An import's reload
+    /// (`import` set) is answered instead with `Event::SessionIndexReloaded`
+    /// and this effect, or `Event::SessionIndexReloadFailed`.
+    RefreshSessionIndex {
+        #[serde(skip_serializing)]
+        import: Option<ImportId>,
+    },
     /// Read the user's saved picks for the config, then send
     /// `Event::ComposerOptionsRead` with this effect and the record.
     ReadComposerOptions {
@@ -121,12 +137,21 @@ pub enum Effect {
     /// with the spawn reply, or `AgentCommandFailed`.
     SpawnAgent {
         config: Value,
-        project_id: Value,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<Value>,
         #[serde(skip_serializing_if = "Option::is_none")]
         session_id: Option<String>,
+        /// The `ensureLiveAgent` waiting on this spawn.
+        #[serde(skip_serializing)]
+        ensure: Option<EnsureId>,
     },
     /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
-    KillAgent { agent_id: String },
+    KillAgent {
+        agent_id: String,
+        /// The `ensureLiveAgent` whose spawn this kill cleans up.
+        #[serde(skip_serializing)]
+        ensure: Option<EnsureId>,
+    },
     /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
     Authenticate {
         agent_id: String,
@@ -135,6 +160,9 @@ pub enum Effect {
         input: Option<Value>,
         #[serde(skip_serializing)]
         flight: FlightId,
+        /// Sent by `authenticateBeforeSession`, not by a click.
+        #[serde(skip_serializing)]
+        on_demand: Option<OnDemand>,
     },
     /// Sign the agent out; then `AgentCommandDone` or `AgentCommandFailed`.
     Logout { agent_id: String },
@@ -270,6 +298,52 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Send `session/list` for one page of the agent's sessions in `cwd`;
+    /// then `AgentCommandDone` with the page, or `AgentCommandFailed`.
+    ListSessions {
+        agent_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cwd: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cursor: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        /// The listing the page belongs to.
+        #[serde(skip_serializing)]
+        list: SessionList,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Load one of the agent's own sessions into the chat history; then
+    /// `AgentCommandDone`, or `AgentCommandFailed` (code `duplicate` when
+    /// the history has it).
+    ImportAgentSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<Value>,
+        /// Unix ms.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        updated_at: Option<i64>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        #[serde(skip_serializing)]
+        import: ImportId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// An import finished its `done`-th session with `outcome`.
+    ImportProgress { done: usize, outcome: Value },
+    /// The user's action answered `value`.
+    ActionResolved { value: Value },
+    /// Whether the host stores a Factory API key; then
+    /// `Event::FactoryKeyStatus` with this effect and the answer, or false
+    /// with `failed` when it could not be read.
+    ReadFactoryKeyStatus {
+        #[serde(skip_serializing)]
+        retry: AuthRetryId,
+    },
     /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
     /// the agent re-advertised the session's options first.
     WaitForReadvertisedOptions {
@@ -287,6 +361,17 @@ impl Effect {
             source: source.to_owned(),
             message,
         }
+    }
+
+    /// A set command sent again after an authenticate on demand.
+    pub(crate) fn retried(&self) -> bool {
+        matches!(
+            self,
+            Self::SetMode { retried: true, .. }
+                | Self::SetModel { retried: true, .. }
+                | Self::ListSessions { retried: true, .. }
+                | Self::ImportAgentSession { retried: true, .. }
+        )
     }
 
     /// The restore a set command belongs to.
@@ -310,6 +395,20 @@ impl Effect {
     pub(crate) fn rejected(message: impl std::fmt::Display) -> Self {
         Self::ActionRejected {
             message: format!("Error: {message}"),
+        }
+    }
+
+    /// The user's action failed with this host error, shown the way
+    /// `String(error)` prints it: an `AcpTransportError` when the host sent
+    /// a code, else an `Error`.
+    pub(crate) fn rejected_by(error: &HostError) -> Self {
+        let name = if error.code.is_some() {
+            "AcpTransportError"
+        } else {
+            "Error"
+        };
+        Self::ActionRejected {
+            message: format!("{name}: {}", error.message),
         }
     }
 

@@ -71,6 +71,7 @@ impl State {
             agent_id: session.agent_id.clone(),
             session_id,
             mode_id,
+            retried: false,
         });
     }
 
@@ -97,6 +98,7 @@ impl State {
             persist: PickOptions::saves(options.as_ref()),
             model_option,
             run,
+            retried: false,
         });
     }
 
@@ -143,6 +145,7 @@ impl State {
                 agent_id,
                 session_id,
                 mode_id,
+                ..
             } => {
                 if let Some(modes) = self
                     .sessions

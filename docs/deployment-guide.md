@@ -42,11 +42,19 @@ Stable Homebrew publication additionally requires:
 
 - `HOMEBREW_TAP_TOKEN` — write access to `gnoviawan/homebrew-termul`
 
-The reusable Homebrew workflow resolves authoritative GitHub release metadata before this token is checked. Prereleases therefore still receive `SHA256SUMS.txt`, skip the tap update, and do not require the tap token.
+The reusable Homebrew workflow generates `SHA256SUMS.txt` before this token is checked, so a missing token fails only the tap update.
+
+## Version Numbers
+
+A stable release is `X.Y.0`: bump the minor for a normal release and the major for a breaking one, then push the `vX.Y.0` tag. A fix for a stable release ships as the next minor, because the patch number belongs to nightlies.
+
+A nightly is `X.Y.N`. `.github/workflows/nightly.yml` takes `X.Y` from the newest `vX.Y.Z` tag and sets N to the number of `dev` commits after it, so each nightly sorts above the stable it follows and below the next one. Nothing in the repository is bumped for a nightly; the workflow stamps the version at build time. The nightly fails if the newest tag's patch is not 0, and builds nothing when N is 0 or the version is already published. A Nightly user who switches to Stable stays on their build until the next stable minor ships.
+
+The nightly release carries two updater manifests for the same build. `nightly.json` holds the `X.Y.N` version and is what current builds read. `latest-nightly.json` holds the same build under `X.Y.N-nightly.<YYYYMMDD>.<run>.g<sha>`, the only form that builds released before this scheme (0.5.0 and older, and the old nightlies) accept, so they update onto an `X.Y.N` build and read `nightly.json` from then on.
 
 ## Release Workflow
 
-`.github/workflows/release.yml` is triggered by `v*` tags. Tags must be full SemVer and may contain dotted prerelease/build identifiers, for example `v1.2.3-beta.1+macos.7`.
+`.github/workflows/release.yml` is triggered by `v*` tags, and every such tag publishes a stable release. Tags must be plain `vX.Y.Z`, for example `v1.2.0`; the workflow fails on a prerelease suffix such as `-rc.1` or build metadata. There is no release-candidate channel. Pre-stable builds come from the nightly workflow.
 
 The workflow order is:
 
@@ -57,8 +65,8 @@ The workflow order is:
 5. Build the standalone Linux server as one workflow artifact per architecture (x64 on `ubuntu-22.04`, arm64 on the native `ubuntu-22.04-arm` runner) after creating the embedded browser bundle.
 6. In one publish job, download every workflow artifact, reject conflicting asset names, deeply validate each updater `{url, signature}` record, reject conflicting duplicate platform records, require every supported updater key (desktop and both server keys), and authoritatively create `latest.json`.
 7. Upload all release assets and `latest.json` once, then publish the draft.
-8. Invoke the reusable Homebrew workflow for every release channel. It always generates `SHA256SUMS.txt`; only stable releases update the tap.
-9. Build the `linux/amd64` and `linux/arm64` container image from the published server assets and push it to `ghcr.io/gnoviawan/troupe-server` and, for the 0.5 release cycle, to the old name `ghcr.io/gnoviawan/termul-server` (same digest), with BuildKit provenance and an SBOM. Every release gets a version tag. Only a stable release moves `latest`. The nightly workflow pushes the `nightly` tag the same way, and the Insider-to-Stable `promote` dispatch retags `latest` from the stable version tag without a rebuild. See [Run in Docker](#run-in-docker).
+8. Invoke the reusable Homebrew workflow, which generates `SHA256SUMS.txt` and updates the tap.
+9. Build the `linux/amd64` and `linux/arm64` container image from the published server assets and push it to `ghcr.io/gnoviawan/troupe-server` and, for the 0.5 release cycle, to the old name `ghcr.io/gnoviawan/termul-server` (same digest), with BuildKit provenance and an SBOM. Every release gets a version tag and moves `latest`. The nightly workflow pushes the `nightly` tag the same way. See [Run in Docker](#run-in-docker).
 
 No matrix/platform build job or standalone-server job is permitted to upload GitHub Release assets or write a shared `latest.json`.
 
@@ -146,11 +154,9 @@ After maintainers provision the Apple secrets, repeat these checks against both 
 `.github/workflows/publish-homebrew.yml` is both reusable and manually dispatchable. It:
 
 1. validates full SemVer input;
-2. queries the GitHub release's `isPrerelease` metadata;
-3. downloads all release assets and uploads `SHA256SUMS.txt` for stable and prerelease channels;
-4. skips the tap job for prereleases without evaluating `HOMEBREW_TAP_TOKEN`;
-5. for stable releases, strictly resolves exactly one checksum for each macOS DMG and updates the cask idempotently;
-6. serializes reusable workflow runs with tap-wide concurrency so different release versions cannot race while pushing the cask.
+2. downloads all release assets and uploads `SHA256SUMS.txt`;
+3. strictly resolves exactly one checksum for each macOS DMG and updates the cask idempotently;
+4. serializes reusable workflow runs with tap-wide concurrency so different release versions cannot race while pushing the cask.
 
 Version `0.4.8` is a narrow historical exception. Its unsigned/unnotarized DMGs retain the cask `xattr -dr com.apple.quarantine` postflight. The cask generator omits that workaround for every other version, including all future signed/notarized releases.
 

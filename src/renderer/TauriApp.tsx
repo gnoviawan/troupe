@@ -18,6 +18,7 @@ import { McpOAuthPasteDialogHost } from '@/components/settings/McpOAuthPasteDial
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAcpUpdateChecks } from '@/hooks/use-acp-update-checks'
+import { useAgentOverlayLoader } from '@/hooks/use-agent-overlay'
 import { useAutomationProposals } from '@/hooks/use-automation-proposals'
 import { usePreventDevToolsShortcuts } from '@/hooks/use-prevent-devtools-shortcuts'
 import { usePreventNativeContextMenu } from '@/hooks/use-prevent-native-context-menu'
@@ -196,6 +197,8 @@ export default function TauriApp(): React.JSX.Element {
   const whatsNew = useWhatsNew()
   // Background Update Check: advisory only, never auto-applies (Q8/Q10).
   useAcpUpdateChecks()
+  // Agent names, logos and brand colours from Troupe's registry. Both roots.
+  useAgentOverlayLoader()
 
   useEffect(() => {
     if (!isWindowStateReady) return
