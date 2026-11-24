@@ -234,6 +234,7 @@ impl State {
         for (tag, result) in fetched {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
+                crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
             }
         }
         changed
@@ -605,7 +606,7 @@ impl State {
         self.run(effects);
     }
 
-    fn write(&mut self, key: &str, value: Value, pending: Pending) {
+    pub(crate) fn write(&mut self, key: &str, value: Value, pending: Pending) {
         let key = self.device_key(key);
         self.call(
             WsRequestType::StoreWrite,

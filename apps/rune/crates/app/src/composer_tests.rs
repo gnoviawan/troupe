@@ -2,7 +2,7 @@ use client::ws::Command;
 use serde_json::{Value, json};
 use troupe_protocol::ws::WsRequestType;
 use ui::composer::field::{put_pill, trigger};
-use ui::composer::menu::{Item, Row, Skill};
+use ui::composer::menu::{self, Item, Row, Skill};
 use ui::composer::{Pill, view::MenuView};
 
 use super::Host;
@@ -315,4 +315,93 @@ fn the_chip_names_the_agent_of_the_chat_config_exactly() {
     s.composer.agents = vec![agent("claude", "Claude"), agent("claude-code", "Claude Code")];
     s.composer.namespaces.insert("chat-1".into(), "config:claude-code".into());
     assert_eq!(s.agent_label(&host).as_deref(), Some("Claude Code"));
+}
+
+#[test]
+fn the_launcher_chip_switches_the_agent_and_remembers_it() {
+    let mut rt = crate::tests::runtime_at((1280.0, 800.0));
+    rt.update_if(|s, _| {
+        s.agents_loaded(Some(json!([
+            { "id": "cfg-a", "name": "Chat Scenario Agent" },
+            { "id": "cfg-b", "name": "Second Agent" }
+        ])));
+        true
+    });
+    rt.frame(0.05);
+    crate::tests::tap(&mut rt, "composer-launcher-p-a-agent");
+    assert!(
+        crate::tests::present(&rt, "composer-launcher-p-a-agent-menu-item1"),
+        "the chip opens the agent menu"
+    );
+    crate::tests::tap(&mut rt, "composer-launcher-p-a-agent-menu-item1");
+    let host = Host::Launcher("p-a".into());
+    assert_eq!(rt.state.agent_label(&host).as_deref(), Some("Second Agent"));
+    let saved: Vec<Value> = rt
+        .state
+        .sync
+        .sent
+        .iter()
+        .filter_map(|c| match c {
+            Command::Call {
+                kind: WsRequestType::StoreWrite,
+                payload,
+                ..
+            } if payload["key"].as_str().is_some_and(|k| k.ends_with("/agents/last-selected")) => {
+                Some(payload["value"]["data"].clone())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(saved, [json!({ "agentId": "cfg-b", "mode": "acp" })]);
+    assert!(!rt.state.draft(&host).is_some_and(|d| d.agent_open), "the menu closes");
+}
+
+#[test]
+fn the_explorer_lists_a_folder_and_a_file_pick_sends_a_resource_link() {
+    let (mut s, host) = chat();
+    let root = s.root_of(&host).expect("chat-1 is in alpha");
+    let mut tx = rune::Tx::default();
+    let pick = |s: &mut crate::State, label: &str, tx: &mut rune::Tx| {
+        let view = s.menu_view(&host).expect("the mention menu is open");
+        let item = menu::flat(&view.sections)
+            .into_iter()
+            .find(|i| i.label == label)
+            .unwrap_or_else(|| panic!("no row {label}"))
+            .clone();
+        s.composer_pick(&host, &item, tx);
+    };
+    s.draft_mut(&host).edit.insert("Read @");
+    pick(&mut s, "Explorer", &mut tx);
+    let view = s.menu_view(&host).expect("explorer");
+    assert_eq!(view.title.as_deref(), Some("Explorer"));
+    assert_eq!(view.sections[0].notice.as_deref(), Some("Loading…"));
+    s.listing_read(
+        root.clone(),
+        &root,
+        Ok(json!([
+            { "name": "src", "path": "/x", "type": "directory", "extension": null, "size": 0, "modifiedAt": 0 },
+            { "name": "README.md", "path": "/x", "type": "file", "extension": "md", "size": 1, "modifiedAt": 0 }
+        ])),
+    );
+    pick(&mut s, "src", &mut tx);
+    let view = s.menu_view(&host).expect("src");
+    assert_eq!(view.crumb, "src/");
+    assert_eq!(menu::flat(&view.sections)[0].label, "Use this folder");
+    s.listing_read(
+        format!("{root}/src"),
+        &root,
+        Ok(json!([{ "name": "main.rs", "path": "/x", "type": "file", "extension": "rs", "size": 1, "modifiedAt": 0 }])),
+    );
+    pick(&mut s, "main.rs", &mut tx);
+    assert!(s.menu_view(&host).is_none(), "the menu closes");
+    s.composer_send(&host);
+    let sent = prompts(&s);
+    let path = format!("{root}/src/main.rs");
+    assert_eq!(
+        sent[0]["content"],
+        json!([
+            { "type": "text", "text": "Read (main.rs)" },
+            { "type": "resource_link", "uri": ui::composer::file_url(&path), "name": "main.rs", "mimeType": "text/x-rust" }
+        ])
+    );
 }

@@ -44,7 +44,10 @@ pub struct Hooks<S> {
     pub add_menu: OnFlag<S>,
     /// An add-menu row: `@`, `/`, a tool id, or `attach`.
     pub add: OnAdd<S>,
-    pub agent: Act<S>,
+    /// The agent chip: open its menu (true) or close it.
+    pub agent: OnFlag<S>,
+    /// An agent menu row, by config id.
+    pub pick_agent: OnAdd<S>,
     pub remove_attachment: OnIndex<S>,
 }
 
@@ -63,6 +66,7 @@ impl<S> Clone for Hooks<S> {
             add_menu: self.add_menu.clone(),
             add: self.add.clone(),
             agent: self.agent.clone(),
+            pick_agent: self.pick_agent.clone(),
             remove_attachment: self.remove_attachment.clone(),
         }
     }
@@ -73,6 +77,8 @@ pub struct MenuView {
     pub sections: Vec<Section>,
     pub highlight: usize,
     pub title: Option<String>,
+    /// The Explorer folder under the title, relative to the project.
+    pub crumb: String,
     pub empty: &'static str,
 }
 
@@ -82,6 +88,13 @@ pub enum Place {
     Start,
     Chat,
     Phone,
+}
+
+/// A row of the agent chip's menu.
+pub struct AgentChoice {
+    pub id: String,
+    pub name: String,
+    pub picked: bool,
 }
 
 pub struct Spec<'a> {
@@ -94,6 +107,9 @@ pub struct Spec<'a> {
     pub placeholder: String,
     /// The agent chip's text, when the host shows one.
     pub agent: Option<String>,
+    /// The agents the chip's menu offers; none, and the chip only reports its press.
+    pub agents: Vec<AgentChoice>,
+    pub agent_open: bool,
     /// The foot row's working copy.
     pub foot: String,
     pub attachments: &'a [Attachment],
@@ -238,10 +254,10 @@ fn add_button<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>, lay
         .build(t, layer, trigger)
 }
 
-fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<S>) -> El {
+fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<S>, layer: &mut Vec<El>) -> El {
     let c = &t.colors;
     let agent = hooks.agent.clone();
-    row()
+    let chip = row()
         .key(format!("{}-agent", spec.key))
         .h(28.0)
         .px(6.0)
@@ -259,7 +275,26 @@ fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &
                 .truncate(),
         )
         .child(icon(&i::CHEVRON_DOWN, 12.0).color(c.muted_foreground))
-        .on_press_tx(move |s: &mut S, tx| agent(s, tx))
+        .on_press(move |s: &mut S| agent(s, true));
+    if spec.agents.is_empty() {
+        return chip;
+    }
+    let mut menu = Menu::new(format!("{}-agent-menu", spec.key))
+        .name("Agent")
+        .width(224.0)
+        .placement(if spec.place == Place::Phone { Placement::TopStart } else { Placement::TopEnd });
+    for choice in &spec.agents {
+        let (pick, id) = (hooks.pick_agent.clone(), choice.id.clone());
+        menu = menu.item(
+            MenuItem::new(choice.name.clone())
+                .checked(choice.picked)
+                .on_select_tx(move |s: &mut S, tx: &mut Tx| pick(s, &id, tx)),
+        );
+    }
+    let close = hooks.agent.clone();
+    menu.open(spec.agent_open)
+        .on_close(move |s: &mut S| close(s, false))
+        .build(t, layer, chip)
 }
 
 fn attachments<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>) -> Option<El> {
@@ -325,7 +360,11 @@ fn menu_row<S: 'static>(t: &'static Tokens, key: &str, n: usize, item: &Item, li
             matches!(item.row, Row::Conversations),
         ),
         Row::Explorer => (Some(&i::FOLDER), c.muted_foreground, true),
+        Row::Dir(_) => (Some(&i::FOLDER), c.muted_foreground, true),
+        Row::UseFolder(_) => (Some(&i::FOLDER), c.muted_foreground, false),
+        Row::File(_) => (Some(&i::FILE), c.muted_foreground, false),
     };
+    let dimmed = matches!(&item.row, Row::Dir(e) | Row::File(e) if e.ignored);
     let tile = matches!(item.row, Row::Conversations | Row::Explorer);
     let mut e = row()
         .key(format!("{key}-row-{n}"))
@@ -350,7 +389,7 @@ fn menu_row<S: 'static>(t: &'static Tokens, key: &str, n: usize, item: &Item, li
     e = e.child(
         text(item.label.clone())
             .font(sans(12.0, 500.0, 16.0))
-            .color(c.foreground)
+            .color(if dimmed { c.muted_foreground } else { c.foreground })
             .truncate(),
     );
     if let Row::Command { hint: Some(hint), .. } = &item.row {
@@ -397,13 +436,19 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
                 [8.0, 8.0, 4.0, 8.0],
             ));
         }
+        if let Some(notice) = &section.notice {
+            group = group.child(pad(
+                text(notice.clone()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground),
+                [6.0, 8.0, 6.0, 8.0],
+            ));
+        }
         for item in &section.items {
             group = group.child(menu_row(t, key, n, item, n == menu.highlight, hooks));
             n += 1;
         }
         list = list.child(group);
     }
-    if n == 0 {
+    if n == 0 && menu.sections.iter().all(|s| s.notice.is_none()) {
         list = list.child(pad(
             text(menu.empty).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground),
             [6.0, 8.0, 6.0, 8.0],
@@ -427,6 +472,13 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
                 .label("Back")
                 .child(icon(&i::CHEVRON_LEFT, 12.0).color(c.foreground))
                 .child(text(title.clone()).font(sans(12.0, 600.0, 16.0)).color(c.foreground))
+                .child(
+                    text(menu.crumb.clone())
+                        .font(sans(12.0, 400.0, 16.0))
+                        .color(c.muted_foreground)
+                        .truncate()
+                        .shrink(),
+                )
                 .on_press_tx(move |s: &mut S, tx| back(s, tx)),
         );
     }
@@ -463,7 +515,7 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
         .items_center()
         .min_w(0.0);
     if let Some(agent) = &spec.agent {
-        let chip = agent_chip(t, &spec, agent, hooks);
+        let chip = agent_chip(t, &spec, agent, hooks, layer);
         if spec.place == Place::Phone {
             start = start.child(chip);
         } else {

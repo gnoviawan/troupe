@@ -15,6 +15,8 @@ use serde_json::Value;
 pub enum Fetch {
     /// `/skills` for a project folder.
     Skills(String),
+    /// `/fs/ls` of a folder the mention menu's Explorer shows, under a project root.
+    Listing { dir: String, root: String },
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

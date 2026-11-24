@@ -12,7 +12,7 @@ use rune::{ClipboardContent, Key, KeyEvent, TextEdit, Tx};
 use serde_json::Value;
 use troupe_protocol::ws::WsRequestType;
 use ui::composer::field::{self, Trigger, TriggerKind};
-use ui::composer::menu::{self, ChatRef, Item, Panel, Row, Skill};
+use ui::composer::menu::{self, ChatRef, Item, Listing, Panel, Row, Skill};
 use ui::composer::view::{Hooks, MenuView};
 use ui::composer::{Attachment, Pill, Send};
 
@@ -47,6 +47,7 @@ pub struct Draft {
     dismissed: Option<usize>,
     pub add_open: bool,
     pub tools_open: bool,
+    pub agent_open: bool,
 }
 
 impl Default for Draft {
@@ -59,6 +60,7 @@ impl Default for Draft {
             dismissed: None,
             add_open: false,
             tools_open: false,
+            agent_open: false,
         }
     }
 }
@@ -76,6 +78,8 @@ pub struct ComposerUi {
     pub drafts: BTreeMap<Host, Draft>,
     /// The skills `/skills` listed, per project folder.
     pub skills: BTreeMap<String, Vec<Skill>>,
+    /// The folders the mention menu's Explorer read, by absolute path.
+    pub listings: BTreeMap<String, Listing>,
     pub agents: Vec<AgentConfig>,
     /// The launcher's agent (`agents/last-selected`), by config id.
     pub picked: Option<String>,
@@ -104,7 +108,7 @@ impl State {
     }
 
     /// The project folder the composer's skills and mentions read.
-    fn root_of(&self, host: &Host) -> Option<String> {
+    pub(crate) fn root_of(&self, host: &Host) -> Option<String> {
         let project = match host {
             Host::Launcher(id) => Some(id.clone()),
             Host::Chat(id) => self.chats.get(id).and_then(|c| c.project_id.clone()),
@@ -126,6 +130,11 @@ impl State {
 
     /// The agent a composer's chip names.
     pub fn agent_label(&self, host: &Host) -> Option<String> {
+        self.shown_agent(host).map(|a| a.name.clone())
+    }
+
+    /// The chat's own agent, else the launcher's pick, else the first config.
+    fn shown_agent(&self, host: &Host) -> Option<&AgentConfig> {
         let agents = &self.composer.agents;
         let by_id = |id: &str| agents.iter().find(|a| a.id == id);
         let found = match host {
@@ -139,7 +148,6 @@ impl State {
         found
             .or_else(|| self.composer.picked.as_deref().and_then(by_id))
             .or_else(|| agents.first())
-            .map(|a| a.name.clone())
     }
 
     /// The trigger at the draft's caret, unless Escape closed it there.
@@ -161,7 +169,7 @@ impl State {
                 menu::slash_sections(&commands, &skills, &trigger.query)
             }
             TriggerKind::Mention => {
-                let panel = self.draft(host).map(|d| d.panel).unwrap_or_default();
+                let panel = self.draft(host).map(|d| d.panel.clone()).unwrap_or_default();
                 let root = self.root_of(host).unwrap_or_default();
                 let skip = match host {
                     Host::Chat(id) => id.as_str(),
@@ -181,7 +189,11 @@ impl State {
                             .collect()
                     })
                     .unwrap_or_default();
-                menu::mention_sections(panel, &root, &chats, &trigger.query)
+                let listing = match &panel {
+                    Panel::Explorer(dir) => self.composer.listings.get(dir),
+                    _ => None,
+                };
+                menu::mention_sections(&panel, &root, &chats, &trigger.query, listing)
             }
         }
     }
@@ -191,18 +203,23 @@ impl State {
         let trigger = self.open_trigger(host)?;
         let draft = self.draft(host)?;
         let sections = self.sections(host, &trigger);
-        let (title, empty) = match (trigger.kind, draft.panel) {
-            (TriggerKind::Slash, _) => (None, "No commands match. Try another name."),
+        let root = self.root_of(host).unwrap_or_default();
+        let (title, crumb, empty) = match (trigger.kind, &draft.panel) {
+            (TriggerKind::Slash, _) => (None, String::new(), "No commands match. Try another name."),
             (TriggerKind::Mention, Panel::Conversations) => {
-                (Some("Conversations".to_owned()), "No chats match. Try another title.")
+                (Some("Conversations".to_owned()), String::new(), "No chats match. Try another title.")
             }
-            (TriggerKind::Mention, Panel::Root) => (None, "Nothing matches. Try another name."),
+            (TriggerKind::Mention, Panel::Explorer(dir)) => {
+                (Some("Explorer".to_owned()), menu::relative_dir(&root, dir), "Nothing matches. Try another name.")
+            }
+            (TriggerKind::Mention, Panel::Root) => (None, String::new(), "Nothing matches. Try another name."),
         };
         let count = menu::flat(&sections).len();
         Some(MenuView {
             sections,
             highlight: draft.highlight.min(count.saturating_sub(1)),
             title,
+            crumb,
             empty,
         })
     }
@@ -282,7 +299,7 @@ impl State {
                     draft.dismissed = field::trigger(&draft.edit).map(|t| t.range.start);
                 }
             }
-            Key::Left if draft.panel != Panel::Root => draft.panel = Panel::Root,
+            Key::Left if draft.panel != Panel::Root => self.panel_back(host),
             _ => return false,
         }
         true
@@ -310,17 +327,16 @@ impl State {
                 title: chat.title.clone(),
                 session_id: chat.session_id.clone(),
             },
-            Row::Conversations => {
-                let draft = self.draft_mut(host);
-                draft.panel = Panel::Conversations;
-                draft.highlight = 0;
-                tx.focus(format!("{}-field", host.key()), false);
-                return;
-            }
+            Row::File(entry) | Row::UseFolder(entry) => Pill::File {
+                display: entry.display(),
+                abs_path: entry.abs_path.clone(),
+            },
+            Row::Conversations => return self.drill(host, Panel::Conversations, tx),
             Row::Explorer => {
-                self.toast_later("The file explorer in the mention menu");
-                return;
+                let root = self.root_of(host).unwrap_or_default();
+                return self.drill(host, Panel::Explorer(root), tx);
             }
+            Row::Dir(entry) => return self.drill(host, Panel::Explorer(entry.folder()), tx),
         };
         log::info!("[composer] pill {:?} into {}", pill_kind(&pill), host.key());
         let draft = self.draft_mut(host);
@@ -328,6 +344,65 @@ impl State {
         draft.panel = Panel::Root;
         draft.highlight = 0;
         tx.focus(format!("{}-field", host.key()), true);
+    }
+
+    /// Opens a mention panel with the query cleared (`push` and `clearQuery`), reading an
+    /// Explorer folder the first time it shows.
+    fn drill(&mut self, host: &Host, panel: Panel, tx: &mut Tx) {
+        if let Panel::Explorer(dir) = &panel {
+            self.read_listing(host, dir.clone());
+        }
+        let draft = self.draft_mut(host);
+        if let Some(t) = field::trigger(&draft.edit).filter(|t| !t.query.is_empty()) {
+            draft.edit.set_selection(t.range.start + 1, t.range.end);
+            draft.edit.insert("");
+        }
+        draft.panel = panel;
+        draft.highlight = 0;
+        tx.focus(format!("{}-field", host.key()), false);
+    }
+
+    /// Back one mention panel: an Explorer folder to its parent, the root folder to the root.
+    fn panel_back(&mut self, host: &Host) {
+        let root = self.root_of(host).unwrap_or_default();
+        let draft = self.draft_mut(host);
+        draft.panel = match &draft.panel {
+            Panel::Explorer(dir) if dir != &root && dir.starts_with(&root) => {
+                Panel::Explorer(dir.rsplit_once('/').map_or(root.clone(), |(parent, _)| parent.to_owned()))
+            }
+            _ => Panel::Root,
+        };
+        draft.highlight = 0;
+    }
+
+    /// `filesystemApi.readDirectory` for an Explorer folder; a ready listing is kept.
+    fn read_listing(&mut self, host: &Host, dir: String) {
+        if matches!(self.composer.listings.get(&dir), Some(Listing::Ready(_))) {
+            return;
+        }
+        let root = self.root_of(host).unwrap_or_default();
+        self.composer.listings.insert(dir.clone(), Listing::Loading);
+        let path = format!("/fs/ls?path={}", ui::composer::encode_query(if dir.is_empty() { "/" } else { &dir }));
+        if let Some(link) = &mut self.host {
+            link.fetch(path, crate::host::Fetch::Listing { dir, root });
+        }
+    }
+
+    pub(crate) fn listing_read(&mut self, dir: String, root: &str, result: Result<Value, client::http::HttpError>) {
+        let listing = match result {
+            Ok(value) => match menu::listing_entries(&value, &dir, root) {
+                Some(entries) => Listing::Ready(entries),
+                None => {
+                    log::warn!("[composer] mention folder listing unreadable: dir={dir}");
+                    Listing::Error
+                }
+            },
+            Err(e) => {
+                log::warn!("[composer] mention folder listing failed: dir={dir} {e}");
+                Listing::Error
+            }
+        };
+        self.composer.listings.insert(dir, listing);
     }
 
     /// An add-menu row: put a trigger at the caret, a tool pill, or (later) the file picker.
@@ -463,6 +538,7 @@ impl State {
             let host = host.clone();
             Rc::new(move |s: &mut State, tx: &mut Tx| f(s, &host, tx)) as Rc<dyn Fn(&mut State, &mut Tx)>
         };
+        let (agent_host, pick_agent_host) = (host.clone(), host.clone());
         let (edit_host, key_host, paste_host, pick_host, hover_host, menu_host, add_host, rm_host) = (
             host.clone(),
             host.clone(),
@@ -487,7 +563,7 @@ impl State {
             pick: Rc::new(move |s: &mut State, item: &Item, tx: &mut Tx| s.composer_pick(&pick_host, item, tx)),
             hover: Rc::new(move |s: &mut State, n: usize| s.draft_mut(&hover_host).highlight = n),
             back: h(|s, host, tx| {
-                s.draft_mut(host).panel = Panel::Root;
+                s.panel_back(host);
                 tx.focus(format!("{}-field", host.key()), false);
             }),
             add_menu: Rc::new(move |s: &mut State, open: bool| {
@@ -496,7 +572,12 @@ impl State {
                 draft.tools_open &= open;
             }),
             add: Rc::new(move |s: &mut State, what: &str, tx: &mut Tx| s.composer_add(&add_host, what, tx)),
-            agent: h(|s, _, _| s.toast_later("Switching agents from the composer")),
+            agent: Rc::new(move |s: &mut State, open: bool| match &agent_host {
+                Host::Chat(_) if open => s.toast_later("Switching agents in a chat"),
+                Host::Chat(_) => {}
+                Host::Launcher(_) => s.draft_mut(&agent_host).agent_open = open,
+            }),
+            pick_agent: Rc::new(move |s: &mut State, id: &str, tx: &mut Tx| s.composer_pick_agent(&pick_agent_host, id, tx)),
             remove_attachment: Rc::new(move |s: &mut State, n: usize| {
                 let draft = s.draft_mut(&rm_host);
                 if n < draft.attachments.len() {
@@ -504,6 +585,36 @@ impl State {
                 }
             }),
         }
+    }
+
+    /// The launcher's agent menu: `rememberLastSelectedAgent`, then back to the field.
+    pub fn composer_pick_agent(&mut self, host: &Host, id: &str, tx: &mut Tx) {
+        self.draft_mut(host).agent_open = false;
+        if !self.composer.agents.iter().any(|a| a.id == id) {
+            return;
+        }
+        log::info!("[composer] launcher agent: {id}");
+        self.composer.picked = Some(id.to_owned());
+        let key = "agents/last-selected";
+        self.write(key, serde_json::json!({ "agentId": id, "mode": "acp" }), Pending::Write(key.to_owned()));
+        tx.focus(format!("{}-field", host.key()), false);
+    }
+
+    /// What the launcher's agent menu lists; a chat's chip has no menu.
+    pub fn agent_choices(&self, host: &Host) -> Vec<ui::composer::view::AgentChoice> {
+        if matches!(host, Host::Chat(_)) {
+            return Vec::new();
+        }
+        let shown = self.shown_agent(host).map(|a| a.id.as_str());
+        self.composer
+            .agents
+            .iter()
+            .map(|a| ui::composer::view::AgentChoice {
+                id: a.id.clone(),
+                name: a.name.clone(),
+                picked: shown == Some(a.id.as_str()),
+            })
+            .collect()
     }
 
     /// The agent configs (`acp/agents`) as read.
