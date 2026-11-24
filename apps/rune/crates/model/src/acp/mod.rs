@@ -37,6 +37,7 @@ pub mod js;
 #[cfg(test)]
 mod js_tests;
 mod launch;
+mod launcher_options;
 pub mod mcp;
 mod mcp_install;
 mod mcp_oauth;
@@ -283,6 +284,9 @@ pub struct Book {
     /// Per session, the newest model pick still running (`latestModelPick`).
     #[serde(skip)]
     pub(crate) latest_model_pick: BTreeMap<String, RunId>,
+    /// The launcher picks being applied to a new session.
+    #[serde(skip)]
+    pub(crate) launchers: BTreeMap<RunId, launcher_options::LauncherRun>,
     /// Sessions whose heal was asked for again while one ran.
     #[serde(skip)]
     pub(crate) heal_rerun: BTreeSet<String>,
@@ -488,7 +492,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.apply_session_index(entries, &mut fx);
             state.on_import_reloaded(&reload, None, &mut fx);
         }
-        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
+        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, None, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
             state.set_model(session_id, model_id, options, None, &mut fx);
         }
@@ -534,6 +538,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.claim_prepared_chat(&key, &project_id, request, &mut fx);
         }
         Event::AgentSwitch(event, seq) => state.on_agent_switch(event, seq, env),
+        Event::ApplyPendingLauncherOptions(session_id, picks, request) => {
+            let by = launcher_options::LauncherCaller::Action(request);
+            state.apply_pending_launcher_options(session_id, picks, by, &mut fx);
+        }
         Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
         Event::SetSwitchPendingOption(session_id, patch) => {
             state.set_switch_pending_option(&session_id, patch, &mut fx);

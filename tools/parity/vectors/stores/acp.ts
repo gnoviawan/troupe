@@ -192,7 +192,8 @@ const RESOLVES = new Set([
   'generateCommitMessage',
   'assistTerminal',
   'draftBugReport',
-  'armAgentSwitch'
+  'armAgentSwitch',
+  'applyPendingLauncherOptions'
 ])
 
 export const acpRecorder: StoreRecorder = {
@@ -404,6 +405,7 @@ import { historyScenarios } from './acp-scenarios-history'
 import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
+import { launcherOptionScenarios } from './acp-scenarios-launcher'
 import { mcpScenarios } from './acp-scenarios-mcp'
 import { olderScenarios } from './acp-scenarios-older'
 import { oneShotScenarios } from './acp-scenarios-oneshot'
@@ -448,5 +450,6 @@ export const acpScenarios = [
   ...reconcileScenarios,
   ...olderScenarios,
   ...armScenarios,
-  ...pendingPickScenarios
+  ...pendingPickScenarios,
+  ...launcherOptionScenarios
 ]

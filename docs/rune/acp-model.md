@@ -458,6 +458,17 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      values under the armed model (`modelValuesPatch`). Nothing goes to the
      chat's current agent. A pick with no switch armed is logged and dropped.
      Not here: the drop once `switchAgent` runs, which needs 9d.
+   - 8d, launcher picks (R6a-7, `acp/launcher_options.rs`).
+     `applyPendingLauncherOptions` sets a launcher's or an armed switch's
+     picks on the new session, one set command at a time on a `Book::runs`
+     id: the mode unless current, the model (native `setModel`, falling back
+     to the model config option; a model the session lacks toasts and skips
+     its scoped values), then each value the session advertises and does not
+     already show. Each failure is logged and the next pick still goes. After
+     a native model switch with values still to set it waits for the
+     re-advertise (`waitForReadvertisedOptions`); the recorder cannot reach
+     that wait, whose loop only ends on the mocked clock. Not here: the
+     `restore` form the reopened chat's model restore uses.
      Not here: `switchAgent` (the handoff summary, the transcript splice, the
      new session and the first prompt) and the reopen's switch redirect and
      re-splice.

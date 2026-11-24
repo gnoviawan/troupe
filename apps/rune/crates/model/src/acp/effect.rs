@@ -83,6 +83,9 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         mode_id: String,
+        /// The run that sent it, which its outcome moves on.
+        #[serde(skip_serializing)]
+        run: Option<RunId>,
         /// Sent again after an authenticate on demand (`withAuthRetry`).
         #[serde(skip_serializing)]
         retried: bool,
@@ -497,7 +500,9 @@ impl Effect {
     /// The restore a set command belongs to.
     pub(crate) fn run(&self) -> Option<RunId> {
         match self {
-            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
+            Self::SetMode { run, .. }
+            | Self::SetModel { run, .. }
+            | Self::SetConfigOption { run, .. } => *run,
             _ => None,
         }
     }
