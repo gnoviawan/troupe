@@ -54797,5 +54797,1228 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_on_an_empty_index_takes_the_host_rows",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": "Untitled Chat 3",
+     "activeTurn": true,
+     "openTurnId": "seed-turn",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22600,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s1",
+        "title": "Fix the build",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "s2",
+        "title": "Chat s2",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": "Fix the build",
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Fix the build",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1,
+       "turnActive": true
+      },
+      {
+       "id": "s2",
+       "title": "Chat s2",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22600,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s2",
+        "title": "Chat s2",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": "Fix the build",
+       "activeTurn": true,
+       "openTurnId": "seed-turn",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2",
+       "title": "Chat s2",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1,
+       "lastSeq": 0
+      },
+      {
+       "id": "s1",
+       "title": "Fix the build",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1,
+       "turnActive": true
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22600,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_keeps_a_newer_local_row",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Renamed",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 200,
+     "lastActivityAt": 20,
+     "messageCount": 5,
+     "lastSeq": 3,
+     "continuedFrom": "local-parent",
+     "turnActive": false
+    },
+    {
+     "id": "s2",
+     "title": "Untitled Chat 2",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 30,
+     "messageCount": 1,
+     "agentConfigId": "cfg-l"
+    },
+    {
+     "id": "s3",
+     "title": "Same time",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1,
+     "kind": "quick"
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22700,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s1",
+        "title": "Host",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 7,
+        "lastSeq": 9,
+        "agentConfigId": "cfg-h",
+        "continuedFrom": "host-parent",
+        "startedBy": "automation",
+        "kind": "chat",
+        "turnActive": true
+       },
+       {
+        "id": "s2",
+        "title": "Host title",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 0,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "s3",
+        "title": "Host same time",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": null,
+        "lastActivityAt": 10,
+        "messageCount": 1,
+        "kind": "chat"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Renamed",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 20,
+       "messageCount": 7,
+       "lastSeq": 9,
+       "agentConfigId": "cfg-h",
+       "continuedFrom": "host-parent",
+       "startedBy": "automation",
+       "kind": "chat",
+       "turnActive": true
+      },
+      {
+       "id": "s2",
+       "title": "Host title",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 30,
+       "messageCount": 1,
+       "agentConfigId": "cfg-l",
+       "lastSeq": 0
+      },
+      {
+       "id": "s3",
+       "title": "Same time",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1,
+       "kind": "quick",
+       "lastSeq": 0
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22700,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_newer_host_row_keeps_what_the_host_cannot_know",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Fix the bug",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1,
+     "turnActive": true,
+     "continuedFrom": "parent"
+    },
+    {
+     "id": "s2",
+     "title": "Local",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1,
+     "turnActive": true
+    },
+    {
+     "id": "s3",
+     "title": "Local three",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22800,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s1",
+        "title": "Untitled Chat",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 50,
+        "messageCount": 1
+       },
+       {
+        "id": "s2",
+        "title": "Host",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 50,
+        "messageCount": 1,
+        "turnActive": false
+       },
+       {
+        "id": "s3",
+        "title": "Host three",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 50,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "title": "Fix the bug",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 50,
+       "messageCount": 1,
+       "turnActive": true,
+       "continuedFrom": "parent"
+      },
+      {
+       "id": "s2",
+       "title": "Host",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 50,
+       "messageCount": 1,
+       "turnActive": false
+      },
+      {
+       "id": "s3",
+       "title": "Host three",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 50,
+       "messageCount": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22800,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_keeps_a_live_row_the_host_lacks",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": "turn:open",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat s1",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1
+    },
+    {
+     "id": "gone",
+     "title": "Chat gone",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1
+    },
+    {
+     "id": "s2",
+     "title": "Chat s2",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 22900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s2",
+        "title": "Chat s2",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 40,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": "turn:open",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2",
+       "title": "Chat s2",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 40,
+       "messageCount": 1
+      },
+      {
+       "id": "s1",
+       "title": "Chat s1",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1,
+       "turnActive": true
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 22900,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_cleans_handoff_titles",
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "x",
+     "title": "Chat x",
+     "agentId": "agent-1",
+     "projectId": "p1",
+     "cwd": "/work",
+     "createdAt": 100,
+     "lastActivityAt": 10,
+     "messageCount": 1
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 23000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "h1",
+        "title": "# Conversation handoff",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "h2",
+        "title": "# Conversation handoff\n\nSummary\n\nUser: fix it\nAgent: done that",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "h3",
+        "title": "# Conversation handoff\n\nSummary\n\n---\n\nShip the fix\nmore",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "h4",
+        "title": "# Conversation handoff\n\nno turns here",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       },
+       {
+        "id": "h5",
+        "title": "About # Conversation handoff",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "h1",
+       "title": "Untitled Chat",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      },
+      {
+       "id": "h2",
+       "title": "done that",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      },
+      {
+       "id": "h3",
+       "title": "Ship the fix",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      },
+      {
+       "id": "h4",
+       "title": "Untitled Chat",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      },
+      {
+       "id": "h5",
+       "title": "About # Conversation handoff",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 23000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "index_snapshot_closes_tabs_of_chats_that_are_gone",
+  "context": {
+   "openChatTabs": [
+    "s1",
+    "ghost",
+    "s5"
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": []
+   },
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {},
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 23100,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "applySessionIndexSnapshot",
+     "args": [
+      [
+       {
+        "id": "s5",
+        "title": "Chat s5",
+        "agentId": "agent-1",
+        "projectId": "p1",
+        "cwd": "/work",
+        "createdAt": 100,
+        "lastActivityAt": 10,
+        "messageCount": 1
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeChatTab",
+      "sessionId": "ghost"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s5",
+       "title": "Chat s5",
+       "agentId": "agent-1",
+       "projectId": "p1",
+       "cwd": "/work",
+       "createdAt": 100,
+       "lastActivityAt": 10,
+       "messageCount": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 23100,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
  }
 ]

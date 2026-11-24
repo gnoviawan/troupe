@@ -77,9 +77,19 @@ vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
     flushPendingWrites: async () => undefined
   }
 }))
+// One tree holds a chat tab per `context.openChatTabs` session; the index
+// prune's tab removal is the model's `closeChatTab` effect.
 vi.mock(`${renderer}/stores/workspace-store`, () => ({
-  getAllLeafPanes: () => [],
-  getAllTreeRoots: () => [],
+  getAllLeafPanes: () => [
+    {
+      tabs: [...openChatTabs].map((sessionId) => ({
+        type: 'agent-chat',
+        id: `chat-${sessionId}`,
+        sessionId
+      }))
+    }
+  ],
+  getAllTreeRoots: () => [{}],
   // A consent ticket asks for its chat tab; the vector keeps the ask, as the
   // model's `revealChatTab` effect, and finds no pane.
   findPaneContainingTab: (_root: unknown, tabId: string) => {
@@ -92,7 +102,8 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     subscribe: () => () => {},
     getState: () => ({
       addAgentChatTab: () => {},
-      removeTab: () => {},
+      removeTab: (tabId: string) =>
+        emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
       remapAgentChatSession: () => {},
       root: { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
     })

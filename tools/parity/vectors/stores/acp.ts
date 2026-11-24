@@ -95,7 +95,9 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/agents/acp-spawn-errors.ts',
     'src/renderer/lib/acp-api.ts',
     'src/shared/types/web-protocol.types.ts',
-    'src/renderer/stores/acp-store/composer-options.ts'
+    'src/renderer/stores/acp-store/composer-options.ts',
+    'src/renderer/stores/acp-store/chat-tab-prune.ts',
+    'src/renderer/lib/acp-history-persistence.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -171,6 +173,7 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
+import { indexScenarios } from './acp-scenarios-index'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { sessionScenarios } from './acp-scenarios-session'
@@ -185,5 +188,6 @@ export const acpScenarios = [
   ...promptScenarios,
   ...sessionScenarios,
   ...agentScenarios,
-  ...pickScenarios
+  ...pickScenarios,
+  ...indexScenarios
 ]

@@ -10,6 +10,7 @@ pub mod agents;
 pub mod approvals;
 mod clamp;
 pub mod controls;
+mod index;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
@@ -278,6 +279,8 @@ pub enum Event {
     AgentSignInRequest(AgentSignInRequestEvent),
     #[serde(rename = "_onAgentSignInResolved")]
     AgentSignInResolved(AgentSignInResolvedEvent),
+    #[serde(rename = "applySessionIndexSnapshot")]
+    ApplySessionIndexSnapshot(Vec<Object>),
     #[serde(rename = "setMode")]
     SetMode(String, String),
     #[serde(rename = "setModel")]
@@ -406,6 +409,9 @@ pub enum Effect {
         #[serde(skip_serializing)]
         is_model: bool,
     },
+    /// Close the chat tab of this session in every project's tree: the chat
+    /// is neither live nor in the index, so the tab could show nothing.
+    CloseChatTab { session_id: String },
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
@@ -469,6 +475,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
             state.set_model(session_id, model_id, options, &mut fx);

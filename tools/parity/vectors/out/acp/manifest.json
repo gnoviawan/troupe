@@ -32,7 +32,9 @@
         "src/renderer/lib/agents/acp-spawn-errors.ts": "4d6688350c5becfe0353863eb5552bce04ac5836",
         "src/renderer/lib/acp-api.ts": "02df50ba69ea0f725df918e8e18587c067577d9f",
         "src/shared/types/web-protocol.types.ts": "296a28c60d36c8129c6388a8b5639115a7f33e55",
-        "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08"
+        "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08",
+        "src/renderer/stores/acp-store/chat-tab-prune.ts": "d71996dd7ade033932cd54eab92b0db45edcae62",
+        "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -182,7 +184,13 @@
         "set_config_option_on_the_model_saves_the_model",
         "set_config_option_on_a_mode_option_is_agent_wide",
         "set_config_option_saves_a_boolean_as_text",
-        "set_config_option_without_a_live_config_only_sets_the_value"
+        "set_config_option_without_a_live_config_only_sets_the_value",
+        "index_snapshot_on_an_empty_index_takes_the_host_rows",
+        "index_snapshot_keeps_a_newer_local_row",
+        "index_snapshot_newer_host_row_keeps_what_the_host_cannot_know",
+        "index_snapshot_keeps_a_live_row_the_host_lacks",
+        "index_snapshot_cleans_handoff_titles",
+        "index_snapshot_closes_tabs_of_chats_that_are_gone"
       ]
     }
   }

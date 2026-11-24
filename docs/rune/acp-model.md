@@ -183,8 +183,17 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      desktop's index reload is the `refreshSessionIndex` effect; the tabs a
      chat shows are `Book::open_chat_tabs`, which the app keeps equal to the
      workspace.
-   - 6b. Index load and snapshot merge, history open, live window and
-     eviction, the resubscribe install, live-turn reattach.
+   - 6b, first part (R6a-2). `applySessionIndexSnapshot`, the answer to
+     `refreshSessionIndex`: the host's rows merged with the local
+     projection (`mergeSessionIndexEntries`), live turns stamped, the
+     placeholder titles of live chats replaced by the index's, handoff
+     titles cleaned, and the tabs of chats neither live nor indexed closed
+     (`closeChatTab`). Not here: the untitled-counter rebase (it only
+     names chats `createSession` makes, PR 8) and the dropped-launch
+     recovery (PR 8). Events apply in order, so the load generation guard
+     has no counterpart.
+   - 6b, rest. History open, live window and eviction, the resubscribe
+     install, live-turn reattach.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider
