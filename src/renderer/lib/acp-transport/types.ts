@@ -445,8 +445,8 @@ export interface AcpTransport {
   /** Antigravity Accounts of the host; secret-free. Google logins only. */
   listAntigravityAccounts(): Promise<AntigravityAccountsSnapshot>
   /**
-   * Per-model quotas of every Antigravity Account. Cached 5 minutes on the host.
-   * `force` still reuses a read younger than 60 seconds.
+   * One usage record per Antigravity Account, in list order. Troupe does not
+   * read Antigravity quotas, so each record is `unavailable` with no windows.
    */
   listAntigravityUsage(force?: boolean): Promise<AntigravityAccountUsage[]>
   setDefaultAntigravityAccount(accountId: string): Promise<void>
