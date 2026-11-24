@@ -9,6 +9,7 @@
 
 pub mod approvals;
 pub mod diff;
+pub mod elicitation;
 pub mod notice;
 pub mod plan;
 mod rows;
@@ -18,6 +19,8 @@ pub mod tool_call;
 
 #[cfg(test)]
 mod diff_tests;
+#[cfg(test)]
+mod elicitation_tests;
 #[cfg(test)]
 mod notice_tests;
 #[cfg(test)]
@@ -75,6 +78,8 @@ pub struct Reader {
     pub dismissed_error: BTreeMap<String, String>,
     /// Sessions whose error notice shows its details.
     pub error_details: BTreeSet<String>,
+    /// What the reader entered in each open elicitation form, by request.
+    forms: BTreeMap<String, elicitation::Form>,
 }
 
 impl Reader {
@@ -166,6 +171,15 @@ impl Reader {
         if !self.plan_entries.remove(&key) {
             self.plan_entries.insert(key);
         }
+    }
+
+    /// The form of the elicitation `request_id`.
+    pub fn form(&mut self, request_id: &str) -> &mut elicitation::Form {
+        self.forms.entry(request_id.to_owned()).or_default()
+    }
+
+    pub fn form_of(&self, request_id: &str) -> Option<&elicitation::Form> {
+        self.forms.get(request_id)
     }
 
     /// Records whether the transcript shows its end; true when that changed.

@@ -56,9 +56,11 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
         )
     };
-    let composer = match pending_question(s, session_id) {
-        Some(q) => question_dock(s, t, q, place),
-        None => crate::composer_view::chat_dock(s, t, session_id, place),
+    let elicitation = s.chat.acp.pending_elicitations.values().find(|e| e.session_id == *session_id);
+    let composer = match (elicitation, pending_question(s, session_id)) {
+        (Some(e), _) => elicitation_dock(s, t, e, place),
+        (None, Some(q)) => question_dock(s, t, q, place),
+        (None, None) => crate::composer_view::chat_dock(s, t, session_id, place),
     };
     let phone = place == ui::composer::view::Place::Phone;
     let mut chat = col().w_full().grow(1.0).min_h(0.0);
@@ -191,6 +193,31 @@ fn question_dock(s: &State, t: &'static Tokens, q: &model::acp::approvals::Pendi
                 .max_w(ui::chat::COLUMN_MAX_W)
                 .child(ui::chat::approvals::question_card(t, q, picked, phone, lenses())),
         )
+}
+
+/// The chat's dock while an elicitation waits: the composer turned into the agent's form.
+fn elicitation_dock(s: &State, t: &'static Tokens, e: &model::acp::approvals::PendingElicitation, place: ui::composer::view::Place) -> El {
+    let phone = place == ui::composer::view::Place::Phone;
+    let empty = ui::chat::elicitation::Form::default();
+    let form = s.chat.reader.form_of(&e.request_id).unwrap_or(&empty);
+    let hooks = ui::chat::elicitation::Hooks {
+        toast: |s: &mut State, why: &str| s.toast_error(why, ""),
+        open_url: |_s: &mut State, url: &str, tx: &mut rune::Tx| {
+            log::info!("[chat] open the elicitation link");
+            if let Err(e) = tx.open_url(url) {
+                log::warn!("[chat] could not open the elicitation link: {e}");
+            }
+        },
+        form: |s: &mut State, id: &str| s.chat.reader.form(id),
+    };
+    col()
+        .key(format!("elicitation-dock-{}", e.session_id))
+        .w_full()
+        .items_center()
+        .px(if phone { 16.0 } else { 20.0 })
+        .pt(12.0)
+        .pb(24.0)
+        .child(col().w_full().max_w(ui::chat::COLUMN_MAX_W).child(ui::chat::elicitation::prompt(t, e, form, phone, lenses(), hooks)))
 }
 
 /// A chat tab's label: the chat's title as the rail lists it.

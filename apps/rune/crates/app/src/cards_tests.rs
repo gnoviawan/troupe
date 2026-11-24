@@ -124,3 +124,33 @@ fn the_error_notice_shows_details_retries_and_dismisses() {
     assert_eq!(sent(&rt.state, WsRequestType::SendPrompt).len(), 1, "Retry sends the last turn again");
     assert!(!present(&rt, "chat-error-chat-1"), "the retried error hides");
 }
+
+#[test]
+fn an_elicitation_form_checks_its_fields_then_answers() {
+    let mut rt = chat();
+    ask(
+        &mut rt,
+        json!({ "_onElicitationRequest": [{
+            "agentId": "agent-1", "sessionId": "chat-1", "requestId": "el-1", "mode": "form", "message": "How many runs?",
+            "fields": [
+                { "name": "runs", "kind": "integer", "required": true, "title": "Runs", "options": [] },
+                { "name": "branch", "kind": "enum", "required": false, "options": [{ "value": "main", "label": "main" }, { "value": "dev", "label": "dev" }] },
+            ],
+        }] }),
+    );
+    assert!(present(&rt, "elicitation-el-1"), "the form takes the composer's place");
+    assert!(!present(&rt, "composer-chat-chat-1-tray"));
+    tap(&mut rt, "elicitation-accept-el-1");
+    assert!(sent(&rt.state, WsRequestType::RespondElicitation).is_empty(), "a missing required field stops Submit");
+    assert_eq!(rt.state.chat.reader.form_of("el-1").and_then(|f| f.error.clone()), Some(("runs".into(), "Runs is required.".into())));
+    rt.update_if(|s, _| {
+        s.chat.reader.form("el-1").text("runs").text = "3".into();
+        true
+    });
+    tap(&mut rt, "elicitation-field-branch-1");
+    tap(&mut rt, "elicitation-accept-el-1");
+    assert_eq!(
+        sent(&rt.state, WsRequestType::RespondElicitation),
+        [json!({ "agentId": "agent-1", "requestId": "el-1", "action": "accept", "content": { "runs": 3, "branch": "dev" } })]
+    );
+}
