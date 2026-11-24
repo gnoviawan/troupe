@@ -8,6 +8,7 @@ import {
   splitInstallValues
 } from '@/components/settings/McpInstallForm'
 import { Button } from '@/components/ui/button'
+import { useReloadChat } from '@/hooks/use-reload-chat'
 import { logFrontendError } from '@/lib/log-api'
 import type { PendingMcpInstall } from '@/lib/mcp-install-request'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,13 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
   const answer = useAcpStore((s) => s.answerMcpInstall)
   const dismiss = useAcpStore((s) => s.dismissMcpInstall)
   const connect = useAcpStore((s) => s.connectMcpOAuth)
+  const checkOAuth = useAcpStore((s) => s.checkMcpOAuthStatus)
+  const serverId = install.result?.serverId ?? null
+  const connecting = useAcpStore((s) =>
+    serverId ? s.mcpOAuthConnecting[serverId] === true : false
+  )
+  const connected = useAcpStore((s) => (serverId ? s.mcpOAuthConnected[serverId] === true : false))
+  const chatReload = useReloadChat(install.sessionId)
   const [values, setValues] = useState(() => initialInstallValues(install.form.fields))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const valuesRef = useRef(values)
@@ -41,6 +49,19 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
     }
     setBaseline(JSON.stringify(splitInstallValues(install.form.fields, valuesRef.current).inputs))
   }, [install.launchDigest, install.form])
+
+  // A token stored before this card (an earlier sign-in) shows as signed in.
+  const needsOAuth = install.result?.oauth === true
+  useEffect(() => {
+    if (!needsOAuth || !serverId || projectId === null) return
+    void checkOAuth(projectId, serverId)
+  }, [needsOAuth, serverId, projectId, checkOAuth])
+
+  // The reload started (directly or after its confirm): the card has done
+  // its job, and the reloaded chat carries the new server.
+  useEffect(() => {
+    if (chatReload.reloading) dismiss(install.requestId)
+  }, [chatReload.reloading, dismiss, install.requestId])
 
   const { inputs } = splitInstallValues(install.form.fields, values)
   const reviewed = baseline !== null && JSON.stringify(inputs) === baseline
@@ -82,16 +103,44 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
   }
 
   const signIn = (): void => {
-    const serverId = install.result?.serverId
     if (!serverId || projectId === null) return
-    void connect(projectId, serverId)
-      .then((connected) => {
-        if (connected) toast.success(`Connected to ${install.name}`)
+    const run = async (): Promise<boolean> => {
+      // The registry reload after an agent install can still be in flight;
+      // without the server entry the store would return false silently.
+      const known = (): boolean =>
+        useAcpStore.getState().mcpServers.some((server) => server.id === serverId)
+      if (!known()) await useAcpStore.getState().loadMcpServers()
+      if (!known()) {
+        void logFrontendError({
+          level: 'warn',
+          source: 'chat.McpInstallCard',
+          message: `mcp sign-in skipped: server ${serverId} is not in the loaded registry`
+        })
+        toast.error('Could not find this server yet. Try again from Settings.')
+        return false
+      }
+      return connect(projectId, serverId)
+    }
+    void run()
+      .then((ok) => {
+        if (ok) toast.success(`Signed in to ${install.name}`)
       })
       .catch(() => toast.error('Could not start sign-in. Try again from Settings.'))
   }
 
   const result = install.result
+  const showSignIn = Boolean(result?.oauth && serverId) && !connected
+  // Reload is offered once nothing else blocks the new tools: no sign-in is
+  // left, and the server was saved (or was already there).
+  const saved = result?.outcome === 'installed' || result?.outcome === 'already_exists'
+  const canReload = saved && !showSignIn
+  const signInStatus = !result?.oauth
+    ? null
+    : connected
+      ? `Signed in. Reload this chat so the agent can use ${install.name}.`
+      : connecting
+        ? 'Finish signing in in the browser window that opened.'
+        : null
 
   return (
     <div
@@ -143,20 +192,35 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
                   <li key={`${step.kind}-${step.runtime ?? ''}`}>{step.message}</li>
                 ))}
               </ul>
+              {signInStatus && (
+                <p className="text-xs text-foreground" role="status">
+                  {signInStatus}
+                </p>
+              )}
             </div>
           )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
           {result ? (
             <>
-              {result.oauth && result.serverId && (
-                <Button type="button" onClick={signIn}>
-                  Sign in
-                </Button>
-              )}
               <Button type="button" variant="outline" onClick={() => dismiss(install.requestId)}>
                 Dismiss
               </Button>
+              {showSignIn && (
+                <Button type="button" disabled={connecting} onClick={signIn}>
+                  {connecting ? 'Signing in…' : 'Sign in'}
+                </Button>
+              )}
+              {canReload && chatReload.reload && (
+                <Button
+                  type="button"
+                  disabled={chatReload.disabled}
+                  title={chatReload.disabled ? (chatReload.reason ?? undefined) : undefined}
+                  onClick={chatReload.reload}
+                >
+                  {chatReload.reloading ? 'Reloading…' : 'Reload chat'}
+                </Button>
+              )}
             </>
           ) : (
             <>
