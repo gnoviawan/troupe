@@ -240,7 +240,9 @@ pub fn resized(start: &[f64], index: usize, travel: f32, length: f32) -> Vec<f64
     }
     let pair = sizes[index] + sizes[index + 1];
     let delta = f64::from(travel) / f64::from(length) * 100.0;
-    let first = (sizes[index] + delta).clamp(MIN_SHARE, (pair - MIN_SHARE).max(MIN_SHARE));
+    // A pair a stored layout left under twice the minimum splits evenly at most, never below 0.
+    let floor = MIN_SHARE.min(pair / 2.0);
+    let first = (sizes[index] + delta).clamp(floor, pair - floor);
     sizes[index] = first;
     sizes[index + 1] = pair - first;
     sizes
@@ -411,8 +413,15 @@ fn tab_bar<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, leading: Vec<El>, layer: &
                 .grow(1.0)
                 .min_w(0.0)
                 .h_full()
-                .clip_rounded(0.0)
-                .child(list)
+                .child(
+                    row()
+                        .key(format!("tab-scroll-{}", leaf.id))
+                        .shrink()
+                        .min_w(0.0)
+                        .h_full()
+                        .scroll_x()
+                        .child(list),
+                )
                 .child(el().grow(1.0).h_full().window_drag()),
         )
         .child(actions)

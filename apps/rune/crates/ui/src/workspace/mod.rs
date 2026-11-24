@@ -166,7 +166,7 @@ impl Workspace {
             self.parked_files.insert(leaving, files);
         }
         let (tree, files) = match hydrated {
-            Some(Hydrated { tree, files }) => (Some(tree), files),
+            Some(Hydrated { tree, files, .. }) => (Some(tree), files),
             None => (
                 None,
                 self.parked_files.remove(project_id).unwrap_or_default(),

@@ -264,6 +264,8 @@ fn a_split_handle_resizes_its_neighbours_and_commits_on_release() {
 fn shares_keep_ten_percent_on_each_side() {
     assert_eq!(resized(&[50.0, 50.0], 0, -900.0, 1000.0), vec![10.0, 90.0]);
     assert_eq!(resized(&[50.0, 50.0], 0, 100.0, 1000.0), vec![60.0, 40.0]);
+    assert_eq!(resized(&[5.0, 5.0, 90.0], 0, 100.0, 1000.0), vec![5.0, 5.0, 90.0]);
+    assert_eq!(resized(&[4.0, 12.0, 84.0], 0, -500.0, 1000.0), vec![8.0, 8.0, 84.0]);
 }
 
 #[test]
