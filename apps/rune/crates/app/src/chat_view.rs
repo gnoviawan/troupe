@@ -6,7 +6,7 @@ use std::rc::Rc;
 use model::workspace::Tab;
 use rune::{El, col, row, text};
 use theme::Tokens;
-use ui::chat::{Folds, Lenses};
+use ui::chat::{Lenses, Reader};
 use ui::markdown::{Hooks, LinkTarget, TABLE_ZOOM};
 use ui::type_::sans;
 
@@ -19,8 +19,8 @@ const COMPOSER_H: f32 = 176.0;
 fn lenses() -> Lenses<State> {
     Lenses {
         acp: |s: &State| &s.chat.acp,
-        folds: |s: &State| &s.chat.folds,
-        folds_mut: |s: &mut State| -> &mut Folds { &mut s.chat.folds },
+        reader: |s: &State| &s.chat.reader,
+        reader_mut: |s: &mut State| -> &mut Reader { &mut s.chat.reader },
     }
 }
 

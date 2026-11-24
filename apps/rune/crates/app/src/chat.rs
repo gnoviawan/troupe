@@ -23,7 +23,7 @@ use crate::sync::{Pending, Uuid};
 #[derive(Default)]
 pub struct ChatUi {
     pub acp: acp::State,
-    pub folds: ui::chat::Folds,
+    pub reader: ui::chat::Reader,
     /// Sessions whose payload was asked for (loaded or not).
     requested: BTreeSet<String>,
     /// Sessions whose payload is in.

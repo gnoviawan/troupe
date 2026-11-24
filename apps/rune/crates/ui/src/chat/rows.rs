@@ -92,7 +92,7 @@ fn reply<S: 'static>(ctx: &Ctx<S>, id: &str, words: &str, streaming: bool, tail:
 fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
     let t = ctx.t;
     let c = &t.colors;
-    let open = (ctx.lenses.folds)(s).is_open(key, a);
+    let open = (ctx.lenses.reader)(s).is_open(key, a);
     let label = if a.active {
         "Working…".to_owned()
     } else {
@@ -112,8 +112,8 @@ fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
     if a.attention && !a.active {
         header = header.child(text("· needs attention").font(sans(12.0, 400.0, 16.0)).color(ink));
     }
-    let (folds, row_key, toggled) = (ctx.lenses.folds_mut, key.to_owned(), a.clone());
-    let header = header.on_press(move |s: &mut S| folds(s).toggle(&row_key, &toggled));
+    let (reader, row_key, toggled) = (ctx.lenses.reader_mut, key.to_owned(), a.clone());
+    let header = header.on_press(move |s: &mut S| reader(s).toggle(&row_key, &toggled));
     let mut frame = col().w_full().my(4.0).min_w(0.0).child(header);
     if open {
         let steps = a.items.iter().map(|item| step(ctx, s, item, a.active));

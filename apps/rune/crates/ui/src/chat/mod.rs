@@ -1,7 +1,8 @@
 //! The chat transcript (`components/chat/ChatMessageList.tsx` with `ChatMessage` and
 //! `TurnActivity`): one virtual row per timeline row in the centred `max-w-3xl` column, inside
 //! a scroll viewport that follows the end while it is at the end and holds the reader's place
-//! when scrolled up (`ScrollSpec::stick_bottom`; virtual rows keep their first visible row).
+//! when scrolled up (`ScrollSpec::stick_bottom`; virtual rows keep their first visible row),
+//! with `MessageScrollerButton`'s "Scroll to latest" over the bottom while it is scrolled up.
 //!
 //! The inline cards (tool calls, approvals, the plan, subagents) are later units; each draws a
 //! placeholder row here so the transcript shows where it goes.
@@ -10,10 +11,12 @@ mod rows;
 pub mod timeline;
 
 #[cfg(test)]
+mod scroll_tests;
+#[cfg(test)]
 mod timeline_tests;
 
 use std::borrow::Cow;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
 use model::acp;
@@ -22,6 +25,7 @@ use theme::Tokens;
 use theme::icons as i;
 
 use crate::markdown::Hooks;
+use crate::paint::{PILL, shadows};
 use crate::type_::sans;
 pub use timeline::{Activity, Item, Row, RowKind, message_text, rows};
 
@@ -34,17 +38,21 @@ pub fn scroll_key(session_id: &str) -> String {
     format!("chat-scroll-{session_id}")
 }
 
-/// The open state of each turn's activity row that the reader set by hand.
+/// What the reader set by hand: the open state of turns' activity rows, and the transcripts
+/// scrolled up from their end.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Folds(BTreeMap<String, bool>);
+pub struct Reader {
+    folds: BTreeMap<String, bool>,
+    away: BTreeSet<String>,
+}
 
-impl Folds {
+impl Reader {
     /// `useState(active || (!attentionRequired && !hasFinalResponse))`, then the reader's pick.
     pub fn is_open(&self, key: &str, activity: &Activity) -> bool {
         if activity.active {
             return true;
         }
-        self.0
+        self.folds
             .get(key)
             .copied()
             .unwrap_or(!activity.attention && !activity.has_final)
@@ -52,15 +60,25 @@ impl Folds {
 
     pub fn toggle(&mut self, key: &str, activity: &Activity) {
         let open = self.is_open(key, activity);
-        self.0.insert(key.to_owned(), !open);
+        self.folds.insert(key.to_owned(), !open);
+    }
+
+    /// The session's transcript is scrolled up from its end.
+    pub fn is_away(&self, session_id: &str) -> bool {
+        self.away.contains(session_id)
+    }
+
+    /// Records whether the transcript shows its end; true when that changed.
+    pub fn set_at_end(&mut self, session_id: &str, at_end: bool) -> bool {
+        if at_end { self.away.remove(session_id) } else { self.away.insert(session_id.to_owned()) }
     }
 }
 
 /// How the transcript reaches the app's state.
 pub struct Lenses<S> {
     pub acp: fn(&S) -> &acp::State,
-    pub folds: fn(&S) -> &Folds,
-    pub folds_mut: fn(&mut S) -> &mut Folds,
+    pub reader: fn(&S) -> &Reader,
+    pub reader_mut: fn(&mut S) -> &mut Reader,
 }
 
 impl<S> Clone for Lenses<S> {
@@ -111,6 +129,7 @@ pub fn transcript<S: 'static>(
         return empty(t, session_id);
     }
     let count = rows.len();
+    let away = (lenses.reader)(state).is_away(session_id);
     let ctx = Rc::new(Ctx { t, session: session_id.to_owned(), rows, lenses, hooks });
     let (keys, build) = (ctx.clone(), ctx.clone());
     let list = col()
@@ -136,7 +155,9 @@ pub fn transcript<S: 'static>(
             .a11y_hidden();
         if top { e.pin(Some(0.0), Some(0.0), Some(0.0), None) } else { e.pin(Some(0.0), None, Some(0.0), Some(0.0)) }
     };
-    el().key(format!("chat-transcript-{session_id}"))
+    let session = session_id.to_owned();
+    let frame = el()
+        .key(format!("chat-transcript-{session_id}"))
         .w_full()
         .grow(1.0)
         .min_h(0.0)
@@ -150,10 +171,37 @@ pub fn transcript<S: 'static>(
                 .min_h(0.0)
                 .px(20.0)
                 .scroll(ScrollSpec { stick_bottom: true })
+                .on_at_bottom_if(move |s: &mut S, at_end| (lenses.reader_mut)(s).set_at_end(&session, at_end))
                 .child(col().w_full().pt(LIST_PADDING_Y).pb(LIST_PADDING_Y).child(list)),
         )
         .child(fade(true))
-        .child(fade(false))
+        .child(fade(false));
+    if away { frame.child(scroll_to_latest::<S>(t, session_id)) } else { frame }
+}
+
+/// `MessageScrollerButton`: a round arrow centred over the transcript's bottom that scrolls
+/// to the end.
+fn scroll_to_latest<S: 'static>(t: &'static Tokens, session_id: &str) -> El {
+    let c = &t.colors;
+    let target = scroll_key(session_id);
+    let button = row()
+        .key(format!("chat-latest-{session_id}"))
+        .role("button")
+        .label("Scroll to latest")
+        .size(40.0, 40.0)
+        .center()
+        .radius(PILL)
+        .border(1.0, c.border)
+        .fill(c.background)
+        .hover(c.muted)
+        .focusable(true)
+        .child(icon(&i::ARROW_DOWN, 16.0).color(c.foreground))
+        .on_press_tx(move |_s: &mut S, tx: &mut rune::Tx| tx.scroll_to_bottom(target.clone()));
+    row()
+        .w_full()
+        .justify_center()
+        .pin(Some(0.0), None, Some(0.0), Some(16.0))
+        .child(shadows(button, &t.shadows.shadow_control))
 }
 
 /// `ChatEmptyState`, reduced: a chat with no messages yet.
