@@ -185,7 +185,19 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      workspace.
    - 6b. Index load and snapshot merge, history open, live window and
      eviction, the resubscribe install, live-turn reattach.
-7. Agent roster, auth and browser.
+7. Agent roster, auth and browser. Split in two:
+   - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
+     browser-open is promoted), `agent_error` (the turn ends, the provider
+     failure text, the rejected rate limit, an auth-required agent marked),
+     `agent_crashed` (the chats die, launch markers and warm slots go,
+     running subagents end), `agent_disconnected` (a kill, reap or close
+     drops the agent and its reuse keys; a crash keeps `error`), the
+     browser-open and sign-in prompts and `clearPendingSignIn`. Not yet:
+     the one-shot collectors (PR 10), the warm-pool drop of an empty
+     session (PR 8), and the auth flight that lets the first browser open
+     of a sign-in open by itself (`authenticateAgent`, 7b).
+   - 7b. Spawn, kill, sign-in, logout and `authenticateAgent` (effects with
+     outcome events, as sending does), the roster watch, browser tabs.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.

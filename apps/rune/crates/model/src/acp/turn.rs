@@ -229,7 +229,7 @@ impl State {
         }
     }
 
-    fn indexed(&self, session_id: &str) -> bool {
+    pub(crate) fn indexed(&self, session_id: &str) -> bool {
         self.sessions.contains_key(session_id)
             && self
                 .session_index

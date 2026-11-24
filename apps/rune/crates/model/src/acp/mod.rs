@@ -6,6 +6,7 @@
 //! [`step`] applies one event and returns the effects the app runs. The model
 //! reads no clock and draws no randomness: [`Env`] carries both.
 
+pub mod agents;
 pub mod approvals;
 mod clamp;
 pub mod controls;
@@ -27,6 +28,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{Ids, Level};
+use agents::{
+    AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
+    AgentSpawnedEvent, BrowserOpenRequestEvent,
+};
 use approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
@@ -81,6 +86,17 @@ pub struct State {
     pub prepared_sessions: BTreeMap<String, String>,
     /// Per session, the durable in-chat agent switch markers.
     pub agent_switches: BTreeMap<String, Vec<Value>>,
+    /// Registered agent processes: capabilities, auth methods, host auth.
+    pub agents: BTreeMap<String, Value>,
+    /// Per agent, the sign-in the user is asked for (a browser page or an
+    /// agent's own prompt).
+    pub pending_sign_in: BTreeMap<String, Value>,
+    /// Per agent, the sign-in URL the app may open without a click.
+    pub auto_open_browser_url: BTreeMap<String, Value>,
+    /// Sessions whose launch is in flight.
+    pub launching_session_ids: BTreeMap<String, Value>,
+    /// Per `agentId\0cwd`, the agent's own sessions found on disk.
+    pub discovered_sessions: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -132,6 +148,9 @@ pub struct Book {
     /// equal to the workspace; a closed session it lists keeps its transcript.
     #[serde(skip)]
     pub open_chat_tabs: BTreeSet<String>,
+    /// Browser-open URLs caught before their agent registered, oldest first.
+    #[serde(skip)]
+    pub early_browser_opens: VecDeque<(String, String)>,
 }
 
 impl Book {
@@ -243,6 +262,22 @@ pub enum Event {
     SessionCreated(SessionCreatedEvent),
     #[serde(rename = "_onSessionClosed")]
     SessionClosed(SessionClosedEvent),
+    #[serde(rename = "_onAgentSpawned")]
+    AgentSpawned(AgentSpawnedEvent),
+    #[serde(rename = "_onAgentError")]
+    AgentError(AgentFailureEvent),
+    #[serde(rename = "_onAgentCrashed")]
+    AgentCrashed(AgentFailureEvent),
+    #[serde(rename = "_onAgentDisconnected")]
+    AgentDisconnected(AgentDisconnectedEvent),
+    #[serde(rename = "_onBrowserOpenRequest")]
+    BrowserOpenRequest(BrowserOpenRequestEvent),
+    #[serde(rename = "_onAgentSignInRequest")]
+    AgentSignInRequest(AgentSignInRequestEvent),
+    #[serde(rename = "_onAgentSignInResolved")]
+    AgentSignInResolved(AgentSignInResolvedEvent),
+    #[serde(rename = "clearPendingSignIn")]
+    ClearPendingSignIn(String),
     #[serde(rename = "setActiveSession")]
     SetActiveSession(Option<String>),
     #[serde(rename = "markResumeFailed")]
@@ -380,6 +415,14 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BackgroundCommands(event) => state.on_background_commands(event),
         Event::SessionCreated(event) => state.on_session_created(event, env, &mut fx),
         Event::SessionClosed(event) => state.on_session_closed(event, env, &mut fx),
+        Event::AgentSpawned(event) => state.on_agent_spawned(event),
+        Event::AgentError(event) => state.on_agent_error(event, env, &mut fx),
+        Event::AgentCrashed(event) => state.on_agent_crashed(event, env, &mut fx),
+        Event::AgentDisconnected(event) => state.on_agent_disconnected(event, env, &mut fx),
+        Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
+        Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
+        Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::ClearPendingSignIn(agent_id) => state.clear_pending_sign_in(&agent_id),
         Event::SetActiveSession(session_id) => state.active_session_id = session_id,
         Event::MarkResumeFailed(session_id, reason) => {
             state.mark_resume_failed(&session_id, &reason);

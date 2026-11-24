@@ -48,7 +48,12 @@ const DATA_KEYS = [
   'configToLiveAgent',
   'activeSessionId',
   'preparedSessions',
-  'agentSwitches'
+  'agentSwitches',
+  'agents',
+  'pendingSignIn',
+  'autoOpenBrowserUrl',
+  'launchingSessionIds',
+  'discoveredSessions'
 ] as const
 
 /** Module functions a step may call besides the store's actions. */
@@ -87,7 +92,9 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/stores/acp-store/slices/session.ts',
     'src/renderer/components/chat/subagent-strip.ts',
     'src/renderer/components/chat/tool-call-summary.ts',
-    'src/renderer/lib/agents/acp-spawn-errors.ts'
+    'src/renderer/lib/agents/acp-spawn-errors.ts',
+    'src/renderer/lib/acp-api.ts',
+    'src/shared/types/web-protocol.types.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -160,6 +167,7 @@ function peekSeq(): number {
 }
 
 import { transcriptScenarios } from './acp-scenarios'
+import { agentScenarios } from './acp-scenarios-agents'
 import { controlScenarios } from './acp-scenarios-controls'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { sessionScenarios } from './acp-scenarios-session'
@@ -172,5 +180,6 @@ export const acpScenarios = [
   ...turnScenarios,
   ...controlScenarios,
   ...promptScenarios,
-  ...sessionScenarios
+  ...sessionScenarios,
+  ...agentScenarios
 ]
