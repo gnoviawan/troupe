@@ -288,6 +288,14 @@ impl Effect {
         }
     }
 
+    /// The user's action failed with this error message; shown the way
+    /// `String(error)` prints an `Error`.
+    pub(crate) fn rejected(message: impl std::fmt::Display) -> Self {
+        Self::ActionRejected {
+            message: format!("Error: {message}"),
+        }
+    }
+
     pub(crate) fn info(source: &str, message: String) -> Self {
         Self::Log {
             level: Level::Info,

@@ -14,7 +14,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::js::{self, string_of};
-use super::mcp_install::{catalog_entry, plain_rejection};
+use super::mcp_install::catalog_entry;
 use super::types::Object;
 use super::{Effect, Env, State};
 
@@ -264,12 +264,12 @@ impl State {
             }
             RegistryOp::Catalog(result) => {
                 if !self.mcp_servers_loaded {
-                    return fx.push(plain_rejection("The MCP server list has not loaded yet"));
+                    return fx.push(Effect::rejected("The MCP server list has not loaded yet"));
                 }
                 let id = env.ids.next_id();
                 let entry = match catalog_entry(&result, &previous, id) {
                     Ok(entry) => entry,
-                    Err(message) => return fx.push(plain_rejection(message)),
+                    Err(message) => return fx.push(Effect::rejected(message)),
                 };
                 let provenance = result.get("provenance");
                 let label = format!(
