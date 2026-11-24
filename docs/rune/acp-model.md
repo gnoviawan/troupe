@@ -43,10 +43,9 @@ the fields the model reads. Session, message and usage records are typed
 structs, with a flattened `rest` map for the fields a later slice owns.
 
 String bounds count UTF-16 code units, as JavaScript's `length` and `slice`
-do. Serialized-size bounds use `serde_json`'s output, which matches
-`JSON.stringify` on strings and integers; a float that `JSON.stringify` writes
-without `.0` is one character shorter there. No bound sits within a
-character of a float field, so the difference is recorded, not handled.
+do. Serialized-size bounds measure the JSON as `JSON.stringify` writes it,
+numbers included (`1`, not `1.0`). A cut that splits a surrogate pair drops
+the whole pair, since a Rust string cannot hold the lone half JavaScript keeps.
 
 ## State, effect, glue
 
