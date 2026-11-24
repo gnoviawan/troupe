@@ -37,8 +37,9 @@ const CHAT_SEGMENT = 'chat'
  * of a live agent *process* (the agent process is MCP-agnostic; only the
  * session folds MCP selection in — see `prepareChatKey` in `acp-store.ts`).
  *
- * `projectId` selects the Claude Account of a managed Claude agent and the
- * Codex Account of `acp-registry:codex-acp`. Two Projects that share a cwd
+ * `projectId` selects the Claude Account of a managed Claude agent, the
+ * Codex Account of `acp-registry:codex-acp` and the Antigravity Account of
+ * `acp-registry:antigravity-acp`. Two Projects that share a cwd
  * must not share that process, so a non-empty Project id is part of the key.
  * `renewAgentCredentials` bumps the credential epoch for that config and
  * project after an account switch, so a process spawned on the old home is

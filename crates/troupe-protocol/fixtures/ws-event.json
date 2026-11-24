@@ -1,0 +1,365 @@
+{
+  "agent_switch": {
+    "sid": "sess-b9ac9edb",
+    "seq": 64,
+    "type": "agent_switch",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "fromConfigId": "fake-longrun",
+      "toConfigId": "fake-longrun",
+      "newSessionId": "sess-bba60978",
+      "summaryText": "Switched for the fixture run"
+    }
+  },
+  "agent_working": {
+    "sid": "sess-b9ac9edb",
+    "seq": 27,
+    "type": "agent_working",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "working": true
+    }
+  },
+  "auth_required": {
+    "sid": null,
+    "seq": 0,
+    "type": "auth_required",
+    "payload": {}
+  },
+  "config_options_update": {
+    "sid": "sess-da8ce08a",
+    "seq": 3,
+    "type": "config_options_update",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "configOptions": [
+        {
+          "id": "model",
+          "name": "Model",
+          "category": "model",
+          "type": "select",
+          "currentValue": "opus-5-5",
+          "options": [
+            {
+              "value": "opus-5-5",
+              "name": "Opus 5.5"
+            },
+            {
+              "value": "sonnet-5-5",
+              "name": "Sonnet 5.5"
+            }
+          ]
+        },
+        {
+          "id": "thought_level",
+          "name": "Thinking",
+          "category": "thought_level",
+          "type": "select",
+          "currentValue": "medium",
+          "options": [
+            {
+              "value": "low",
+              "name": "Low"
+            },
+            {
+              "value": "medium",
+              "name": "Medium"
+            },
+            {
+              "value": "high",
+              "name": "High"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "elicitation_request": {
+    "sid": "sess-b9ac9edb",
+    "seq": 48,
+    "type": "elicitation_request",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "requestId": "elicit-38d95c49-639d-445a-8aa0-1b756e10eec1",
+      "mode": "form",
+      "message": "Name the branch to test",
+      "fields": [
+        {
+          "name": "branch",
+          "kind": "string",
+          "required": true,
+          "options": []
+        },
+        {
+          "name": "env",
+          "kind": "enum",
+          "required": false,
+          "options": [
+            {
+              "value": "staging",
+              "label": "staging"
+            },
+            {
+              "value": "production",
+              "label": "production"
+            }
+          ]
+        },
+        {
+          "name": "verbose",
+          "kind": "boolean",
+          "required": false,
+          "options": []
+        }
+      ],
+      "allowOther": false
+    }
+  },
+  "message_chunk": {
+    "sid": "sess-b9ac9edb",
+    "seq": 10,
+    "type": "message_chunk",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "role": "agent",
+      "content": {
+        "type": "text",
+        "text": "chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 t=0s"
+      }
+    }
+  },
+  "mode_update": {
+    "sid": "sess-da8ce08a",
+    "seq": 2,
+    "type": "mode_update",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "currentModeId": "plan"
+    }
+  },
+  "permission_request": {
+    "sid": "sess-b9ac9edb",
+    "seq": 9,
+    "type": "permission_request",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "requestId": "perm-e3d0cb63-aea4-4e90-bedb-e8bd71d48dc7",
+      "toolCall": {
+        "toolCallId": "fake-perm-fake-ask-1",
+        "kind": "execute",
+        "status": "pending",
+        "title": "npm test -- auth"
+      },
+      "options": [
+        {
+          "optionId": "reject-once",
+          "name": "Reject",
+          "kind": "reject_once"
+        },
+        {
+          "optionId": "allow-always",
+          "name": "Always allow",
+          "kind": "allow_always"
+        },
+        {
+          "optionId": "allow-once",
+          "name": "Allow once",
+          "kind": "allow_once"
+        }
+      ],
+      "turnId": "fixture-turn-1"
+    }
+  },
+  "plan_update": {
+    "sid": "sess-b9ac9edb",
+    "seq": 5,
+    "type": "plan_update",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "plan": {
+        "entries": [
+          {
+            "content": "Read the auth module",
+            "priority": "high",
+            "status": "completed"
+          },
+          {
+            "content": "Add the token store",
+            "priority": "high",
+            "status": "completed"
+          },
+          {
+            "content": "Wire the session refresh",
+            "priority": "medium",
+            "status": "completed"
+          },
+          {
+            "content": "Cover login with tests",
+            "priority": "medium",
+            "status": "in_progress"
+          },
+          {
+            "content": "Update the changelog",
+            "priority": "low",
+            "status": "pending"
+          }
+        ]
+      }
+    }
+  },
+  "prompt_complete": {
+    "sid": "sess-b9ac9edb",
+    "seq": 26,
+    "type": "prompt_complete",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "stopReason": "end_turn",
+      "turnId": "fixture-turn-1"
+    }
+  },
+  "question_request": {
+    "sid": "sess-b9ac9edb",
+    "seq": 31,
+    "type": "question_request",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "questionId": "q-fcb73ba4-6296-4998-b80e-4691d48d5994",
+      "question": "Which test suite should run?",
+      "options": [
+        {
+          "value": "unit",
+          "label": "Unit tests",
+          "description": "Fast, no network"
+        },
+        {
+          "value": "e2e",
+          "label": "End-to-end tests"
+        }
+      ]
+    }
+  },
+  "session_closed": {
+    "sid": "sess-da8ce08a",
+    "seq": 17,
+    "type": "session_closed",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "reason": "killed"
+    }
+  },
+  "session_created": {
+    "sid": "sess-b9ac9edb",
+    "seq": 1,
+    "type": "session_created",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "tool_call": {
+    "sid": "sess-b9ac9edb",
+    "seq": 6,
+    "type": "tool_call",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "toolCall": {
+        "toolCallId": "fake-edit-1",
+        "title": "Edit src/auth.ts",
+        "kind": "edit",
+        "status": "completed",
+        "content": [
+          {
+            "type": "diff",
+            "path": "src/auth.ts",
+            "newText": "auth1\nauth2\nauth3\nauth4\nauth5\nauth6\nauth7\nauth8\nauth9\nauth10"
+          }
+        ],
+        "locations": [
+          {
+            "path": "src/auth.ts"
+          }
+        ]
+      }
+    }
+  },
+  "tool_call_update": {
+    "sid": "sess-da8ce08a",
+    "seq": 13,
+    "type": "tool_call_update",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "update": {
+        "toolCallId": "termul-subagent:sess-da8ce08a-sub-a-589588",
+        "status": "completed",
+        "_meta": {
+          "termul/subagent": {
+            "id": "sess-da8ce08a-sub-a-589588",
+            "rootSessionId": "sess-da8ce08a",
+            "dispatchToolCallId": "termul-subagent:sess-da8ce08a-sub-a-589588",
+            "source": "acp-rfd",
+            "title": "Review the store",
+            "description": "general-purpose",
+            "background": false,
+            "activity": "idle",
+            "end": {
+              "reason": "completed"
+            },
+            "startedAt": 1795449260480,
+            "endedAt": 1795449264503,
+            "usage": {
+              "inputTokens": 1200,
+              "outputTokens": 300,
+              "totalTokens": 1500
+            },
+            "caps": {
+              "stop": "session-cancel",
+              "transcript": "live",
+              "liveProgress": true,
+              "usage": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "usage_update": {
+    "sid": "sess-b9ac9edb",
+    "seq": 3,
+    "type": "usage_update",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "used": 20000,
+      "size": 200000
+    }
+  },
+  "user_prompt": {
+    "sid": "sess-b9ac9edb",
+    "seq": 2,
+    "type": "user_prompt",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "turnId": "fixture-turn-1",
+      "content": [
+        {
+          "type": "text",
+          "text": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] record fixtures"
+        }
+      ]
+    }
+  }
+}

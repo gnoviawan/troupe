@@ -937,6 +937,38 @@ fn tier_of_maps_idempotent_and_reliable() {
 }
 
 #[test]
+fn tier_of_answers_every_event_type_as_the_linear_scan_did() {
+    let not_reliable: Vec<(&str, ReliabilityTier)> = WsEventType::ALL
+        .iter()
+        .map(|known| (known.as_str(), tier_of(known.as_str())))
+        .filter(|(_, tier)| *tier != ReliabilityTier::Reliable)
+        .collect();
+    assert_eq!(
+        not_reliable,
+        [
+            ("prompt_complete", ReliabilityTier::Idempotent),
+            ("message_chunk", ReliabilityTier::Lossy),
+            ("tool_call_update", ReliabilityTier::Lossy),
+            ("commands_update", ReliabilityTier::Lossy),
+            ("plan_update", ReliabilityTier::Lossy),
+        ]
+    );
+    let linear_scan = |type_: &str| {
+        WsEventType::ALL
+            .iter()
+            .find(|known| known.as_str() == type_)
+            .map_or(ReliabilityTier::Reliable, |known| known.tier())
+    };
+    for name in WsEventType::ALL
+        .iter()
+        .map(|known| known.as_str())
+        .chain(["unknown_type", "", "MESSAGE_CHUNK"])
+    {
+        assert_eq!(tier_of(name), linear_scan(name), "{name}");
+    }
+}
+
+#[test]
 fn error_codes_are_snake_case() {
     assert_eq!(WsErrorCode::NotFound.as_str(), "not_found");
     assert_eq!(WsErrorCode::Unauthorized.as_str(), "unauthorized");

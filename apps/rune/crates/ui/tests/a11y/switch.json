@@ -1,0 +1,20 @@
+{
+  "children": [
+    {
+      "actions": ["focus"],
+      "name": "Wrap lines",
+      "role": "switch",
+      "states": ["checked"]
+    },
+    {
+      "name": "Disabled",
+      "role": "switch",
+      "states": ["disabled", "unchecked"]
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

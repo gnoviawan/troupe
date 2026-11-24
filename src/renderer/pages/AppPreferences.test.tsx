@@ -165,6 +165,10 @@ vi.mock('@/components/settings/provider/CodexProviderSettings', () => ({
   CodexProviderSettings: () => null
 }))
 
+vi.mock('@/components/settings/provider/AntigravityProviderSettings', () => ({
+  AntigravityProviderSettings: () => null
+}))
+
 vi.mock('@/components/settings/BrowserPolicySettings', () => ({
   BrowserAppPolicy: () => null
 }))

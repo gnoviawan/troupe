@@ -154,6 +154,7 @@ fn gated_production_router() -> axum::Router {
         crate::web::host_allow::HostAllowList::loopback(),
         crate::web::connection_runtime::ConnectionRuntime::default(),
         None,
+        None,
     )
 }
 

@@ -1,0 +1,825 @@
+{
+  "acp_deliver_auth_redirect": {
+    "id": "req-75",
+    "type": "acp_deliver_auth_redirect",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "url": "https://example.invalid/callback"
+    },
+    "command_id": "fixture-redirect"
+  },
+  "add_antigravity_account": {
+    "id": "req-ag-93",
+    "type": "add_antigravity_account",
+    "payload": {
+      "name": "Fixture"
+    },
+    "command_id": "fixture-antigravity-add"
+  },
+  "add_claude_account": {
+    "id": "req-80",
+    "type": "add_claude_account",
+    "payload": {
+      "name": "Fixture"
+    },
+    "command_id": "fixture-claude-add"
+  },
+  "add_codex_account": {
+    "id": "req-93",
+    "type": "add_codex_account",
+    "payload": {
+      "name": "Fixture"
+    },
+    "command_id": "fixture-codex-add"
+  },
+  "add_project": {
+    "id": "req-14",
+    "type": "add_project",
+    "payload": {
+      "id": "fixture-proj-b",
+      "name": "proj-b",
+      "path": "/fixture/work/proj-w",
+      "color": "green"
+    }
+  },
+  "answer_mcp_install": {
+    "id": "req-70",
+    "type": "answer_mcp_install",
+    "payload": {
+      "requestId": "missing-request",
+      "approved": false
+    },
+    "command_id": "fixture-answer-mcp"
+  },
+  "answer_question": {
+    "id": "req-25",
+    "type": "answer_question",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "questionId": "q-fcb73ba4-6296-4998-b80e-4691d48d5994",
+      "values": ["yes"]
+    },
+    "command_id": "fixture-answer"
+  },
+  "authenticate": {
+    "id": "req-1",
+    "type": "authenticate",
+    "payload": {
+      "token": "fixture-token",
+      "protocolVersion": 7,
+      "deviceId": "fixture-device",
+      "clientInstanceId": "fixture-tab"
+    }
+  },
+  "authenticate_agent": {
+    "id": "req-59",
+    "type": "authenticate_agent",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "methodId": "fixture-method"
+    },
+    "command_id": "fixture-auth-agent"
+  },
+  "browser_stop": {
+    "id": "req-48",
+    "type": "browser_stop",
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "cancel_claude_login": {
+    "id": "req-89",
+    "type": "cancel_claude_login",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
+  "cancel_mcp_install": {
+    "id": "req-68",
+    "type": "cancel_mcp_install",
+    "payload": {
+      "planId": "missing-plan"
+    }
+  },
+  "cancel_prompt": {
+    "id": "req-28",
+    "type": "cancel_prompt",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "canvas_mount": {
+    "id": "req-102",
+    "type": "canvas_mount",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "mountSeq": 1
+    }
+  },
+  "canvas_reply": {
+    "id": "req-103",
+    "type": "canvas_reply",
+    "payload": {
+      "callId": 1,
+      "mountSeq": 1,
+      "ok": true,
+      "result": "{}"
+    }
+  },
+  "canvas_unmount": {
+    "id": "req-104",
+    "type": "canvas_unmount",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "mountSeq": 1
+    }
+  },
+  "close_session": {
+    "id": "req-106",
+    "type": "close_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb"
+    },
+    "command_id": "fixture-close"
+  },
+  "commit_mcp_install": {
+    "id": "req-67",
+    "type": "commit_mcp_install",
+    "payload": {
+      "planId": "missing-plan"
+    },
+    "command_id": "fixture-commit-mcp"
+  },
+  "create_session": {
+    "id": "req-19",
+    "type": "create_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "cwd": "/fixture/work/proj-a",
+      "mcpServers": [],
+      "ephemeral": false,
+      "projectId": "fixture-proj-a"
+    },
+    "command_id": "fixture-create"
+  },
+  "delete_agent_session": {
+    "id": "req-61",
+    "type": "delete_agent_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "missing-session"
+    }
+  },
+  "delete_session": {
+    "id": "req-105",
+    "type": "delete_session",
+    "payload": {
+      "sessionId": "sess-bba60978"
+    }
+  },
+  "describe_mcp_install": {
+    "id": "req-65",
+    "type": "describe_mcp_install",
+    "payload": {
+      "serverId": "missing-server"
+    }
+  },
+  "dispose_ephemeral_session": {
+    "id": "req-54",
+    "type": "dispose_ephemeral_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-90a3354f"
+    },
+    "command_id": "fixture-dispose"
+  },
+  "fetch_acp_registry_snapshot": {
+    "id": "req-73",
+    "type": "fetch_acp_registry_snapshot",
+    "payload": {
+      "reason": "background"
+    }
+  },
+  "finish_claude_link_login": {
+    "id": "req-88",
+    "type": "finish_claude_link_login",
+    "payload": {
+      "accountId": "missing-account",
+      "code": "fixture-code"
+    },
+    "command_id": "fixture-claude-finish"
+  },
+  "get_mcp_catalog_icon": {
+    "id": "req-69",
+    "type": "get_mcp_catalog_icon",
+    "payload": {
+      "serverId": "missing-server"
+    }
+  },
+  "get_mcp_catalog_status": {
+    "id": "req-63",
+    "type": "get_mcp_catalog_status",
+    "payload": {}
+  },
+  "get_session_cursor": {
+    "id": "req-21",
+    "type": "get_session_cursor",
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "get_session_payload": {
+    "id": "req-39",
+    "type": "get_session_payload",
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "get_session_payload_tail": {
+    "id": "req-40",
+    "type": "get_session_payload_tail",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "limit": 2
+    }
+  },
+  "import_agent_session": {
+    "id": "req-58",
+    "type": "import_agent_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "imported-session",
+      "cwd": "/fixture/work/proj-a"
+    },
+    "command_id": "fixture-import"
+  },
+  "install_acp_agent": {
+    "id": "req-74",
+    "type": "install_acp_agent",
+    "payload": {
+      "agentId": "missing-agent"
+    },
+    "command_id": "fixture-install"
+  },
+  "kill_agent": {
+    "id": "req-107",
+    "type": "kill_agent",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0"
+    }
+  },
+  "list_acp_catalog": {
+    "id": "req-72",
+    "type": "list_acp_catalog",
+    "payload": {}
+  },
+  "list_agents": {
+    "id": "req-18",
+    "type": "list_agents",
+    "payload": {}
+  },
+  "list_antigravity_accounts": {
+    "id": "req-ag-91",
+    "type": "list_antigravity_accounts",
+    "payload": {}
+  },
+  "list_antigravity_usage": {
+    "id": "req-ag-92",
+    "type": "list_antigravity_usage",
+    "payload": {}
+  },
+  "list_claude_accounts": {
+    "id": "req-78",
+    "type": "list_claude_accounts",
+    "payload": {}
+  },
+  "list_claude_usage": {
+    "id": "req-79",
+    "type": "list_claude_usage",
+    "payload": {}
+  },
+  "list_codex_accounts": {
+    "id": "req-91",
+    "type": "list_codex_accounts",
+    "payload": {}
+  },
+  "list_codex_usage": {
+    "id": "req-92",
+    "type": "list_codex_usage",
+    "payload": {}
+  },
+  "list_persisted_sessions": {
+    "id": "req-38",
+    "type": "list_persisted_sessions",
+    "payload": {}
+  },
+  "list_sessions": {
+    "id": "req-43",
+    "type": "list_sessions",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "cwd": "/fixture/work/proj-a"
+    }
+  },
+  "load_session": {
+    "id": "req-55",
+    "type": "load_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "cwd": "/fixture/work/proj-a"
+    },
+    "command_id": "fixture-load"
+  },
+  "logout_agent": {
+    "id": "req-60",
+    "type": "logout_agent",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0"
+    }
+  },
+  "mark_chat_read": {
+    "id": "req-37",
+    "type": "mark_chat_read",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "seq": 62,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2"
+    }
+  },
+  "open_persisted_session": {
+    "id": "req-42",
+    "type": "open_persisted_session",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "lastSeq": 0
+    }
+  },
+  "ping": {
+    "id": "req-2",
+    "type": "ping",
+    "payload": {}
+  },
+  "plan_mcp_install": {
+    "id": "req-66",
+    "type": "plan_mcp_install",
+    "payload": {
+      "serverId": "missing-server",
+      "target": "global"
+    }
+  },
+  "promote_session": {
+    "id": "req-52",
+    "type": "promote_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-a3519370"
+    },
+    "command_id": "fixture-promote"
+  },
+  "record_agent_switch": {
+    "id": "req-50",
+    "type": "record_agent_switch",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "fromConfigId": "fake-longrun",
+      "toConfigId": "fake-longrun",
+      "newSessionId": "sess-bba60978",
+      "summaryText": "Switched for the fixture run"
+    },
+    "command_id": "fixture-switch"
+  },
+  "recover_session_snapshot": {
+    "id": "req-41",
+    "type": "recover_session_snapshot",
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "register_discovered_session": {
+    "id": "req-57",
+    "type": "register_discovered_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "discovered-session",
+      "cwd": "/fixture/work/proj-a",
+      "title": "Discovered"
+    },
+    "command_id": "fixture-register"
+  },
+  "remove_antigravity_account": {
+    "id": "req-ag-101",
+    "type": "remove_antigravity_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29"
+    }
+  },
+  "remove_claude_account": {
+    "id": "req-90",
+    "type": "remove_claude_account",
+    "payload": {
+      "accountId": "7ae793aa15df4d6e908339762260506c"
+    }
+  },
+  "remove_codex_account": {
+    "id": "req-101",
+    "type": "remove_codex_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29"
+    }
+  },
+  "remove_project": {
+    "id": "req-108",
+    "type": "remove_project",
+    "payload": {
+      "projectId": "fixture-proj-b"
+    }
+  },
+  "rename_antigravity_account": {
+    "id": "req-ag-94",
+    "type": "rename_antigravity_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture 2"
+    }
+  },
+  "rename_claude_account": {
+    "id": "req-81",
+    "type": "rename_claude_account",
+    "payload": {
+      "accountId": "7ae793aa15df4d6e908339762260506c",
+      "name": "Fixture 2"
+    }
+  },
+  "rename_codex_account": {
+    "id": "req-94",
+    "type": "rename_codex_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture 2"
+    }
+  },
+  "rename_session": {
+    "id": "req-47",
+    "type": "rename_session",
+    "payload": {
+      "sessionId": "sess-79c4aab6",
+      "title": "Quick fixture chat"
+    }
+  },
+  "respond_elicitation": {
+    "id": "req-27",
+    "type": "respond_elicitation",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "requestId": "missing",
+      "action": "cancel"
+    },
+    "command_id": "fixture-elicitation"
+  },
+  "respond_permission": {
+    "id": "req-23",
+    "type": "respond_permission",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "requestId": "perm-e3d0cb63-aea4-4e90-bedb-e8bd71d48dc7",
+      "optionId": "reject-once"
+    },
+    "command_id": "fixture-permission"
+  },
+  "resume_session": {
+    "id": "req-56",
+    "type": "resume_session",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "cwd": "/fixture/work/proj-a"
+    },
+    "command_id": "fixture-resume"
+  },
+  "search_mcp_catalog": {
+    "id": "req-64",
+    "type": "search_mcp_catalog",
+    "payload": {
+      "query": "fixture",
+      "limit": 1
+    }
+  },
+  "send_prompt": {
+    "id": "req-22",
+    "type": "send_prompt",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-b9ac9edb",
+      "text": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] record fixtures",
+      "turnId": "fixture-turn-1"
+    },
+    "command_id": "fixture-turn-1"
+  },
+  "set_antigravity_auto_switch": {
+    "id": "req-ag-98",
+    "type": "set_antigravity_auto_switch",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_antigravity_resume": {
+    "id": "req-ag-99",
+    "type": "set_antigravity_resume",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "at": null
+    }
+  },
+  "set_catalog_opt_in": {
+    "id": "req-71",
+    "type": "set_catalog_opt_in",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_chat_antigravity_account": {
+    "id": "req-ag-97",
+    "type": "set_chat_antigravity_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "sessionId": "sess-b9ac9edb",
+      "accountId": null
+    }
+  },
+  "set_chat_claude_account": {
+    "id": "req-84",
+    "type": "set_chat_claude_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "sessionId": "sess-b9ac9edb",
+      "accountId": null
+    }
+  },
+  "set_chat_codex_account": {
+    "id": "req-97",
+    "type": "set_chat_codex_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "sessionId": "sess-b9ac9edb",
+      "accountId": null
+    }
+  },
+  "set_claude_auto_switch": {
+    "id": "req-85",
+    "type": "set_claude_auto_switch",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_claude_resume": {
+    "id": "req-86",
+    "type": "set_claude_resume",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "at": null
+    }
+  },
+  "set_codex_auto_switch": {
+    "id": "req-98",
+    "type": "set_codex_auto_switch",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_codex_resume": {
+    "id": "req-99",
+    "type": "set_codex_resume",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "at": null
+    }
+  },
+  "set_config_option": {
+    "id": "req-33",
+    "type": "set_config_option",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "configId": "thought_level",
+      "valueId": "high"
+    }
+  },
+  "set_default_antigravity_account": {
+    "id": "req-ag-95",
+    "type": "set_default_antigravity_account",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
+  "set_default_claude_account": {
+    "id": "req-82",
+    "type": "set_default_claude_account",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
+  "set_default_codex_account": {
+    "id": "req-95",
+    "type": "set_default_codex_account",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
+  "set_default_project": {
+    "id": "req-16",
+    "type": "set_default_project",
+    "payload": {
+      "projectId": "fixture-proj-a"
+    }
+  },
+  "set_mcp_catalog_sync": {
+    "id": "req-62",
+    "type": "set_mcp_catalog_sync",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_mode": {
+    "id": "req-31",
+    "type": "set_mode",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "modeId": "plan"
+    }
+  },
+  "set_model": {
+    "id": "req-32",
+    "type": "set_model",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "sessionId": "sess-da8ce08a",
+      "modelId": "opus-5-5"
+    }
+  },
+  "set_project_antigravity_account": {
+    "id": "req-ag-96",
+    "type": "set_project_antigravity_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "accountId": null
+    }
+  },
+  "set_project_claude_account": {
+    "id": "req-83",
+    "type": "set_project_claude_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "accountId": null
+    }
+  },
+  "set_project_codex_account": {
+    "id": "req-96",
+    "type": "set_project_codex_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "accountId": null
+    }
+  },
+  "spawn_agent": {
+    "id": "req-17",
+    "type": "spawn_agent",
+    "payload": {
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      },
+      "projectId": "fixture-proj-a",
+      "sessionId": null
+    },
+    "command_id": "fixture-spawn"
+  },
+  "start_antigravity_account_login": {
+    "id": "req-ag-100",
+    "type": "start_antigravity_account_login",
+    "payload": {
+      "accountId": "missing-account",
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      }
+    },
+    "command_id": "fixture-antigravity-login"
+  },
+  "start_claude_link_login": {
+    "id": "req-87",
+    "type": "start_claude_link_login",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
+  "start_codex_account_login": {
+    "id": "req-100",
+    "type": "start_codex_account_login",
+    "payload": {
+      "accountId": "missing-account",
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      }
+    },
+    "command_id": "fixture-codex-login"
+  },
+  "stop_subagent": {
+    "id": "req-35",
+    "type": "stop_subagent",
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "rootSessionId": "sess-da8ce08a",
+      "subagentId": "missing-subagent"
+    }
+  },
+  "store_delete": {
+    "id": "req-13",
+    "type": "store_delete",
+    "payload": {
+      "key": "device/fixture-device/fixture/key"
+    }
+  },
+  "store_read": {
+    "id": "req-11",
+    "type": "store_read",
+    "payload": {
+      "key": "device/fixture-device/fixture/key"
+    }
+  },
+  "store_write": {
+    "id": "req-10",
+    "type": "store_write",
+    "payload": {
+      "key": "device/fixture-device/fixture/key",
+      "value": {
+        "theme": "dark"
+      }
+    }
+  },
+  "subagent_settings_get": {
+    "id": "req-76",
+    "type": "subagent_settings_get",
+    "payload": {}
+  },
+  "subagent_settings_set": {
+    "id": "req-77",
+    "type": "subagent_settings_set",
+    "payload": {
+      "maxRunning": 2
+    }
+  },
+  "subscribe": {
+    "id": "req-20",
+    "type": "subscribe",
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "unwatch": {
+    "id": "req-109",
+    "type": "unwatch",
+    "payload": {
+      "watch": "store",
+      "scope": "device/fixture-device/fixture/key"
+    }
+  },
+  "update_project": {
+    "id": "req-15",
+    "type": "update_project",
+    "payload": {
+      "projectId": "fixture-proj-b",
+      "name": "proj-b renamed"
+    }
+  },
+  "watch": {
+    "id": "req-3",
+    "type": "watch",
+    "payload": {
+      "watch": "projects",
+      "scope": ""
+    }
+  }
+}

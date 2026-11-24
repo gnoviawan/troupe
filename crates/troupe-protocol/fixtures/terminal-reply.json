@@ -1,0 +1,143 @@
+{
+  "attach": {
+    "id": "req-3",
+    "success": true,
+    "data": {
+      "id": "terminal-1795449248103-0",
+      "shell": "/bin/bash",
+      "cwd": "/fixture/work/proj-w",
+      "pid": 3167115,
+      "cols": 80,
+      "rows": 24,
+      "latestSeq": 0,
+      "gap": false,
+      "reset": false,
+      "logEpoch": "17af201e-f292-4df9-8c7d-f6b61cca93ad",
+      "snapshot": {
+        "cwd": "/fixture/work/proj-w",
+        "gitBranch": null,
+        "gitStatus": null,
+        "exitCode": null,
+        "exited": false
+      }
+    }
+  },
+  "authenticate": {
+    "id": "req-1",
+    "success": true,
+    "data": {}
+  },
+  "command_editor_cancel_completion": {
+    "id": "req-14",
+    "success": true,
+    "data": "NotStarted"
+  },
+  "command_editor_request_completion": {
+    "id": "req-13",
+    "success": false,
+    "error": "Invalid completion request",
+    "code": "INVALID_PAYLOAD"
+  },
+  "command_editor_restore_prompt": {
+    "id": "req-11",
+    "success": true,
+    "data": "Accepted"
+  },
+  "command_editor_submit": {
+    "id": "req-12",
+    "success": true,
+    "data": "Accepted"
+  },
+  "detach": {
+    "id": "req-15",
+    "success": true,
+    "data": null
+  },
+  "get_cwd": {
+    "id": "req-7",
+    "success": true,
+    "data": "/tmp"
+  },
+  "get_exit_code": {
+    "id": "req-10",
+    "success": true,
+    "data": 1
+  },
+  "get_git_branch": {
+    "id": "req-8",
+    "success": true,
+    "data": "main"
+  },
+  "get_git_status": {
+    "id": "req-9",
+    "success": true,
+    "data": {
+      "modified": 1,
+      "staged": 0,
+      "untracked": 0,
+      "ahead": 0,
+      "behind": 0,
+      "hasChanges": true
+    }
+  },
+  "kill": {
+    "id": "req-21",
+    "success": true,
+    "data": null
+  },
+  "list_preserved": {
+    "id": "req-18",
+    "success": true,
+    "data": {
+      "projectId": "fixture-proj-a",
+      "terminals": [
+        {
+          "id": "terminal-1795449248103-0",
+          "shell": "/bin/bash",
+          "cwd": "/fixture/work/proj-w",
+          "pid": 3167115,
+          "cols": 100,
+          "rows": 30,
+          "claim": "5cd1d8a17a90c879f90934dfa90b308c52e993bcf6d5915aee198e59d5a24056",
+          "hasLiveAttachment": false
+        }
+      ]
+    }
+  },
+  "resize": {
+    "id": "req-5",
+    "success": true,
+    "data": null
+  },
+  "revoke_claim": {
+    "id": "req-22",
+    "success": false,
+    "error": "Unauthorized",
+    "code": "UNAUTHORIZED"
+  },
+  "rotate_claim": {
+    "id": "req-17",
+    "success": true,
+    "data": {
+      "claim": "228186f340a8bbc6f0c6a3e73d07fb90e636f2c084664cb38b1736342c7258a1"
+    }
+  },
+  "spawn": {
+    "id": "req-2",
+    "success": true,
+    "data": {
+      "id": "terminal-1795449248103-0",
+      "shell": "/bin/bash",
+      "cwd": "/fixture/work/proj-w",
+      "pid": 3167115,
+      "cols": 80,
+      "rows": 24,
+      "claim": "cde64440e88078d54a1efadd1152d4336b7d4c093a05a499eeaaa5b8bf9e97f4"
+    }
+  },
+  "write": {
+    "id": "req-4",
+    "success": true,
+    "data": null
+  }
+}

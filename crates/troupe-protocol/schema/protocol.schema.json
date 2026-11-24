@@ -1,0 +1,2344 @@
+{
+  "$defs": {
+    "AcpAuthenticatePayload": {
+      "description": "`authenticate` request payload. `token` is absent only when the host has\nno web auth token. Neither id is a credential.",
+      "properties": {
+        "clientInstanceId": {
+          "description": "Per tab or window.",
+          "type": "string"
+        },
+        "deviceId": {
+          "description": "Per install or browser profile.",
+          "type": "string"
+        },
+        "protocolVersion": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "token": {
+          "type": "string"
+        }
+      },
+      "required": ["protocolVersion", "deviceId", "clientInstanceId"],
+      "type": "object"
+    },
+    "AcpAuthenticateReply": {
+      "description": "`authenticate` reply payload.",
+      "properties": {
+        "historyMode": {
+          "$ref": "#/$defs/HistoryMode"
+        },
+        "protocolVersion": {
+          "description": "The protocol version the host speaks.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "runtimePolicy": {
+          "$ref": "#/$defs/AcpRuntimePolicy"
+        }
+      },
+      "type": "object"
+    },
+    "AcpRuntimePolicy": {
+      "description": "Turn and keepalive budgets the host hands out at `authenticate`, in ms.\n`0` means no limit for the two turn budgets.",
+      "properties": {
+        "pingIntervalMs": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pongTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "promptInactivityTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "turnTimeoutMs": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["turnTimeoutMs", "promptInactivityTimeoutMs", "pingIntervalMs", "pongTimeoutMs"],
+      "type": "object"
+    },
+    "AddProjectPayload": {
+      "additionalProperties": false,
+      "description": "`add_project` request payload.",
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isArchived": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "name", "path", "color"],
+      "type": "object"
+    },
+    "AgentBackgroundCommands": {
+      "description": "The commands an agent left running, by owned session, as of `revision`.",
+      "properties": {
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessions": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/BackgroundCommand"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        }
+      },
+      "required": ["revision", "sessions"],
+      "type": "object"
+    },
+    "AgentCapabilities": {
+      "additionalProperties": true,
+      "description": "Agent capabilities as advertised at `initialize`. Unknown keys pass through.",
+      "properties": {
+        "auth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loadSession": {
+          "type": "boolean"
+        },
+        "mcpCapabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/McpCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "promptCapabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PromptCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sessionCapabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SessionCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "AgentsWatchDelta": {
+      "description": "An `agents` delta: an agent-level fact with its event payload.",
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/AgentsWatchEvent"
+        },
+        "payload": true
+      },
+      "required": ["event", "payload"],
+      "type": "object"
+    },
+    "AgentsWatchEvent": {
+      "description": "The host fact an `agents` delta reports.",
+      "enum": [
+        "agent_spawned",
+        "agent_crashed",
+        "agent_error",
+        "agent_disconnected",
+        "browser_open_request",
+        "agent_sign_in_request",
+        "agent_sign_in_resolved",
+        "browser_policy_changed",
+        "automation_changed",
+        "automation_resync"
+      ],
+      "type": "string"
+    },
+    "AuthCapabilities": {
+      "additionalProperties": true,
+      "description": "Whether the agent can sign out.",
+      "properties": {
+        "logout": true
+      },
+      "type": "object"
+    },
+    "BackgroundCommand": {
+      "description": "A command the agent left running after its tool call or turn ended.",
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "running",
+              "type": "string"
+            }
+          },
+          "required": ["state"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "endedAtMs": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "state": {
+              "const": "ended",
+              "type": "string"
+            }
+          },
+          "required": ["state", "endedAtMs"],
+          "type": "object"
+        }
+      ],
+      "properties": {
+        "command": {
+          "type": ["string", "null"]
+        },
+        "startedAtMs": {
+          "description": "Wall clock when the tool call first appeared.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "title": {
+          "description": "The command's description, else its tool call title.",
+          "type": "string"
+        },
+        "toolCallId": {
+          "type": "string"
+        }
+      },
+      "required": ["toolCallId", "title", "command", "startedAtMs"],
+      "type": "object"
+    },
+    "BackgroundCommandList": {
+      "description": "One session's background commands as of `revision`.",
+      "properties": {
+        "commands": {
+          "items": {
+            "$ref": "#/$defs/BackgroundCommand"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["revision", "commands"],
+      "type": "object"
+    },
+    "CanvasLeaseLostReason": {
+      "description": "Why a renderer lost its canvas mount.",
+      "enum": ["takenOver", "evicted"],
+      "type": "string"
+    },
+    "ChatActivityRecord": {
+      "description": "What every chat list shows for one agent chat.",
+      "properties": {
+        "busy": {
+          "description": "A prompt turn is open or the agent works outside one.",
+          "type": "boolean"
+        },
+        "needsYou": {
+          "description": "A permission, question or elicitation waits for an answer.",
+          "type": "boolean"
+        },
+        "projectId": {
+          "description": "The project the session was created in; `null` when the host has no\npersisted record of it.",
+          "type": ["string", "null"]
+        },
+        "turnEnd": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ChatTurnEnd"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unread": {
+          "description": "The newest turn end is past the shared last-read marker.",
+          "type": "boolean"
+        }
+      },
+      "required": ["busy", "needsYou", "unread", "turnEnd"],
+      "type": "object"
+    },
+    "ChatActivityWatchDelta": {
+      "description": "A `chat_activity` delta: one session's record as it stands.",
+      "properties": {
+        "busy": {
+          "description": "A prompt turn is open or the agent works outside one.",
+          "type": "boolean"
+        },
+        "needsYou": {
+          "description": "A permission, question or elicitation waits for an answer.",
+          "type": "boolean"
+        },
+        "projectId": {
+          "description": "The project the session was created in; `null` when the host has no\npersisted record of it.",
+          "type": ["string", "null"]
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "turnEnd": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ChatTurnEnd"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unread": {
+          "description": "The newest turn end is past the shared last-read marker.",
+          "type": "boolean"
+        }
+      },
+      "required": ["sessionId", "busy", "needsYou", "unread", "turnEnd"],
+      "type": "object"
+    },
+    "ChatActivityWatchState": {
+      "description": "`chat_activity` watch state.",
+      "properties": {
+        "sessions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ChatActivityRecord"
+          },
+          "type": "object"
+        }
+      },
+      "required": ["sessions"],
+      "type": "object"
+    },
+    "ChatHistoryWatchDelta": {
+      "description": "A `chat_history` delta: the sessions whose index entry changed, or an\nempty list when the index changed in bulk.",
+      "properties": {
+        "changed": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "event": {
+          "const": "worktree_branch_renamed",
+          "type": "string"
+        },
+        "payload": true
+      },
+      "required": ["changed"],
+      "type": "object"
+    },
+    "ChatReadMark": {
+      "additionalProperties": false,
+      "description": "`mark_chat_read` request payload: a chat's shared last-read marker.\n`logEpoch` is absent only from a peer that predates it.",
+      "properties": {
+        "logEpoch": {
+          "type": "string"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "seq"],
+      "type": "object"
+    },
+    "ChatReadMarkReply": {
+      "description": "`mark_chat_read` reply: the marker as it stands. Unlike the request it\naccepts fields it does not name, so a client keeps reading the reply after\nthe host adds one.",
+      "properties": {
+        "logEpoch": {
+          "type": "string"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "seq"],
+      "type": "object"
+    },
+    "ChatTurnEnd": {
+      "description": "The newest turn end the host saw for a chat.",
+      "properties": {
+        "logEpoch": {
+          "type": "string"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["seq", "logEpoch"],
+      "type": "object"
+    },
+    "DeleteSessionPayload": {
+      "additionalProperties": false,
+      "description": "`delete_session` request payload. The reply is `true` when the record was\ndeleted and `false` when it was already absent.",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId"],
+      "type": "object"
+    },
+    "FsWatchChangeDelta": {
+      "description": "One debounced batch of changed paths under the project root.",
+      "properties": {
+        "paths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "root": {
+          "type": "string"
+        }
+      },
+      "required": ["root", "paths"],
+      "type": "object"
+    },
+    "FsWatchDelta": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FsWatchChangeDelta"
+        },
+        {
+          "$ref": "#/$defs/FsWatchEndedDelta"
+        }
+      ],
+      "description": "An `fs` delta."
+    },
+    "FsWatchEndedDelta": {
+      "description": "The last `fs` delta: the project is no longer watchable.",
+      "properties": {
+        "ended": {
+          "const": true,
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": ["ended", "reason"],
+      "type": "object"
+    },
+    "FsWatchState": {
+      "description": "`fs` watch state: the canonical root being watched.",
+      "properties": {
+        "root": {
+          "type": "string"
+        }
+      },
+      "required": ["root"],
+      "type": "object"
+    },
+    "GitStatus": {
+      "description": "Change counts of a terminal's git working tree.",
+      "properties": {
+        "ahead": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "behind": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hasChanges": {
+          "type": "boolean"
+        },
+        "modified": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "staged": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "untracked": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["modified", "staged", "untracked", "ahead", "behind", "hasChanges"],
+      "type": "object"
+    },
+    "HistoryMode": {
+      "description": "Whether the host keeps session history.",
+      "enum": ["server", "live_only"],
+      "type": "string"
+    },
+    "McpCapabilities": {
+      "additionalProperties": true,
+      "description": "MCP transports the agent accepts.",
+      "properties": {
+        "acp": {
+          "type": "boolean"
+        },
+        "http": {
+          "type": "boolean"
+        },
+        "sse": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "PersistedSessionStatus": {
+      "description": "Lifecycle state of a persisted session.",
+      "enum": ["active", "closed", "error"],
+      "type": "string"
+    },
+    "PersistedSessionSummary": {
+      "description": "One entry of `list_persisted_sessions`.",
+      "properties": {
+        "continuedFrom": {
+          "description": "The session this one continues after an in-chat agent switch.",
+          "type": "string"
+        },
+        "createdAt": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "discovered": {
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "quick",
+          "type": "string"
+        },
+        "lastActivityAt": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "lastSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "description": "The session log's epoch. The hand-written type lacks it.",
+          "type": "string"
+        },
+        "messageCount": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "modelName": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "quickChatId": {
+          "description": "Host-minted folder id of a quick chat. The hand-written type lacks it.",
+          "type": "string"
+        },
+        "resumeEligible": {
+          "type": "boolean"
+        },
+        "runtimeAgentId": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "stableAgentNamespace": {
+          "type": ["string", "null"]
+        },
+        "startedBy": {
+          "description": "The chat whose agent started this one with `start_chat`.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/PersistedSessionStatus"
+        },
+        "storageKey": {
+          "type": "string"
+        },
+        "title": {
+          "type": ["string", "null"]
+        },
+        "titleSource": {
+          "$ref": "#/$defs/TitleSource",
+          "description": "Who named the chat. The hand-written type lacks it."
+        },
+        "toolCount": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "turnActive": {
+          "description": "True while a prompt turn is open.",
+          "type": "boolean"
+        },
+        "worktreeBranch": {
+          "type": "string"
+        },
+        "worktreePath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "storageKey",
+        "sessionId",
+        "stableAgentNamespace",
+        "cwd",
+        "title",
+        "createdAt",
+        "lastActivityAt",
+        "status",
+        "messageCount",
+        "toolCount",
+        "lastSeq",
+        "resumeEligible"
+      ],
+      "type": "object"
+    },
+    "ProjectBusyDetails": {
+      "description": "`err.details` of a `project_busy` refusal: the live sessions and terminals\nbound to the project.",
+      "properties": {
+        "sessions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "terminals": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["sessions", "terminals"],
+      "type": "object"
+    },
+    "PromptCapabilities": {
+      "additionalProperties": true,
+      "description": "Prompt content kinds the agent accepts.",
+      "properties": {
+        "audio": {
+          "type": "boolean"
+        },
+        "embeddedContext": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "RecordAgentSwitchPayload": {
+      "additionalProperties": false,
+      "description": "`record_agent_switch` request payload: the host appends one durable\n`agent_switch` record built from it.",
+      "properties": {
+        "fromConfigId": {
+          "type": "string"
+        },
+        "newSessionId": {
+          "description": "The session the conversation continues in.",
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "summaryText": {
+          "type": "string"
+        },
+        "toConfigId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "fromConfigId", "toConfigId", "newSessionId", "summaryText"],
+      "type": "object"
+    },
+    "ReliabilityTier": {
+      "description": "How the relay delivers an event type to a slow client.",
+      "enum": ["lossy", "reliable", "idempotent"],
+      "type": "string"
+    },
+    "RemoveProjectPayload": {
+      "additionalProperties": false,
+      "description": "`remove_project` request payload.",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "projectId": {
+          "type": "string"
+        }
+      },
+      "required": ["projectId"],
+      "type": "object"
+    },
+    "RotatedClaim": {
+      "description": "`rotate_claim` reply data: the fresh credential.",
+      "properties": {
+        "claim": {
+          "type": "string"
+        }
+      },
+      "required": ["claim"],
+      "type": "object"
+    },
+    "SessionCapabilities": {
+      "additionalProperties": true,
+      "description": "Which optional session methods the agent serves.",
+      "properties": {
+        "additionalDirectories": true,
+        "close": true,
+        "delete": true,
+        "list": true,
+        "resume": true
+      },
+      "type": "object"
+    },
+    "SessionCursorReply": {
+      "description": "`get_session_cursor` reply. An unknown session has no epoch and no head.",
+      "properties": {
+        "headSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "watermark": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["sessionId", "watermark"],
+      "type": "object"
+    },
+    "SessionSnapshotEvent": {
+      "description": "Atomic stale-recovery payload: the next cursor is `(logEpoch, watermark)`.",
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/WsEvent"
+          },
+          "type": "array"
+        },
+        "headSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "type": "string"
+        },
+        "pendingElicitations": {
+          "items": true,
+          "type": "array"
+        },
+        "pendingMcpInstalls": {
+          "description": "MCP install approvals still waiting. The hand-written type lacks it.",
+          "items": true,
+          "type": "array"
+        },
+        "pendingPermissions": {
+          "items": true,
+          "type": "array"
+        },
+        "pendingQuestions": {
+          "items": true,
+          "type": "array"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "watermark": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["sessionId", "watermark", "headSeq", "logEpoch", "events"],
+      "type": "object"
+    },
+    "SessionSubscribeReply": {
+      "description": "`subscribe` reply. The `pending*` lists hold the original request payloads\nstill waiting for an answer, in queue order.",
+      "properties": {
+        "headSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "type": "string"
+        },
+        "pendingElicitations": {
+          "items": true,
+          "type": "array"
+        },
+        "pendingMcpInstalls": {
+          "description": "MCP install approvals still waiting. The hand-written type lacks it.",
+          "items": true,
+          "type": "array"
+        },
+        "pendingPermissions": {
+          "items": true,
+          "type": "array"
+        },
+        "pendingQuestions": {
+          "items": true,
+          "type": "array"
+        },
+        "replayed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "replayed", "logEpoch", "headSeq"],
+      "type": "object"
+    },
+    "SpawnedTerminal": {
+      "description": "`spawn` reply data: the terminal and the claim credential it issued.",
+      "properties": {
+        "claim": {
+          "description": "64 hex characters; only spawn and rotate replies carry it.",
+          "type": "string"
+        },
+        "cols": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "pid": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rows": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "shell": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "shell", "cwd", "pid", "cols", "rows", "claim"],
+      "type": "object"
+    },
+    "StoreDeletePayload": {
+      "additionalProperties": false,
+      "description": "`store_delete` request payload; shared keys follow the write preconditions.",
+      "properties": {
+        "baseRevision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "commandId": {
+          "type": "string"
+        },
+        "expected": true,
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": ["key"],
+      "type": "object"
+    },
+    "StoreDeleteReply": {
+      "description": "`store_delete` reply.",
+      "properties": {
+        "existed": {
+          "type": "boolean"
+        }
+      },
+      "required": ["existed"],
+      "type": "object"
+    },
+    "StoreDeviceWriteReply": {
+      "description": "`store_write` reply for a device key.",
+      "properties": {
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["revision"],
+      "type": "object"
+    },
+    "StoreReadPayload": {
+      "additionalProperties": false,
+      "description": "`store_read` request payload.",
+      "properties": {
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": ["key"],
+      "type": "object"
+    },
+    "StoreReadReply": {
+      "description": "`store_read` reply. Revision `0` means the key is absent.",
+      "properties": {
+        "clientInstanceId": {
+          "type": ["string", "null"]
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": true
+      },
+      "required": ["value", "revision", "clientInstanceId"],
+      "type": "object"
+    },
+    "StoreSharedWriteReply": {
+      "description": "`store_write` reply for a shared key: the stored, possibly merged value.",
+      "properties": {
+        "merged": {
+          "type": "boolean"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": true
+      },
+      "required": ["value", "revision", "merged"],
+      "type": "object"
+    },
+    "StoreWatchState": {
+      "description": "`store` watch state and delta: whether the key holds a value, and which.",
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        },
+        "value": true
+      },
+      "required": ["exists"],
+      "type": "object"
+    },
+    "StoreWritePayload": {
+      "additionalProperties": false,
+      "description": "`store_write` request payload. `expected: null` (key must be absent)\ndiffers from no `expected`.",
+      "properties": {
+        "baseRevision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "commandId": {
+          "type": "string"
+        },
+        "expected": true,
+        "key": {
+          "type": "string"
+        },
+        "value": true
+      },
+      "required": ["key", "value"],
+      "type": "object"
+    },
+    "TerminalAttachResult": {
+      "description": "`attach` reply data: the replay cursor and the terminal's last known\nstate. It never carries a claim.",
+      "properties": {
+        "cols": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "gap": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "latestSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "type": "string"
+        },
+        "pid": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reset": {
+          "type": "boolean"
+        },
+        "rows": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "shell": {
+          "type": "string"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/TerminalStateSnapshot"
+        }
+      },
+      "required": [
+        "id",
+        "shell",
+        "cwd",
+        "pid",
+        "cols",
+        "rows",
+        "latestSeq",
+        "gap",
+        "reset",
+        "logEpoch",
+        "snapshot"
+      ],
+      "type": "object"
+    },
+    "TerminalKind": {
+      "description": "What a terminal runs.",
+      "enum": ["shell", "agent"],
+      "type": "string"
+    },
+    "TerminalSpawnOptions": {
+      "additionalProperties": true,
+      "description": "`spawn` request payload. With `program` set the PTY runs that executable\nwith `args` instead of a login shell. Unknown keys pass through.",
+      "properties": {
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "cols": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "env": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "kind": {
+          "$ref": "#/$defs/TerminalKind"
+        },
+        "program": {
+          "type": "string"
+        },
+        "projectId": {
+          "description": "Required and non-empty on `/terminal/ws`.",
+          "type": "string"
+        },
+        "rows": {
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "shell": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "TerminalStateSnapshot": {
+      "description": "A terminal's last known state, sent on attach so a late client can seed\nits store.",
+      "properties": {
+        "cwd": {
+          "type": ["string", "null"]
+        },
+        "exitCode": {
+          "format": "int32",
+          "type": ["integer", "null"]
+        },
+        "exited": {
+          "type": "boolean"
+        },
+        "gitBranch": {
+          "type": ["string", "null"]
+        },
+        "gitStatus": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GitStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["cwd", "gitBranch", "gitStatus", "exitCode", "exited"],
+      "type": "object"
+    },
+    "TerminalsWatchState": {
+      "description": "`terminals` watch state and delta: the project's terminals as they are now.",
+      "properties": {
+        "terminals": {
+          "items": {
+            "$ref": "#/$defs/WsTerminalSetEntry"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["terminals"],
+      "type": "object"
+    },
+    "TitleSource": {
+      "description": "Who named a chat; a local alias wins over every other source.",
+      "enum": ["background_generated", "agent_supplied", "derived_first_message", "local_alias"],
+      "type": "string"
+    },
+    "UpdateProjectPayload": {
+      "additionalProperties": false,
+      "description": "`update_project` request payload. `cascade: true` stops the project's live\nsessions and terminals instead of refusing `project_busy`.",
+      "properties": {
+        "cascade": {
+          "type": "boolean"
+        },
+        "color": {
+          "type": "string"
+        },
+        "isArchived": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        }
+      },
+      "required": ["projectId"],
+      "type": "object"
+    },
+    "UserPromptEvent": {
+      "description": "The payload of a `user_prompt` event: the user input the host recorded.",
+      "properties": {
+        "agentId": {
+          "type": "string"
+        },
+        "content": {
+          "items": true,
+          "type": "array"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "turnId": {
+          "type": "string"
+        }
+      },
+      "required": ["agentId", "sessionId", "content"],
+      "type": "object"
+    },
+    "WatchResyncDelta": {
+      "description": "The delta the host sends when it could not queue the one before it.",
+      "properties": {
+        "resync": {
+          "const": true,
+          "type": "boolean"
+        }
+      },
+      "required": ["resync"],
+      "type": "object"
+    },
+    "WebTerminalDataFrame": {
+      "description": "One sequenced output chunk of an attached terminal.",
+      "properties": {
+        "data": {
+          "description": "Raw output bytes.",
+          "items": {
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "terminalId": {
+          "type": "string"
+        },
+        "type": {
+          "const": "data",
+          "type": "string"
+        }
+      },
+      "required": ["type", "terminalId", "seq", "data"],
+      "type": "object"
+    },
+    "WebTerminalErrReply": {
+      "description": "A failed reply.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "success": {
+          "const": false,
+          "type": "boolean"
+        }
+      },
+      "required": ["id", "success", "error", "code"],
+      "type": "object"
+    },
+    "WebTerminalErrorCode": {
+      "description": "SCREAMING_SNAKE_CASE codes of `/terminal/ws` refusals. Handlers also\nanswer domain codes outside this set (`VALIDATION_ERROR`), so a reply's\n`code` stays a string.",
+      "enum": [
+        "UNAUTHORIZED",
+        "PROTOCOL_VERSION_MISMATCH",
+        "INVALID_CLIENT_IDENTITY",
+        "FORBIDDEN",
+        "OUTCOME_UNKNOWN",
+        "COMMAND_CONFLICT",
+        "INVALID_COMMAND_ID",
+        "TERMINAL_LIMIT",
+        "PROJECT_BUSY"
+      ],
+      "type": "string"
+    },
+    "WebTerminalEventFrame": {
+      "description": "A terminal lifecycle or metadata change.",
+      "properties": {
+        "payload": {
+          "$ref": "#/$defs/WebTerminalEventPayload"
+        },
+        "type": {
+          "const": "event",
+          "type": "string"
+        }
+      },
+      "required": ["type", "payload"],
+      "type": "object"
+    },
+    "WebTerminalEventPayload": {
+      "description": "The payload of a [`WebTerminalEventFrame`].",
+      "oneOf": [
+        {
+          "properties": {
+            "cwd": {
+              "type": ["string", "null"]
+            },
+            "exit_code": {
+              "format": "int32",
+              "type": ["integer", "null"]
+            },
+            "kind": {
+              "type": "string"
+            },
+            "line_empty": {
+              "type": "boolean"
+            },
+            "nonce": {
+              "type": ["string", "null"]
+            },
+            "prompt_generation": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": ["integer", "null"]
+            },
+            "prompt_suppressed": {
+              "type": "boolean"
+            },
+            "session_id": {
+              "type": "string"
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "session_lifecycle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "terminal_id",
+            "session_id",
+            "kind",
+            "nonce",
+            "prompt_suppressed",
+            "line_empty",
+            "exit_code",
+            "prompt_generation",
+            "cwd"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "exit_code": {
+              "format": "int32",
+              "type": ["integer", "null"]
+            },
+            "signal": {
+              "format": "int32",
+              "type": ["integer", "null"]
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "exit",
+              "type": "string"
+            }
+          },
+          "required": ["type", "terminal_id", "exit_code", "signal"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "cwd": {
+              "type": "string"
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "cwd_changed",
+              "type": "string"
+            }
+          },
+          "required": ["type", "terminal_id", "cwd"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "branch": {
+              "type": ["string", "null"]
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "git_branch_changed",
+              "type": "string"
+            }
+          },
+          "required": ["type", "terminal_id", "branch"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "status": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/GitStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "git_status_changed",
+              "type": "string"
+            }
+          },
+          "required": ["type", "terminal_id", "status"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "exit_code": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "terminal_id": {
+              "type": "string"
+            },
+            "type": {
+              "const": "exit_code_changed",
+              "type": "string"
+            }
+          },
+          "required": ["type", "terminal_id", "exit_code"],
+          "type": "object"
+        }
+      ]
+    },
+    "WebTerminalFrame": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WebTerminalReply"
+        },
+        {
+          "$ref": "#/$defs/WebTerminalDataFrame"
+        },
+        {
+          "$ref": "#/$defs/WebTerminalReplayFrame"
+        },
+        {
+          "$ref": "#/$defs/WebTerminalGapFrame"
+        },
+        {
+          "$ref": "#/$defs/WebTerminalEventFrame"
+        }
+      ],
+      "description": "Any frame the host writes on `/terminal/ws`."
+    },
+    "WebTerminalGapFrame": {
+      "description": "The output stream lagged and lost chunks after `lastSeq`.",
+      "properties": {
+        "lastSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "terminalId": {
+          "type": "string"
+        },
+        "type": {
+          "const": "gap",
+          "type": "string"
+        }
+      },
+      "required": ["type", "terminalId", "lastSeq"],
+      "type": "object"
+    },
+    "WebTerminalOkReply": {
+      "description": "A successful reply.",
+      "properties": {
+        "data": true,
+        "id": {
+          "type": "string"
+        },
+        "success": {
+          "const": true,
+          "type": "boolean"
+        }
+      },
+      "required": ["id", "success", "data"],
+      "type": "object"
+    },
+    "WebTerminalReplayChunk": {
+      "description": "One chunk of a replay.",
+      "properties": {
+        "data": {
+          "items": {
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["seq", "data"],
+      "type": "object"
+    },
+    "WebTerminalReplayFrame": {
+      "description": "The chunks a client has not seen, sent on attach.",
+      "properties": {
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/WebTerminalReplayChunk"
+          },
+          "type": "array"
+        },
+        "gap": {
+          "type": "boolean"
+        },
+        "latestSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "logEpoch": {
+          "type": "string"
+        },
+        "reset": {
+          "description": "The cursor was from another epoch or ahead of the head: discard what\nwas rendered first.",
+          "type": "boolean"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/TerminalStateSnapshot"
+        },
+        "terminalId": {
+          "type": "string"
+        },
+        "type": {
+          "const": "replay",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "terminalId",
+        "chunks",
+        "gap",
+        "reset",
+        "logEpoch",
+        "latestSeq",
+        "snapshot"
+      ],
+      "type": "object"
+    },
+    "WebTerminalReply": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WebTerminalOkReply"
+        },
+        {
+          "$ref": "#/$defs/WebTerminalErrReply"
+        }
+      ],
+      "description": "A reply frame: `data` on success, a message and a code on failure."
+    },
+    "WebTerminalRequest": {
+      "description": "A request frame, client to host.",
+      "properties": {
+        "commandId": {
+          "description": "Client-minted id of a ledgered request (`spawn`, `write`, `kill`,\n`rotate_claim`, `revoke_claim`). A resend never runs twice.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "default": null,
+          "description": "The request payload; `spawn` sends a [`TerminalSpawnOptions`]. The\nhost accepts a request without one and reads it as `null`."
+        },
+        "type": {
+          "$ref": "#/$defs/WebTerminalRequestType"
+        }
+      },
+      "required": ["id", "type", "payload"],
+      "type": "object"
+    },
+    "WebTerminalRequestType": {
+      "description": "A `/terminal/ws` request `type`.",
+      "enum": [
+        "authenticate",
+        "spawn",
+        "write",
+        "command_editor_submit",
+        "command_editor_request_completion",
+        "command_editor_cancel_completion",
+        "command_editor_restore_prompt",
+        "resize",
+        "kill",
+        "attach",
+        "detach",
+        "rotate_claim",
+        "revoke_claim",
+        "get_cwd",
+        "get_git_branch",
+        "get_git_status",
+        "get_exit_code",
+        "list_preserved"
+      ],
+      "type": "string"
+    },
+    "WsAgentSummary": {
+      "description": "One element of the `list_agents` reply. Older hosts omit the session lists.",
+      "properties": {
+        "backgroundCommands": {
+          "$ref": "#/$defs/AgentBackgroundCommands"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/AgentCapabilities"
+        },
+        "configId": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "ownsSession": {
+          "description": "Sessions whose workspace roots are registered on this agent's driver.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "workingSessions": {
+          "description": "Owned sessions the agent works in outside a prompt turn.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["id", "name", "capabilities"],
+      "type": "object"
+    },
+    "WsCanvasAttached": {
+      "description": "The connection now runs the mount.",
+      "properties": {
+        "attached": {
+          "const": true,
+          "type": "boolean"
+        }
+      },
+      "required": ["attached"],
+      "type": "object"
+    },
+    "WsCanvasCallFrame": {
+      "description": "One canvas control call for the connection that holds `projectId`'s canvas\nat `mountSeq`, answered with a `canvas_reply` request.",
+      "properties": {
+        "callId": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "method": {
+          "type": "string"
+        },
+        "mountSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "params": {
+          "description": "JSON text, never parsed on the way.",
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "timeoutMs": {
+          "description": "How long the host still waits for the reply, in ms. Absent on a notice.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "type": {
+          "const": "canvas_call",
+          "type": "string"
+        }
+      },
+      "required": ["type", "callId", "projectId", "mountSeq", "method", "params"],
+      "type": "object"
+    },
+    "WsCanvasError": {
+      "description": "The error of a failed canvas call.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": ["code", "message"],
+      "type": "object"
+    },
+    "WsCanvasFailure": {
+      "description": "A failed canvas call.",
+      "properties": {
+        "callId": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "error": {
+          "$ref": "#/$defs/WsCanvasError"
+        },
+        "mountSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ok": {
+          "const": false,
+          "type": "boolean"
+        }
+      },
+      "required": ["callId", "mountSeq", "ok", "error"],
+      "type": "object"
+    },
+    "WsCanvasLeaseLostFrame": {
+      "description": "The mount at `mountSeq` was saved and unmounted.",
+      "properties": {
+        "mountSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/CanvasLeaseLostReason"
+        },
+        "type": {
+          "const": "canvas_lease_lost",
+          "type": "string"
+        }
+      },
+      "required": ["type", "projectId", "mountSeq", "reason"],
+      "type": "object"
+    },
+    "WsCanvasMountReply": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WsCanvasAttached"
+        },
+        {
+          "$ref": "#/$defs/WsCanvasRefused"
+        }
+      ],
+      "description": "`canvas_mount` reply."
+    },
+    "WsCanvasRefused": {
+      "description": "The host has no such mount for this renderer. `heldElsewhere`: another\nwindow holds the project's lease.",
+      "properties": {
+        "attached": {
+          "const": false,
+          "type": "boolean"
+        },
+        "heldElsewhere": {
+          "type": "boolean"
+        }
+      },
+      "required": ["attached", "heldElsewhere"],
+      "type": "object"
+    },
+    "WsCanvasReplyPayload": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WsCanvasResult"
+        },
+        {
+          "$ref": "#/$defs/WsCanvasFailure"
+        }
+      ],
+      "description": "`canvas_reply` request payload: the result's JSON text, or a typed error."
+    },
+    "WsCanvasResult": {
+      "description": "A result, or one slice of it when `partial` is set.",
+      "properties": {
+        "callId": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "mountSeq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ok": {
+          "const": true,
+          "type": "boolean"
+        },
+        "partial": {
+          "const": true,
+          "type": "boolean"
+        },
+        "result": {
+          "type": "string"
+        }
+      },
+      "required": ["callId", "mountSeq", "ok", "result"],
+      "type": "object"
+    },
+    "WsErrReply": {
+      "description": "A failed reply.",
+      "properties": {
+        "err": {
+          "$ref": "#/$defs/WsError"
+        },
+        "id": {
+          "type": "string"
+        },
+        "ok": {
+          "const": false,
+          "type": "boolean"
+        },
+        "visible_at": true
+      },
+      "required": ["id", "ok", "err"],
+      "type": "object"
+    },
+    "WsError": {
+      "description": "The `err` object of a failed reply.",
+      "properties": {
+        "code": {
+          "description": "A `WsErrorCode` string, or a SCREAMING_SNAKE_CASE domain code from the\nstore and install handlers.",
+          "type": "string"
+        },
+        "details": {
+          "$ref": "#/$defs/ProjectBusyDetails",
+          "description": "Set on `project_busy`: the live entities bound to the project."
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": ["code", "message"],
+      "type": "object"
+    },
+    "WsErrorCode": {
+      "description": "The stable snake_case `err.code` strings of `/ws`. Some handlers\n(the store, installs) answer SCREAMING_SNAKE_CASE codes outside this\nset, so `WsError::code` stays a string.",
+      "enum": [
+        "not_found",
+        "unauthorized",
+        "rate_limited",
+        "agent_crashed",
+        "permission_denied",
+        "stale",
+        "duplicate",
+        "unsupported",
+        "not_implemented",
+        "agent_auth_required",
+        "session_owned_by_other",
+        "protocol_version_mismatch",
+        "invalid_client_identity",
+        "terminal_limit",
+        "project_busy",
+        "outcome_unknown",
+        "destructive_op_blocked",
+        "provider_quota_exceeded",
+        "provider_session_limit",
+        "provider_request_rejected",
+        "forbidden",
+        "already_resolved",
+        "agent_unavailable",
+        "invalid_agent_config",
+        "command_conflict",
+        "invalid_command_id",
+        "claude_account_signed_out",
+        "codex_account_signed_out",
+        "antigravity_account_signed_out",
+        "claude_login_code_incomplete",
+        "claude_login_busy"
+      ],
+      "type": "string"
+    },
+    "WsEvent": {
+      "description": "A session log event, host to client. `sid` is `null` and `seq` is `0` for\nagent-level and relay-level events; `payload` is the camelCase ACP event.",
+      "properties": {
+        "payload": true,
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sid": {
+          "type": ["string", "null"]
+        },
+        "type": {
+          "$ref": "#/$defs/WsEventType"
+        }
+      },
+      "required": ["sid", "seq", "type", "payload"],
+      "type": "object"
+    },
+    "WsEventBatchFrame": {
+      "description": "Several events queued together, written as one frame.",
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/WsEvent"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "events",
+          "type": "string"
+        }
+      },
+      "required": ["type", "events"],
+      "type": "object"
+    },
+    "WsEventType": {
+      "description": "The `type` of a `/ws` session log event. `gap` and `heartbeat` name the\ntop-level delivery frames. The host publishes every session-scoped ACP\nevent, so this list also holds the nine types after `heartbeat` that the\nhand-written `WS_EVENT_TYPES` lacks.",
+      "enum": [
+        "agent_spawned",
+        "session_created",
+        "session_closed",
+        "agent_disconnected",
+        "agent_error",
+        "tool_call",
+        "mode_update",
+        "config_options_update",
+        "session_info_update",
+        "usage_update",
+        "permission_request",
+        "prompt_complete",
+        "message_chunk",
+        "tool_call_update",
+        "commands_update",
+        "plan_update",
+        "auth_required",
+        "user_prompt",
+        "agent_switch",
+        "local_title_generated",
+        "agent_working",
+        "background_commands",
+        "gap",
+        "heartbeat",
+        "question_request",
+        "question_cancelled",
+        "elicitation_request",
+        "mcp_install_request",
+        "mcp_install_resolved",
+        "mcp_registry_changed",
+        "browser_ticket_closed",
+        "claude_limit_action",
+        "codex_limit_action",
+        "antigravity_limit_action"
+      ],
+      "type": "string"
+    },
+    "WsGapFrame": {
+      "description": "Lossy events of `sid` were dropped for this connection; the client installs\na fresh snapshot of the session.",
+      "properties": {
+        "sid": {
+          "type": "string"
+        },
+        "type": {
+          "const": "gap",
+          "type": "string"
+        }
+      },
+      "required": ["type", "sid"],
+      "type": "object"
+    },
+    "WsHeartbeatFrame": {
+      "description": "The host is alive; written every 10 s.",
+      "properties": {
+        "type": {
+          "const": "heartbeat",
+          "type": "string"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "WsOkReply": {
+      "description": "A successful reply.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ok": {
+          "const": true,
+          "type": "boolean"
+        },
+        "payload": true,
+        "visible_at": {
+          "description": "The session log seq the effect is visible at, on session commands."
+        }
+      },
+      "required": ["id", "ok"],
+      "type": "object"
+    },
+    "WsReply": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WsOkReply"
+        },
+        {
+          "$ref": "#/$defs/WsErrReply"
+        }
+      ],
+      "description": "A reply frame, host to client: success with an optional payload, or a\nfailure with a machine code."
+    },
+    "WsRequest": {
+      "description": "A request frame, client to host. `id` is echoed in the reply.",
+      "properties": {
+        "command_id": {
+          "description": "Client-minted id of a mutating request (1-128 characters of\n`[A-Za-z0-9_-]`). A resend with the same id never runs twice.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "payload": {
+          "default": null,
+          "description": "The request payload; its shape depends on `type`. The host accepts a\nrequest without one and reads it as `null`."
+        },
+        "type": {
+          "$ref": "#/$defs/WsRequestType"
+        }
+      },
+      "required": ["id", "type", "payload"],
+      "type": "object"
+    },
+    "WsRequestType": {
+      "description": "A `/ws` request `type`.",
+      "enum": [
+        "send_prompt",
+        "cancel_prompt",
+        "stop_subagent",
+        "set_config_option",
+        "set_mode",
+        "set_model",
+        "respond_permission",
+        "answer_question",
+        "answer_mcp_install",
+        "browser_stop",
+        "create_session",
+        "load_session",
+        "resume_session",
+        "close_session",
+        "dispose_ephemeral_session",
+        "promote_session",
+        "list_sessions",
+        "register_discovered_session",
+        "import_agent_session",
+        "spawn_agent",
+        "kill_agent",
+        "list_agents",
+        "authenticate",
+        "authenticate_agent",
+        "logout_agent",
+        "delete_agent_session",
+        "respond_elicitation",
+        "subscribe",
+        "ping",
+        "list_persisted_sessions",
+        "delete_session",
+        "rename_session",
+        "open_persisted_session",
+        "get_session_payload",
+        "recover_session_snapshot",
+        "get_session_cursor",
+        "get_session_payload_tail",
+        "list_acp_catalog",
+        "set_catalog_opt_in",
+        "fetch_acp_registry_snapshot",
+        "search_mcp_catalog",
+        "get_mcp_catalog_status",
+        "set_mcp_catalog_sync",
+        "describe_mcp_install",
+        "plan_mcp_install",
+        "commit_mcp_install",
+        "cancel_mcp_install",
+        "get_mcp_catalog_icon",
+        "install_acp_agent",
+        "acp_deliver_auth_redirect",
+        "store_read",
+        "store_write",
+        "store_delete",
+        "add_project",
+        "update_project",
+        "remove_project",
+        "record_agent_switch",
+        "mark_chat_read",
+        "watch",
+        "unwatch",
+        "set_default_project",
+        "subagent_settings_get",
+        "subagent_settings_set",
+        "list_claude_accounts",
+        "list_claude_usage",
+        "set_default_claude_account",
+        "set_project_claude_account",
+        "set_chat_claude_account",
+        "set_claude_auto_switch",
+        "set_claude_resume",
+        "add_claude_account",
+        "rename_claude_account",
+        "remove_claude_account",
+        "start_claude_link_login",
+        "finish_claude_link_login",
+        "cancel_claude_login",
+        "list_codex_accounts",
+        "list_codex_usage",
+        "set_default_codex_account",
+        "set_project_codex_account",
+        "set_chat_codex_account",
+        "set_codex_auto_switch",
+        "set_codex_resume",
+        "add_codex_account",
+        "rename_codex_account",
+        "remove_codex_account",
+        "start_codex_account_login",
+        "list_antigravity_accounts",
+        "list_antigravity_usage",
+        "set_default_antigravity_account",
+        "set_project_antigravity_account",
+        "set_chat_antigravity_account",
+        "set_antigravity_auto_switch",
+        "set_antigravity_resume",
+        "add_antigravity_account",
+        "rename_antigravity_account",
+        "remove_antigravity_account",
+        "start_antigravity_account_login",
+        "canvas_mount",
+        "canvas_unmount",
+        "canvas_reply"
+      ],
+      "type": "string"
+    },
+    "WsServerFrame": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WsReply"
+        },
+        {
+          "$ref": "#/$defs/WsEventBatchFrame"
+        },
+        {
+          "$ref": "#/$defs/WsGapFrame"
+        },
+        {
+          "$ref": "#/$defs/WsHeartbeatFrame"
+        },
+        {
+          "$ref": "#/$defs/WsWatchFrame"
+        },
+        {
+          "$ref": "#/$defs/WsCanvasCallFrame"
+        },
+        {
+          "$ref": "#/$defs/WsCanvasLeaseLostFrame"
+        },
+        {
+          "$ref": "#/$defs/WsEvent"
+        }
+      ],
+      "description": "Any frame the host writes on `/ws`."
+    },
+    "WsTerminalSetEntry": {
+      "description": "One terminal of the `terminals` watch. It never carries a claim.",
+      "properties": {
+        "attached": {
+          "description": "A web connection holds a live attachment.",
+          "type": "boolean"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "projectId": {
+          "type": "string"
+        },
+        "terminalId": {
+          "type": "string"
+        }
+      },
+      "required": ["terminalId", "projectId", "cwd", "attached"],
+      "type": "object"
+    },
+    "WsWatchDeltaFrame": {
+      "description": "One change after the state.",
+      "properties": {
+        "delta": true,
+        "reset": false,
+        "revision": {
+          "$ref": "#/$defs/WsWatchRevision"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "state": false,
+        "type": {
+          "const": "watch",
+          "type": "string"
+        },
+        "watch": {
+          "$ref": "#/$defs/WsWatchName"
+        }
+      },
+      "required": ["type", "watch", "scope", "revision", "delta"],
+      "type": "object"
+    },
+    "WsWatchFrame": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WsWatchStateFrame"
+        },
+        {
+          "$ref": "#/$defs/WsWatchDeltaFrame"
+        }
+      ],
+      "description": "A watch frame: exactly one of the full state and a delta."
+    },
+    "WsWatchName": {
+      "description": "A watch a connection can hold. `projects`, `chat_history`, `agents` and\n`chat_activity` have the empty scope; `fs` and `terminals` are scoped\nto a project id, `store` to a store key.",
+      "enum": ["projects", "chat_history", "agents", "fs", "store", "terminals", "chat_activity"],
+      "type": "string"
+    },
+    "WsWatchReply": {
+      "description": "`watch` reply payload.",
+      "properties": {
+        "revision": {
+          "$ref": "#/$defs/WsWatchRevision"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "watch": {
+          "$ref": "#/$defs/WsWatchName"
+        }
+      },
+      "required": ["watch", "scope", "revision"],
+      "type": "object"
+    },
+    "WsWatchRevision": {
+      "description": "Which serve start produced a frame, and its position in the subscription's\nstream: `n` is `1` for the full state and then rises by one per frame.",
+      "properties": {
+        "hostEpoch": {
+          "type": "string"
+        },
+        "n": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": ["hostEpoch", "n"],
+      "type": "object"
+    },
+    "WsWatchStateFrame": {
+      "description": "The full state of a watch.",
+      "properties": {
+        "delta": false,
+        "reset": {
+          "const": true,
+          "type": "boolean"
+        },
+        "revision": {
+          "$ref": "#/$defs/WsWatchRevision"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "state": true,
+        "type": {
+          "const": "watch",
+          "type": "string"
+        },
+        "watch": {
+          "$ref": "#/$defs/WsWatchName"
+        }
+      },
+      "required": ["type", "watch", "scope", "revision", "reset", "state"],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "troupe-protocol",
+  "x-constants": {
+    "MAX_CLIENT_ID_LEN": 128,
+    "MAX_COMMAND_ID_LEN": 128,
+    "WS_PROTOCOL_VERSION": 7
+  }
+}

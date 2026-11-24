@@ -1,0 +1,13 @@
+{
+  "children": [
+    {
+      "name": "Thinking about the diff",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

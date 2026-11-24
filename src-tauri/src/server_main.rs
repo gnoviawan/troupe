@@ -108,6 +108,13 @@ fn main() -> ExitCode {
         return termul_manager_lib::codex_admin::run(&raw_args[1..]);
     }
 
+    // Local-only Antigravity Account commands (`troupe-server antigravity
+    // account ...`). Same pre-bind path. Google sign-in runs in the Troupe UI.
+    if raw_args.first().is_some_and(|arg| arg == "antigravity") {
+        init_tracing();
+        return termul_manager_lib::antigravity_admin::run(&raw_args[1..]);
+    }
+
     // Parse CLI BEFORE any tokio / app setup (AC2).
     let cfg = match ServerConfig::from_args(raw_args) {
         Ok(cfg) => cfg,
@@ -387,6 +394,9 @@ fn main() -> ExitCode {
         let codex_agent = Arc::new(termul_manager_lib::CodexAgentService::system(
             acp_install_dir.clone(),
         ));
+        let antigravity_agent = Arc::new(termul_manager_lib::AntigravityAgentService::system(
+            acp_install_dir.clone(),
+        ));
         let acp_install = match AcpInstallService::open(
             acp_install_dir,
             std::sync::Arc::clone(acp_catalog.as_ref().expect("catalog opened above")),
@@ -409,12 +419,22 @@ fn main() -> ExitCode {
             termul_manager_lib::claude_limit::ClaudeLimitHandle::channel();
         let (codex_limit, codex_limit_inbox) =
             termul_manager_lib::codex_limit::CodexLimitHandle::channel();
-        let acp = Arc::new(AcpManager::with_persistence_and_host_agents(
-            vec![ws_relay.clone(), claude_limit.sink(), codex_limit.sink()],
-            persistence,
-            claude_agent,
-            codex_agent,
-        ));
+        let (antigravity_limit, antigravity_limit_inbox) =
+            termul_manager_lib::antigravity_limit::AntigravityLimitHandle::channel();
+        let acp = Arc::new(
+            AcpManager::with_persistence_and_host_agents(
+                vec![
+                    ws_relay.clone(),
+                    claude_limit.sink(),
+                    codex_limit.sink(),
+                    antigravity_limit.sink(),
+                ],
+                persistence,
+                claude_agent,
+                codex_agent,
+            )
+            .with_antigravity_agent(antigravity_agent),
+        );
         termul_manager_lib::claude_limit::start(
             &acp,
             &ws_relay,
@@ -427,6 +447,13 @@ fn main() -> ExitCode {
             &ws_relay,
             codex_limit,
             codex_limit_inbox,
+            &tokio::runtime::Handle::current(),
+        );
+        termul_manager_lib::antigravity_limit::start(
+            &acp,
+            &ws_relay,
+            antigravity_limit,
+            antigravity_limit_inbox,
             &tokio::runtime::Handle::current(),
         );
         termul_manager_lib::worker_chats::install(
@@ -1020,6 +1047,16 @@ OPTIONS:
                                   commands keep starting, but ignored (a
                                   warning is logged at startup).
 
+  Experimental:
+    --experimental-rune-client    Serve the Rune web client preview at /rune/
+                                  and redirect /?ui=rune there. Needs
+                                  --rune-web-dir; off by default, when /rune/
+                                  answers 404 and /?ui=rune is the React client.
+                                  [env: TROUPE_EXPERIMENTAL_RUNE_CLIENT=true|1]
+    --rune-web-dir <DIR>          The built Rune web bundle (index.html, *.js,
+                                  *_bg.wasm, fonts) to serve at /rune/.
+                                  [env: TROUPE_RUNE_WEB_DIR]
+
   Security & updates:
     --allow-remote-writes         Admit non-loopback peers on all guarded write
                                   routes. /fs/* writes reject only .. traversal
@@ -1090,6 +1127,8 @@ ENVIRONMENT:
     TROUPE_SERVER_ALLOW_REMOTE_WRITES  true|1 enables --allow-remote-writes
     TROUPE_WEB_AUTH_TOKEN         Fallback for --web-auth-token
     TROUPE_ALLOWED_ORIGINS        Fallback for --allowed-origins (comma-separated)
+    TROUPE_EXPERIMENTAL_RUNE_CLIENT  true|1 enables --experimental-rune-client
+    TROUPE_RUNE_WEB_DIR           Fallback for --rune-web-dir
     TROUPE_SERVER_UPDATE_ENABLED  true gates the periodic self-update loop
     TROUPE_SERVER_UPDATE_CHANNEL  stable|insider|nightly (required for periodic loop)
     TROUPE_SERVER_UPDATE_INTERVAL_SECS  periodic loop interval [default: 21600]

@@ -1,0 +1,130 @@
+{
+  "stores": {
+    "workspace": {
+      "sources": {
+        "src/renderer/stores/workspace-store/tree.ts": "f9b68ef60a19be48a31612c7fbb44ceea805187a",
+        "src/renderer/stores/workspace-store/slices/pane.ts": "e05bd7c274370dca74f6202593de29436027c0c8",
+        "src/renderer/stores/workspace-store/slices/projects.ts": "e1bfbf9a8bd00e4f0ab182d7c993ef25a9c97215",
+        "src/renderer/stores/workspace-store/slices/sync.ts": "ad3c4538050c7c608965243b9aed175eb5929b7f",
+        "src/renderer/stores/workspace-store/slices/tabs.ts": "790028e4d72b22870fc23a94110202fe4aa74cd2",
+        "src/renderer/lib/diff-tab-identity.ts": "0747a66f3e793b31939459bd57f2870ded43dff9",
+        "src/renderer/lib/working-copy.ts": "102cadf8f1824e244619aabe6478289293cb937c"
+      },
+      "vectors": [
+        "split_nested_each_side",
+        "split_same_direction_inserts_sibling",
+        "split_custom_sizes",
+        "split_without_focus_keeps_fullscreen",
+        "add_tab_to_pane",
+        "move_tab_between_panes",
+        "move_tab_to_new_split",
+        "move_tab_to_stale_pane",
+        "move_tab_to_new_split_same_direction",
+        "close_tab_collapses_empty_pane",
+        "close_active_middle_tab",
+        "set_active_tab_and_pane",
+        "toggle_fullscreen",
+        "update_pane_sizes",
+        "collapse_pane",
+        "collapse_pane_keeps_focus_on_sibling",
+        "reorder_tabs",
+        "terminal_tabs",
+        "editor_tabs",
+        "browser_and_agent_browser_tabs",
+        "agent_browser_tab_fallback_to_first_leaf",
+        "agent_chat_tabs",
+        "insert_chat_into_empty_pane",
+        "git_and_github_tabs",
+        "diff_tabs",
+        "canvas_and_automations_tabs",
+        "remove_tab_visible_and_parked",
+        "sync_terminal_tabs",
+        "clear_pane_and_reset",
+        "load_project_workspace_normalizes",
+        "sync_editor_tabs",
+        "remap_terminal_tabs",
+        "next_tab_and_active_tab_queries",
+        "project_trees"
+      ]
+    },
+    "shortcuts": {
+      "sources": {
+        "src/renderer/stores/keyboard-shortcuts-store.ts": "790c7bc23bb124601af106ced7a365a147e65bfa",
+        "src/renderer/types/settings.ts": "1eb4d46e8097214368522f67941a5576a61978e9",
+        "src/renderer/lib/platform.ts": "17a189bf41b26507ad845fa1605e303018dd3d67"
+      },
+      "vectors": [
+        "web_update_and_reset",
+        "desktop_update_and_reset",
+        "set_shortcuts_and_conflicts",
+        "normalize_key_events",
+        "format_keys_for_display",
+        "match_key_events"
+      ]
+    },
+    "overlay": {
+      "sources": {
+        "src/renderer/stores/overlay-stack-store.ts": "427f7e24513473b576ea429c1bc835161420ab56"
+      },
+      "vectors": [
+        "register_and_close_topmost",
+        "mobile_shell_flag",
+        "sentinel_depth"
+      ]
+    },
+    "projects": {
+      "sources": {
+        "src/renderer/stores/project-store.ts": "444b3ce412505d9408c82c5bd39577e95b8d3009",
+        "src/renderer/stores/project-registry-feed.ts": "902f5b3a3b44b0b2ab6545a5eefa4d084007db2d",
+        "src/renderer/lib/project-prefs.ts": "cf89f1c53afc6438ac5325b130df3db941582acf"
+      },
+      "vectors": [
+        "first_list_uses_saved_layout_and_selection",
+        "saved_selection_archived_falls_back",
+        "host_default_when_nothing_saved",
+        "select_project",
+        "update_project_splits_host_and_device_fields",
+        "reorder_projects_keeps_unlisted_and_archived",
+        "worktrees_and_lock",
+        "groups",
+        "persist_prefs_skips_unchanged_record",
+        "remembered_prefs_reach_a_new_project"
+      ]
+    },
+    "shell-layout": {
+      "sources": {
+        "src/renderer/stores/shell-layout-store.ts": "b3b21628023f847158ed5958d57d8af006b5644d",
+        "src/renderer/lib/shell-layout-record.ts": "cacd65f45ea3524dedc6ce87550a06e99e623e2f",
+        "src/renderer/lib/shell-layout-migration.ts": "b4206d6a3565e40b7fec7e4b328225cbe8eea610"
+      },
+      "vectors": [
+        "gate_then_fresh_install",
+        "load_existing_record_clamped",
+        "version_1_record_is_saved_as_current",
+        "version_2_chats_view_becomes_explorer",
+        "non_object_record_loads_defaults",
+        "read_error_goes_unavailable",
+        "newer_version_goes_unavailable",
+        "tabs_picks_and_sections",
+        "remove_project_when_ready",
+        "remove_project_before_hydration",
+        "remove_project_before_fresh_install",
+        "remove_project_while_unavailable"
+      ]
+    },
+    "pane-tree": {
+      "sources": {
+        "src/renderer/hooks/editor-persistence/pane-tree.ts": "0440ab7b7976f34906c47e6378d70e80f6c88f09",
+        "src/renderer/lib/workspace-tab-kinds.ts": "99aa05cc1857c1927ffb2cf7160a18a152c75f6a"
+      },
+      "vectors": [
+        "serialize_every_kind_and_splits",
+        "deserialize_every_kind",
+        "deserialize_drops_corrupt_tabs",
+        "deserialize_legacy_leaf_and_split",
+        "reconcile_terminals_by_id_then_name",
+        "reconcile_keeps_saved_terminals_when_none_live"
+      ]
+    }
+  }
+}

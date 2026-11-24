@@ -7,25 +7,34 @@
  *   project-switch switch cycles under live load
  *   pty-flood      canned PTY output flood
  *   soak           long-duration stream + periodic switches (ask-first)
- *   compare        two result dirs → per-metric deltas + verdicts (CAP-5)
- *   browser        CAP-7 secondary lane (stream-storm/project-switch)
+ *   compare        two clients interleaved (or two result dirs → deltas)
+ *   browser        Linux client lane on Xvfb (launch, stream-storm,
+ *                  pty-flood, soak, idle, project-switch)
+ *   run            client comparison engine, direct flags
+ *   webkit-startup Tauri/WebKitGTK desktop startup + idle reference
  *   self-test      fake-agent determinism + report smoke, no app needed
  *
  * Help prints usage without launching anything (acceptance: `--help` works
  * with no app, no exe, no CDP).
  */
 
+import { writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { runBrowserScenario } from './browser/browser-lane.ts'
-import { driveProjectSwitchBrowser, driveStreamStormBrowser } from './browser/browser-scenarios.ts'
+import { driveProjectSwitchBrowser } from './browser/browser-scenarios.ts'
+import { SCENARIOS } from './client-scenarios.ts'
 import { selfTest } from './fake-agent/fake-agent.ts'
 import { compareRuns, formatCompare } from './report/compare.ts'
 import { renderReport } from './report/html-report.ts'
+import { parseRunArgs, runClientComparison, toPerfRunResult } from './run.ts'
 import { runScenario, type ScenarioDef } from './runner/scenario-harness.ts'
+import { formatRunsReport, loadRunSet } from './runs-report.ts'
 import { projectSwitchScenario } from './scenarios/project-switch.ts'
 import { ptyFloodScenario } from './scenarios/pty-flood.ts'
 import { soakScenario } from './scenarios/soak.ts'
 import { streamStormScenario } from './scenarios/stream-storm.ts'
 import { type PerfRunResult, summarize } from './types.ts'
+import { webkitStartup } from './webkit-startup.ts'
 
 const USAGE = `Troupe perf toolkit
 
@@ -41,10 +50,25 @@ Commands:
                   --terminals 3 --lines-per-sec 200 --resize-every 200 --with-agent-stream
   soak            Long-duration stream-storm with periodic switches (>15 min;
                   requires --yes). --minutes 30 --switch-every-sec 120
-  compare         Two result dirs → per-metric min/median deltas + verdicts.
+  compare         Two clients interleaved N runs → medians, p95, rank-sum p:
+                  --clients chromium:a,chromium:b --scenarios launch --runs 3
+                  Or two existing result dirs → per-metric deltas + verdicts:
                   --base tools/perf/results/<id> --against tools/perf/results/<id2>
-  browser         CAP-7 secondary lane against termul-server (stream-storm,
-                  project-switch). --server http://127.0.0.1:3000
+  browser         Linux client lane: headed Chromium on Xvfb against a seeded
+                  troupe-server. Scenarios: launch, idle, stream-storm,
+                  pty-flood, soak (project-switch stays headless).
+                  --server <url> attaches a running server; --server-bin <path>
+                  spawns one per run. Scenario flags pass through (--rate,
+                  --terminals, --settle, --measure, ...).
+  run             The client engine directly: --clients <spec> --scenarios <list>
+                  --runs 3 --display :181 --port 8196 --out <dir>
+                  Clients: chromium (the React client), rune-web (a Rune wasm
+                  build in Chromium) and rune-desktop (a native Rune window).
+                  The Rune clients open --rune-app hello (default; gallery runs
+                  on rune-web only) and run the launch and idle scenarios until
+                  Rune has Troupe screens.
+  webkit-startup  Startup + idle of the shipped Tauri/WebKitGTK binary.
+                  --bin <troupe> --runs 3 --display :182
   self-test       Fake-agent determinism + report/compare smoke. No app.
 
 Shared flags:
@@ -59,6 +83,21 @@ Environment:
 `
 
 async function runCompare(argv: string[]): Promise<number> {
+  if (argv.includes('--clients')) {
+    // Live comparison: two clients interleaved over N runs → medians, p95
+    // and a two-sided rank-sum p per key (runs-report).
+    const opts = parseRunArgs(argv)
+    if (opts.clients.length < 2) {
+      console.error('compare --clients needs two client specs, e.g. chromium:a,chromium:b')
+      return 1
+    }
+    const set = await runClientComparison(opts)
+    const report = formatRunsReport(loadRunSet(opts.outDir))
+    console.log(report)
+    writeFileSync(path.join(set.outDir, 'runs-report.md'), report)
+    console.log(`[perf] wrote ${path.join(set.outDir, 'runs-report.md')}`)
+    return 0
+  }
   let base: string | undefined
   let against: string | undefined
   for (let i = 0; i < argv.length; i++) {
@@ -66,7 +105,7 @@ async function runCompare(argv: string[]): Promise<number> {
     if (argv[i] === '--against') against = argv[i + 1]
   }
   if (!base || !against) {
-    console.error('compare requires --base <dir> and --against <dir>')
+    console.error('compare requires --clients <a>,<b> or --base <dir> and --against <dir>')
     console.error(USAGE)
     return 1
   }
@@ -91,17 +130,33 @@ async function runBrowser(argv: string[]): Promise<number> {
     }
     rest.push(argv[i])
   }
-  if (scenario !== 'stream-storm' && scenario !== 'project-switch') {
-    console.error('browser lane supports: stream-storm, project-switch')
+  // The headless CDP lane, kept for project-switch (it needs two seeded
+  // projects and measures store-switch latency, not a client under X).
+  if (scenario === 'project-switch') {
+    const flags = parseFlagsInto(rest, projectSwitchScenario.defaults)
+    await runBrowserScenario({ scenario, flags, serverUrl }, driveProjectSwitchBrowser)
+    return 0
+  }
+  if (!scenario || !(scenario in SCENARIOS)) {
+    console.error(`browser lane supports: ${Object.keys(SCENARIOS).join(', ')}, project-switch`)
     return 1
   }
-  const defaults =
-    scenario === 'stream-storm' ? streamStormScenario.defaults : projectSwitchScenario.defaults
-  const flags = parseFlagsInto(rest, defaults)
-  await runBrowserScenario(
-    { scenario, flags, serverUrl },
-    scenario === 'stream-storm' ? driveStreamStormBrowser : driveProjectSwitchBrowser
-  )
+  // Client-lane scenarios run through the shared engine: Xvfb, seeded
+  // troupe-server (spawned per run, or --server attaches one), byte proxy,
+  // proc/thread/page/screen metrics.
+  const runArgv = ['--scenarios', scenario, '--clients', 'chromium', '--runs', '1']
+  if (serverUrl) runArgv.push('--server', serverUrl)
+  runArgv.push(...rest)
+  const opts = parseRunArgs(runArgv)
+  const set = await runClientComparison(opts)
+  const record = set.records[set.records.length - 1]
+  if (record) {
+    // The browser lane's result.json + report.html, in the classic schema.
+    const result = toPerfRunResult(record, serverUrl ?? opts.serverBin ?? '')
+    writeFileSync(path.join(set.outDir, 'result.json'), JSON.stringify(result))
+    writeFileSync(path.join(set.outDir, 'report.html'), renderReport(result))
+    console.log(`[perf] wrote ${path.join(set.outDir, 'result.json')} + report.html`)
+  }
   return 0
 }
 
@@ -228,6 +283,12 @@ async function main(): Promise<number> {
       return await runCompare(rest)
     case 'browser':
       return await runBrowser(rest)
+    case 'run':
+      await runClientComparison(parseRunArgs(rest))
+      return 0
+    case 'webkit-startup':
+      await webkitStartup(rest)
+      return 0
     case 'self-test':
       return await runSelfTest()
     default:

@@ -21,8 +21,10 @@ use crate::commands::IpcResult;
 mod claude_accounts;
 pub use claude_accounts::*;
 
+mod antigravity_accounts;
 mod codex_accounts;
 mod codex_login_file;
+pub use antigravity_accounts::*;
 pub use codex_accounts::*;
 
 /// Whether the host OS keychain currently holds a Factory Droid API key.

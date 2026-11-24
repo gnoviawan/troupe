@@ -7994,6 +7994,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "troupe-protocol",
  "url",
  "uuid",
  "webkit2gtk",
@@ -8476,6 +8477,15 @@ dependencies = [
  "memchr",
  "nom",
  "petgraph",
+]
+
+[[package]]
+name = "troupe-protocol"
+version = "0.1.0"
+dependencies = [
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

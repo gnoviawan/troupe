@@ -399,6 +399,7 @@ fn is_auth_required(error: &str) -> bool {
         .is_some_and(|rest| rest.starts_with(": "))
         || crate::acp::claude_accounts::strip_signed_out_tag(error).is_some()
         || crate::acp::codex_accounts::strip_signed_out_tag(error).is_some()
+        || crate::acp::antigravity_accounts::strip_signed_out_tag(error).is_some()
 }
 
 /// The private agent's only sink: keeps the text of the current turn's last

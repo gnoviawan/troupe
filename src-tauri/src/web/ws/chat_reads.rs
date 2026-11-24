@@ -2,24 +2,18 @@
 //! keeps the marker ([`crate::web::chat_reads`]) and re-derives the chat's
 //! `chat_activity` record when it moves, so the dot clears on every surface.
 
+use troupe_protocol::ws::ChatReadMark;
+
 use super::*;
 use crate::logging::redact_session_id;
 use crate::web::chat_reads::MarkOutcome;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct MarkChatReadPayload {
-    session_id: String,
-    seq: u64,
-    log_epoch: Option<String>,
-}
 
 /// `mark_chat_read{sessionId, seq, logEpoch?}` → `{sessionId, seq, logEpoch}`,
 /// the marker as it stands. Idempotent and monotonic: an older or repeated
 /// seq, or a seq from another log epoch than the session's, is a no-op that
 /// still replies with the current marker. Unknown session → `not_found`.
 pub(super) fn handle_mark_chat_read(id: String, payload: &Value, relay: &WsRelaySink) -> WsReply {
-    let parsed: MarkChatReadPayload = match serde_json::from_value(payload.clone()) {
+    let parsed: ChatReadMark = match serde_json::from_value(payload.clone()) {
         Ok(parsed) => parsed,
         Err(error) => {
             warn!(

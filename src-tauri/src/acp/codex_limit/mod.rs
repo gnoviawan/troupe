@@ -139,10 +139,16 @@ impl EventSink for LimitSignalSink {
         if event.type_ != EVENT_AGENT_ERROR {
             return;
         }
-        let Some(kind) = event
-            .payload
-            .get("data")
-            .and_then(crate::acp::codex_accounts::usage::codex_plan_limit_kind)
+        let data = event.payload.get("data");
+        // An Antigravity plan limit carries the same `errorKind`; its own
+        // supervisor handles it.
+        if data
+            .and_then(crate::acp::antigravity_accounts::usage::antigravity_plan_limit)
+            .is_some()
+        {
+            return;
+        }
+        let Some(kind) = data.and_then(crate::acp::codex_accounts::usage::codex_plan_limit_kind)
         else {
             return;
         };
@@ -259,3 +265,7 @@ mod real_loop_tests;
 #[cfg(test)]
 #[path = "cross_keep_tests.rs"]
 mod cross_keep_tests;
+
+#[cfg(test)]
+#[path = "sink_tests.rs"]
+mod sink_tests;

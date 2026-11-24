@@ -245,6 +245,8 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
         | "list_claude_usage"
         | "list_codex_accounts"
         | "list_codex_usage"
+        | "list_antigravity_accounts"
+        | "list_antigravity_usage"
         | "subagent_settings_get"
         | "store_read"
         | "mark_chat_read" => Requirement::View,

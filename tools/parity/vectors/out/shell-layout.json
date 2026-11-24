@@ -1,0 +1,2237 @@
+[
+ {
+  "store": "shell-layout",
+  "name": "gate_then_fresh_install",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setRailExpanded",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelWidth",
+     "args": [
+      400
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p1"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p1"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": true
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-migration",
+      "message": "[shell-migrate] migrated (flags 0, sizes 0, picks 0)"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelVisible",
+     "args": [
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelWidth",
+     "args": [
+      9999
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 560,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 560,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelWidth",
+     "args": [
+      100.4
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 220,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 220,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailWidth",
+     "args": [
+      250.6
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 251,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 220,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 251,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 220,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailWidth",
+     "args": [
+      "wide"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 220,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 220,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailExpanded",
+     "args": [
+      "yes"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 220,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailExpanded",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": false,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 220,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": false,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 220,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "load_existing_record_clamped",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 3,
+        "railExpanded": "no",
+        "railWidth": 500,
+        "sidePanelVisible": true,
+        "sidePanelWidth": 300.2,
+        "sshSectionHeight": null,
+        "lastColumnTabByProject": {
+         "p1": "changes",
+         "p2": "ssh",
+         "p3": "chats",
+         "": "explorer"
+        },
+        "worktreePickByProject": {
+         "p1": "/x",
+         "p2": ""
+        },
+        "chatsHiddenByProject": {
+         "p1": true,
+         "p2": false
+        },
+        "extra": 1
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 360,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {
+      "p1": "/x"
+     },
+     "chatsHiddenByProject": {
+      "p1": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelVisible",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 360,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 300,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes"
+       },
+       "worktreePickByProject": {
+        "p1": "/x"
+       },
+       "chatsHiddenByProject": {
+        "p1": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 360,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {
+      "p1": "/x"
+     },
+     "chatsHiddenByProject": {
+      "p1": true
+     },
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "version_1_record_is_saved_as_current",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 1,
+        "graphHeight": 200,
+        "railExpanded": false,
+        "sidePanelWidth": 260
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": false,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 260,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": false,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 260,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "version_2_chats_view_becomes_explorer",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 2,
+        "sidePanelVisible": true,
+        "sidePanelWidth": 420,
+        "lastColumnTabByProject": {
+         "p1": "chats",
+         "p2": "github"
+        }
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 420,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "explorer",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 420,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "explorer",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "non_object_record_loads_defaults",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": "garbage"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "read_error_goes_unavailable",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "code": "IO_ERROR"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout read failed (IO_ERROR); not saved"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailExpanded",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": false,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   },
+   {
+    "event": {
+     "action": "setRailWidth",
+     "args": [
+      300
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": false,
+     "railWidth": 300,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "newer_version_goes_unavailable",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 4,
+        "railWidth": 300
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "shell-layout-store",
+      "message": "[shell] unsupported shell-layout version 4; layout is not saved"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   },
+   {
+    "event": {
+     "action": "setSidePanelVisible",
+     "args": [
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "tabs_picks_and_sections",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": true
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-migration",
+      "message": "[shell-migrate] migrated (flags 0, sizes 0, picks 0)"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setLastColumnTab",
+     "args": [
+      "p1",
+      "changes"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setLastColumnTab",
+     "args": [
+      "p1",
+      "ssh"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setLastColumnTab",
+     "args": [
+      "",
+      "explorer"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setLastColumnTab",
+     "args": [
+      "__proto__",
+      "github"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setLastColumnTab",
+     "args": [
+      "p2",
+      "github"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreePick",
+     "args": [
+      "p1",
+      "/repo/./wt/"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {
+        "p1": "/repo/wt"
+       },
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {
+      "p1": "/repo/wt"
+     },
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreePick",
+     "args": [
+      "p2",
+      ""
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {
+      "p1": "/repo/wt"
+     },
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreePick",
+     "args": [
+      "p1",
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreePick",
+     "args": [
+      "__proto__",
+      "/x"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setProjectChatsHidden",
+     "args": [
+      "p1",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p1": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p1": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setProjectChatsHidden",
+     "args": [
+      "p2",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p1": true,
+        "p2": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p1": true,
+      "p2": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setProjectChatsHidden",
+     "args": [
+      "p1",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p2": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p2": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSshSectionVisible",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": false,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p2": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": false,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p2": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSshSectionVisible",
+     "args": [
+      1
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": false,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p2": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setSshSectionHeight",
+     "args": [
+      10
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": false,
+       "sshSectionHeight": 48,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p2": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": false,
+     "sshSectionHeight": 48,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p2": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "setGitHistoryDetailWidth",
+     "args": [
+      1000
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": false,
+       "sshSectionHeight": 48,
+       "gitHistoryDetailWidth": 560,
+       "lastColumnTabByProject": {
+        "p1": "changes",
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {
+        "p2": true
+       }
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": false,
+     "sshSectionHeight": 48,
+     "gitHistoryDetailWidth": 560,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {
+      "p2": true
+     },
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "remove_project_when_ready",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 3,
+        "railExpanded": true,
+        "railWidth": 260,
+        "sidePanelVisible": true,
+        "sidePanelWidth": 300,
+        "sshSectionVisible": true,
+        "sshSectionHeight": 140,
+        "gitHistoryDetailWidth": 400,
+        "lastColumnTabByProject": {
+         "p1": "changes",
+         "p2": "github"
+        },
+        "worktreePickByProject": {
+         "p1": "/repo/wt"
+        },
+        "chatsHiddenByProject": {
+         "p1": true
+        }
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 260,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p1": "changes",
+      "p2": "github"
+     },
+     "worktreePickByProject": {
+      "p1": "/repo/wt"
+     },
+     "chatsHiddenByProject": {
+      "p1": true
+     },
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 260,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 300,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     },
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p1"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p1"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 260,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   },
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p9"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p9"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p9"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 260,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "remove_project_before_hydration",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p1"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p1"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "data": {
+        "version": 3,
+        "railExpanded": true,
+        "railWidth": 260,
+        "sidePanelVisible": true,
+        "sidePanelWidth": 300,
+        "sshSectionVisible": true,
+        "sshSectionHeight": 140,
+        "gitHistoryDetailWidth": 400,
+        "lastColumnTabByProject": {
+         "p1": "changes",
+         "p2": "github"
+        },
+        "worktreePickByProject": {
+         "p1": "/repo/wt"
+        },
+        "chatsHiddenByProject": {
+         "p1": true
+        }
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 260,
+       "sidePanelVisible": true,
+       "sidePanelWidth": 300,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {
+        "p2": "github"
+       },
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": false
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout hydrated"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 260,
+     "sidePanelVisible": true,
+     "sidePanelWidth": 300,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {
+      "p2": "github"
+     },
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "remove_project_before_fresh_install",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p1"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p1"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeShellLayout",
+      "record": {
+       "version": 3,
+       "railExpanded": true,
+       "railWidth": 248,
+       "sidePanelVisible": false,
+       "sidePanelWidth": 340,
+       "sshSectionVisible": true,
+       "sshSectionHeight": 140,
+       "gitHistoryDetailWidth": 400,
+       "lastColumnTabByProject": {},
+       "worktreePickByProject": {},
+       "chatsHiddenByProject": {}
+      },
+      "immediate": true
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "shell-layout-migration",
+      "message": "[shell-migrate] migrated (flags 0, sizes 0, picks 0)"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "ready"
+    }
+   }
+  ]
+ },
+ {
+  "store": "shell-layout",
+  "name": "remove_project_while_unavailable",
+  "initial": {
+   "version": 3,
+   "railExpanded": true,
+   "railWidth": 248,
+   "sidePanelVisible": false,
+   "sidePanelWidth": 340,
+   "sshSectionVisible": true,
+   "sshSectionHeight": 140,
+   "gitHistoryDetailWidth": 400,
+   "lastColumnTabByProject": {},
+   "worktreePickByProject": {},
+   "chatsHiddenByProject": {},
+   "status": "idle"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p2"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p2"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "idle"
+    }
+   },
+   {
+    "event": {
+     "action": "hydrate",
+     "args": [
+      {
+       "code": "IO_ERROR"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "shell-layout-store",
+      "message": "[shell] shell layout read failed (IO_ERROR); not saved"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   },
+   {
+    "event": {
+     "action": "removeProject",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "forgetProjectChats",
+      "projectId": "p1"
+     },
+     {
+      "kind": "deleteStoreKey",
+      "key": "workspace/p1"
+     }
+    ],
+    "state": {
+     "version": 3,
+     "railExpanded": true,
+     "railWidth": 248,
+     "sidePanelVisible": false,
+     "sidePanelWidth": 340,
+     "sshSectionVisible": true,
+     "sshSectionHeight": 140,
+     "gitHistoryDetailWidth": 400,
+     "lastColumnTabByProject": {},
+     "worktreePickByProject": {},
+     "chatsHiddenByProject": {},
+     "status": "unavailable"
+    }
+   }
+  ]
+ }
+]

@@ -1,0 +1,87 @@
+{
+  "data": {
+    "type": "data",
+    "terminalId": "terminal-1795449248103-0",
+    "seq": 1,
+    "data": [101, 99, 104, 111, 32, 111, 107, 13, 10]
+  },
+  "event.cwd_changed": {
+    "type": "event",
+    "payload": {
+      "type": "cwd_changed",
+      "terminal_id": "terminal-1795449248103-0",
+      "cwd": "/tmp"
+    }
+  },
+  "event.exit": {
+    "type": "event",
+    "payload": {
+      "type": "exit",
+      "terminal_id": "terminal-1795449249948-1",
+      "exit_code": null,
+      "signal": null
+    }
+  },
+  "event.exit_code_changed": {
+    "type": "event",
+    "payload": {
+      "type": "exit_code_changed",
+      "terminal_id": "terminal-1795449248103-0",
+      "exit_code": 0
+    }
+  },
+  "event.git_branch_changed": {
+    "type": "event",
+    "payload": {
+      "type": "git_branch_changed",
+      "terminal_id": "terminal-1795449248103-0",
+      "branch": "main"
+    }
+  },
+  "event.git_status_changed": {
+    "type": "event",
+    "payload": {
+      "type": "git_status_changed",
+      "terminal_id": "terminal-1795449248103-0",
+      "status": {
+        "modified": 1,
+        "staged": 0,
+        "untracked": 0,
+        "ahead": 0,
+        "behind": 0,
+        "hasChanges": true
+      }
+    }
+  },
+  "event.session_lifecycle": {
+    "type": "event",
+    "payload": {
+      "type": "session_lifecycle",
+      "terminal_id": "terminal-1795449248103-0",
+      "session_id": "87cf6008-475c-4749-81b8-b0967942ff8c",
+      "kind": "InitShell",
+      "nonce": "ab169b583b21cf0ba979c7779f85c264",
+      "prompt_suppressed": false,
+      "line_empty": false,
+      "exit_code": null,
+      "prompt_generation": null,
+      "cwd": null
+    }
+  },
+  "replay": {
+    "type": "replay",
+    "terminalId": "terminal-1795449248103-0",
+    "chunks": [],
+    "gap": false,
+    "reset": false,
+    "logEpoch": "17af201e-f292-4df9-8c7d-f6b61cca93ad",
+    "latestSeq": 0,
+    "snapshot": {
+      "cwd": "/fixture/work/proj-w",
+      "gitBranch": null,
+      "gitStatus": null,
+      "exitCode": null,
+      "exited": false
+    }
+  }
+}

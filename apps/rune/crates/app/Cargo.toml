@@ -1,0 +1,21 @@
+[package]
+name = "troupe-app"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "Troupe's Rune app root: connects to a Troupe server and draws the workspace shell. The web and desktop entries share it."
+
+[dependencies]
+client = { path = "../client" }
+log = "0.4"
+model = { path = "../model" }
+rune = { workspace = true, features = ["tooling"] }
+serde_json = { workspace = true }
+theme = { path = "../theme" }
+troupe-protocol = { path = "../../../../crates/troupe-protocol" }
+ui = { path = "../ui" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
+wasm-bindgen = { workspace = true }
+web-sys = { version = "0.3", features = ["Window"] }

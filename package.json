@@ -86,6 +86,8 @@
     "landing:preview": "bun run --cwd landing preview",
     "build:agentation": "node scripts/build-agentation.mjs",
     "perf": "node tools/perf/cli.ts",
+    "parity": "bun tools/parity/pair.ts",
+    "parity:matrix": "bun tools/parity/run.ts",
     "docs:dev": "bun run --cwd website-docs dev",
     "docs:build": "bun run --cwd website-docs build",
     "docs:lint": "bun run --cwd website-docs lint",

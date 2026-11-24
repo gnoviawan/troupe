@@ -8,6 +8,8 @@
 
 use std::sync::OnceLock;
 
+use troupe_protocol::ws::AcpAuthenticateReply;
+
 use crate::web::presence::PresenceGuard;
 
 use super::super::*;
@@ -336,12 +338,12 @@ fn pre_auth_reply(request: &WsRequest, conn: &mut ConnState, env: &HandlerEnv) -
     // First authenticate wins; the connection is authed from here on.
     let _ = conn.identity.set(validated);
     conn.authed = true;
-    WsReply::ok(
+    ok_with_payload(
         id,
-        Some(json!({
-            "historyMode": env.history_mode,
-            "runtimePolicy": RuntimePolicy::resolved(),
-            "protocolVersion": WS_PROTOCOL_VERSION,
-        })),
+        &AcpAuthenticateReply {
+            history_mode: Some(env.history_mode),
+            runtime_policy: Some(resolved_runtime_policy()),
+            protocol_version: Some(WS_PROTOCOL_VERSION),
+        },
     )
 }

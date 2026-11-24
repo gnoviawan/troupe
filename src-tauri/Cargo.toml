@@ -85,6 +85,8 @@ tauri-plugin-log = "2"
 tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
+# The /ws and /terminal/ws wire types, shared with the Rune client.
+troupe-protocol = { path = "../crates/troupe-protocol" }
 # Derives JSON Schemas from the serde types for the OpenAPI spec (web::openapi);
 # already in the tree via rmcp.
 schemars = "1"

@@ -71,6 +71,13 @@ impl CodexAgentService {
                 None
             });
         }
+        for row in snapshot
+            .profiles
+            .iter()
+            .filter(|row| row.signed_in == Some(true))
+        {
+            self.forget_signed_out_usage(&row.id);
+        }
         Ok(snapshot)
     }
 
@@ -308,6 +315,7 @@ impl CodexAgentService {
         if !self.has_account(account_id)? {
             return Err("That Codex account does not exist".to_string());
         }
+        self.forget_usage(account_id);
         let home = if account_id == BUILTIN_ACCOUNT_ID {
             None
         } else {

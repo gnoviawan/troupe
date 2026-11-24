@@ -312,6 +312,45 @@ export function codexAccountSignedOutMessage(raw: unknown): string {
 }
 
 /**
+ * The host refused because an Antigravity Account is not signed in: choosing
+ * it, or starting or reopening a managed Antigravity agent on it. `/ws`
+ * carries the `antigravity_account_signed_out` code; the desktop `invoke` path
+ * carries the same verdict as a message prefix.
+ */
+export const ANTIGRAVITY_ACCOUNT_SIGNED_OUT_PREFIX = 'ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT'
+
+export function isAntigravityAccountSignedOutError(raw: unknown): boolean {
+  if (typeof raw === 'object' && raw !== null) {
+    if ((raw as { code?: unknown }).code === WS_ERROR_CODES.ANTIGRAVITY_ACCOUNT_SIGNED_OUT)
+      return true
+  }
+  return rawErrorMessage(raw).startsWith(`${ANTIGRAVITY_ACCOUNT_SIGNED_OUT_PREFIX}: `)
+}
+
+/** The host's sentence for an Antigravity sign-in refusal, without the transport tag. */
+export function antigravityAccountSignedOutMessage(raw: unknown): string {
+  const message = rawErrorMessage(raw)
+  const tag = `${ANTIGRAVITY_ACCOUNT_SIGNED_OUT_PREFIX}: `
+  return message.startsWith(tag) ? message.slice(tag.length) : message
+}
+
+/** Any provider Account the host refused because it is not signed in. */
+export function isAccountSignedOutError(raw: unknown): boolean {
+  return (
+    isClaudeAccountSignedOutError(raw) ||
+    isCodexAccountSignedOutError(raw) ||
+    isAntigravityAccountSignedOutError(raw)
+  )
+}
+
+/** The host's sentence for any provider sign-in refusal, without the transport tag. */
+export function accountSignedOutMessage(raw: unknown): string {
+  if (isAntigravityAccountSignedOutError(raw)) return antigravityAccountSignedOutMessage(raw)
+  if (isCodexAccountSignedOutError(raw)) return codexAccountSignedOutMessage(raw)
+  return claudeAccountSignedOutMessage(raw)
+}
+
+/**
  * The host rejected a spawn deterministically (AD-5): the agent binary is
  * missing / cannot start (`agent_unavailable`) or the config is unusable
  * (`invalid_agent_config`). `/ws` carries the stable code; the Tauri `invoke`
@@ -461,6 +500,13 @@ export function classifySetupError(
       category: 'auth',
       label: SETUP_ERROR_LABELS.auth,
       detail: codexAccountSignedOutMessage(raw)
+    }
+  }
+  if (isAntigravityAccountSignedOutError(raw)) {
+    return {
+      category: 'auth',
+      label: SETUP_ERROR_LABELS.auth,
+      detail: antigravityAccountSignedOutMessage(raw)
     }
   }
   // A definite host rejection (AD-5) is authoritative: it is a spawn failure

@@ -7,6 +7,12 @@
 
 import type { AcpCatalog } from '@shared/types/acp-catalog.types'
 import type {
+  AntigravityAccount,
+  AntigravityAccountsSnapshot,
+  AntigravityAccountUsage,
+  RemovedAntigravityAccount
+} from '@shared/types/antigravity-accounts.types'
+import type {
   ClaudeAccount,
   ClaudeAccountsSnapshot,
   ClaudeAccountUsage,
@@ -426,6 +432,55 @@ export interface AcpTransport {
    * authenticates it with `chat-gpt` or `chat-gpt-device-code`.
    */
   startCodexAccountLogin(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<SpawnAgentResult>
+  /** Antigravity Accounts of the host; secret-free. Google logins only. */
+  listAntigravityAccounts(): Promise<AntigravityAccountsSnapshot>
+  /**
+   * Per-model quotas of every Antigravity Account. Cached 5 minutes on the host.
+   * `force` still reuses a read younger than 60 seconds.
+   */
+  listAntigravityUsage(force?: boolean): Promise<AntigravityAccountUsage[]>
+  setDefaultAntigravityAccount(accountId: string): Promise<void>
+  /**
+   * `null` returns the Project to the Default Account. With
+   * `expectedAccountId` the host applies the choice only while the Project
+   * still uses that Account. Resolves whether the choice applied.
+   */
+  setProjectAntigravityAccount(
+    projectId: string,
+    accountId: string | null,
+    expectedAccountId?: string
+  ): Promise<boolean>
+  /**
+   * `null` makes the chat follow its Project again. With `expectedAccountId`
+   * the host applies the choice only while the chat still runs on that Account.
+   */
+  setChatAntigravityAccount(
+    projectId: string,
+    sessionId: string,
+    accountId: string | null,
+    expectedAccountId?: string
+  ): Promise<boolean>
+  setAntigravityAutoSwitch(enabled: boolean): Promise<void>
+  /** Continue the chat at `at` (epoch ms), or cancel with `null`. */
+  setAntigravityResume(sessionId: string, at: number | null): Promise<void>
+  /** Add a signed-out Account; a same-id resend answers with the first one. */
+  addAntigravityAccount(name: string, options?: CommandCallOptions): Promise<AntigravityAccount>
+  renameAntigravityAccount(accountId: string, name: string): Promise<void>
+  /**
+   * Remove an Account. `movedProjectIds` are the Projects that now follow the
+   * Default Account. `movedChatIds` are the chats that had it as their own and
+   * now follow their Project. Both are empty when it was already gone.
+   */
+  removeAntigravityAccount(accountId: string): Promise<RemovedAntigravityAccount>
+  /**
+   * Spawn the Antigravity agent with this Account's home. The caller then
+   * authenticates it with `oauth-personal` or `oauth-business`.
+   */
+  startAntigravityAccountLogin(
     accountId: string,
     config: AgentConfig,
     options?: CommandCallOptions

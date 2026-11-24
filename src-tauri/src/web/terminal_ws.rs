@@ -23,11 +23,16 @@ use axum::extract::ws::{Message, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, State};
 use axum::response::IntoResponse;
 use futures_util::{Sink, SinkExt, Stream, StreamExt};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::{info, warn};
+use troupe_protocol::terminal::{
+    DataTag, TerminalGapTag, WebTerminalDataFrame, WebTerminalErrReply, WebTerminalGapFrame,
+    WebTerminalOkReply,
+};
+use troupe_protocol::{False, True};
 
 use crate::pty::manager::{PtyManager, SpawnOptions};
 use crate::web::capabilities::{terminal_request_is_view, Capabilities, CapabilityPolicy, Carrier};
@@ -624,15 +629,14 @@ async fn handle(
                         match receiver.recv().await {
                             Ok(chunk) => {
                                 current_seq = chunk.seq;
-                                let data: Vec<u64> = chunk.data.iter().map(|b| *b as u64).collect();
                                 if send_json(
                                     &output_tx,
-                                    json!({
-                                        "type": "data",
-                                        "terminalId": attached_id,
-                                        "seq": current_seq,
-                                        "data": data
-                                    }),
+                                    WebTerminalDataFrame {
+                                        kind: DataTag,
+                                        terminal_id: attached_id.clone(),
+                                        seq: current_seq,
+                                        data: chunk.data,
+                                    },
                                 )
                                 .await
                                 .is_err()
@@ -647,11 +651,11 @@ async fn handle(
                             );
                                 let _ = send_json(
                                     &output_tx,
-                                    json!({
-                                        "type": "gap",
-                                        "terminalId": attached_id,
-                                        "lastSeq": current_seq
-                                    }),
+                                    WebTerminalGapFrame {
+                                        kind: TerminalGapTag,
+                                        terminal_id: attached_id.clone(),
+                                        last_seq: current_seq,
+                                    },
                                 )
                                 .await;
                             }
@@ -781,8 +785,9 @@ fn u16_field(value: &Value, key: &str) -> Result<u16, (&'static str, String)> {
         .ok_or_else(|| ("VALIDATION_ERROR", format!("invalid {key}")))
 }
 
-async fn send_json(tx: &mpsc::Sender<Message>, value: Value) -> Result<(), String> {
-    tx.send(Message::Text(value.to_string().into()))
+async fn send_json(tx: &mpsc::Sender<Message>, frame: impl Serialize) -> Result<(), String> {
+    let text = serde_json::to_string(&frame).map_err(|error| error.to_string())?;
+    tx.send(Message::Text(text.into()))
         .await
         .map_err(|_| "terminal websocket closed".to_string())
 }
@@ -795,7 +800,12 @@ async fn send_error(
 ) -> Result<(), String> {
     send_json(
         tx,
-        json!({ "id": id, "success": false, "error": error, "code": code }),
+        WebTerminalErrReply {
+            id: id.to_string(),
+            success: False,
+            error,
+            code: code.to_string(),
+        },
     )
     .await
 }
@@ -804,5 +814,7 @@ async fn send_error(
 mod command_editor_tests;
 #[cfg(test)]
 mod command_tests;
+#[cfg(test)]
+mod protocol_fixture_tests;
 #[cfg(test)]
 mod tests;

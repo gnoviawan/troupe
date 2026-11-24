@@ -1,9 +1,12 @@
 /**
  * WS relay protocol frame schema (Story 1.4).
  *
- * Single source of truth for the wire contract between the standalone
- * `termul-server` WS relay (`src-tauri/src/web/ws.rs`) and any browser client.
- * Mirrors the Rust structs/enums in `web/ws.rs` one-to-one.
+ * The wire contract between the `troupe-server` WS relay and any browser
+ * client. The message types and name sets come from `crates/troupe-protocol`
+ * through the generated `./generated/protocol.ts`, re-exported here under
+ * their contract names. The types declared here are the ones the crate does
+ * not model one to one: generic replies, the client's event-type subset, and
+ * the client-side registries.
  *
  * # Wire casing (AC3 — deviation from architecture text, MUST follow)
  *
@@ -33,6 +36,77 @@
  * Runtime-neutral: no `@tauri-apps/*` imports, no `@renderer/*` imports.
  * ESM-first. Strict-typed (no `any`).
  */
+
+import type {
+  ProjectBusyDetails,
+  ReliabilityTier,
+  WsErrorCode,
+  WsRequestType
+} from './generated/protocol'
+import { WsRequestTypeValues, WsWatchNameValues } from './generated/protocol'
+
+export type {
+  AcpAuthenticatePayload,
+  AcpAuthenticateReply,
+  AcpRuntimePolicy,
+  AddProjectPayload,
+  AgentCapabilities,
+  AgentsWatchDelta,
+  BackgroundCommand,
+  BackgroundCommandList,
+  ChatActivityRecord,
+  ChatActivityWatchDelta,
+  ChatActivityWatchState,
+  ChatHistoryWatchDelta,
+  ChatReadMark,
+  DeleteSessionPayload,
+  FsWatchChangeDelta,
+  FsWatchDelta,
+  FsWatchEndedDelta,
+  FsWatchState,
+  HistoryMode,
+  PersistedSessionSummary,
+  ProjectBusyDetails,
+  RecordAgentSwitchPayload,
+  ReliabilityTier,
+  RemoveProjectPayload,
+  SessionCursorReply,
+  SessionSubscribeReply,
+  StoreDeletePayload,
+  StoreDeleteReply,
+  StoreDeviceWriteReply,
+  StoreReadPayload,
+  StoreReadReply,
+  StoreSharedWriteReply,
+  StoreWatchState,
+  StoreWritePayload,
+  TerminalsWatchState,
+  UpdateProjectPayload,
+  UserPromptEvent,
+  WatchResyncDelta,
+  WsAgentSummary,
+  WsCanvasCallFrame,
+  WsCanvasLeaseLostFrame,
+  WsCanvasMountReply,
+  WsCanvasReplyPayload,
+  WsErrorCode,
+  WsGapFrame,
+  WsHeartbeatFrame,
+  WsRequest,
+  WsRequestType,
+  WsTerminalSetEntry,
+  WsWatchDeltaFrame,
+  WsWatchFrame,
+  WsWatchName,
+  WsWatchReply,
+  WsWatchRevision,
+  WsWatchStateFrame
+} from './generated/protocol'
+export {
+  MAX_CLIENT_ID_LEN,
+  MAX_COMMAND_ID_LEN,
+  WS_PROTOCOL_VERSION
+} from './generated/protocol'
 
 // ============================================================================
 // Event `type` names (17) — acp:* prefix-dropped, snake_case (AC2)
@@ -107,262 +181,10 @@ export type WsEventType = (typeof WS_EVENT_TYPES)[number]
 // ============================================================================
 
 /**
- * The 17 WS request `type` names: the `acp_*` operation names with the `acp_`
- * prefix dropped, snake_case (`create_session` is the session-creation
- * request). Every carrier (the WebSocket and the desktop's Tauri channel)
- * sends these.
- *
- * Agent lifecycle (`spawn_agent` / `kill_agent` / `list_agents`); since CAP-11
- * the identity-rich `list_agents` reply carries `WsAgentSummary` entries and
- * `WsAcpTransport.listAgents` maps them to bare ids.
- *
- * `subscribe` (Story 1.6) is relay-level (not an agent operation): binds a
- * connection to a session event log with an optional `lastSeq` cursor.
- * `ping` is a relay-level heartbeat: a client-emitted request that round-trips
- * an ok reply so the server's keepalive watchdog (`last_activity`) stays fresh
- * through proxies that strip WS-level Ping/Pong control frames.
+ * Every `/ws` request `type`, in the crate's order. Each carrier (the
+ * WebSocket and the desktop's Tauri channel) sends these.
  */
-export const WS_REQUEST_TYPES = [
-  'send_prompt',
-  'cancel_prompt',
-  // Stop one subagent of a chat (`session/cancel` for its child session).
-  'stop_subagent',
-  'set_config_option',
-  'set_mode',
-  'set_model',
-  'respond_permission',
-  'answer_question',
-  // Chat approval of an MCP install. The payload may carry secret field
-  // values, so the host does not ledger it.
-  'answer_mcp_install',
-  // Stop agent browsing for a session (desktop parity with the
-  // `browser_stop` Tauri command); only an authenticated client of the
-  // session may send it.
-  'browser_stop',
-  'create_session',
-  'load_session',
-  'resume_session',
-  'close_session',
-  'dispose_ephemeral_session',
-  // Story 8: promote a backend-ephemeral warm-pool session to durable
-  // (registers persistence metadata + clears the ephemeral mark).
-  'promote_session',
-  'list_sessions',
-  'register_discovered_session',
-  'import_agent_session',
-  'spawn_agent',
-  'kill_agent',
-  'list_agents',
-  // WS connection token-gate handshake (pre-auth). Distinct from
-  // `authenticate_agent` (the ACP agent method).
-  'authenticate',
-  // ACP agent-advertised `authenticate` method (e.g. `pi_terminal_login`).
-  // Post-auth request routed to `AcpManager::authenticate` on the host.
-  'authenticate_agent',
-  'logout_agent',
-  'delete_agent_session',
-  'respond_elicitation',
-  'subscribe',
-  'ping',
-  'list_persisted_sessions',
-  // CAP-11: host-owned session delete (desktop parity with the
-  // `acp_history_delete` Tauri command). Boolean reply (finding 6): `true` =
-  // deleted, `false` = record already absent (idempotent no-op); genuine
-  // errors reject. Publishes a `chat_history` watch delta on a real delete;
-  // live-only mode → `unsupported`.
-  'delete_session',
-  // Quick chat local rename. Sets TitleSource::LocalAlias. Quick chats only.
-  'rename_session',
-  'open_persisted_session',
-  'get_session_payload',
-  'recover_session_snapshot',
-  // R2: lightweight server-authoritative replay cursor (no snapshot payload).
-  // Unlike `recover_session_snapshot` (which re-registers a subscription),
-  // this only returns the durable `{ sessionId, watermark }` (plus the log's
-  // `logEpoch`/`headSeq`, see `SessionCursorReply`) so a refreshed transport
-  // can seed its `(logEpoch, lastSeq)` cursor before its first subscribe.
-  'get_session_cursor',
-  // Tail-first variant of `get_session_payload`: fetches only the last `limit`
-  // messages + matching tool calls so the renderer can install the recent
-  // transcript immediately and lazy-load the full payload on scroll-up.
-  'get_session_payload_tail',
-  // CAP-6 / Story 8: host-owned ACP catalog resolution. The web client
-  // resolves the catalog through `list_acp_catalog` (the host's OS/arch/
-  // runtime + per-agent `SupportedAcpAgentStatus`) + `set_catalog_opt_in`
-  // (the host-persisted opt-in that gates CDN registry augmentation). The
-  // web client never probes `@tauri-apps/plugin-os` or PATH locally — the
-  // host is the single source of truth.
-  'list_acp_catalog',
-  'set_catalog_opt_in',
-  // The registry check behind "Check for updates": `{ reason: 'manual' |
-  // 'background' }`, answered with the host's `AcpRegistrySnapshot`
-  // (`source: 'cache'` when the registry was unreachable).
-  'fetch_acp_registry_snapshot',
-  // MCP catalog (spine AD-1): `{ query?, cursor?, limit? }` → one
-  // `McpCatalogPage` of the host's converted registry snapshot. A read.
-  'search_mcp_catalog',
-  'get_mcp_catalog_status',
-  'set_mcp_catalog_sync',
-  'describe_mcp_install',
-  'plan_mcp_install',
-  'commit_mcp_install',
-  'cancel_mcp_install',
-  'get_mcp_catalog_icon',
-  // CAP-6 / Story 9: host-owned verified-atomic ACP install. The web client
-  // installs a catalog agent through `install_acp_agent` (the host downloads +
-  // verifies sha256 + extracts + atomically activates). The request is
-  // `{ agentId }` only; the host resolves everything from the trusted catalog.
-  'install_acp_agent',
-  // Headless ACP auth (spec-acp-terminal-auth): deliver a user-pasted
-  // loopback OAuth redirect URL to the agent's callback listener on the
-  // host. Payload `{ agentId, url }`; reply `{ status }` (the replay's HTTP
-  // status). The host validates http(s) + loopback-only before fetching
-  // (SSRF guard). NOTE: this request keeps the `acp_` prefix — the wire
-  // name is fixed by the contract, not the prefix-drop convention.
-  'acp_deliver_auth_redirect',
-  // Issue #613: server-side generic key-value store — the web client routes
-  // its `persistenceApi` through these (replacing the per-browser localStorage
-  // stub) so settings / layout / command history / SSH profiles survive
-  // browser switches + server restarts. Keys are scoped by prefix
-  // (`device/<deviceId>/…`, `shared/lww/…`, `shared/cas/…`) and every record
-  // carries a revision + the writing `clientInstanceId` (issue #1073). Errors
-  // carry SCREAMING_SNAKE_CASE codes via `err_with_code`: `STORE_UNAVAILABLE`
-  // (no store attached / unreadable), `STORE_WRITE_FAILED` /
-  // `STORE_DELETE_FAILED` (IO), `VALIDATION_ERROR` (malformed payload,
-  // empty/whitespace key, key > 1024 bytes — CAP-11), `STORE_VALUE_TOO_LARGE`
-  // (serialized value > 256 KiB — CAP-11), `STORE_KEY_SCOPE` (key outside the
-  // three scopes or another device's partition), `STORE_BASE_REQUIRED`
-  // (shared/lww write to an existing key without `baseRevision`),
-  // `STORE_CAS_FAILED` (shared/cas `expected` mismatch), `STORE_PARTITION_FULL`
-  // (the device partition would exceed its byte budget).
-  'store_read',
-  'store_write',
-  'store_delete',
-  // Project registry commands (one host command service shared with the HTTP
-  // routes `POST /projects`, `PUT /projects/{id}`, `DELETE /projects/{id}`).
-  // They persist to the host's durable registry, then publish the new state to
-  // every `projects` watcher. Add / update / remove are idempotent by
-  // `projectId`; a remove or archive with live sessions/PTYs is refused
-  // `project_busy` (`err.details` lists them) unless the request carries
-  // `cascade: true`.
-  'add_project',
-  'update_project',
-  'remove_project',
-  // CAP-2 (spec-in-chat-agent-switch): host-authored durable agent-switch
-  // marker: the host
-  // numbers ONE `agent_switch` record, appends it durably and delivers the
-  // `acp:agent_switch` event to live clients under the same seq. Reply `{}`;
-  // unknown session → `not_found`; live-only mode → `unsupported`.
-  'record_agent_switch',
-  // A surface read a chat: `{ sessionId, seq, logEpoch? }` (the session-log
-  // seq of the newest turn end it showed, and the log epoch it belongs to) →
-  // `{ sessionId, seq, logEpoch }`, the host's shared last-read marker as it
-  // stands. Idempotent and monotonic: an older seq, or one from another log
-  // epoch, is a no-op. The chat's `chat_activity` record follows the marker.
-  // Unknown session → `not_found`.
-  'mark_chat_read',
-  // Watches `{ watch, scope? }` (`projects`, `chat_history`, `agents`; `fs`
-  // and `terminals` scoped to a project id; `store` scoped to a key): `watch`
-  // queues the full-state frame, then replies `{ watch, scope, revision }`;
-  // later changes arrive as deltas under `n + 1`. A second `watch` of the same
-  // (watch, scope) replaces the subscription and sends fresh state. `unwatch`
-  // is idempotent. Unknown watch or scope → `unsupported`; an `fs` watch of an
-  // unknown/archived project → `not_found`; a `store` watch on a host without
-  // a store → `STORE_UNAVAILABLE`.
-  'watch',
-  'unwatch',
-  // Explicit host-default project change (updates `default_project_id`,
-  // persists on file-backed hosts, publishes the project state to every
-  // `projects` watcher).
-  'set_default_project',
-  // Orchestrated sub-agents (acp-subagent-orchestrator): `get` reads the
-  // settings view `{ enabled, maxRunning, maxDepth, agents: [{ agentId,
-  // name, allowed, model, description }] }`; `set` writes a partial of it (an omitted field keeps
-  // its value) and answers the new view. One host engine serves every chat.
-  'subagent_settings_get',
-  'subagent_settings_set',
-  // Claude Accounts (ADR-0004): list `{}` → `ClaudeAccountsSnapshot`; choose
-  // the Default `{ accountId }` → `{}` or a Project Account `{ projectId,
-  // accountId | null, expectedAccountId? }` → `{ applied }`, where
-  // `expectedAccountId` makes the choice a compare-and-set.
-  'list_claude_accounts',
-  // `{ force? }` → `{ usage: ClaudeAccountUsage[] }`; reads are cached 5 min
-  // on the host (a forced read still reuses one younger than 60 s).
-  'list_claude_usage',
-  'set_default_claude_account',
-  'set_project_claude_account',
-  // `{ projectId, sessionId, accountId | null, expectedAccountId? }` →
-  // `{ applied }`: the chat's own Account; `null` follows the Project again.
-  // `expectedAccountId` compares with the Account the chat resolves to now.
-  'set_chat_claude_account',
-  // `{ enabled }` → `{}`: host-wide automatic switching at a usage limit.
-  'set_claude_auto_switch',
-  // `{ sessionId, at }` → `{}`: the host continues the chat at `at` (epoch
-  // ms) after its Claude limit resets; `at: null` cancels.
-  'set_claude_resume',
-  // `{ name }` → the new signed-out `ClaudeAccount`.
-  'add_claude_account',
-  // `{ accountId, name }` → `{}`.
-  'rename_claude_account',
-  // `{ accountId }` → `RemovedClaudeAccount` (`{ movedProjectIds,
-  // movedChatIds }`): the Projects that moved to the Default Account and the
-  // chats that had the Account as their own; empty when the Account was
-  // already gone. The built-in Account is refused.
-  'remove_claude_account',
-  // Link sign-in: `start` `{ accountId }` → `{ url }` (the Claude sign-in
-  // link; replaces a running sign-in of the Account). `finish` `{ accountId,
-  // code }` → `{}` once the CLI stored the login; `claude_login_code_incomplete`
-  // and `claude_login_busy` keep the sign-in running, any other error ended it.
-  // `cancel` `{ accountId }` →
-  // `{ cancelled }` stops a browser or link sign-in.
-  'start_claude_link_login',
-  'finish_claude_link_login',
-  'cancel_claude_login',
-  // Codex Accounts. ChatGPT logins only. `list` → `CodexAccountsSnapshot`.
-  // Choose the Default `{ accountId }` → `{}` or a Project `{ projectId,
-  // accountId | null, expectedAccountId? }` → `{ applied }`.
-  'list_codex_accounts',
-  // `{ force? }` → `{ usage: CodexAccountUsage[] }`. Cached 5 min on the host.
-  // A forced read still reuses one younger than 60 s.
-  'list_codex_usage',
-  'set_default_codex_account',
-  'set_project_codex_account',
-  // `{ projectId, sessionId, accountId | null, expectedAccountId? }` →
-  // `{ applied }`: the chat's own Account; `null` follows the Project again.
-  'set_chat_codex_account',
-  // `{ enabled }` → `{}`. A chat at its Account's limit continues on the
-  // signed-in Account with the most room.
-  'set_codex_auto_switch',
-  // `{ sessionId, at }` → `{}`: the host continues the chat at `at` (epoch
-  // ms) after its Codex limit resets; `at: null` cancels.
-  'set_codex_resume',
-  // `{ name }` → the new signed-out account.
-  'add_codex_account',
-  // `{ accountId, name }` → `{}`.
-  'rename_codex_account',
-  // `{ accountId }` → `{ movedProjectIds }`. Runs `codex logout` for that home
-  // first. The built-in Account is refused. An Account already gone answers
-  // `{ movedProjectIds: [] }`.
-  'remove_codex_account',
-  // `{ accountId, config }` → the spawn outcome of an agent whose home is that
-  // Account. The client then calls `authenticate_agent` with `chat-gpt` or
-  // `chat-gpt-device-code`. The config env is not stored in the ledger.
-  'start_codex_account_login',
-  // The canvas gateway's renderer leg (spine AD-21, AD-29). `canvas_mount`
-  // / `canvas_unmount` `{ projectId, mountSeq }` tell the host this connection
-  // holds (or no longer holds) a project's canvas; the host then forwards
-  // agent canvas calls to it as top-level `canvas_call` frames, answered with
-  // `canvas_reply { callId, mountSeq, ok, result | error }`. `params` and
-  // `result` are JSON text, never parsed on the way. Replies `{}`,
-  // `{ unmounted }` and `{ resolved }`. A long `result` goes in several
-  // `canvas_reply`, each `partial: true` but the last, answered `{ accepted }`.
-  'canvas_mount',
-  'canvas_unmount',
-  'canvas_reply'
-] as const
-
-/** Union of all WS request `type` strings. */
-export type WsRequestType = (typeof WS_REQUEST_TYPES)[number]
+export const WS_REQUEST_TYPES = WsRequestTypeValues
 
 /** How the host's receipt ledger treats a request type. Mirrors the Rust `ClassKind`. */
 export type WsCommandKind = 'create' | 'command' | 'idempotent' | 'read'
@@ -430,6 +252,17 @@ export const WS_COMMAND_CLASSES: Readonly<
   rename_codex_account: ['idempotent', null],
   remove_codex_account: ['idempotent', null],
   start_codex_account_login: ['command', 'payload'],
+  list_antigravity_accounts: ['read', null],
+  list_antigravity_usage: ['read', null],
+  set_default_antigravity_account: ['idempotent', null],
+  set_project_antigravity_account: ['idempotent', null],
+  set_chat_antigravity_account: ['idempotent', null],
+  set_antigravity_auto_switch: ['idempotent', null],
+  set_antigravity_resume: ['idempotent', null],
+  add_antigravity_account: ['command', 'payload'],
+  rename_antigravity_account: ['idempotent', null],
+  remove_antigravity_account: ['idempotent', null],
+  start_antigravity_account_login: ['command', 'payload'],
   kill_agent: ['idempotent', null],
   list_agents: ['read', null],
   authenticate: ['read', null],
@@ -478,240 +311,13 @@ export const WS_COMMAND_CLASSES: Readonly<
   canvas_reply: ['idempotent', null]
 }
 
-/** Longest accepted `commandId`, in bytes. Mirrors the Rust `MAX_COMMAND_ID_LEN`. */
-export const MAX_COMMAND_ID_LEN = 128
-
 /** A well-formed `commandId`: 1-128 characters of `[A-Za-z0-9_-]`. */
 export const COMMAND_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
-
-// ============================================================================
-// Session history lifecycle (CAP-11) — request payloads + reply contracts
-// ============================================================================
-
-/**
- * `delete_session` request payload. Permanently removes a persisted session
- * from the host-owned store. Boolean reply (finding 6): `true` = deleted,
- * `false` = record already absent (idempotent no-op); `unsupported` in
- * live-only mode. Older servers may still reply `not_found` for an unknown id.
- */
-export interface DeleteSessionPayload {
-  sessionId: string
-}
-
-/**
- * `record_agent_switch` request payload (CAP-2, spec-in-chat-agent-switch).
- * Host-authored durable agent-switch marker; the durable record's payload
- * is the `agent_switch` event built from them (these fields plus the
- * runtime `agentId`). Reply: `{}` on success; `not_found` for an unknown
- * session; `unsupported` in live-only mode or on a storage failure.
- */
-export interface RecordAgentSwitchPayload {
-  sessionId: string
-  fromConfigId: string
-  toConfigId: string
-  /** The NEW session id the conversation continues in (CAP-7 reopen). */
-  newSessionId: string
-  summaryText: string
-}
 
 // Frozen replay contract 1: `resume_session` NEVER emits replay events or a
 // replay snapshot — history reconstruction belongs to `get_session_payload` /
 // `recover_session_snapshot`. The `resume_session` ok payload carries the
 // explicit `"replaySnapshot": null` marker documenting that absence.
-
-/**
- * ACP agent capabilities as advertised at `initialize` (camelCase on the
- * wire). Open shape — unknown keys pass through. Declared here (the wire
- * contract) and re-exported by `@/lib/acp-api`: shared types must not import
- * renderer modules (tsconfig.node.json covers `src/shared` without the `@/`
- * alias).
- */
-export interface AgentCapabilities {
-  loadSession?: boolean
-  sessionCapabilities?: {
-    resume?: unknown
-    close?: unknown
-    list?: unknown
-    delete?: unknown
-    additionalDirectories?: unknown
-  } | null
-  auth?: { logout?: unknown } | null
-  mcpCapabilities?: { http?: boolean; sse?: boolean; acp?: boolean } | null
-  promptCapabilities?: { image?: boolean; audio?: boolean; embeddedContext?: boolean } | null
-  [k: string]: unknown
-}
-
-/**
- * `list_agents` reply element (CAP-11): identity-rich agent summary —
- * `{ id, name, configId?, namespace?, capabilities, ownsSession }` replacing
- * the bare id-string array. `configId`/`namespace` are omitted when absent
- * (server-side `skip_serializing_if`). `WsAcpTransport.listAgents` maps
- * these to bare ids; `listAgentDetails` returns the full summaries.
- */
-export interface WsAgentSummary {
-  id: string
-  name: string
-  configId?: string
-  namespace?: string
-  capabilities: AgentCapabilities
-  /**
-   * Session ids whose workspace roots are registered on this agent's driver
-   * (issue #837). Always serialized by the current server (as `[]` when the
-   * agent owns no session); older servers omit it — consumers treat absent
-   * as "unknown/none".
-   */
-  ownsSession?: string[]
-  /**
-   * Owned sessions the agent works in outside a prompt turn now (the state
-   * the `agent_working` event reports live). Older servers omit it.
-   */
-  workingSessions?: string[]
-  /**
-   * The commands the agent left running, by owned session (the lists the
-   * `background_commands` event reports live), as of `revision`. A session
-   * left out lists none. Older servers omit it.
-   */
-  backgroundCommands?: { revision: number; sessions: Record<string, BackgroundCommand[]> }
-}
-
-/**
- * A command the agent left running after its tool call reported done or its
- * prompt turn ended. The host derives it from ACP updates; an ended command
- * stays listed until the next prompt of its session starts.
- */
-export type BackgroundCommand = {
-  toolCallId: string
-  /** The command's description, else its tool call title. */
-  title: string
-  command: string | null
-  /** Wall clock, when the tool call first appeared. */
-  startedAtMs: number
-} & ({ state: 'running' } | { state: 'ended'; endedAtMs: number })
-
-/**
- * One session's commands as of `revision`. Every change on the agent takes
- * the next revision, so of two lists from one agent the higher one is newer.
- */
-export interface BackgroundCommandList {
-  revision: number
-  commands: BackgroundCommand[]
-}
-
-// ============================================================================
-// Server-side key-value store (issue #613) — request payloads + replies
-// ============================================================================
-
-/** `store_read` request payload. */
-export interface StoreReadPayload {
-  key: string
-}
-
-/**
- * `store_read` reply. `revision` 0 = the key is absent (`value` is `null`,
- * `clientInstanceId` is `null`). A read that fails is an error reply, never a
- * default value.
- */
-export interface StoreReadReply {
-  value: unknown | null
-  revision: number
-  clientInstanceId: string | null
-}
-
-/**
- * `store_write` request payload. `value` is any JSON value.
- * - `device/<own id>/…`: last arrival wins; `baseRevision` is ignored.
- * - `shared/lww/…`: `baseRevision` is the revision the value was derived from
- *   (required when the key already exists); the host merges per field.
- * - `shared/cas/…`: `expected` (the whole current value, `null` = key must be
- *   absent; the field must be present) and `commandId` are required; a resend
- *   with the same `commandId` and value succeeds even when `expected` is stale.
- */
-export interface StoreWritePayload {
-  key: string
-  value: unknown
-  baseRevision?: number
-  expected?: unknown | null
-  commandId?: string
-}
-
-/** `store_write` reply: `{ revision }` for device keys. */
-export interface StoreDeviceWriteReply {
-  revision: number
-}
-
-/**
- * `store_write` reply for shared scopes: the stored (merged) value and its
- * revision. `merged` is `true` when the stored value differs from the value
- * the client sent (lww only; always `false` for cas).
- */
-export interface StoreSharedWriteReply {
-  value: unknown
-  revision: number
-  merged: boolean
-}
-
-/** `store_delete` request payload; shared scopes follow the write preconditions. */
-export interface StoreDeletePayload {
-  key: string
-  baseRevision?: number
-  expected?: unknown | null
-  commandId?: string
-}
-
-/** `store_delete` reply. */
-export interface StoreDeleteReply {
-  existed: boolean
-}
-
-// ============================================================================
-// Project-list mutations (Option B) — request payloads + replies
-// ============================================================================
-
-/** `add_project` request payload. Reply: `{ project: ProjectSummary }`. */
-export interface AddProjectPayload {
-  id: string
-  name: string
-  path: string
-  color: string
-  isArchived?: boolean
-}
-
-/**
- * `update_project` request payload. All fields optional. Reply: `{}`.
- * `isArchived` archives/restores; `path` moves the project's root (validated
- * and canonicalized like `add_project`'s; the current root is not a move).
- * Archiving a project with live sessions or PTYs, or moving the root of one,
- * is refused `project_busy` unless `cascade` is `true`, which makes the host
- * stop them first.
- */
-export interface UpdateProjectPayload {
-  projectId: string
-  name?: string
-  color?: string
-  isArchived?: boolean
-  path?: string
-  cascade?: boolean
-}
-
-/**
- * `remove_project` request payload. Reply: `{}` (an absent id is ok). A
- * project with live sessions or PTYs is refused `project_busy` unless `cascade`
- * is `true`, which makes the host stop them first.
- */
-export interface RemoveProjectPayload {
-  projectId: string
-  cascade?: boolean
-}
-
-/**
- * `err.details` of a `project_busy` refusal (HTTP `IpcBody.details` carries the
- * same shape under `PROJECT_BUSY`): the ids of the live sessions and terminals
- * bound to the project — with `cascade: true`, the ones the host could not stop.
- */
-export interface ProjectBusyDetails {
-  sessions: string[]
-  terminals: string[]
-}
 
 // ============================================================================
 // Error codes — stable machine strings (AC2)
@@ -791,6 +397,9 @@ export const WS_ERROR_CODES = {
   // The Codex Account a managed Codex spawn needs is not signed in. The
   // message names the Account or the project `CODEX_HOME`.
   CODEX_ACCOUNT_SIGNED_OUT: 'codex_account_signed_out',
+  // The Antigravity Account a managed Antigravity spawn needs is not signed
+  // in. The message names the Account or the project `GEMINI_HOME`.
+  ANTIGRAVITY_ACCOUNT_SIGNED_OUT: 'antigravity_account_signed_out',
   // `finish_claude_link_login` got a code the Claude CLI calls incomplete.
   // The sign-in still waits for the whole code.
   CLAUDE_LOGIN_CODE_INCOMPLETE: 'claude_login_code_incomplete',
@@ -798,9 +407,6 @@ export const WS_ERROR_CODES = {
   // earlier one. The sign-in goes on; its first code gets the verdict.
   CLAUDE_LOGIN_BUSY: 'claude_login_busy'
 } as const
-
-/** Union of all WS error code strings. */
-export type WsErrorCode = (typeof WS_ERROR_CODES)[keyof typeof WS_ERROR_CODES]
 
 /**
  * The stable upstream-provider failure codes. They travel as the `err.code` of
@@ -830,9 +436,6 @@ export const WS_RELAY_TIERS = {
   RELIABLE: 'reliable',
   IDEMPOTENT: 'idempotent'
 } as const
-
-/** A WS event delivery tier. */
-export type ReliabilityTier = (typeof WS_RELAY_TIERS)[keyof typeof WS_RELAY_TIERS]
 
 /**
  * The single tier registry: maps each `WsEventType` to its `ReliabilityTier`.
@@ -879,51 +482,6 @@ export const WS_EVENT_TIERS: Readonly<Record<WsEventType, ReliabilityTier>> = {
   heartbeat: WS_RELAY_TIERS.RELIABLE
 }
 
-export type HistoryMode = 'server' | 'live_only'
-
-/** Additive policy negotiated during the relay authenticate handshake. */
-export interface AcpRuntimePolicy {
-  /** Authoritative absolute server turn ceiling, in ms. `0` is the
-   *  unlimited sentinel — no hard cap is imposed (the default). */
-  turnTimeoutMs: number
-  /** Matching session activity refreshes the renderer timer to this budget,
-   *  in ms. `0` is the unlimited sentinel — no inactivity timer is imposed
-   *  (the default). */
-  promptInactivityTimeoutMs: number
-  pingIntervalMs: number
-  pongTimeoutMs: number
-}
-
-/**
- * The `authenticate` protocol version this client speaks. Mirrors the Rust
- * `WS_PROTOCOL_VERSION`. Bump it on any wire-contract change (AD-15).
- */
-export const WS_PROTOCOL_VERSION = 7
-
-/** Longest accepted `deviceId` / `clientInstanceId`, in bytes. */
-export const MAX_CLIENT_ID_LEN = 128
-
-/**
- * `authenticate` payload (AD-4, AD-15). `token` is omitted only when no web
- * auth token is configured. Neither id is a credential, and the host never
- * mints or rewrites either.
- */
-export interface AcpAuthenticatePayload {
-  token?: string
-  protocolVersion: number
-  /** Per install / browser profile; persisted locally. */
-  deviceId: string
-  /** Per tab or window; kept in `sessionStorage`. */
-  clientInstanceId: string
-}
-
-export interface AcpAuthenticateReply {
-  historyMode?: HistoryMode
-  runtimePolicy?: AcpRuntimePolicy
-  /** The protocol version the host speaks. */
-  protocolVersion?: number
-}
-
 /**
  * Atomic stale-recovery payload emitted before post-watermark live events.
  * `logEpoch` + `headSeq` are read under the host's seq lock at registration:
@@ -943,113 +501,6 @@ export interface SessionSnapshotEvent {
   pendingQuestions?: unknown[]
   /** The session's still-pending elicitations, always present (see `SessionSubscribeReply`). */
   pendingElicitations?: unknown[]
-}
-
-/**
- * `subscribe` reply. A cursor (`lastSeq`, optionally with the `logEpoch` it was
- * issued under) from another epoch or ahead of `headSeq` is answered with a
- * `stale` error instead and registers nothing. Events with `seq <= headSeq` are
- * replay (durable replay may skip non-durable seqs); anything above is live and
- * must be contiguous.
- */
-export interface SessionSubscribeReply {
-  sessionId: string
-  replayed: number
-  logEpoch: string
-  headSeq: number
-  /**
-   * The session's still-pending approvals at registration: the original
-   * `permission_request` payloads, in queue order. A `permission_request` is
-   * not in the durable log, so this list (not the replay) is authoritative for
-   * every request at or below `headSeq`. Absent when the host keeps no
-   * approval tickets.
-   */
-  pendingPermissions?: unknown[]
-  /**
-   * The session's still-pending questions (`question_request` payloads),
-   * authoritative like `pendingPermissions`. Absent when the host keeps no
-   * question tickets.
-   */
-  pendingQuestions?: unknown[]
-  /**
-   * The session's still-pending elicitations (`elicitation_request`
-   * payloads), authoritative like `pendingPermissions`. Always present
-   * (possibly empty): every relay keeps elicitation tickets.
-   */
-  pendingElicitations?: unknown[]
-}
-
-/**
- * `get_session_cursor` reply: the durable `watermark` plus, for a session the
- * host knows, the log's epoch and allocated frontier. An unknown session has
- * neither (the client subscribes live-only).
- */
-export interface SessionCursorReply {
-  sessionId: string
-  watermark: number
-  logEpoch?: string
-  headSeq?: number
-}
-
-export interface PersistedSessionSummary {
-  storageKey: string
-  sessionId: string
-  stableAgentNamespace: string | null
-  runtimeAgentId?: string
-  projectId?: string
-  cwd: string
-  title: string | null
-  createdAt: number
-  lastActivityAt: number
-  status: 'active' | 'closed' | 'error'
-  messageCount: number
-  toolCount: number
-  lastSeq: number
-  /**
-   * True while a prompt turn is still open. Older hosts omit it; readers
-   * derive the open turn from the session payload before launch recovery.
-   */
-  turnActive?: boolean
-  /** Agent-owned metadata mirror; transcript remains authoritative in the agent. */
-  discovered?: boolean
-  resumeEligible: boolean
-  /**
-   * Worktree path the agent runs in (CAP-3). Additive: absent on pre-feature
-   * sessions. Used by the CAP-6 indicator + the deleted-worktree fallback.
-   * State isolation still keys on `cwd`; this field is for display only.
-   */
-  worktreePath?: string
-  worktreeBranch?: string
-  /**
-   * Host-recorded current model (CAP-3): id plus a display-name snapshot taken
-   * when it was recorded. Additive: absent on old entries and on
-   * discovered/imported sessions; never written by a client.
-   */
-  modelId?: string
-  modelName?: string
-  /**
-   * Switch-chain edge (CAP-8): the previous session id this session
-   * continues from, stamped by the host when an in-chat agent switch is
-   * durably recorded. Additive: absent on pre-feature sessions and on the
-   * chain's first session. The authoritative switch history stays in the
-   * durable `agent_switch` records; this is an index convenience so a
-   * client can fold the chain into one history row without walking logs.
-   */
-  continuedFrom?: string
-  /**
-   * Session id of the chat whose agent started this one with the host's
-   * `start_chat` tool. Absent on chats a person started and on older hosts.
-   */
-  startedBy?: string
-  /** `quick` for a chat with no project. Absent on older hosts and on project chats. */
-  kind?: 'quick'
-}
-
-export interface UserPromptEvent {
-  agentId: string
-  sessionId: string
-  turnId?: string
-  content: unknown[]
 }
 
 /**
@@ -1126,69 +577,11 @@ export interface WsEvent {
   payload: unknown
 }
 
-/** Top-level `gap` frame: LOSSY events of `sid` were dropped for this connection. */
-export interface WsGapFrame {
-  type: 'gap'
-  sid: string
-}
-
-/** Top-level `heartbeat` frame: the host is alive. */
-export interface WsHeartbeatFrame {
-  type: 'heartbeat'
-}
-
 /** `type` of the top-level frame that forwards an agent canvas call (no `seq`). */
 export const WS_CANVAS_CALL_FRAME_TYPE = 'canvas_call'
 
 /** `type` of the top-level frame that says a renderer lost its canvas mount. */
 export const WS_CANVAS_LEASE_LOST_FRAME_TYPE = 'canvas_lease_lost'
-
-/**
- * Host → the connection that held `projectId`'s canvas at `mountSeq`: this
- * mount was saved and unmounted because another window or tab opened the
- * canvas (`takenOver`, spine AD-30) or the mount cap unloaded it (`evicted`,
- * AD-26).
- */
-export interface WsCanvasLeaseLostFrame {
-  type: typeof WS_CANVAS_LEASE_LOST_FRAME_TYPE
-  projectId: string
-  mountSeq: number
-  reason: 'takenOver' | 'evicted'
-}
-
-/**
- * Host → the connection holding `projectId`'s canvas at `mountSeq`: one
- * figcraft control-protocol call to run in the editor. `params` is JSON text.
- * Answered with a `canvas_reply` request carrying the same `callId` and
- * `mountSeq`; the host times the call out, never the renderer.
- */
-export interface WsCanvasCallFrame {
-  type: typeof WS_CANVAS_CALL_FRAME_TYPE
-  callId: number
-  projectId: string
-  mountSeq: number
-  method: string
-  params: string
-  /** How long the host still waits for the reply, in ms. A call still
-   * queued for a loading editor when it runs out is answered
-   * `CANVAS_TIMEOUT` and never runs. Absent on a notice. */
-  timeoutMs?: number
-}
-
-/** `canvas_mount` reply. A refused report carries `heldElsewhere`: another
- * window holds the project's lease; otherwise the host no longer has that
- * mount (its lease grace ran out). */
-export type WsCanvasMountReply = { attached: true } | { attached: false; heldElsewhere: boolean }
-
-/**
- * `canvas_reply` payload: the result's JSON text, or a typed error. A result
- * too long for one message is sent as several, each `partial: true` but the
- * last, and the host joins them. It answers a partial one `{ accepted }`;
- * `false` tells the sender to stop.
- */
-export type WsCanvasReplyPayload =
-  | { callId: number; mountSeq: number; ok: true; result: string; partial?: true }
-  | { callId: number; mountSeq: number; ok: false; error: { code: string; message: string } }
 
 /**
  * `type` of the top-level watch frame (no `seq`): the full state of a watch
@@ -1204,213 +597,7 @@ export const WS_WATCH_FRAME_TYPE = 'watch'
  * and `chat_activity` have the empty scope; `fs` and `terminals` are scoped to a
  * project id, `store` to a store key.
  */
-export const WS_WATCH_NAMES = [
-  'projects',
-  'chat_history',
-  'agents',
-  'fs',
-  'store',
-  'terminals',
-  'chat_activity'
-] as const
-
-/** One of {@link WS_WATCH_NAMES}. */
-export type WsWatchName = (typeof WS_WATCH_NAMES)[number]
-
-/**
- * `(hostEpoch, n)`: which serve start produced a watch frame, and its position
- * in that subscription's stream. `n` is `1` for the full state and then rises
- * by one per frame.
- */
-export interface WsWatchRevision {
-  hostEpoch: string
-  n: number
-}
-
-/** Fields every `watch` frame carries. */
-interface WsWatchFrameBase {
-  type: typeof WS_WATCH_FRAME_TYPE
-  watch: WsWatchName
-  scope: string
-  revision: WsWatchRevision
-}
-
-/** Top-level `watch` frame with the full state of a watch (revision `n = 1`). */
-export interface WsWatchStateFrame extends WsWatchFrameBase {
-  reset: true
-  state: unknown
-  delta?: undefined
-}
-
-/** Top-level `watch` frame with one delta after the state. */
-export interface WsWatchDeltaFrame extends WsWatchFrameBase {
-  reset?: undefined
-  state?: undefined
-  delta: unknown
-}
-
-/** Top-level `watch` frame: exactly one of the state and delta forms. */
-export type WsWatchFrame = WsWatchStateFrame | WsWatchDeltaFrame
-
-/** `watch` reply payload. */
-export interface WsWatchReply {
-  watch: WsWatchName
-  scope: string
-  revision: WsWatchRevision
-}
-
-/**
- * A `chat_history` delta: the session ids whose index entry changed (an empty
- * list means the index changed in bulk). The client refetches the index.
- */
-export interface ChatHistoryWatchDelta {
-  changed: string[]
-  /**
-   * A host fact that rewrote the index and belongs to no session log: a
-   * worktree branch rename, with the rename as `payload`.
-   */
-  event?: 'worktree_branch_renamed'
-  payload?: unknown
-}
-
-/**
- * An `agents` delta: an agent-level lifecycle event, with the payload it had
- * as an event.
- */
-export interface AgentsWatchDelta {
-  event:
-    | 'agent_spawned'
-    | 'agent_crashed'
-    | 'agent_error'
-    | 'agent_disconnected'
-    // The host's browser-open shim captured an agent's auth URL; the payload is
-    // `{ agentId, url }`. Not part of the roster state: a missed delta is lost.
-    | 'browser_open_request'
-    // The agent asked the user to sign in at a URL (a device code); the
-    // payload is `{ agentId, requestId, url, message }`, answered through
-    // `respond_elicitation`. `agent_sign_in_resolved` (`{ agentId,
-    // requestId }`) withdraws it. Not roster state: a missed delta is lost.
-    | 'agent_sign_in_request'
-    | 'agent_sign_in_resolved'
-    // One browser policy scope changed; the payload is `{ scope, projectId?,
-    // revision }` and clients re-read that scope. Not roster state either.
-    | 'browser_policy_changed'
-    // One automation changed; the payload is `{ project_id, automation_id }`
-    // and clients re-read it. Not roster state either.
-    | 'automation_changed'
-    // The host dropped `automation_changed` deltas it could not forward in
-    // time; the payload is `{ missed }` and clients re-read every automation.
-    | 'automation_resync'
-  payload: unknown
-}
-
-/**
- * `mark_chat_read` request payload and reply: a chat's shared last-read
- * marker. `seq` counts within the host log incarnation `logEpoch` names; a
- * host ignores a read sent against another epoch than the session's.
- * `logEpoch` is absent only from a peer that predates it.
- */
-export interface ChatReadMark {
-  sessionId: string
-  seq: number
-  logEpoch?: string
-}
-
-/**
- * What every chat list shows for one agent chat, owned by the host and the
- * same for every surface whether or not it subscribed to the session.
- * `busy`: a prompt turn is open or the agent works outside one. `needsYou`: a
- * permission, question or elicitation waits for an answer. `unread`: the
- * newest turn end the host saw (`turnEnd`) is past the shared last-read
- * marker. `projectId`: the project the session was created in, so a surface
- * counts a chat it never opened under its project; null for a session the
- * host has no persisted record of (absent from a host that predates it).
- */
-export interface ChatActivityRecord {
-  busy: boolean
-  needsYou: boolean
-  unread: boolean
-  turnEnd: { seq: number; logEpoch: string } | null
-  projectId?: string | null
-}
-
-/** `chat_activity` watch state: every chat with something to show or a turn end to remember. */
-export interface ChatActivityWatchState {
-  sessions: Record<string, ChatActivityRecord>
-}
-
-/**
- * A `chat_activity` delta: one session's record as it stands. Every flag false
- * and no `turnEnd` means the chat has nothing to show.
- */
-export type ChatActivityWatchDelta = ChatActivityRecord & { sessionId: string }
-
-/** `fs` watch state: the canonical root being watched. A new state means: refresh the trees. */
-export interface FsWatchState {
-  root: string
-}
-
-/** An `fs` delta: one debounced batch of changed paths under the project root. */
-export interface FsWatchChangeDelta {
-  root: string
-  paths: string[]
-}
-
-/** The last `fs` delta: the project is no longer watchable; the host released the watch. */
-export interface FsWatchEndedDelta {
-  ended: true
-  reason: string
-}
-
-/** An `fs` delta. */
-export type FsWatchDelta = FsWatchChangeDelta | FsWatchEndedDelta
-
-/**
- * `store` watch state and delta: whether the key holds a value, and the value
- * it holds after the write or delete that produced the frame.
- */
-export interface StoreWatchState {
-  exists: boolean
-  value?: unknown
-}
-
-/** One terminal in the `terminals` watch (no claim credential). */
-export interface WsTerminalSetEntry {
-  terminalId: string
-  projectId: string
-  cwd: string
-  /** A web connection holds a live attachment. */
-  attached: boolean
-}
-
-/** `terminals` watch state and delta: the project's terminals as they are now. */
-export interface TerminalsWatchState {
-  terminals: WsTerminalSetEntry[]
-}
-
-/** A delta the host sends when it could not queue the one before it. */
-export interface WatchResyncDelta {
-  resync: true
-}
-
-/**
- * A WS request frame sent client→server.
- *
- * `id` is a client-chosen correlation id echoed back in the `WsReply`.
- */
-export interface WsRequest {
-  /** Client-chosen correlation id (echoed in the reply). */
-  id: string
-  /** The request `type` (one of `WsRequestType`). */
-  type: WsRequestType
-  /** Request payload (shape depends on `type`). */
-  payload: unknown
-  /**
-   * Client-minted command id for a mutating request. The field name is fixed
-   * here; the host ignores it until the command/receipt work lands.
-   */
-  command_id?: string
-}
+export const WS_WATCH_NAMES = WsWatchNameValues
 
 /**
  * A WS reply envelope sent server→client in response to a `WsRequest`.
