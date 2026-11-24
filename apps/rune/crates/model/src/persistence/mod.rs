@@ -191,6 +191,9 @@ pub fn filter_expanded_dirs(dirs: &[String], root: Option<&str>) -> Vec<String> 
 pub struct Hydrated {
     pub tree: ProjectWorkspace,
     pub files: Files,
+    /// The device holds a record that did not decode: the tree is a fresh one, and writing
+    /// it would replace the stored record.
+    pub unreadable: bool,
 }
 
 /// The read half of `hydrateProject`: `raw` is the stored value (`None` when the device has
@@ -204,12 +207,13 @@ pub fn hydrate(
     ids: &mut dyn Ids,
     fx: &mut Vec<Effect>,
 ) -> Hydrated {
-    let mut fresh = || Hydrated {
+    let mut fresh = |unreadable| Hydrated {
         tree: tree::create_project_workspace(ids),
         files: Files::default(),
+        unreadable,
     };
     let Some(raw) = raw.map(unwrap_stored).filter(|v| !v.is_null()) else {
-        return fresh();
+        return fresh(false);
     };
     let record: Record = match serde_json::from_value(raw.clone()) {
         Ok(record) => record,
@@ -219,7 +223,7 @@ pub fn hydrate(
                 "useEditorPersistence.hydrateProject",
                 format!("unreadable workspace record ignored: {error}"),
             ));
-            return fresh();
+            return fresh(true);
         }
     };
     let files = Files {
@@ -242,7 +246,11 @@ pub fn hydrate(
         }
         None => legacy_editor_workspace(&files, record.active_tab_id.as_deref(), ids),
     };
-    Hydrated { tree, files }
+    Hydrated {
+        tree,
+        files,
+        unreadable: false,
+    }
 }
 
 /// `buildProjectWorkspace`: normalize the tree and keep the active pane when it is a leaf.

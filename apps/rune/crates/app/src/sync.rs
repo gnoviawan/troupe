@@ -1,7 +1,7 @@
 //! Between the server and the model: what the app asks the host for once connected, how
 //! `/ws` outputs become model events, and how model effects become host requests.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use client::CallId;
 use client::link::Status;
@@ -24,7 +24,13 @@ enum Pending {
     ReadActiveProject,
     /// A project's workspace record, read when the project becomes visible.
     ReadWorkspace(String),
+    /// Then its terminal layout (`loadPersistedTerminals`), with the record read before it.
+    ReadTerminals {
+        project_id: String,
+        record: Option<Value>,
+    },
     Write(String),
+    WriteWorkspace(String),
 }
 
 /// The device's saved selection: unread, or read (`None` when it has none).
@@ -48,6 +54,8 @@ pub struct Sync {
     written: HashMap<String, Value>,
     /// The workspace revision the last persist saw.
     persisted_revision: u64,
+    /// Projects whose stored record failed to read or decode: this session never writes over it.
+    unwritable: HashSet<String>,
 }
 
 /// Ids for a store that mints them (groups); the shell creates none yet.
@@ -183,19 +191,51 @@ impl State {
                     self.registry_list(list);
                 }
             }
-            Pending::ReadWorkspace(project_id) => {
-                let raw = match result {
-                    Ok(reply) => stored_value(reply),
+            Pending::ReadWorkspace(project_id) => match result {
+                Ok(reply) => {
+                    let key = self.device_key(&format!("terminals/{project_id}"));
+                    let record = stored_value(reply);
+                    self.call(
+                        WsRequestType::StoreRead,
+                        json!({ "key": key }),
+                        Pending::ReadTerminals { project_id, record },
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "[app] reading the workspace of {project_id} failed: {}; its stored record is left unwritten",
+                        e.code
+                    );
+                    self.sync.unwritable.insert(project_id.clone());
+                    self.workspace_read(&project_id, None, None);
+                }
+            },
+            Pending::ReadTerminals { project_id, record } => {
+                let terminals = match result {
+                    Ok(reply) => stored_value(reply)
+                        .and_then(|layout| layout.get("terminals").cloned())
+                        .and_then(|list| serde_json::from_value(list).ok()),
                     Err(e) => {
-                        log::warn!("[app] reading the workspace of {project_id} failed: {}", e.code);
+                        log::warn!("[app] reading the terminal layout of {project_id} failed: {}", e.code);
                         None
                     }
                 };
-                self.workspace_read(&project_id, raw);
+                self.workspace_read(&project_id, record, terminals);
             }
             Pending::Write(key) => {
                 if let Err(e) = result {
                     log::warn!("[app] writing {key} failed: {}: {}", e.code, e.message);
+                }
+            }
+            Pending::WriteWorkspace(project_id) => {
+                if let Err(e) = result {
+                    log::warn!(
+                        "[app] writing the workspace of {project_id} failed: {}: {}",
+                        e.code,
+                        e.message
+                    );
+                    // The next change writes again, even back to the value that failed.
+                    self.sync.written.remove(&project_id);
                 }
             }
         }
@@ -244,7 +284,12 @@ impl State {
         );
     }
 
-    fn workspace_read(&mut self, project_id: &str, raw: Option<Value>) {
+    fn workspace_read(
+        &mut self,
+        project_id: &str,
+        raw: Option<Value>,
+        terminals: Option<Vec<persistence::TerminalInfo>>,
+    ) {
         if self.sync.reading.as_deref() != Some(project_id) {
             return;
         }
@@ -257,15 +302,19 @@ impl State {
             .find(|p| p.id == project_id)
             .and_then(|p| p.path.clone());
         let mut effects = Vec::new();
+        // No terminal is live in the Rune shell yet, so the layout keeps the saved terminal tabs.
         let hydrated = persistence::hydrate(
             raw,
             root.as_deref(),
             &[],
-            None,
+            terminals.as_deref(),
             self.workspace.ids(),
             &mut effects,
         );
         self.run(effects);
+        if hydrated.unreadable {
+            self.sync.unwritable.insert(project_id.to_owned());
+        }
         self.workspace.activate(project_id, Some(hydrated));
         if self.active_project().map(|p| p.id.as_str()) != Some(project_id) {
             self.show_active_project();
@@ -290,12 +339,33 @@ impl State {
         ) else {
             return;
         };
+        if self.sync.unwritable.contains(&project_id) {
+            return;
+        }
         let value = persistence::js_numbers(serde_json::to_value(record).unwrap_or(Value::Null));
         if self.sync.written.get(&project_id) == Some(&value) {
             return;
         }
         self.sync.written.insert(project_id.clone(), value.clone());
-        self.write(&persistence::key(&project_id), value);
+        let key = self.device_key(&persistence::key(&project_id));
+        self.call(
+            WsRequestType::StoreWrite,
+            json!({ "key": key, "value": persistence::stored(value) }),
+            Pending::WriteWorkspace(project_id),
+        );
+    }
+
+    /// The projects whose workspace record has a write in flight.
+    #[cfg(test)]
+    pub(crate) fn workspace_writes(&self) -> Vec<&str> {
+        self.sync
+            .pending
+            .values()
+            .filter_map(|pending| match pending {
+                Pending::WriteWorkspace(project_id) => Some(project_id.as_str()),
+                _ => None,
+            })
+            .collect()
     }
 
     pub fn layout_step(&mut self, event: LayoutEvent) {
