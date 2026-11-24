@@ -4,12 +4,14 @@ import {
   serializePaneTree
 } from '../../../../src/renderer/hooks/editor-persistence/pane-tree'
 import type { PersistedPaneNodeInput } from '../../../../src/renderer/hooks/editor-persistence/types'
+import { useBrowserSessionStore } from '../../../../src/renderer/stores/browser-session-store'
 import type { PaneNode } from '../../../../src/renderer/types/workspace.types'
 import type { Scenario, StoreRecorder, VectorEvent } from '../record'
 
 /**
- * The workspace record's pane tree (`hooks/editor-persistence/pane-tree.ts`): pure
- * functions, so the "store" has no state and each step's result is the function's.
+ * The workspace record's pane tree (`hooks/editor-persistence/pane-tree.ts`): each step's
+ * result is the function's. The only state is the browser session store, which serialize
+ * reads a tab's url from and deserialize fills, so `reset` empties it.
  */
 export const paneTreeRecorder: StoreRecorder = {
   store: 'pane-tree',
@@ -17,7 +19,9 @@ export const paneTreeRecorder: StoreRecorder = {
     'src/renderer/hooks/editor-persistence/pane-tree.ts',
     'src/renderer/lib/workspace-tab-kinds.ts'
   ],
-  reset() {},
+  reset() {
+    useBrowserSessionStore.setState(useBrowserSessionStore.getInitialState(), true)
+  },
   seed() {},
   snapshot: () => ({}),
   dispatch({ action, args }: VectorEvent): unknown {
