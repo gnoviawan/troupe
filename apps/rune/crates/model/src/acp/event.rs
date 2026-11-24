@@ -158,6 +158,9 @@ pub enum Event {
     ),
     #[serde(rename = "cancelAgentSwitch")]
     CancelAgentSwitch(String),
+    /// Answered by `actionResolved` with whether the switch armed.
+    #[serde(rename = "armAgentSwitch")]
+    ArmAgentSwitch(String, String, #[serde(default)] super::import::RequestId),
     #[serde(rename = "prepareChat")]
     PrepareChat(super::warm::PrepareRequest),
     #[serde(rename = "cancelPreparedChat")]

@@ -438,10 +438,19 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      to the front (`stampSwitchContinuation`); a history open heals the
      same edges from its payload (`healChainEdges`). The history watermark
      now counts switch markers (`maxPayloadSeq`). `cancelAgentSwitch`
-     drops an armed switch. Not here: `armAgentSwitch` (it warms the target
-     through `prepareChat`), `setSwitchPendingOption`, `switchAgent` (the
-     handoff summary, the transcript splice, the new session and the first
-     prompt) and the reopen's switch redirect and re-splice.
+     drops an armed switch.
+   - 9b, arming (R6a-6). `armAgentSwitch` answers with `actionResolved`.
+     The busy gate (`switchBlockedReason`) refuses while a turn runs, a
+     restore or a launch is in flight, prompts are queued, a permission,
+     question, elicitation or sign-in waits on the user, or background
+     subagents or commands of the chat's own agent run. A refusal, the
+     agent that already owns the chat, and an unknown config each stamp
+     `Could not switch agent: …` on the chat. An armed chat gets
+     `switching: { toConfigId, status: 'pending' }` and its target warms
+     through `prepareChat` (silent). Not here: `setSwitchPendingOption`,
+     `switchAgent` (the handoff summary, the transcript splice, the new
+     session and the first prompt) and the reopen's switch redirect and
+     re-splice.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
       effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,

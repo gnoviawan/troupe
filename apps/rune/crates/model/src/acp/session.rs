@@ -271,6 +271,24 @@ fn running_background(calls: &[Object], boundary: Option<&Boundary>) -> Vec<Stri
 }
 
 impl State {
+    /// `runningBackgroundSubagents(...).length > 0` for the session.
+    pub(crate) fn runs_background_subagents(&self, session_id: &str) -> bool {
+        let Some(calls) = self.tool_calls.get(session_id) else {
+            return false;
+        };
+        let boundary = self.messages.get(session_id).and_then(|messages| {
+            messages
+                .iter()
+                .rev()
+                .find(|message| message.role == super::types::Role::User)
+                .map(|message| Boundary {
+                    seq: message.seq,
+                    timestamp: Some(message.timestamp),
+                })
+        });
+        !running_background(calls, boundary.as_ref()).is_empty()
+    }
+
     pub(crate) fn on_session_created(
         &mut self,
         event: SessionCreatedEvent,

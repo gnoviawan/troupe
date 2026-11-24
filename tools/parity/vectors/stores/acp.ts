@@ -191,7 +191,8 @@ const RESOLVES = new Set([
   'openHistorySession',
   'generateCommitMessage',
   'assistTerminal',
-  'draftBugReport'
+  'draftBugReport',
+  'armAgentSwitch'
 ])
 
 export const acpRecorder: StoreRecorder = {
@@ -413,7 +414,7 @@ import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
-import { switchScenarios } from './acp-scenarios-switch'
+import { armScenarios, switchScenarios } from './acp-scenarios-switch'
 import { turnScenarios } from './acp-scenarios-turn'
 import { warmScenarios } from './acp-scenarios-warm'
 import { windowScenarios } from './acp-scenarios-window'
@@ -445,5 +446,6 @@ export const acpScenarios = [
   ...switchScenarios,
   ...warmScenarios,
   ...reconcileScenarios,
-  ...olderScenarios
+  ...olderScenarios,
+  ...armScenarios
 ]

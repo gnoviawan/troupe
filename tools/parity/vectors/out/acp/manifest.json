@@ -522,7 +522,26 @@
         "load_older_folds_one_row_per_unstamped_twin",
         "load_older_never_folds_into_a_stamped_or_persisted_bubble",
         "load_older_folds_a_streaming_prefix_only_at_the_seam",
-        "load_older_keeps_a_streaming_prefix_far_from_the_seam"
+        "load_older_keeps_a_streaming_prefix_far_from_the_seam",
+        "arm_agent_switch_marks_the_chat_and_warms_the_target",
+        "arm_agent_switch_rejects_the_agent_that_owns_the_chat",
+        "arm_agent_switch_reads_the_owner_from_the_index",
+        "arm_agent_switch_rejects_an_unknown_config",
+        "arm_agent_switch_waits_for_the_turn",
+        "arm_agent_switch_waits_for_a_restore",
+        "arm_agent_switch_waits_for_a_launch",
+        "arm_agent_switch_waits_for_queued_prompts",
+        "arm_agent_switch_waits_for_a_permission",
+        "arm_agent_switch_waits_for_a_sign_in",
+        "arm_agent_switch_waits_for_background_commands",
+        "arm_agent_switch_ignores_finished_or_foreign_background_commands",
+        "arm_agent_switch_waits_for_a_question",
+        "arm_agent_switch_waits_for_an_elicitation",
+        "arm_agent_switch_waits_for_background_subagents",
+        "arm_agent_switch_ignores_background_commands_that_finished",
+        "arm_agent_switch_ignores_the_commands_of_a_failed_chat",
+        "arm_agent_switch_on_a_missing_chat_is_refused",
+        "cancel_agent_switch_drops_an_armed_switch"
       ]
     }
   }
