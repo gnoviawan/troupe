@@ -64,14 +64,16 @@ export type RuneAppName = keyof typeof RUNE_APPS
 
 /**
  * The surfaces the Rune shell draws today (R5a: the frame, the rail's
- * projects, the side panel frame). Every other surface waits on the unit that
- * ports its content, named by its area in `RUNE_UNIT_BY_AREA`.
+ * projects, the side panel frame; R5b: the tab bar's `+` menu). Every other
+ * surface waits on the unit that ports its content, named by its area in
+ * `RUNE_UNIT_BY_AREA`.
  */
 export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'shell.dashboard',
   'shell.not-found',
   'rail.project-list',
-  'rail.collapse'
+  'rail.collapse',
+  'terminal.new-tab-menu'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
