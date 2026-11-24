@@ -65,6 +65,13 @@ describe('deriveAgentConfig', () => {
     }
   })
 
+  it('bundles a Hermes Agent icon that inherits the text color', async () => {
+    const { findBundledIconByKey } = await import('@/lib/agents/agent-icon-catalog')
+    const icon = findBundledIconByKey('acp:hermes')
+    expect(icon?.label).toBe('Hermes Agent')
+    expect(icon?.svg).toContain('fill="currentColor"')
+  })
+
   it('starts Factory Droid with documented ACP output instead of the legacy daemon mode', () => {
     const factory = REGISTRY_AGENTS.find((entry) => entry.id === 'factory-droid')
     expect(factory).toBeDefined()
