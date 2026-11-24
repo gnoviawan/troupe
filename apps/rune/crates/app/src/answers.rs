@@ -28,7 +28,7 @@ impl State {
             ),
         };
         log::info!("[chat] send {kind:?} to {agent_id}");
-        self.command(kind, payload, Pending::Answer(answer));
+        self.command(kind, payload, Pending::Answer(Box::new(answer)));
     }
 
     /// The host's reply to an answer: a refusal puts the prompt back and says so.

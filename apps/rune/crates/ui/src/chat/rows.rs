@@ -130,7 +130,9 @@ fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
         .min_h(28.0)
         .gap(6.0)
         .items_center()
-        .child(icon(&i::CHEVRON_RIGHT, 13.0).color(ink).rotate(if open { std::f32::consts::FRAC_PI_2 } else { 0.0 }))
+        // A down chevron, not a rotated right one: the web client's CPU canvas stops presenting
+        // frames while a rotated icon is on screen (Rune at the pin).
+        .child(icon(if open { &i::CHEVRON_DOWN } else { &i::CHEVRON_RIGHT }, 13.0).color(ink))
         .child(text(label).font(sans(12.0, 500.0, 16.0)).color(ink));
     if a.attention && !a.active {
         header = header.child(text("· needs attention").font(sans(12.0, 400.0, 16.0)).color(ink));

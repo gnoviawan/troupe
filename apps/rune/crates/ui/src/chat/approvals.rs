@@ -121,17 +121,14 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
         .items_center()
         .child(text("The agent is waiting for permission to run").font(sans(12.0, 400.0, 19.5)).color(c.muted_foreground))
         .child(
-            text(title)
-                .font(mono(12.0, 400.0, 16.0))
-                .color(c.foreground)
+            row()
+                .min_w(0.0)
                 .px(6.0)
                 .py(2.0)
                 .radius(4.0)
                 .border(1.0, c.border.alpha(0.5))
                 .fill(c.muted.alpha(0.6))
-                .single_line()
-                .truncate()
-                .min_w(0.0),
+                .child(text(title).font(mono(12.0, 400.0, 16.0)).color(c.foreground).single_line().truncate().min_w(0.0)),
         )
         .child(text(".").font(sans(12.0, 400.0, 19.5)).color(c.muted_foreground));
     let head = row()
@@ -396,7 +393,7 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
             let qid = qid.clone();
             let values = picked.to_vec();
             Button::new("Submit")
-                .size(ButtonSize::Xs)
+                .size(ButtonSize::Sm)
                 .disabled(!can_submit)
                 .build(t)
                 .key(format!("question-submit-{qid}"))

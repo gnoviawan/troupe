@@ -116,3 +116,4 @@ fn a_question_replaces_the_composer_and_submits_the_pick() {
     );
     assert!(present(&rt, "composer-chat-chat-1-tray"), "the composer comes back");
 }
+
