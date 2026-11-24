@@ -467,6 +467,7 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
         .group_color(c.foreground)
         .a11y_hidden();
     let close_id = tab_id.clone();
+    let close_pane = leaf.id.clone();
     let close = row()
         .key(format!("tab-close-{}", tab.id()))
         .role("button")
@@ -478,7 +479,11 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
         .focusable(active)
         .group_opacity(if active && !dirty { 1.0 } else { 0.0 }, 1.0)
         .child(close_ink)
-        .on_press(move |s: &mut S| lens(s).close(&close_id));
+        .on_press(move |s: &mut S| {
+            let ws = lens(s);
+            ws.focus_pane(&close_pane);
+            ws.close(&close_id);
+        });
     close_slot = close_slot.child(close);
 
     let mut chrome = row()
@@ -539,6 +544,8 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
         let point = d.window_point();
         match d.phase {
             Phase::Down => {
+                // `PaneContent`'s mousedown: any press in a pane makes it the active one.
+                ws.focus_pane(&pane_id);
                 ws.drag = Some(TabDrag {
                     tab: tab_id.clone(),
                     source: pane_id.clone(),
@@ -609,6 +616,7 @@ fn new_tab_menu<S: 'static>(ctx: &Ctx<'_, S>, pane: &str, layer: &mut Vec<El>) -
         .key(format!("new-tab-{pane}"))
         .on_press(move |s: &mut S| {
             let ws = lens(s);
+            ws.focus_pane(&opener);
             ws.menu = if ws.menu.as_deref() == Some(opener.as_str()) {
                 None
             } else {
