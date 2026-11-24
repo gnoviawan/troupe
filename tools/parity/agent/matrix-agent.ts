@@ -17,6 +17,8 @@
  *   with its diff, a command with output, a terminal, a failed call), then
  *   replies `TOOLS_REPLY`.
  * - `matrix error` fails the turn with `TURN_ERROR` (the error notice).
+ * - `matrix form` asks a form elicitation (`elicitation/create`: a required
+ *   whole number and an optional pick), then replies with the answer.
  *
  * With `MATRIX_AGENT_OPTIONS=1` in its environment, each new session also
  * offers modes and a model option (the composer's mode chip and model
@@ -55,8 +57,10 @@ export const MATRIX_PROMPTS = {
   question: 'matrix question',
   subagent: 'matrix subagent',
   tools: 'matrix tools',
-  error: 'matrix error'
+  error: 'matrix error',
+  form: 'matrix form'
 } as const
+export const FORM_MESSAGE = 'How many test runs should I do?'
 export const TOOLS_REPLY = 'The tool calls are done.'
 export const TURN_ERROR = 'Stream closed: NGHTTP2_INTERNAL_ERROR'
 const OLD_ROUTE = Array.from({ length: 14 }, (_, n) => `const route${n + 1} = '/r${n + 1}'`).join(
@@ -279,6 +283,26 @@ async function tools(sessionId: string): Promise<void> {
   say(sessionId, TOOLS_REPLY)
 }
 
+async function form(sessionId: string): Promise<void> {
+  const reply = (await request('elicitation/create', {
+    sessionId,
+    mode: 'form',
+    message: FORM_MESSAGE,
+    requestedSchema: {
+      type: 'object',
+      properties: {
+        runs: { type: 'integer', title: 'Runs', description: 'Whole runs of the suite.' },
+        branch: { type: 'string', title: 'Branch', enum: ['main', 'dev'] }
+      },
+      required: ['runs']
+    }
+  })) as Frame & { result?: { action?: string; content?: unknown } }
+  say(
+    sessionId,
+    `Form answer: ${reply.result?.action} ${JSON.stringify(reply.result?.content ?? null)}`
+  )
+}
+
 async function failTurn(_sessionId: string): Promise<void> {
   throw new Error(TURN_ERROR)
 }
@@ -365,7 +389,8 @@ const HANDLERS: Record<string, (sessionId: string) => Promise<void>> = {
   [MATRIX_PROMPTS.question]: question,
   [MATRIX_PROMPTS.subagent]: subagent,
   [MATRIX_PROMPTS.tools]: tools,
-  [MATRIX_PROMPTS.error]: failTurn
+  [MATRIX_PROMPTS.error]: failTurn,
+  [MATRIX_PROMPTS.form]: form
 }
 
 async function answer(

@@ -22,6 +22,8 @@ export interface Client {
   /** True once `text` shows, waiting up to `ms`. */
   sees(text: string, ms?: number): Promise<boolean>
   send(prompt: string): Promise<void>
+  /** Types `text` into the field labelled `label`. */
+  fill(label: string, text: string): Promise<void>
 }
 
 export interface LaneOptions {
@@ -71,6 +73,9 @@ function reactClient(page: Page, phone: boolean): Client {
           .first()
           .click({ timeout: 20_000 })
       else await page.keyboard.press('Enter')
+    },
+    async fill(label, text) {
+      await page.getByLabel(label, { exact: true }).first().fill(text, { timeout: 20_000 })
     }
   }
 }
@@ -101,6 +106,11 @@ function runeClient(page: Page, phone: boolean): Client {
       await page.waitForTimeout(300)
       if (phone) await this.click('Send message')
       else await page.keyboard.press('Enter')
+    },
+    async fill(label, text) {
+      const { x, y } = await at(label, true)
+      await page.mouse.click(x, y)
+      await page.keyboard.type(text, { delay: 15 })
     }
   }
 }
