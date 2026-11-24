@@ -731,3 +731,5 @@ mod automation_tests;
 mod read_chat_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tool_schema_tests;

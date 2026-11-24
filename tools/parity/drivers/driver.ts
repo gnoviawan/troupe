@@ -57,6 +57,30 @@ export interface ClientLauncher {
   session<T>(ctx: SessionContext, body: (driver: Driver) => Promise<T>): Promise<T>
 }
 
+/** One `design-system` registry entry, and the Rune gallery scene of the same id. */
+export interface GalleryEntry {
+  id: string
+  name: string
+  width: number
+  height: number
+}
+
+/** A client of the gallery profile, open on its gallery for the whole run. */
+export interface GallerySession {
+  /** What drew the frames, when the client can tell. */
+  renderer?: string
+  /**
+   * Shows `entry` and writes its frame, `entry.width` x `entry.height`, to
+   * `file`. Returns how the entry was picked and, for a client with a DOM,
+   * where text and icons were painted in the frame's coordinates.
+   */
+  shoot(
+    entry: GalleryEntry,
+    file: string
+  ): Promise<{ via: ActionLog['via']; parts: PartRects | null }>
+  close(): Promise<void>
+}
+
 /**
  * Where a driver moves the pointer after an action that leaves it over a
  * control (`PARKS_POINTER`): the bottom edge of the window, over no control.

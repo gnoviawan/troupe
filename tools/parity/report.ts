@@ -158,8 +158,9 @@ export function renderReport(
   out.push('', '## Driven interactions and literal results', '')
   for (const { surface, result } of rows) {
     if (!result?.reference) {
+      const pending = surface.pending ?? result?.pending
       out.push(
-        `- \`${surface.id}\`: ${surface.pending ? `pending ${surface.pending.unit}: ${surface.pending.reason}` : (surface.blocked ?? 'not run')}`
+        `- \`${surface.id}\`: ${pending ? `pending ${pending.unit}: ${pending.reason}` : (surface.blocked ?? 'not run')}`
       )
       continue
     }

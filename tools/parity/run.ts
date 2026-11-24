@@ -1,5 +1,5 @@
 /**
- * `bun run parity:matrix [--client react] [--against react] [--profile desktop|phone]
+ * `bun run parity:matrix [--client react] [--against react] [--profile desktop|phone|gallery]
  *   [--only id,id] [--area a,b] [--client-dist DIR] [--against-dist DIR] [--port N] [--out DIR] [--state DIR]
  *   [--server-bin FILE] [--reruns N] [--report-only]`
  *
@@ -12,6 +12,11 @@
  * (a partial run updates only the surfaces it ran). A surface whose run
  * failed is rerun up to `--reruns` times and listed under flakes. Writes
  * `<out>/report.md` and prints a line per surface.
+ *
+ * The Rune clients (`rune-web`, `rune-desktop`) have no Troupe screen until
+ * R5, so a run with either one marks every surface pending without starting
+ * a server. `--profile gallery` compares the design-system registry with the
+ * Rune gallery instead (`gallery.ts`).
  */
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
@@ -25,7 +30,11 @@ import { REFERENCE_ARGS } from './drivers/chromium'
 import type { ClientLauncher, Driver, Points } from './drivers/driver'
 import { errorLine } from './drivers/driver'
 import { reactClient } from './drivers/react'
+import { TROUPE_ON_RUNE_PENDING } from './drivers/rune-apps'
+import { runeDesktopClient } from './drivers/rune-desktop'
+import { runeWebArgs, runeWebClient } from './drivers/rune-web'
 import { tauriClient } from './drivers/tauri'
+import { runGallery } from './gallery'
 import { maxPixels, renderReport, summaryLine } from './report'
 import { pickPort, REPO_DIR } from './server'
 import { autoStatus } from './status'
@@ -98,9 +107,14 @@ function parseClient(name: string): Client {
 
 const CLIENT = parseClient(values.client as string)
 const AGAINST = parseClient(values.against as string)
-if (PROFILE === 'phone' && (CLIENT === 'tauri' || AGAINST === 'tauri')) {
-  throw new Error('the phone profile runs only web clients; tauri has no phone shell')
+const DESKTOP_APPS: readonly Client[] = ['tauri', 'rune-desktop']
+if (PROFILE === 'phone' && (DESKTOP_APPS.includes(CLIENT) || DESKTOP_APPS.includes(AGAINST))) {
+  throw new Error('the phone profile runs only web clients; a desktop app has no phone shell')
 }
+/** Why no surface can run yet in this comparison, when one side is a Rune client. */
+const CLIENT_PENDING = [CLIENT, AGAINST].some((c) => c.startsWith('rune-'))
+  ? TROUPE_ON_RUNE_PENDING
+  : undefined
 /** The surfaces of this run's profile. */
 const PROFILE_SURFACES = SURFACES.filter((s) => (s.profile ?? 'desktop') === PROFILE)
 const slug = (id: string) => id.replace(/[^a-z0-9-]/gi, '-')
@@ -293,23 +307,25 @@ async function attempt(
   }
 }
 
+/** The result of a surface that waits on another unit or has no reference. */
+function notRun(surface: Surface, pending = surface.pending): SurfaceResult {
+  return {
+    id: surface.id,
+    ranAt: new Date().toISOString(),
+    auto: pending ? 'pending-unit' : 'blocked',
+    diffs: [],
+    reruns: [],
+    pending,
+    blocked: surface.blocked
+  }
+}
+
 async function runSurface(
   surface: Surface,
   world: World,
   launcher: (client: Client, role: Role) => ClientLauncher
 ): Promise<SurfaceResult> {
-  if (surface.pending || surface.blocked) {
-    const auto = surface.pending ? 'pending-unit' : 'blocked'
-    return {
-      id: surface.id,
-      ranAt: new Date().toISOString(),
-      auto,
-      diffs: [],
-      reruns: [],
-      pending: surface.pending,
-      blocked: surface.blocked
-    }
-  }
+  if (surface.pending || surface.blocked) return notRun(surface)
   const launchers = {
     reference: launcher(surface.reference ?? AGAINST, 'reference'),
     candidate: launcher(CLIENT, 'candidate')
@@ -356,6 +372,11 @@ function writeReport(saved: SavedResults): void {
 
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true })
+  if (PROFILE === 'gallery') {
+    const only = values.only?.split(',').filter(Boolean)
+    await runGallery({ client: CLIENT, against: AGAINST, out: OUT, only })
+    return
+  }
   const previous = readResults()
   if (values['report-only']) {
     if (!previous) throw new Error(`${RESULTS} is missing: run the matrix first`)
@@ -368,6 +389,22 @@ async function main(): Promise<void> {
     console.error(`[parity] ${RESULTS} holds ${previous.comparison}; starting a new comparison`)
   }
   const surfaces = selected()
+  if (CLIENT_PENDING) {
+    for (const surface of surfaces) {
+      const result = surface.blocked
+        ? notRun(surface)
+        : notRun(surface, surface.pending ?? CLIENT_PENDING)
+      saved.surfaces[surface.id] = result
+      console.log(summaryLine(result))
+    }
+    saveResults(saved)
+    const blocked = surfaces.filter((s) => s.blocked).length
+    console.log(
+      `[parity] ${surfaces.length} surfaces: ${surfaces.length - blocked} pending ${CLIENT_PENDING.unit} (${CLIENT_PENDING.reason}), ${blocked} blocked`
+    )
+    writeReport(saved)
+    return
+  }
   const port = await pickPort(values.port ? Number(values.port) : undefined)
   const root = path.join(STATE, 'world')
   await rm(root, { recursive: true, force: true })
@@ -376,7 +413,7 @@ async function main(): Promise<void> {
   let browser: Browser | null = null
   const started = performance.now()
   try {
-    browser = await chromium.launch({ args: REFERENCE_ARGS })
+    browser = await chromium.launch({ args: runeWebArgs(REFERENCE_ARGS) })
     const shared = browser
     const launchers: Record<Client, (role: Role) => ClientLauncher> = {
       react: (role) =>
@@ -384,7 +421,9 @@ async function main(): Promise<void> {
           browser: shared,
           dist: values[role === 'reference' ? 'against-dist' : 'client-dist'] as string
         }),
-      tauri: () => tauriClient()
+      tauri: () => tauriClient(),
+      'rune-web': () => runeWebClient({ browser: shared }),
+      'rune-desktop': () => runeDesktopClient()
     }
     const launcher = (client: Client, role: Role) => launchers[client](role)
     for (const surface of surfaces) {

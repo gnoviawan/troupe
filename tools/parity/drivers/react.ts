@@ -89,7 +89,7 @@ function locate(page: Page, target: Target): Locator {
  * box of every visible text node, the content box of every text field, and
  * the box of every outermost svg and every img.
  */
-function paintedParts(): PartRects {
+export function paintedParts(): PartRects {
   const box = (r: DOMRect) => ({ x: r.x, y: r.y, width: r.width, height: r.height })
   const onScreen = (r: DOMRect) =>
     r.width > 0 &&

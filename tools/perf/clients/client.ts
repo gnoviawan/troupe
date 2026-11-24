@@ -1,11 +1,13 @@
+import type { RuneAppName } from '../../parity/drivers/rune-apps.ts'
 import type { PageMetrics } from '../types.ts'
 
 /**
  * The client kinds the Linux lane can launch. `chromium` is the reference
- * client (the React web client in Playwright Chromium); the Rune web and
- * Rune desktop clients land with their own units.
+ * client (the React web client in Playwright Chromium). `rune-web` is a Rune
+ * wasm build in Chromium and `rune-desktop` a native Rune window
+ * (`clients/rune.ts`).
  */
-export type ClientKind = 'chromium'
+export type ClientKind = 'chromium' | 'rune-web' | 'rune-desktop'
 
 export interface ClientLaunchOptions {
   /** Origin the client loads or connects to (the byte proxy, not the server). */
@@ -19,6 +21,8 @@ export interface ClientLaunchOptions {
   gl: 'lavapipe' | 'swiftshader' | 'cpu'
   /** Skip the in-page observers, whose rAF loop keeps an idle page drawing. */
   noPageMetrics?: boolean
+  /** The Rune app the Rune clients open, until Rune has a Troupe screen. */
+  runeApp: RuneAppName
 }
 
 export interface ChatStartPart {

@@ -9,10 +9,12 @@ import type { DiffResult, Rect } from './diff'
 /**
  * A client the matrix can drive. `react` is today's web client in Playwright
  * Chromium. `tauri` is the shipped desktop app, driven with XTEST and read
- * only through its pixels. The Rune clients join this list in R3c.
+ * only through its pixels. `rune-web` is a Rune wasm build in Playwright
+ * Chromium, read through Rune's accessibility mirror. `rune-desktop` is a
+ * native Rune window under Xvfb, driven through the live driver's socket.
  */
-export type Client = 'react' | 'tauri'
-export const CLIENTS: readonly Client[] = ['react', 'tauri']
+export type Client = 'react' | 'tauri' | 'rune-web' | 'rune-desktop'
+export const CLIENTS: readonly Client[] = ['react', 'tauri', 'rune-web', 'rune-desktop']
 
 /**
  * How an action finds its element. `testId` and `text` name an element any
@@ -103,10 +105,12 @@ export type AreaId =
 /**
  * The window a surface runs in. `desktop` is 1280x800 with a mouse. `phone`
  * is 390x844 with touch and `isMobile`, which puts the web client on its
- * phone shell; only the `react` client runs it.
+ * phone shell; only web clients run it. `gallery` is not a window: it
+ * compares the `design-system` registry entries with the Rune gallery's
+ * scenes, one frame per registry id (`gallery.ts`).
  */
-export type Profile = 'desktop' | 'phone'
-export const PROFILES: readonly Profile[] = ['desktop', 'phone']
+export type Profile = 'desktop' | 'phone' | 'gallery'
+export const PROFILES: readonly Profile[] = ['desktop', 'phone', 'gallery']
 
 /** The kinds of screen the inventory counts (`surfaces/inventory.ts`). */
 export type ScreenKind = 'route' | 'gate' | 'pane' | 'side-panel' | 'settings'
@@ -186,6 +190,8 @@ export interface ClientRun {
   checks: CheckLog[]
   /** One frame per step, in step order. */
   frames: string[]
+  /** What drew the frames, for a client that can tell (the Rune web build: WebGPU, WebGL2 or the CPU canvas). */
+  renderer?: string
 }
 
 export interface StepDiff {
