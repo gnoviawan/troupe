@@ -47,6 +47,8 @@ pub struct ChatUi {
     deferred: Vec<Event>,
     /// Busy-queue retries the model asked for: (due on the frame clock, session, generation).
     retries: Vec<(f64, String, u64)>,
+    /// Waits for re-advertised options a model pick asked for: (due on the frame clock, run).
+    pub(crate) readvertise: Vec<(f64, model::acp::RunId)>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
@@ -263,7 +265,17 @@ impl State {
                     self.chat.retries.push((self.now + delay_ms / 1000.0, session_id, generation));
                 }
                 Effect::Answer(answer) => self.send_answer(answer),
-                other => log::info!("[chat] effect not wired in the Rune client yet: {other:?}"),
+                Effect::PersistComposerOptions { config_id, .. } => {
+                    log::info!("[chat] picks of {config_id} not saved: the Rune client does not write composer picks yet");
+                }
+                Effect::PersistModelCatalog { config_id, .. } => {
+                    log::info!("[chat] model list of {config_id} not saved: the Rune client has no catalog store yet");
+                }
+                other => {
+                    if let Some(other) = self.run_control(other) {
+                        log::info!("[chat] effect not wired in the Rune client yet: {other:?}");
+                    }
+                }
             }
         }
     }

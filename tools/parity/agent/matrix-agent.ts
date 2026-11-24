@@ -14,6 +14,13 @@
  *   subagent panel); the first offers a stop. A `session/cancel` for a child
  *   ends it as cancelled, and the turn ends once no child runs.
  *
+ * With `MATRIX_AGENT_OPTIONS=1` in its environment, each new session also
+ * offers modes and a model option (the composer's mode chip and model
+ * selector), the proxy answers `session/set_mode` and
+ * `session/set_config_option` itself, and every turn it answers reports a
+ * growing context usage (the context ring). Off by default, so the matrix's
+ * other surfaces keep their reference frames.
+ *
  * Every other frame passes through to the scenario agent unchanged. With
  * `PARITY_PROMPT_LOG` set, each prompt's blocks are appended to that file as
  * one JSON line, so two clients' sends can be compared byte for byte.
@@ -188,6 +195,79 @@ function cancelChild(parent: string, child: string): boolean {
 
 let turnSession = ''
 
+export const OPTIONS_ENV = 'MATRIX_AGENT_OPTIONS'
+const OPTIONS = process.env[OPTIONS_ENV] === '1'
+export const MODES = [
+  { id: 'default', name: 'Default', description: 'Ask before edits and commands' },
+  { id: 'acceptEdits', name: 'Accept edits', description: 'Edit files without asking' },
+  { id: 'plan', name: 'Plan', description: 'Read and plan, change nothing' }
+]
+export const MODELS = [
+  { value: 'matrix-large', name: 'Matrix Large', description: 'The most capable model' },
+  { value: 'matrix-fast', name: 'Matrix Fast', description: 'Quicker answers' }
+]
+const CONTEXT_SIZE = 200_000
+const sessionModels = new Map<string, string>()
+const usageTurns = new Map<string, number>()
+
+function modelOption(sessionId: string): object {
+  return {
+    id: 'model',
+    name: 'Model',
+    category: 'model',
+    type: 'select',
+    currentValue: sessionModels.get(sessionId) ?? MODELS[0].value,
+    options: MODELS
+  }
+}
+
+/** A context report that grows by a turn's worth each time. */
+function reportUsage(sessionId: string): void {
+  if (!OPTIONS) return
+  const turns = (usageTurns.get(sessionId) ?? 0) + 1
+  usageTurns.set(sessionId, turns)
+  update(sessionId, {
+    sessionUpdate: 'usage_update',
+    used: 18_000 + turns * 24_000,
+    size: CONTEXT_SIZE
+  })
+}
+
+/** `session/new` from the scenario agent, with the modes and the model option added. */
+function withOptions(line: string, newSessionIds: Set<Id>): string {
+  if (!OPTIONS || newSessionIds.size === 0) return line
+  const frame = JSON.parse(line) as { id?: Id; result?: { sessionId?: string } }
+  if (frame.id === undefined || !newSessionIds.delete(frame.id) || !frame.result?.sessionId)
+    return line
+  const sessionId = frame.result.sessionId
+  usageTurns.set(sessionId, 0)
+  return JSON.stringify({
+    ...frame,
+    result: {
+      ...frame.result,
+      modes: { currentModeId: MODES[0].id, availableModes: MODES },
+      configOptions: [modelOption(sessionId)]
+    }
+  })
+}
+
+/** Answers the option setters the scenario agent lacks; true when it did. */
+function setOption(frame: Frame & { params?: Record<string, unknown> }): boolean {
+  if (!OPTIONS || frame.id === undefined) return false
+  const sessionId = String(frame.params?.sessionId ?? '')
+  if (frame.method === 'session/set_mode') {
+    send({ id: frame.id, result: {} })
+    update(sessionId, { sessionUpdate: 'current_mode_update', currentModeId: frame.params?.modeId })
+    return true
+  }
+  if (frame.method === 'session/set_config_option' && frame.params?.configId === 'model') {
+    sessionModels.set(sessionId, String(frame.params?.value))
+    send({ id: frame.id, result: { configOptions: [modelOption(sessionId)] } })
+    return true
+  }
+  return false
+}
+
 const HANDLERS: Record<string, (sessionId: string) => Promise<void>> = {
   [MATRIX_PROMPTS.plan]: plan,
   [MATRIX_PROMPTS.permission]: permission,
@@ -205,6 +285,7 @@ async function answer(
   turnSession = sessionId
   try {
     await handler(sessionId)
+    reportUsage(sessionId)
     send({ id, result: { stopReason: cancelled ? 'cancelled' : 'end_turn' } })
   } catch (error) {
     console.error(`[matrix-agent] prompt failed: ${error}`)
@@ -241,15 +322,18 @@ if (import.meta.main) {
   const child = spawn('bun', [path.join(import.meta.dir, 'scenario-agent.ts')], {
     stdio: ['pipe', 'pipe', 'inherit']
   })
+  const newSessionIds = new Set<Id>()
   void (async () => {
     for await (const line of createInterface({ input: child.stdout })) {
-      if (line.trim()) process.stdout.write(`${line}\n`)
+      if (line.trim()) process.stdout.write(`${withOptions(line, newSessionIds)}\n`)
     }
   })()
   for await (const line of createInterface({ input: process.stdin })) {
     if (!line.trim()) continue
     try {
-      if (!intercept(JSON.parse(line) as Frame)) child.stdin.write(`${line}\n`)
+      const frame = JSON.parse(line) as Frame
+      if (frame.method === 'session/new' && frame.id !== undefined) newSessionIds.add(frame.id)
+      if (!setOption(frame) && !intercept(frame)) child.stdin.write(`${line}\n`)
     } catch (error) {
       console.error(`[matrix-agent] bad frame: ${error}`)
     }

@@ -22,6 +22,9 @@ mod composer;
 mod composer_agents;
 mod composer_sheet;
 mod composer_view;
+mod controls;
+#[cfg(test)]
+mod controls_tests;
 mod host;
 mod ids;
 mod keys;
@@ -243,8 +246,9 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.read_agents();
     changed |= state.flush_chat();
     let (retried, next_retry) = state.fire_retries(now);
-    changed |= retried;
-    for due in [state.toasts.next_expiry(), next_retry].into_iter().flatten() {
+    let (waited, next_wait) = state.fire_readvertise_waits(now);
+    changed |= retried | waited;
+    for due in [state.toasts.next_expiry(), next_retry, next_wait].into_iter().flatten() {
         tx.wake_at(due);
     }
     state.persist_workspace();

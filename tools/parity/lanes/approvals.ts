@@ -89,7 +89,13 @@ function reactClient(page: Page): Client {
       await editor.click({ timeout: 20_000 })
       await page.keyboard.type(prompt, { delay: 15 })
       await page.waitForTimeout(300)
-      await page.keyboard.press('Enter')
+      // A phone's Return breaks the line; its Send button sends.
+      if (PHONE)
+        await page
+          .getByRole('button', { name: /^(Send message|Start agent chat)$/ })
+          .first()
+          .click({ timeout: 20_000 })
+      else await page.keyboard.press('Enter')
     }
   }
 }
@@ -118,7 +124,9 @@ function runeClient(page: Page): Client {
       await page.mouse.click(x, y)
       await page.keyboard.type(prompt, { delay: 15 })
       await page.waitForTimeout(300)
-      await page.keyboard.press('Enter')
+      // A phone's Return breaks the line; its Send button sends.
+      if (PHONE) await this.click('Send message')
+      else await page.keyboard.press('Enter')
     }
   }
 }
@@ -140,6 +148,8 @@ async function run(client: Client): Promise<string[]> {
 
   await client.send(MATRIX_PROMPTS.permission)
   await client.sees('Approval needed')
+  // The phone ignores taps in the first 400 ms of a prompt (APPROVAL_ACTIVATION_GUARD_MS).
+  await client.page.waitForTimeout(600)
   await client.click('Reject')
   await expect(EXPECTED[1])
   await shot(client, '3-rejected')
@@ -159,6 +169,9 @@ async function run(client: Client): Promise<string[]> {
   await client.sees('Subagent of this chat')
   await shot(client, '7-panel')
   await client.click('Stop')
+  await client.sees('Stopped')
+  await client.page.waitForTimeout(500)
+  if (PHONE) await client.click('Back to chat')
   await expect(EXPECTED[3])
   await shot(client, '8-stopped')
   return seen

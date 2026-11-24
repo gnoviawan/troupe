@@ -64,6 +64,8 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
                 .map(|p| ui::chat::approvals::permission_prompt(t, p, place == Place::Phone, crate::chat_view::lenses())),
             Host::Launcher(_) => None,
         },
+        mode: s.mode_view(host),
+        usage: s.usage_view(host),
     };
     view::composer(t, spec, &State::composer_hooks(host))
 }

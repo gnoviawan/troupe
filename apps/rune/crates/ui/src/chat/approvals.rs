@@ -88,9 +88,10 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
         } else {
             b.variant(ButtonVariant::Outline).fill(c.secondary.alpha(0.3))
         };
-        b.build(t)
-            .key(format!("permission-option-{}", choice.id))
-            .radius(8.0)
+        let b = b.build(t).key(format!("permission-option-{}", choice.id)).radius(8.0);
+        // `size="touch"` keeps the 44-point floor with `px-3`.
+        let b = if phone { b.px(12.0) } else { b };
+        b
             .on_press(answer(Some(choice.id.clone())))
     };
     let ordered = choices
@@ -110,6 +111,7 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
                 .build(t)
                 .key("permission-cancel")
                 .radius(8.0)
+                .px(if phone { 12.0 } else { 10.0 })
                 .on_press(answer(None)),
         );
     }
@@ -119,7 +121,8 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
         .min_w(0.0)
         .gap(4.0)
         .items_center()
-        .child(text("The agent is waiting for permission to run").font(sans(12.0, 400.0, 19.5)).color(c.muted_foreground))
+        .flex_wrap()
+        .child(text("The agent is waiting for permission to run").font(sans(12.0, 400.0, 19.5)).color(c.muted_foreground).wrap().min_w(0.0))
         .child(
             row()
                 .min_w(0.0)
@@ -399,16 +402,19 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
                 .key(format!("question-submit-{qid}"))
                 .radius(8.0)
                 .h(if phone { 44.0 } else { 32.0 })
-                .pr(6.0)
-                .child(
+                .pr(if phone { 14.0 } else { 6.0 })
+                .child(if phone {
+                    // A keyboard hint: touch has no Enter key to press here.
+                    el()
+                } else {
                     row()
                         .size(20.0, 20.0)
                         .center()
                         .radius(5.0)
                         .fill(c.primary_foreground.alpha(0.15))
                         .child(text("↵").font(sans(MICRO, 400.0, 16.0)).color(c.primary_foreground))
-                        .a11y_hidden(),
-                )
+                        .a11y_hidden()
+                })
                 .on_press(move |s: &mut S| {
                     if values.is_empty() {
                         return;
