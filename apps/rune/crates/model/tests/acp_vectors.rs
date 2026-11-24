@@ -157,6 +157,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::KillAgent { .. }
                         | Effect::ListSessions { .. }
                         | Effect::ImportAgentSession { .. }
+                        | Effect::NewSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }

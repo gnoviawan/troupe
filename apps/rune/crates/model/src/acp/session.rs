@@ -41,7 +41,7 @@ pub struct SessionClosedEvent {
 
 /// `creationOptionDefaultsFrom`: the option values a session was created
 /// with, the baseline the stale-echo guards compare against.
-fn creation_option_defaults(
+pub(super) fn creation_option_defaults(
     modes: Option<&Value>,
     models: Option<&Value>,
     config_options: &[Value],
@@ -162,7 +162,7 @@ fn append_unseen_config_values(option: &Value, other: &Value) -> Value {
 
 /// `addAdvertisedOptionsKeepingCurrent`: keep the session's current picks
 /// and add the modes, models and option values it did not list yet.
-fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
+pub(super) fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
     for (field, list, id, payload) in [
         ("modes", "availableModes", "id", event.modes.as_ref()),
         (

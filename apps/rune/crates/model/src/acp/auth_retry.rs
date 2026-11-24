@@ -84,6 +84,7 @@ fn auth_op(command: &Effect) -> Option<&'static str> {
         Effect::SetModel { .. } => Some("session/set_model"),
         Effect::ListSessions { .. } => Some("session/list"),
         Effect::ImportAgentSession { .. } => Some("session/load"),
+        Effect::NewSession { .. } => Some("session/new"),
         _ => None,
     }
 }
@@ -93,7 +94,8 @@ fn agent_of(command: &Effect) -> &str {
         Effect::SetMode { agent_id, .. }
         | Effect::SetModel { agent_id, .. }
         | Effect::ListSessions { agent_id, .. }
-        | Effect::ImportAgentSession { agent_id, .. } => agent_id,
+        | Effect::ImportAgentSession { agent_id, .. }
+        | Effect::NewSession { agent_id, .. } => agent_id,
         _ => "",
     }
 }
@@ -102,7 +104,8 @@ fn mark_retried(mut command: Effect) -> Effect {
     if let Effect::SetMode { retried, .. }
     | Effect::SetModel { retried, .. }
     | Effect::ListSessions { retried, .. }
-    | Effect::ImportAgentSession { retried, .. } = &mut command
+    | Effect::ImportAgentSession { retried, .. }
+    | Effect::NewSession { retried, .. } = &mut command
     {
         *retried = true;
     }
@@ -186,27 +189,42 @@ fn whole_number(text: &str, code: &str) -> bool {
     })
 }
 
-/// `isAuthRetriableSessionError`: the explicit auth-required signal, or a
-/// failure `classifySetupError` files under `auth`, in its order.
-pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
+/// The `classifySetupError` categories the model acts on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SetupCategory {
+    /// Several sign-in methods and none chosen.
+    MultiAuth,
+    Auth,
+    Spawn,
+    Provider,
+    /// A broken stream or connection: the process cannot be reused.
+    Transport,
+    Other,
+}
+
+/// `classifySetupError`'s category, in its order: the ambiguous code, the
+/// auth-required signal, a signed-out Account, a definite rejection, a
+/// provider code, then the wording.
+pub(crate) fn setup_category(error: &HostError) -> SetupCategory {
     let code = error.code.as_deref();
     if code == Some(host_error::AMBIGUOUS_AUTH) {
-        return false;
+        return SetupCategory::MultiAuth;
     }
     if code == Some(host_error::AUTH_REQUIRED) || error.message.starts_with("ACP_AUTH_REQUIRED") {
-        return true;
+        return SetupCategory::Auth;
     }
     if error.is(&host_error::SIGNED_OUT) {
-        return true;
+        return SetupCategory::Auth;
     }
-    if error.is(&host_error::DEFINITE_SPAWN_REJECTION)
-        || code.is_some_and(|code| host_error::PROVIDER.contains(&code))
-    {
-        return false;
+    if error.is(&host_error::DEFINITE_SPAWN_REJECTION) {
+        return SetupCategory::Spawn;
+    }
+    if code.is_some_and(|code| host_error::PROVIDER.contains(&code)) {
+        return SetupCategory::Provider;
     }
     let text = error.message.to_ascii_lowercase();
     if ENOENT.iter().any(|needle| text.contains(needle)) || on_a_line(&text, "spawn", "fail") {
-        return false;
+        return SetupCategory::Spawn;
     }
     let pipe = find_with(&text, "pipe", |rest| {
         rest.chars().next().is_none_or(|c| !word(c))
@@ -215,14 +233,25 @@ pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
         || pipe
         || on_a_line(&text, "connection", "timed out");
     if transport {
-        return false;
+        return SetupCategory::Transport;
     }
-    AUTH.iter().any(|needle| text.contains(needle))
+    let auth = AUTH.iter().any(|needle| text.contains(needle))
         || joined(&text, "sign", "in")
         || joined(&text, "api", "key")
         || text.contains("not logged in")
         || whole_number(&text, "401")
-        || whole_number(&text, "403")
+        || whole_number(&text, "403");
+    if auth {
+        SetupCategory::Auth
+    } else {
+        SetupCategory::Other
+    }
+}
+
+/// `isAuthRetriableSessionError`: a failure `classifySetupError` files
+/// under `auth`.
+pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
+    setup_category(error) == SetupCategory::Auth
 }
 
 /// `withAuthRetry` logs a retry that went through.
@@ -291,6 +320,7 @@ impl State {
             Effect::ImportAgentSession {
                 import, session_id, ..
             } => self.on_import_session_failed(import, session_id, error, fx),
+            Effect::NewSession { create, .. } => self.on_create_failed(create, error, fx),
             command => match command.run() {
                 Some(run) => self.on_run_command(run, Some(error.message), fx),
                 None => fx.push(Effect::rejected_by(&error)),
@@ -583,6 +613,13 @@ impl State {
         match outcome {
             Ok(true) => fx.push(mark_retried(waiting.command)),
             Ok(false) => self.control_rejected(waiting.command, waiting.first_error, fx),
+            // `session/new` is the picker surface: the launcher lists the
+            // methods. Every other call shows text.
+            Err(AuthFailure::Ambiguous(message))
+                if matches!(waiting.command, Effect::NewSession { .. }) =>
+            {
+                self.control_rejected(waiting.command, HostError::ambiguous(message), fx);
+            }
             Err(AuthFailure::Ambiguous(_)) => {
                 let error = HostError::new(PICKER_UNAVAILABLE.into(), None);
                 self.control_rejected(waiting.command, error, fx);

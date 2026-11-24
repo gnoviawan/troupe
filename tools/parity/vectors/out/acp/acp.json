@@ -175120,5 +175120,4918 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_adds_the_chat_and_persists_it",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 37700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 37700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_keeps_the_active_chat",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s6",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ],
+     "cwd": "/work/sub"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": "s1",
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 37800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      null,
+      {
+       "kind": "chat"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s6"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s6"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s6": {
+       "id": "s6",
+       "agentId": "agent-1",
+       "cwd": "/work/sub",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "kind": "chat"
+      }
+     },
+     "messages": {
+      "s6": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s1",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 37800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_starts_the_registry_servers_the_agent_can_run",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [],
+     "capabilities": {
+      "mcpCapabilities": {
+       "http": true
+      }
+     }
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "a",
+     "name": "Files",
+     "command": "files-mcp"
+    },
+    {
+     "id": "b",
+     "name": "Web",
+     "type": "http",
+     "url": "https://mcp.example/web"
+    },
+    {
+     "id": "c",
+     "name": "Events",
+     "type": "sse",
+     "url": "https://mcp.example/sse"
+    },
+    {
+     "id": "d",
+     "name": "Off",
+     "command": "off",
+     "enabled": false
+    }
+   ],
+   "book": {
+    "seq": 37900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "toast",
+      "level": "warning",
+      "message": "Some MCP servers were skipped"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [
+       {
+        "type": "stdio",
+        "name": "Files",
+        "command": "files-mcp",
+        "args": [],
+        "env": []
+       },
+       {
+        "type": "http",
+        "name": "Web",
+        "url": "https://mcp.example/web",
+        "headers": []
+       }
+      ],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 2,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [],
+       "capabilities": {
+        "mcpCapabilities": {
+         "http": true
+        }
+       }
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "a",
+       "name": "Files",
+       "command": "files-mcp"
+      },
+      {
+       "id": "b",
+       "name": "Web",
+       "type": "http",
+       "url": "https://mcp.example/web"
+      },
+      {
+       "id": "c",
+       "name": "Events",
+       "type": "sse",
+       "url": "https://mcp.example/sse"
+      },
+      {
+       "id": "d",
+       "name": "Off",
+       "command": "off",
+       "enabled": false
+      }
+     ],
+     "book": {
+      "seq": 37900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_starts_every_server_before_the_agent_reports_capabilities",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "mcpServers": [
+    {
+     "id": "b",
+     "name": "Web",
+     "type": "http",
+     "url": "https://mcp.example/web",
+     "headers": []
+    }
+   ],
+   "book": {
+    "seq": 38000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [
+       {
+        "type": "http",
+        "name": "Web",
+        "url": "https://mcp.example/web",
+        "headers": []
+       }
+      ],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 1,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "mcpServers": [
+      {
+       "id": "b",
+       "name": "Web",
+       "type": "http",
+       "url": "https://mcp.example/web",
+       "headers": []
+      }
+     ],
+     "book": {
+      "seq": 38000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_sends_the_project_roots_worktree_and_quick_kind",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work",
+     "worktrees": [
+      {
+       "path": "/wt/a"
+      },
+      {
+       "path": "relative"
+      },
+      {
+       "path": "/wt/a"
+      },
+      {
+       "path": "C:\\wt"
+      }
+     ]
+    }
+   ],
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [],
+     "capabilities": {
+      "sessionCapabilities": {
+       "additionalDirectories": {}
+      }
+     }
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1",
+      {
+       "worktreePath": "/wt/a",
+       "worktreeBranch": "feat",
+       "kind": "quick",
+       "promotable": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": true,
+      "projectId": "p1",
+      "worktreePath": "/wt/a",
+      "worktreeBranch": "feat",
+      "additionalDirectories": [
+       "/wt/a",
+       "C:\\wt"
+      ],
+      "sessionKind": "quick"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "__unassigned__",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "worktreePath": "/wt/a",
+       "worktreeBranch": "feat",
+       "kind": "quick"
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [],
+       "capabilities": {
+        "sessionCapabilities": {
+         "additionalDirectories": {}
+        }
+       }
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_merges_what_events_set_during_the_call",
+  "context": {
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "s5",
+      "modes": {
+       "currentModeId": "ask",
+       "availableModes": [
+        {
+         "id": "ask"
+        },
+        {
+         "id": "code"
+        }
+       ]
+      },
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      },
+      "configOptions": [
+       {
+        "id": "effort",
+        "name": "Effort",
+        "category": "thought_level",
+        "type": "select",
+        "currentValue": "low",
+        "options": [
+         {
+          "value": "low",
+          "name": "Low"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionCreated",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5",
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modeId": "code",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentWorking",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5",
+       "working": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.agentWorking",
+      "message": "Agent started working on session s5 outside a prompt turn"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "modeId": "code",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null,
+       "agentWorking": true
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [],
+       "updatedAt": 1700000002000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000004000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": true,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         },
+         {
+          "id": "ask"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "code",
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code"
+         },
+         {
+          "id": "ask"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000004000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_keeps_a_title_and_close_set_during_the_call",
+  "context": {
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "s5",
+      "modes": {
+       "currentModeId": "ask",
+       "availableModes": [
+        {
+         "id": "ask"
+        },
+        {
+         "id": "code"
+        }
+       ]
+      },
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      },
+      "configOptions": [
+       {
+        "id": "effort",
+        "name": "Effort",
+        "category": "thought_level",
+        "type": "select",
+        "currentValue": "low",
+        "options": [
+         {
+          "value": "low",
+          "name": "Low"
+         }
+        ]
+       }
+      ],
+      "cwd": ""
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionCreated",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionInfoUpdate",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5",
+       "title": "Named"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": "Named",
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionClosed",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "closed",
+       "title": "Named",
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000005000
+      }
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": "Named",
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000005000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_keeps_a_turn_opened_during_the_call",
+  "context": {
+   "agentReplies": [
+    {
+     "hold": true,
+     "release": {
+      "sessionId": "s5",
+      "modes": {
+       "currentModeId": "ask",
+       "availableModes": [
+        {
+         "id": "ask"
+        },
+        {
+         "id": "code"
+        }
+       ]
+      },
+      "models": {
+       "currentModelId": "m1",
+       "availableModels": [
+        {
+         "modelId": "m1",
+         "name": "M1"
+        }
+       ]
+      },
+      "configOptions": [
+       {
+        "id": "effort",
+        "name": "Effort",
+        "category": "thought_level",
+        "type": "select",
+        "currentValue": "low",
+        "options": [
+         {
+          "value": "low",
+          "name": "Low"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onSessionCreated",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "refreshSessionIndex"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onUserPrompt",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s5",
+       "content": [
+        {
+         "type": "text",
+         "text": "hi"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "",
+       "projectId": "",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000003000,
+        "seq": 38401
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38401,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000004000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000002000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": [
+       {
+        "id": "msg-id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "hi"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000003000,
+        "seq": 38401
+       }
+      ]
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000004000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38401,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_ephemeral_is_not_persisted_or_activated",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38500,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1",
+      {
+       "ephemeral": true,
+       "backendEphemeral": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38500,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_lookup_of_an_ephemeral_session_fails",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "lookup": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1",
+      {
+       "ephemeral": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.createSession.lookup",
+      "message": "session/new for agent agent-1 was answered by entity lookup (session s5) but the session is ephemeral; it cannot be reopened from history"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: The temporary session could not be confirmed after the connection dropped. Try again."
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38600,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_lookup_of_a_host_ephemeral_session_fails",
+  "context": {
+   "agentReplies": [
+    {
+     "sessionId": "s5",
+     "lookup": true
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38700,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1",
+      {
+       "backendEphemeral": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": true,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.createSession.lookup",
+      "message": "session/new for agent agent-1 was answered by entity lookup (session s5) but the session is ephemeral; it cannot be reopened from history"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: The temporary session could not be confirmed after the connection dropped. Try again."
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38700,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_signs_in_on_demand_and_retries",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "ACP_AUTH_REQUIRED: sign in first"
+    },
+    null,
+    {
+     "sessionId": "s5",
+     "modes": {
+      "currentModeId": "ask",
+      "availableModes": [
+       {
+        "id": "ask"
+       },
+       {
+        "id": "code"
+       }
+      ]
+     },
+     "models": {
+      "currentModelId": "m1",
+      "availableModels": [
+       {
+        "modelId": "m1",
+        "name": "M1"
+       }
+      ]
+     },
+     "configOptions": [
+      {
+       "id": "effort",
+       "name": "Effort",
+       "category": "thought_level",
+       "type": "select",
+       "currentValue": "low",
+       "options": [
+        {
+         "value": "low",
+         "name": "Low"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth",
+       "type": "agent"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38800,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/new reported auth required; authenticating on demand"
+     },
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "claude": "oauth"
+      }
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/new succeeded after authenticate-on-demand"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s5"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1",
+          "description": null
+         }
+        ]
+       },
+       "modelOption": null,
+       "updatedAt": 1700000001000
+      }
+     },
+     {
+      "kind": "readComposerOptions",
+      "configId": "claude"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s5"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s5": {
+       "id": "s5",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "creationOptionDefaults": {
+        "modeId": "ask",
+        "modelId": "m1",
+        "configValues": {
+         "effort": "low"
+        }
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s5": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {
+      "claude": {
+       "models": {
+        "currentModelId": "m1",
+        "availableModels": [
+         {
+          "modelId": "m1",
+          "name": "M1"
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask"
+         },
+         {
+          "id": "code"
+         }
+        ]
+       },
+       "configOptions": [
+        {
+         "id": "effort",
+         "name": "Effort",
+         "category": "thought_level",
+         "type": "select",
+         "currentValue": "low",
+         "options": [
+          {
+           "value": "low",
+           "name": "Low"
+          }
+         ]
+        }
+       ],
+       "updatedAt": 1700000001000
+      }
+     },
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": "s5",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth",
+         "type": "agent"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38800,
+      "historyWatermarks": {},
+      "mcpSharedSync": true,
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "claude": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_shows_the_picker_for_several_methods",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "ACP_AUTH_REQUIRED: sign in first"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      },
+      {
+       "id": "key",
+       "name": "key"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 38900,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/new reported auth required; authenticating on demand"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "AmbiguousAuthError: This agent advertises multiple sign-in methods (oauth, key). Troupe does not choose one automatically; pick one of the methods below to sign in."
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        },
+        {
+         "id": "key",
+         "name": "key"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 38900,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_forgets_the_sign_in_when_the_retry_fails",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "ACP_AUTH_REQUIRED: sign in first"
+    },
+    null,
+    {
+     "reject": "HTTP 401 unauthorized"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 39000,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/new reported auth required; authenticating on demand"
+     },
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "claude": "oauth"
+      }
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp-store.withAuthRetry",
+      "message": "session/new failed again after the authenticate-on-demand retry"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {}
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: HTTP 401 unauthorized"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 39000,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_evicts_the_agent_on_a_broken_connection",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "stream closed by peer"
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 39100,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "killAgent",
+      "agentId": "agent-1"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: stream closed by peer"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {},
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {},
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 39100,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_rejects_after_a_failed_eviction_kill",
+  "context": {
+   "agentReplies": [
+    null,
+    {
+     "reject": "connection reset"
+    },
+    {
+     "reject": "no such agent"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": [
+      {
+       "id": "oauth",
+       "name": "oauth"
+      }
+     ]
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 39200,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "authenticateAgent",
+     "args": [
+      "agent-1",
+      "oauth"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "authenticate",
+      "agentId": "agent-1",
+      "methodId": "oauth"
+     },
+     {
+      "kind": "persistAuthMethods",
+      "methods": {
+       "claude": "oauth"
+      }
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 39200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true,
+      "authenticatedAgents": [
+       "agent-1"
+      ],
+      "rememberedAuthMethods": {
+       "claude": "oauth"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "killAgent",
+      "agentId": "agent-1"
+     },
+     {
+      "kind": "actionRejected",
+      "message": "Error: connection reset"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": [
+        {
+         "id": "oauth",
+         "name": "oauth"
+        }
+       ]
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 39200,
+      "historyWatermarks": {},
+      "mcpSharedSync": true,
+      "rememberedAuthMethods": {
+       "claude": "oauth"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_rejects_a_definite_refusal_as_is",
+  "context": {
+   "agentReplies": [
+    {
+     "reject": "the agent binary is missing",
+     "code": "agent_unavailable"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "book": {
+    "seq": 39300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "additionalDirectories": []
+     },
+     {
+      "kind": "actionRejected",
+      "message": "AcpTransportError: the agent binary is missing"
+     }
+    ],
+    "state": {
+     "sessions": {},
+     "messages": {},
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "book": {
+      "seq": 39300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

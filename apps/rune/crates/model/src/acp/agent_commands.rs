@@ -13,6 +13,7 @@
 use serde_json::{Map, Value, json};
 
 use super::auth_retry::AuthFailure;
+use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::host_error::HostError;
@@ -30,6 +31,17 @@ fn present(value: Option<&Value>) -> Option<&Value> {
 
 fn flight_key(agent_id: &str, method_id: &str) -> String {
     format!("{agent_id}\0{method_id}")
+}
+
+/// Who asked for a kill, which its outcome moves on.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Killer {
+    /// The user's `killAgent`.
+    User,
+    /// The `ensureLiveAgent` whose spawn the kill cleans up.
+    Ensure(EnsureId),
+    /// The `createSession` whose broken connection discards the process.
+    Evict(CreateId),
 }
 
 impl State {
@@ -108,13 +120,8 @@ impl State {
         });
     }
 
-    pub(crate) fn kill_agent(
-        &mut self,
-        agent_id: String,
-        ensure: Option<EnsureId>,
-        fx: &mut Vec<Effect>,
-    ) {
-        fx.push(Effect::KillAgent { agent_id, ensure });
+    pub(crate) fn kill_agent(&mut self, agent_id: String, by: Killer, fx: &mut Vec<Effect>) {
+        fx.push(Effect::KillAgent { agent_id, by });
     }
 
     pub(crate) fn authenticate_agent(
@@ -230,6 +237,7 @@ impl State {
         &mut self,
         command: Effect,
         reply: Value,
+        env: &mut super::Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
         match command {
@@ -248,16 +256,22 @@ impl State {
                 super::auth_retry::note_retry_succeeded(&command, fx);
                 self.on_session_imported(import, session_id, fx);
             }
+            Effect::NewSession { create, .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_session_new(create, &reply, env, fx);
+            }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
                     self.on_ensure_spawned(ensure, agent_id, fx);
                 }
             }
-            Effect::KillAgent { agent_id, ensure } => {
+            Effect::KillAgent { agent_id, by } => {
                 self.on_agent_killed(&agent_id);
-                if let Some(ensure) = ensure {
-                    self.finish_spawn(ensure, Ok(None), fx);
+                match by {
+                    Killer::User => {}
+                    Killer::Ensure(ensure) => self.finish_spawn(ensure, Ok(None), fx),
+                    Killer::Evict(create) => self.on_create_evicted(create, fx),
                 }
             }
             Effect::Authenticate {
@@ -300,7 +314,9 @@ impl State {
         let mut waiters = 0;
         let mut message = message;
         match command {
-            Effect::ListSessions { .. } | Effect::ImportAgentSession { .. } => {
+            Effect::ListSessions { .. }
+            | Effect::ImportAgentSession { .. }
+            | Effect::NewSession { .. } => {
                 return self.on_session_call_failed(command, HostError::new(message, code), fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {
@@ -310,11 +326,15 @@ impl State {
                     return self.finish_spawn(ensure, Err(HostError::new(message, code)), fx);
                 }
             }
-            // The ensure's cleanup kill is best effort.
+            // The ensure's cleanup kill and the eviction are best effort.
             Effect::KillAgent {
-                ensure: Some(ensure),
+                by: Killer::Ensure(ensure),
                 ..
             } => return self.finish_spawn(ensure, Ok(None), fx),
+            Effect::KillAgent {
+                by: Killer::Evict(create),
+                ..
+            } => return self.on_create_evicted(create, fx),
             Effect::Authenticate {
                 agent_id,
                 method_id,

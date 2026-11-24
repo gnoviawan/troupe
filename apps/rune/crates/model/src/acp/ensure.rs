@@ -463,7 +463,7 @@ impl State {
             config.get("id").and_then(Value::as_str) == Some(spawn.launch_id.as_str())
         });
         if !still_configured {
-            return self.kill_agent(agent_id, Some(id), fx);
+            return self.kill_agent(agent_id, super::Killer::Ensure(id), fx);
         }
         book.signatures
             .insert(agent_id.clone(), spawn.signature.clone());

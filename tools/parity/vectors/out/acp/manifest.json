@@ -350,7 +350,24 @@
         "import_agent_sessions_of_nothing_still_reloads_the_index",
         "import_agent_sessions_stops_before_the_next_session",
         "import_agent_sessions_without_a_sign_in_keeps_the_first_error",
-        "import_agent_sessions_signs_in_on_demand"
+        "import_agent_sessions_signs_in_on_demand",
+        "create_session_adds_the_chat_and_persists_it",
+        "create_session_keeps_the_active_chat",
+        "create_session_starts_the_registry_servers_the_agent_can_run",
+        "create_session_starts_every_server_before_the_agent_reports_capabilities",
+        "create_session_sends_the_project_roots_worktree_and_quick_kind",
+        "create_session_merges_what_events_set_during_the_call",
+        "create_session_keeps_a_title_and_close_set_during_the_call",
+        "create_session_keeps_a_turn_opened_during_the_call",
+        "create_session_ephemeral_is_not_persisted_or_activated",
+        "create_session_lookup_of_an_ephemeral_session_fails",
+        "create_session_lookup_of_a_host_ephemeral_session_fails",
+        "create_session_signs_in_on_demand_and_retries",
+        "create_session_shows_the_picker_for_several_methods",
+        "create_session_forgets_the_sign_in_when_the_retry_fails",
+        "create_session_evicts_the_agent_on_a_broken_connection",
+        "create_session_rejects_after_a_failed_eviction_kill",
+        "create_session_rejects_a_definite_refusal_as_is"
       ]
     }
   }

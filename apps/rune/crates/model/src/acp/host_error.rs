@@ -8,11 +8,26 @@
 pub(crate) struct HostError {
     pub message: String,
     pub code: Option<String>,
+    /// The class `String(error)` prints, when the model made the error.
+    pub name: Option<&'static str>,
 }
 
 impl HostError {
     pub(crate) fn new(message: String, code: Option<String>) -> Self {
-        Self { message, code }
+        Self {
+            message,
+            code,
+            name: None,
+        }
+    }
+
+    /// `AmbiguousAuthError`: the sign-in picker lists the methods.
+    pub(crate) fn ambiguous(message: String) -> Self {
+        Self {
+            message,
+            code: Some(AMBIGUOUS_AUTH.into()),
+            name: Some("AmbiguousAuthError"),
+        }
     }
 
     /// The `/ws` code, or the desktop message tag, of one of `verdicts`.

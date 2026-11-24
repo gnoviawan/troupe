@@ -228,6 +228,33 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      PR 8), the reopen and restore invalidation (history open), and the
      launch cancellation a delete during a launch leaves (`finalizeChatLaunch`,
      PR 8).
+   - 6c, `createSession` (R6a-6, `acp/create.rs`). The call is the
+     `newSession` effect (the `kind` option is `sessionKind`, since `kind`
+     names the effect), answered by `agentCommandDone` with the host's
+     reply or `agentCommandFailed`; the action answers `actionResolved`
+     with the session id. Without explicit servers it starts the enabled
+     registry servers the agent can run (`selectMcpServersForAgent`; all of
+     them before the agent reports capabilities) and toasts the skipped
+     ones. It sends the Project's folder and worktrees as extra roots to an
+     agent that advertises `additionalDirectories`. A `session/new` refused
+     for a sign-in goes through `withAuthRetry` on the picker surface: an
+     agent with several methods and none remembered rejects with
+     `AmbiguousAuthError`, which the launcher's picker reads. The reply
+     rebuilds the chat record, keeping what events set while the call ran
+     (title, a closed status, the open turn, the creation baseline,
+     `createdAt`, the host's `agent_working`); a non-ephemeral chat is
+     persisted and becomes the active one if none is; the options cache is
+     filled either way. A failure the setup classifier files under
+     `transport` forgets the agent's sign-in and kills it (`killAgent`
+     with `Killer::Evict`) before the caller sees the error; one under
+     `auth` forgets the sign-in. A resend the host answered from its
+     records (`lookup`) fails for an ephemeral session; for any other it
+     answers with the session id but does not open it yet: history open
+     does that, and it is not ported. Not here: the registry server
+     fingerprints (`recordRegistryMcpServers`, read by the warm-pool
+     claim), `ephemeralSessionIds` (PR 8), the reopen generation
+     (`invalidateSessionReopen`, history open) and `pendingRestartVersions`
+     (the agent update slice).
    - 6b, rest. History open, `loadOlderMessages` (it needs the composer
      unit's wire-to-display reversal for its twin folding and the switch
      bands of PR 9), the resubscribe install, live-turn reattach.

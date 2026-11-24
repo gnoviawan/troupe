@@ -331,6 +331,21 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(cursor === undefined ? {} : { cursor }),
           ...(projectId === undefined ? {} : { projectId })
         }),
+      // The `kind` option is `sessionKind`: `kind` names the effect.
+      newSession: (
+        agentId: string,
+        cwd: string,
+        mcpServers: unknown[],
+        { kind, ...options }: Record<string, unknown> = {}
+      ) =>
+        agentCommand({
+          kind: 'newSession',
+          agentId,
+          cwd,
+          mcpServers,
+          ...options,
+          ...(kind === undefined ? {} : { sessionKind: kind })
+        }),
       importAgentSession: (input: Record<string, unknown>) =>
         agentCommand({ kind: 'importAgentSession', ...input }),
       closeSession: (agentId: string, sessionId: string) =>

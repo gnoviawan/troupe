@@ -127,6 +127,8 @@ pub enum Event {
     ReadvertiseWaitOver(RunId),
     #[serde(rename = "spawnAgent")]
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
+    #[serde(rename = "createSession")]
+    CreateSession(super::create::CreateRequest),
     #[serde(rename = "killAgent")]
     KillAgent(String),
     #[serde(rename = "discoverSessions")]

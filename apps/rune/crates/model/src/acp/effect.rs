@@ -5,8 +5,8 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::FlightId;
 use super::auth_retry::{AuthRetryId, OnDemand};
+use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::host_error::HostError;
@@ -16,6 +16,7 @@ use super::restore::RunId;
 use super::turn::TurnEnd;
 use super::types::Object;
 use super::window::PayloadRead;
+use super::{FlightId, Killer};
 use crate::Level;
 
 /// What a step asks the world to do. The caller runs these in order.
@@ -148,9 +149,8 @@ pub enum Effect {
     /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
     KillAgent {
         agent_id: String,
-        /// The `ensureLiveAgent` whose spawn this kill cleans up.
         #[serde(skip_serializing)]
-        ensure: Option<EnsureId>,
+        by: Killer,
     },
     /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
     Authenticate {
@@ -298,6 +298,30 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Send `session/new`; then `AgentCommandDone` with the new session
+    /// (`lookup` set when a resend was answered from the host's records),
+    /// or `AgentCommandFailed`.
+    NewSession {
+        agent_id: String,
+        cwd: String,
+        mcp_servers: Vec<Value>,
+        ephemeral: bool,
+        promotable: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        worktree_path: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        worktree_branch: Option<String>,
+        /// `quick` for a quick chat.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        session_kind: Option<String>,
+        additional_directories: Vec<Value>,
+        #[serde(skip_serializing)]
+        create: CreateId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
     /// Send `session/list` for one page of the agent's sessions in `cwd`;
     /// then `AgentCommandDone` with the page, or `AgentCommandFailed`.
     ListSessions {
@@ -380,6 +404,7 @@ impl Effect {
                 | Self::SetModel { retried: true, .. }
                 | Self::ListSessions { retried: true, .. }
                 | Self::ImportAgentSession { retried: true, .. }
+                | Self::NewSession { retried: true, .. }
         )
     }
 
@@ -411,10 +436,10 @@ impl Effect {
     /// `String(error)` prints it: an `AcpTransportError` when the host sent
     /// a code, else an `Error`.
     pub(crate) fn rejected_by(error: &HostError) -> Self {
-        let name = if error.code.is_some() {
-            "AcpTransportError"
-        } else {
-            "Error"
+        let name = match (error.name, &error.code) {
+            (Some(name), _) => name,
+            (None, Some(_)) => "AcpTransportError",
+            (None, None) => "Error",
         };
         Self::ActionRejected {
             message: format!("{name}: {}", error.message),

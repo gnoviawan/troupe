@@ -166,7 +166,7 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
 const importStop = { requested: false }
 
 /** Actions whose answer the caller reads: it is the `actionResolved` effect. */
-const RESOLVES = new Set(['listImportableSessions', 'importAgentSessions'])
+const RESOLVES = new Set(['listImportableSessions', 'importAgentSessions', 'createSession'])
 
 export const acpRecorder: StoreRecorder = {
   store: 'acp',
@@ -347,6 +347,7 @@ import { agentScenarios } from './acp-scenarios-agents'
 import { authRetryScenarios } from './acp-scenarios-auth-retry'
 import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
+import { createScenarios } from './acp-scenarios-create'
 import { discoveryScenarios } from './acp-scenarios-discovery'
 import { ensureScenarios } from './acp-scenarios-ensure'
 import { importScenarios } from './acp-scenarios-import'
@@ -382,5 +383,6 @@ export const acpScenarios = [
   ...ensureScenarios,
   ...authRetryScenarios,
   ...discoveryScenarios,
-  ...importScenarios
+  ...importScenarios,
+  ...createScenarios
 ]

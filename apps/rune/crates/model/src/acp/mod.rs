@@ -17,6 +17,7 @@ mod auth_retry_tests;
 mod clamp;
 mod close;
 pub mod controls;
+mod create;
 mod diff_stat;
 mod discovery;
 mod effect;
@@ -63,8 +64,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::Ids;
-pub use agent_commands::FlightId;
+pub use agent_commands::{FlightId, Killer};
 use approvals::{PendingElicitation, PendingPermission, PendingQuestion};
+pub use create::{CreateOptions, CreateRequest};
 pub use effect::Effect;
 pub use ensure::{EnsureId, Holder};
 pub use event::Event;
@@ -296,6 +298,9 @@ pub struct Book {
     /// The `session/list` discoveries in flight, by key.
     #[serde(skip)]
     pub(crate) discoveries: BTreeMap<String, discovery::Discovery>,
+    /// The `session/new` calls in flight.
+    #[serde(skip)]
+    pub(crate) creates: create::CreateBook,
     /// The import listings and imports in flight.
     #[serde(skip)]
     pub(crate) imports: import::ImportBook,
@@ -464,7 +469,8 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::SpawnAgent(config, project_id, session_id) => {
             state.spawn_agent(config, Some(project_id), session_id, None, &mut fx);
         }
-        Event::KillAgent(agent_id) => state.kill_agent(agent_id, None, &mut fx),
+        Event::KillAgent(agent_id) => state.kill_agent(agent_id, Killer::User, &mut fx),
+        Event::CreateSession(request) => state.create_session(request, &mut fx),
         Event::PrewarmAgent(config_id, cwd) => {
             let options = ensure::EnsureOptions {
                 register_warm_ui: true,
@@ -487,7 +493,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::CompleteBrowserAuth(agent_id) => state.complete_browser_auth(&agent_id, &mut fx),
         Event::AgentCommandDone(command, reply) => {
-            state.on_agent_command_done(command, reply, &mut fx);
+            state.on_agent_command_done(command, reply, env, &mut fx);
         }
         Event::AgentCommandFailed(command, message, code) => {
             state.on_agent_command_failed(command, message, code, &mut fx);
