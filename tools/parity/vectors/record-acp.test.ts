@@ -2,13 +2,16 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  configReplies,
   dispatchOutcomes,
   drawId,
   emit,
   type Manifest,
   manifestEntry,
   OUT_DIR,
+  openChatTabs,
   recordVector,
+  sourcesOutsideWorkflow,
   storeText,
   type Vector,
   writeOut
@@ -41,7 +44,11 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     await importOriginal<typeof import('../../../src/renderer/lib/acp-history-persistence')>()
   return {
     ...actual,
-    loadSessionIndex: async () => [],
+    // The index reload is the host's; its answer arrives as its own event.
+    loadSessionIndex: () => {
+      emit({ kind: 'refreshSessionIndex' })
+      return new Promise(() => {})
+    },
     saveSessionIndex: async () => {},
     saveSessionPayload: async () => {},
     queueSessionPayloadSave: async () => {},
@@ -70,9 +77,19 @@ vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
     flushPendingWrites: async () => undefined
   }
 }))
+// One tree holds a chat tab per `context.openChatTabs` session; the index
+// prune's tab removal is the model's `closeChatTab` effect.
 vi.mock(`${renderer}/stores/workspace-store`, () => ({
-  getAllLeafPanes: () => [],
-  getAllTreeRoots: () => [],
+  getAllLeafPanes: () => [
+    {
+      tabs: [...openChatTabs].map((sessionId) => ({
+        type: 'agent-chat',
+        id: `chat-${sessionId}`,
+        sessionId
+      }))
+    }
+  ],
+  getAllTreeRoots: () => [{}],
   // A consent ticket asks for its chat tab; the vector keeps the ask, as the
   // model's `revealChatTab` effect, and finds no pane.
   findPaneContainingTab: (_root: unknown, tabId: string) => {
@@ -80,12 +97,13 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     return null
   },
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
-  getAgentChatSessionIdsInAllTrees: () => new Set<string>(),
+  getAgentChatSessionIdsInAllTrees: () => new Set(openChatTabs),
   useWorkspaceStore: {
     subscribe: () => () => {},
     getState: () => ({
       addAgentChatTab: () => {},
-      removeTab: () => {},
+      removeTab: (tabId: string) =>
+        emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
       remapAgentChatSession: () => {},
       root: { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
     })
@@ -149,7 +167,20 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
         dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId),
       sendPromptBlocks: dispatchPrompt,
       cancelPrompt: async (agentId: string, sessionId: string) =>
-        emit({ kind: 'cancelPrompt', agentId, sessionId })
+        emit({ kind: 'cancelPrompt', agentId, sessionId }),
+      setMode: async (agentId: string, sessionId: string, modeId: string) =>
+        emit({ kind: 'setMode', agentId, sessionId, modeId }),
+      setModel: async (agentId: string, sessionId: string, modelId: string) =>
+        emit({ kind: 'setModel', agentId, sessionId, modelId }),
+      setConfigOption: async (
+        agentId: string,
+        sessionId: string,
+        configId: string,
+        value: unknown
+      ) => {
+        emit({ kind: 'setConfigOption', agentId, sessionId, configId, value })
+        return configReplies.shift() ?? null
+      }
     }
   }
 })
@@ -163,6 +194,8 @@ vi.mock(`${renderer}/stores/acp-store/model-catalog`, async (importOriginal) => 
 }))
 vi.mock(`${renderer}/stores/acp-store/composer-options`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  persistComposerOptions: (configId: string, patch: unknown) =>
+    emit({ kind: 'persistComposerOptions', configId, patch }),
   readComposerOptions: async (configId: string) => {
     emit({ kind: 'reapplyComposerOptions', configId })
     return null
@@ -179,6 +212,9 @@ describe('acp test vectors', () => {
     vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(drawId)
     const recorded: Vector[] = []
     for (const scenario of acpScenarios) recorded.push(await recordVector(acpRecorder, scenario))
+    for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
+      expect(sourcesOutsideWorkflow(acpRecorder.sources, file), `${file} paths`).toEqual([])
+    }
     const manifest: Manifest = { stores: { acp: manifestEntry(acpRecorder, recorded) } }
     const byStore = new Map([['acp', recorded]])
     if (write) {

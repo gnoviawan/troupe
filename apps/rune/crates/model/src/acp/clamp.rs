@@ -47,7 +47,7 @@ fn hint(value: Option<&Value>) -> Option<Value> {
     (js::len(text) > TITLE_CHARS).then(|| json!(format!("{}…", js::head(text, TITLE_CHARS))))
 }
 
-fn log_key(tool_call_id: &str) -> String {
+pub(crate) fn log_key(tool_call_id: &str) -> String {
     if js::len(tool_call_id) > TITLE_CHARS {
         format!("{}…", js::head(tool_call_id, TITLE_CHARS))
     } else {

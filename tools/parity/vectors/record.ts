@@ -70,6 +70,12 @@ export const reads = new Map<string, unknown>()
 /** How the mocked prompt dispatches answer, in order; a vector's `context.dispatch`. */
 export const dispatchOutcomes: unknown[] = []
 
+/** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
+export const configReplies: unknown[] = []
+
+/** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
+export const openChatTabs = new Set<string>()
+
 /** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
 export const readFailures = new Map<string, string>()
 
@@ -140,6 +146,22 @@ export function sourceHash(repoPath: string): string {
 export interface Manifest {
   /** Per store: the hashes of its sources and its vector names, in `out/<store>.json`. */
   stores: Record<string, { sources: Record<string, string>; vectors: string[] }>
+}
+
+/**
+ * Repo paths that no `paths:` glob of a workflow's `pull_request` trigger
+ * matches. Both workflows must run on a PR that changes a pinned source:
+ * parity-vectors re-records the vectors, and rune replays them in Rust and
+ * fails while a source is newer than its manifest hash.
+ */
+export function sourcesOutsideWorkflow(
+  sources: string[],
+  file: 'parity-vectors.yml' | 'rune.yml'
+): string[] {
+  const workflow = readFileSync(join(REPO_ROOT, '.github/workflows', file), 'utf8')
+  const block = workflow.split(/^\s+paths:\n/m)[1]?.split(/^\s+[a-z_]+:/m)[0] ?? ''
+  const globs = [...block.matchAll(/^\s+- '([^']+)'$/gm)].map(([, glob]) => new Bun.Glob(glob))
+  return sources.filter((source) => !globs.some((glob) => glob.match(source)))
 }
 
 export function manifestEntry(

@@ -174,14 +174,60 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
    "Sending as two steps" below.
 6. Session lifecycle and history. Created, closed, index load, history open,
    live window, eviction, the resubscribe install of pending prompts, the
-   cancel of running subagents, live-turn reattach.
-7. Agent roster, auth and browser.
+   cancel of running subagents, live-turn reattach. Split in two:
+   - 6a (R6a-2). `session_created` (the stub, the advertised options added
+     to a known session, the creation baseline, the options cache),
+     `session_closed` (the old-process guard, the cancel of running
+     subagents, prompts and warm slots dropped, the transcript kept for an
+     open tab or freed), `setActiveSession` and `markResumeFailed`. The
+     desktop's index reload is the `refreshSessionIndex` effect; the tabs a
+     chat shows are `Book::open_chat_tabs`, which the app keeps equal to the
+     workspace. A close (and a disconnect that empties a chat) persists
+     first and frees the transcript only after: `persistSession` comes
+     before `dropSessionTranscript`, which the app sends back as an event
+     once the persist read the state.
+   - 6b, first part (R6a-2). `applySessionIndexSnapshot`, the answer to
+     `refreshSessionIndex`: the host's rows merged with the local
+     projection (`mergeSessionIndexEntries`), live turns stamped, the
+     placeholder titles of live chats replaced by the index's, handoff
+     titles cleaned, and the tabs of chats neither live nor indexed closed
+     (`closeChatTab`). Not here: the untitled-counter rebase (it only
+     names chats `createSession` makes, PR 8) and the dropped-launch
+     recovery (PR 8). Events apply in order, so the load generation guard
+     has no counterpart.
+   - 6b, rest. History open, live window and eviction, the resubscribe
+     install, live-turn reattach.
+7. Agent roster, auth and browser. Split in two:
+   - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
+     browser-open is promoted), `agent_error` (the turn ends, the provider
+     failure text, the rejected rate limit, an auth-required agent marked),
+     `agent_crashed` (the chats die, launch markers and warm slots go,
+     running subagents end), `agent_disconnected` (a kill, reap or close
+     drops the agent and its reuse keys; a crash keeps `error`), the
+     browser-open and sign-in prompts and `clearPendingSignIn`. Not yet:
+     the one-shot collectors (PR 10), the warm-pool drop of an empty
+     session (PR 8), and the auth flight that lets the first browser open
+     of a sign-in open by itself (`authenticateAgent`, 7b).
+   - 7b. Spawn, kill, sign-in, logout and `authenticateAgent` (effects with
+     outcome events, as sending does), the roster watch, browser tabs.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
-    the client crate's command ledger.
+    the client crate's command ledger. Split in two:
+    - 11a (R6a-2). `setMode`, `setModel` and `setConfigOption` as two steps,
+      like sending: the action returns the set command, and the app hands
+      the same effect back as `controlSet` once the agent acknowledged it,
+      with the agent's option snapshot. The acknowledgement applies the
+      value (the echo guard spares the option just set), updates the index
+      row and the options cache, and saves the pick
+      (`persistComposerOptions`, with the per-model values of a scoped
+      option). Not yet: the re-auth retry (`withAuthRetry`, 7b), the pick
+      marks a reopen restore reads (`noteUserPick`), and the drop of a
+      warm-pool session's pick (PR 8).
+    - 11b. `pickModel`, the saved-pick heal, the reopen restore, and the
+      prompt reconcile.
 
 ### Sending as two steps
 
@@ -230,11 +276,31 @@ so the replay drops `retryQueueAfter` before it compares.
   re-auth after an expired token, the armed agent switch (PR 9), and
   send-now's 5 s wait timeout.
 
+On a closed session the model does not yet run the reload hand-off
+(`reloadInFlight`, PR 9), the one-shot collectors (PR 10) or the drop of an
+empty warm-pool session (`ephemeralSessionIds`, PR 8).
+
+## CI
+
+`.github/workflows/parity-vectors.yml` records every store's vectors on a PR
+that touches `src/renderer/**`, `src/shared/**`, the lockfile or the vectors,
+and fails when `out/` is stale. A renderer change that changes what a store
+does fails its own PR there; the re-recorded files then trigger the Rune
+workflow, whose replay fails until the Rust follows. The Rune workflow
+also runs on a PR that changes a pinned source, so its staleness test fails
+on that PR and not on a later, unrelated Rune PR. Each recorder checks that
+its pinned sources match a path glob of both workflows.
+
 ## Recorder limits
 
 - The TypeScript clamp log remembers ids across vectors, and only a stored
   call's id can be forgotten from outside. Vectors that log a clamp use ids
   no other vector uses.
+- The recorder's transport is a stub whose `historyMode` is `tauri_store`
+  (the desktop) or, with `context.serverHistory`, `server`. A relay
+  (`live_only`) client skips the index reload the way the server one does;
+  the model folds both into `Env::server_history`.
+- `context.openChatTabs` lists the sessions a chat tab shows.
 - The TypeScript seq counter only moves up, so each vector starts on the next
   hundred and records the start in `book.seq`. Adding a scenario shifts the
   seqs of the ones after it; re-record and commit the whole file.

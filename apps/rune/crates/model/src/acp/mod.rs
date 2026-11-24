@@ -6,14 +6,20 @@
 //! [`step`] applies one event and returns the effects the app runs. The model
 //! reads no clock and draws no randomness: [`Env`] carries both.
 
+pub mod agents;
 pub mod approvals;
 mod clamp;
 pub mod controls;
+mod index;
 pub mod js;
 #[cfg(test)]
 mod js_tests;
+mod picks;
 mod plan;
 pub mod prompt;
+pub mod session;
+#[cfg(test)]
+mod session_tests;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -26,12 +32,18 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{Ids, Level};
+use agents::{
+    AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
+    AgentSpawnedEvent, BrowserOpenRequestEvent,
+};
 use approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
+use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
@@ -74,6 +86,23 @@ pub struct State {
     /// Reuse key (config, cwd, project) to the live agent running it, in the
     /// order the keys were added.
     pub config_to_live_agent: Object,
+    /// The chat the window shows.
+    pub active_session_id: Option<String>,
+    /// Warm-slot key to the prepared session it holds.
+    pub prepared_sessions: BTreeMap<String, String>,
+    /// Per session, the durable in-chat agent switch markers.
+    pub agent_switches: BTreeMap<String, Vec<Value>>,
+    /// Registered agent processes: capabilities, auth methods, host auth.
+    pub agents: BTreeMap<String, Value>,
+    /// Per agent, the sign-in the user is asked for (a browser page or an
+    /// agent's own prompt).
+    pub pending_sign_in: BTreeMap<String, Value>,
+    /// Per agent, the sign-in URL the app may open without a click.
+    pub auto_open_browser_url: BTreeMap<String, Value>,
+    /// Sessions whose launch is in flight.
+    pub launching_session_ids: BTreeMap<String, Value>,
+    /// Per `agentId\0cwd`, the agent's own sessions found on disk.
+    pub discovered_sessions: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -121,6 +150,13 @@ pub struct Book {
     /// Send-nows waiting for the turn they stopped, by session.
     #[serde(skip)]
     pub send_now: BTreeMap<String, SendNow>,
+    /// Sessions a chat tab shows, in any project's tree. The app keeps this
+    /// equal to the workspace; a closed session it lists keeps its transcript.
+    #[serde(skip)]
+    pub open_chat_tabs: BTreeSet<String>,
+    /// Browser-open URLs caught before their agent registered, oldest first.
+    #[serde(skip)]
+    pub early_browser_opens: VecDeque<(String, String)>,
 }
 
 impl Book {
@@ -228,6 +264,46 @@ pub enum Event {
     AgentWorking(AgentWorkingEvent),
     #[serde(rename = "_onBackgroundCommands")]
     BackgroundCommands(BackgroundCommandsEvent),
+    #[serde(rename = "_onSessionCreated")]
+    SessionCreated(SessionCreatedEvent),
+    #[serde(rename = "_onSessionClosed")]
+    SessionClosed(SessionClosedEvent),
+    #[serde(rename = "_onAgentSpawned")]
+    AgentSpawned(AgentSpawnedEvent),
+    #[serde(rename = "_onAgentError")]
+    AgentError(AgentFailureEvent),
+    #[serde(rename = "_onAgentCrashed")]
+    AgentCrashed(AgentFailureEvent),
+    #[serde(rename = "_onAgentDisconnected")]
+    AgentDisconnected(AgentDisconnectedEvent),
+    #[serde(rename = "_onBrowserOpenRequest")]
+    BrowserOpenRequest(BrowserOpenRequestEvent),
+    #[serde(rename = "_onAgentSignInRequest")]
+    AgentSignInRequest(AgentSignInRequestEvent),
+    #[serde(rename = "_onAgentSignInResolved")]
+    AgentSignInResolved(AgentSignInResolvedEvent),
+    /// The persist a [`Effect::DropSessionTranscript`] waited for ran.
+    #[serde(rename = "dropSessionTranscript")]
+    DropSessionTranscript(String),
+    #[serde(rename = "applySessionIndexSnapshot")]
+    ApplySessionIndexSnapshot(Vec<Object>),
+    #[serde(rename = "setMode")]
+    SetMode(String, String),
+    #[serde(rename = "setModel")]
+    SetModel(String, String, #[serde(default)] Option<PickOptions>),
+    #[serde(rename = "setConfigOption")]
+    SetConfigOption(String, String, Value, #[serde(default)] Option<PickOptions>),
+    /// The agent acknowledged a set command an `Effect::SetMode`, `SetModel`
+    /// or `SetConfigOption` sent; the reply is a `SetConfigOption`'s option
+    /// snapshot, when the agent sent one.
+    #[serde(skip_deserializing)]
+    ControlSet(Effect, Option<Vec<Value>>),
+    #[serde(rename = "clearPendingSignIn")]
+    ClearPendingSignIn(String),
+    #[serde(rename = "setActiveSession")]
+    SetActiveSession(Option<String>),
+    #[serde(rename = "markResumeFailed")]
+    MarkResumeFailed(String, String),
     #[serde(rename = "sendPrompt")]
     SendPrompt(String, String),
     #[serde(rename = "sendPromptBlocks")]
@@ -307,6 +383,50 @@ pub enum Effect {
     },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
+    /// Send `session/set_mode`, then `Event::ControlSet` with this effect.
+    SetMode {
+        agent_id: String,
+        session_id: String,
+        mode_id: String,
+    },
+    /// Send `session/set_model`, then `Event::ControlSet` with this effect.
+    SetModel {
+        agent_id: String,
+        session_id: String,
+        model_id: String,
+        #[serde(skip_serializing)]
+        persist: bool,
+        /// The id of the session's model-category option when it was sent.
+        #[serde(skip_serializing)]
+        model_option: Option<Value>,
+    },
+    /// Send `session/set_config_option`, then `Event::ControlSet` with this
+    /// effect and the agent's option snapshot.
+    SetConfigOption {
+        agent_id: String,
+        session_id: String,
+        config_id: String,
+        value: Value,
+        #[serde(skip_serializing)]
+        persist: bool,
+        /// The model the session ran when the value was sent.
+        #[serde(skip_serializing)]
+        model_at_request: Option<String>,
+        #[serde(skip_serializing)]
+        is_model: bool,
+    },
+    /// Free the session's transcript once the `PersistSession` before this
+    /// effect has read it: send `Event::DropSessionTranscript` before the
+    /// next event.
+    DropSessionTranscript { session_id: String },
+    /// Close the chat tab of this session in every project's tree: the chat
+    /// is neither live nor in the index, so the tab could show nothing.
+    CloseChatTab { session_id: String },
+    /// Merge this patch into the config's saved composer picks.
+    PersistComposerOptions { config_id: String, patch: Value },
+    /// Reload the chat index from the desktop's history store, then send
+    /// what it read as `applySessionIndexSnapshot`.
+    RefreshSessionIndex,
     /// Read the user's saved picks for the config and apply the ones the
     /// session still offers.
     ReapplyComposerOptions {
@@ -356,6 +476,30 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, env, &mut fx),
         Event::AgentWorking(event) => state.on_agent_working(event, env, &mut fx),
         Event::BackgroundCommands(event) => state.on_background_commands(event),
+        Event::SessionCreated(event) => state.on_session_created(event, env, &mut fx),
+        Event::SessionClosed(event) => state.on_session_closed(event, env, &mut fx),
+        Event::AgentSpawned(event) => state.on_agent_spawned(event),
+        Event::AgentError(event) => state.on_agent_error(event, env, &mut fx),
+        Event::AgentCrashed(event) => state.on_agent_crashed(event, env, &mut fx),
+        Event::AgentDisconnected(event) => state.on_agent_disconnected(event, env, &mut fx),
+        Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
+        Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
+        Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
+        Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
+        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
+        Event::SetModel(session_id, model_id, options) => {
+            state.set_model(session_id, model_id, options, &mut fx);
+        }
+        Event::SetConfigOption(session_id, config_id, value, options) => {
+            state.set_config_option(session_id, config_id, value, options, &mut fx);
+        }
+        Event::ControlSet(command, reply) => state.on_control_set(command, reply, env, &mut fx),
+        Event::ClearPendingSignIn(agent_id) => state.clear_pending_sign_in(&agent_id),
+        Event::SetActiveSession(session_id) => state.active_session_id = session_id,
+        Event::MarkResumeFailed(session_id, reason) => {
+            state.mark_resume_failed(&session_id, &reason);
+        }
         Event::TurnEnd(end) => state.on_turn_end(end, env, &mut fx),
         Event::SendPrompt(session_id, text) => {
             let blocks = vec![serde_json::json!({ "type": "text", "text": text })];
