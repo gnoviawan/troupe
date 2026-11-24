@@ -360,7 +360,8 @@ fn chat_row(s: &State, t: &'static Tokens, chat: &Chat) -> El {
     let c = &t.colors;
     let hovered = s.rail.hovered_chat.as_deref() == Some(chat.session_id.as_str())
         || s.rail.chat.as_deref() == Some(&chat.session_id);
-    let (hover_id, menu_id, more_id) = (
+    let (hover_id, menu_id, more_id, open_id) = (
+        chat.session_id.clone(),
         chat.session_id.clone(),
         chat.session_id.clone(),
         chat.session_id.clone(),
@@ -428,7 +429,7 @@ fn chat_row(s: &State, t: &'static Tokens, chat: &Chat) -> El {
                 s.rail.hovered_chat = None;
             }
         })
-        .on_press(|s: &mut State| s.toast_later("Opening a chat"))
+        .on_press(move |s: &mut State| s.open_chat(&open_id))
         .on_secondary_press(move |s: &mut State, at: PointerPress, _tx: &mut Tx| {
             s.open_chat_menu(&menu_id, at)
         })

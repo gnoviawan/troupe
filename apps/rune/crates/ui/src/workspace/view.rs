@@ -27,6 +27,8 @@ pub struct Slots<'a> {
     pub leading: Vec<El>,
     /// What a pane with no tab shows (the launcher greeting).
     pub empty: &'a dyn Fn() -> El,
+    /// The body of a tab the app draws itself (a chat), or None for the placeholder.
+    pub tab: &'a dyn Fn(&Tab) -> Option<El>,
     pub dark: bool,
 }
 
@@ -38,6 +40,7 @@ struct Ctx<'a, S> {
     t: &'static Tokens,
     geometry: Rc<Geometry>,
     dark: bool,
+    tab: &'a dyn Fn(&Tab) -> Option<El>,
 }
 
 fn content_key(pane: &str) -> String {
@@ -91,6 +94,7 @@ pub fn view<S: 'static>(
         t,
         geometry: Rc::new(geometry(ws, cx)),
         dark: slots.dark,
+        tab: slots.tab,
     };
     let tree = &ws.store.tree;
     let fullscreen = tree
@@ -272,7 +276,7 @@ fn pane<S: 'static>(
         .fill(t.colors.terminal_bg)
         .clip_rounded(0.0)
         .child(match active_tab(leaf) {
-            Some(tab) => placeholder(ctx, tab),
+            Some(tab) => (ctx.tab)(tab).unwrap_or_else(|| placeholder(ctx, tab)),
             None => col().w_full().grow(1.0).min_h(0.0).center().child(empty()),
         });
     let dragging = ws.drag.as_ref().filter(|d| d.moving);

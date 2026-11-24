@@ -9,10 +9,9 @@ description = "Troupe's base components (components/ui) for the Rune client."
 rune = { workspace = true }
 theme = { path = "../theme" }
 model = { path = "../model" }
-rune-kit = { workspace = true }
-
-[dev-dependencies]
+rune-kit = { workspace = true, features = ["markdown", "mermaid"] }
 serde_json = { workspace = true }
+
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = { workspace = true }

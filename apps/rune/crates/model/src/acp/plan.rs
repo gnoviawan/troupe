@@ -54,8 +54,8 @@ fn leaves(tool: &Object) -> Vec<String> {
     .collect()
 }
 
-/// `isPlanToolCall`.
-fn is_plan_tool(tool: &Object) -> bool {
+/// `isPlanToolCall`: the plan lives in the plan panel, so the transcript draws no card for it.
+pub fn is_plan_tool(tool: &Object) -> bool {
     tool.get("planTool") == Some(&Value::Bool(true))
         || leaves(tool)
             .iter()
