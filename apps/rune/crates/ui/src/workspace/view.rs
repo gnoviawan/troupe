@@ -537,6 +537,8 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
             Side::After => line.pin(None, Some(4.0), Some(0.0), Some(4.0)),
         });
     }
+    let (select_pane, select_tab) = (leaf.id.clone(), tab_id.clone());
+    chrome = chrome.on_press(move |s: &mut S| lens(s).select(&select_pane, &select_tab));
     let pane_id = leaf.id.clone();
     let geometry = Rc::clone(&ctx.geometry);
     chrome.on_drag(move |s: &mut S, d: &mut Drag, _: &mut Tx| {
@@ -571,9 +573,7 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
                 if d.cancelled() {
                     return;
                 }
-                if !drag.moving {
-                    ws.select(&pane_id, &tab_id);
-                } else if let Some(target) = &drag.target {
+                if let Some(target) = drag.target.as_ref().filter(|_| drag.moving) {
                     ws.drop_tab(&drag.tab, &drag.source, target);
                 }
             }
