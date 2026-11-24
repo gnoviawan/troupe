@@ -32,7 +32,7 @@ import { logFrontendError } from '@/lib/log-api'
 import { markPlanTool, planEventHasList, plansAfterToolCall } from '@/lib/plan-session'
 import { wireBlocksToDisplay } from '@/lib/skills-wire-reverse'
 import { dismissSettledChildApprovals } from '../child-approvals'
-import { forgetComposerSession } from '../composer-options'
+import { forgetComposerSession, persistComposerOptions } from '../composer-options'
 import {
   acceptsSessionTranscriptEvents,
   cacheOptionsFromSession,
@@ -1681,8 +1681,10 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
   // A legacy-only session's model switch (Hermes Agent `session/set_model`):
   // the host sends the whole list, so it replaces the session's copy on every
   // client, not only the one that picked. The switch is one the agent just
-  // accepted, so only the options cache is refreshed: the persisted-pick heal
-  // would switch this client's chat back to its older saved model.
+  // accepted, so only the options cache is refreshed (the persisted-pick heal
+  // would switch the chat back to an older saved model), and the accepted
+  // model is saved, so a later heal on this client (a mode or options
+  // update) reads it instead of the older pick.
   _onModelsUpdate: (e) => {
     set((s) => {
       const session = s.sessions[e.sessionId]
@@ -1693,7 +1695,9 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
         sessionIndex: withSessionModelOnIndex(s.sessionIndex, e.sessionId, next)
       }
     })
-    writeOptionsCacheFromSession(set, get, e.sessionId)
+    const configId = writeOptionsCacheFromSession(set, get, e.sessionId)
+    if (configId)
+      persistComposerOptions(configId, { modelId: e.models.currentModelId }, e.sessionId)
   },
 
   _onConfigOptionsUpdate: (e) => {

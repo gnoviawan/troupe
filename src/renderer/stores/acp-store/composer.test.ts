@@ -245,11 +245,14 @@ describe('acp-store: composer-selection persistence', () => {
       configToLiveAgent: { ...s.configToLiveAgent, [agentReuseKey('cfg-1', '/work')]: 'agent-9' }
     }))
     // This client's saved record still holds the model before the switch.
+    const stored: Record<string, unknown> = { 'agents/composer-options/cfg-1': { modelId: 'm1' } }
     mockPersistenceApi.read.mockImplementation(async (key: string) =>
-      key === 'agents/composer-options/cfg-1'
-        ? { success: true, data: { modelId: 'm1' } }
-        : { success: false }
+      key in stored ? { success: true, data: stored[key] } : { success: false }
     )
+    mockPersistenceApi.writeDebounced.mockImplementation(async (key: string, data: unknown) => {
+      stored[key] = data
+      return { success: true }
+    })
     ;(invoke as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
 
     useAcpStore.getState()._onModelsUpdate({
@@ -263,6 +266,21 @@ describe('acp-store: composer-selection persistence', () => {
     expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
     // The options cache still learns the new model.
     expect(useAcpStore.getState().agentOptionsCache['cfg-1']?.models?.currentModelId).toBe('m2')
+    // The accepted model is saved, so a later heal (here a mode update) reads
+    // it and leaves the agent on the switched model.
+    await vi.waitFor(() =>
+      expect(stored['agents/composer-options/cfg-1']).toEqual(
+        expect.objectContaining({ modelId: 'm2' })
+      )
+    )
+    useAcpStore.getState()._onModeUpdate({
+      agentId: 'agent-9',
+      sessionId: 'sess-legacy',
+      currentModeId: 'default'
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
+    expect(useAcpStore.getState().sessions['sess-legacy'].models?.currentModelId).toBe('m2')
   })
 
   it('setMode persists the modeId to persistenceApi (debounced)', async () => {

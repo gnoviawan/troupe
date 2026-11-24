@@ -222,4 +222,13 @@ fn a_legacy_model_switch_from_the_host_is_not_healed_back() {
     );
     let value = serde_json::to_value(&state).expect("a state");
     assert_eq!(value["sessions"]["s1"]["models"]["currentModelId"], "m2");
+    // The accepted model is saved, so a later heal reads it.
+    assert!(
+        fx.iter().any(|e| matches!(
+            e,
+            Effect::PersistComposerOptions { config_id, patch }
+                if config_id == "cfg-1" && patch["modelId"] == "m2"
+        )),
+        "the switch is saved: {fx:?}"
+    );
 }

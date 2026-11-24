@@ -2,7 +2,7 @@
   "stores": {
     "acp": {
       "sources": {
-        "src/renderer/stores/acp-store/slices/transcript.ts": "d2ca013731faddcf11fec18f77f1f2c082b92ef7",
+        "src/renderer/stores/acp-store/slices/transcript.ts": "a62df1d45c950b7df6e308c71d14b6bf41511b8f",
         "src/renderer/stores/acp-store/helpers.ts": "19fbbe3098ad6885c5962458670577bfdc9889ce",
         "src/renderer/stores/acp-store/shared-state.ts": "9b60a0d9608a025c078043f1af8ce8577e0b6d52",
         "src/renderer/stores/acp-store/rate-limit.ts": "29fce98761782e12f4d2ac499bb3788453d50124",

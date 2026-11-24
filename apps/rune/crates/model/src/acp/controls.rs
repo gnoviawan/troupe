@@ -338,8 +338,9 @@ impl State {
 
     /// `_onModelsUpdate`: a legacy-only session's model switch carries the
     /// whole list, which replaces the session's copy. The agent accepted the
-    /// switch, so only the options cache is refreshed: the heal would switch
-    /// the chat back to an older saved model.
+    /// switch, so only the options cache is refreshed (the heal would switch
+    /// the chat back to an older saved model), and the accepted model is
+    /// saved, so a later heal reads it instead of the older pick.
     pub(crate) fn on_models_update(
         &mut self,
         event: ModelsUpdateEvent,
@@ -347,12 +348,20 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let session_id = event.session_id.as_str();
+        let model_id = event.models.get("currentModelId").cloned();
         if let Some(session) = self.sessions.get_mut(session_id) {
             session.rest.insert("models".into(), event.models);
             align_model_projection(session);
             self.set_index_model(session_id);
         }
-        self.cache_session_options(session_id, env, fx);
+        if let (Some(config_id), Some(model_id)) =
+            (self.cache_session_options(session_id, env, fx), model_id)
+        {
+            fx.push(Effect::PersistComposerOptions {
+                config_id,
+                patch: json!({ "modelId": model_id }),
+            });
+        }
     }
 
     pub(crate) fn on_config_options_update(
