@@ -1,3 +1,5 @@
+import type { BundledLanguage } from 'shiki'
+
 /**
  * Code the chat shows often, one sample per language: the scripted agent's own fences first,
  * then the common shapes of each language (imports, a type, a function, a call, literals,
@@ -5,7 +7,7 @@
  */
 
 export interface Sample {
-  lang: string
+  lang: BundledLanguage
   code: string
 }
 

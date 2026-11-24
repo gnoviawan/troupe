@@ -47,7 +47,7 @@ SAMPLES.forEach((sample, i) => {
   const web: string[] = []
   for (const line of highlighter.codeToTokensBase(sample.code, {
     lang: sample.lang,
-    theme: theme.name
+    theme
   })) {
     for (const token of line) for (const _ of token.content) web.push(norm(token.color ?? theme.fg))
     web.push(norm(theme.fg))
