@@ -163,7 +163,7 @@ fn main_area(
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
-        let tab = |tab: &model::workspace::Tab| crate::chat_view::tab_body(s, t, tab);
+        let tab = |tab: &model::workspace::Tab| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat);
         let slots = ui::workspace::Slots {
             leading,
             empty: &empty,
@@ -358,7 +358,7 @@ fn active_chat_tab(s: &State) -> Option<&model::workspace::Tab> {
 
 fn workspace_main(s: &State, t: &'static Tokens) -> El {
     if let Some(tab) = active_chat_tab(s) {
-        let body = crate::chat_view::tab_body(s, t, tab);
+        let body = crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Phone);
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).children(body);
     }
     if let Some(project) = s.active_project() {

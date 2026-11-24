@@ -41,7 +41,7 @@ fn hooks(s: &State) -> Hooks<State> {
 }
 
 /// The body of `tab` when the app draws it: a chat's transcript.
-pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
+pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::view::Place) -> Option<El> {
     let Tab::AgentChat { session_id, .. } = tab else {
         return None;
     };
@@ -53,7 +53,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
         )
     };
-    let composer = crate::composer_view::chat_dock(s, t, session_id);
+    let composer = crate::composer_view::chat_dock(s, t, session_id, place);
     Some(
         col()
             .key(format!("tab-body-{}", tab.id()))

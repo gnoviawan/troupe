@@ -18,6 +18,8 @@ use crate::sync::Pending;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Launch {
     pub project_id: String,
+    /// The stored config's id: the new chat's chip names it before its history says.
+    pub config_id: String,
     pub cwd: String,
     pub send: Send,
 }
@@ -40,10 +42,10 @@ impl State {
         };
         let picked = self.composer.picked.clone();
         let agents = &self.composer.agents;
-        let Some(config) = picked
+        let Some((config_id, config)) = picked
             .and_then(|id| agents.iter().find(|a| a.id == id))
             .or_else(|| agents.first())
-            .map(|a| spawn_config(&a.raw))
+            .map(|a| (a.id.clone(), spawn_config(&a.raw)))
         else {
             self.toast_error("No agent to start", "Add an agent in Settings first.");
             return;
@@ -56,12 +58,10 @@ impl State {
             .find(|p| &p.id == project_id)
             .and_then(|p| p.path.clone())
             .unwrap_or_default();
-        log::info!(
-            "[launch] starting {} in {project_id}",
-            config.get("id").and_then(Value::as_str).unwrap_or("?")
-        );
+        log::info!("[launch] starting {config_id} in {project_id}");
         self.composer.launching = Some(Launch {
             project_id: project_id.clone(),
+            config_id,
             cwd,
             send,
         });
@@ -121,6 +121,9 @@ impl State {
         self.composer
             .morphed
             .insert(session_id.clone(), launch.project_id.clone());
+        self.composer
+            .namespaces
+            .insert(session_id.clone(), format!("config:{}", launch.config_id));
         let host = Host::Launcher(launch.project_id);
         let draft = self.draft_mut(&host);
         draft.edit.clear();

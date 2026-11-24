@@ -137,6 +137,27 @@ impl State {
         }
     }
 
+    /// The foot row's checkout (`ChatStartContextRow`): a chat adds its project's branch when
+    /// the project has read one.
+    pub fn checkout_label(&self, host: &Host) -> String {
+        let branch = match host {
+            Host::Chat(_) => self.project_of(host).and_then(|id| {
+                self.projects
+                    .store
+                    .projects
+                    .iter()
+                    .find(|p| p.id == id)
+                    .and_then(|p| p.client.git_branch.clone())
+                    .filter(|b| !b.is_empty())
+            }),
+            Host::Launcher(_) => None,
+        };
+        match branch {
+            Some(branch) => format!("Current checkout · {branch}"),
+            None => "Current checkout".to_owned(),
+        }
+    }
+
     /// The agent a composer's chip names.
     pub fn agent_label(&self, host: &Host) -> Option<String> {
         self.shown_agent(host).map(|a| a.name.clone())
@@ -705,9 +726,13 @@ impl State {
         log::info!("[composer] {} agent configs", self.composer.agents.len());
     }
 
-    /// `readLastSelectedAgentId`: the saved pick counts only when its mode is `acp`.
+    /// `readLastSelectedAgentId`: the saved pick counts only when its mode is `acp`, and never
+    /// over an agent the user picked while the read was out.
     pub(crate) fn last_agent_loaded(&mut self, data: Option<Value>) {
         self.composer.picked_read = true;
+        if self.composer.picked.is_some() {
+            return;
+        }
         self.composer.picked = data
             .filter(|v| v.get("mode").and_then(Value::as_str) == Some("acp"))
             .and_then(|v| v.get("agentId").and_then(Value::as_str).map(str::to_owned));

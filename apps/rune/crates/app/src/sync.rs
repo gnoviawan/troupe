@@ -23,6 +23,8 @@ use crate::{Host, State};
 
 const ACTIVE_PROJECT_KEY: &str = "active-project";
 const PREFS_KEY: &str = "project-prefs";
+/// The code the link fails an unledgered call with when its socket drops.
+const CLOSED: &str = "closed";
 
 /// A key every device shares, written last-writer-wins on the host.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -170,13 +172,21 @@ impl State {
     /// The composers' agent reads (`acp/agents`, `agents/last-selected`), once the first
     /// workspace shows; asked again after a reconnect.
     pub(crate) fn read_agents(&mut self) {
-        if self.host.is_none() || self.composer.agents_asked || self.workspace.record().is_none() {
+        let down = matches!(self.status, Status::Reconnecting { .. } | Status::Halted { .. } | Status::Stopped);
+        if self.host.is_none() || down || self.composer.agents_asked || self.workspace.record().is_none() {
             return;
         }
         self.composer.agents_asked = true;
         self.call(WsRequestType::StoreRead, json!({ "key": "shared/lww/acp/agents" }), Pending::ReadAgents);
         let key = self.device_key("agents/last-selected");
         self.call(WsRequestType::StoreRead, json!({ "key": key }), Pending::ReadLastAgent);
+    }
+
+    /// A read the dropped socket failed (`closed`) is asked again once the link is live.
+    fn agents_read_lost(&mut self, e: &WsError) {
+        if e.code == CLOSED {
+            self.composer.agents_asked = false;
+        }
     }
 
     fn device_key(&self, key: &str) -> String {
@@ -357,13 +367,19 @@ impl State {
             },
             Pending::ReadAgents => match result {
                 Ok(reply) => self.agents_loaded(stored_value(reply)),
-                Err(e) => log::warn!("[app] reading the agent configs failed: {}", e.code),
+                Err(e) => {
+                    log::warn!("[app] reading the agent configs failed: {}", e.code);
+                    self.agents_read_lost(&e);
+                }
             },
             Pending::ReadLastAgent => match result {
                 Ok(reply) => self.last_agent_loaded(stored_value(reply)),
                 Err(e) => {
                     log::warn!("[app] reading the last agent failed: {}", e.code);
-                    self.last_agent_loaded(None);
+                    self.agents_read_lost(&e);
+                    if e.code != CLOSED {
+                        self.last_agent_loaded(None);
+                    }
                 }
             },
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
