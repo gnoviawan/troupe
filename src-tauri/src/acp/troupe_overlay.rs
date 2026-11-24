@@ -172,20 +172,100 @@ fn parse_brand_color(value: &Value) -> Option<AgentBrandColor> {
     })
 }
 
-/// Size cap plus an `<svg>` root with a `viewBox`. Markup safety is the
-/// renderer's sanitizer's job; this only refuses what can never render.
-pub fn is_acceptable_icon(svg: &str) -> bool {
+/// Why an overlay icon is refused, or `None` when it may ship to the
+/// renderer: the size cap, an `<svg>` root with a `viewBox`, and no markup
+/// that could restyle the app or reach the network once inlined. The renderer
+/// sanitizes again before it draws.
+pub fn icon_rejection(svg: &str) -> Option<&'static str> {
     if svg.len() > MAX_ICON_BYTES {
-        return false;
+        return Some("no <svg> root");
     }
     let lower = svg.to_ascii_lowercase();
     let Some(start) = lower.find("<svg") else {
-        return false;
+        return Some("over the size cap");
     };
     let Some(end) = lower[start..].find('>') else {
-        return false;
+        return Some("no <svg> root");
     };
-    lower[start..start + end].contains("viewbox")
+    if !lower[start..start + end].contains("viewbox") {
+        return Some("no viewBox on the <svg> root");
+    }
+    for (tag, reason) in [
+        ("<style", "a <style> element"),
+        ("<image", "an <image> element"),
+        ("<foreignobject", "a <foreignObject> element"),
+        ("<script", "a <script> element"),
+    ] {
+        if lower.contains(tag) {
+            return Some(reason);
+        }
+    }
+    if has_anchor_tag(&lower) {
+        return Some("an <a> element");
+    }
+    if has_event_handler(&lower) {
+        return Some("an on* event handler");
+    }
+    if has_external_href(&lower) {
+        return Some("an href that is not a #fragment");
+    }
+    if has_external_url(&lower) {
+        return Some("a url() that is not a #fragment");
+    }
+    None
+}
+
+fn is_tag_name_end(byte: Option<&u8>) -> bool {
+    byte.is_none_or(|byte| byte.is_ascii_whitespace() || *byte == b'>' || *byte == b'/')
+}
+
+fn has_anchor_tag(lower: &str) -> bool {
+    lower
+        .match_indices("<a")
+        .any(|(at, _)| is_tag_name_end(lower.as_bytes().get(at + 2)))
+}
+
+/// An attribute named `on<letters>` followed by `=`.
+fn has_event_handler(lower: &str) -> bool {
+    let bytes = lower.as_bytes();
+    lower.match_indices("on").any(|(at, _)| {
+        let separated = at > 0 && (bytes[at - 1].is_ascii_whitespace() || bytes[at - 1] == b'/');
+        if !separated {
+            return false;
+        }
+        let rest = &bytes[at + 2..];
+        let letters = rest
+            .iter()
+            .take_while(|byte| byte.is_ascii_alphabetic())
+            .count();
+        letters > 0
+            && rest[letters..]
+                .iter()
+                .find(|byte| !byte.is_ascii_whitespace())
+                .is_some_and(|byte| *byte == b'=')
+    })
+}
+
+/// The first character of a value after skipping whitespace and quotes.
+fn value_start(rest: &str) -> Option<char> {
+    rest.chars()
+        .find(|c| !c.is_ascii_whitespace() && *c != '"' && *c != '\'')
+}
+
+/// `href=` / `xlink:href=` whose value does not start with `#`.
+fn has_external_href(lower: &str) -> bool {
+    lower.match_indices("href").any(|(at, _)| {
+        let rest = lower[at + 4..].trim_start();
+        rest.strip_prefix('=')
+            .is_some_and(|value| value_start(value) != Some('#'))
+    })
+}
+
+/// `url(` whose argument does not start with `#`.
+fn has_external_url(lower: &str) -> bool {
+    lower
+        .match_indices("url(")
+        .any(|(at, _)| value_start(&lower[at + 4..]) != Some('#'))
 }
 
 fn parse_override(value: &Value) -> Option<AgentOverride> {
@@ -201,11 +281,13 @@ fn parse_override(value: &Value) -> Option<AgentOverride> {
         .filter(|name| !name.is_empty() && name.chars().count() <= MAX_NAME_CHARS)
         .map(str::to_string);
     let icon = match value.get("icon").and_then(Value::as_str) {
-        Some(svg) if is_acceptable_icon(svg) => Some(svg.to_string()),
-        Some(_) => {
-            warn(&format!("override {id}: icon dropped (not an svg with a viewBox, or over {MAX_ICON_BYTES} bytes)"));
-            None
-        }
+        Some(svg) => match icon_rejection(svg) {
+            None => Some(svg.to_string()),
+            Some(reason) => {
+                warn(&format!("override {id}: icon dropped ({reason})"));
+                None
+            }
+        },
         None => None,
     };
     let brand_color = match value.get("brandColor") {

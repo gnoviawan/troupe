@@ -244,3 +244,91 @@ fn a_cache_with_an_unknown_schema_falls_back_to_the_bundled_copy() {
     let service = TroupeOverlayService::with_fetch(root.path(), fetch);
     assert_eq!(service.current().source, OverlaySource::Bundled);
 }
+
+#[test]
+fn icons_that_restyle_the_app_or_reach_the_network_are_refused() {
+    let cases = [
+        (
+            r#"<svg viewBox="0 0 4 4"><style>body{display:none}</style><path d="M0 0h4v4z"/></svg>"#,
+            "a <style> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><image href="https://evil.example/ping.png"/></svg>"#,
+            "an <image> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><a href="https://evil.example"><path d="M0 0h4v4z"/></a></svg>"#,
+            "an <a> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><a><path d="M0 0h4v4z"/></a></svg>"#,
+            "an <a> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><foreignObject><div>x</div></foreignObject></svg>"#,
+            "a <foreignObject> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><script>alert(1)</script></svg>"#,
+            "a <script> element",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4" onload="alert(1)"><path d="M0 0h4v4z"/></svg>"#,
+            "an on* event handler",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><use xlink:href="https://evil.example/s.svg#x"/></svg>"#,
+            "an href that is not a #fragment",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><use href = 'data:image/svg+xml,x'/></svg>"#,
+            "an href that is not a #fragment",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><path fill="url(https://evil.example/p)" d="M0 0h4v4z"/></svg>"#,
+            "a url() that is not a #fragment",
+        ),
+        (
+            r#"<svg viewBox="0 0 4 4"><path style="fill:URL( 'https://evil.example/p' )" d="M0 0h4v4z"/></svg>"#,
+            "a url() that is not a #fragment",
+        ),
+    ];
+    for (svg, reason) in cases {
+        assert_eq!(icon_rejection(svg), Some(reason), "{svg}");
+    }
+}
+
+#[test]
+fn fragment_references_and_plain_shapes_are_accepted() {
+    let svg = r##"<svg viewBox="0 0 24 24"><defs><linearGradient id="g"><stop offset="0" stop-color="#000"/></linearGradient><path id="p" d="M0 0h4v4z"/></defs><use href="#p"/><use xlink:href='#p'/><path fill="url(#g)" style="fill: url( '#g' )" d="M0 0h24v24z"/><title>Agent on top</title></svg>"##;
+    assert_eq!(icon_rejection(svg), None);
+    let animate = r#"<svg viewBox="0 0 4 4"><animate attributeName="opacity"/></svg>"#;
+    assert_eq!(icon_rejection(animate), None);
+}
+
+#[test]
+fn a_refused_icon_keeps_the_rest_of_its_override() {
+    let overlay = overlay_from(json!({
+        "schemaVersion": 1,
+        "overrides": [{
+            "id": "gemini",
+            "name": "Gemini",
+            "icon": "<svg viewBox=\"0 0 4 4\"><image href=\"https://evil.example/p.png\"/></svg>",
+            "brandColor": { "light": "#112233", "dark": "#445566" }
+        }]
+    }));
+    assert_eq!(
+        overlay.overrides,
+        vec![AgentOverride {
+            id: "gemini".into(),
+            name: Some("Gemini".into()),
+            hidden: false,
+            icon: None,
+            brand_color: Some(AgentBrandColor {
+                light: "#112233".into(),
+                dark: "#445566".into(),
+                gradient: None,
+            }),
+        }]
+    );
+}
