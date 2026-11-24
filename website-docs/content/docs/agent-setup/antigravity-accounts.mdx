@@ -63,24 +63,19 @@ Before a chat starts, the account button in the agent launcher is **Account for 
 
 If the project's environment variables set an absolute `GEMINI_HOME`, Antigravity uses that folder instead of the account you picked.
 
-## Watch your usage and limits
+## Usage and limits
 
-Antigravity gives each model its own quota, for example one for Gemini 3 Pro and one for Gemini 3 Flash. In **Settings** > **Provider**, each Antigravity account shows its plan and a bar for each model, how much of its quota is used, and when it resets.
+Troupe does not read Antigravity quotas, so **Settings** > **Provider** and the account button in the chat box do not show usage bars or percentages for Antigravity accounts. Troupe does not read or send the account's Google login. Only the Antigravity agent uses it.
 
-In an Antigravity chat, the account button in the chat box shows the model whose quota is the most used, for example `Gemini 3 Pro 42%`. The number turns yellow at 80% and red at 100%. Open the button to see each account's plan and its most used model.
-
-Troupe reads these numbers from Google with the account's saved login on the computer that runs Troupe. It does not save or show the login token. If Troupe cannot read them, the account shows no usage bars. The Default account on macOS keeps its login in the keychain, so Troupe does not show its usage.
+Troupe learns that an account reached its limit from the Antigravity agent. When a chat's turn ends with Antigravity's "Usage Limit Reached" message, Troupe marks that account as limited until the reset time the message gives.
 
 ## Switch accounts when you hit a limit
 
-During a chat, Troupe watches the quota of the account the chat uses.
-
-- When the account gets close to its quota, a notice at the top of the chat box shows how much it has used. If another account has room, the notice has a **Switch to** button with that account's name. Click the **×** button to dismiss the notice.
-- When Antigravity says the account reached its usage limit, the notice says so and when it resets.
+When Antigravity says the chat's account reached its usage limit, a notice at the top of the chat box says so and shows when the limit resets, if Antigravity said when.
 
 In the notice at the limit, you can:
 
-- Click **Switch to** _account_ **and continue**. Troupe moves this chat to that account and continues it with a short message. It does not send your last message again. Troupe suggests the account with the most room left.
+- Click **Switch to** _account_ **and continue**. Troupe moves this chat to that account and continues it with a short message. It does not send your last message again. Troupe suggests the first signed-in account in your list that has not reached a limit.
 - Click **Other account** to pick a different one.
 - Click **Continue when it resets** when no other account has room. Troupe continues the chat when the limit resets. Click **Cancel** to stop the wait.
 - Click **Add account** to sign in to another account.
