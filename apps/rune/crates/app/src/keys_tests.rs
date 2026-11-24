@@ -8,15 +8,17 @@ use crate::State;
 use crate::tests::{loaded, read_reply};
 
 /// The Rune key event the desktop build gets for a binding such as `ctrl+shift+p`: off macOS
-/// Ctrl also sets `cmd`, and a Ctrl letter arrives as `Key::Command`.
+/// Ctrl also sets `cmd`, and a Ctrl letter arrives as `Key::Command`; on macOS the Control key
+/// sets `ctrl` alone and its letter arrives as text.
 fn press(binding: &str) -> KeyEvent {
+    let mac = super::platform().mac;
     let mut mods = Mods::default();
     let mut name = "";
     for part in binding.split('+') {
         match part {
             "ctrl" => {
                 mods.ctrl = true;
-                mods.cmd = true;
+                mods.cmd = !mac;
             }
             "shift" => mods.shift = true,
             "alt" => mods.alt = true,
@@ -29,7 +31,7 @@ fn press(binding: &str) -> KeyEvent {
         "enter" => Key::Enter,
         "delete" => Key::Delete,
         "f2" => Key::Function(2),
-        n if n.len() == 1 && mods.ctrl && n.chars().all(|c| c.is_ascii_alphabetic()) => {
+        n if n.len() == 1 && mods.cmd && n.chars().all(|c| c.is_ascii_alphabetic()) => {
             Key::Command(n.chars().next().unwrap_or('a'))
         }
         n => Key::Text(n.to_owned()),
