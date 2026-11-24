@@ -9,6 +9,7 @@ import {
   manifestEntry,
   OUT_DIR,
   recordVector,
+  sourcesOutsideWorkflow,
   storeText,
   type Vector,
   writeOut
@@ -179,6 +180,7 @@ describe('acp test vectors', () => {
     vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(drawId)
     const recorded: Vector[] = []
     for (const scenario of acpScenarios) recorded.push(await recordVector(acpRecorder, scenario))
+    expect(sourcesOutsideWorkflow(acpRecorder.sources), 'parity-vectors.yml paths').toEqual([])
     const manifest: Manifest = { stores: { acp: manifestEntry(acpRecorder, recorded) } }
     const byStore = new Map([['acp', recorded]])
     if (write) {

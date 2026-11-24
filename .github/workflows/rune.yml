@@ -15,7 +15,7 @@ name: Rune
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*"]
+    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*"]
     paths:
       - '.github/workflows/rune.yml'
       - 'apps/rune/**'
