@@ -1,6 +1,6 @@
 //! The shell frame. Desktop: rail | main area | side panel | tool strip (`ShellFrame`). Below
-//! the phone breakpoint the rail moves into a drawer behind a menu button, until the phone
-//! shell's own header, drawer and sheets are ported.
+//! the phone breakpoint the phone shell (`phone`) replaces it. Every open overlay mounts in one
+//! layer above the frame.
 
 use client::link::Status;
 use model::shell_layout::{self, Event as LayoutEvent, Tab};
@@ -11,31 +11,45 @@ use theme::icons as i;
 use ui::shell::{self, COLLAPSED_RAIL, PHONE_MAX_WIDTH, TOOL_STRIP};
 use ui::type_::{mono, sans};
 
-use crate::{DRAWER, Edge, Route, State};
+use crate::{Edge, Route, State};
 
 const ROOT: &str = "troupe-root";
 const RAIL_TOGGLE: &str = "Expand or collapse projects";
 
 pub fn view(s: &State, cx: &mut Cx<State>) -> El {
-    let t = theme::tokens(s.theme, true);
+    let t = s.tokens();
+    s.zoom.apply(cx);
     ui::overlay::history::sync(s.overlays.depth());
-    let phone = cx
-        .layout_size(ROOT)
-        .is_some_and(|[w, _]| w <= PHONE_MAX_WIDTH);
+    let size = cx.layout_size(ROOT);
+    let phone = size.is_some_and(|[w, _]| w <= PHONE_MAX_WIDTH);
+    let window = size.map_or((1280.0, 800.0), |[w, h]| (w, h));
     let root = row().key(ROOT).w_full().h_full().fill(t.colors.background);
     if let Route::NotFound(path) = &s.route {
         return root.child(not_found(t, path));
     }
-    if phone {
-        root.child(phone_frame(s, t))
+    let mut layer = Vec::new();
+    let root = if phone {
+        root.child(crate::phone::frame(s, t, workspace_main(s, t)))
     } else {
-        root.children(desktop_frame(s, t))
-    }
+        root.children(desktop_frame(s, t, &mut layer))
+    };
+    crate::rail_menus::build(s, t, &mut layer);
+    crate::rail_forms::build(s, t, &mut layer);
+    crate::phone::sheets(s, t, window, &mut layer);
+    crate::theme_picker::build(s, t, phone, &mut layer);
+    crate::keys::build(s, t, window.1, &mut layer);
+    layer.push(
+        row()
+            .key("toaster-layer")
+            .pin(None, Some(16.0), Some(16.0), None)
+            .child(s.toasts.build(t, |id| Box::new(move |s: &mut State| s.toasts.dismiss(id)))),
+    );
+    ui::overlay::root(root, layer)
 }
 
-fn desktop_frame(s: &State, t: &'static Tokens) -> Vec<El> {
+fn desktop_frame(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
     let expanded = s.layout.record.rail_expanded;
-    let mut parts = vec![rail(s, t, !expanded, s.width(Edge::Rail) as f32)];
+    let mut parts = vec![rail(s, t, !expanded, s.width(Edge::Rail) as f32, layer)];
     let mut shell_row = row()
         .key("shell-row")
         .grow(1.0)
@@ -60,146 +74,6 @@ fn rail_toggle(t: &Tokens, expanded: bool) -> El {
         .on_press(move |s: &mut State| {
             s.layout_step(LayoutEvent::SetRailExpanded(json!(!expanded)))
         })
-}
-
-fn select_project(s: &mut State, id: &str) {
-    s.projects_step(model::projects::Event::SelectProject(id.to_owned()));
-    s.overlays.close(DRAWER);
-    s.route = Route::Workspace;
-}
-
-/// The rail's body: navigation, the server's projects, quick chats, and the footer actions.
-/// `toggle` is false in the phone drawer, which the menu button opens instead.
-fn rail_body(s: &State, t: &'static Tokens, collapsed: bool, toggle: bool) -> El {
-    let active = s.active_project();
-    let has_project = active.is_some();
-    let can_canvas = active.is_some_and(|p| p.path.is_some());
-    let nav = col()
-        .w_full()
-        .pt(8.0)
-        .px(if collapsed { 0.0 } else { 8.0 })
-        .gap(1.0)
-        .child(
-            shell::nav_row(t, &i::CHAT_EDIT, "New chat", collapsed, !has_project)
-                .key("rail-new-chat"),
-        )
-        .child(shell::nav_row(t, &i::SEARCH_LIST, "Search", collapsed, false).key("rail-search"))
-        .child(shell::nav_row(t, &i::CANVAS, "Canvas", collapsed, !can_canvas).key("rail-canvas"))
-        .child(
-            shell::nav_row(
-                t,
-                &i::CALENDAR_CLOCK,
-                "Automations",
-                collapsed,
-                !has_project,
-            )
-            .key("rail-automations"),
-        );
-
-    let mut projects = col()
-        .w_full()
-        .px(if collapsed { 0.0 } else { 8.0 })
-        .gap(1.0)
-        .role("list")
-        .label("Projects");
-    for project in s
-        .projects
-        .store
-        .projects
-        .iter()
-        .filter(|p| p.is_archived != Some(true))
-    {
-        let is_active = active.is_some_and(|a| a.id == project.id);
-        let trailing = is_active.then(|| {
-            shell::rail_button(
-                t,
-                &i::PLUS,
-                &format!("New chat in {}", project.name),
-                20.0,
-                12.0,
-                false,
-            )
-        });
-        let id = project.id.clone();
-        projects = projects.child(
-            shell::project_row(
-                t,
-                &project.name,
-                &project.color,
-                is_active,
-                collapsed,
-                trailing,
-            )
-            .key(format!("project-item-{}", project.id))
-            .on_press(move |s: &mut State| select_project(s, &id)),
-        );
-    }
-
-    let mut body = col().w_full().grow(1.0).min_h(0.0).child(nav);
-    if collapsed {
-        body = body.child(el().h(22.0)).child(projects);
-    } else {
-        let add = shell::rail_button(
-            t,
-            &i::PLUS,
-            "Add project or folder group",
-            20.0,
-            12.0,
-            false,
-        );
-        body = body
-            .child(el().h(22.0))
-            .child(shell::section_header(t, "Projects", Some(add)))
-            .child(el().h(2.0))
-            .child(projects)
-            .child(el().h(12.0))
-            .child(shell::section_header(
-                t,
-                "Quick chats",
-                Some(shell::rail_button(
-                    t,
-                    &i::PLUS,
-                    "New quick chat",
-                    20.0,
-                    12.0,
-                    false,
-                )),
-            ));
-    }
-    let footer_button = |glyph, label: &str| shell::rail_button(t, glyph, label, 28.0, 14.0, false);
-    let footer_items = [
-        footer_button(&i::SLIDERS, "Settings"),
-        footer_button(&i::BUG, "Report a bug"),
-        footer_button(&i::PALETTE, "Color themes"),
-        footer_button(&i::KEYBOARD, "Keyboard shortcuts"),
-    ];
-    let footer = if collapsed {
-        col()
-            .w_full()
-            .items_center()
-            .gap(6.0)
-            .pb(10.0)
-            .children(footer_items)
-    } else {
-        row()
-            .w_full()
-            .px(14.0)
-            .gap(6.0)
-            .pb(10.0)
-            .children(footer_items)
-    };
-    col()
-        .w_full()
-        .h_full()
-        .child(shell::rail_header(
-            t,
-            collapsed,
-            (toggle && !collapsed).then(|| rail_toggle(t, true)),
-        ))
-        .child(body.scroll(rune::ScrollSpec {
-            stick_bottom: false,
-        }))
-        .child(footer)
 }
 
 /// A drag on a resizable edge: `sign` is +1 when moving right grows the part.
@@ -227,7 +101,7 @@ fn resize(edge: Edge, sign: f32) -> impl Fn(&mut State, &mut Drag, &mut Tx) + 's
     }
 }
 
-fn rail(s: &State, t: &'static Tokens, collapsed: bool, width: f32) -> El {
+fn rail(s: &State, t: &'static Tokens, collapsed: bool, width: f32, layer: &mut Vec<El>) -> El {
     let width = if collapsed { COLLAPSED_RAIL } else { width };
     let mut nav = col()
         .key("shell-rail")
@@ -237,7 +111,7 @@ fn rail(s: &State, t: &'static Tokens, collapsed: bool, width: f32) -> El {
         .h_full()
         .clip_rounded(0.0)
         .fill(t.colors.background)
-        .child(rail_body(s, t, collapsed, true));
+        .child(crate::rail_view::body(s, t, collapsed, (!collapsed).then(|| rail_toggle(t, true)), layer));
     if !collapsed {
         nav = nav.child(
             shell::resize_handle(t, "Resize projects rail")
@@ -426,72 +300,7 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
         .child(shell::connection_lamp(t, s.status == Status::Live))
 }
 
-/// Below the phone breakpoint: a header with the menu button and the project, the main area,
-/// and the rail as a drawer. The phone shell's own header and sheets replace it.
-fn phone_frame(s: &State, t: &'static Tokens) -> El {
-    let project = s
-        .active_project()
-        .map(|p| p.name.clone())
-        .unwrap_or_default();
-    let menu = shell::rail_button(t, &i::MENU, "Open navigation", 40.0, 16.0, false)
-        .key("phone-menu")
-        .on_press(|s: &mut State| s.overlays.open(DRAWER));
-    let header = row()
-        .key("phone-header")
-        .w_full()
-        .h(56.0)
-        .items_center()
-        .gap(8.0)
-        .px(8.0)
-        .border_sides([0.0, 0.0, 1.0, 0.0], t.colors.border)
-        .child(menu)
-        .child(
-            col()
-                .grow(1.0)
-                .min_w(0.0)
-                .child(
-                    text("Troupe")
-                        .font(sans(15.0, 500.0, 20.0))
-                        .color(t.colors.foreground),
-                )
-                .child(
-                    text(project)
-                        .font(sans(13.0, 400.0, 18.0))
-                        .color(t.colors.muted_foreground)
-                        .single_line()
-                        .truncate(),
-                ),
-        );
-    let mut frame = col().w_full().h_full().child(header).child(
-        col()
-            .key("workspace-main")
-            .grow(1.0)
-            .w_full()
-            .min_h(0.0)
-            .center()
-            .child(main_body(s, t)),
-    );
-    if s.overlays.is_open(DRAWER) {
-        frame = frame
-            .child(
-                el().key("drawer-scrim")
-                    .pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0))
-                    .fill(t.colors.overlay.alpha(0.6))
-                    .on_press(|s: &mut State| {
-                        s.overlays.close(DRAWER);
-                    }),
-            )
-            .child(
-                col()
-                    .key(DRAWER)
-                    .role("dialog")
-                    .label("Navigation")
-                    .w(300.0)
-                    .pin(Some(0.0), Some(0.0), None, Some(0.0))
-                    .fill(t.colors.background)
-                    .border_sides([0.0, 1.0, 0.0, 0.0], t.colors.border)
-                    .child(rail_body(s, t, false, false)),
-            );
-    }
-    frame
+/// The main area under the phone header.
+fn workspace_main(s: &State, t: &'static Tokens) -> El {
+    col().key("workspace-main").grow(1.0).w_full().min_h(0.0).center().child(main_body(s, t))
 }
