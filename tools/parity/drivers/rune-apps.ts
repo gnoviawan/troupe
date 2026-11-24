@@ -65,7 +65,8 @@ export type RuneAppName = keyof typeof RUNE_APPS
 /**
  * The surfaces the Rune shell draws today: the frame, the rail's projects and
  * the side panel frame (R5a), the tab bar's `+` menu (R5b), and the rail's
- * overlays, the theme picker, the shortcut menu and the phone shell (R5c).
+ * overlays, the theme picker, the shortcut menu and the phone shell (R5c),
+ * and the chat transcript with its table full screen (R6b).
  * Every other surface waits on the unit that ports its content, named by its
  * area in `RUNE_UNIT_BY_AREA`.
  */
@@ -89,7 +90,9 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'phone.header-more',
   'phone.project-sheet',
   'phone.recents-actions',
-  'terminal.new-tab-menu'
+  'terminal.new-tab-menu',
+  'chat.transcript',
+  'chat.table-zoom'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
