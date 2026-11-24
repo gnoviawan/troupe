@@ -70,6 +70,10 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
     let answer = |option: Option<String>| {
         let request = p.request_id.clone();
         move |s: &mut S| {
+            // `respond(requestId, optionId)` never runs for an option without an id.
+            if option.as_deref() == Some("") {
+                return;
+            }
             (lenses.step)(s, Event::RespondPermission(request.clone(), option.clone()));
         }
     };
@@ -390,7 +394,24 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
         // `QUESTION_PANEL_MAX_H`: the rows scroll, the header and the footer stay.
         col().w_full().max_h(380.0).scroll(rune::ScrollSpec { stick_bottom: false }).child(col().w_full().gap(2.0).px(8.0).py(6.0).children(rows))
     };
-    let mut card = col().key(format!("question-{qid}")).role("dialog").label(heading).w_full().child(header).child(prompt).child(body);
+    let escape = qid.clone();
+    let mut card = col()
+        .key(format!("question-{qid}"))
+        .role("dialog")
+        .label(heading)
+        .w_full()
+        // `QuestionStepper`'s Escape closes the question only while focus is inside it.
+        .on_key(move |s: &mut S, key: &rune::KeyEvent, _tx: &mut rune::Tx| {
+            if !matches!(key.key, rune::Key::Escape) {
+                return false;
+            }
+            (lenses.reader_mut)(s).picks.forget(&escape);
+            (lenses.step)(s, Event::AnswerQuestion(escape.clone(), Vec::new()));
+            true
+        })
+        .child(header)
+        .child(prompt)
+        .child(body);
     if !options.is_empty() {
         let can_submit = !picked.is_empty();
         let submit = {

@@ -52,8 +52,9 @@ impl State {
     /// `stop_subagent` for the record `subagent_id` of the chat `session_id`; the agent confirms
     /// by ending the record as cancelled.
     pub(crate) fn stop_subagent(&mut self, session_id: String, subagent_id: String) {
-        let Some(agent_id) = self.chat.acp.sessions.get(&session_id).map(|s| s.agent_id.clone()) else {
-            log::warn!("[chat] stop of a subagent in an unknown chat {session_id}");
+        let agent_id = self.chat.acp.sessions.get(&session_id).map(|s| s.agent_id.clone()).filter(|a| !a.is_empty());
+        let Some(agent_id) = agent_id.filter(|_| !subagent_id.is_empty()) else {
+            log::warn!("[chat] stop of a subagent without an agent or id in chat {session_id}");
             return;
         };
         log::info!("[chat] stopping subagent {} in chat {session_id}", subagent_id.chars().take(128).collect::<String>());
@@ -79,7 +80,7 @@ impl State {
     }
 
     /// The question card's keys (`QuestionStepper`): a digit picks that option, Enter sends the
-    /// picks, Escape cancels. Only while the chat on screen shows a question.
+    /// picks. Only while the chat on screen shows a question; the card's own Escape cancels it.
     pub(crate) fn question_key(&mut self, key: &KeyEvent) -> bool {
         if key.mods != rune::Mods::default() {
             return false;
@@ -93,11 +94,6 @@ impl State {
         };
         let id = question.question_id.clone();
         match &key.key {
-            Key::Escape => {
-                log::info!("[chat] cancel question {id}");
-                self.chat.reader.picks.forget(&id);
-                self.acp_step(Event::AnswerQuestion(id, Vec::new()));
-            }
             Key::Enter => {
                 let values = self.chat.reader.picks.of(&id).to_vec();
                 if values.is_empty() {

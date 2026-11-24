@@ -82,7 +82,7 @@ fn subagent_panel(s: &State, t: &'static Tokens, session_id: &str) -> Option<El>
     let status = ui::chat::subagents::status(tool, turn_active);
     let stopping = status == ui::chat::subagents::Status::Running
         && ui::chat::subagents::subagent_id(tool).is_some_and(|id| s.chat.reader.is_stopping(&id));
-    let agent = s.agent_label(&crate::composer::Host::Chat(session_id.to_owned()));
+    let agent = s.shown_agent_name(&crate::composer::Host::Chat(session_id.to_owned()));
     let spec = ui::chat::subagents::PanelSpec {
         session: session_id,
         tool,
