@@ -335,7 +335,7 @@ fn automatic_switching_is_off_in_a_new_store() {
 }
 
 #[test]
-fn automatic_switching_an_older_build_turned_on_reads_as_off_and_keeps_the_accounts() {
+fn automatic_switching_an_older_build_turned_on_reads_as_off_and_the_next_save_writes_it_off() {
     let f = fixture();
     fs::create_dir_all(&f.state).unwrap();
     fs::write(
@@ -347,10 +347,16 @@ fn automatic_switching_an_older_build_turned_on_reads_as_off_and_keeps_the_accou
     assert!(!snapshot.auto_switch);
     let names: Vec<&str> = snapshot.profiles.iter().map(|p| p.name.as_str()).collect();
     assert_eq!(names, vec!["Default", "Work"]);
+    store(&f).rename("ab12", "Office").unwrap();
+    let file: serde_json::Value =
+        serde_json::from_slice(&fs::read(f.state.join("antigravity-accounts.json")).unwrap())
+            .unwrap();
+    assert_eq!(file["autoSwitch"], false);
+    assert_eq!(file["autoSwitchOptIn"], false);
 }
 
 #[test]
-fn automatic_switching_turned_on_persists_under_the_opt_in_key() {
+fn automatic_switching_persists_under_the_opt_in_key_and_mirrors_it_for_older_builds() {
     let f = fixture();
     let read = || -> serde_json::Value {
         serde_json::from_slice(&fs::read(f.state.join("antigravity-accounts.json")).unwrap())
@@ -359,10 +365,11 @@ fn automatic_switching_turned_on_persists_under_the_opt_in_key() {
     store(&f).set_auto_switch(true).unwrap();
     assert!(store(&f).snapshot().unwrap().auto_switch);
     assert_eq!(read()["autoSwitchOptIn"], true);
-    assert_eq!(read().get("autoSwitch"), None);
+    assert_eq!(read()["autoSwitch"], true);
     store(&f).set_auto_switch(false).unwrap();
     assert!(!store(&f).snapshot().unwrap().auto_switch);
     assert_eq!(read()["autoSwitchOptIn"], false);
+    assert_eq!(read()["autoSwitch"], false);
 }
 
 #[test]

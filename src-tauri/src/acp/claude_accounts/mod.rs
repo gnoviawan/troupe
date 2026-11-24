@@ -137,8 +137,21 @@ struct StoreFile {
     // JSON key stays `chatAccounts`.
     #[serde(default, rename = "chatAccounts")]
     chat_profiles: BTreeMap<String, String>,
+    /// Not `autoSwitch`: that key turned switching on before it became opt-in.
     #[serde(default)]
     auto_switch_opt_in: bool,
+}
+
+/// What [`StoreFile`] writes to disk.
+#[derive(Serialize)]
+struct DiskFile<'a> {
+    #[serde(flatten)]
+    file: &'a StoreFile,
+    /// Never read. Builds before the opt-in read a missing `autoSwitch` as on,
+    /// so every save mirrors the opt-in here to keep a downgrade from turning
+    /// switching back on.
+    #[serde(rename = "autoSwitch")]
+    legacy_auto_switch: bool,
 }
 
 impl StoreFile {
@@ -580,7 +593,11 @@ impl ClaudeAccountStore {
     }
 
     fn save(&self, file: &StoreFile) -> Result<(), String> {
-        let bytes = serde_json::to_vec_pretty(file).map_err(|error| {
+        let disk = DiskFile {
+            file,
+            legacy_auto_switch: file.auto_switch_opt_in,
+        };
+        let bytes = serde_json::to_vec_pretty(&disk).map_err(|error| {
             log::warn!("[claude-accounts] store encode failed: {error}");
             "Could not save the Claude account list".to_string()
         })?;
