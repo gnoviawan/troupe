@@ -19,6 +19,7 @@ use model::{projects, shell_layout};
 use rune::{AppSpec, FontSmoothing, Key, KeyEvent, Tx, Waker};
 use std::sync::OnceLock;
 use ui::overlay::Overlays;
+use ui::workspace::{Uuids, Workspace};
 
 pub use host::Host;
 pub use view::view;
@@ -67,6 +68,8 @@ pub struct State {
     pub theme: &'static str,
     /// The rail or side panel width while its edge is dragged; committed on release.
     pub drag_width: Option<(Edge, f64)>,
+    /// The visible project's panes and tabs.
+    pub workspace: Workspace,
     pub(crate) sync: sync::Sync,
 }
 
@@ -99,6 +102,7 @@ impl Default for State {
             route: launch.route,
             theme: theme::DEFAULT_FAMILY,
             drag_width: None,
+            workspace: Workspace::new(Box::new(Uuids::new(seed()))),
             sync: sync::Sync::default(),
         }
     }
@@ -126,6 +130,20 @@ impl State {
     }
 }
 
+/// A different seed each run, so pane ids minted now never repeat ids a saved tree holds.
+#[cfg(not(target_arch = "wasm32"))]
+fn seed() -> u64 {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos() as u64);
+    nanos ^ u64::from(std::process::id()).rotate_left(32)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn seed() -> u64 {
+    (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
+}
+
 fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
@@ -138,7 +156,9 @@ fn poll(state: &mut State, now: f64, _tx: &mut Tx) -> bool {
     for _ in 0..ui::overlay::history::take_back_presses() {
         changed |= state.overlays.pop().is_some();
     }
-    changed | state.pump(now)
+    changed |= state.pump(now);
+    state.persist_workspace();
+    changed
 }
 
 fn on_key(state: &mut State, key: &KeyEvent, _tx: &mut Tx) -> bool {

@@ -19,7 +19,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Effect, Ids};
 
-pub use ids::{commit_diff_tab_id, diff_tab_id, normalize_path};
+pub use ids::{commit_diff_tab_id, diff_tab_id, editor as editor_tab_id, normalize_path};
+pub use tree::{find_leaf, find_pane_containing_tab, find_split, leaves};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

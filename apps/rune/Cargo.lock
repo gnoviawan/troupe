@@ -3994,6 +3994,7 @@ dependencies = [
 name = "ui"
 version = "0.0.1"
 dependencies = [
+ "model",
  "rune",
  "rune-kit",
  "serde_json",

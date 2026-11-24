@@ -46,6 +46,28 @@ pub fn unwrap_stored(raw: Value) -> Value {
     }
 }
 
+/// `value` with every whole float written as an integer, as `JSON.stringify` prints numbers:
+/// a share of `50.0` goes over the wire as `50`.
+#[must_use]
+pub fn js_numbers(value: Value) -> Value {
+    const MAX_SAFE: f64 = 9_007_199_254_740_991.0;
+    match value {
+        Value::Number(n) => match n.as_f64() {
+            Some(f) if n.is_f64() && f.fract() == 0.0 && f.abs() <= MAX_SAFE => {
+                Value::from(f as i64)
+            }
+            _ => Value::Number(n),
+        },
+        Value::Array(items) => Value::Array(items.into_iter().map(js_numbers).collect()),
+        Value::Object(map) => Value::Object(
+            map.into_iter()
+                .map(|(key, value)| (key, js_numbers(value)))
+                .collect(),
+        ),
+        other => other,
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Cursor {
     pub line: u32,

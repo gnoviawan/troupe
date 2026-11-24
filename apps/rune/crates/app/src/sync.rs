@@ -8,6 +8,7 @@ use client::link::Status;
 use client::ws::{Command, Output};
 use model::projects::{Event as ProjectEvent, ProjectList};
 use model::shell_layout::{Event as LayoutEvent, ReadOutcome};
+use model::persistence;
 use model::{Effect, Ids, Level, shell_layout};
 use serde_json::{Value, json};
 use troupe_protocol::ws::{WsRequestType, WsWatchName};
@@ -21,6 +22,8 @@ const ACTIVE_PROJECT_KEY: &str = "active-project";
 enum Pending {
     ReadLayout,
     ReadActiveProject,
+    /// A project's workspace record, read when the project becomes visible.
+    ReadWorkspace(String),
     Write(String),
 }
 
@@ -39,6 +42,12 @@ pub struct Sync {
     saved_active: Saved,
     /// A registry list that came before the saved selection.
     held: Option<ProjectList>,
+    /// The project whose workspace record is being read.
+    reading: Option<String>,
+    /// The last record written per project, so an unchanged one is not written again.
+    written: HashMap<String, Value>,
+    /// The workspace revision the last persist saw.
+    persisted_revision: u64,
 }
 
 /// Ids for a store that mints them (groups); the shell creates none yet.
@@ -174,6 +183,16 @@ impl State {
                     self.registry_list(list);
                 }
             }
+            Pending::ReadWorkspace(project_id) => {
+                let raw = match result {
+                    Ok(reply) => stored_value(reply),
+                    Err(e) => {
+                        log::warn!("[app] reading the workspace of {project_id} failed: {}", e.code);
+                        None
+                    }
+                };
+                self.workspace_read(&project_id, raw);
+            }
             Pending::Write(key) => {
                 if let Err(e) = result {
                     log::warn!("[app] writing {key} failed: {}: {}", e.code, e.message);
@@ -197,6 +216,86 @@ impl State {
     pub fn projects_step(&mut self, event: ProjectEvent) {
         let out = projects::step(&mut self.projects, event, &mut Counter(0));
         self.run(out.effects);
+        self.show_active_project();
+    }
+
+    /// Bring the selected project's tree on screen: its parked tree at once, else after its
+    /// record is read. The project being left is saved first.
+    fn show_active_project(&mut self) {
+        let Some(project_id) = self.active_project().map(|p| p.id.clone()) else {
+            return;
+        };
+        if self.workspace.project() == Some(project_id.as_str())
+            || self.sync.reading.as_deref() == Some(project_id.as_str())
+        {
+            return;
+        }
+        self.persist_workspace();
+        if self.workspace.has_tree(&project_id) {
+            self.workspace.activate(&project_id, None);
+            return;
+        }
+        self.sync.reading = Some(project_id.clone());
+        let key = self.device_key(&persistence::key(&project_id));
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": key }),
+            Pending::ReadWorkspace(project_id),
+        );
+    }
+
+    fn workspace_read(&mut self, project_id: &str, raw: Option<Value>) {
+        if self.sync.reading.as_deref() != Some(project_id) {
+            return;
+        }
+        self.sync.reading = None;
+        let root = self
+            .projects
+            .store
+            .projects
+            .iter()
+            .find(|p| p.id == project_id)
+            .and_then(|p| p.path.clone());
+        let mut effects = Vec::new();
+        let hydrated = persistence::hydrate(
+            raw,
+            root.as_deref(),
+            &[],
+            None,
+            self.workspace.ids(),
+            &mut effects,
+        );
+        self.run(effects);
+        self.workspace.activate(project_id, Some(hydrated));
+        if self.active_project().map(|p| p.id.as_str()) != Some(project_id) {
+            self.show_active_project();
+        }
+    }
+
+    /// Write the visible project's record when it changed (`persistState`), and carry out what
+    /// the workspace asked for.
+    pub(crate) fn persist_workspace(&mut self) {
+        let logs = std::mem::take(&mut self.workspace.logs);
+        self.run(logs);
+        for request in std::mem::take(&mut self.workspace.requests) {
+            log::info!("[app] workspace request not wired in the Rune shell yet: {request:?}");
+        }
+        if self.workspace.revision == self.sync.persisted_revision {
+            return;
+        }
+        self.sync.persisted_revision = self.workspace.revision;
+        let (Some(project_id), Some(record)) = (
+            self.workspace.project().map(str::to_owned),
+            self.workspace.record(),
+        ) else {
+            return;
+        };
+        let value = persistence::js_numbers(serde_json::to_value(record).unwrap_or(Value::Null));
+        if self.sync.written.get(&project_id) == Some(&value) {
+            return;
+        }
+        self.sync.written.insert(project_id.clone(), value.clone());
+        self.write(&persistence::key(&project_id), value);
     }
 
     pub fn layout_step(&mut self, event: LayoutEvent) {
@@ -204,11 +303,12 @@ impl State {
         self.run(effects);
     }
 
+    /// Write a device key in the web client's envelope (`{ _version, data }`).
     fn write(&mut self, key: &str, value: Value) {
         let key = self.device_key(key);
         self.call(
             WsRequestType::StoreWrite,
-            json!({ "key": key, "value": value }),
+            json!({ "key": key, "value": persistence::stored(value) }),
             Pending::Write(key.clone()),
         );
     }
@@ -239,11 +339,16 @@ impl State {
 
 use model::projects;
 
-/// A `store_read` reply's value, or `None` when the key is absent (revision 0).
+/// A `store_read` reply's value without the web client's envelope, or `None` when the key
+/// is absent (revision 0).
 fn stored_value(reply: Option<Value>) -> Option<Value> {
     let reply = reply?;
     if reply.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {
         return None;
     }
-    reply.get("value").cloned().filter(|v| !v.is_null())
+    reply
+        .get("value")
+        .cloned()
+        .map(persistence::unwrap_stored)
+        .filter(|v| !v.is_null())
 }
