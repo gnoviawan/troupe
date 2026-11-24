@@ -1,6 +1,8 @@
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Info } from '@/components/icons'
 import { TOUCH_HIT_AREA_CLASS } from '@/components/phone-modal-classes'
+import { openerApi } from '@/lib/api'
+import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
 
 export type AccountProviderId = 'claude' | 'codex' | 'antigravity'
@@ -42,6 +44,17 @@ export const PROVIDER_TERMS: Record<AccountProviderId, ProviderTerms> = {
 const SHARED_SWITCH_RISK =
   'A provider can suspend all the accounts of one person together. Safer options are to switch by hand when a chat reaches its limit, buy extra usage or credits, or use an API key.'
 
+function openDocs(url: string): void {
+  void openerApi.openUrlWithSystemBrowser(url).then((result) => {
+    if (result.success) return
+    void logFrontendError({
+      level: 'warn',
+      source: 'account-provider-terms',
+      message: `[accounts] could not open ${url}: ${result.error}`
+    })
+  })
+}
+
 function DocsLink({ href, children }: { href: string; children: string }): React.JSX.Element {
   return (
     <a
@@ -49,6 +62,10 @@ function DocsLink({ href, children }: { href: string; children: string }): React
       target="_blank"
       rel="noopener noreferrer"
       className={cn('text-foreground underline underline-offset-2', TOUCH_HIT_AREA_CLASS)}
+      onClick={(event) => {
+        event.preventDefault()
+        openDocs(href)
+      }}
     >
       {children}
     </a>
