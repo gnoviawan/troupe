@@ -559,10 +559,34 @@ fn a_phone_chat_opens_the_add_sheet() {
 }
 
 #[test]
-fn a_chat_foot_names_its_project_branch_only_when_read() {
+fn a_composer_foot_names_its_project_branch_only_when_read() {
+    use ui::composer::view::Foot;
     let (mut s, host) = chat();
-    assert_eq!(s.checkout_label(&host), "Current checkout");
+    let launcher = Host::Launcher("p-a".into());
+    assert_eq!(s.foot(&host), Foot::Chat { branch: None });
     let project = s.projects.store.projects.iter_mut().find(|p| p.id == "p-a").expect("alpha");
     project.client.git_branch = Some("feature/login".into());
-    assert_eq!(s.checkout_label(&host), "Current checkout · feature/login");
+    assert_eq!(s.foot(&host), Foot::Chat { branch: Some("feature/login".into()) });
+    assert_eq!(s.foot(&launcher), Foot::Launcher { branch: Some("feature/login".into()) });
+}
+
+#[test]
+fn the_phone_launcher_shows_the_worktree_strip_and_a_phone_chat_does_not() {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    let project = s.projects.store.projects.iter_mut().find(|p| p.id == "p-a").expect("alpha");
+    project.client.git_branch = Some("main".into());
+    let mut rt = rune::Runtime::new(s, crate::view, (390.0, 844.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    assert!(crate::tests::present(&rt, "composer-launcher-p-a-strip-checkout"));
+    assert!(crate::tests::present(&rt, "composer-launcher-p-a-strip-branch"));
+    rt.update_if(|s, _| {
+        s.install_new_chat("chat-1", "agent-1");
+        s.workspace.step(model::workspace::Event::AddAgentChatTab("chat-1".into(), None));
+        true
+    });
+    rt.frame(0.05);
+    assert!(crate::tests::present(&rt, "composer-chat-chat-1-tray"));
+    assert!(!crate::tests::present(&rt, "composer-chat-chat-1-strip"), "a working chat has no strip");
 }

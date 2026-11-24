@@ -134,24 +134,21 @@ impl State {
         }
     }
 
-    /// The foot row's checkout (`ChatStartContextRow`): a chat adds its project's branch when
-    /// the project has read one.
-    pub fn checkout_label(&self, host: &Host) -> String {
-        let branch = match host {
-            Host::Chat(_) => self.project_of(host).and_then(|id| {
-                self.projects
-                    .store
-                    .projects
-                    .iter()
-                    .find(|p| p.id == id)
-                    .and_then(|p| p.client.git_branch.clone())
-                    .filter(|b| !b.is_empty())
-            }),
-            Host::Launcher(_) => None,
-        };
-        match branch {
-            Some(branch) => format!("Current checkout · {branch}"),
-            None => "Current checkout".to_owned(),
+    /// The working copy under a composer: a chat's label or the launcher's strip, with its
+    /// project's branch when the project has read one.
+    pub fn foot(&self, host: &Host) -> ui::composer::view::Foot {
+        let branch = self.project_of(host).and_then(|id| {
+            self.projects
+                .store
+                .projects
+                .iter()
+                .find(|p| p.id == id)
+                .and_then(|p| p.client.git_branch.clone())
+                .filter(|b| !b.is_empty())
+        });
+        match host {
+            Host::Chat(_) => ui::composer::view::Foot::Chat { branch },
+            Host::Launcher(_) => ui::composer::view::Foot::Launcher { branch },
         }
     }
 

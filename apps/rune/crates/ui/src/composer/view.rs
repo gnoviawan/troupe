@@ -11,6 +11,8 @@ use theme::Tokens;
 use theme::icons as i;
 
 use super::field::pill_of;
+pub use super::foot::Foot;
+use super::foot::{phone_strip, worktree};
 use super::menu::{Item, Row, Section};
 use super::{Attachment, Pill};
 use crate::overlay::{Menu, MenuItem, Placement};
@@ -136,8 +138,8 @@ pub struct Spec<'a> {
     /// The agents the chip's menu offers; none, and the chip only reports its press.
     pub agents: Vec<AgentChoice>,
     pub agent_open: bool,
-    /// The foot row's working copy.
-    pub foot: String,
+    /// The working copy under the card.
+    pub foot: Foot,
     pub attachments: &'a [Attachment],
     pub menu: Option<MenuView>,
     pub add_open: bool,
@@ -700,7 +702,15 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
     }
     card = card.child(input_row).child(toolbar);
     let tray = if spec.place == Place::Phone {
-        shadows(card.radius(20.0).fill(c.popover), &t.shadows.shadow_control).key(format!("{}-tray", spec.key))
+        let card = shadows(card.radius(20.0).fill(c.popover), &t.shadows.shadow_control);
+        match &spec.foot {
+            Foot::Launcher { branch } => col()
+                .key(format!("{}-tray", spec.key))
+                .w_full()
+                .child(card)
+                .child(phone_strip(t, &spec.key, branch.as_deref())),
+            Foot::Chat { .. } => card.key(format!("{}-tray", spec.key)),
+        }
     } else {
         let card = shadows(card.radius(14.0).fill(c.popover), &t.shadows.shadow_control);
         let foot = row()
@@ -711,22 +721,7 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
             .gap(16.0)
             .items_center()
             .justify_between()
-            .child(
-                row()
-                    .key("worktree")
-                    .h(28.0)
-                    .px(6.0)
-                    .gap(8.0)
-                    .items_center()
-                    .min_w(0.0)
-                    .child(icon(&i::FOLDER, 14.0).color(c.muted_foreground))
-                    .child(
-                        text(spec.foot.clone())
-                            .font(sans(12.0, 400.0, 16.0))
-                            .color(c.muted_foreground)
-                            .truncate(),
-                    ),
-            )
+            .child(worktree(t, &spec.foot))
             .child(
                 row()
                     .key("connectors")
