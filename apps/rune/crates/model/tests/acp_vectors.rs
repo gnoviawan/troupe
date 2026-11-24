@@ -154,6 +154,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::ReadFactoryKeyStatus { .. }
                         | Effect::SpawnAgent { .. }
                         | Effect::KillAgent { .. }
+                        | Effect::ListSessions { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }

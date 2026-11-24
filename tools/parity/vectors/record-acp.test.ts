@@ -317,6 +317,13 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(sessionId ? { sessionId } : {})
         }),
       killAgent: (agentId: string) => agentCommand({ kind: 'killAgent', agentId }),
+      listSessions: (agentId: string, cwd?: string, cursor?: string) =>
+        agentCommand({
+          kind: 'listSessions',
+          agentId,
+          ...(cwd === undefined ? {} : { cwd }),
+          ...(cursor === undefined ? {} : { cursor })
+        }),
       closeSession: (agentId: string, sessionId: string) =>
         agentCommand({ kind: 'closeAgentSession', agentId, sessionId }),
       deleteAgentSession: (agentId: string, sessionId: string) =>

@@ -278,7 +278,7 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      the banner. The authenticate shares the click's in-flight one of the
      same agent and method, and a click joining it fails with its error.
      A retry that fails again forgets the remembered method. Not here: the
-     other session calls (`session/new`, `list`, `load`, `resume`), which
+     other session calls (`session/new`, `load`, `resume`; discovery wraps `list`), which
      their slices wrap when they are ported, and the forget tombstone the
      shared config sync reads.
    - 7b, rest (R6a-4). The host's `agents` watch and the agent browser
@@ -350,7 +350,18 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       registry normalization and the legacy canvas entry migration stay in
       the app's persistence layer. Not here: the answering marks of
       `pending-permission-sync` (the resubscribe install, PR 6).
-    - 10b, rest. Import, discovery and the one-shot collectors.
+    - 10b, discovery (R6a-5, `acp/discovery.rs`). `discoverSessions` reads
+      the agent's own sessions in a folder page by page: each page is a
+      `listSessions` effect the app answers with `agentCommandDone` and the
+      page, or `agentCommandFailed`. It runs only for a connected agent
+      that advertises `sessionCapabilities.list`, once per agent and
+      normalized folder (`discoveringKeys`), for at most 10 pages, and
+      drops repeated session ids. An empty-string cursor is a page token;
+      only a missing or null one ends the listing. A page refused for a
+      sign-in goes through `withAuthRetry` (`session/list`); a failure
+      clears the folder's old result, and a result whose agent
+      disconnected meanwhile is dropped.
+    - 10b, rest. Import and the one-shot collectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:

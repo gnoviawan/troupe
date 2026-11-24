@@ -128,6 +128,8 @@ pub enum Event {
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
     #[serde(rename = "killAgent")]
     KillAgent(String),
+    #[serde(rename = "discoverSessions")]
+    DiscoverSessions(String, String),
     #[serde(rename = "prewarmAgent")]
     PrewarmAgent(String, String),
     /// `renewAgentCredentials`: the Project's account for the config changed.

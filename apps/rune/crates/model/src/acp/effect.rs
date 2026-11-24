@@ -290,6 +290,20 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Send `session/list` for one page of the agent's sessions in `cwd`;
+    /// then `AgentCommandDone` with the page, or `AgentCommandFailed`.
+    ListSessions {
+        agent_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cwd: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        cursor: Option<String>,
+        /// The discovery (`agent\0cwd`) the page belongs to.
+        #[serde(skip_serializing)]
+        key: String,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
     /// Whether the host stores a Factory API key; then
     /// `Event::FactoryKeyStatus` with this effect and the answer, or false
     /// with `failed` when it could not be read.
@@ -320,7 +334,9 @@ impl Effect {
     pub(crate) fn retried(&self) -> bool {
         matches!(
             self,
-            Self::SetMode { retried: true, .. } | Self::SetModel { retried: true, .. }
+            Self::SetMode { retried: true, .. }
+                | Self::SetModel { retried: true, .. }
+                | Self::ListSessions { retried: true, .. }
         )
     }
 

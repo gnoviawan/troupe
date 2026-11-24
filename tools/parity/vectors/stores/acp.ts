@@ -96,6 +96,7 @@ attachAgentRosterWatch(
 const MCP_KEYS = [
   'agentConfigs',
   'warmingConfigs',
+  'discoveringKeys',
   'mcpServers',
   'mcpServersLoaded',
   'pendingMcpInstalls',
@@ -112,6 +113,7 @@ const MCP_KEYS = [
 const MCP_FRESH = {
   agentConfigs: [],
   warmingConfigs: {},
+  discoveringKeys: {},
   mcpServers: [],
   mcpServersLoaded: false,
   pendingMcpInstalls: {},
@@ -321,6 +323,7 @@ import { agentScenarios } from './acp-scenarios-agents'
 import { authRetryScenarios } from './acp-scenarios-auth-retry'
 import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
+import { discoveryScenarios } from './acp-scenarios-discovery'
 import { ensureScenarios } from './acp-scenarios-ensure'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
@@ -352,5 +355,6 @@ export const acpScenarios = [
   ...launchScenarios,
   ...closeScenarios,
   ...ensureScenarios,
-  ...authRetryScenarios
+  ...authRetryScenarios,
+  ...discoveryScenarios
 ]

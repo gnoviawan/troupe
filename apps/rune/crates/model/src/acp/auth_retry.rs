@@ -80,19 +80,25 @@ fn auth_op(command: &Effect) -> Option<&'static str> {
     match command {
         Effect::SetMode { .. } => Some("session/set_mode"),
         Effect::SetModel { .. } => Some("session/set_model"),
+        Effect::ListSessions { .. } => Some("session/list"),
         _ => None,
     }
 }
 
 fn agent_of(command: &Effect) -> &str {
     match command {
-        Effect::SetMode { agent_id, .. } | Effect::SetModel { agent_id, .. } => agent_id,
+        Effect::SetMode { agent_id, .. }
+        | Effect::SetModel { agent_id, .. }
+        | Effect::ListSessions { agent_id, .. } => agent_id,
         _ => "",
     }
 }
 
 fn mark_retried(mut command: Effect) -> Effect {
-    if let Effect::SetMode { retried, .. } | Effect::SetModel { retried, .. } = &mut command {
+    if let Effect::SetMode { retried, .. }
+    | Effect::SetModel { retried, .. }
+    | Effect::ListSessions { retried, .. } = &mut command
+    {
         *retried = true;
     }
     command
@@ -249,9 +255,9 @@ impl State {
         }
     }
 
-    /// A set command failed. One that wanted a sign-in authenticates and
+    /// A session call failed. One that wanted a sign-in authenticates and
     /// goes again; a retry that fails is final.
-    pub(crate) fn on_control_failed(
+    pub(crate) fn on_session_call_failed(
         &mut self,
         command: Effect,
         message: String,
@@ -276,8 +282,11 @@ impl State {
         self.control_rejected(command, message, fx);
     }
 
-    /// The set command's failure reaches its caller.
+    /// The session call's failure reaches its caller.
     fn control_rejected(&mut self, command: Effect, message: String, fx: &mut Vec<Effect>) {
+        if let Effect::ListSessions { key, .. } = &command {
+            return self.on_session_list_failed(key);
+        }
         match command.run() {
             Some(run) => self.on_run_command(run, Some(message), fx),
             None => fx.push(Effect::rejected(message)),

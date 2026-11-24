@@ -231,6 +231,10 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         match command {
+            Effect::ListSessions { ref key, .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_session_list_page(key, &reply, fx);
+            }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
@@ -281,6 +285,9 @@ impl State {
         let mut waiters = 0;
         let mut message = message;
         match command {
+            Effect::ListSessions { .. } => {
+                return self.on_session_call_failed(command, message, fx);
+            }
             Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));
                 self.agent_status.insert(name, json!("error"));

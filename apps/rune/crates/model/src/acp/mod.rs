@@ -18,6 +18,7 @@ mod clamp;
 mod close;
 pub mod controls;
 mod diff_stat;
+mod discovery;
 mod effect;
 mod ensure;
 mod event;
@@ -124,6 +125,9 @@ pub struct State {
     pub auto_open_browser_url: BTreeMap<String, Value>,
     /// Sessions whose launch is in flight.
     pub launching_session_ids: BTreeMap<String, Value>,
+    /// Per `agentId\0cwd`, a discovery in flight.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub discovering_keys: BTreeMap<String, Value>,
     /// Per `agentId\0cwd`, the agent's own sessions found on disk.
     pub discovered_sessions: BTreeMap<String, Value>,
     /// The saved agent configs (`agentConfigs`).
@@ -284,6 +288,9 @@ pub struct Book {
     /// The spawns `ensureLiveAgent` runs and what it remembers about them.
     #[serde(skip)]
     pub(crate) ensure: ensure::EnsureBook,
+    /// The `session/list` discoveries in flight, by key.
+    #[serde(skip)]
+    pub(crate) discoveries: BTreeMap<String, discovery::Discovery>,
     /// Session calls waiting on an authenticate on demand.
     #[serde(skip)]
     pub(crate) auth_retry: auth_retry::AuthRetryBook,
@@ -423,8 +430,9 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             }
         }
         Event::ControlFailed(command, message) => {
-            state.on_control_failed(command, message, &mut fx)
+            state.on_session_call_failed(command, message, &mut fx)
         }
+        Event::DiscoverSessions(agent_id, cwd) => state.discover_sessions(agent_id, cwd, &mut fx),
         Event::FactoryKeyStatus(read, stored) => state.on_factory_key_status(read, stored, &mut fx),
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {
