@@ -75,6 +75,8 @@ pub struct Hooks<S> {
     pub pick_agent: OnAdd<S>,
     pub remove_attachment: OnIndex<S>,
     pub queue: OnQueue<S>,
+    /// The mode chip and the context ring.
+    pub control: super::controls::OnControl<S>,
 }
 
 impl<S> Clone for Hooks<S> {
@@ -96,6 +98,7 @@ impl<S> Clone for Hooks<S> {
             pick_agent: self.pick_agent.clone(),
             remove_attachment: self.remove_attachment.clone(),
             queue: self.queue.clone(),
+            control: self.control.clone(),
         }
     }
 }
@@ -150,6 +153,12 @@ pub struct Spec<'a> {
     /// The chat's queued prompts, sent top to bottom after the running turn.
     pub queue: Vec<QueueRow>,
     pub queue_open: bool,
+    /// The approval the chat waits on (`PermissionPrompt`), drawn under the queue.
+    pub prompt: Option<El>,
+    /// A chat's modes, for the chip right of `+`.
+    pub mode: Option<super::controls::ModeView>,
+    /// A chat's context window, for the ring.
+    pub usage: Option<super::controls::UsageView>,
 }
 
 pub const PLACEHOLDER: &str = "Ask anything… (/ for commands, @ for files and chats)";
@@ -650,7 +659,7 @@ fn menu_surface<S: 'static>(t: &'static Tokens, key: &str, menu: &MenuView, hook
 
 /// The composer: the open menu over the tray, then the tray, with the add menu's surface
 /// anchored out of flow (no ancestor of a composer clips).
-pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) -> El {
+pub fn composer<S: 'static>(t: &'static Tokens, mut spec: Spec, hooks: &Hooks<S>) -> El {
     let mut layer = Vec::new();
     let layer = &mut layer;
     let c = &t.colors;
@@ -667,11 +676,19 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
     )
     .child(col().grow(1.0).min_w(0.0).child(field(t, &spec, hooks)))
     .on_press_tx(move |_: &mut S, tx| tx.focus(field_key.clone(), false));
+    let ring = spec.usage.filter(|u| u.shown()).map(|u| super::controls::context_ring(t, &spec.key, &u, &hooks.control, layer));
+    let (input_row, phone_ring) = match ring {
+        Some(ring) if spec.place != Place::Phone => (input_row.child(ring.mr(-8.0).my(-3.0)), None),
+        ring => (input_row, ring),
+    };
     let mut start = row()
         .key(format!("{}-tools-start", spec.key))
         .gap(6.0)
         .items_center()
         .child(add_button(t, &spec, hooks, layer));
+    if let Some(mode) = spec.mode.as_ref().filter(|m| !m.modes.is_empty() && spec.place != Place::Phone) {
+        start = start.child(super::controls::mode_chip(t, &spec.key, mode, &hooks.control, layer));
+    }
     let mut end = row()
         .key(format!("{}-tools-end", spec.key))
         .gap(4.0)
@@ -684,6 +701,9 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
         } else {
             end = end.child(chip);
         }
+    }
+    if let Some(ring) = phone_ring {
+        end = end.child(ring);
     }
     end = end.child(send_button(t, &spec, can_send, hooks));
     let toolbar = pad(
@@ -699,6 +719,9 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
     let mut card = col().key(format!("{}-card", spec.key)).w_full();
     if let Some(queue) = queue_panel(t, &spec, hooks) {
         card = card.child(queue);
+    }
+    if let Some(prompt) = spec.prompt.take() {
+        card = card.child(prompt);
     }
     if let Some(row) = attachments(t, &spec, hooks) {
         card = card.child(row);

@@ -69,7 +69,7 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
         )
         .child(mobile::header_title(
             t,
-            "Troupe",
+            &header_title(s),
             mobile::header_subtitle(
                 t,
                 &project_line(s),
@@ -93,6 +93,18 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
         frame = frame.child(drawer(s, t));
     }
     frame
+}
+
+/// `MobileChatShell`'s `headerTitle`: a chat shows its own title ("Agent Chat" before it has
+/// one); everything else still reads "Troupe".
+fn header_title(s: &State) -> String {
+    let active = model::workspace::query(&s.workspace.store, model::workspace::Query::GetActiveTab);
+    match active {
+        model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::AgentChat { .. })) => {
+            crate::chat_view::tab_title(s, &tab).unwrap_or_else(|| "Agent Chat".to_owned())
+        }
+        _ => "Troupe".to_owned(),
+    }
 }
 
 /// The full-screen drawer.

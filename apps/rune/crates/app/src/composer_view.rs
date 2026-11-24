@@ -54,6 +54,18 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         queue: s.queue_rows(host),
         // `defaultOpen={!isMobileShell}`.
         queue_open: (place != Place::Phone) != draft.queue_toggled,
+        prompt: match host {
+            Host::Chat(id) => s
+                .chat
+                .acp
+                .pending_permissions
+                .values()
+                .find(|p| &p.session_id == id)
+                .map(|p| ui::chat::approvals::permission_prompt(t, p, place == Place::Phone, crate::chat_view::lenses())),
+            Host::Launcher(_) => None,
+        },
+        mode: s.mode_view(host),
+        usage: s.usage_view(host),
     };
     view::composer(t, spec, &State::composer_hooks(host))
 }
