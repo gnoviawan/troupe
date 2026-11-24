@@ -11,7 +11,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /** One store action: `getState()[action](...args)` on a Zustand store. */
@@ -154,12 +154,17 @@ export function storeText(vectors: Vector[]): string {
   return `${JSON.stringify(vectors, null, 1)}\n`
 }
 
-/** Replace `out/` with these stores' vectors and their manifest. */
-export function writeOut(manifest: Manifest, byStore: Map<string, Vector[]>): void {
-  rmSync(OUT_DIR, { recursive: true, force: true })
-  mkdirSync(OUT_DIR, { recursive: true })
-  for (const [store, vectors] of byStore) {
-    writeFileSync(join(OUT_DIR, `${store}.json`), storeText(vectors))
+/**
+ * Replace the vector files in `dir` (`out/` by default) with these stores'
+ * vectors and their manifest. Subfolders, which other recorders own, stay.
+ */
+export function writeOut(manifest: Manifest, byStore: Map<string, Vector[]>, dir = OUT_DIR): void {
+  mkdirSync(dir, { recursive: true })
+  for (const file of readdirSync(dir)) {
+    if (file.endsWith('.json')) rmSync(join(dir, file))
   }
-  writeFileSync(join(OUT_DIR, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+  for (const [store, vectors] of byStore) {
+    writeFileSync(join(dir, `${store}.json`), storeText(vectors))
+  }
+  writeFileSync(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 }

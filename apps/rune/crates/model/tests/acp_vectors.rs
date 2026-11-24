@@ -1,0 +1,125 @@
+//! Replays the ACP chat store's vectors (`tools/parity/vectors/out/acp/`,
+//! recorded by `record-acp.test.ts`) through `model::acp` and compares the
+//! state and the effects after every step. A second test fails when a
+//! TypeScript source changed after the vectors were recorded.
+
+mod common;
+
+use common::{Replay, diff, out_dir, parse, read_json, source_hash, to_value};
+use model::acp::{self, Env, Event, State};
+use serde_json::{Value, json};
+
+/// The vector clock: `context.now` while seeding, 1 s later at every step.
+const NOW: f64 = 1_700_000_000_000.0;
+
+fn acp_dir() -> std::path::PathBuf {
+    out_dir().join("acp")
+}
+
+fn event(recorded: &Value) -> Result<Event, String> {
+    let action = recorded["action"].as_str().ok_or("event without action")?;
+    let args = recorded["args"].as_array().cloned().unwrap_or_default();
+    let shape = match args.as_slice() {
+        [only] => json!({ action: only }),
+        _ => json!({ action: args }),
+    };
+    serde_json::from_value(shape.clone())
+        .or_else(|_| serde_json::from_value(json!({ action: args })))
+        .map_err(|e| format!("{action}: {e}"))
+}
+
+fn replay(vector: &Value) -> Result<usize, String> {
+    let context = vector.get("context").cloned().unwrap_or(json!({}));
+    let start = context.get("now").and_then(Value::as_f64).unwrap_or(NOW);
+    let server_history = context.get("serverHistory") == Some(&Value::Bool(true));
+    let mut state: State = parse(&vector["initial"])?;
+    if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
+        return Err(format!("initial state does not round-trip: {problem}"));
+    }
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, recorded) in steps.iter().enumerate() {
+        let at = |what: &str| format!("step {index} ({}) {what}", recorded["event"]["action"]);
+        let mut ids = Replay {
+            ids: parse(&recorded["ids"]).map_err(|e| at(&e))?,
+            overdrawn: 0,
+        };
+        let mut env = Env {
+            now: start + 1000.0 * (index as f64 + 1.0),
+            ids: &mut ids,
+            server_history,
+        };
+        let effects = acp::step(
+            &mut state,
+            event(&recorded["event"]).map_err(|e| at(&e))?,
+            &mut env,
+        );
+        if !ids.ids.is_empty() || ids.overdrawn > 0 {
+            return Err(at(&format!(
+                "drew {} ids too few or {} too many",
+                ids.ids.len(),
+                ids.overdrawn
+            )));
+        }
+        for (what, want, got) in [
+            ("effects", &recorded["effects"], &to_value(&effects)),
+            ("state", &recorded["state"], &to_value(&state)),
+        ] {
+            if let Some(problem) = diff(what, want, got) {
+                return Err(at(&problem));
+            }
+        }
+    }
+    Ok(steps.len())
+}
+
+#[test]
+fn replays_every_acp_vector() {
+    let manifest = read_json(&acp_dir().join("manifest.json"));
+    let vectors = read_json(&acp_dir().join("acp.json"));
+    let vectors = vectors
+        .as_array()
+        .expect("acp.json holds an array of vectors");
+    let names: Vec<&Value> = vectors.iter().map(|vector| &vector["name"]).collect();
+    let listed: Vec<&Value> = manifest["stores"]["acp"]["vectors"]
+        .as_array()
+        .expect("manifest vector list")
+        .iter()
+        .collect();
+    assert_eq!(
+        names, listed,
+        "acp.json vector names differ from the manifest"
+    );
+    let mut failures = Vec::new();
+    let mut total = 0;
+    for vector in vectors {
+        match replay(vector) {
+            Ok(steps) => total += steps,
+            Err(problem) => failures.push(format!("{}: {problem}", vector["name"])),
+        }
+    }
+    println!("acp: {} vectors, {total} steps replayed", vectors.len());
+    assert!(
+        failures.is_empty(),
+        "{} acp vectors failed:\n{}",
+        failures.len(),
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn acp_vectors_are_not_older_than_their_sources() {
+    let manifest = read_json(&acp_dir().join("manifest.json"));
+    let sources = manifest["stores"]["acp"]["sources"]
+        .as_object()
+        .expect("manifest sources");
+    let stale: Vec<&String> = sources
+        .iter()
+        .filter(|(path, recorded)| source_hash(path) != recorded.as_str().unwrap_or_default())
+        .map(|(path, _)| path)
+        .collect();
+    assert!(
+        stale.is_empty(),
+        "TypeScript changed after the acp vectors were recorded; rerun \
+         `RECORD_VECTORS=1 bun run test tools/parity/vectors` and port the change: {stale:?}"
+    );
+}

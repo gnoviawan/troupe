@@ -65,3 +65,14 @@ The TypeScript stores mint ids with `crypto.randomUUID()`. The model never
 generates randomness: `step` takes an [`Ids`](src/lib.rs) source. The app
 passes a random one; the vector replay passes the ids the TypeScript run drew,
 in order, and checks that the model drew the same number.
+
+## The ACP chat model
+
+`src/acp/` ports the ACP chat store (`src/renderer/stores/acp-store/`):
+sessions, transcripts, tool calls, plans, commands and usage, one module per
+slice. `docs/rune/acp-model.md` at the repository root maps each TypeScript
+module to its Rust one, says what is state, effect or React glue, and lists
+what is not ported yet. Its vectors are recorded apart, by
+`tools/parity/vectors/record-acp.test.ts` into `out/acp/`, and replayed by
+`tests/acp_vectors.rs`. A step reads the clock and draws ids only through
+`acp::Env`.
