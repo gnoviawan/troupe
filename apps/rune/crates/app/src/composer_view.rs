@@ -50,6 +50,9 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         menu: s.menu_view(host),
         add_open: draft.add_open,
         tools_open: draft.tools_open,
+        queue: s.queue_rows(host),
+        // `defaultOpen={!isMobileShell}`.
+        queue_open: (place != Place::Phone) != draft.queue_toggled,
     };
     view::composer(t, spec, &State::composer_hooks(host))
 }

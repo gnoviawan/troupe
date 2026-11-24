@@ -455,3 +455,31 @@ fn the_launcher_waits_for_the_saved_agent_before_it_starts() {
     s.composer_send(&host);
     assert!(s.composer.launching.is_some(), "the launch starts once the read is in");
 }
+
+#[test]
+fn a_send_during_a_turn_shows_in_the_queue_and_edit_takes_it_back() {
+    use ui::composer::view::QueueAct;
+    let (mut s, host) = chat();
+    s.draft_mut(&host).edit.insert("first");
+    s.composer_send(&host);
+    s.draft_mut(&host).edit.insert("Use /mat");
+    let t = trigger(&s.draft(&host).expect("draft").edit).expect("slash");
+    put_pill(
+        &mut s.draft_mut(&host).edit,
+        t.range,
+        &Pill::Skill { name: "matrix-review".into(), path: "/s/SKILL.md".into() },
+    );
+    s.composer_send(&host);
+    assert_eq!(prompts(&s).len(), 1, "the second send waits for the running turn");
+    let rows = s.queue_rows(&host);
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].summary, "Use (matrix-review)");
+    assert!(rows[0].editable);
+
+    let mut tx = rune::Tx::default();
+    s.draft_mut(&host).edit.insert("draft");
+    s.composer_queue(&host, QueueAct::Edit(rows[0].id.clone()), &mut tx);
+    assert!(s.queue_rows(&host).is_empty(), "Edit takes it out of the queue");
+    let doc = ui::composer::field::doc_of(&s.draft(&host).expect("draft").edit);
+    assert_eq!(doc.display_text(), "draft\nUse \u{E000}matrix-review\u{E001}\u{E002}\u{2007}\u{E003} ");
+}

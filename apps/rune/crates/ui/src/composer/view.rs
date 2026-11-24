@@ -26,6 +26,27 @@ type OnPick<S> = Rc<dyn Fn(&mut S, &Item, &mut Tx)>;
 type OnIndex<S> = Rc<dyn Fn(&mut S, usize)>;
 type OnFlag<S> = Rc<dyn Fn(&mut S, bool)>;
 type OnAdd<S> = Rc<dyn Fn(&mut S, &str, &mut Tx)>;
+type OnQueue<S> = Rc<dyn Fn(&mut S, QueueAct, &mut Tx)>;
+
+/// A press in the queued-prompts panel (`PromptQueuePanel`), by queue id.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum QueueAct {
+    /// Collapse or expand the list.
+    Toggle,
+    Clear,
+    /// Stop the turn and send this one now.
+    Steer(String),
+    /// Take a text-only prompt back into the draft.
+    Edit(String),
+    Remove(String),
+}
+
+/// One queued prompt's row.
+pub struct QueueRow {
+    pub id: String,
+    pub summary: String,
+    pub editable: bool,
+}
 
 /// What the composer's presses and keys do. `edit` reaches the field's model.
 pub struct Hooks<S> {
@@ -51,6 +72,7 @@ pub struct Hooks<S> {
     /// An agent menu row, by config id.
     pub pick_agent: OnAdd<S>,
     pub remove_attachment: OnIndex<S>,
+    pub queue: OnQueue<S>,
 }
 
 impl<S> Clone for Hooks<S> {
@@ -71,6 +93,7 @@ impl<S> Clone for Hooks<S> {
             agent: self.agent.clone(),
             pick_agent: self.pick_agent.clone(),
             remove_attachment: self.remove_attachment.clone(),
+            queue: self.queue.clone(),
         }
     }
 }
@@ -119,6 +142,9 @@ pub struct Spec<'a> {
     pub menu: Option<MenuView>,
     pub add_open: bool,
     pub tools_open: bool,
+    /// The chat's queued prompts, sent top to bottom after the running turn.
+    pub queue: Vec<QueueRow>,
+    pub queue_open: bool,
 }
 
 pub const PLACEHOLDER: &str = "Ask anything… (/ for commands, @ for files and chats)";
@@ -315,6 +341,118 @@ fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &
     menu.open(spec.agent_open)
         .on_close(move |s: &mut S| close(s, false))
         .build(t, layer, chip)
+}
+
+/// A 22-point icon action of a queue row.
+fn queue_icon<S: 'static>(t: &Tokens, key: String, glyph: &'static rune::Icon, label: &str, act: QueueAct, hooks: &Hooks<S>) -> El {
+    let c = &t.colors;
+    let on = hooks.queue.clone();
+    row()
+        .key(key)
+        .w(22.0)
+        .h(22.0)
+        .center()
+        .radius(6.0)
+        .role("button")
+        .label(label.to_owned())
+        .hover(c.foreground.alpha(0.08))
+        .child(icon(glyph, 14.0).color(c.muted_foreground))
+        .on_press_tx(move |s: &mut S, tx| on(s, act.clone(), tx))
+}
+
+/// `PromptQueuePanel`: "N queued" (it collapses the list) and Clear, then a row per prompt
+/// with Steer, Edit and Remove, shown on hover. A hairline closes it off from the field.
+fn queue_panel<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>) -> Option<El> {
+    if spec.queue.is_empty() {
+        return None;
+    }
+    let c = &t.colors;
+    let key = &spec.key;
+    let toggle = hooks.queue.clone();
+    let header = row()
+        .key(format!("{key}-queue-head"))
+        .w_full()
+        .min_h(28.0)
+        .pr(3.0)
+        .gap(6.0)
+        .items_center()
+        .child(
+            row()
+                .key(format!("{key}-queue-toggle"))
+                .grow(1.0)
+                .min_w(0.0)
+                .h(28.0)
+                .pl(8.0)
+                .gap(6.0)
+                .items_center()
+                .role("button")
+                .label(format!("{} queued", spec.queue.len()))
+                .child(
+                    row().w(16.0).h(16.0).center().child(
+                        icon(if spec.queue_open { &i::CHEVRON_DOWN } else { &i::CHEVRON_RIGHT }, 14.0)
+                            .color(c.muted_foreground),
+                    ),
+                )
+                .child(
+                    text(format!("{} queued", spec.queue.len()))
+                        .font(sans(12.0, 500.0, 16.0))
+                        .color(c.muted_foreground),
+                )
+                .on_press_tx(move |s: &mut S, tx| toggle(s, QueueAct::Toggle, tx)),
+        )
+        .child(queue_icon(t, format!("{key}-queue-clear"), &i::X, "Clear queue", QueueAct::Clear, hooks));
+    let mut panel = crate::paint::pad(col().key(format!("{key}-queue")).w_full().gap(2.0), [6.0; 4]).child(header);
+    if spec.queue_open {
+        for (n, item) in spec.queue.iter().enumerate() {
+            let steer = hooks.queue.clone();
+            let id = item.id.clone();
+            let mut actions = row()
+                .gap(2.0)
+                .items_center()
+                .child(
+                    row()
+                        .key(format!("{key}-queue-steer-{n}"))
+                        .h(22.0)
+                        .px(8.0)
+                        .center()
+                        .radius(6.0)
+                        .fill(c.muted)
+                        .border(0.5, c.border)
+                        .role("button")
+                        .label("Steer")
+                        .child(text("Steer").font(sans(12.0, 500.0, 16.0)).color(c.foreground))
+                        .on_press_tx(move |s: &mut S, tx| steer(s, QueueAct::Steer(id.clone()), tx)),
+                );
+            if item.editable {
+                actions = actions.child(queue_icon(t, format!("{key}-queue-edit-{n}"), &i::EDIT, "Edit", QueueAct::Edit(item.id.clone()), hooks));
+            }
+            actions = actions.child(queue_icon(t, format!("{key}-queue-remove-{n}"), &i::TRASH2, "Remove", QueueAct::Remove(item.id.clone()), hooks));
+            panel = panel.child(
+                row()
+                    .key(format!("{key}-queue-row-{n}"))
+                    .w_full()
+                    .min_h(28.0)
+                    .pl(8.0)
+                    .pr(3.0)
+                    .gap(6.0)
+                    .items_center()
+                    .radius(8.0)
+                    .hover(c.foreground.alpha(0.06))
+                    .hover_group()
+                    .child(el().w(16.0).h(16.0))
+                    .child(
+                        text(item.summary.clone())
+                            .font(sans(12.0, 400.0, 20.0))
+                            .color(c.muted_foreground)
+                            .truncate()
+                            .shrink()
+                            .grow(1.0),
+                    )
+                    .child(actions.group_opacity(0.0, 1.0)),
+            );
+        }
+    }
+    Some(col().w_full().child(panel).child(el().w_full().h(0.5).fill(c.border)))
 }
 
 fn attachments<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>) -> Option<El> {
@@ -554,6 +692,9 @@ pub fn composer<S: 'static>(t: &'static Tokens, spec: Spec, hooks: &Hooks<S>) ->
     .child(start)
     .child(end);
     let mut card = col().key(format!("{}-card", spec.key)).w_full();
+    if let Some(queue) = queue_panel(t, &spec, hooks) {
+        card = card.child(queue);
+    }
     if let Some(row) = attachments(t, &spec, hooks) {
         card = card.child(row);
     }

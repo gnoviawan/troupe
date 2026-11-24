@@ -161,11 +161,33 @@ fn replace_skills(value: &str) -> String {
         .collect()
 }
 
-/// What a sent message's Copy puts on the clipboard (`ChatMessage`):
-/// `sanitizeDisplayText(serializeSelectionContexts(text))`, every pill as plain text.
-pub fn copy_text(value: &str) -> String {
-    let plain = replace_files(&replace_skills(&replace_commands(&serialize_contexts(value))));
+/// `sanitizeDisplayText`: every pill as plain text.
+fn sanitize(value: &str) -> String {
+    let plain = replace_files(&replace_skills(&replace_commands(value)));
     replace_tools(&replace_conversations(&plain, |title, _| format!("(conversation: {title})")))
+}
+
+/// What a sent message's Copy puts on the clipboard (`ChatMessage`):
+/// `sanitizeDisplayText(serializeSelectionContexts(text))`.
+pub fn copy_text(value: &str) -> String {
+    sanitize(&serialize_contexts(value))
+}
+
+/// A queued prompt's one-line text (`previewQueuedPrompt`): each context as its
+/// `[Context N]` marker, every pill as plain text, trimmed.
+pub fn queue_preview(value: &str) -> String {
+    let mut n = 0;
+    let marked: String = context_segments(value)
+        .into_iter()
+        .map(|seg| match seg {
+            ContextSeg::Text(text) => text,
+            ContextSeg::Context(_) => {
+                n += 1;
+                format!("[Context {n}]")
+            }
+        })
+        .collect();
+    super::js_trim(&sanitize(&marked)).to_owned()
 }
 
 /// `formatPromptWithSkills`.
