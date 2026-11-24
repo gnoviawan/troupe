@@ -404,7 +404,7 @@ impl State {
             fx.push(Effect::PersistSession { session_id: id });
         }
         for id in emptied {
-            self.drop_session_transcript(&id);
+            fx.push(Effect::DropSessionTranscript { session_id: id });
         }
     }
 

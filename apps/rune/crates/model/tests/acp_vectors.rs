@@ -145,6 +145,22 @@ fn replay(vector: &Value) -> Result<usize, String> {
                 effects.extend(acp::step(&mut state, event, &mut env));
                 continue;
             }
+            // The app frees a transcript right after the persist that read it.
+            if let Some(index) = effects
+                .iter()
+                .position(|e| matches!(e, Effect::DropSessionTranscript { .. }))
+            {
+                let Effect::DropSessionTranscript { session_id } = effects.remove(index) else {
+                    unreachable!()
+                };
+                let more = acp::step(
+                    &mut state,
+                    Event::DropSessionTranscript(session_id),
+                    &mut env,
+                );
+                effects.extend(more);
+                continue;
+            }
             if let Some(index) = effects.iter().position(|e| matches!(e, Effect::EndTurn(_))) {
                 let Effect::EndTurn(end) = effects.remove(index) else {
                     unreachable!()

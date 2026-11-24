@@ -182,7 +182,10 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      open tab or freed), `setActiveSession` and `markResumeFailed`. The
      desktop's index reload is the `refreshSessionIndex` effect; the tabs a
      chat shows are `Book::open_chat_tabs`, which the app keeps equal to the
-     workspace.
+     workspace. A close (and a disconnect that empties a chat) persists
+     first and frees the transcript only after: `persistSession` comes
+     before `dropSessionTranscript`, which the app sends back as an event
+     once the persist read the state.
    - 6b, first part (R6a-2). `applySessionIndexSnapshot`, the answer to
      `refreshSessionIndex`: the host's rows merged with the local
      projection (`mergeSessionIndexEntries`), live turns stamped, the
@@ -283,8 +286,10 @@ empty warm-pool session (`ephemeralSessionIds`, PR 8).
 that touches `src/renderer/**`, `src/shared/**`, the lockfile or the vectors,
 and fails when `out/` is stale. A renderer change that changes what a store
 does fails its own PR there; the re-recorded files then trigger the Rune
-workflow, whose replay fails until the Rust follows. Each recorder checks
-that its pinned sources match one of the workflow's path globs.
+workflow, whose replay fails until the Rust follows. The Rune workflow
+also runs on a PR that changes a pinned source, so its staleness test fails
+on that PR and not on a later, unrelated Rune PR. Each recorder checks that
+its pinned sources match a path glob of both workflows.
 
 ## Recorder limits
 

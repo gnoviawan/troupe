@@ -144,7 +144,9 @@ describe('test vectors', () => {
     for (const [recorder, scenarios] of STORES) {
       const recorded: Vector[] = []
       for (const scenario of scenarios) recorded.push(await recordVector(recorder, scenario))
-      expect(sourcesOutsideWorkflow(recorder.sources), 'parity-vectors.yml paths').toEqual([])
+      for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
+        expect(sourcesOutsideWorkflow(recorder.sources, file), `${file} paths`).toEqual([])
+      }
       manifest.stores[recorder.store] = manifestEntry(recorder, recorded)
       byStore.set(recorder.store, recorded)
     }

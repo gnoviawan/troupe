@@ -149,11 +149,16 @@ export interface Manifest {
 }
 
 /**
- * Repo paths that no `paths:` glob of the parity-vectors workflow matches. A
- * source missing there could change without the workflow running on its PR.
+ * Repo paths that no `paths:` glob of a workflow's `pull_request` trigger
+ * matches. Both workflows must run on a PR that changes a pinned source:
+ * parity-vectors re-records the vectors, and rune replays them in Rust and
+ * fails while a source is newer than its manifest hash.
  */
-export function sourcesOutsideWorkflow(sources: string[]): string[] {
-  const workflow = readFileSync(join(REPO_ROOT, '.github/workflows/parity-vectors.yml'), 'utf8')
+export function sourcesOutsideWorkflow(
+  sources: string[],
+  file: 'parity-vectors.yml' | 'rune.yml'
+): string[] {
+  const workflow = readFileSync(join(REPO_ROOT, '.github/workflows', file), 'utf8')
   const block = workflow.split(/^\s+paths:\n/m)[1]?.split(/^\s+[a-z_]+:/m)[0] ?? ''
   const globs = [...block.matchAll(/^\s+- '([^']+)'$/gm)].map(([, glob]) => new Bun.Glob(glob))
   return sources.filter((source) => !globs.some((glob) => glob.match(source)))

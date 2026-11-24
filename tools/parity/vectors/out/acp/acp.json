@@ -55181,7 +55181,8 @@
         "createdAt": null,
         "lastActivityAt": 10,
         "messageCount": 1,
-        "kind": "chat"
+        "kind": "chat",
+        "agentConfigId": null
        }
       ]
      ]
@@ -55253,6 +55254,7 @@
        "lastActivityAt": 10,
        "messageCount": 1,
        "kind": "quick",
+       "agentConfigId": null,
        "lastSeq": 0
       }
      ],

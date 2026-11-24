@@ -55,7 +55,7 @@ export const indexScenarios: Scenario[] = [
           turnActive: true
         }),
         row('s2', { title: 'Host title', createdAt: 0 }),
-        row('s3', { title: 'Host same time', kind: 'chat', createdAt: null })
+        row('s3', { title: 'Host same time', kind: 'chat', createdAt: null, agentConfigId: null })
       )
     ]
   },

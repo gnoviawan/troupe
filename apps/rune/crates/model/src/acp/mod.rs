@@ -18,6 +18,8 @@ mod picks;
 mod plan;
 pub mod prompt;
 pub mod session;
+#[cfg(test)]
+mod session_tests;
 pub mod subagent;
 mod tool_call;
 mod transcript;
@@ -279,6 +281,9 @@ pub enum Event {
     AgentSignInRequest(AgentSignInRequestEvent),
     #[serde(rename = "_onAgentSignInResolved")]
     AgentSignInResolved(AgentSignInResolvedEvent),
+    /// The persist a [`Effect::DropSessionTranscript`] waited for ran.
+    #[serde(rename = "dropSessionTranscript")]
+    DropSessionTranscript(String),
     #[serde(rename = "applySessionIndexSnapshot")]
     ApplySessionIndexSnapshot(Vec<Object>),
     #[serde(rename = "setMode")]
@@ -409,6 +414,10 @@ pub enum Effect {
         #[serde(skip_serializing)]
         is_model: bool,
     },
+    /// Free the session's transcript once the `PersistSession` before this
+    /// effect has read it: send `Event::DropSessionTranscript` before the
+    /// next event.
+    DropSessionTranscript { session_id: String },
     /// Close the chat tab of this session in every project's tree: the chat
     /// is neither live nor in the index, so the tab could show nothing.
     CloseChatTab { session_id: String },
@@ -475,6 +484,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
         Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
         Event::SetModel(session_id, model_id, options) => {

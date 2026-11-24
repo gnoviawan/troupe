@@ -174,7 +174,7 @@ fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
     ] {
         let current = session.rest.get(field).filter(|value| !value.is_null());
         let next = match (current, payload.filter(|value| !value.is_null())) {
-            (Some(current), Some(payload)) => {
+            (Some(current), Some(payload)) if current.is_object() && payload.is_object() => {
                 let mut merged = current.clone();
                 merged[list] = Value::Array(append_unseen(
                     items(current.get(list)),
@@ -184,6 +184,8 @@ fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
                 ));
                 merged
             }
+            // TypeScript throws on a list it cannot read; the model keeps
+            // what the session showed.
             (current, payload) => current.or(payload).cloned().unwrap_or(Value::Null),
         };
         session.rest.insert(field.into(), next);
@@ -375,6 +377,8 @@ impl State {
             && self.book.open_chat_tabs.contains(&id);
         if keep_transcript {
             self.drop_session_bookkeeping(&id);
+        } else if self.sessions.contains_key(&id) {
+            fx.push(Effect::DropSessionTranscript { session_id: id });
         } else {
             self.drop_session_transcript(&id);
         }

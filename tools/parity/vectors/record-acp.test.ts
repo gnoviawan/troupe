@@ -212,7 +212,9 @@ describe('acp test vectors', () => {
     vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(drawId)
     const recorded: Vector[] = []
     for (const scenario of acpScenarios) recorded.push(await recordVector(acpRecorder, scenario))
-    expect(sourcesOutsideWorkflow(acpRecorder.sources), 'parity-vectors.yml paths').toEqual([])
+    for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
+      expect(sourcesOutsideWorkflow(acpRecorder.sources, file), `${file} paths`).toEqual([])
+    }
     const manifest: Manifest = { stores: { acp: manifestEntry(acpRecorder, recorded) } }
     const byStore = new Map([['acp', recorded]])
     if (write) {

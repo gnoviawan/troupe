@@ -58,8 +58,10 @@ fn merge_newer_local(host: &Object, local: &Object) -> Object {
     for key in ["messageCount", "lastSeq"] {
         merged.insert(key.into(), json!(number(local, key).max(number(host, key))));
     }
+    // `first ?? second`: a null or absent first falls to the second as it is,
+    // null included.
     let either = |first: &Object, second: &Object, key: &str| {
-        given(first, key).or_else(|| given(second, key)).cloned()
+        given(first, key).or_else(|| second.get(key)).cloned()
     };
     set_or_drop(
         &mut merged,
