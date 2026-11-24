@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 
+import { adoptQuickChat } from '@/lib/no-project-chat'
 import { setRouterNavigate } from '@/lib/router-navigate'
 import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { useAcpStore } from '@/stores/acp-store'
@@ -80,5 +81,21 @@ describe('useQuickChatRouteSync', () => {
     useQuickChatStore.setState({ view: { mode: 'launcher' } })
     rerender({ path: '/c/p1' })
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+  })
+
+  it('takes Back to a quick launch that started behind a new launcher to its chat', () => {
+    const navigate = vi.fn()
+    setRouterNavigate(navigate)
+    // Send, then + before the agent started: the launcher replaced the
+    // placeholder's view, and #/c/launch-q1 stays in history.
+    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    adoptQuickChat('launch-q1', 'q2', 'test')
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+
+    const { rerender } = renderSync('/')
+    rerender({ path: '/c/launch-q1' })
+    expect(navigate).toHaveBeenCalledWith('/c/q2', { replace: true })
+    rerender({ path: '/c/q2' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'q2' })
   })
 })

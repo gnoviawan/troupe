@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { clearChatRoute } from '@/lib/router-navigate'
+import { clearChatRoute, isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
 
 /** What the main area shows for a quick chat. */
 export type QuickChatView =
@@ -27,11 +27,6 @@ interface QuickChatState {
   openChat: (sessionId: string) => void
   /** An older no-project chat. History can be read. New prompts are refused. */
   openOlderChat: (sessionId: string) => void
-  /**
-   * The launch placeholder `from` became session `to`. Only when `from` is
-   * the chat on screen: the view moves to `to` and keeps its panel key.
-   */
-  adoptChat: (from: string, to: string) => void
   close: () => void
 }
 
@@ -45,12 +40,6 @@ export const useQuickChatStore = create<QuickChatState>((set) => ({
   openLauncher: () => set({ view: { mode: 'launcher' } }),
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
   openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
-  adoptChat: (from, to) =>
-    set((state) => {
-      const view = state.view
-      if (view.mode !== 'chat' || view.sessionId !== from) return state
-      return { view: { mode: 'chat', sessionId: to, panelKey: view.panelKey ?? from } }
-    }),
   close: () => set({ view: { mode: 'closed' } })
 }))
 
@@ -62,6 +51,35 @@ export function useQuickChatOpen(): boolean {
 /** The session id of the open quick chat, or `null` (also for the launcher). */
 export function useQuickChatSessionId(): string | null {
   return useQuickChatStore((state) => (state.view.mode === 'chat' ? state.view.sessionId : null))
+}
+
+/** Quick launch placeholders that became their session off screen: placeholder id to session id. */
+const startedOffScreen = new Map<string, string>()
+
+/**
+ * The quick launch placeholder `from` became session `to`. When `from` is the
+ * chat on screen, the view moves to `to` with the same panel key (the typed
+ * text stays) and the placeholder's route entry is replaced. Otherwise the
+ * user moved on while it started: the placeholder's `#/c/<from>` entry is
+ * still in history and cannot be rewritten from here, so `to` is remembered
+ * for {@link startedQuickLaunch}. Returns whether the view followed.
+ */
+export function followQuickLaunch(from: string, to: string): boolean {
+  const view = useQuickChatStore.getState().view
+  if (view.mode !== 'chat' || view.sessionId !== from) {
+    startedOffScreen.set(from, to)
+    return false
+  }
+  useQuickChatStore.setState({
+    view: { mode: 'chat', sessionId: to, panelKey: view.panelKey ?? from }
+  })
+  navigateToChatSession(to, isChatRouteCurrent(from) ? { replace: true } : undefined)
+  return true
+}
+
+/** The session a quick launch placeholder became after it left the screen, if any. */
+export function startedQuickLaunch(placeholderId: string): string | undefined {
+  return startedOffScreen.get(placeholderId)
 }
 
 /** The quick chat whose view just closed, until its route is settled. */

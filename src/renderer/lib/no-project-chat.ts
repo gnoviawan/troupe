@@ -3,16 +3,14 @@ import { toast } from 'sonner'
 import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { focusComposerWhenReady } from '@/lib/focus-composer'
 import { logFrontendError } from '@/lib/log-api'
-import {
-  isChatRouteCurrent,
-  navigateToChatSession,
-  navigateToWorkspaceRoot
-} from '@/lib/router-navigate'
+import { navigateToChatSession, navigateToWorkspaceRoot } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
 import {
   closeQuickChatView,
   describeQuickChatView,
+  followQuickLaunch,
+  startedQuickLaunch,
   useQuickChatSessionId,
   useQuickChatStore
 } from '@/stores/quick-chat-store'
@@ -64,20 +62,33 @@ export function showQuickChatLauncher(source: string): void {
 }
 
 /**
- * The launch placeholder `from` on screen became session `to`. The view
- * moves to `to` with the same panel (the typed text stays), and the route
- * entry of the placeholder is replaced, so Back never lands on it.
+ * The quick launch placeholder `from` became session `to`: the view follows
+ * it when it is on screen (see {@link followQuickLaunch}).
  */
 export function adoptQuickChat(from: string, to: string, source: string): void {
-  const view = useQuickChatStore.getState().view
-  if (view.mode !== 'chat' || view.sessionId !== from) return
-  useQuickChatStore.getState().adoptChat(from, to)
-  navigateToChatSession(to, isChatRouteCurrent(from) ? { replace: true } : undefined)
+  const followed = followQuickLaunch(from, to)
   void logFrontendError({
     level: 'info',
     source,
-    message: `Quick chat ${from} started as ${to}`
+    message: `Quick chat ${from} started as ${to}${followed ? '' : ' off screen'}`
   })
+}
+
+/**
+ * When the route names a quick launch placeholder that started off screen
+ * (Back to its stale history entry), replace that entry with its session and
+ * return `true`. The route change then shows the session.
+ */
+export function followStartedQuickLaunchRoute(placeholderId: string, source: string): boolean {
+  const sessionId = startedQuickLaunch(placeholderId)
+  if (!sessionId) return false
+  navigateToChatSession(sessionId, { replace: true })
+  void logFrontendError({
+    level: 'info',
+    source,
+    message: `Route of quick chat launch ${placeholderId} now names its session ${sessionId}`
+  })
+  return true
 }
 
 /**
