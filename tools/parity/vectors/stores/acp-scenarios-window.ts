@@ -57,6 +57,23 @@ export const windowScenarios: Scenario[] = [
     steps: [fresh('a'), fresh('b')]
   },
   {
+    // A close drops the transcript while the probe is in flight: its answer
+    // marks nothing and logs nothing for a session that is gone.
+    name: 'live_window_probe_answered_after_the_chat_closed',
+    context: { payloads: { [S]: { hold: true, release: null } }, agentReplies: [null] },
+    initial: seeded({}, { messages: { [S]: history(300) } }),
+    steps: [fresh('a'), ev('closeSession', S), ev('releaseHeld')]
+  },
+  {
+    name: 'live_window_failed_probe_answered_after_the_chat_closed_still_logs',
+    context: {
+      payloads: { [S]: { hold: true, release: { reject: 'disk gone' } } },
+      agentReplies: [null]
+    },
+    initial: seeded({}, { messages: { [S]: history(300) } }),
+    steps: [fresh('a'), ev('closeSession', S), ev('releaseHeld')]
+  },
+  {
     name: 'live_window_is_not_trimmed_during_a_replay',
     context: { payloads: { [S]: DURABLE } },
     initial: seeded({ replaying: 'streaming' }, { messages: { [S]: history(301) } }),

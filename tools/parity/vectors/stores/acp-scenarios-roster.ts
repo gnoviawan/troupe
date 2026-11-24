@@ -41,6 +41,19 @@ export const rosterScenarios: Scenario[] = [
     ]
   },
   {
+    name: 'agents_watch_failures_without_a_message_toast_a_default_and_leave_no_text',
+    initial: seeded(
+      {},
+      { agents: { [AGENT]: agent(AGENT) }, agentStatus: { [AGENT]: 'connected' } }
+    ),
+    steps: [
+      delta('agent_error', { agentId: AGENT, sessionId: S }),
+      ev('_onPromptComplete', { agentId: AGENT, sessionId: S, stopReason: 'error' }),
+      delta('agent_crashed', { agentId: AGENT }),
+      delta('agent_disconnected', { agentId: AGENT })
+    ]
+  },
+  {
     name: 'agents_watch_routes_browser_open_and_sign_in_deltas',
     initial: { agents: { [AGENT]: agent(AGENT) }, agentStatus: { [AGENT]: 'connected' } },
     steps: [

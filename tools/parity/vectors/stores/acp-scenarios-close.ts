@@ -65,6 +65,18 @@ export const closeScenarios: Scenario[] = [
     steps: [ev('deleteHistorySession', S), ev('deleteHistorySession', 's8')]
   },
   {
+    name: 'close_session_answered_after_the_chat_was_deleted',
+    context: { agentReplies: [{ hold: true, release: null }, null, null] },
+    initial: chats(),
+    steps: [ev('closeSession', S), ev('deleteHistorySession', S), ev('releaseHeld')]
+  },
+  {
+    name: 'delete_history_session_answered_after_the_chat_was_closed',
+    context: { agentReplies: [{ hold: true, release: { reject: 'gone' } }, null, null] },
+    initial: chats(),
+    steps: [ev('deleteHistorySession', S), ev('closeSession', S), ev('releaseHeld')]
+  },
+  {
     name: 'delete_history_session_keeps_the_chat_when_the_history_stays',
     context: { agentReplies: [{ reject: 'disk full' }, null] },
     initial: {

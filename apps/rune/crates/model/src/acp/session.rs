@@ -325,7 +325,7 @@ impl State {
                     agent_working: None,
                     replaying: Some(None),
                     opencode_notice: None,
-                    last_error: None,
+                    last_error: Some(None),
                     last_error_code: None,
                     last_error_data: None,
                     background_commands: None,
@@ -489,7 +489,7 @@ impl State {
         let Some(session) = self.sessions.get_mut(session_id) else {
             return;
         };
-        let last = session.last_error.as_deref();
+        let last = session.last_error.as_ref().and_then(Option::as_deref);
         if session.status != SessionStatus::Closed
             || last.is_some_and(|last| last.starts_with(RESUME_FAILED_PREFIX))
             || last == Some(CODEX_CLI_SIGNED_OUT_MESSAGE)
@@ -501,7 +501,7 @@ impl State {
             .find_map(|tag| reason.strip_prefix(tag))
             .unwrap_or(reason);
         session.replaying = Some(None);
-        session.last_error = Some(format!("{RESUME_FAILED_PREFIX}{message}"));
+        session.last_error = Some(Some(format!("{RESUME_FAILED_PREFIX}{message}")));
         session.last_error_code = Some(None);
         session.last_error_data = None;
     }

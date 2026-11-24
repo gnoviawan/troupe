@@ -144,7 +144,7 @@ impl State {
         let session = self.sessions.get_mut(session_id).expect("checked above");
         session.active_turn = true;
         session.open_turn_id = Some(open_turn_id);
-        session.last_error = None;
+        session.last_error = Some(None);
         session.last_error_code = Some(None);
         session.last_error_data = None;
         self.launching_session_ids

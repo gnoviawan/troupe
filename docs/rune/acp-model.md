@@ -212,7 +212,8 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `diff_stat.rs`). `clearSessionBackfill` forgets the backfill and trims
      at once. The payload cache and its pins are the app's: the model only
      remembers which sessions are durable, so a cache eviction does not make
-     it probe again where the TypeScript would.
+     it probe again where the TypeScript would. A delete forgets it, as the
+     TypeScript delete evicts the cached payload.
    - 6b, close and delete (R6a-4, `acp/close.rs`). `closeSession` ends an
      open chat's agent session (`closeAgentSession`), then closes the chat,
      drops its warm slot, its prompts, its queue and its queue hold,
@@ -408,9 +409,9 @@ its pinned sources match a path glob of both workflows.
 - `context.openChatTabs` lists the sessions a chat tab shows.
 - `context.desktop` makes `isTauriContext` true, as `Book::desktop` does.
 - `context.payloads` is each session's durable history: every
-  `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
-  session it does not list, and `{ "reject": text }` fails the read. The
-  payload cache is cleared per vector.
+  `loadSessionPayload` emits `readSessionPayload` and answers it the way an
+  agent command answers its reply (below), null for a session it does not
+  list. The payload cache is cleared per vector.
 - `context.mcpReplies` answers the MCP commands in order: an entry is the
   reply, `{ "reject": text, "code": c }` fails it (an `McpOAuthError` when
   `code` is set), `{ "hold": true }` leaves it in flight, and a start's
@@ -427,12 +428,20 @@ its pinned sources match a path glob of both workflows.
 - Toasts are effects (`toast`, with the level). The roster watch is attached
   once to a stub watch client; `agentsWatchState` and `agentsWatchDelta` call
   its handlers.
-- `context.agentReplies` answers the agent commands in order: an entry is
-  the reply, `{ "reject": text }` fails it, and `{ "hold": true }` leaves it
-  in flight for the rest of the vector.
+- `context.agentReplies` answers the agent commands and the close and
+  delete commands in order: an entry is the reply, `{ "reject": text }`
+  fails it, and `{ "hold": true }` leaves it in flight for the rest of the
+  vector. `{ "hold": true, "release": reply }` holds it until a
+  `releaseHeld` step, which answers the oldest held command with `reply`;
+  that is how a vector interleaves a close with a delete, or a durability
+  probe with a close.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
   `{ "reject": text }` fails that `setConfigOption` with `text`.
+- An `agent_error` or `agent_crashed` without a `message` leaves the chat's
+  `lastError` absent (`undefined`), not null; `Session::last_error` keeps
+  the three states. An `agent_disconnected` without a `reason` counts as a
+  deliberate end.
 - A failed command comes back with the error's raw message
   (`controlFailed`, `agentCommandFailed`, a failed `promptSettled`); the
   model adds the `Error: ` prefix `String(error)` prints wherever the store

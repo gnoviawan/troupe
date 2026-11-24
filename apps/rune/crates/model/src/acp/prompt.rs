@@ -200,7 +200,7 @@ impl State {
         session
             .rest
             .insert("latestPromptTurnId".into(), json!(turn_id));
-        session.last_error = None;
+        session.last_error = Some(None);
         session.last_error_code = Some(None);
         session.last_error_data = None;
         let agent_id = session.agent_id.clone();
@@ -301,7 +301,7 @@ impl State {
                     session.active_turn = false;
                     session.open_turn_id = None;
                     if !agent_dead {
-                        session.last_error = Some(message.clone());
+                        session.last_error = Some(Some(message.clone()));
                     }
                 }
                 match dispatch.caller {
@@ -371,7 +371,7 @@ impl State {
         if let (Some(session), Some(restored)) = (self.sessions.get_mut(session_id), restored) {
             session.active_turn = restored.is_some();
             session.open_turn_id = restored;
-            session.last_error = None;
+            session.last_error = Some(None);
             session.last_error_code = Some(None);
             session.last_error_data = None;
         }

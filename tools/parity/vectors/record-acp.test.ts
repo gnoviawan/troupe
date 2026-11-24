@@ -8,6 +8,7 @@ import {
   dispatchOutcomes,
   drawId,
   emit,
+  heldReplies,
   type Manifest,
   manifestEntry,
   mcpReplies,
@@ -73,14 +74,10 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     queueSessionPayloadDelete: (sessionId: string) =>
       agentCommand({ kind: 'deleteSessionPayload', sessionId }),
     // A payload read is the model's `readSessionPayload` effect; it answers
-    // `context.payloads`.
-    loadSessionPayload: async (id: string) => {
+    // `context.payloads` the way an agent command answers its reply.
+    loadSessionPayload: (id: string) => {
       emit({ kind: 'readSessionPayload', sessionId: id })
-      const payload = sessionPayloads.get(id)
-      if (typeof payload === 'object' && payload !== null && 'reject' in payload) {
-        throw new Error(String(payload.reject))
-      }
-      return payload ?? null
+      return answer(sessionPayloads.get(id) ?? null)
     },
     loadSessionPayloadTail: async () => null
   }
@@ -231,14 +228,23 @@ function dispatchPrompt(
   }
   return Promise.resolve(outcome)
 }
-// An agent command answers the next `context.agentReplies` entry: `{ reject }`
-// fails it, `{ hold: true }` leaves it in flight, anything else is the reply.
+// An agent command answers the next `context.agentReplies` entry.
 function agentCommand(effect: Record<string, unknown>): Promise<unknown> {
   emit(effect)
-  const reply = agentReplies.shift() ?? null
+  return answer(agentReplies.shift() ?? null)
+}
+// `{ reject }` fails, `{ hold: true }` stays in flight for the rest of the
+// vector, and `{ hold: true, release }` until a `releaseHeld` step answers it
+// with `release`. Anything else is the reply.
+function answer(reply: unknown): Promise<unknown> {
   if (typeof reply === 'object' && reply !== null) {
     if ('reject' in reply) return Promise.reject(new Error(String(reply.reject)))
-    if ('hold' in reply) return new Promise(() => {})
+    if ('hold' in reply) {
+      if (!('release' in reply)) return new Promise(() => {})
+      return new Promise((resolve, reject) =>
+        heldReplies.push(() => answer(reply.release).then(resolve, reject))
+      )
+    }
   }
   return Promise.resolve(reply)
 }

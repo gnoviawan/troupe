@@ -101,6 +101,12 @@ export const mcpReplies: unknown[] = []
 /** The shared MCP registry watch, once the store started it. */
 export const mcpSharedSync: { apply: ((change: unknown) => void) | null } = { apply: null }
 
+/**
+ * Answers held in flight by a `{ hold: true, release }` reply, oldest first;
+ * a `releaseHeld` step answers the oldest with its `release`.
+ */
+export const heldReplies: Array<() => void> = []
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 

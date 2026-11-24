@@ -30,6 +30,7 @@ import {
   configReplies,
   dispatchOutcomes,
   emit,
+  heldReplies,
   mcpReplies,
   mcpSharedSync,
   openChatTabs,
@@ -132,7 +133,8 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
   noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor,
   mcpSharedChanged: (change: unknown) => mcpSharedSync.apply?.(change),
   agentsWatchState: (state: unknown) => agentsWatch.onState?.(state),
-  agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta)
+  agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta),
+  releaseHeld: () => heldReplies.shift()?.()
 }
 
 export const acpRecorder: StoreRecorder = {
@@ -211,6 +213,7 @@ export const acpRecorder: StoreRecorder = {
     composerRecord.saved = context.composerOptions ?? null
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
     mcpReplies.splice(0, mcpReplies.length, ...((context.mcpReplies as unknown[]) ?? []))
+    heldReplies.length = 0
     _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
     platform.desktop = context.desktop === true

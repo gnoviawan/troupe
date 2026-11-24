@@ -164,7 +164,7 @@ impl State {
         let timestamp = present(stored, "timestamp").or_else(|| present(&marked, "timestamp"));
         let seq = present(stored, "seq").or_else(|| present(&marked, "seq"));
         let mut merged = spread(stored.clone(), marked);
-        merged.remove("restoredSummary");
+        merged.shift_remove("restoredSummary");
         set_or_remove(&mut merged, "timestamp", timestamp);
         set_or_remove(&mut merged, "seq", seq);
         let Some(mut stored) = clamp::tool_call(&mut self.book, fx, &session_id, merged) else {
@@ -229,7 +229,7 @@ impl State {
             None => json!(self.book.next_seq()),
         };
         let mut merged = spread(stored.clone(), clamped);
-        merged.remove("restoredSummary");
+        merged.shift_remove("restoredSummary");
         merged.insert("timestamp".into(), timestamp);
         merged.insert("seq".into(), seq);
         let Some(mut merged) = clamp::tool_call(&mut self.book, fx, &session_id, merged) else {
@@ -261,7 +261,7 @@ fn set_or_remove(call: &mut Object, key: &str, value: Option<Value>) {
             call.insert(key.to_owned(), value);
         }
         None => {
-            call.remove(key);
+            call.shift_remove(key);
         }
     }
 }

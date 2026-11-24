@@ -119,7 +119,7 @@ impl Projected {
                 true
             }
             Self::Dropped => {
-                call.remove(key);
+                call.shift_remove(key);
                 true
             }
         }

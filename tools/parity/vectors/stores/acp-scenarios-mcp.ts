@@ -78,6 +78,31 @@ export const mcpScenarios: Scenario[] = [
     ]
   },
   {
+    // `sameProbeConfig` compares `JSON.stringify` of the configs, so the
+    // fields left after dropping `id` and `enabled` keep their order.
+    name: 'mcp_shared_change_with_the_id_moved_keeps_the_probe',
+    initial: {
+      ...loaded(http('a')),
+      mcpProbeStatus: { a: 'connected' },
+      mcpTools: { a: connected.tools }
+    },
+    steps: [
+      ev('mcpSharedChanged', {
+        exists: true,
+        data: [
+          {
+            type: 'http',
+            name: 'srv-a',
+            url: 'https://a.example/mcp',
+            headers: [],
+            id: 'a',
+            enabled: true
+          }
+        ]
+      })
+    ]
+  },
+  {
     name: 'mcp_load_failure_logs_and_toasts',
     context: { mcpReplies: [{ reject: 'disk gone' }] },
     steps: [ev('loadMcpServers')]

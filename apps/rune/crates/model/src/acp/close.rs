@@ -113,6 +113,8 @@ impl State {
         self.session_index
             .retain(|entry| entry.get("id").and_then(Value::as_str) != Some(session_id));
         self.prepared_sessions.retain(|_, id| id != session_id);
+        // The cached payload goes with the history it mirrored.
+        self.book.durable_history.remove(session_id);
         self.drop_session_transcript(session_id);
         fx.push(Effect::CloseChatTab {
             session_id: session_id.to_owned(),

@@ -245,6 +245,7 @@
         "respond_agent_sign_in_failure_is_logged",
         "agents_watch_routes_each_roster_delta_to_its_reducer",
         "agents_watch_toasts_a_default_for_a_failure_without_text",
+        "agents_watch_failures_without_a_message_toast_a_default_and_leave_no_text",
         "agents_watch_routes_browser_open_and_sign_in_deltas",
         "agents_watch_hands_policy_and_automation_hints_on",
         "agents_watch_reconciles_the_full_state",
@@ -257,6 +258,8 @@
         "live_window_keeps_a_streaming_tail_longer_than_the_bound",
         "live_window_never_trims_a_session_without_durable_history",
         "live_window_probes_again_after_a_failed_probe",
+        "live_window_probe_answered_after_the_chat_closed",
+        "live_window_failed_probe_answered_after_the_chat_closed_still_logs",
         "live_window_is_not_trimmed_during_a_replay",
         "live_window_trims_after_a_tool_event",
         "live_tool_calls_plateau_at_the_bound_keeping_in_flight_calls",
@@ -264,6 +267,7 @@
         "live_tool_calls_leave_a_summary_of_a_dropped_file_change",
         "live_tool_calls_over_the_bound_in_flight_keep_the_newest",
         "mcp_load_sets_the_list_and_starts_the_shared_watch",
+        "mcp_shared_change_with_the_id_moved_keeps_the_probe",
         "mcp_load_failure_logs_and_toasts",
         "mcp_save_adds_or_replaces_and_reprobes_an_edited_server",
         "mcp_registry_writes_roll_back_when_the_save_fails",
@@ -283,6 +287,8 @@
         "close_session_ends_the_agent_session_then_frees_the_chat",
         "close_session_keeps_the_transcript_an_open_tab_shows",
         "delete_history_session_asks_the_agent_that_can_delete",
+        "close_session_answered_after_the_chat_was_deleted",
+        "delete_history_session_answered_after_the_chat_was_closed",
         "delete_history_session_keeps_the_chat_when_the_history_stays"
       ]
     }
