@@ -190,7 +190,7 @@ describe('openNewChat', () => {
 
     expect(await openNewChat({ reason: 'rail' })).toEqual({ kind: 'launcher' })
 
-    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher', id: expect.any(Number) })
     expect(useWorkspaceStore.getState().agentLauncherPaneId).toBeNull()
     expect(useAcpStore.getState().sessions).toEqual({})
     expect(createLaunchPlaceholder).not.toHaveBeenCalled()
@@ -216,7 +216,7 @@ describe('openNewQuickChat', () => {
 
     expect(openNewQuickChat('quick-chats-header')).toEqual({ kind: 'launcher' })
 
-    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher', id: expect.any(Number) })
     expect(navigate).toHaveBeenCalledWith('/')
     // A project launcher overlay under the quick view is dropped.
     expect(useWorkspaceStore.getState().agentLauncherPaneId).toBeNull()
@@ -233,11 +233,12 @@ describe('openNewQuickChat', () => {
 
     openNewQuickChat('quick-chats-header')
 
-    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher', id: expect.any(Number) })
   })
 
   it('focuses the launcher already on screen, once it can take typing', async () => {
-    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    useQuickChatStore.getState().openLauncher()
+    const onScreen = useQuickChatStore.getState().view
     const main = document.createElement('div')
     main.dataset.testid = 'quick-chat-main'
     const editor = document.createElement('div')
@@ -248,7 +249,8 @@ describe('openNewQuickChat', () => {
     document.body.append(main)
     try {
       expect(openNewQuickChat('command-palette-quick')).toEqual({ kind: 'launcher' })
-      expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+      // The same launcher: a launch it started is not called off.
+      expect(useQuickChatStore.getState().view).toBe(onScreen)
       expect(navigate).not.toHaveBeenCalled()
       await vi.waitFor(() => expect(document.activeElement).toBe(editor))
     } finally {

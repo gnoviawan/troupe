@@ -6,9 +6,10 @@ export type QuickChatView =
   | { mode: 'closed' }
   /**
    * The agent launcher for a new quick chat. No session exists until Send,
-   * so it owns no `#/c/<id>` route.
+   * so it owns no `#/c/<id>` route. Each opened launcher gets a new `id`, so a
+   * launch can tell its own launcher from one opened after it closed.
    */
-  | { mode: 'launcher' }
+  | { mode: 'launcher'; id: number }
   | {
       mode: 'chat'
       sessionId: string
@@ -23,6 +24,7 @@ export type QuickChatView =
 
 interface QuickChatState {
   view: QuickChatView
+  /** Open a new launcher, with a new id. */
   openLauncher: () => void
   openChat: (sessionId: string) => void
   /** An older no-project chat. History can be read. New prompts are refused. */
@@ -35,9 +37,11 @@ interface QuickChatState {
  * project pane tree. Selecting a project or opening a project chat closes
  * this view (see {@link closeQuickChatView}).
  */
+let lastLauncherId = 0
+
 export const useQuickChatStore = create<QuickChatState>((set) => ({
   view: { mode: 'closed' },
-  openLauncher: () => set({ view: { mode: 'launcher' } }),
+  openLauncher: () => set({ view: { mode: 'launcher', id: ++lastLauncherId } }),
   openChat: (sessionId) => set({ view: { mode: 'chat', sessionId } }),
   openOlderChat: (sessionId) => set({ view: { mode: 'chat', sessionId, readOnly: true } }),
   close: () => set({ view: { mode: 'closed' } })
@@ -46,6 +50,12 @@ export const useQuickChatStore = create<QuickChatState>((set) => ({
 /** `true` while a quick chat or its launcher owns the main area. */
 export function useQuickChatOpen(): boolean {
   return useQuickChatStore((state) => state.view.mode !== 'closed')
+}
+
+/** The id of the quick launcher on screen, or `null` when the quick view shows no launcher. */
+export function quickLauncherOnScreen(): number | null {
+  const view = useQuickChatStore.getState().view
+  return view.mode === 'launcher' ? view.id : null
 }
 
 /** The session id of the open quick chat, or `null` (also for the launcher). */

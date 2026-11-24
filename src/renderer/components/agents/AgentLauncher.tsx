@@ -152,7 +152,7 @@ import {
   readComposerOptions,
   savedModelValues
 } from '@/stores/acp-store/composer-options'
-import { useQuickChatStore } from '@/stores/quick-chat-store'
+import { quickLauncherOnScreen } from '@/stores/quick-chat-store'
 import { useWorktreePick } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 
@@ -1326,6 +1326,7 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
     const configSnapshot = selectedConfig
     const paneSnapshot = paneId
     const surfaceSnapshot = place.surface
+    const quickLauncherSnapshot = surfaceSnapshot.kind === 'quick' ? quickLauncherOnScreen() : null
     const projectIdSnapshot = activeProjectId
     const projectRootSnapshot = place.launchCwd
     const needsSave = !acpConfigs.some((config) => config.id === selectedConfig.id)
@@ -1434,9 +1435,13 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
       }
     }
 
-    // The user left the quick launcher (picked a project) while the launch
-    // waited above: opening the quick chat now would pull them back.
-    if (surfaceSnapshot.kind === 'quick' && useQuickChatStore.getState().view.mode !== 'launcher') {
+    // The user left this quick launcher (picked a project, or closed it and
+    // opened a new one) while the launch waited above: opening the quick chat
+    // now would pull them back, or send this prompt from the new launcher.
+    if (
+      surfaceSnapshot.kind === 'quick' &&
+      (quickLauncherSnapshot === null || quickLauncherOnScreen() !== quickLauncherSnapshot)
+    ) {
       void logFrontendError({
         level: 'info',
         source: 'agentLauncher.launch',

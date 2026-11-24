@@ -4967,7 +4967,7 @@ describe('AgentLauncher Claude account chip', () => {
 
 describe('AgentLauncher for a new quick chat', () => {
   function renderQuickLauncher(): void {
-    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    useQuickChatStore.getState().openLauncher()
     render(
       <TooltipProvider>
         <MemoryRouter>
@@ -5093,6 +5093,56 @@ describe('AgentLauncher for a new quick chat', () => {
         expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
           expect.objectContaining({ kind: 'quick', projectId: '__unassigned__' })
         )
+      )
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
+
+  it('calls the launch off when its launcher closed and a new one opened while a mentioned chat loads', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      act(() => useQuickChatStore.getState().close())
+      act(() => useQuickChatStore.getState().openLauncher())
+      const newLauncher = useQuickChatStore.getState().view
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).not.toHaveBeenCalled()
+      expect(useQuickChatStore.getState().view).toBe(newLauncher)
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
+
+  it('starts the quick chat once a mentioned chat loads when its launcher stayed open', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'quick', projectId: '__unassigned__' })
       )
     } finally {
       conversationContextsOverride.current = null

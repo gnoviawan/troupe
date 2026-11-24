@@ -128,7 +128,7 @@ describe('launchChat', () => {
   it('opens a quick chat in the quick view with its first message and follows it to its session', async () => {
     const navigate = vi.fn()
     setRouterNavigate(navigate)
-    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    useQuickChatStore.getState().openLauncher()
     let adopt: ((from: string, to: string) => void) | undefined
     seams.finalizeChatLaunch.mockImplementation(
       async (args: { adoptSession: (from: string, to: string) => void }) => {

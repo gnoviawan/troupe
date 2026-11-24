@@ -132,6 +132,6 @@ describe('useShellUnreadTracker viewing', () => {
   })
 
   it('views no chat while the quick chat launcher covers the panes', () => {
-    expect(viewingWith({ mode: 'launcher' })).toEqual([])
+    expect(viewingWith({ mode: 'launcher', id: 1 })).toEqual([])
   })
 })

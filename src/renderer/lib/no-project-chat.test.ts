@@ -56,12 +56,12 @@ describe('no-project-chat', () => {
   it('shows the quick chat launcher on the workspace root, with no chat route', () => {
     window.location.hash = '#/snapshots'
     showQuickChatLauncher('test')
-    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'launcher', id: expect.any(Number) })
     expect(navigate).toHaveBeenCalledWith('/')
   })
 
   it('closes the launcher for a project view without touching the route', async () => {
-    useQuickChatStore.setState({ view: { mode: 'launcher' } })
+    useQuickChatStore.getState().openLauncher()
     leaveQuickChatView('test')
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
     await new Promise((resolve) => setTimeout(resolve, 0))
