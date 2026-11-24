@@ -10,6 +10,7 @@ import {
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
+import { attachAgentRosterWatch } from '../../../../src/renderer/stores/acp-store/agent-roster-watch'
 import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
@@ -29,6 +30,7 @@ import {
   dispatchOutcomes,
   emit,
   openChatTabs,
+  platform,
   type StoreRecorder
 } from '../record'
 
@@ -70,10 +72,24 @@ const DATA_KEYS = [
   'discoveredSessions'
 ] as const
 
+/** The host's `agents` watch, as `attachAgentRosterWatch` subscribes to it. */
+const agentsWatch: { onState?: (state: unknown) => void; onDelta?: (delta: unknown) => void } = {}
+attachAgentRosterWatch(
+  {
+    subscribe: (_topic: string, handlers: typeof agentsWatch) => {
+      Object.assign(agentsWatch, handlers)
+      return () => {}
+    }
+  } as unknown as Parameters<typeof attachAgentRosterWatch>[0],
+  () => useAcpStore.getState()
+)
+
 /** Module functions a step may call besides the store's actions. */
 const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
   noteHistoryWatermark: shared.noteHistoryWatermark,
-  noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor
+  noteLiveTurnReplayFloor: shared.noteLiveTurnReplayFloor,
+  agentsWatchState: (state: unknown) => agentsWatch.onState?.(state),
+  agentsWatchDelta: (delta: unknown) => agentsWatch.onDelta?.(delta)
 }
 
 export const acpRecorder: StoreRecorder = {
@@ -111,7 +127,9 @@ export const acpRecorder: StoreRecorder = {
     'src/shared/types/web-protocol.types.ts',
     'src/renderer/stores/acp-store/composer-options.ts',
     'src/renderer/stores/acp-store/chat-tab-prune.ts',
-    'src/renderer/lib/acp-history-persistence.ts'
+    'src/renderer/lib/acp-history-persistence.ts',
+    'src/renderer/stores/acp-store/agent-roster-watch.ts',
+    'src/renderer/stores/acp-store/browser-agent-tabs.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -134,6 +152,7 @@ export const acpRecorder: StoreRecorder = {
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
     _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
+    platform.desktop = context.desktop === true
     openChatTabs.clear()
     for (const id of (context.openChatTabs as string[]) ?? []) openChatTabs.add(id)
     // The counter only moves up; each vector starts on the next hundred.
@@ -203,6 +222,7 @@ import { indexScenarios } from './acp-scenarios-index'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { restoreScenarios } from './acp-scenarios-restore'
+import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
@@ -218,5 +238,6 @@ export const acpScenarios = [
   ...pickScenarios,
   ...indexScenarios,
   ...restoreScenarios,
-  ...agentCommandScenarios
+  ...agentCommandScenarios,
+  ...rosterScenarios
 ]

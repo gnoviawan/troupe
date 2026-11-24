@@ -101,7 +101,8 @@ TypeScript lines are whole files, comments included. Every path below is under
 | `slices/session.ts` (`_onSessionCreated`, `_onSessionClosed`, `createSession`, `closeSession`, index load and snapshot, history open, retry) | 2,879 | `acp/session.rs`, `acp/history.rs` | state; payload reads, index writes, `session/load` are effects | 6 |
 | `slices/agent.ts` (roster events, browser consent) and `agent-roster-watch.ts` | 1,554 | `acp/agents.rs` | state | 7a |
 | `slices/agent.ts` (spawn, kill, sign-in, sign-out, the sign-in prompt answer, the auth bookkeeping) | (same file) | `acp/agent_commands.rs` | state; each command is an effect with an outcome event | 7b |
-| `browser-agent-tabs.ts` | 77 | `acp/agents.rs` | state; the workspace tab is an effect | 7 |
+| `agent-roster-watch.ts` | 127 | `acp/roster.rs` | state; the policy and automation hints and the toasts are effects | 7 |
+| `browser-agent-tabs.ts` | 77 | `acp/roster.rs` | effects: the Stop owner, and on the desktop the workspace tab | 7 |
 | `slices/agent.ts` `_onBrowserConsentTicket`, `_onBrowserTicketClosed` and `lib/browser-consent-api.ts` `parseBrowserConsentTicket` | (part) | `acp/approvals.rs` | state; revealing the chat tab is an effect | 2 |
 | `slices/launch.ts`, `chat-reuse-scope.ts`, `ephemeral-ids.ts`, `registry-mcp-fingerprints.ts` | 1,139 | `acp/launch.rs` | state; prepare and claim are socket effects | 8 |
 | `slices/config.ts` | 344 | `acp/launch.rs` | state; config writes are persistence effects | 8 |
@@ -227,7 +228,17 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `prepareChat`, PR 8), `stoppingAgentIds` (read only by the warm-pool
      reap, PR 8), and the sign-in before a session call
      (`authenticateBeforeSession`, `withAuthRetry`, PR 8).
-   - 7b, rest. The roster watch and the browser tabs.
+   - 7b, rest (R6a-4). The host's `agents` watch and the agent browser
+     tabs (`acp/roster.rs`). The watch's full state (`agentsWatchState`)
+     spawns the agents the model lacks, disconnects the connected ones the
+     host dropped, and asks the policy and automation views to re-read. A
+     delta (`agentsWatchDelta`) goes to the handler the desktop event
+     reaches; a crash or error also toasts. The browser policy and
+     automation hints pass through as effects. `_onBrowserAgentTab` and
+     `_onBrowserTabClosed` track the tab's Stop owner and, when
+     `Env::desktop`, open or close the workspace tab; an open the history
+     covers is skipped. A delta whose payload its handler cannot read is
+     logged and dropped, where the TypeScript hands it on unchecked.
 8. Launch, prepare and warm pool, agent configs.
 9. In-chat agent switch.
 10. MCP, import, discovery, one-shot collectors.
@@ -330,6 +341,10 @@ its pinned sources match a path glob of both workflows.
   (`live_only`) client skips the index reload the way the server one does;
   the model folds both into `Env::server_history`.
 - `context.openChatTabs` lists the sessions a chat tab shows.
+- `context.desktop` makes `isTauriContext` true, as `Env::desktop` does.
+- Toasts are effects (`toast`, with the level). The roster watch is attached
+  once to a stub watch client; `agentsWatchState` and `agentsWatchDelta` call
+  its handlers.
 - `context.agentReplies` answers the agent commands in order: an entry is
   the reply, `{ "reject": text }` fails it, and `{ "hold": true }` leaves it
   in flight for the rest of the vector.

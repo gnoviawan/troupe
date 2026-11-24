@@ -43,6 +43,7 @@ fn apply(state: &mut State, event: Value) -> Vec<Effect> {
         now: 1_000.0,
         ids: &mut ids,
         server_history: true,
+        desktop: false,
     };
     step(state, event, &mut env)
 }

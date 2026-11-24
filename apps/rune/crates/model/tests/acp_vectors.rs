@@ -57,6 +57,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
     let context = vector.get("context").cloned().unwrap_or(json!({}));
     let start = context.get("now").and_then(Value::as_f64).unwrap_or(NOW);
     let server_history = context.get("serverHistory") == Some(&Value::Bool(true));
+    let desktop = context.get("desktop") == Some(&Value::Bool(true));
     let mut config_replies: VecDeque<Value> = context
         .get("configReplies")
         .and_then(Value::as_array)
@@ -99,6 +100,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
             now: start + 1000.0 * (index as f64 + 1.0),
             ids: &mut ids,
             server_history,
+            desktop,
         };
         let mut effects = acp::step(
             &mut state,

@@ -23,6 +23,7 @@ pub mod prompt;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
+pub mod roster;
 pub mod session;
 #[cfg(test)]
 mod session_tests;
@@ -52,6 +53,7 @@ use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 use restore::Run;
 pub use restore::RunId;
+use roster::{AgentBrowserTabClosedEvent, BrowserAgentTabEvent};
 use session::{SessionClosedEvent, SessionCreatedEvent};
 pub use transcript::{
     CommandsUpdateEvent, CompactionNotice, HistoryPayload, MessageChunkEvent, PayloadMetadata,
@@ -268,6 +270,9 @@ pub struct Env<'a> {
     pub ids: &'a mut dyn Ids,
     /// The host owns the history (`historyMode` is `server`): the web client.
     pub server_history: bool,
+    /// The app shows native panes, such as an agent's browser tab
+    /// (`isTauriContext`).
+    pub desktop: bool,
 }
 
 impl Env<'_> {
@@ -335,6 +340,16 @@ pub enum Event {
     AgentSignInRequest(AgentSignInRequestEvent),
     #[serde(rename = "_onAgentSignInResolved")]
     AgentSignInResolved(AgentSignInResolvedEvent),
+    #[serde(rename = "_onBrowserAgentTab")]
+    BrowserAgentTab(BrowserAgentTabEvent, #[serde(default)] Option<f64>),
+    #[serde(rename = "_onBrowserTabClosed")]
+    AgentBrowserTabClosed(AgentBrowserTabClosedEvent),
+    /// The full state of the host's `agents` watch, sent on every subscribe.
+    #[serde(rename = "agentsWatchState")]
+    AgentsWatchState(Value),
+    /// One change of the host's `agents` watch.
+    #[serde(rename = "agentsWatchDelta")]
+    AgentsWatchDelta(Value),
     /// The persist a [`Effect::DropSessionTranscript`] waited for ran.
     #[serde(rename = "dropSessionTranscript")]
     DropSessionTranscript(String),
@@ -557,6 +572,28 @@ pub enum Effect {
     },
     /// Save the remembered auth method per config.
     PersistAuthMethods { methods: BTreeMap<String, String> },
+    /// Show a toast; `level` is `error`, `warning` or `success`.
+    Toast { level: String, message: String },
+    /// Ask the browser policy views to re-read: a hint may have been lost.
+    RequestBrowserPolicyResync,
+    /// Hand a `browser_policy_changed` hint to the policy views.
+    PublishBrowserPolicyChange { payload: Value },
+    /// Ask the automation views to re-read: a change may have been lost.
+    RequestAutomationResync,
+    /// Hand an `automation_changed` hint to the automation views.
+    PublishAutomationChange { payload: Value },
+    /// The session's agent drives this browser tab: its Stop stops the tab.
+    TrackAgentTab { tab_id: String, session_id: String },
+    /// No session drives this browser tab any more.
+    UntrackAgentTab { tab_id: String },
+    /// Open the agent's browser tab in the workspace (desktop only).
+    OpenAgentBrowserTab {
+        tab_id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        url: Option<String>,
+    },
+    /// Close the agent's browser tab and its browser session (desktop only).
+    CloseAgentBrowserTab { tab_id: String },
     /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
     /// the agent re-advertised the session's options first.
     WaitForReadvertisedOptions {
@@ -624,6 +661,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::BrowserOpenRequest(event) => state.on_browser_open_request(event, &mut fx),
         Event::AgentSignInRequest(event) => state.on_agent_sign_in_request(event, &mut fx),
         Event::AgentSignInResolved(event) => state.on_agent_sign_in_resolved(event),
+        Event::BrowserAgentTab(event, seq) => state.on_browser_agent_tab(event, seq, env, &mut fx),
+        Event::AgentBrowserTabClosed(event) => state.on_browser_tab_closed(event, env, &mut fx),
+        Event::AgentsWatchState(state_) => state.on_agents_watch_state(state_, env, &mut fx),
+        Event::AgentsWatchDelta(delta) => state.on_agents_watch_delta(delta, env, &mut fx),
         Event::DropSessionTranscript(session_id) => state.drop_session_transcript(&session_id),
         Event::ApplySessionIndexSnapshot(entries) => state.apply_session_index(entries, &mut fx),
         Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),

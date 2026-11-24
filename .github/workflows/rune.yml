@@ -49,6 +49,8 @@ on:
       - 'src/renderer/lib/working-copy.ts'
       - 'src/renderer/lib/workspace-tab-kinds.ts'
       - 'src/renderer/stores/acp-reuse-keys.ts'
+      - 'src/renderer/stores/acp-store/agent-roster-watch.ts'
+      - 'src/renderer/stores/acp-store/browser-agent-tabs.ts'
       - 'src/renderer/stores/acp-store/chat-tab-prune.ts'
       - 'src/renderer/stores/acp-store/child-approvals.ts'
       - 'src/renderer/stores/acp-store/composer-options.ts'

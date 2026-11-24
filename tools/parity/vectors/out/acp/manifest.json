@@ -34,7 +34,9 @@
         "src/shared/types/web-protocol.types.ts": "296a28c60d36c8129c6388a8b5639115a7f33e55",
         "src/renderer/stores/acp-store/composer-options.ts": "a8e610b12c801232528614acbb7faf57d9766c08",
         "src/renderer/stores/acp-store/chat-tab-prune.ts": "d71996dd7ade033932cd54eab92b0db45edcae62",
-        "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510"
+        "src/renderer/lib/acp-history-persistence.ts": "824eb13371e84a90ca5d9ee72a8bbdad8a2e5510",
+        "src/renderer/stores/acp-store/agent-roster-watch.ts": "ce955780d8e578d22b0705e7ae4534a94193c582",
+        "src/renderer/stores/acp-store/browser-agent-tabs.ts": "17e0cfcad6dc3306c3d6823cc293f1f9b9c11130"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -232,7 +234,17 @@
         "respond_agent_sign_in_accept_keeps_the_prompt",
         "respond_agent_sign_in_cancel_ends_the_prompt",
         "respond_agent_sign_in_ignores_a_browser_prompt",
-        "respond_agent_sign_in_failure_is_logged"
+        "respond_agent_sign_in_failure_is_logged",
+        "agents_watch_routes_each_roster_delta_to_its_reducer",
+        "agents_watch_toasts_a_default_for_a_failure_without_text",
+        "agents_watch_routes_browser_open_and_sign_in_deltas",
+        "agents_watch_hands_policy_and_automation_hints_on",
+        "agents_watch_reconciles_the_full_state",
+        "agents_watch_resync_without_a_list_only_asks_for_rereads",
+        "agents_watch_ignores_a_delta_without_an_agent_id_or_of_an_unknown_kind",
+        "agent_browser_tab_on_the_web_only_tracks_its_stop_owner",
+        "agent_browser_tab_on_the_desktop_opens_and_closes_the_tab",
+        "agent_browser_tab_open_the_history_covers_is_skipped"
       ]
     }
   }

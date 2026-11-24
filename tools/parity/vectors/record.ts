@@ -82,6 +82,9 @@ export const composerRecord: { saved: unknown } = { saved: null }
  */
 export const agentReplies: unknown[] = []
 
+/** The app runs native panes (`isTauriContext`); a vector's `context.desktop`. */
+export const platform = { desktop: false }
+
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 

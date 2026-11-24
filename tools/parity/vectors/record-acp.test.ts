@@ -12,6 +12,7 @@ import {
   manifestEntry,
   OUT_DIR,
   openChatTabs,
+  platform,
   recordVector,
   sourcesOutsideWorkflow,
   storeText,
@@ -26,12 +27,18 @@ import {
 
 const renderer = '../../../src/renderer'
 
-vi.mock('sonner', () => ({ toast: { error: () => {}, warning: () => {}, success: () => {} } }))
+vi.mock('sonner', () => ({
+  toast: {
+    error: (message: unknown) => emit({ kind: 'toast', level: 'error', message }),
+    warning: (message: unknown) => emit({ kind: 'toast', level: 'warning', message }),
+    success: (message: unknown) => emit({ kind: 'toast', level: 'success', message })
+  }
+}))
 vi.mock('@tauri-apps/api/core', () => ({ invoke: async () => null }))
 vi.mock('@tauri-apps/api/event', () => ({ listen: async () => () => {} }))
 vi.mock(`${renderer}/lib/tauri-runtime`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  isTauriContext: () => false,
+  isTauriContext: () => platform.desktop,
   cleanupTauriListener: () => {}
 }))
 vi.mock(`${renderer}/lib/log-api`, async (importOriginal) => ({
@@ -99,17 +106,49 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     return null
   },
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
+  browserTabId: (tabId: string) => `browser-${tabId}`,
   getAgentChatSessionIdsInAllTrees: () => new Set(openChatTabs),
   useWorkspaceStore: {
     subscribe: () => () => {},
     getState: () => ({
       addAgentChatTab: () => {},
+      // An agent's browser tab opens and closes as one workspace effect; the
+      // browser session store beside it follows the tab.
+      openAgentBrowserTab: (tabId: string, url?: string) =>
+        emit({ kind: 'openAgentBrowserTab', tabId, ...(url ? { url } : {}) }),
       removeTab: (tabId: string) =>
-        emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
+        tabId.startsWith('browser-')
+          ? emit({ kind: 'closeAgentBrowserTab', tabId: tabId.replace(/^browser-/, '') })
+          : emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
       remapAgentChatSession: () => {},
       root: { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
     })
   }
+}))
+vi.mock(`${renderer}/stores/browser-session-store`, () => ({
+  useBrowserSessionStore: { getState: () => ({ createTab: () => {}, removeTab: () => {} }) }
+}))
+// Which session owns an agent browser tab, for the Stop indicator.
+vi.mock(`${renderer}/stores/browser-control-store`, () => ({
+  useBrowserControlStore: {
+    getState: () => ({
+      trackAgentTab: (tabId: string, sessionId: string) =>
+        emit({ kind: 'trackAgentTab', tabId, sessionId }),
+      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId })
+    })
+  }
+}))
+// The roster watch hands policy and automation hints to their own modules.
+vi.mock(`${renderer}/lib/browser-policy-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  requestBrowserPolicyResync: () => emit({ kind: 'requestBrowserPolicyResync' }),
+  publishBrowserPolicyChange: (payload: unknown) =>
+    emit({ kind: 'publishBrowserPolicyChange', payload })
+}))
+vi.mock(`${renderer}/lib/automation-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  requestAutomationResync: () => emit({ kind: 'requestAutomationResync' }),
+  publishAutomationChange: (payload: unknown) => emit({ kind: 'publishAutomationChange', payload })
 }))
 vi.mock(`${renderer}/lib/web-tab-session`, () => ({
   setTabFocusedSessionId: () => {},
