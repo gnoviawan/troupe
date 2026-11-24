@@ -7,9 +7,9 @@ use troupe_protocol::ws::WsRequestType;
 use crate::State;
 use crate::tests::{loaded, read_reply};
 
-/// The Rune key event the desktop build gets for a binding such as `ctrl+shift+p`: off macOS
-/// Ctrl also sets `cmd`, and a Ctrl letter arrives as `Key::Command`; on macOS the Control key
-/// sets `ctrl` alone and its letter arrives as text.
+/// The Rune key event the desktop build gets for a binding such as `ctrl+shift+p`. Off macOS
+/// Ctrl also sets `cmd`. On macOS a `ctrl` binding fires from Cmd (Control alone belongs to the
+/// shell), so the press holds Cmd. A letter with Cmd held arrives as `Key::Command`.
 fn press(binding: &str) -> KeyEvent {
     let mac = super::platform().mac;
     let mut mods = Mods::default();
@@ -17,8 +17,8 @@ fn press(binding: &str) -> KeyEvent {
     for part in binding.split('+') {
         match part {
             "ctrl" => {
-                mods.ctrl = true;
-                mods.cmd = !mac;
+                mods.ctrl = !mac;
+                mods.cmd = true;
             }
             "shift" => mods.shift = true,
             "alt" => mods.alt = true,
@@ -121,7 +121,13 @@ fn a_rebinding_is_saved_and_a_fresh_client_reads_it_back() {
     assert_eq!(saved.len(), 1);
     assert_eq!(saved[0]["baseRevision"], json!(0));
     let data = saved[0]["value"]["data"].clone();
-    assert_eq!(data["sidebarToggle"]["customKey"], json!("ctrl+shift+y"));
+    // macOS records the Cmd chord as `cmd`, which then fires from Cmd alone.
+    let chord = if super::platform().mac {
+        "cmd+shift+y"
+    } else {
+        "ctrl+shift+y"
+    };
+    assert_eq!(data["sidebarToggle"]["customKey"], json!(chord));
 
     let mut fresh = crate::tests::connected();
     fresh.apply(read_reply(5, data));
@@ -131,7 +137,7 @@ fn a_rebinding_is_saved_and_a_fresh_client_reads_it_back() {
             .shortcuts
             .get("sidebarToggle")
             .map(|sc| sc.active_key().to_owned()),
-        Some("ctrl+shift+y".to_owned())
+        Some(chord.to_owned())
     );
     fresh.keys.fired.clear();
     key(&mut fresh, &press("ctrl+shift+y"));
@@ -148,14 +154,14 @@ fn a_rebinding_is_saved_and_a_fresh_client_reads_it_back() {
 fn a_chord_another_shortcut_holds_asks_before_it_rebinds() {
     let mut s = loaded();
     s.keys.recording = Some("sidebarToggle".to_owned());
-    key(&mut s, &press("ctrl+k"));
+    key(&mut s, &press("f2"));
     let conflict = s.keys.conflict.clone();
     assert_eq!(
         conflict,
         Some((
             "sidebarToggle".to_owned(),
-            "ctrl+k".to_owned(),
-            "Command Palette".to_owned()
+            "f2".to_owned(),
+            "Rename File".to_owned()
         ))
     );
     assert!(shortcut_writes(&s).is_empty());
