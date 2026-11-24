@@ -172,7 +172,9 @@ pub fn validate(fields: &[Field], form: &Form, phone: bool) -> Result<Map<String
 #[derive(Clone, Copy)]
 pub struct Hooks<S> {
     pub toast: fn(&mut S, &str),
-    pub open_url: fn(&mut S, &str, &mut rune::Tx),
+    /// Asks the user before the agent's link opens (`requestExternalLinkOpen`): the URL comes
+    /// from an untrusted MCP server.
+    pub request_link: fn(&mut S, &str),
     pub form: for<'a> fn(&'a mut S, &str) -> &'a mut Form,
 }
 
@@ -242,7 +244,7 @@ pub fn prompt<S: 'static>(t: &'static Tokens, p: &PendingElicitation, form: &For
                     .size(size)
                     .build(t)
                     .key(format!("elicitation-open-{id}"))
-                    .on_press_tx(move |s: &mut S, tx: &mut rune::Tx| (hooks.open_url)(s, &url, tx)),
+                    .on_press(move |s: &mut S| (hooks.request_link)(s, &url)),
             ),
         );
     }

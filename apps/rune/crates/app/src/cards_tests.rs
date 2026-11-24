@@ -214,3 +214,27 @@ fn a_free_text_question_sends_the_typed_answer() {
         [json!({ "agentId": "agent-1", "questionId": "q-9", "values": ["release/1.2"] })]
     );
 }
+
+#[test]
+fn an_elicitation_link_opens_only_after_the_user_confirms_it() {
+    let mut rt = chat();
+    let url = "https://auth.example.com/device?code=ABCD-1234";
+    ask(
+        &mut rt,
+        json!({ "_onElicitationRequest": [{
+            "agentId": "agent-1", "sessionId": "chat-1", "requestId": "el-url", "mode": "url",
+            "message": "Sign in to continue", "url": url, "fields": [],
+        }] }),
+    );
+    tap(&mut rt, "elicitation-open-el-url");
+    assert!(rt.take_url_requests().is_empty(), "the press only asks");
+    assert!(present(&rt, "link-confirm-dialog"), "the confirm shows");
+    assert_eq!(rt.state.chat.link_confirm.as_deref(), Some(url), "with the full URL");
+    tap(&mut rt, "link-confirm-cancel");
+    assert!(!present(&rt, "link-confirm-dialog"));
+    assert!(rt.take_url_requests().is_empty(), "Cancel opens nothing");
+    tap(&mut rt, "elicitation-open-el-url");
+    tap(&mut rt, "link-confirm-open");
+    assert_eq!(rt.take_url_requests(), [url.to_owned()], "Open opens the link once");
+    assert!(!present(&rt, "link-confirm-dialog"));
+}

@@ -3,7 +3,10 @@
 //! `MAX_LCS_CELLS`, else chain anchors, then fold context to 3 lines around each change), and
 //! the two views, `EditDiffBlock` (inline under an edit) and `DiffPreview` (inside a card).
 
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::rc::Rc;
 
 use rune::{El, col, el, icon, row, text};
 use rune_kit::syntax::{self, Highlight};
@@ -212,6 +215,40 @@ pub fn lines(old_text: Option<&str>, new_text: &str) -> Vec<Line> {
     fold(&ops)
 }
 
+/// Diffs and colours kept between frames: a card rebuilds on every streamed chunk, and its
+/// texts rarely change. Each cache starts over when it reaches this many entries.
+const CACHE_CAP: usize = 256;
+
+thread_local! {
+    static LINES: RefCell<HashMap<u64, Rc<Vec<Line>>>> = RefCell::new(HashMap::new());
+    static COLOURS: RefCell<HashMap<u64, Rc<Colours>>> = RefCell::new(HashMap::new());
+}
+
+fn hash_of(parts: &[Option<&str>]) -> u64 {
+    let mut h = DefaultHasher::new();
+    parts.hash(&mut h);
+    h.finish()
+}
+
+fn cached<T>(cache: &'static std::thread::LocalKey<RefCell<HashMap<u64, Rc<T>>>>, key: u64, make: impl FnOnce() -> T) -> Rc<T> {
+    if let Some(hit) = cache.with_borrow(|c| c.get(&key).cloned()) {
+        return hit;
+    }
+    let made = Rc::new(make());
+    cache.with_borrow_mut(|c| {
+        if c.len() >= CACHE_CAP {
+            c.clear();
+        }
+        c.insert(key, made.clone());
+    });
+    made
+}
+
+/// [`lines`] for a pair of texts, computed once per pair.
+pub fn lines_of(old_text: Option<&str>, new_text: &str) -> Rc<Vec<Line>> {
+    cached(&LINES, hash_of(&[old_text, Some(new_text)]), || lines(old_text, new_text))
+}
+
 /// Added and removed rows among `lines`.
 pub fn counts(lines: &[Line]) -> (usize, usize) {
     lines.iter().fold((0, 0), |(a, r), l| match l.kind {
@@ -271,6 +308,13 @@ pub struct Colours {
 }
 
 impl Colours {
+    /// Both sides' colours, highlighted once per theme, path and texts.
+    pub fn of_texts(t: &'static Tokens, path: &str, old_text: Option<&str>, new_text: &str) -> Rc<Self> {
+        let theme = format!("{:p}", t);
+        let key = hash_of(&[Some(&theme), Some(path), old_text, Some(new_text)]);
+        cached(&COLOURS, key, || Colours::new(t, path, old_text, new_text))
+    }
+
     pub fn new(t: &Tokens, path: &str, old_text: Option<&str>, new_text: &str) -> Self {
         let lang = syntax::lang_for_path(path);
         Colours { old: painted(t, lang, old_text.unwrap_or("")), new: painted(t, lang, new_text) }
@@ -353,7 +397,7 @@ pub fn edit_block<S: 'static>(
     on_expand: impl Fn(&mut S) + 'static,
 ) -> El {
     let c = &t.colors;
-    let lines = lines(b.old_text, b.new_text);
+    let lines = lines_of(b.old_text, b.new_text);
     let (added, removed) = counts(&lines);
     let change = first_change(&lines);
     let name = base_name(b.path).to_owned();
@@ -386,7 +430,7 @@ pub fn edit_block<S: 'static>(
             .hover(c.muted.alpha(0.5))
             .on_press(move |s: &mut S| open(s, path.clone(), open_line));
     }
-    let colours = Colours::new(t, b.path, b.old_text, b.new_text);
+    let colours = Colours::of_texts(t, b.path, b.old_text, b.new_text);
     let mut block = col()
         .key(b.key.clone())
         .w_full()
@@ -416,9 +460,9 @@ pub fn edit_block<S: 'static>(
 }
 
 /// `DiffPreview`: the path, `new` for a created file and `+N −M`, over every changed row.
-pub fn preview(t: &Tokens, path: &str, old_text: Option<&str>, new_text: &str) -> El {
+pub fn preview(t: &'static Tokens, path: &str, old_text: Option<&str>, new_text: &str) -> El {
     let c = &t.colors;
-    let lines = lines(old_text, new_text);
+    let lines = lines_of(old_text, new_text);
     let (added, removed) = counts(&lines);
     let mut head = row()
         .w_full()
@@ -433,7 +477,7 @@ pub fn preview(t: &Tokens, path: &str, old_text: Option<&str>, new_text: &str) -
         head = head.child(row().px(4.0).radius(4.0).fill(c.success.alpha(0.15)).child(text("new").font(sans(MICRO, 400.0, 18.0)).color(c.success)));
     }
     head = head.child(el().grow(1.0)).child(stat(t, added, removed, true, mono(MICRO, 400.0, 18.0)));
-    let colours = Colours::new(t, path, old_text, new_text);
+    let colours = Colours::of_texts(t, path, old_text, new_text);
     col()
         .w_full()
         .radius(4.0)

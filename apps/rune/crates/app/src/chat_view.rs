@@ -7,6 +7,8 @@ use model::workspace::Tab;
 use rune::{El, col, row, text};
 use theme::Tokens;
 use ui::chat::{Lenses, Reader};
+use ui::overlay::dialog::{Dialog, DialogKind};
+use ui::{Button, ButtonSize, ButtonVariant};
 use ui::markdown::{Hooks, LinkTarget, TABLE_ZOOM};
 use ui::type_::sans;
 
@@ -225,12 +227,7 @@ fn elicitation_dock(s: &State, t: &'static Tokens, e: &model::acp::approvals::Pe
     let form = s.chat.reader.form_of(&e.request_id).unwrap_or(&empty);
     let hooks = ui::chat::elicitation::Hooks {
         toast: |s: &mut State, why: &str| s.toast_error(why, ""),
-        open_url: |_s: &mut State, url: &str, tx: &mut rune::Tx| {
-            log::info!("[chat] open the elicitation link");
-            if let Err(e) = tx.open_url(url) {
-                log::warn!("[chat] could not open the elicitation link: {e}");
-            }
-        },
+        request_link: |s: &mut State, url: &str| s.request_link_open(url),
         form: |s: &mut State, id: &str| s.chat.reader.form(id),
     };
     col()
@@ -251,8 +248,67 @@ pub fn tab_title(s: &State, tab: &Tab) -> Option<String> {
     s.chats.get(session_id).map(|chat| chat.label().to_owned())
 }
 
-/// The full-window table, when one is open.
+/// `ExternalLinkConfirm`: "Open external link?" with the full URL; only Open opens it, and
+/// Cancel, Escape and a press outside open nothing.
+fn link_confirm(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
+    let Some(url) = s.chat.link_confirm.clone() else { return };
+    let c = &t.colors;
+    let cancel = Button::new("Cancel")
+        .variant(ButtonVariant::Outline)
+        .size(ButtonSize::Sm)
+        .build(t)
+        .key("link-confirm-cancel")
+        .autofocus()
+        .on_press(|s: &mut State| s.settle_link(false, None));
+    let open = Button::new("Open")
+        .size(ButtonSize::Sm)
+        .build(t)
+        .key("link-confirm-open")
+        .on_press_tx(|s: &mut State, tx: &mut rune::Tx| s.settle_link(true, Some(tx)));
+    let address = col()
+        .key("link-confirm-url")
+        .w_full()
+        .max_h(160.0)
+        .scroll(rune::ScrollSpec { stick_bottom: false })
+        .child(text(url).font(ui::type_::mono(12.0, 400.0, 16.0)).color(c.muted_foreground).wrap_anywhere());
+    Dialog::new("link-confirm", "Open external link?")
+        .kind(DialogKind::Alert)
+        .child(address)
+        .footer(cancel)
+        .footer(open)
+        .open(true)
+        .on_close(|s: &mut State| s.settle_link(false, None))
+        .build(t, layer);
+}
+
+impl State {
+    /// `requestExternalLinkOpen`: ask before opening `url`; a second request while one waits,
+    /// or an empty link, asks nothing.
+    pub(crate) fn request_link_open(&mut self, url: &str) {
+        if url.is_empty() || self.chat.link_confirm.is_some() {
+            return;
+        }
+        log::info!("[chat] asking before opening an external link");
+        self.chat.link_confirm = Some(url.to_owned());
+    }
+
+    /// The user's answer: Open hands the link to the system browser once; anything else drops it.
+    fn settle_link(&mut self, open: bool, tx: Option<&mut rune::Tx>) {
+        let Some(url) = self.chat.link_confirm.take() else { return };
+        let (true, Some(tx)) = (open, tx) else {
+            log::info!("[chat] external link not opened");
+            return;
+        };
+        log::info!("[chat] opening an external link the user confirmed");
+        if let Err(e) = tx.open_url(&url) {
+            log::warn!("[chat] could not open the confirmed link: {e}");
+        }
+    }
+}
+
+/// The full-window table, when one is open, and the external link confirm.
 pub fn layer(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
+    link_confirm(s, t, layer);
     let open = s.overlays.is_open(TABLE_ZOOM);
     let Some(table) = s.chat.zoomed_table.as_deref().filter(|_| open) else {
         return;

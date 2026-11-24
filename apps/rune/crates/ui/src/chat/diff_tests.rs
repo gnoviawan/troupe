@@ -81,3 +81,14 @@ fn new_and_emptied_files_and_the_first_change() {
     assert_eq!(first_change(&lines(Some("a\nb\n"), "a\n")), Some((1, 2)));
     assert_eq!(first_change(&lines(Some("a\n"), "a\n")), None);
 }
+
+#[test]
+fn a_rebuild_reuses_the_diff_and_colours_of_unchanged_texts() {
+    let (old, new) = ("a\nb\n", "a\nB\n");
+    let first = super::diff::lines_of(Some(old), new);
+    assert!(std::rc::Rc::ptr_eq(&first, &super::diff::lines_of(Some(old), new)), "the same texts diff once");
+    assert!(!std::rc::Rc::ptr_eq(&first, &super::diff::lines_of(None, new)), "a new file is another diff");
+    let t = theme::tokens("termul", true);
+    let colours = super::diff::Colours::of_texts(t, "a.rs", Some(old), new);
+    assert!(std::rc::Rc::ptr_eq(&colours, &super::diff::Colours::of_texts(t, "a.rs", Some(old), new)), "the same file highlights once");
+}
