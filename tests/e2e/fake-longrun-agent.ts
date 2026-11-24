@@ -894,7 +894,8 @@ const BG_OPEN_MARKER = /\[BG_OPEN:(\d+(?:\.\d+)?)\]/
 const UNPROMPTED_MARKER = /\[UNPROMPTED:(\d+(?:\.\d+)?)\]/
 // The task may carry its own `[MARKER]` text, so it ends at the `]` that is
 // followed by a space or the end of the prompt (`[X]]` keeps the inner `]`).
-const SPAWN_MARKER = /\[SPAWN:([^\s\]]+):([\s\S]+?)\](?=\s|$)/
+// The agent id stops at the first `:` — ids with a `:` cannot be spawned.
+const SPAWN_MARKER = /\[SPAWN:([^\s:\]]+):([\s\S]+?)\](?=\s|$)/
 
 /** Whether the prompt carries any of the background-work/spawn markers. */
 function hasMarkerTurn(prompt: JsonValue | undefined): boolean {

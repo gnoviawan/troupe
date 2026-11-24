@@ -100,11 +100,14 @@ test('[UNPROMPTED] agent work outside the turn toggles the composer Stop', async
 
   const send = pane.getByRole('button', { name: 'Send message' })
   const stop = pane.getByRole('button', { name: 'Cancel turn' })
-  // The instant marker turn ends first: Send shows, then the unprompted
-  // chunk (~3s) flips the composer to Stop while the agent works, and the
-  // host's quiet window returns it to Send.
-  await expect(send).toBeVisible()
-  await expect(stop).toBeVisible({ timeout: 15_000 })
+  // Wait on the wire frame, not the button: 'Send message' renders
+  // (disabled) before the host's working flag lands, so button-only waits
+  // can race through the whole sequence before the 3 s timer fires.
+  await expect
+    .poll(() => wireLogSince(logOffset).includes('Unprompted update'), { timeout: 15_000 })
+    .toBe(true)
+  await expect(stop).toBeVisible()
+  // The host's quiet window returns the composer to Send.
   await expect(send).toBeVisible({ timeout: 60_000 })
 
   const log = wireLogSince(logOffset)
@@ -119,11 +122,13 @@ test('[SPAWN] starts a real sub-agent through the host MCP server', async ({ pag
   await launchChat(page, `${title} [SPAWN:fake-longrun:[DURATION:5]]`)
   const pane = page.locator('[data-pane-content]').filter({ has: chatTab(page, title) })
 
-  // The tool result JSON lands in the transcript once the run is up.
+  // The tool result JSON lands in the transcript once the run is up (the
+  // reply JSON sits escaped inside the MCP content text, so match the key
+  // without its quotes).
   await expect(
     pane
       .getByRole('log')
-      .getByText(/SPAWN_RESULT=\{.*"subagentId"/)
+      .getByText(/SPAWN_RESULT=\{.*subagentId/)
       .filter({ visible: true })
   ).toBeVisible({ timeout: 60_000 })
 
