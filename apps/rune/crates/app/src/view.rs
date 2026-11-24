@@ -66,7 +66,8 @@ fn select_project(s: &mut State, id: &str) {
 }
 
 /// The rail's body: navigation, the server's projects, quick chats, and the footer actions.
-fn rail_body(s: &State, t: &'static Tokens, collapsed: bool) -> El {
+/// `toggle` is false in the phone drawer, which the menu button opens instead.
+fn rail_body(s: &State, t: &'static Tokens, collapsed: bool, toggle: bool) -> El {
     let active = s.active_project();
     let has_project = active.is_some();
     let can_canvas = active.is_some_and(|p| p.path.is_some());
@@ -190,7 +191,7 @@ fn rail_body(s: &State, t: &'static Tokens, collapsed: bool) -> El {
         .child(shell::rail_header(
             t,
             collapsed,
-            (!collapsed).then(|| rail_toggle(t, true)),
+            (toggle && !collapsed).then(|| rail_toggle(t, true)),
         ))
         .child(body.scroll(rune::ScrollSpec {
             stick_bottom: false,
@@ -233,7 +234,7 @@ fn rail(s: &State, t: &'static Tokens, collapsed: bool, width: f32) -> El {
         .h_full()
         .clip_rounded(0.0)
         .fill(t.colors.background)
-        .child(rail_body(s, t, collapsed));
+        .child(rail_body(s, t, collapsed, true));
     if !collapsed {
         nav = nav.child(
             shell::resize_handle(t, "Resize projects rail")
@@ -467,7 +468,7 @@ fn phone_frame(s: &State, t: &'static Tokens) -> El {
                     .pin(Some(0.0), Some(0.0), None, Some(0.0))
                     .fill(t.colors.background)
                     .border_sides([0.0, 1.0, 0.0, 0.0], t.colors.border)
-                    .child(rail_body(s, t, false)),
+                    .child(rail_body(s, t, false, false)),
             );
     }
     frame

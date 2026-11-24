@@ -9,15 +9,20 @@
  *
  *   cargo build --release -p hello --features tooling   # live driver linked in
  *   cargo build --release -p gallery
+ *   cargo build --release -p troupe-dev                  # the shell, live driver linked in
  *   bash <rune checkout>/scripts/web-build.sh hello --out target/web
  *   bash <rune checkout>/scripts/web-build.sh gallery --out target/web-gallery
+ *   bash <rune checkout>/scripts/web-build.sh troupe-web --out target/web-troupe --no-html
+ *   cp crates/web/index.html target/web-troupe/
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { createServer, type Server } from 'node:http'
+import { createServer, request, type Server } from 'node:http'
+import { connect } from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Page } from 'playwright'
+import type { AreaId, Surface } from '../types'
 
 const REPO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
 const RUNE_DIR = path.join(REPO_DIR, 'apps/rune')
@@ -27,34 +32,82 @@ const RUNE_DIR = path.join(REPO_DIR, 'apps/rune')
  * first frame is up: a mirror button on the web, an element's text natively.
  */
 export interface RuneApp {
-  name: 'hello' | 'gallery'
+  name: 'hello' | 'gallery' | 'troupe'
   /** The default `web-build.sh --out` folder, relative to `apps/rune`. */
   web: string
+  /** The native binary's name under the cargo target dir. */
+  bin: string
   ready: string
   /** The native build links the live driver (`automation`), so `RUNE_DRIVE_SOCK` drives its window. */
   liveDriver: boolean
 }
 
 export const RUNE_APPS = {
-  hello: { name: 'hello', web: 'target/web', ready: 'Press me', liveDriver: true },
+  hello: { name: 'hello', web: 'target/web', bin: 'hello', ready: 'Press me', liveDriver: true },
   gallery: {
     name: 'gallery',
     web: 'target/web-gallery',
+    bin: 'gallery',
     ready: 'Surface tokens',
     liveDriver: false
+  },
+  /** The workspace shell (`troupe-web`, `troupe-dev`); it needs a seeded server to paint `ready`. */
+  troupe: {
+    name: 'troupe',
+    web: 'target/web-troupe',
+    bin: 'troupe-dev',
+    ready: 'What should we do in alpha?',
+    liveDriver: true
   }
 } as const satisfies Record<string, RuneApp>
 export type RuneAppName = keyof typeof RUNE_APPS
 
 /**
- * Every Troupe surface waits on this unit for the Rune clients: there is no
- * Troupe screen in Rune until R5 serves `/?ui=rune`. Delete it when R5 lands
- * and the matrix drives the surfaces through the same drivers.
+ * The surfaces the Rune shell draws today (R5a: the frame, the rail's
+ * projects, the side panel frame). Every other surface waits on the unit that
+ * ports its content, named by its area in `RUNE_UNIT_BY_AREA`.
  */
-export const TROUPE_ON_RUNE_PENDING = {
-  unit: 'R5',
-  reason: 'Rune has no Troupe screen yet; the R5 shell serves it at /?ui=rune'
-} as const
+export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
+  'shell.dashboard',
+  'shell.not-found',
+  'rail.project-list',
+  'rail.collapse'
+])
+
+const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
+  rail: 'R5c',
+  'side-panel': 'R5c',
+  statusbar: 'R5c',
+  theme: 'R5c',
+  palette: 'R5c',
+  shortcuts: 'R5c',
+  dialogs: 'R5c',
+  notifications: 'R5c',
+  remote: 'R5c',
+  chat: 'R6',
+  composer: 'R6',
+  terminal: 'R7',
+  explorer: 'R8',
+  editor: 'R8',
+  git: 'R9',
+  github: 'R9',
+  settings: 'R9',
+  ssh: 'R9',
+  snapshots: 'R9',
+  automations: 'R9',
+  browser: 'R11',
+  canvas: 'R11'
+}
+
+/** Why a surface cannot run on a Rune client yet, or undefined when the shell draws it. */
+export function runePending(surface: Pick<Surface, 'id' | 'area' | 'profile'>): Surface['pending'] {
+  if ((surface.profile ?? 'desktop') === 'phone') {
+    return { unit: 'R5c', reason: 'the Rune phone shell (header, drawer, sheets) is R5c' }
+  }
+  if (RUNE_SHELL_SURFACES.has(surface.id)) return undefined
+  const unit = RUNE_UNIT_BY_AREA[surface.area]
+  return { unit, reason: `the Rune shell draws the frame only; ${unit} ports this surface` }
+}
 
 const envName = (app: RuneAppName, kind: 'WEB' | 'BIN') =>
   `TROUPE_RUNE_${app.toUpperCase()}_${kind}`
@@ -78,7 +131,9 @@ export function runeBinary(app: RuneAppName): string {
     return fromEnv
   }
   const target = process.env.CARGO_TARGET_DIR ?? path.join(RUNE_DIR, 'target')
-  const found = ['release', 'debug'].map((p) => path.join(target, p, app)).find(existsSync)
+  const found = ['release', 'debug']
+    .map((p) => path.join(target, p, RUNE_APPS[app].bin))
+    .find(existsSync)
   if (!found) {
     throw new Error(
       `no native build of ${app} under ${target}: set ${envName(app, 'BIN')} or build it (see drivers/rune-apps.ts)`
@@ -136,6 +191,83 @@ export async function serveStatic(dir: string): Promise<StaticServer> {
     })
     if (await listen(server, port)) {
       console.error(`[rune] serving ${root} on http://127.0.0.1:${port}/`)
+      return {
+        url: `http://127.0.0.1:${port}`,
+        close: () => new Promise((resolve) => server.close(() => resolve()))
+      }
+    }
+  }
+  throw new Error(`no free port in 8190-8199 for ${root}`)
+}
+
+/**
+ * Serves the Rune web client's build at `/` and forwards every other request,
+ * WebSocket upgrades included, to the Troupe server at `upstream`, so the page
+ * and the server share one origin as they will when the server serves the
+ * client itself. The Host header passes through unchanged, so the server's
+ * Origin check sees the page's own origin.
+ */
+export async function serveRuneClient(dir: string, upstream: string): Promise<StaticServer> {
+  const root = path.resolve(dir)
+  const target = new URL(upstream)
+  const own = (pathname: string): string | null => {
+    const file = path.join(root, pathname === '/' ? 'index.html' : pathname)
+    return file.startsWith(root + path.sep) && existsSync(file) ? file : null
+  }
+  for (const port of PORTS) {
+    const server = createServer((req, res) => {
+      const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)
+      const file = own(pathname)
+      if (file) {
+        res.writeHead(200, {
+          'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream',
+          'cache-control': 'no-store'
+        })
+        res.end(readFileSync(file))
+        return
+      }
+      const forward = request(
+        {
+          host: target.hostname,
+          port: target.port,
+          method: req.method,
+          path: req.url,
+          headers: req.headers
+        },
+        (reply) => {
+          res.writeHead(reply.statusCode ?? 502, reply.headers)
+          reply.pipe(res)
+        }
+      )
+      forward.on('error', () => res.writeHead(502).end())
+      req.pipe(forward)
+    })
+    server.on('upgrade', (req, socket, head) => {
+      const back = connect(Number(target.port), target.hostname, () => {
+        const lines = [`${req.method} ${req.url} HTTP/${req.httpVersion}`]
+        for (let i = 0; i < req.rawHeaders.length; i += 2) {
+          lines.push(`${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}`)
+        }
+        back.write(`${lines.join('\r\n')}\r\n\r\n`)
+        if (head.length) back.write(head)
+        back.pipe(socket)
+        socket.pipe(back)
+      })
+      const drop = () => {
+        back.destroy()
+        socket.destroy()
+      }
+      back.on('error', drop)
+      socket.on('error', drop)
+      back.on('close', () => socket.destroy())
+      socket.on('close', () => back.destroy())
+    })
+    if (await listen(server, port)) {
+      // A matrix run ends without closing it; it must not keep the process alive.
+      server.unref()
+      console.error(
+        `[rune] serving ${root} on http://127.0.0.1:${port}/, the rest from ${upstream}`
+      )
       return {
         url: `http://127.0.0.1:${port}`,
         close: () => new Promise((resolve) => server.close(() => resolve()))

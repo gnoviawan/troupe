@@ -221,18 +221,15 @@ export async function openRuneDesktop(opts: RuneDesktopOptions): Promise<RuneDes
 }
 
 /**
- * The matrix's `rune-desktop` client: the Rune desktop app at
- * `TROUPE_RUNE_APP_BIN`, pointed at the seeded server. Until R5 builds it,
- * the runner marks every surface pending (`TROUPE_ON_RUNE_PENDING`) and
- * never opens a session.
+ * The matrix's `rune-desktop` client: `troupe-dev` (or `TROUPE_RUNE_APP_BIN`)
+ * pointed at the seeded server through `TROUPE_SERVER_URL`.
  */
 export function runeDesktopClient(): ClientLauncher {
   return {
     client: 'rune-desktop',
     resolvesTargets: true,
     async session({ world, surface, deviceId, points, stateDir }, body) {
-      const bin = process.env.TROUPE_RUNE_APP_BIN
-      if (!bin) throw new Error('set TROUPE_RUNE_APP_BIN to the Rune desktop app')
+      const bin = process.env.TROUPE_RUNE_APP_BIN ?? runeBinary('troupe')
       mkdirSync(stateDir, { recursive: true })
       const session = await openRuneDesktop({
         bin,

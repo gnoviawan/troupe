@@ -13,9 +13,10 @@
  * failed is rerun up to `--reruns` times and listed under flakes. Writes
  * `<out>/report.md` and prints a line per surface.
  *
- * The Rune clients (`rune-web`, `rune-desktop`) have no Troupe screen until
- * R5, so a run with either one marks every surface pending without starting
- * a server. `--profile gallery` compares the design-system registry with the
+ * The Rune clients (`rune-web`, `rune-desktop`) run only the surfaces the
+ * Rune shell draws (`RUNE_SHELL_SURFACES`); every other surface is pending
+ * on the unit that ports it, and a run of pending surfaces alone starts no
+ * server. `--profile gallery` compares the design-system registry with the
  * Rune gallery instead (`gallery.ts`).
  */
 
@@ -30,7 +31,7 @@ import { REFERENCE_ARGS } from './drivers/chromium'
 import type { ClientLauncher, Driver, Points } from './drivers/driver'
 import { errorLine } from './drivers/driver'
 import { reactClient } from './drivers/react'
-import { TROUPE_ON_RUNE_PENDING } from './drivers/rune-apps'
+import { runePending } from './drivers/rune-apps'
 import { runeDesktopClient } from './drivers/rune-desktop'
 import { runeWebArgs, runeWebClient } from './drivers/rune-web'
 import { tauriClient } from './drivers/tauri'
@@ -111,10 +112,11 @@ const DESKTOP_APPS: readonly Client[] = ['tauri', 'rune-desktop']
 if (PROFILE === 'phone' && (DESKTOP_APPS.includes(CLIENT) || DESKTOP_APPS.includes(AGAINST))) {
   throw new Error('the phone profile runs only web clients; a desktop app has no phone shell')
 }
-/** Why no surface can run yet in this comparison, when one side is a Rune client. */
-const CLIENT_PENDING = [CLIENT, AGAINST].some((c) => c.startsWith('rune-'))
-  ? TROUPE_ON_RUNE_PENDING
-  : undefined
+/** A Rune client on either side: only the surfaces the Rune shell draws can run. */
+const RUNE_SIDE = [CLIENT, AGAINST].some((c) => c.startsWith('rune-'))
+/** Why `surface` cannot run in this comparison yet: its own unit, else the Rune shell's. */
+const pendingOf = (surface: Surface) =>
+  surface.pending ?? (RUNE_SIDE ? runePending(surface) : undefined)
 /** The surfaces of this run's profile. */
 const PROFILE_SURFACES = SURFACES.filter((s) => (s.profile ?? 'desktop') === PROFILE)
 const slug = (id: string) => id.replace(/[^a-z0-9-]/gi, '-')
@@ -325,7 +327,9 @@ async function runSurface(
   world: World,
   launcher: (client: Client, role: Role) => ClientLauncher
 ): Promise<SurfaceResult> {
-  if (surface.pending || surface.blocked) return notRun(surface)
+  if (surface.blocked) return notRun(surface)
+  const pending = pendingOf(surface)
+  if (pending) return notRun(surface, pending)
   const launchers = {
     reference: launcher(surface.reference ?? AGAINST, 'reference'),
     candidate: launcher(CLIENT, 'candidate')
@@ -389,18 +393,17 @@ async function main(): Promise<void> {
     console.error(`[parity] ${RESULTS} holds ${previous.comparison}; starting a new comparison`)
   }
   const surfaces = selected()
-  if (CLIENT_PENDING) {
+  if (surfaces.every((s) => s.blocked || pendingOf(s))) {
     for (const surface of surfaces) {
-      const result = surface.blocked
-        ? notRun(surface)
-        : notRun(surface, surface.pending ?? CLIENT_PENDING)
+      const result = surface.blocked ? notRun(surface) : notRun(surface, pendingOf(surface))
       saved.surfaces[surface.id] = result
       console.log(summaryLine(result))
     }
     saveResults(saved)
     const blocked = surfaces.filter((s) => s.blocked).length
+    const units = [...new Set(surfaces.flatMap((s) => (s.blocked ? [] : [pendingOf(s)?.unit])))]
     console.log(
-      `[parity] ${surfaces.length} surfaces: ${surfaces.length - blocked} pending ${CLIENT_PENDING.unit} (${CLIENT_PENDING.reason}), ${blocked} blocked`
+      `[parity] ${surfaces.length} surfaces: ${surfaces.length - blocked} pending (${units.join(', ')}), ${blocked} blocked`
     )
     writeReport(saved)
     return

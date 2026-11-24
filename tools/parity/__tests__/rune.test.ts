@@ -1,8 +1,16 @@
 import { expect, test } from 'bun:test'
 import { mkdtempSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
-import { runeWebDist, serveStatic } from '../drivers/rune-apps'
+import {
+  RUNE_SHELL_SURFACES,
+  runePending,
+  runeWebDist,
+  serveRuneClient,
+  serveStatic
+} from '../drivers/rune-apps'
 import { runeKey } from '../drivers/rune-socket'
 import { GALLERY_SURFACES } from '../gallery'
 import { SURFACES } from '../surfaces'
@@ -48,5 +56,59 @@ test('runeWebDist names the variable to set when the wasm build is missing', () 
   } finally {
     if (previous === undefined) delete process.env.TROUPE_RUNE_HELLO_WEB
     else process.env.TROUPE_RUNE_HELLO_WEB = previous
+  }
+})
+
+test('the Rune shell surfaces exist and run; every other surface waits on a named unit', () => {
+  const ids = new Set(SURFACES.map((s) => s.id))
+  for (const id of RUNE_SHELL_SURFACES) expect(ids.has(id)).toBe(true)
+  const dashboard = SURFACES.find((s) => s.id === 'shell.dashboard')
+  expect(dashboard && runePending(dashboard)).toBeUndefined()
+  const chat = SURFACES.find((s) => s.area === 'chat')
+  expect(chat && runePending(chat)?.unit).toBe('R6')
+  const phone = SURFACES.find((s) => s.profile === 'phone')
+  expect(phone && runePending(phone)?.unit).toBe('R5c')
+})
+
+test('serveRuneClient serves the build and forwards the rest, upgrades included, to the server', async () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'rune-proxy-'))
+  writeFileSync(path.join(dir, 'index.html'), '<p>rune</p>')
+  const upstream = createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({ path: req.url, host: req.headers.host }))
+  })
+  upstream.on('upgrade', (req, socket) => {
+    socket.end(`HTTP/1.1 101 Switching Protocols\r\nX-Path: ${req.url}\r\n\r\n`)
+  })
+  await new Promise<void>((resolve) => upstream.listen(0, '127.0.0.1', resolve))
+  const { port } = upstream.address() as AddressInfo
+  const proxy = await serveRuneClient(dir, `http://127.0.0.1:${port}`)
+  try {
+    expect(await (await fetch(`${proxy.url}/`)).text()).toBe('<p>rune</p>')
+    const forwarded = (await (await fetch(`${proxy.url}/projects?x=1`)).json()) as {
+      path: string
+      host: string
+    }
+    expect(forwarded).toEqual({ path: '/projects?x=1', host: proxy.url.replace('http://', '') })
+    const net = await import('node:net')
+    const reply = await new Promise<string>((resolve, reject) => {
+      const url = new URL(proxy.url)
+      const socket = net.connect(Number(url.port), url.hostname, () => {
+        socket.write(
+          'GET /ws HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n'
+        )
+      })
+      let text = ''
+      socket.on('data', (chunk) => {
+        text += chunk.toString()
+      })
+      socket.on('end', () => resolve(text))
+      socket.on('error', reject)
+    })
+    expect(reply).toContain('101 Switching Protocols')
+    expect(reply).toContain('X-Path: /ws')
+  } finally {
+    await proxy.close()
+    await new Promise((resolve) => upstream.close(resolve))
   }
 })
