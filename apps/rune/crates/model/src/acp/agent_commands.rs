@@ -19,12 +19,6 @@ use super::{Effect, State};
 /// itself once.
 pub type FlightId = u64;
 
-fn rejected(message: impl std::fmt::Display) -> Effect {
-    Effect::ActionRejected {
-        message: format!("Error: {message}"),
-    }
-}
-
 /// `a ?? b`: `a` unless it is absent or null.
 fn present(value: Option<&Value>) -> Option<&Value> {
     value.filter(|value| !value.is_null())
@@ -121,7 +115,7 @@ impl State {
     ) {
         let method_id = crate::js_trim(method_id);
         if method_id.is_empty() {
-            fx.push(rejected(
+            fx.push(Effect::rejected(
                 "Cannot sign in: the agent advertised an empty authentication method id.",
             ));
             return;
@@ -138,7 +132,7 @@ impl State {
             .filter(|id| !id.is_empty())
             .collect();
         if !advertised.is_empty() && !advertised.contains(&method_id) {
-            fx.push(rejected(
+            fx.push(Effect::rejected(
                 "Cannot sign in: this authentication method is no longer advertised.",
             ));
             return;
@@ -169,7 +163,7 @@ impl State {
             .and_then(|agent| agent.pointer("/capabilities/auth/logout"))
             .is_some_and(super::js::truthy);
         if !supports {
-            fx.push(rejected("This agent does not support sign out."));
+            fx.push(Effect::rejected("This agent does not support sign out."));
             return;
         }
         fx.push(Effect::Logout { agent_id });
@@ -297,7 +291,7 @@ impl State {
             _ => {}
         }
         for _ in 0..=waiters {
-            fx.push(rejected(&message));
+            fx.push(Effect::rejected(&message));
         }
     }
 
