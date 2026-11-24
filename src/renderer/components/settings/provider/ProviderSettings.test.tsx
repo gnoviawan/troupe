@@ -182,6 +182,32 @@ describe('ProviderSettings', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Team')
   })
 
+  it('Add account advises against many accounts when one is signed in already', async () => {
+    render(<ProviderSettings />)
+    await screen.findByTestId('claude-account-default')
+    fireEvent.click(screen.getByRole('button', { name: /add account/i }))
+    const notice = await screen.findByTestId('second-account-notice')
+    expect(notice).toHaveTextContent(
+      "Troupe does not recommend using many Claude accounts. A separate work account is fine. Using several accounts to get past usage limits can break Anthropic's terms and get your accounts suspended. More info"
+    )
+    expect(within(notice).getByRole('link', { name: 'More info' })).toHaveAttribute(
+      'href',
+      'https://usetroupe.dev/docs/agent-setup/claude-accounts#risks-of-switching-accounts'
+    )
+  })
+
+  it('Add account shows no advice when no account is signed in', async () => {
+    api.list.mockResolvedValue({
+      ...SNAPSHOT,
+      accounts: [{ ...SNAPSHOT.accounts[0], signedIn: false }, SNAPSHOT.accounts[1]]
+    })
+    render(<ProviderSettings />)
+    await screen.findByTestId('claude-account-default')
+    fireEvent.click(screen.getByRole('button', { name: /add account/i }))
+    expect(await screen.findByLabelText('Name')).toBeInTheDocument()
+    expect(screen.queryByTestId('second-account-notice')).not.toBeInTheDocument()
+  })
+
   it('shows a failed sign-in with Try again', async () => {
     api.login.mockRejectedValueOnce(new Error('Claude sign-in timed out'))
     render(<ProviderSettings />)

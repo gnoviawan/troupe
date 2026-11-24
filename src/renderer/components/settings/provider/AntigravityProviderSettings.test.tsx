@@ -168,6 +168,9 @@ describe('AntigravityProviderSettings', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add account' }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Add an Antigravity account')).toBeInTheDocument()
+    expect(within(dialog).getByTestId('second-account-notice')).toHaveTextContent(
+      "Troupe does not recommend using many Antigravity accounts. A separate work account is fine. Using several accounts to get past usage limits can break Google's terms and get your accounts suspended. More info"
+    )
     expect(within(dialog).getByLabelText('Steps')).toHaveTextContent('1Name2Sign in3Done')
     // "Work" and "Personal" are in use, so only "Team" is suggested.
     expect(within(dialog).queryByRole('button', { name: 'Work' })).not.toBeInTheDocument()

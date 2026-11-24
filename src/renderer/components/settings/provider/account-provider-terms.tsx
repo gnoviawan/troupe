@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Info } from '@/components/icons'
 import { TOUCH_HIT_AREA_CLASS } from '@/components/phone-modal-classes'
 import { cn } from '@/lib/utils'
 
@@ -6,11 +7,8 @@ export type AccountProviderId = 'claude' | 'codex' | 'antigravity'
 
 interface ProviderTerms {
   name: string
-  /** The company whose terms apply to the provider's plans. */
   company: string
-  /** Why switching accounts at a limit can break this provider's terms. */
-  risk: string
-  /** The risks section of the provider's accounts page in the docs. */
+  autoSwitchRisk: string
   docsUrl: string
 }
 
@@ -21,19 +19,22 @@ export const PROVIDER_TERMS: Record<AccountProviderId, ProviderTerms> = {
   claude: {
     name: 'Claude',
     company: 'Anthropic',
-    risk: 'Anthropic says Claude plan limits assume ordinary, individual use. Its terms do not allow access by automated means unless Anthropic permits it, and Anthropic can suspend an account without notice.',
+    autoSwitchRisk:
+      'Anthropic says Claude plan limits assume ordinary, individual use. Its terms do not allow access by automated means unless Anthropic permits it, and Anthropic can suspend an account without notice.',
     docsUrl: docsUrl('claude-accounts')
   },
   codex: {
     name: 'Codex',
     company: 'OpenAI',
-    risk: "OpenAI's terms do not allow getting around rate limits or restrictions. Moving a chat to another account at its Codex limit can count as that. OpenAI's own answer to a Codex limit is to buy credits or use an API key.",
+    autoSwitchRisk:
+      "OpenAI's terms do not allow getting around rate limits or restrictions. Moving a chat to another account at its Codex limit can count as that. OpenAI's own answer to a Codex limit is to buy credits or use an API key.",
     docsUrl: docsUrl('codex-accounts')
   },
   antigravity: {
     name: 'Antigravity',
     company: 'Google',
-    risk: "Google's Antigravity FAQ says automated account rotation is not supported on consumer plans. Google has suspended Antigravity access for breaking its terms.",
+    autoSwitchRisk:
+      "Google's Antigravity FAQ says automated account rotation is not supported on consumer plans. Google has suspended Antigravity access for breaking its terms.",
     docsUrl: docsUrl('antigravity-accounts')
   }
 }
@@ -54,7 +55,6 @@ function DocsLink({ href, children }: { href: string; children: string }): React
   )
 }
 
-/** The warning a user accepts before automatic account switching turns on. */
 export function AutoSwitchRiskDialog({
   provider,
   open,
@@ -71,7 +71,7 @@ export function AutoSwitchRiskDialog({
     <ConfirmDialog
       isOpen={open}
       title={`Switch ${terms.name} accounts automatically?`}
-      message={terms.risk}
+      message={terms.autoSwitchRisk}
       confirmLabel="Turn on anyway"
       variant="danger"
       onConfirm={onConfirm}
@@ -81,5 +81,27 @@ export function AutoSwitchRiskDialog({
         {SHARED_SWITCH_RISK} <DocsLink href={terms.docsUrl}>Read more</DocsLink>
       </p>
     </ConfirmDialog>
+  )
+}
+
+export function SecondAccountNotice({
+  provider
+}: {
+  provider: AccountProviderId
+}): React.JSX.Element {
+  const terms = PROVIDER_TERMS[provider]
+  return (
+    <div
+      role="note"
+      data-testid="second-account-notice"
+      className="flex items-start gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs text-secondary-foreground"
+    >
+      <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
+      <p>
+        Troupe does not recommend using many {terms.name} accounts. A separate work account is fine.
+        Using several accounts to get past usage limits can break {terms.company}'s terms and get
+        your accounts suspended. <DocsLink href={terms.docsUrl}>More info</DocsLink>
+      </p>
+    </div>
   )
 }
