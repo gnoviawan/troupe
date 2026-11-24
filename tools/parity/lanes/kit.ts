@@ -75,7 +75,8 @@ function reactClient(page: Page, phone: boolean): Client {
       else await page.keyboard.press('Enter')
     },
     async fill(label, text) {
-      await page.getByLabel(label, { exact: true }).first().fill(text, { timeout: 20_000 })
+      // A field's name also carries its description (`Runs Whole runs of the suite.`).
+      await page.getByLabel(label).first().fill(text, { timeout: 20_000 })
     }
   }
 }
@@ -108,7 +109,20 @@ function runeClient(page: Page, phone: boolean): Client {
       else await page.keyboard.press('Enter')
     },
     async fill(label, text) {
-      const { x, y } = await at(label, true)
+      // The text field named `label`, not the caption above it that shows the same words.
+      const field = await page.evaluate((want) => {
+        const root = document.querySelector('[data-rune-a11y]')
+        const fields =
+          root?.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"]') ??
+          []
+        for (const el of fields) {
+          if ((el.getAttribute('aria-label') ?? '').trim() !== want) continue
+          const r = el.getBoundingClientRect()
+          if (r.width > 0 && r.height > 0) return { x: r.x + r.width / 2, y: r.y + r.height / 2 }
+        }
+        return null
+      }, label)
+      const { x, y } = field ?? (await at(label, true))
       await page.mouse.click(x, y)
       await page.keyboard.type(text, { delay: 15 })
     }
