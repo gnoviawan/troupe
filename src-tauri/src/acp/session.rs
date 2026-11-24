@@ -665,7 +665,8 @@ impl DriverState {
         self.legacy_model_sessions.remove(session_id);
     }
 
-    /// Whether the session's model list is legacy-only (read-only).
+    /// Whether the session's model list is legacy-only (switched with the
+    /// legacy `session/set_model` request).
     pub(crate) fn is_legacy_models(&self, session_id: &str) -> bool {
         self.legacy_model_sessions.contains(session_id)
     }

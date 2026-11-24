@@ -25,7 +25,7 @@ pub(super) fn reached_agent(outcome: &Result<SessionReopenOutcome, String>) -> b
 }
 
 /// Convert a reopen response into the outcome plus whether its model list is
-/// legacy-only (read-only for `set_model`, issue #822).
+/// legacy-only (`set_model` uses the legacy request, issue #822).
 pub(super) trait IntoSessionReopenOutcome {
     fn into_session_reopen_outcome(self) -> (SessionReopenOutcome, bool);
 }

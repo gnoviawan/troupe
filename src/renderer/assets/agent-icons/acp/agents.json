@@ -506,6 +506,36 @@
     }
   },
   {
+    "id": "hermes",
+    "name": "Hermes Agent",
+    "version": "0.19.0",
+    "description": "Hermes Agent by Nous Research: a self-improving agent with persistent memory, run in ACP mode with `hermes acp`",
+    "distribution": {
+      "binary": {
+        "darwin-aarch64": {
+          "cmd": "hermes",
+          "args": ["acp"]
+        },
+        "darwin-x86_64": {
+          "cmd": "hermes",
+          "args": ["acp"]
+        },
+        "linux-x86_64": {
+          "cmd": "hermes",
+          "args": ["acp"]
+        },
+        "linux-aarch64": {
+          "cmd": "hermes",
+          "args": ["acp"]
+        },
+        "windows-x86_64": {
+          "cmd": "hermes",
+          "args": ["acp"]
+        }
+      }
+    }
+  },
+  {
     "id": "junie",
     "name": "Junie",
     "version": "3218.3.0",

@@ -48,6 +48,23 @@ describe('deriveAgentConfig', () => {
     }
   })
 
+  it('lists Hermes Agent as a bundled agent that runs `hermes acp` from PATH', () => {
+    // Hermes Agent (Nous Research) is not in the ACP registry; its installer
+    // puts `hermes` on PATH, and `hermes acp` serves ACP over stdio.
+    const hermes = REGISTRY_AGENTS.find((entry) => entry.id === 'hermes')
+    expect(hermes?.name).toBe('Hermes Agent')
+    for (const target of ['darwin-aarch64', 'linux-x86_64', 'windows-x86_64']) {
+      const result = deriveAgentConfig(hermes!, target)
+      expect(result).toEqual({
+        kind: 'needs-install',
+        cmd: 'hermes',
+        args: ['acp'],
+        env: {},
+        archiveUrl: undefined
+      })
+    }
+  })
+
   it('starts Factory Droid with documented ACP output instead of the legacy daemon mode', () => {
     const factory = REGISTRY_AGENTS.find((entry) => entry.id === 'factory-droid')
     expect(factory).toBeDefined()

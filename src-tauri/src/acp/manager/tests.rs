@@ -520,7 +520,7 @@ fn legacy_model_state() -> SessionModelState {
 /// Issue #822: a reopen whose result carries only the legacy `models` field
 /// surfaces that list in the outcome and marks the session read-only.
 #[tokio::test]
-async fn session_reopen_uses_legacy_models_and_marks_session_read_only() {
+async fn session_reopen_uses_legacy_models_and_marks_the_session_legacy() {
     use crate::acp::legacy_models::WithLegacyModels;
     let state = Mutex::new(DriverState::new());
     let outcome = run_session_reopen("session/load", "sess-legacy", "/work", &state, async {
