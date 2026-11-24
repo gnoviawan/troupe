@@ -141,3 +141,17 @@ fn the_in_flight_guard_keeps_every_summary() {
     );
     assert_eq!(calls.len(), MAX_LIVE_TOOL_CALLS + 1);
 }
+
+#[test]
+fn a_chunk_the_history_covers_is_not_flushed() {
+    let mut state = chat(MAX_LIVE_WINDOW_MESSAGES + 1);
+    state.book.history_watermarks.insert("s1".into(), 40.0);
+    let chunk = |seq: f64| {
+        json!({ "_onMessageChunk": [
+            { "sessionId": "s1", "role": "agent", "content": { "type": "text", "text": "a" } },
+            seq
+        ] })
+    };
+    assert_eq!(probes(&apply(&mut state, chunk(40.0))), 0, "covered");
+    assert_eq!(probes(&apply(&mut state, chunk(41.0))), 1, "live");
+}

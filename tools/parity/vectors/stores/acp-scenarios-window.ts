@@ -57,7 +57,7 @@ export const windowScenarios: Scenario[] = [
     steps: [fresh('a'), fresh('b')]
   },
   {
-    name: 'live_window_is_not_trimmed_by_a_replay_or_a_covered_event',
+    name: 'live_window_is_not_trimmed_during_a_replay',
     context: { payloads: { [S]: DURABLE } },
     initial: seeded({ replaying: 'streaming' }, { messages: { [S]: history(301) } }),
     steps: [fresh('a')]
