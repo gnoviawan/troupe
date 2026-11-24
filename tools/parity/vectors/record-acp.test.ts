@@ -14,6 +14,7 @@ import {
   openChatTabs,
   platform,
   recordVector,
+  sessionPayloads,
   sourcesOutsideWorkflow,
   storeText,
   type Vector,
@@ -62,7 +63,16 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
     saveSessionPayload: async () => {},
     queueSessionPayloadSave: async () => {},
     queueSessionPayloadDelete: async () => {},
-    loadSessionPayload: async (id: string) => actual.getCachedSessionPayload(id) ?? null,
+    // A payload read is the model's `readSessionPayload` effect; it answers
+    // `context.payloads`.
+    loadSessionPayload: async (id: string) => {
+      emit({ kind: 'readSessionPayload', sessionId: id })
+      const payload = sessionPayloads.get(id)
+      if (typeof payload === 'object' && payload !== null && 'reject' in payload) {
+        throw new Error(String(payload.reject))
+      }
+      return payload ?? null
+    },
     loadSessionPayloadTail: async () => null
   }
 })

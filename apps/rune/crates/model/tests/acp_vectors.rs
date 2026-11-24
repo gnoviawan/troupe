@@ -80,6 +80,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .cloned()
         .unwrap_or_default()
         .into();
+    let payloads = context.get("payloads").cloned().unwrap_or(json!({}));
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
@@ -128,6 +129,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
+                        | Effect::ReadSessionPayload { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
@@ -154,6 +156,18 @@ fn replay(vector: &Value) -> Result<usize, String> {
                     }
                     Effect::SetMode { .. } | Effect::SetModel { .. } => {
                         Event::ControlSet(command, None)
+                    }
+                    // A payload read answers `context.payloads`: `{ reject }`
+                    // fails it, a session it does not list has none.
+                    Effect::ReadSessionPayload { ref session_id, .. } => {
+                        let outcome = match payloads.get(session_id) {
+                            None | Some(Value::Null) => Ok(None),
+                            Some(payload) => match payload.get("reject").and_then(Value::as_str) {
+                                Some(reason) => Err(reason.to_owned()),
+                                None => Ok(Some(payload.clone())),
+                            },
+                        };
+                        Event::SessionPayloadRead(command, outcome)
                     }
                     // An agent command answers the next `agentReplies` entry:
                     // `{ reject }` fails it, `{ hold }` leaves it in flight.

@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { _clearPayloadCacheForTesting } from '../../../../src/renderer/lib/acp-history-persistence'
 import {
   _setAcpTransportForTests,
   type AcpTransport
@@ -31,7 +32,8 @@ import {
   emit,
   openChatTabs,
   platform,
-  type StoreRecorder
+  type StoreRecorder,
+  sessionPayloads
 } from '../record'
 
 /**
@@ -136,9 +138,20 @@ export const acpRecorder: StoreRecorder = {
     for (const sessionId of new Set([...SCENARIO_SESSIONS, ...Object.keys(state.sessions)])) {
       forgetHostReports(sessionId)
     }
-    // Forgets each session's clamp-log ids, so a vector logs its own clamps.
-    for (const sessionId of Object.keys(state.toolCalls)) {
+    // Forgets each session's clamp-log ids and window bookkeeping, so a
+    // vector logs its own clamps and probes its own history.
+    for (const sessionId of new Set([
+      ...Object.keys(state.toolCalls),
+      ...Object.keys(state.messages)
+    ])) {
       dropSessionTranscriptState(state, sessionId)
+    }
+    _clearPayloadCacheForTesting()
+    sessionPayloads.clear()
+    for (const [id, payload] of Object.entries(
+      (context.payloads as Record<string, unknown>) ?? {}
+    )) {
+      sessionPayloads.set(id, payload)
     }
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
@@ -226,6 +239,7 @@ import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
 import { turnScenarios } from './acp-scenarios-turn'
+import { windowScenarios } from './acp-scenarios-window'
 
 export const acpScenarios = [
   ...transcriptScenarios,
@@ -239,5 +253,6 @@ export const acpScenarios = [
   ...indexScenarios,
   ...restoreScenarios,
   ...agentCommandScenarios,
-  ...rosterScenarios
+  ...rosterScenarios,
+  ...windowScenarios
 ]

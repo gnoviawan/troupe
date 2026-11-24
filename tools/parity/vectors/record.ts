@@ -82,6 +82,13 @@ export const composerRecord: { saved: unknown } = { saved: null }
  */
 export const agentReplies: unknown[] = []
 
+/**
+ * The durable payload each session's history holds, by session id; a
+ * vector's `context.payloads`. `{ reject }` fails the read; a session it does
+ * not list has none.
+ */
+export const sessionPayloads = new Map<string, unknown>()
+
 /** The app runs native panes (`isTauriContext`); a vector's `context.desktop`. */
 export const platform = { desktop: false }
 

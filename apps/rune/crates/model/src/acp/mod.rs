@@ -13,6 +13,8 @@ pub mod agents;
 pub mod approvals;
 mod clamp;
 pub mod controls;
+mod diff_stat;
+mod effect;
 mod index;
 pub mod js;
 #[cfg(test)]
@@ -32,13 +34,14 @@ mod tool_call;
 mod transcript;
 pub mod turn;
 pub mod types;
+pub mod window;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{Ids, Level};
+use crate::Ids;
 pub use agent_commands::FlightId;
 use agents::{
     AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
@@ -49,6 +52,7 @@ use approvals::{
     PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
 };
 use controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+pub use effect::Effect;
 use picks::PickOptions;
 use prompt::{BusyRetry, Dispatch, PromptSettled, SendNow, SendOptions};
 use restore::Run;
@@ -62,6 +66,7 @@ pub use transcript::{
 };
 use turn::{AgentWorkingEvent, BackgroundCommandsEvent, HostReports, PromptCompleteEvent, TurnEnd};
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
+use window::PayloadReadOutcome;
 
 /// What the store holds. Field names follow the TypeScript store's.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -202,6 +207,19 @@ pub struct Book {
     /// Per agent, the flight whose first browser open was let open by itself.
     #[serde(skip)]
     pub(crate) auto_open_granted: BTreeMap<String, FlightId>,
+    /// Per session, the older messages the reader paged in, which the live
+    /// window keeps on top of its bound.
+    #[serde(skip)]
+    pub(crate) backfill_counts: BTreeMap<String, usize>,
+    /// Sessions whose history is known durable, so their window may trim.
+    #[serde(skip)]
+    pub(crate) durable_history: BTreeSet<String>,
+    /// Sessions with no durable history: their window never trims.
+    #[serde(skip)]
+    pub(crate) untrimmable: BTreeSet<String>,
+    /// Sessions whose durability probe is in flight.
+    #[serde(skip)]
+    pub(crate) durability_probes: BTreeSet<String>,
 }
 
 impl Book {
@@ -436,203 +454,17 @@ pub enum Event {
     /// The live-turn reattach lowered the session's subscribe cursor.
     #[serde(rename = "noteLiveTurnReplayFloor")]
     NoteLiveTurnReplayFloor(String, f64),
-}
-
-/// What a step asks the world to do. The caller runs these in order.
-#[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub enum Effect {
-    /// A boundary log line for the host log.
-    Log {
-        level: Level,
-        source: String,
-        message: String,
-    },
-    /// Write the session's index entry and payload (`persistSession`).
-    PersistSession { session_id: String },
-    /// Bring the session's chat tab forward if another tab in its pane
-    /// hides it, so a consent card is on screen.
-    RevealChatTab { session_id: String },
-    /// Send `Event::TurnEnd` with this close once the events already queued
-    /// have been applied, so chunks racing the terminator join the turn.
-    EndTurn(TurnEnd),
-    /// Send the prompt command with this turn id through the client's
-    /// ledger, then send `Event::PromptSettled` with its outcome.
-    DispatchPrompt {
-        agent_id: String,
-        session_id: String,
-        turn_id: String,
-        blocks: Vec<Value>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        display_blocks: Option<Vec<Value>>,
-    },
-    /// Send `session/cancel` for the session's turn or the agent's own work.
-    CancelPrompt {
-        agent_id: String,
-        session_id: String,
-    },
-    /// The action the user took failed; show this.
-    ActionRejected { message: String },
-    /// Send `Event::QueueRetryDue` with this generation after `delay_ms`.
-    RetryQueueAfter {
-        session_id: String,
-        delay_ms: f64,
-        #[serde(skip_serializing)]
-        generation: u64,
-    },
-    /// Save the config's model list, so the pickers show it after a restart.
-    PersistModelCatalog { config_id: String, catalog: Value },
-    /// Send `session/set_mode`, then `Event::ControlSet` with this effect.
-    SetMode {
-        agent_id: String,
-        session_id: String,
-        mode_id: String,
-    },
-    /// Send `session/set_model`, then `Event::ControlSet` with this effect.
-    SetModel {
-        agent_id: String,
-        session_id: String,
-        model_id: String,
-        #[serde(skip_serializing)]
-        persist: bool,
-        /// The id of the session's model-category option when it was sent.
-        #[serde(skip_serializing)]
-        model_option: Option<Value>,
-        /// The restore that sent it, which its outcome moves on.
-        #[serde(skip_serializing)]
-        run: Option<RunId>,
-    },
-    /// Send `session/set_config_option`, then `Event::ControlSet` with this
-    /// effect and the agent's option snapshot.
-    SetConfigOption {
-        agent_id: String,
-        session_id: String,
-        config_id: String,
-        value: Value,
-        #[serde(skip_serializing)]
-        persist: bool,
-        /// The model the session ran when the value was sent.
-        #[serde(skip_serializing)]
-        model_at_request: Option<String>,
-        #[serde(skip_serializing)]
-        is_model: bool,
-        #[serde(skip_serializing)]
-        run: Option<RunId>,
-    },
-    /// Free the session's transcript once the `PersistSession` before this
-    /// effect has read it: send `Event::DropSessionTranscript` before the
-    /// next event.
-    DropSessionTranscript { session_id: String },
-    /// Close the chat tab of this session in every project's tree: the chat
-    /// is neither live nor in the index, so the tab could show nothing.
-    CloseChatTab { session_id: String },
-    /// Merge this patch into the config's saved composer picks.
-    PersistComposerOptions { config_id: String, patch: Value },
-    /// Reload the chat index from the desktop's history store, then send
-    /// what it read as `applySessionIndexSnapshot`.
-    RefreshSessionIndex,
-    /// Read the user's saved picks for the config, then send
-    /// `Event::ComposerOptionsRead` with this effect and the record.
-    ReadComposerOptions {
-        config_id: String,
-        #[serde(skip_serializing)]
-        run: RunId,
-    },
-    /// Start an agent process for the config; then `Event::AgentCommandDone`
-    /// with the spawn reply, or `AgentCommandFailed`.
-    SpawnAgent {
-        config: Value,
-        project_id: Value,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        session_id: Option<String>,
-    },
-    /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
-    KillAgent { agent_id: String },
-    /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
-    Authenticate {
-        agent_id: String,
-        method_id: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        input: Option<Value>,
-        #[serde(skip_serializing)]
-        flight: FlightId,
-    },
-    /// Sign the agent out; then `AgentCommandDone` or `AgentCommandFailed`.
-    Logout { agent_id: String },
-    /// Answer the agent's own sign-in prompt; then `AgentCommandDone` or
-    /// `AgentCommandFailed`.
-    RespondElicitation {
-        agent_id: String,
-        request_id: String,
-        action: String,
-    },
-    /// Save the remembered auth method per config.
-    PersistAuthMethods { methods: BTreeMap<String, String> },
-    /// Show a toast; `level` is `error`, `warning` or `success`.
-    Toast { level: String, message: String },
-    /// Ask the browser policy views to re-read: a hint may have been lost.
-    RequestBrowserPolicyResync,
-    /// Hand a `browser_policy_changed` hint to the policy views.
-    PublishBrowserPolicyChange { payload: Value },
-    /// Ask the automation views to re-read: a change may have been lost.
-    RequestAutomationResync,
-    /// Hand an `automation_changed` hint to the automation views.
-    PublishAutomationChange { payload: Value },
-    /// The session's agent drives this browser tab: its Stop stops the tab.
-    TrackAgentTab { tab_id: String, session_id: String },
-    /// No session drives this browser tab any more.
-    UntrackAgentTab { tab_id: String },
-    /// Open the agent's browser tab in the workspace (desktop only).
-    OpenAgentBrowserTab {
-        tab_id: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        url: Option<String>,
-    },
-    /// Close the agent's browser tab and its browser session (desktop only).
-    CloseAgentBrowserTab { tab_id: String },
-    /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
-    /// the agent re-advertised the session's options first.
-    WaitForReadvertisedOptions {
-        session_id: String,
-        delay_ms: f64,
-        #[serde(skip_serializing)]
-        run: RunId,
-    },
-}
-
-impl Effect {
-    pub(crate) fn warn(source: &str, message: String) -> Self {
-        Self::Log {
-            level: Level::Warn,
-            source: source.to_owned(),
-            message,
-        }
-    }
-
-    /// The restore a set command belongs to.
-    fn run(&self) -> Option<RunId> {
-        match self {
-            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
-            _ => None,
-        }
-    }
-
-    pub(crate) fn info(source: &str, message: String) -> Self {
-        Self::Log {
-            level: Level::Info,
-            source: source.to_owned(),
-            message,
-        }
-    }
+    #[serde(rename = "clearSessionBackfill")]
+    ClearSessionBackfill(String),
+    /// What an [`Effect::ReadSessionPayload`] read.
+    #[serde(skip_deserializing)]
+    SessionPayloadRead(Effect, PayloadReadOutcome),
 }
 
 /// Apply one event.
 pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     let mut fx = Vec::new();
+    let flushed = event.coalesced_session(state);
     match event {
         Event::UserPrompt(event, seq) => state.on_user_prompt(event, seq, env),
         Event::MessageChunk(event, seq) => state.on_message_chunk(event, seq, env, &mut fx),
@@ -750,6 +582,15 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::NoteLiveTurnReplayFloor(session_id, floor) => {
             state.book.live_turn_replay_floors.insert(session_id, floor);
         }
+        Event::ClearSessionBackfill(session_id) => {
+            state.clear_session_backfill(&session_id, &mut fx);
+        }
+        Event::SessionPayloadRead(read, outcome) => {
+            state.on_session_payload_read(read, outcome, &mut fx);
+        }
+    }
+    if let Some(session_id) = flushed {
+        state.trim_flushed(&session_id, &mut fx);
     }
     // A run waiting for re-advertised options moves on once an event changed
     // them, as the TypeScript poll would see.

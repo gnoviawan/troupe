@@ -74,7 +74,7 @@ TypeScript lines are whole files, comments included. Every path below is under
 |---|---:|---|---|---|
 | `types.ts` | 1,279 | `acp/types.rs` (records), `acp/mod.rs` (`State`, `Event`, `Effect`) | state types; the action signatures become `Event` variants | 1, grows per PR |
 | `slices/transcript.ts` event handlers (`_onUserPrompt`, `_onMessageChunk`, `_onToolCall`, `_onToolCallUpdate`, `_onPlanUpdate`, `_onCommandsUpdate`, `_onSessionInfoUpdate`, `_onUsageUpdate`) and the live clamps | 1,788 | `acp/transcript.rs`, `acp/tool_call.rs`, `acp/clamp.rs` | state; logs and `persistSession` are effects | 1 |
-| `slices/transcript.ts` window (`loadOlderMessages`, `trimLiveWindow`, backfill counts) | (same file) | `acp/window.rs` | state plus a payload-read effect | 6 |
+| `slices/transcript.ts` window (`loadOlderMessages`, `trimLiveWindow`, backfill counts); `helpers.ts` `trimLiveToolCalls` | (same file) | `acp/window.rs`, `acp/diff_stat.rs` | state plus a payload-read effect | 6 |
 | `slices/transcript.ts` `_onModeUpdate`, `_onConfigOptionsUpdate`; `helpers.ts` `mergeAgentConfigOptions`, `cacheOptionsFromSession`, `writeAgentOptionsCache`; `model-catalog.ts` `modelCatalogFromOptions`; the model helpers of `components/chat/chat-input-bar-config.ts` | (parts) | `acp/controls.rs` | state; the model list save and the saved-pick heal are effects | 4 |
 | `slices/transcript-flush-clock.ts` | 149 | none | glue | none |
 | `lib/plan-session.ts` (plan tool, merge, classify) | 388 | `acp/plan.rs` | state | 1 |
@@ -198,8 +198,24 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      names chats `createSession` makes, PR 8) and the dropped-launch
      recovery (PR 8). Events apply in order, so the load generation guard
      has no counterpart.
-   - 6b, rest. History open, live window and eviction, the resubscribe
-     install, live-turn reattach.
+   - 6b, live window (R6a-4). `acp/window.rs`: the trims a flush runs on
+     the session a chunk, tool call or tool update coalesced into (not a
+     replaying session, not a covered event). Messages over 300 keep the
+     newest and the streaming tail, but only once the session's history is
+     known durable: the first time over the bound the model sends
+     `readSessionPayload` (the durability probe), and its answer
+     (`sessionPayloadRead`) marks the session durable, untrimmable (no
+     history, logged) or neither (a failed read, logged, probed again on the
+     next flush). Tool calls over 500 drop the oldest finished ones, never a
+     subagent dispatch; a dropped edit, delete or move leaves a path-only
+     summary with its line counts (`acp/diff_stat.rs`, a copy of the host's
+     `diff_stat.rs`). `clearSessionBackfill` forgets the backfill and trims
+     at once. The payload cache and its pins are the app's: the model only
+     remembers which sessions are durable, so a cache eviction does not make
+     it probe again where the TypeScript would.
+   - 6b, rest. History open, `loadOlderMessages` (it needs the composer
+     unit's wire-to-display reversal for its twin folding and the switch
+     bands of PR 9), the resubscribe install, live-turn reattach.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider
@@ -305,7 +321,6 @@ so the replay drops `retryQueueAfter` before it compares.
   `clearPromptReconcileForTurn`) and `handoffOnlyTurnIds`. PR 11 and PR 9.
 - The one-shot collectors that swallow chunks, tool calls and requests of
   commit-message, terminal assist and bug-report sessions. PR 10.
-- The live-window trim and the tool-call trim at flush. PR 6.
 - Switch markers in `maxPayloadSeq`. PR 9.
 - On `prompt_complete`: the prompt-reconcile clear (PR 11), and the update of
   the in-memory payload cache (PR 6).
@@ -342,6 +357,12 @@ its pinned sources match a path glob of both workflows.
   the model folds both into `Env::server_history`.
 - `context.openChatTabs` lists the sessions a chat tab shows.
 - `context.desktop` makes `isTauriContext` true, as `Env::desktop` does.
+- `context.payloads` is each session's durable history: every
+  `loadSessionPayload` emits `readSessionPayload` and answers it, null for a
+  session it does not list, and `{ "reject": text }` fails the read. The
+  payload cache is cleared per vector.
+- Vectors over the live bounds keep their records small: every step
+  snapshots the whole state.
 - Toasts are effects (`toast`, with the level). The roster watch is attached
   once to a stub watch client; `agentsWatchState` and `agentsWatchDelta` call
   its handlers.
