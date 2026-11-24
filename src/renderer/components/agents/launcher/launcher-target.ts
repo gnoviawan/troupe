@@ -63,8 +63,14 @@ export function useLauncherPlace(target: LauncherTarget): LauncherPlace {
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const activeProject = useActiveProject() ?? null
   const paneId = target.kind === 'pane' ? target.paneId : undefined
-  // The project is read per render; the rest (and the callbacks effects
-  // depend on) stays stable while the pane and the active project do.
+  // The folders are read per render: a project's path can change while the
+  // launcher is shown, and a project picked before it is listed has none yet.
+  // The rest (and the callbacks effects depend on) stays stable while the
+  // pane, the project and its folders do.
+  const projectRoot =
+    paneId !== undefined && activeProjectId ? getDefaultCwdForProject(activeProjectId) : undefined
+  const skillsRoot =
+    paneId !== undefined && activeProjectId ? getProjectRootPath(activeProjectId) : undefined
   const place = useMemo((): Omit<LauncherPlace, 'project'> => {
     if (paneId === undefined) {
       return {
@@ -86,13 +92,12 @@ export function useLauncherPlace(target: LauncherTarget): LauncherPlace {
         }
       }
     }
-    const projectRoot = activeProjectId ? getDefaultCwdForProject(activeProjectId) : undefined
     return {
       key: paneId,
       paneId,
       projectId: activeProjectId,
       projectRoot,
-      skillsRoot: activeProjectId ? getProjectRootPath(activeProjectId) : undefined,
+      skillsRoot,
       launchCwd: activeProjectId && projectRoot ? projectRoot : null,
       quick: false,
       agentScope: { cwd: projectRoot, projectId: activeProjectId || null },
@@ -112,6 +117,6 @@ export function useLauncherPlace(target: LauncherTarget): LauncherPlace {
             }
           : null
     }
-  }, [paneId, activeProjectId])
+  }, [paneId, activeProjectId, projectRoot, skillsRoot])
   return { ...place, project: paneId === undefined ? null : activeProject }
 }
