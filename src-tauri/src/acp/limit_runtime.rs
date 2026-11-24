@@ -1,6 +1,7 @@
-//! Shared pieces of the Claude and Codex limit supervisors: the turn clock,
-//! the set of accounts that just reached a limit, and moving one chat onto a
-//! new agent. Each supervisor keeps its own schedule and its own decision.
+//! Shared pieces of the Claude, Codex and Antigravity limit supervisors: the
+//! turn clock, the set of accounts that just reached a limit, the roomiest
+//! account for a new chat, and moving one chat onto a new agent. Each
+//! supervisor keeps its own schedule and its own decision.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -8,6 +9,7 @@ use std::time::SystemTime;
 
 use agent_client_protocol::schema::v1::{ContentBlock, TextContent};
 
+use crate::acp::claude_limit::decide::{first_with_room, rank_alternatives, Candidate};
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::manager::{HostMove, LaunchRecipe};
 use crate::acp::{AcpManager, LaunchChat, SpawnScope};
@@ -75,6 +77,19 @@ impl LimitedAccounts {
     pub(crate) fn snapshot(&self) -> HashMap<String, SystemTime> {
         self.0.lock().clone()
     }
+}
+
+/// The Account of `candidates` with the most room for a new chat: the
+/// ranking a chat at its limit moves by, skipping the Accounts in
+/// `limited_until` whose limit has not reset at `now`. `None` when none has
+/// room.
+#[must_use]
+pub(crate) fn roomiest_account(
+    candidates: &[Candidate],
+    limited_until: &HashMap<String, SystemTime>,
+    now: SystemTime,
+) -> Option<String> {
+    first_with_room(&rank_alternatives(candidates), limited_until, now).cloned()
 }
 
 pub(crate) enum Relaunch {
@@ -276,3 +291,7 @@ pub(crate) async fn send_notice(
         ),
     }
 }
+
+#[cfg(test)]
+#[path = "limit_runtime_tests.rs"]
+mod tests;

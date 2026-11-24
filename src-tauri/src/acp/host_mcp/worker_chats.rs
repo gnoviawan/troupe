@@ -5,12 +5,13 @@ use serde::{Deserialize, Serialize};
 
 pub const START_CHAT_DESCRIPTION: &str = "Start a new Troupe chat that works in parallel with \
 this one, in the same project and folder, and send it `prompt` as its first message. When this \
-chat runs on a Claude account Troupe manages and the user allows automatic account switching, \
-the new chat runs on the signed-in Claude account with the most room; otherwise it uses the \
-project's account. It is a normal chat the user can open. It does not see this conversation: \
-put the whole task and every detail it needs in `prompt`. Returns its chat ID and account. \
-Follow it with read_chat and send follow-ups with send_to_chat. A chat started this way cannot \
-start chats itself, and one chat may have at most 6 running.";
+chat runs on a Claude, Codex or Antigravity account Troupe manages and the user allows automatic \
+account switching for that provider, the new chat runs on the signed-in account of the same \
+provider with the most room; otherwise it uses the project's account. It is a normal chat the \
+user can open. It does not see this conversation: put the whole task and every detail it needs \
+in `prompt`. Returns its chat ID and account. Follow it with read_chat and send follow-ups with \
+send_to_chat. A chat started this way cannot start chats itself, and one chat may have at most 6 \
+running.";
 
 pub const LIST_STARTED_CHATS_DESCRIPTION: &str = "List the chats this chat started with \
 start_chat, newest first: chat ID, title, and status (working, idle or stopped).";
@@ -33,9 +34,10 @@ pub struct StartChatInput {
     /// A short title for the new chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    /// `auto` (the default) picks the signed-in Claude account with the most
-    /// room; or a Claude account ID from Troupe. Ignored when this chat does
-    /// not run on a Claude account Troupe manages.
+    /// `auto` (the default) picks the signed-in account with the most room,
+    /// of this chat's provider (Claude, Codex or Antigravity); or an account
+    /// ID of that provider from Troupe. Ignored when this chat does not run
+    /// on an account Troupe manages.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub account: Option<String>,
 }

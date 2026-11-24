@@ -243,6 +243,7 @@ pub(super) async fn route_request(req: WsRequest, env: &HandlerEnv) -> WsReply {
         "fetch_acp_registry_snapshot" => {
             handle_fetch_acp_registry_snapshot(id, &req.payload, acp_catalog).await
         }
+        "get_acp_agent_overlay" => handle_get_acp_agent_overlay(id, acp_catalog).await,
         // MCP catalog (spine AD-1): host-side paged search over the bundled
         // registry snapshot. Shares its service with `GET /mcp-catalog/search`.
         "search_mcp_catalog" => {

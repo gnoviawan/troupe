@@ -39,3 +39,16 @@ export const LAUNCHER_BACKDROP_REVEAL_MS = 300
 
 /** Reduced-motion exit: no morph, just a quick uniform fade. */
 export const LAUNCHER_EXIT_REDUCED_MS = 150
+
+/**
+ * Transition of the presence wrapper that holds an exiting launcher: the
+ * keep-alive window for the launcher's own exit choreography.
+ */
+export function launcherExitTransition(reducedMotion: boolean): {
+  delay?: number
+  duration: number
+} {
+  return reducedMotion
+    ? { duration: LAUNCHER_EXIT_REDUCED_MS / 1000 }
+    : { delay: LAUNCHER_EXIT_WINDOW_MS / 1000, duration: 0.05 }
+}

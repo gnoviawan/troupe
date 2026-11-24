@@ -10,7 +10,7 @@ import { SettingsSwitchRow } from '@/components/settings/SettingsSwitchRow'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import type { SubagentSettingsAgentView, SubagentSettingsView } from '@/lib/acp-api'
-import { findBundledIconByKey } from '@/lib/agents/agent-icon-catalog'
+import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
 import { acpApi } from '@/lib/api'
 import { logFrontendError } from '@/lib/log-api'
@@ -33,7 +33,8 @@ const MAX_DESCRIPTION_CHARS = 1000
 function AgentRowIcon({ agentId, name }: { agentId: string; name: string }): React.JSX.Element {
   const templateId = useAgentTemplateId(null, agentId)
   const customIcon = useAgentIcon(null, agentId)
-  const svg = customIcon ?? (templateId ? findBundledIconByKey(`acp:${templateId}`)?.svg : null)
+  const catalog = useAgentIconCatalog()
+  const svg = customIcon ?? (templateId ? catalog.byKey(`acp:${templateId}`)?.svg : null)
   const sanitized = svg ? sanitizeInlineAgentSvg(svg) : null
   if (sanitized) {
     return (

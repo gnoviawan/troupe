@@ -8,7 +8,7 @@
  * (`.message` is the human string callers already toast).
  */
 
-import type { AcpCatalog } from '@shared/types/acp-catalog.types'
+import type { AcpAgentOverlay, AcpCatalog } from '@shared/types/acp-catalog.types'
 import type {
   AntigravityAccount,
   AntigravityAccountsSnapshot,
@@ -967,6 +967,11 @@ export class WsAcpTransport implements AcpTransport {
   /** `list_acp_catalog`: the host-resolved catalog (see {@link AcpTransport.listCatalog}). */
   async listCatalog(refresh = false): Promise<AcpCatalog> {
     return this.request<AcpCatalog>('list_acp_catalog', { refresh })
+  }
+
+  /** `get_acp_agent_overlay`: see {@link AcpTransport.getAgentOverlay}. */
+  async getAgentOverlay(): Promise<AcpAgentOverlay> {
+    return this.request<AcpAgentOverlay>('get_acp_agent_overlay', {})
   }
 
   /** `search_mcp_catalog`: one page of the host's MCP catalog (see {@link AcpTransport.searchMcpCatalog}). */

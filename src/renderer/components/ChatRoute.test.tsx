@@ -169,6 +169,9 @@ vi.mock('@/lib/log-api', () => ({
 
 import { ChatRoute } from '@/components/ChatRoute'
 import { logFrontendError } from '@/lib/log-api'
+import { adoptQuickChat } from '@/lib/no-project-chat'
+import { setRouterNavigate } from '@/lib/router-navigate'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 
 type Rerender = (ui: ReactElement) => void
 
@@ -793,5 +796,35 @@ describe('ChatRoute tab activation (multi-project perf)', () => {
         expect(chatTab(workspaceRootRef.current, 's-b')).toBeUndefined()
       })
     })
+  })
+})
+
+describe('ChatRoute on a launch placeholder route', () => {
+  beforeEach(() => {
+    mockOpenHistorySession.mockReset()
+    mockAddAgentChatTab.mockClear()
+    acpStateRef.current = {}
+    acpIndexRef.current = []
+    workspaceRootRef.current = { type: 'leaf', id: 'pane-a', tabs: [], activeTabId: null }
+  })
+
+  it('loads no history for a launch placeholder that is gone', () => {
+    renderChatRoute('/c/launch-gone')
+    expect(mockOpenHistorySession).not.toHaveBeenCalled()
+    expect(mockAddAgentChatTab).not.toHaveBeenCalled()
+  })
+
+  it('moves the stale route of a quick launch that started off screen to its chat', () => {
+    const navigate = vi.fn()
+    setRouterNavigate(navigate)
+    useQuickChatStore.setState({ view: { mode: 'closed' } })
+    adoptQuickChat('launch-route-1', 'sess-route-1', 'test')
+    try {
+      renderChatRoute('/c/launch-route-1')
+    } finally {
+      setRouterNavigate(null)
+    }
+    expect(navigate).toHaveBeenCalledWith('/c/sess-route-1', { replace: true })
+    expect(mockOpenHistorySession).not.toHaveBeenCalled()
   })
 })

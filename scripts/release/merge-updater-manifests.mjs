@@ -75,7 +75,7 @@ function releaseUrlAssetName(url, tag, description) {
 /**
  * Resolve the GitHub release tag the channel's assets live under.
  *
- * Stable and Insider RC tags are the versioned tag (`v<version>`). Nightly
+ * Stable assets live under the versioned tag (`v<version>`). Nightly
  * assets live under the moving `nightly` tag regardless of the synthesized
  * `0.0.0-nightly.*` version, so the URL validator must use `nightly` as the
  * tag prefix for that channel. An explicit `tag` override wins.
@@ -147,7 +147,7 @@ export async function mergeUpdaterManifests({
   }
 
   const requiredKeys =
-    channel === 'nightly' || channel === 'insider'
+    channel === 'nightly'
       ? requiredPlatformKeys.filter((key) => key !== 'windows-x86_64-msi')
       : requiredPlatformKeys
   const missing = requiredKeys.filter((key) => !platforms[key])
@@ -180,7 +180,7 @@ async function runCli() {
   const [outputPath, version, notesPath, pubDate, ...inputPaths] = positional
   if (!outputPath || !version || !notesPath || !pubDate || inputPaths.length === 0) {
     throw new Error(
-      'Usage: merge-updater-manifests.mjs [--channel <stable|insider|nightly>] [--tag <tag>] <output> <version> <notes-file> <pub-date> <manifest> [manifest...]'
+      'Usage: merge-updater-manifests.mjs [--channel <stable|nightly>] [--tag <tag>] <output> <version> <notes-file> <pub-date> <manifest> [manifest...]'
     )
   }
   await mergeUpdaterManifests({

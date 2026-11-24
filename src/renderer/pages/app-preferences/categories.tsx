@@ -455,8 +455,8 @@ const ALL_APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   {
     categoryId: 'updates',
     label: 'Release channel',
-    description: 'Choose Stable, Insider, or Nightly update track.',
-    keywords: ['insider', 'nightly', 'stable', 'prerelease', 'beta', 'channel'],
+    description: 'Choose the Stable or Nightly update track.',
+    keywords: ['nightly', 'stable', 'prerelease', 'beta', 'channel'],
     anchorId: rowId('release-channel')
   },
   {

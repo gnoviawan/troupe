@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "overrides": [
+    {
+      "id": "claude-acp",
+      "brandColor": {
+        "light": "#C15F3C",
+        "dark": "#D97757"
+      }
+    },
+    {
+      "id": "gemini",
+      "brandColor": {
+        "light": "#1C69FF",
+        "dark": "#4796E3",
+        "gradient": {
+          "light": ["#1C69FF", "#9168C0"],
+          "dark": ["#4796E3", "#9177C7"]
+        }
+      }
+    },
+    {
+      "id": "mistral-vibe",
+      "brandColor": {
+        "light": "#D9440A",
+        "dark": "#FA520F"
+      }
+    }
+  ],
+  "agents": [
+    {
+      "id": "oh-my-pi",
+      "name": "Oh My Pi",
+      "version": "18.12.6",
+      "description": "Oh My Pi (omp): a terminal coding agent built on Pi, with an ACP mode",
+      "distribution": {
+        "binary": {
+          "darwin-aarch64": {
+            "cmd": "omp",
+            "args": ["acp"]
+          },
+          "darwin-x86_64": {
+            "cmd": "omp",
+            "args": ["acp"]
+          },
+          "linux-x86_64": {
+            "cmd": "omp",
+            "args": ["acp"]
+          },
+          "linux-aarch64": {
+            "cmd": "omp",
+            "args": ["acp"]
+          },
+          "windows-x86_64": {
+            "cmd": "omp",
+            "args": ["acp"]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -180,7 +180,7 @@ export function sendFromChatStart(args: {
   const { placeholderId, started } = launchChat({
     configId,
     projectId,
-    paneId,
+    surface: { kind: 'pane', paneId },
     checkout: target.kind === 'move' ? target.checkout : { launchCwd: target.projectRoot },
     newWorktree:
       target.kind === 'new-worktree'

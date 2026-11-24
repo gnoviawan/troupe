@@ -53,18 +53,18 @@ impl CodexUsageProbe for FixedUsage {
     }
 }
 
-struct Host {
+pub(crate) struct Host {
     dir: tempfile::TempDir,
-    acp: Arc<AcpManager>,
-    relay: Arc<WsRelaySink>,
+    pub(crate) acp: Arc<AcpManager>,
+    pub(crate) relay: Arc<WsRelaySink>,
     persistence: Arc<SessionPersistence>,
-    accounts: HashMap<&'static str, String>,
+    pub(crate) accounts: HashMap<&'static str, String>,
     resets_at: Arc<AtomicI64>,
     _serial: tokio::sync::MutexGuard<'static, ()>,
 }
 
 impl Host {
-    async fn start(
+    pub(crate) async fn start(
         usage: &[(&'static str, f64)],
         project_account: &str,
         resets_at: i64,
@@ -181,21 +181,35 @@ impl Host {
         })
     }
 
-    fn state(&self) -> PathBuf {
+    pub(crate) fn state(&self) -> PathBuf {
         self.dir.path().join("state")
     }
 
     async fn open_chat(&self, python: &str) -> (AgentId, SessionId) {
+        self.open_chat_with(python, &[]).await
+    }
+
+    /// [`Self::open_chat`] with `env` set on the agent over the defaults.
+    pub(crate) async fn open_chat_with(
+        &self,
+        python: &str,
+        env: &[(&str, &str)],
+    ) -> (AgentId, SessionId) {
         let script = self.dir.path().join("mock_agent.py");
+        let mut agent_env = HashMap::from([
+            ("MOCK_RESUME_OK".to_string(), "1".to_string()),
+            ("MOCK_SESSION_IDS".to_string(), "1".to_string()),
+        ]);
+        agent_env.extend(
+            env.iter()
+                .map(|(key, value)| ((*key).to_string(), (*value).to_string())),
+        );
         let config = AgentConfig {
             config_id: Some(CODEX_CONFIG_ID.to_string()),
             name: "Codex".to_string(),
             command: python.to_string(),
             args: vec!["-u".to_string(), script.to_string_lossy().to_string()],
-            env: HashMap::from([
-                ("MOCK_RESUME_OK".to_string(), "1".to_string()),
-                ("MOCK_SESSION_IDS".to_string(), "1".to_string()),
-            ]),
+            env: agent_env,
             allow_terminal: false,
         };
         let agent_id = self
@@ -243,7 +257,7 @@ impl Host {
         });
     }
 
-    async fn log_until(
+    pub(crate) async fn log_until(
         &self,
         session_id: &SessionId,
         done: impl Fn(&[(String, Value)]) -> bool,
@@ -271,7 +285,7 @@ impl Host {
     }
 }
 
-fn texts<'a>(records: &'a [(String, Value)], kind: &str) -> Vec<&'a str> {
+pub(crate) fn texts<'a>(records: &'a [(String, Value)], kind: &str) -> Vec<&'a str> {
     records
         .iter()
         .filter(|(k, _)| k == kind)
@@ -294,7 +308,7 @@ fn actions(records: &[(String, Value)]) -> Vec<Value> {
         .collect()
 }
 
-fn has_home_chunk(records: &[(String, Value)]) -> bool {
+pub(crate) fn has_home_chunk(records: &[(String, Value)]) -> bool {
     texts(records, "message_chunk")
         .iter()
         .any(|text| text.starts_with("codex_home="))

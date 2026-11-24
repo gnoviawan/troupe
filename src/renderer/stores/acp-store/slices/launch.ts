@@ -15,6 +15,7 @@ import {
 } from '@/lib/agents/acp-spawn-errors'
 import { findStoredAgentConfig } from '@/lib/agents/agent-aliases'
 import { logFrontendError } from '@/lib/log-api'
+import { QUICK_CHAT_AGENT_CWD } from '../../acp-reuse-keys'
 import { pendingRestartVersionsAfterSpawn } from '../../agent-update-orchestration'
 import { dropPromptQueueForSession } from '../../prompt-queue-orchestration'
 import { isScopedOption, userPickedDuringRestore } from '../composer-options'
@@ -470,7 +471,7 @@ export const createLaunchSlice: StateCreator<AcpState, [], [], LaunchSliceState>
     if (!config) throw new Error(`unknown agent config ${configId}`)
     // The spawn key is not a project path, so no project env (and no
     // per-project CODEX_HOME) is applied. The session cwd comes from the host.
-    const agentId = await ensureLiveAgent(get, set, configId, 'quick-chat', {
+    const agentId = await ensureLiveAgent(get, set, configId, QUICK_CHAT_AGENT_CWD, {
       holder: 'chat'
     })
     if (!agentId) throw new Error(`failed to spawn agent for config ${configId}`)

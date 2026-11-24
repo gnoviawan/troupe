@@ -37,6 +37,7 @@ import { agentReuseKey } from '@/stores/acp-reuse-keys'
 import type { AcpSession } from '@/stores/acp-store'
 import { hydrateOptionsCacheFromCatalog } from '@/stores/acp-store/model-catalog'
 import { useLoginTerminalSignInStore } from '@/stores/login-terminal-sign-in-store'
+import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import { useShellLayoutStore } from '@/stores/shell-layout-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -830,7 +831,7 @@ function renderLauncher(): void {
   render(
     <TooltipProvider>
       <MemoryRouter>
-        <AgentLauncher paneId="pane1" />
+        <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
       </MemoryRouter>
     </TooltipProvider>
   )
@@ -1770,7 +1771,7 @@ describe('AgentLauncher ACP new thread', () => {
     const { unmount } = render(
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -1877,7 +1878,7 @@ describe('AgentLauncher ACP new thread', () => {
     const first = render(
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -1929,7 +1930,7 @@ describe('AgentLauncher ACP new thread', () => {
     const ui = (): React.JSX.Element => (
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -1979,7 +1980,7 @@ describe('AgentLauncher ACP new thread', () => {
     const ui = (): React.JSX.Element => (
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -2194,7 +2195,7 @@ describe('AgentLauncher ACP new thread', () => {
       <FavoritesStoreContext.Provider value={favorites}>
         <TooltipProvider>
           <MemoryRouter>
-            <AgentLauncher paneId="pane1" />
+            <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
           </MemoryRouter>
         </TooltipProvider>
       </FavoritesStoreContext.Provider>
@@ -3468,7 +3469,7 @@ describe('AgentLauncher worktree isolation', () => {
     render(
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -3653,7 +3654,7 @@ describe('AgentLauncher worktree isolation', () => {
             <AnimatePresence initial={false}>
               {show ? (
                 <motion.div exit={{ opacity: 0 }} transition={{ duration: 5 }}>
-                  <AgentLauncher paneId="pane1" />
+                  <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -4115,7 +4116,7 @@ describe('AgentLauncher worktree isolation', () => {
       const tree = (): React.JSX.Element => (
         <TooltipProvider>
           <MemoryRouter>
-            <AgentLauncher paneId="pane1" />
+            <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
           </MemoryRouter>
         </TooltipProvider>
       )
@@ -4349,7 +4350,7 @@ describe('AgentLauncher per-agent update badge', () => {
     const renderTree = () => (
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -4400,7 +4401,7 @@ describe('AgentLauncher per-agent update badge', () => {
     const renderTree = () => (
       <TooltipProvider>
         <MemoryRouter>
-          <AgentLauncher paneId="pane1" />
+          <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
         </MemoryRouter>
       </TooltipProvider>
     )
@@ -4649,7 +4650,7 @@ describe('AgentLauncher exit handoff', () => {
           <AnimatePresence initial={false}>
             {show ? (
               <motion.div exit={{ opacity: 0 }} transition={{ duration: 5 }}>
-                <AgentLauncher paneId="pane1" />
+                <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -4668,7 +4669,7 @@ describe('AgentLauncher exit handoff', () => {
             <AnimatePresence initial={false}>
               {show ? (
                 <motion.div exit={{ opacity: 0 }} transition={{ duration: 5 }}>
-                  <AgentLauncher paneId="pane1" />
+                  <AgentLauncher target={{ kind: 'pane', paneId: 'pane1' }} />
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -4962,4 +4963,189 @@ describe('AgentLauncher Claude account chip', () => {
     expect(await screen.findByRole('button', { name: /Currently OpenCode/ })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Claude account:/ })).not.toBeInTheDocument()
   }, 10000)
+})
+
+describe('AgentLauncher for a new quick chat', () => {
+  function renderQuickLauncher(): void {
+    useQuickChatStore.getState().openLauncher()
+    render(
+      <TooltipProvider>
+        <MemoryRouter>
+          <AgentLauncher target={{ kind: 'quick' }} />
+        </MemoryRouter>
+      </TooltipProvider>
+    )
+  }
+
+  it('starts the quick chat with the first message on Send and follows it to its session', async () => {
+    const defaultAgent = defaultReadyAgent()
+    renderQuickLauncher()
+
+    setComposerValue('hello quick')
+    fireEvent.click(screen.getByLabelText('Start agent chat'))
+
+    expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        configId: defaultAgent.configId,
+        cwd: '',
+        projectId: '__unassigned__',
+        kind: 'quick',
+        initialUserBlocks: [{ type: 'text', text: 'hello quick' }]
+      })
+    )
+    expect(mockAddAgentChatTab).not.toHaveBeenCalled()
+    expect(mockClaimPreparedChat).not.toHaveBeenCalled()
+
+    await waitFor(() => expect(mockFinalizeChatLaunch).toHaveBeenCalledTimes(1))
+    expect(mockFinalizeChatLaunch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        placeholderId: 'launch-placeholder-1',
+        configId: defaultAgent.configId,
+        cwd: '',
+        projectId: '__unassigned__',
+        initialBlocks: [{ type: 'text', text: 'hello quick' }]
+      })
+    )
+    // The view moved to the session and kept the placeholder's panel.
+    expect(useQuickChatStore.getState().view).toEqual({
+      mode: 'chat',
+      sessionId: 'session-1',
+      panelKey: 'launch-placeholder-1'
+    })
+    expect(mockRemapAgentChatSession).not.toHaveBeenCalled()
+    expect(mockPersistWrite).toHaveBeenCalledWith('agents/last-selected', {
+      agentId: defaultAgent.configId,
+      mode: 'acp'
+    })
+    // A quick chat has no workspace pick: the project's saved pick stays.
+    const firstTurnSave = mockPersistComposerOptions.mock.calls.at(-1)
+    expect(firstTurnSave?.[0]).toBe(defaultAgent.configId)
+    expect(Object.keys(firstTurnSave?.[1] ?? {})).not.toContain('isolationMode')
+  })
+
+  it('names no project and offers no workspace chip', () => {
+    mockProjectOverride.current = { isGitRepo: true, gitBranch: 'feat/x' }
+    renderQuickLauncher()
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'What should we do?' })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Workspace' })).not.toBeInTheDocument()
+  })
+
+  it('warms only the agent process under the quick chat key, never a project session', async () => {
+    seedDefaultAgentConfigured()
+    const defaultAgent = defaultReadyAgent()
+    renderQuickLauncher()
+
+    await waitFor(() =>
+      expect(mockPrewarmAgent).toHaveBeenCalledWith(defaultAgent.configId, 'quick-chat')
+    )
+    expect(mockSetSelectedAgentConfigId).toHaveBeenCalledWith(defaultAgent.configId)
+    expect(mockRetargetWarmPool).not.toHaveBeenCalled()
+    expect(mockPrepareChat).not.toHaveBeenCalled()
+  })
+
+  it('on web warms no agent nobody configured (#840)', async () => {
+    renderQuickLauncher()
+    await screen.findByLabelText('Agent prompt')
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    expect(mockPrewarmAgent).not.toHaveBeenCalled()
+  })
+
+  it('Escape closes the quick view, not a pane launcher', async () => {
+    renderQuickLauncher()
+    await screen.findByLabelText('Agent prompt')
+
+    pressComposerKey('Escape')
+
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    expect(mockHideAgentLauncher).not.toHaveBeenCalled()
+  })
+
+  it('calls the launch off when a project is picked while a mentioned chat loads', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      act(() => useQuickChatStore.getState().close())
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).not.toHaveBeenCalled()
+      expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+
+      // Nothing stays in flight: Send works again once the launcher is back.
+      conversationContextsOverride.current = null
+      act(() => useQuickChatStore.getState().openLauncher())
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() =>
+        expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
+          expect.objectContaining({ kind: 'quick', projectId: '__unassigned__' })
+        )
+      )
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
+
+  it('calls the launch off when its launcher closed and a new one opened while a mentioned chat loads', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      act(() => useQuickChatStore.getState().close())
+      act(() => useQuickChatStore.getState().openLauncher())
+      const newLauncher = useQuickChatStore.getState().view
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).not.toHaveBeenCalled()
+      expect(useQuickChatStore.getState().view).toBe(newLauncher)
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
+
+  it('starts the quick chat once a mentioned chat loads when its launcher stayed open', async () => {
+    let finishRead!: (contexts: ConversationContexts) => void
+    conversationContextsOverride.current = () =>
+      new Promise((resolve) => {
+        finishRead = resolve
+      })
+    try {
+      defaultReadyAgent()
+      renderQuickLauncher()
+      await screen.findByLabelText('Agent prompt')
+      setComposerValue(`see ${conversationToken('Old chat', 'chat-9')} `)
+      fireEvent.click(screen.getByLabelText('Start agent chat'))
+      await waitFor(() => expect(finishRead).toBeDefined())
+
+      await act(async () => finishRead({ blocks: [], gaps: new Map([['chat-9', 'unavailable']]) }))
+
+      expect(mockCreateLaunchPlaceholder).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'quick', projectId: '__unassigned__' })
+      )
+    } finally {
+      conversationContextsOverride.current = null
+    }
+  })
 })
