@@ -21,6 +21,13 @@ const crashed = (extra: Record<string, unknown> = {}) =>
 const disconnected = (reason: string, agentId = AGENT) =>
   ev('_onAgentDisconnected', { agentId, reason })
 
+/** Antigravity's plan-limit error data. */
+const antigravityLimit = {
+  agent: 'antigravity',
+  errorKind: 'quota_exhausted',
+  resetsAt: 1_700_000_123_456
+}
+
 const registered = { agents: { [AGENT]: { id: AGENT, capabilities: {}, authMethods: [] } } }
 
 function running(id: string, seq: number): Record<string, unknown> {
@@ -162,6 +169,31 @@ export const agentScenarios: Scenario[] = [
       agentError({ data: { errorKind: 'rate_limited' }, message: 'weekly cap', code: 1.5 }),
       agentError({ sessionId: 's9', data: { codexErrorInfo: 'usageLimitExceeded' } })
     ]
+  },
+  {
+    name: 'agent_error_at_an_antigravity_limit_counts_only_for_an_antigravity_chat',
+    initial: {
+      ...fleet(),
+      configToLiveAgent: {
+        'acp-registry:antigravity-acp\u0000/work\u0000p1': AGENT,
+        'cfg-2\u0000/work\u0000p1': 'agent-2'
+      }
+    },
+    steps: [
+      agentError({ data: { errorKind: 'rate_limited' }, message: 'weekly cap' }),
+      agentError({ data: { ...antigravityLimit, resetsAt: -5 } }),
+      agentError({ data: antigravityLimit, message: 'You hit your 5-hour limit' }),
+      agentError({ sessionId: 's9', agentId: 'agent-2', data: antigravityLimit })
+    ]
+  },
+  {
+    name: 'agent_error_reads_an_antigravity_chat_from_the_index',
+    initial: {
+      ...fleet(),
+      configToLiveAgent: {},
+      sessionIndex: [{ id: S, agentConfigId: 'acp-registry:antigravity-acp' }]
+    },
+    steps: [agentError({ data: { ...antigravityLimit, resetsAt: 1_700_000_123_999.5 } })]
   },
   {
     name: 'agent_error_without_a_session_marks_every_live_one',

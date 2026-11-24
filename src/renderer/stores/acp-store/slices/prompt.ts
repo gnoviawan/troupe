@@ -30,6 +30,7 @@ import { COMMAND_RESEND_DELAYS_MS, settleCommand } from '@/lib/command-engine'
 import { logFrontendError } from '@/lib/log-api'
 import { settleRunningPlan } from '@/lib/plan-session'
 import { randomUUID } from '@/lib/uuid'
+import { isAntigravityAccountRestarting } from '@/stores/antigravity-account-restart'
 import { isCodexAccountRestarting } from '@/stores/codex-account-restart'
 import { readOnlyGuardOfSession } from '@/stores/github-chat-links-store'
 import {
@@ -853,6 +854,9 @@ export const createPromptSlice: StateCreator<AcpState, [], [], PromptSliceState>
     if (isCodexAccountRestarting(sessionId)) {
       return Promise.reject(new Error('This chat is switching Codex accounts'))
     }
+    if (isAntigravityAccountRestarting(sessionId)) {
+      return Promise.reject(new Error('This chat is switching Antigravity accounts'))
+    }
     const older = rejectOlderChat(get, sessionId)
     if (older) return older
     // Staged switch-on-send (CAP-1/CAP-4): an armed switch intercepts the
@@ -876,6 +880,9 @@ export const createPromptSlice: StateCreator<AcpState, [], [], PromptSliceState>
   sendPromptBlocks: (sessionId, blocks, options) => {
     if (isCodexAccountRestarting(sessionId)) {
       return Promise.reject(new Error('This chat is switching Codex accounts'))
+    }
+    if (isAntigravityAccountRestarting(sessionId)) {
+      return Promise.reject(new Error('This chat is switching Antigravity accounts'))
     }
     const older = rejectOlderChat(get, sessionId)
     if (older) return older

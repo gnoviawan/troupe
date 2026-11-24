@@ -37,6 +37,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::rail_forms::build(s, t, &mut layer);
     crate::phone::sheets(s, t, window, &mut layer);
     crate::theme_picker::build(s, t, phone, &mut layer);
+    crate::chat_view::layer(s, t, &mut layer);
     crate::keys::build(s, t, window.1, &mut layer);
     layer.push(
         row()
@@ -162,9 +163,12 @@ fn main_area(
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
+        let tab = |tab: &model::workspace::Tab| crate::chat_view::tab_body(s, t, tab);
         let slots = ui::workspace::Slots {
             leading,
             empty: &empty,
+            tab: &tab,
+            title: &|tab: &model::workspace::Tab| crate::chat_view::tab_title(s, tab),
             dark: true,
         };
         return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));

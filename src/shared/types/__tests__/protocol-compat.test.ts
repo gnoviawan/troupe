@@ -38,6 +38,7 @@ type ExtraEventTypes =
   | 'browser_ticket_closed'
   | 'claude_limit_action'
   | 'codex_limit_action'
+  | 'antigravity_limit_action'
 check<Same<Exclude<G.WsEventType, H.WsEventType>, ExtraEventTypes>>()
 check<Fits<H.WsEventType, G.WsEventType>>()
 check<Same<Omit<G.WsEvent, 'type'>, Omit<H.WsEvent, 'type'>>>()
@@ -229,7 +230,8 @@ describe('generated constants', () => {
       'mcp_registry_changed',
       'browser_ticket_closed',
       'claude_limit_action',
-      'codex_limit_action'
+      'codex_limit_action',
+      'antigravity_limit_action'
     ])
   })
 })

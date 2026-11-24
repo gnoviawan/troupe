@@ -40,6 +40,7 @@ import {
 } from '../helpers'
 import { useAcpStore } from '../index'
 import { isAdapterPlanLimit, rejectedRateLimit, withRateLimit } from '../rate-limit'
+import { sessionAgentConfigId } from '../session-agent-config'
 import {
   activeWirePromptTurns,
   bugReportCollectors,
@@ -956,14 +957,14 @@ export const createAgentSlice: StateCreator<AcpState, [], [], AgentSliceState> =
             ? { agentStatus: { ...s.agentStatus, [e.agentId]: 'error' as AgentStatus } }
             : {}),
           ...((detail.providerCode === 'provider_quota_exceeded' ||
-            isAdapterPlanLimit(detail.data)) &&
+            isAdapterPlanLimit(detail.data, sessionAgentConfigId(s, e.sessionId))) &&
           session.agentId === e.agentId
             ? {
                 sessionUsage: {
                   ...s.sessionUsage,
                   [e.sessionId]: withRateLimit(
                     s.sessionUsage[e.sessionId],
-                    rejectedRateLimit(e.message)
+                    rejectedRateLimit(e.message, detail.data)
                   )
                 }
               }

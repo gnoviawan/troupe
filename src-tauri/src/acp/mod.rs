@@ -9,6 +9,10 @@ pub mod account_choice;
 pub mod agent_aliases;
 pub mod agent_process;
 pub mod agent_session_import;
+pub mod antigravity_accounts;
+pub mod antigravity_admin;
+pub mod antigravity_agent;
+pub mod antigravity_limit;
 pub mod archive;
 pub mod atomic_file;
 pub mod browser_policy;
@@ -58,6 +62,7 @@ pub mod worker_chats;
 // is used now (managed in `lib.rs`); the config/id types are part of the public
 // surface the chat UI will consume, so they are intentionally re-exported even
 // though nothing inside the crate references them through this path yet.
+pub use antigravity_agent::{AntigravityAgentService, AntigravitySignInCheck};
 #[allow(unused_imports)]
 pub use catalog::{
     overlay_installed, AcpCatalog, AcpCatalogService, CatalogAgent, CatalogConfigFile,

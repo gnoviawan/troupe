@@ -312,6 +312,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
 fn recents_row(t: &'static Tokens, chat: &Chat) -> El {
     let c = &t.colors;
     let id = chat.session_id.clone();
+    let open = chat.session_id.clone();
     row()
         .key(format!("recent-{}", chat.session_id))
         .w_full()
@@ -335,7 +336,10 @@ fn recents_row(t: &'static Tokens, chat: &Chat) -> El {
                 .grow(1.0)
                 .role("button")
                 .label(chat.label().to_owned())
-                .on_press(|s: &mut State| s.toast_later("Opening a chat")),
+                .on_press(move |s: &mut State| {
+                    s.close(DRAWER);
+                    s.open_chat(&open);
+                }),
         )
         .child(
             text(ids::clock_time(chat.last_activity_at))

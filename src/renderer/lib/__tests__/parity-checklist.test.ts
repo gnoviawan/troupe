@@ -24,8 +24,11 @@ import { describe, expect, it } from 'vitest'
 import { mapTauriVerdict } from '../acp-transport/tauri-verdicts'
 import { AcpTransportError } from '../acp-transport/types'
 import {
+  antigravityAccountSignedOutMessage,
   claudeAccountSignedOutMessage,
-  isClaudeAccountSignedOutError
+  isAntigravityAccountSignedOutError,
+  isClaudeAccountSignedOutError,
+  isCodexAccountSignedOutError
 } from '../agents/acp-spawn-errors'
 
 // Type definitions for our test data
@@ -2414,6 +2417,69 @@ describe('Claude Accounts parity (ADR-0004)', () => {
       expect(claudeAccountSignedOutMessage(error)).toBe(reason)
     }
     expect(isClaudeAccountSignedOutError(new Error(reason))).toBe(false)
+  })
+})
+
+describe('Antigravity Accounts parity', () => {
+  const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+  const read = (...parts: string[]): string => readFileSync(join(SRC_TAURI, ...parts), 'utf-8')
+  const desktopTransport = readFileSync(
+    join(LIB_DIR, 'acp-transport', 'desktop-transport.ts'),
+    'utf-8'
+  )
+  const wsTransport = readFileSync(join(LIB_DIR, 'acp-transport', 'ws-transport.ts'), 'utf-8')
+  const invokeTransport = readFileSync(
+    join(LIB_DIR, 'test-utils', 'invoke-acp-transport.ts'),
+    'utf-8'
+  )
+  const facade = readFileSync(join(LIB_DIR, 'antigravity-accounts-api.ts'), 'utf-8')
+  const REQUESTS = [
+    'list_antigravity_accounts',
+    'list_antigravity_usage',
+    'set_default_antigravity_account',
+    'set_project_antigravity_account',
+    'set_chat_antigravity_account',
+    'set_antigravity_auto_switch',
+    'set_antigravity_resume',
+    'add_antigravity_account',
+    'rename_antigravity_account',
+    'remove_antigravity_account',
+    'start_antigravity_account_login'
+  ]
+
+  it('desktop and web reach every Antigravity account operation over /ws', () => {
+    // Desktop speaks /ws over the Tauri Channel carrier, so it inherits these.
+    expect(desktopTransport).toMatch(/class DesktopAcpTransport extends WsAcpTransport/)
+    expect(desktopTransport).not.toMatch(/AntigravityAccount|AntigravityUsage/)
+    const dispatch = readRustModule(join(SRC_TAURI, 'web', 'ws', 'dispatch'))
+    for (const request of REQUESTS) {
+      expect(wsTransport).toContain(`'${request}'`)
+      expect(dispatch).toContain(`"${request}"`)
+    }
+    expect(readWsProtocol()).toContain(`'antigravity_limit_action'`)
+    // The facade goes through the transport only; no carrier-specific branch.
+    expect(facade).not.toMatch(/isTauriContext|invoke\(/)
+  })
+
+  it('the invoke carrier names the Tauri commands the host registers, as for Codex', () => {
+    const lib = read('lib.rs')
+    for (const suffix of ['list', 'usage', 'set_default', 'set_project', 'set_auto_switch']) {
+      expect(invokeTransport).toContain(`'antigravity_accounts_${suffix}'`)
+      expect(lib).toContain(`acp::commands::antigravity_accounts_${suffix}`)
+    }
+  })
+
+  it('a signed-out refusal reads the same on the /ws code and the desktop invoke prefix', () => {
+    const reason = 'The Antigravity account "Work" is not signed in.'
+    const viaWs = new AcpTransportError(WS_ERROR_CODES.ANTIGRAVITY_ACCOUNT_SIGNED_OUT, reason)
+    const viaInvoke = mapTauriVerdict(`ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`)
+    expect(viaInvoke).toEqual(viaWs)
+    for (const error of [viaWs, viaInvoke, `ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`]) {
+      expect(isAntigravityAccountSignedOutError(error)).toBe(true)
+      expect(isCodexAccountSignedOutError(error)).toBe(false)
+      expect(antigravityAccountSignedOutMessage(error)).toBe(reason)
+    }
+    expect(isAntigravityAccountSignedOutError(new Error(reason))).toBe(false)
   })
 })
 

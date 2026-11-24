@@ -248,6 +248,32 @@
     }
   },
   {
+    "file": "ws-event.json",
+    "name": "antigravity_limit_action",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/antigravity_limit/mod.rs AntigravityLimitActionEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "antigravity_limit_action",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "projectId": "fixture-proj-a",
+        "action": "switched",
+        "from": {
+          "id": "default",
+          "name": "Default"
+        },
+        "to": {
+          "id": "antigravity-2",
+          "name": "Work"
+        },
+        "fromAgentId": "agent-fixture",
+        "newAgentId": "agent-fixture-2"
+      }
+    }
+  },
+  {
     "file": "ws-frame.json",
     "name": "gap",
     "_handwritten": true,

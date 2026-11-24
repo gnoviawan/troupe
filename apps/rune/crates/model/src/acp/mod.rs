@@ -60,6 +60,7 @@ pub use transcript::{
     Plan, PlanUpdateEvent, RetryNotice, SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent,
     UsageUpdateEvent, UserPromptEvent,
 };
+pub use plan::is_plan_tool;
 use turn::{AgentWorkingEvent, BackgroundCommandsEvent, HostReports, PromptCompleteEvent, TurnEnd};
 use types::{ChatMessage, LogPoint, Object, PlanEntry, Session, Usage};
 
