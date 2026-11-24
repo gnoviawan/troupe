@@ -953,8 +953,18 @@ fn tier_of_answers_every_event_type_as_the_linear_scan_did() {
             ("plan_update", ReliabilityTier::Lossy),
         ]
     );
-    for known in WsEventType::ALL {
-        assert_eq!(tier_of(known.as_str()), known.tier(), "{}", known.as_str());
+    let linear_scan = |type_: &str| {
+        WsEventType::ALL
+            .iter()
+            .find(|known| known.as_str() == type_)
+            .map_or(ReliabilityTier::Reliable, |known| known.tier())
+    };
+    for name in WsEventType::ALL
+        .iter()
+        .map(|known| known.as_str())
+        .chain(["unknown_type", "", "MESSAGE_CHUNK"])
+    {
+        assert_eq!(tier_of(name), linear_scan(name), "{name}");
     }
 }
 
