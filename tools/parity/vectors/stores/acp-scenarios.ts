@@ -1,92 +1,23 @@
-// The ACP store's scenarios for `acp.ts`. Each restates a case of an
-// acp-store unit suite (`src/renderer/stores/acp-store/*.test.ts`).
-import type { Scenario, VectorEvent } from '../record'
+// The ACP store's transcript scenarios for `acp.ts`. Each restates a case of
+// an acp-store unit suite (`src/renderer/stores/acp-store/*.test.ts`).
+import type { Scenario } from '../record'
+import {
+  AGENT,
+  big,
+  chunk,
+  ev,
+  idle,
+  message,
+  prompt,
+  S,
+  seeded,
+  text,
+  toolCall,
+  toolUpdate,
+  watermark
+} from './acp-fixtures'
 
-const ev = (action: string, ...args: unknown[]): VectorEvent => ({ action, args })
-
-const S = 's1'
-const AGENT = 'agent-1'
-
-function session(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
-    id: S,
-    agentId: AGENT,
-    cwd: '/work',
-    projectId: 'p1',
-    status: 'active',
-    title: null,
-    activeTurn: true,
-    openTurnId: 'seed-turn',
-    modes: null,
-    models: null,
-    configOptions: [],
-    lastError: null,
-    createdAt: 1,
-    ...overrides
-  }
-}
-
-const idle = { activeTurn: false, openTurnId: null }
-
-function seeded(
-  overrides: Record<string, unknown> = {},
-  extra: Record<string, unknown> = {}
-): Record<string, unknown> {
-  return { sessions: { [S]: session(overrides) }, messages: { [S]: [] }, ...extra }
-}
-
-function message(
-  id: string,
-  role: string,
-  text: string,
-  extra: Record<string, unknown> = {}
-): Record<string, unknown> {
-  return {
-    id,
-    role,
-    blocks: [{ type: 'text', text }],
-    streaming: false,
-    timestamp: 1,
-    ...extra
-  }
-}
-
-const text = (value: string) => ({ type: 'text', text: value })
-
-const chunk = (value: string, extra: Record<string, unknown> = {}, seq?: number) =>
-  ev(
-    '_onMessageChunk',
-    { agentId: AGENT, sessionId: S, role: 'agent', content: text(value), ...extra },
-    ...(seq === undefined ? [] : [seq])
-  )
-
-const prompt = (content: unknown[], extra: Record<string, unknown> = {}, seq?: number) =>
-  ev(
-    '_onUserPrompt',
-    { agentId: AGENT, sessionId: S, content, ...extra },
-    ...(seq === undefined ? [] : [seq])
-  )
-
-const toolCall = (call: Record<string, unknown>, seq?: number, sessionId = S) =>
-  ev(
-    '_onToolCall',
-    { agentId: AGENT, sessionId, toolCall: call },
-    ...(seq === undefined ? [] : [seq])
-  )
-
-const toolUpdate = (update: Record<string, unknown>, seq?: number) =>
-  ev(
-    '_onToolCallUpdate',
-    { agentId: AGENT, sessionId: S, update },
-    ...(seq === undefined ? [] : [seq])
-  )
-
-const watermark = (lastSeq: number, messages: unknown[] = [], toolCalls: unknown[] = []) =>
-  ev('noteHistoryWatermark', S, { metadata: { id: S, lastSeq }, messages, toolCalls })
-
-const big = (length: number, char = 'x') => char.repeat(length)
-
-const transcriptScenarios: Scenario[] = [
+const eventScenarios: Scenario[] = [
   {
     name: 'chunks_coalesce_into_one_message',
     initial: seeded(),
@@ -695,8 +626,8 @@ const updateScenarios: Scenario[] = [
   }
 ]
 
-export const acpScenarios: Scenario[] = [
-  ...transcriptScenarios,
+export const transcriptScenarios: Scenario[] = [
+  ...eventScenarios,
   ...promptScenarios,
   ...toolScenarios,
   ...clampScenarios,

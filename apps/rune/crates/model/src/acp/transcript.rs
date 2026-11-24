@@ -10,7 +10,7 @@ use super::types::{
     ChatMessage, Compaction, LogPoint, Object, OpencodeNotice, PlanEntry, Replaying, Role, Session,
     SessionStatus, Usage, UsageCost, nullable,
 };
-use super::{Effect, Env, State, clamp, js};
+use super::{Effect, Env, State, clamp, js, subagent};
 
 /// Id prefix of records spliced in from the session a chat switched away
 /// from. They are history, never this session's live tail.
@@ -409,10 +409,14 @@ impl State {
         event: MessageChunkEvent,
         event_seq: Option<f64>,
         env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
     ) {
-        // Subagent text belongs to its dispatch card: ported with the
-        // subagents (docs/rune/acp-model.md, PR 2).
-        if event.parent_tool_call_id.is_some() {
+        if event
+            .parent_tool_call_id
+            .as_deref()
+            .is_some_and(|id| !id.is_empty())
+        {
+            self.on_subagent_chunk(event, event_seq, env, fx);
             return;
         }
         let session_id = event.session_id;
@@ -511,6 +515,51 @@ impl State {
             rest: Object::new(),
         };
         self.messages.entry(session_id).or_default().push(message);
+    }
+
+    /// `appendSubagentChunk`: a subagent's text joins its dispatch call,
+    /// never the main reply. It follows the tool-event coverage rule, since
+    /// the open turn's attach replay rebuilds the dispatch card.
+    fn on_subagent_chunk(
+        &mut self,
+        event: MessageChunkEvent,
+        event_seq: Option<f64>,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let session_id = event.session_id;
+        let parent = event.parent_tool_call_id.unwrap_or_default();
+        if self.book.history_covered_tool(&session_id, event_seq) {
+            return;
+        }
+        let replay_seq = self.book.live_turn_replay_seq(&session_id, event_seq);
+        let Some(session) = self.sessions.get(&session_id) else {
+            return;
+        };
+        if session.status == SessionStatus::Closed && session.replaying().is_none() {
+            return;
+        }
+        let Some(text) = subagent::chunk_text(event.role == Role::Agent, &event.content) else {
+            return;
+        };
+        let calls = self
+            .tool_calls
+            .get(&session_id)
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let Some(idx) = calls.iter().position(|call| {
+            call.get("toolCallId").and_then(Value::as_str) == Some(parent.as_str())
+        }) else {
+            subagent::log_orphan(&mut self.book, fx, &parent, &session_id);
+            return;
+        };
+        let seq = replay_seq.unwrap_or_else(|| self.book.next_seq());
+        let mut call = calls[idx].clone();
+        let message_id = event.message_id.map(Value::String);
+        subagent::with_text(&mut call, text, (seq, env.now, message_id.as_ref()), calls);
+        if let Some(calls) = self.tool_calls.get_mut(&session_id) {
+            calls[idx] = call;
+        }
     }
 
     fn accepts(&self, session_id: &str) -> bool {

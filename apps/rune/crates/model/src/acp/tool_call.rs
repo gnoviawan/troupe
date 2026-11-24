@@ -5,6 +5,7 @@
 
 use serde_json::{Value, json};
 
+use super::subagent::Reader;
 use super::types::Object;
 use super::{Effect, Env, State, ToolCallEvent, ToolCallUpdateEvent, clamp, js, plan};
 
@@ -113,6 +114,7 @@ impl State {
         if self.book.history_covered_tool(&session_id, event_seq) {
             return;
         }
+        self.dismiss_settled_child_approvals(&session_id, &event.tool_call, fx);
         let replay_seq = self.book.live_turn_replay_seq(&session_id, event_seq);
         if !self
             .sessions
@@ -139,7 +141,12 @@ impl State {
             Some(seq) => seq.clone(),
             None => json!(replay_seq.unwrap_or_else(|| self.book.next_seq())),
         };
-        let mut stamped = spread(incoming, stream);
+        let ingested = Reader {
+            book: &mut self.book,
+            fx,
+        }
+        .ingest(incoming);
+        let mut stamped = spread(ingested, stream);
         stamped.insert("timestamp".into(), timestamp);
         stamped.insert("seq".into(), seq);
         let Some(mut marked) = clamp::tool_call(&mut self.book, fx, &session_id, stamped) else {
@@ -185,6 +192,7 @@ impl State {
         if self.book.history_covered_tool(&session_id, event_seq) {
             return;
         }
+        self.dismiss_settled_child_approvals(&session_id, &event.update, fx);
         if !self
             .sessions
             .get(&session_id)
@@ -204,8 +212,13 @@ impl State {
         let raw_input = update.get("rawInput").cloned();
         let stored = self.tool_calls[&session_id][idx].clone();
         let stream = terminal_stream(Some(&stored), &update);
+        let ingested = Reader {
+            book: &mut self.book,
+            fx,
+        }
+        .ingest(update);
         let Some(clamped) =
-            clamp::tool_call(&mut self.book, fx, &session_id, spread(update, stream))
+            clamp::tool_call(&mut self.book, fx, &session_id, spread(ingested, stream))
         else {
             return;
         };

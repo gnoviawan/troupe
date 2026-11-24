@@ -13,6 +13,8 @@ import {
 } from '../../../../src/renderer/stores/acp-store'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
 import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
+import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
+import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH } from '../../../../src/renderer/stores/acp-store/testkit'
 import type { StoreRecorder } from '../record'
 
@@ -33,7 +35,11 @@ const DATA_KEYS = [
   'commands',
   'commandsSeq',
   'sessionUsage',
-  'sessionIndex'
+  'sessionIndex',
+  'pendingPermissions',
+  'pendingQuestions',
+  'pendingElicitations',
+  'pendingBrowserConsents'
 ] as const
 
 /** Module functions a step may call besides the store's actions. */
@@ -54,7 +60,13 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/log-point.ts',
     'src/renderer/lib/github-handoff/read-only-guard.ts',
     'src/renderer/components/chat/terminal-output.ts',
-    'src/renderer/components/chat/handoff-summary.ts'
+    'src/renderer/components/chat/handoff-summary.ts',
+    'src/renderer/stores/acp-store/subagent-lifecycle.ts',
+    'src/renderer/stores/acp-store/subagent-transcript.ts',
+    'src/renderer/stores/acp-store/child-approvals.ts',
+    'src/renderer/stores/acp-store/slices/prompt.ts',
+    'src/renderer/stores/acp-store/slices/agent.ts',
+    'src/renderer/lib/browser-consent-api.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -64,6 +76,8 @@ export const acpRecorder: StoreRecorder = {
     }
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
+    _resetSubagentRecordLogsForTesting()
+    _resetSubagentTranscriptLogsForTesting()
     // The counter only moves up; each vector starts on the next hundred.
     shared.rebaseSeqCounter(Math.ceil((peekSeq() + 1) / 100) * 100)
     if (context.serverHistory) {
@@ -75,7 +89,7 @@ export const acpRecorder: StoreRecorder = {
       _resetAcpTransportForTests(null)
     }
     clock = typeof context.now === 'number' ? context.now : NOW
-    useAcpStore.setState(FRESH as Partial<AcpState>)
+    useAcpStore.setState({ ...FRESH, pendingBrowserConsents: {} } as Partial<AcpState>)
   },
   seed(initial) {
     useAcpStore.setState(initial as Partial<AcpState>)
@@ -105,4 +119,7 @@ function peekSeq(): number {
   return (shared as unknown as { peekSeqCounter: () => number }).peekSeqCounter()
 }
 
-export { acpScenarios } from './acp-scenarios'
+import { transcriptScenarios } from './acp-scenarios'
+import { subagentScenarios } from './acp-scenarios-subagents'
+
+export const acpScenarios = [...transcriptScenarios, ...subagentScenarios]

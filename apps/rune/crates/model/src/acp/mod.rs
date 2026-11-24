@@ -6,19 +6,25 @@
 //! [`step`] applies one event and returns the effects the app runs. The model
 //! reads no clock and draws no randomness: [`Env`] carries both.
 
+pub mod approvals;
 mod clamp;
 pub mod js;
 mod plan;
+pub mod subagent;
 mod tool_call;
 mod transcript;
 pub mod types;
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{Ids, Level};
+use approvals::{
+    BrowserTicketClosedEvent, ElicitationRequestEvent, PendingElicitation, PendingPermission,
+    PendingQuestion, PermissionRequestEvent, QuestionCancelledEvent, QuestionRequestEvent,
+};
 pub use transcript::{
     CommandsUpdateEvent, HistoryPayload, MessageChunkEvent, PlanUpdateEvent,
     SessionInfoUpdateEvent, ToolCallEvent, ToolCallUpdateEvent, UsageUpdateEvent, UserPromptEvent,
@@ -38,6 +44,13 @@ pub struct State {
     pub session_usage: BTreeMap<String, Usage>,
     /// The persisted chat index; the model reads which sessions it holds.
     pub session_index: Vec<Object>,
+    /// Waiting on the user, keyed by request id.
+    pub pending_permissions: BTreeMap<String, PendingPermission>,
+    /// Waiting on the user, keyed by question id.
+    pub pending_questions: BTreeMap<String, PendingQuestion>,
+    pub pending_elicitations: BTreeMap<String, PendingElicitation>,
+    /// The host's browser consent tickets, keyed by request id.
+    pub pending_browser_consents: BTreeMap<String, Value>,
     pub book: Book,
 }
 
@@ -58,6 +71,12 @@ pub struct Book {
     /// Tool call ids whose clamp was logged, oldest first, capped.
     #[serde(skip)]
     pub clamp_logged: VecDeque<String>,
+    /// Malformed subagent records already logged, by call id and key.
+    #[serde(skip)]
+    pub subagent_warned: VecDeque<String>,
+    /// Unknown dispatch ids whose subagent text was dropped and logged.
+    #[serde(skip)]
+    pub orphans_logged: BTreeSet<String>,
 }
 
 impl Book {
@@ -140,6 +159,16 @@ pub enum Event {
     SessionInfoUpdate(SessionInfoUpdateEvent),
     #[serde(rename = "_onUsageUpdate")]
     UsageUpdate(UsageUpdateEvent),
+    #[serde(rename = "_onPermissionRequest")]
+    PermissionRequest(PermissionRequestEvent, #[serde(default)] Option<f64>),
+    #[serde(rename = "_onQuestionRequest")]
+    QuestionRequest(QuestionRequestEvent, #[serde(default)] Option<f64>),
+    #[serde(rename = "_onQuestionCancelled")]
+    QuestionCancelled(QuestionCancelledEvent),
+    #[serde(rename = "_onElicitationRequest")]
+    ElicitationRequest(ElicitationRequestEvent, #[serde(default)] Option<f64>),
+    #[serde(rename = "_onBrowserTicketClosed")]
+    BrowserTicketClosed(BrowserTicketClosedEvent),
     /// A history payload was installed for the session.
     #[serde(rename = "noteHistoryWatermark")]
     NoteHistoryWatermark(String, HistoryPayload),
@@ -164,6 +193,9 @@ pub enum Effect {
     },
     /// Write the session's index entry and payload (`persistSession`).
     PersistSession { session_id: String },
+    /// Bring the session's chat tab forward if another tab in its pane
+    /// hides it, so a consent card is on screen.
+    RevealChatTab { session_id: String },
 }
 
 impl Effect {
@@ -189,13 +221,18 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     let mut fx = Vec::new();
     match event {
         Event::UserPrompt(event, seq) => state.on_user_prompt(event, seq, env),
-        Event::MessageChunk(event, seq) => state.on_message_chunk(event, seq, env),
+        Event::MessageChunk(event, seq) => state.on_message_chunk(event, seq, env, &mut fx),
         Event::ToolCall(event, seq) => state.on_tool_call(event, seq, env, &mut fx),
         Event::ToolCallUpdate(event, seq) => state.on_tool_call_update(event, seq, env, &mut fx),
         Event::PlanUpdate(event) => state.on_plan_update(event),
         Event::CommandsUpdate(event, point) => state.on_commands_update(event, point),
         Event::SessionInfoUpdate(event) => state.on_session_info_update(event, &mut fx),
         Event::UsageUpdate(event) => state.on_usage_update(event, env),
+        Event::PermissionRequest(event, seq) => state.on_permission_request(event, seq, &mut fx),
+        Event::QuestionRequest(event, seq) => state.on_question_request(event, seq),
+        Event::QuestionCancelled(event) => state.on_question_cancelled(event),
+        Event::ElicitationRequest(event, seq) => state.on_elicitation_request(event, seq),
+        Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
         Event::NoteHistoryWatermark(session_id, payload) => {
             state.note_history_watermark(&session_id, &payload);
         }

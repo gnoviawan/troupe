@@ -23,6 +23,25 @@ pub fn head(text: &str, end: usize) -> &str {
     text
 }
 
+/// `text.slice(-count)`. `slice(-0)` is `slice(0)`, the whole text.
+pub fn tail(text: &str, count: usize) -> &str {
+    if count == 0 {
+        return text;
+    }
+    let mut units = 0;
+    for (index, ch) in text.char_indices().rev() {
+        units += ch.len_utf16();
+        if units >= count {
+            return if units == count {
+                &text[index..]
+            } else {
+                &text[index + ch.len_utf8()..]
+            };
+        }
+    }
+    text
+}
+
 /// `JSON.stringify(value).length`; 0 for an absent value, as
 /// `JSON.stringify(undefined)?.length ?? 0` is.
 pub fn serialized_len(value: Option<&Value>) -> usize {

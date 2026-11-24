@@ -72,7 +72,12 @@ vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
 vi.mock(`${renderer}/stores/workspace-store`, () => ({
   getAllLeafPanes: () => [],
   getAllTreeRoots: () => [],
-  findPaneContainingTab: () => null,
+  // A consent ticket asks for its chat tab; the vector keeps the ask, as the
+  // model's `revealChatTab` effect, and finds no pane.
+  findPaneContainingTab: (_root: unknown, tabId: string) => {
+    emit({ kind: 'revealChatTab', sessionId: tabId.replace(/^chat-/, '') })
+    return null
+  },
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
   getAgentChatSessionIdsInAllTrees: () => new Set<string>(),
   useWorkspaceStore: {
