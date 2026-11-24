@@ -16,8 +16,19 @@ pub const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
 pub const NO_IMAGES: &str = "This agent can't accept images in the browser";
 
 impl State {
-    /// The agent a composer's chip names.
+    /// The agent a composer's chip names; a chat with a model choice names its model
+    /// (`AgentModelSelector`'s pill).
     pub fn agent_label(&self, host: &Host) -> Option<String> {
+        if let Host::Chat(id) = host
+            && let Some(model) = self.chat_models(id).and_then(|m| m.current_name())
+        {
+            return Some(model);
+        }
+        self.shown_agent(host).map(|a| a.name.clone())
+    }
+
+    /// The name of the agent a composer runs.
+    pub(crate) fn shown_agent_name(&self, host: &Host) -> Option<String> {
         self.shown_agent(host).map(|a| a.name.clone())
     }
 
@@ -99,9 +110,15 @@ impl State {
         matches!(host, Host::Launcher(_)) && self.composer.launching.is_some()
     }
 
-    /// The launcher's agent menu: `rememberLastSelectedAgent`, then back to the field.
+    /// The launcher's agent menu: `rememberLastSelectedAgent`, then back to the field. A
+    /// chat's menu lists its models: a pick goes through the model's `pickModel`.
     pub fn composer_pick_agent(&mut self, host: &Host, id: &str, tx: &mut Tx) {
         self.draft_mut(host).agent_open = false;
+        if let Host::Chat(session) = host {
+            log::info!("[composer] chat {session} model: {id}");
+            self.acp_step(model::acp::Event::PickModel(session.clone(), id.to_owned(), None));
+            return;
+        }
         if !self.composer.agents.iter().any(|a| a.id == id) {
             return;
         }
@@ -112,10 +129,10 @@ impl State {
         tx.focus(format!("{}-field", host.key()), false);
     }
 
-    /// What the launcher's agent menu lists; a chat's chip has no menu.
+    /// What the launcher's agent menu lists; a chat's menu lists its models.
     pub fn agent_choices(&self, host: &Host) -> Vec<ui::composer::view::AgentChoice> {
-        if matches!(host, Host::Chat(_)) {
-            return Vec::new();
+        if let Host::Chat(id) = host {
+            return self.chat_models(id).map(|m| m.choices()).unwrap_or_default();
         }
         let shown = self.shown_agent(host).map(|a| a.id.as_str());
         self.composer

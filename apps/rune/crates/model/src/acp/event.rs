@@ -24,6 +24,7 @@ use super::transcript::{
 use super::turn::{AgentWorkingEvent, BackgroundCommandsEvent, PromptCompleteEvent, TurnEnd};
 use super::types::{LogPoint, Object};
 use super::window::PayloadReadOutcome;
+use super::answer::Answer;
 use super::{Effect, RunId, import, launch};
 
 /// One store action. The variant names are the TypeScript action names; an
@@ -332,4 +333,15 @@ pub enum Event {
     /// What an [`Effect::ReadSessionPayload`] read.
     #[serde(skip_deserializing)]
     SessionPayloadRead(Effect, PayloadReadOutcome),
+    /// The user picked a permission option; none cancels the request.
+    #[serde(rename = "respondPermission")]
+    RespondPermission(String, #[serde(default)] Option<String>),
+    #[serde(rename = "answerQuestion")]
+    AnswerQuestion(String, Vec<String>),
+    /// The user answered an elicitation: its action and the form's content.
+    #[serde(rename = "respondElicitation")]
+    RespondElicitation(String, String, #[serde(default)] Option<Value>),
+    /// The host refused an [`Effect::Answer`]: its message and code.
+    #[serde(skip_deserializing)]
+    AnswerFailed(Answer, String, Option<String>),
 }
