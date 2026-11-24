@@ -237,8 +237,7 @@ pub fn link_file_paths(src: &str) -> String {
     let mut fence: Option<(u8, usize)> = None;
     for line in src.split_inclusive('\n') {
         let trimmed = line.trim_start_matches(' ');
-        let run = |ch: u8| trimmed.bytes().take_while(|&b| b == ch).count();
-        let marker = [b'`', b'~'].into_iter().map(|ch| (ch, run(ch))).find(|&(_, n)| n >= 3);
+        let marker = super::fences::fence_marker(trimmed);
         let indent = line.len() - trimmed.len();
         match (fence, marker) {
             (Some((ch, n)), Some((mch, m))) if indent <= 3 && ch == mch && m >= n && trimmed[m..].trim().is_empty() => {

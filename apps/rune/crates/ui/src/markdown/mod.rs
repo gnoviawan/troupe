@@ -38,14 +38,18 @@ pub use table::{TABLE_ZOOM, table_zoom};
 use crate::type_::mono;
 use crate::{IconActionButton, IconActionSize, icon_action_group};
 
+/// A press on a link: a file to open, a URL or a fragment.
+pub type OnLink<S> = Rc<dyn Fn(&mut S, LinkTarget, &mut rune::Tx)>;
+/// A request for a table's full-window view, with the table's Markdown.
+pub type OnTableZoom<S> = Rc<dyn Fn(&mut S, String)>;
+/// The app's picture for an image source, if it has one.
+pub type Images = Rc<dyn Fn(&str) -> Option<Image>>;
+
 /// What a reply's Markdown hands back to the app.
 pub struct Hooks<S> {
-    /// A link was pressed: a file to open, a URL or a fragment.
-    pub on_link: Rc<dyn Fn(&mut S, LinkTarget, &mut rune::Tx)>,
-    /// A table's full-window view was asked for, with the table's Markdown.
-    pub on_table_zoom: Rc<dyn Fn(&mut S, String)>,
-    /// The app's picture for an image source, if it has one.
-    pub images: Rc<dyn Fn(&str) -> Option<Image>>,
+    pub on_link: OnLink<S>,
+    pub on_table_zoom: OnTableZoom<S>,
+    pub images: Images,
 }
 
 impl<S> Clone for Hooks<S> {
@@ -82,10 +86,7 @@ pub fn segments(src: &str) -> Vec<Segment> {
     let mut fence: Option<(u8, usize)> = None;
     for line in src.split_inclusive('\n') {
         let trimmed = line.trim_start();
-        let marker = [b'`', b'~']
-            .into_iter()
-            .map(|ch| (ch, trimmed.bytes().take_while(|&b| b == ch).count()))
-            .find(|&(_, n)| n >= 3);
+        let marker = fences::fence_marker(trimmed);
         fence = match (fence, marker) {
             (None, Some(open)) => Some(open),
             (Some((ch, n)), Some((mch, m))) if ch == mch && m >= n && trimmed[m..].trim().is_empty() => None,
@@ -139,6 +140,7 @@ fn prose_run<S: 'static>(t: &'static Tokens, src: String, streaming: bool, hooks
             }
             code_card::<S>(t, card, frame.language.unwrap_or(""), frame.source.to_owned(), frame.open)
         })
+        .diagram_frame(move |card, frame| code_card::<S>(t, card, "mermaid", frame.source.to_owned(), frame.open))
         .render(&markdown_style(t))
 }
 
@@ -148,7 +150,7 @@ pub(crate) fn copies<S: 'static>(text: String) -> impl Fn(&mut S, &mut rune::Tx)
 }
 
 /// Streamdown's `CodeBlock`: a rounded card with the language and the Download and Copy
-/// buttons over the code, which sits in its own inset panel.
+/// buttons over the code (or a diagram), which sits in its own inset panel.
 fn code_card<S: 'static>(
     t: &'static Tokens,
     code: El,

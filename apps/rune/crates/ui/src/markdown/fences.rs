@@ -66,6 +66,13 @@ fn find_close(body: &str) -> Option<std::ops::Range<usize>> {
     Some(start..i + 4)
 }
 
+/// The fence run a line (with its indent already trimmed) starts with: its character and length.
+pub(crate) fn fence_marker(trimmed: &str) -> Option<(u8, usize)> {
+    b"`~".iter()
+        .map(|&ch| (ch, trimmed.bytes().take_while(|&b| b == ch).count()))
+        .find(|&(_, n)| n >= 3)
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct Fence {
     ch: u8,
