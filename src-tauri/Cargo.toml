@@ -350,3 +350,9 @@ winapi = { version = "0.3", features = [
 
 
 
+
+# figcraft's craft-pdf needs craft-libs' vendored krilla 0.8.2 (print colour, optional content,
+# unwind without abort). A dependency's own [patch] does not apply here, so it is repeated; keep the
+# rev in step with figcraft's root Cargo.toml at the pinned tag.
+[patch.crates-io]
+krilla = { git = "https://github.com/storytold/craft-libs", rev = "a49329e71e32ad93794ab595c41f33209a7d2220" }
