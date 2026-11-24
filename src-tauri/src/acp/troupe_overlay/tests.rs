@@ -332,3 +332,53 @@ fn a_refused_icon_keeps_the_rest_of_its_override() {
         }]
     );
 }
+
+fn launchable_ids(service: &TroupeOverlayService, opt_in: bool) -> Vec<String> {
+    service
+        .launchable_agents(opt_in)
+        .into_iter()
+        .map(|agent| agent.id)
+        .collect()
+}
+
+#[tokio::test]
+async fn remote_overlay_agents_launch_only_under_the_opt_in() {
+    let root = tempfile::tempdir().unwrap();
+    let (fetch, _) = counting_fetch(Ok(remote_document()));
+    let service = TroupeOverlayService::with_fetch(root.path(), fetch);
+    assert_eq!(launchable_ids(&service, false), ["oh-my-pi"]);
+    assert_eq!(launchable_ids(&service, true), ["oh-my-pi"]);
+
+    assert!(service.refresh_if_stale().await);
+    assert_eq!(launchable_ids(&service, false), ["oh-my-pi"]);
+    assert_eq!(launchable_ids(&service, true), ["remote-only", "oh-my-pi"]);
+    assert_eq!(
+        service.current().presentation().overrides[0]
+            .name
+            .as_deref(),
+        Some("Gemini CLI")
+    );
+}
+
+#[tokio::test]
+async fn an_opted_in_remote_entry_replaces_the_bundled_one_with_its_id() {
+    let root = tempfile::tempdir().unwrap();
+    let (fetch, _) = counting_fetch(Ok(json!({
+        "schemaVersion": 1,
+        "agents": [{
+            "id": "oh-my-pi",
+            "name": "Oh My Pi",
+            "version": "99.0.0",
+            "distribution": { "npx": { "package": "omp@99.0.0" } }
+        }]
+    })));
+    let service = TroupeOverlayService::with_fetch(root.path(), fetch);
+    assert!(service.refresh_if_stale().await);
+
+    let off = service.launchable_agents(false);
+    assert_eq!(off.len(), 1);
+    assert_eq!(off[0].version, "18.12.6");
+    let on = service.launchable_agents(true);
+    assert_eq!(on.len(), 1);
+    assert_eq!(on[0].version, "99.0.0");
+}

@@ -53,7 +53,13 @@ fn an_overlay_agent_never_replaces_an_upstream_one() {
         ]
     }));
 
-    apply_troupe_overlay(&mut agents, &overlay, &host(), "linux-x86_64");
+    apply_troupe_overlay(
+        &mut agents,
+        &overlay.agents,
+        &overlay.overrides,
+        &host(),
+        "linux-x86_64",
+    );
 
     let summary: Vec<(String, String, CatalogSource, serde_json::Value)> = agents
         .iter()
@@ -89,14 +95,15 @@ fn an_overlay_agent_never_replaces_an_upstream_one() {
 #[test]
 fn hidden_drops_the_agent_and_name_renames_it() {
     let mut agents = vec![upstream("a", "a@1.0.0"), upstream("b", "b@1.0.0")];
-    let mut overlay = TroupeOverlay::default();
-    overlay.overrides.push(AgentOverride {
-        hidden: true,
-        ..rename("a", "Ignored")
-    });
-    overlay.overrides.push(rename("b", "Bee"));
+    let overrides = [
+        AgentOverride {
+            hidden: true,
+            ..rename("a", "Ignored")
+        },
+        rename("b", "Bee"),
+    ];
 
-    apply_troupe_overlay(&mut agents, &overlay, &host(), "linux-x86_64");
+    apply_troupe_overlay(&mut agents, &[], &overrides, &host(), "linux-x86_64");
 
     let listed: Vec<(&str, &str)> = agents
         .iter()
@@ -128,4 +135,67 @@ async fn the_catalog_lists_oh_my_pi_from_the_bundled_overlay() {
         .iter()
         .filter(|agent| agent.id != "oh-my-pi")
         .all(|agent| agent.source == CatalogSource::Bundled));
+}
+
+/// A catalog root whose overlay cache holds a fresh remote copy listing
+/// `remote-only`, and a CDN registry fetch that always fails.
+fn service_with_remote_overlay() -> (tempfile::TempDir, std::sync::Arc<AcpCatalogService>) {
+    let root = tempfile::tempdir().unwrap();
+    let catalog_root = root.path().join("catalog");
+    std::fs::create_dir_all(&catalog_root).unwrap();
+    std::fs::write(
+        catalog_root.join("troupe-overlay-cache.json"),
+        serde_json::to_vec(&json!({
+            "fetchedAt": chrono::Utc::now().to_rfc3339(),
+            "document": {
+                "schemaVersion": 1,
+                "overrides": [{ "id": "oh-my-pi", "name": "Oh My Pi (remote)" }],
+                "agents": [{
+                    "id": "remote-only",
+                    "name": "Remote Only",
+                    "version": "1.0.0",
+                    "distribution": { "npx": { "package": "remote-only@1.0.0" } }
+                }]
+            }
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let service = AcpCatalogService::with_snapshot_fetcher(
+        catalog_root,
+        std::sync::Arc::new(|_, _| Box::pin(async { Err("simulated CDN failure".to_string()) })),
+    );
+    (root, service)
+}
+
+fn listed(catalog: &crate::acp::AcpCatalog) -> Vec<(&str, &str, CatalogSource)> {
+    let mut rows: Vec<(&str, &str, CatalogSource)> = catalog
+        .agents
+        .iter()
+        .filter(|agent| agent.source == CatalogSource::Troupe)
+        .map(|agent| (agent.id.as_str(), agent.name.as_str(), agent.source))
+        .collect();
+    rows.sort_by(|a, b| a.0.cmp(b.0));
+    rows
+}
+
+#[tokio::test]
+async fn a_remote_overlay_agent_waits_for_the_cdn_opt_in() {
+    let (_root, service) = service_with_remote_overlay();
+
+    let catalog = service.list_catalog(false).await.unwrap();
+    assert_eq!(
+        listed(&catalog),
+        [("oh-my-pi", "Oh My Pi (remote)", CatalogSource::Troupe)]
+    );
+
+    service.set_opt_in(true).unwrap();
+    let catalog = service.list_catalog(false).await.unwrap();
+    assert_eq!(
+        listed(&catalog),
+        [
+            ("oh-my-pi", "Oh My Pi (remote)", CatalogSource::Troupe),
+            ("remote-only", "Remote Only", CatalogSource::Troupe),
+        ]
+    );
 }

@@ -1,19 +1,22 @@
 //! Merges Troupe's registry overlay into a resolved catalog.
 
 use super::{compute_catalog_agent, BundledAgent, CatalogAgent, CatalogSource, HostCapability};
-use crate::acp::troupe_overlay::TroupeOverlay;
+use crate::acp::troupe_overlay::AgentOverride;
+use crate::acp_registry_snapshot::AcpRegistrySnapshotAgent;
 
-/// Overlay agents join only under ids the bundled and CDN entries do not use,
-/// so the overlay can never replace an upstream agent's launch command.
-/// Then `hidden` overrides drop their agent and `name` overrides rename it.
+/// `launchable` (see `TroupeOverlayService::launchable_agents`) joins only
+/// under ids the bundled and CDN entries do not use, so the overlay can never
+/// replace an upstream agent's launch command. Then `hidden` overrides drop
+/// their agent and `name` overrides rename it.
 pub(super) fn apply_troupe_overlay(
     agents: &mut Vec<CatalogAgent>,
-    overlay: &TroupeOverlay,
+    launchable: &[AcpRegistrySnapshotAgent],
+    overrides: &[AgentOverride],
     host: &HostCapability,
     platform_arch: &str,
 ) {
     let mut added = 0;
-    for agent in &overlay.agents {
+    for agent in launchable {
         if crate::acp::agent_aliases::is_legacy_agent_id(&agent.id) {
             continue;
         }
@@ -41,13 +44,12 @@ pub(super) fn apply_troupe_overlay(
     }
     let before = agents.len();
     agents.retain(|agent| {
-        !overlay
-            .overrides
+        !overrides
             .iter()
             .any(|entry| entry.hidden && entry.id == agent.id)
     });
     let hidden = before - agents.len();
-    for entry in &overlay.overrides {
+    for entry in overrides {
         let Some(name) = &entry.name else {
             continue;
         };

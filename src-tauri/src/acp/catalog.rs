@@ -120,7 +120,8 @@ pub struct PlatformTarget {
 
 /// Whether a catalog entry came from the trusted bundled baseline, the
 /// explicitly-approved CDN registry augmentation, or Troupe's own registry
-/// overlay (`troupe_overlay`), which only adds ids neither of the others has.
+/// overlay (`troupe_overlay`), which only adds ids neither of the others has
+/// (its remote copy's agents only under the same CDN opt-in).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum CatalogSource {
@@ -745,7 +746,8 @@ impl AcpCatalogService {
             .collect();
 
         let bundled_count = agents.len();
-        if self.is_opt_in() {
+        let opt_in = self.is_opt_in();
+        if opt_in {
             let snapshot = if !force_snapshot_refresh && self.snapshot_fetch_gated() {
                 // A non-forced fetch failed within the retry interval — skip
                 // the fetch (no 15s stall loop on an offline host) and serve
@@ -855,7 +857,8 @@ impl AcpCatalogService {
 
         overlay::apply_troupe_overlay(
             &mut agents,
-            &self.overlay.current().overlay,
+            &self.overlay.launchable_agents(opt_in),
+            &self.overlay.current().overlay.overrides,
             &host,
             &platform_arch,
         );

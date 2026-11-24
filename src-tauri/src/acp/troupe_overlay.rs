@@ -4,6 +4,10 @@
 //! The official ACP registry stays the source of agents, versions and launch
 //! commands. This overlay only adds presentation (display names, logos, brand
 //! colours, hidden flags) and agents the official registry does not list.
+//! Presentation from any copy applies by default. Agents carry launch
+//! commands, so only the bundled copy's agents join the catalog by default; a
+//! network or cached copy's agents join once the user opts in to the CDN
+//! registry ([`TroupeOverlayService::launchable_agents`]).
 //! The fetch is on by default and never blocks a caller that does not ask to
 //! wait: the catalog reads the overlay it already holds and refreshes it in
 //! the background.
@@ -178,11 +182,11 @@ fn parse_brand_color(value: &Value) -> Option<AgentBrandColor> {
 /// sanitizes again before it draws.
 pub fn icon_rejection(svg: &str) -> Option<&'static str> {
     if svg.len() > MAX_ICON_BYTES {
-        return Some("no <svg> root");
+        return Some("over the size cap");
     }
     let lower = svg.to_ascii_lowercase();
     let Some(start) = lower.find("<svg") else {
-        return Some("over the size cap");
+        return Some("no <svg> root");
     };
     let Some(end) = lower[start..].find('>') else {
         return Some("no <svg> root");
@@ -409,14 +413,6 @@ pub struct ResolvedOverlay {
 }
 
 impl ResolvedOverlay {
-    fn bundled() -> Self {
-        Self {
-            overlay: Arc::new(bundled_overlay()),
-            source: OverlaySource::Bundled,
-            fetched_at: None,
-        }
-    }
-
     fn is_fresh(&self, now: chrono::DateTime<chrono::Utc>) -> bool {
         let Some(fetched) = self.fetched_at else {
             return false;
@@ -497,6 +493,8 @@ fn production_fetch() -> OverlayFetch {
 /// Holds the overlay in use and refreshes it from the network.
 pub struct TroupeOverlayService {
     cache_path: PathBuf,
+    /// The copy built into this binary, kept for its trusted agents.
+    bundled: Arc<TroupeOverlay>,
     fetch: OverlayFetch,
     current: RwLock<ResolvedOverlay>,
     failed_at: Mutex<Option<Instant>>,
@@ -512,7 +510,12 @@ impl TroupeOverlayService {
 
     pub fn with_fetch(catalog_root: &Path, fetch: OverlayFetch) -> Self {
         let cache_path = catalog_root.join(CACHE_FILENAME);
-        let current = read_cache(&cache_path).unwrap_or_else(ResolvedOverlay::bundled);
+        let bundled = Arc::new(bundled_overlay());
+        let current = read_cache(&cache_path).unwrap_or_else(|| ResolvedOverlay {
+            overlay: Arc::clone(&bundled),
+            source: OverlaySource::Bundled,
+            fetched_at: None,
+        });
         info(&format!(
             "ready source={:?} overrides={} agents={}",
             current.source,
@@ -521,6 +524,7 @@ impl TroupeOverlayService {
         ));
         Self {
             cache_path,
+            bundled,
             fetch,
             current: RwLock::new(current),
             failed_at: Mutex::new(None),
@@ -531,6 +535,35 @@ impl TroupeOverlayService {
     /// The overlay in use. No I/O.
     pub fn current(&self) -> ResolvedOverlay {
         self.current.read().clone()
+    }
+
+    /// The overlay agents the catalog may list. The bundled copy ships in
+    /// this binary and is trusted, so its agents always join. A network or
+    /// cached copy could add launch commands, so its agents join only under
+    /// the CDN registry opt-in, the same consent the registry itself needs.
+    /// They come first so an opted-in newer entry wins over a bundled one.
+    pub fn launchable_agents(&self, remote_opt_in: bool) -> Vec<AcpRegistrySnapshotAgent> {
+        let current = self.current();
+        let mut agents: Vec<AcpRegistrySnapshotAgent> = Vec::new();
+        if current.source != OverlaySource::Bundled {
+            if remote_opt_in {
+                agents.extend(current.overlay.agents.iter().cloned());
+            } else if !current.overlay.agents.is_empty() {
+                log::debug!(
+                    "[acp-overlay] {} remote overlay agent(s) skipped: the CDN registry opt-in is off",
+                    current.overlay.agents.len()
+                );
+            }
+        }
+        let bundled: Vec<AcpRegistrySnapshotAgent> = self
+            .bundled
+            .agents
+            .iter()
+            .filter(|agent| !agents.iter().any(|remote| remote.id == agent.id))
+            .cloned()
+            .collect();
+        agents.extend(bundled);
+        agents
     }
 
     /// Whether a refresh would fetch: the held copy is past its TTL and no
