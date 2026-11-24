@@ -1,7 +1,8 @@
 name: Thermo Review
 
-# One-shot PR review with the Cursor SDK (local runtime, Grok 4.7 high 500k).
-# Model turns bill to the owner of secrets.CURSOR_API_KEY.
+# One-shot PR review with the Claude Agent SDK (Claude Sonnet 5.5, effort high).
+# Model calls bill to secrets.ANTHROPIC_API_KEY, falling back to
+# secrets.ANTHROPIC_API_KEY_2 when the first key is missing or refused.
 
 on:
   pull_request:
@@ -35,10 +36,10 @@ jobs:
       - name: Check secret
         id: secret
         env:
-          HAS_KEY: ${{ secrets.CURSOR_API_KEY != '' }}
+          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.ANTHROPIC_API_KEY_2 != '' }}
         run: |
           if [ "$HAS_KEY" != "true" ]; then
-            echo "::notice::CURSOR_API_KEY is not set. Skipping review."
+            echo "::notice::ANTHROPIC_API_KEY and ANTHROPIC_API_KEY_2 are not set. Skipping review."
           fi
           echo "ok=$HAS_KEY" >> "$GITHUB_OUTPUT"
 
@@ -91,14 +92,16 @@ jobs:
       - name: Review
         if: steps.reviewer.outputs.ok == 'true'
         env:
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY_2: ${{ secrets.ANTHROPIC_API_KEY_2 }}
           GITHUB_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           WORKSPACE: ${{ github.workspace }}
-          MODEL_FAST: "1"
+          REVIEW_MODEL: claude-sonnet-5-5
+          REVIEW_EFFORT: high
           REVIEW_TIMEOUT_MS: "1500000"
           TOOL_BUDGET: "0"
         run: node "$RUNNER_TEMP/reviewer/review.mjs"

@@ -1,7 +1,7 @@
 // Run with: node --test .github/reviewer/*.test.mjs
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { hasBotReview, providerRunError, reviewOutcome } from './reviews.mjs'
+import { hasBotReview, providerRunError, reviewOutcome, shouldTryNextKey } from './reviews.mjs'
 
 const marker = '<!-- termul-reviewer:abc123 -->'
 const bot = { login: 'github-actions[bot]', type: 'Bot' }
@@ -51,27 +51,53 @@ test('stops after a short page', async () => {
   assert.deepEqual(requested, [1, 2])
 })
 
-const sdkError = (name, message, code) => Object.assign(new Error(message), { name, code })
-
-test('maps a thrown SDK rate limit error to its code and message', () => {
-  const error = sdkError('RateLimitError', 'Usage limit reached', 'usage_limit_exceeded')
-  assert.deepEqual(providerRunError(error), {
-    code: 'usage_limit_exceeded',
-    message: 'Usage limit reached'
+test('maps a provider error code to its code and message', () => {
+  assert.deepEqual(providerRunError('rate_limit', 'Rate limit reached'), {
+    code: 'rate_limit',
+    message: 'Rate limit reached'
   })
 })
 
-test('uses the error class name when a thrown SDK error has no code', () => {
-  const error = sdkError('AuthenticationError', 'Invalid API key')
-  assert.deepEqual(providerRunError(error), {
-    code: 'AuthenticationError',
-    message: 'Invalid API key'
+test('uses the code as the message when the SDK gave no text', () => {
+  assert.deepEqual(providerRunError('authentication_failed'), {
+    code: 'authentication_failed',
+    message: 'authentication_failed'
   })
 })
 
-test('does not treat a plain error or an agent busy error as a provider failure', () => {
-  assert.equal(providerRunError(new TypeError('x is undefined')), undefined)
-  assert.equal(providerRunError(sdkError('AgentBusyError', 'busy')), undefined)
+test('does not treat other error codes as a provider failure', () => {
+  assert.equal(providerRunError('invalid_request', 'bad'), undefined)
+  assert.equal(providerRunError('max_output_tokens', 'cut'), undefined)
+  assert.equal(providerRunError(undefined, 'x'), undefined)
+})
+
+test('tries the next key when the provider refused before any work', () => {
+  const run = {
+    status: 'error',
+    error: { code: 'billing_error', message: 'Credit balance is too low' },
+    tools: 0,
+    tokens: 0
+  }
+  assert.equal(shouldTryNextKey(run), true)
+})
+
+test('does not try the next key after work started or on a non-provider error', () => {
+  const error = { code: 'rate_limit', message: 'slow down' }
+  assert.equal(shouldTryNextKey({ status: 'error', error, tools: 2, tokens: 0 }), false)
+  assert.equal(shouldTryNextKey({ status: 'error', error, tools: 0, tokens: 900 }), false)
+  assert.equal(
+    shouldTryNextKey({
+      status: 'error',
+      error: { code: 'invalid_request', message: 'x' },
+      tools: 0,
+      tokens: 0
+    }),
+    false
+  )
+  assert.equal(
+    shouldTryNextKey({ status: 'error', error, tools: 0, tokens: 0, findings: [] }),
+    false
+  )
 })
 
 test('skips with the cause when the run errored before any tool call or token', () => {

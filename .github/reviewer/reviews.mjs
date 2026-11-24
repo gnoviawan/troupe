@@ -21,21 +21,40 @@ export async function hasBotReview(fetchPage, marker) {
   }
 }
 
-// SDK error classes, by `name`, that mean the provider refused the run: a bad
-// or revoked key, a quota or rate limit, a model it no longer offers, or the
-// service being down.
+// Claude Agent SDK error codes (SDKAssistantMessageError) that mean the
+// provider refused the run: a bad or revoked key, billing or a quota, a model
+// it no longer offers, or the service being down.
 const PROVIDER_ERRORS = new Set([
-  'AuthenticationError',
-  'RateLimitError',
-  'ConfigurationError',
-  'NetworkError'
+  'authentication_failed',
+  'oauth_org_not_allowed',
+  'account_on_hold',
+  'verification_required',
+  'billing_error',
+  'rate_limit',
+  'overloaded',
+  'model_not_found',
+  'server_error',
+  'cloud_credential_error'
 ])
 
-// The RunError shape for a provider error thrown by Agent.create or
-// agent.send, or undefined for any other error.
-export function providerRunError(error) {
-  if (!PROVIDER_ERRORS.has(error?.name)) return undefined
-  return { code: error.code ?? error.name, message: String(error.message) }
+// The RunError shape for a provider error code reported by the SDK (on an
+// assistant message's `error` or an API-error result), or undefined for any
+// other code.
+export function providerRunError(code, message) {
+  if (!PROVIDER_ERRORS.has(code)) return undefined
+  return { code, message: String(message ?? code) }
+}
+
+// True when the run failed at the provider before the reviewer did any work,
+// so retrying with the next API key can help.
+export function shouldTryNextKey({ status, error, tools, tokens, findings }) {
+  return (
+    findings === undefined &&
+    status === 'error' &&
+    tools === 0 &&
+    tokens === 0 &&
+    providerRunError(error?.code, error?.message) !== undefined
+  )
 }
 
 // How a review ends, from the last turn's status and error plus the tool calls

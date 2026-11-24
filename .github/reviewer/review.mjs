@@ -1,9 +1,12 @@
-// One-shot PR reviewer for GitHub Actions. Uses the @cursor/sdk local runtime:
-// the agent loop runs on the runner, reads the checked-out PR head, and the
-// model call bills to the CURSOR_API_KEY owner. Read-only tools, no shell.
+// One-shot PR reviewer for GitHub Actions. Uses the Claude Agent SDK: the
+// agent loop runs on the runner, reads the checked-out PR head, and the model
+// calls bill to the Anthropic API key. Read-only tools, no shell.
 //
 // Env:
-//   CURSOR_API_KEY   Cursor user API key (secret).
+//   ANTHROPIC_API_KEY    Anthropic API key (secret).
+//   ANTHROPIC_API_KEY_2  Fallback key (secret, optional). Used when the first key
+//                        is missing or the provider refuses it before any work
+//                        (bad key, billing, rate limit, outage).
 //   GITHUB_TOKEN     Token with pull-requests: write (only needed to post).
 //   REPO             owner/name.
 //   PR_NUMBER        Pull request number.
@@ -12,25 +15,29 @@
 //                    built locally with 15 lines of context; else from the API.
 //   WORKSPACE        Checkout path. Default: cwd.
 //   DRY_RUN=1        Print the review instead of posting it.
-//   MODEL_FAST=0     Use the non-fast model. Default is fast (non-fast missed 20 min on a 2k-line PR).
+//   REVIEW_MODEL     Model id. Default claude-sonnet-5-5.
+//   REVIEW_EFFORT    low | medium | high | xhigh | max. Default high.
 //   REVIEW_TIMEOUT_MS  Hard cap for the whole review. Default 1_500_000 (25 min).
 //   PROMPT_ONLY=1    Print the run section and prompt size, then exit.
 //   TOOL_BUDGET      Exploration tool calls before a forced wrap-up. 0 = no budget (default).
 //
 // Exploration stops at TOOL_BUDGET tool calls or at 70% of the timeout, then
-// a follow-up turn on the same agent asks for post_findings with what it has.
-// When the provider fails before any tool call or token (bad key, quota, model
-// gone, outage), the run prints a ::warning:: with the cause and exits 0.
+// a follow-up turn on the same session asks for post_findings with what it has.
+// When the provider fails before any tool call or token on every key, the run
+// prints a ::warning:: with the cause and exits 0.
 import { execFileSync } from 'node:child_process'
+import { realpathSync } from 'node:fs'
 import { appendFile, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Agent } from '@cursor/sdk'
-import { hasBotReview, providerRunError, REVIEWS_PER_PAGE, reviewOutcome } from './reviews.mjs'
+import { createSdkMcpServer, query, tool } from '@anthropic-ai/claude-agent-sdk'
+import { z } from 'zod'
+import { hasBotReview, REVIEWS_PER_PAGE, reviewOutcome, shouldTryNextKey } from './reviews.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MAX_DIFF_CHARS = 300_000
 const SEVERITIES = new Set(['high', 'medium', 'low'])
+const POST_TOOL = 'mcp__thermo__post_findings'
 
 const env = (name, fallback) => {
   const value = process.env[name]
@@ -41,24 +48,36 @@ const env = (name, fallback) => {
   return value
 }
 
-const apiKey = env('CURSOR_API_KEY')
+const apiKeys = ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY_2']
+  .map((name) => ({ name, value: env(name, '') }))
+  .filter((k) => k.value !== '')
+if (apiKeys.length === 0) throw new Error('missing env ANTHROPIC_API_KEY')
 const repo = env('REPO')
 const prNumber = Number(env('PR_NUMBER'))
 const headSha = env('HEAD_SHA')
 const baseSha = process.env.BASE_SHA ?? ''
 const workspace = env('WORKSPACE', process.cwd())
+const root = realpathSync(workspace)
 const dryRun = env('DRY_RUN', '0') === '1'
-const fast = env('MODEL_FAST', '1') === '1'
+const model = env('REVIEW_MODEL', 'claude-sonnet-5-5')
+const effort = env('REVIEW_EFFORT', 'high')
 const timeoutMs = Number(env('REVIEW_TIMEOUT_MS', '1500000'))
 const toolBudget = Number(env('TOOL_BUDGET', '0'))
 const githubToken = process.env.GITHUB_TOKEN ?? ''
 const marker = `<!-- termul-reviewer:${headSha} -->`
 
-// Keep secrets out of the agent's process env view and out of any output.
-const secrets = [apiKey, githubToken].filter((s) => s.length >= 8)
-delete process.env.CURSOR_API_KEY
-delete process.env.GITHUB_TOKEN
-delete process.env.GH_TOKEN
+// Keep secrets out of the agent's environment and out of any output. The
+// agent process gets a minimal env with only the key it runs with.
+const secrets = [...apiKeys.map((k) => k.value), githubToken].filter((s) => s.length >= 8)
+for (const name of [
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_API_KEY_2',
+  'ANTHROPIC_AUTH_TOKEN',
+  'GITHUB_TOKEN',
+  'GH_TOKEN'
+]) {
+  delete process.env[name]
+}
 const redact = (text) => secrets.reduce((t, s) => t.split(s).join('[redacted]'), text)
 
 async function gh(path, init = {}) {
@@ -177,7 +196,6 @@ function relatedFiles(files) {
 }
 
 const flatten = (v) => String(v).replace(/\s+/g, ' ').trim()
-const describe = (error) => redact(flatten(`${error.code ?? 'unknown'}: ${error.message}`))
 const skipReview = (message) => console.log(`::warning::${redact(flatten(message))}`)
 
 function reviewBody(findings) {
@@ -239,7 +257,7 @@ async function main() {
     'Steps:',
     '1. Read the diff and the file map below. They are your main context.',
     '2. List the suspected bugs to yourself, riskiest first.',
-    `3. Confirm each by reading only the lines you need in a changed file or a file from the map.${toolBudget > 0 ? ` Budget: about ${toolBudget} read/grep/glob/ls calls in total.` : ''} No repo-wide searches.`,
+    `3. Confirm each by reading only the lines you need in a changed file or a file from the map.${toolBudget > 0 ? ` Budget: about ${toolBudget} Read/Grep/Glob calls in total.` : ''} No repo-wide searches.`,
     '4. Call post_findings once with the confirmed findings only.',
     'No shell. Do not build, run, or test anything.',
     '',
@@ -259,187 +277,258 @@ async function main() {
     return
   }
   const startedAt = Date.now()
-  const agentOptions = {
-    apiKey,
-    name: `termul-review-${prNumber}-${headSha.slice(0, 7)}`,
-    model: {
-      id: 'grok-4.7',
-      params: [
-        { id: 'reasoning_effort', value: 'high' },
-        { id: 'context', value: '500k' },
-        { id: 'fast', value: fast ? 'true' : 'false' }
-      ]
-    },
-    tools: ['read', 'grep', 'glob', 'ls', 'mcp'],
-    local: {
-      cwd: workspace,
-      settingSources: [],
-      customTools: {
-        post_findings: {
-          description:
-            'Record the review for this pull request. Call once. Empty findings = CLEAN.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              findings: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    severity: { type: 'string', enum: ['high', 'medium', 'low'] },
-                    file: { type: 'string' },
-                    line: { type: 'integer', minimum: 1 },
-                    title: { type: 'string', maxLength: 160 },
-                    scenario: { type: 'string', maxLength: 400 },
-                    detail: { type: 'string', maxLength: 280 }
-                  },
-                  required: ['severity', 'file', 'line', 'title', 'scenario', 'detail']
-                }
-              }
-            },
-            required: ['findings']
+  const deadline = startedAt + timeoutMs
+  let tools = 0
+  let sawOutput = false
+  let lastResult
+
+  // post_findings lives in an in-process MCP server. A fresh server per query,
+  // since a server instance connects to one session only.
+  const findingsServer = () =>
+    createSdkMcpServer({
+      name: 'thermo',
+      version: '1.0.0',
+      tools: [
+        tool(
+          'post_findings',
+          'Record the review for this pull request. Call once. Empty findings = CLEAN.',
+          {
+            findings: z.array(
+              z.object({
+                severity: z.enum(['high', 'medium', 'low']),
+                file: z.string(),
+                line: z.number().int().min(1),
+                title: z.string().max(160),
+                scenario: z.string().max(400),
+                detail: z.string().max(280)
+              })
+            )
           },
-          execute({ findings: raw }) {
+          async ({ findings: raw }) => {
+            const reply = (text, isError = false) => ({
+              content: [{ type: 'text', text }],
+              isError
+            })
             if (!Array.isArray(raw) || !raw.every(validFinding)) {
-              return {
-                content: [
-                  { type: 'text', text: 'Invalid findings. Check the schema and call again.' }
-                ],
-                isError: true
-              }
+              return reply('Invalid findings. Check the schema and call again.', true)
             }
             const outside = raw.filter((f) => !inChangedHunk(f))
             if (outside.length > 0) {
               const where = outside.map((f) => `${f.file}:${f.line}`).join(', ')
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `These are not on lines this PR changed: ${where}. Point each finding at the changed line that causes it, or drop it, then call again.`
-                  }
-                ],
-                isError: true
-              }
+              return reply(
+                `These are not on lines this PR changed: ${where}. Point each finding at the changed line that causes it, or drop it, then call again.`,
+                true
+              )
             }
             findings = raw
-            return 'Recorded. Stop now.'
+            return reply('Recorded. Stop now.')
           }
-        }
+        )
+      ]
+    })
+
+  // Reads stay inside the checkout. Paths are resolved through symlinks, so a
+  // PR cannot add a link that points at /proc or the runner's home.
+  const insideRoot = (target) => {
+    let real = resolve(root, target)
+    try {
+      real = realpathSync(real)
+    } catch {}
+    const rel = relative(root, real)
+    return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
+  }
+  const guardPaths = async (input) => {
+    const args = input.tool_input ?? {}
+    const target = input.tool_name === 'Read' ? args.file_path : args.path
+    if (target === undefined || (typeof target === 'string' && insideRoot(target))) return {}
+    console.log(`[deny] ${input.tool_name} outside the checkout`)
+    return {
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'deny',
+        permissionDecisionReason: 'Only files inside the repository checkout can be read.'
       }
     }
   }
-  let agent
-  try {
-    agent = await Agent.create(agentOptions)
-  } catch (error) {
-    const runError = providerRunError(error)
-    if (runError === undefined) throw error
-    skipReview(reviewOutcome({ status: 'error', error: runError, tools: 0, tokens: 0 }).message)
-    return
-  }
 
-  const deadline = startedAt + timeoutMs
-  let tools = 0
-  const totals = {
-    inputTokens: 0,
-    outputTokens: 0,
-    cacheReadTokens: 0,
-    cacheWriteTokens: 0,
-    reasoningTokens: 0
-  }
-  const requests = []
+  const options = (key) => ({
+    cwd: root,
+    model,
+    effort,
+    thinking: { type: 'adaptive' },
+    tools: ['Read', 'Grep', 'Glob'],
+    allowedTools: ['Read', 'Grep', 'Glob', POST_TOOL],
+    permissionMode: 'dontAsk',
+    settingSources: [],
+    strictMcpConfig: true,
+    mcpServers: { thermo: findingsServer() },
+    hooks: {
+      PreToolUse: [{ matcher: 'Read|Grep|Glob', hooks: [guardPaths], onFailure: 'block' }]
+    },
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      TMPDIR: process.env.RUNNER_TEMP ?? process.env.TMPDIR,
+      ANTHROPIC_API_KEY: key,
+      CLAUDE_AGENT_SDK_CLIENT_APP: 'troupe-thermo-review/1.0',
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+    },
+    stderr: (data) => console.log(`[cli] ${redact(flatten(data))}`)
+  })
 
-  // One turn. Cancels when `stopAt` passes or, if `budget` is set, when the
-  // turn has used that many tool calls.
-  async function turn(message, stopAt, budget) {
-    let run
-    try {
-      run = await agent.send(message)
-    } catch (error) {
-      const runError = providerRunError(error)
-      if (runError === undefined) throw error
-      console.log(`[turn] send failed: ${describe(runError)}`)
-      return { status: 'error', error: runError }
-    }
+  const textOf = (message) =>
+    (message.message?.content ?? [])
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join(' ')
+
+  // One query. Aborts when `stopAt` passes or, if `budget` is set, when the
+  // turn has used that many exploration tool calls. `resume` continues a
+  // session from an earlier turn.
+  async function turn(message, { key, stopAt, budget, resume }) {
+    const abortController = new AbortController()
     let stopped = null
     const stop = (why) => {
       if (stopped !== null) return
       stopped = why
       console.log(`[stop] ${why}`)
-      void run.cancel()
+      abortController.abort()
     }
     const timer = setTimeout(() => stop('time'), Math.max(0, stopAt - Date.now()))
     let used = 0
-    for await (const event of run.stream()) {
-      if (event.type === 'tool_call' && event.status === 'running') {
-        tools += 1
-        used += 1
-        console.log(`[tool] ${event.name}`)
-        if (budget !== undefined && used >= budget && event.name !== 'mcp') stop('tool budget')
-      } else if (event.type === 'tool_call' && event.status === 'error') {
-        console.log(`[tool error] ${event.name}`)
-      } else if (event.type === 'status') {
-        const note = event.message ? `: ${redact(flatten(event.message))}` : ''
-        console.log(`[status] ${event.status}${note}`)
+    let error
+    let result
+    let sessionId = resume
+    try {
+      const run = query({ prompt: message, options: { ...options(key), abortController, resume } })
+      for await (const msg of run) {
+        if (msg.type === 'system' && msg.subtype === 'init') {
+          sessionId = msg.session_id
+          console.log(`[init] model=${msg.model} tools=${msg.tools.join(',')}`)
+        } else if (msg.type === 'system' && msg.subtype === 'api_retry') {
+          console.log(
+            `[retry] attempt=${msg.attempt}/${msg.max_retries} status=${msg.error_status} error=${msg.error}`
+          )
+        } else if (msg.type === 'assistant' && msg.parent_tool_use_id === null) {
+          if (msg.error !== undefined) {
+            error = { code: msg.error, message: redact(flatten(textOf(msg) || msg.error)) }
+            console.log(`[error] ${error.code}: ${error.message}`)
+            continue
+          }
+          sawOutput = true
+          for (const block of msg.message.content) {
+            if (block.type !== 'tool_use') continue
+            tools += 1
+            used += 1
+            console.log(`[tool] ${block.name}`)
+            if (budget !== undefined && used >= budget && block.name !== POST_TOOL) {
+              stop('tool budget')
+            }
+          }
+        } else if (msg.type === 'result') {
+          result = msg
+          lastResult = msg
+        }
+      }
+    } catch (thrown) {
+      // An abort we asked for, or a CLI exit after it reported a provider
+      // error, ends the turn. Anything else is a bug.
+      if (stopped === null && error === undefined) throw thrown
+      if (stopped === null) console.log(`[turn] query ended: ${redact(flatten(thrown.message))}`)
+    } finally {
+      clearTimeout(timer)
+    }
+
+    let status = 'finished'
+    if (stopped !== null) status = 'cancelled'
+    else if (error !== undefined) status = 'error'
+    else if (result === undefined || result.is_error || result.subtype !== 'success') {
+      status = 'error'
+      if (result?.subtype !== undefined && result.subtype !== 'success') {
+        error = { code: result.subtype, message: redact(flatten(result.errors.join('; '))) }
+      } else {
+        error = { code: 'unknown', message: redact(flatten(result?.result ?? 'no result')) }
       }
     }
-    const result = await run.wait()
-    clearTimeout(timer)
-    console.log(
-      `[turn] status=${result.status}${result.error ? ` error=${describe(result.error)}` : ''}`
-    )
-    requests.push(result.requestId ?? '-')
-    for (const key of Object.keys(totals)) totals[key] += result.usage?.[key] ?? 0
-    return result
+    console.log(`[turn] status=${status}${error ? ` error=${error.code}: ${error.message}` : ''}`)
+    return { status, error, sessionId }
   }
 
-  let result = await turn(
-    prompt,
-    startedAt + timeoutMs * 0.7,
-    toolBudget > 0 ? toolBudget : undefined
-  )
-  // Asking again after an error that came before any tool call only repeats it.
-  if (findings === undefined && !(result.status === 'error' && tools === 0)) {
-    console.log('[wrap-up] asking for post_findings now')
-    result = await turn(
-      'Your tool budget is spent. Do not call read, grep, glob, or ls again. Call post_findings now with every bug you have concrete evidence for from the diff and the code you already read, each on its changed line with a concrete scenario. Drop only items you now think are wrong or are style.',
-      deadline
-    )
+  const tokenTotals = () => {
+    const totals = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
+    for (const usage of Object.values(lastResult?.modelUsage ?? {})) {
+      totals.inputTokens += usage.inputTokens ?? 0
+      totals.outputTokens += usage.outputTokens ?? 0
+      totals.cacheReadTokens += usage.cacheReadInputTokens ?? 0
+      totals.cacheWriteTokens += usage.cacheCreationInputTokens ?? 0
+    }
+    return totals
+  }
+
+  // A full review with one key: explore, then a wrap-up turn if needed.
+  async function reviewWith(key) {
+    tools = 0
+    sawOutput = false
+    lastResult = undefined
+    let result = await turn(prompt, {
+      key,
+      stopAt: startedAt + timeoutMs * 0.7,
+      budget: toolBudget > 0 ? toolBudget : undefined
+    })
+    // Asking again after an error that came before any tool call only repeats it.
+    if (
+      findings === undefined &&
+      result.sessionId !== undefined &&
+      !(result.status === 'error' && tools === 0)
+    ) {
+      console.log('[wrap-up] asking for post_findings now')
+      result = await turn(
+        'Your tool budget is spent. Do not call Read, Grep, or Glob again. Call post_findings now with every bug you have concrete evidence for from the diff and the code you already read, each on its changed line with a concrete scenario. Drop only items you now think are wrong or are style.',
+        { key, stopAt: deadline, resume: result.sessionId }
+      )
+    }
+    const usage = tokenTotals()
+    const tokens = usage.inputTokens + usage.outputTokens
+    return {
+      status: result.status,
+      error: result.error,
+      tools,
+      tokens: tokens > 0 || !sawOutput ? tokens : 1,
+      usage
+    }
+  }
+
+  let run
+  for (const [index, key] of apiKeys.entries()) {
+    console.log(`[auth] using ${key.name}`)
+    run = await reviewWith(key.value)
+    if (index === apiKeys.length - 1 || !shouldTryNextKey({ ...run, findings })) break
+    console.log(`[auth] ${key.name} failed (${run.error.code}); trying ${apiKeys[index + 1].name}`)
   }
   const elapsed = Date.now() - startedAt
+  const { usage } = run
 
-  const usage = totals
+  console.log(`status=${run.status} elapsed_ms=${elapsed} tools=${run.tools} model=${model}`)
   console.log(
-    `status=${result.status} elapsed_ms=${elapsed} tools=${tools} requests=${requests.join(',')}`
+    `tokens in=${usage.inputTokens} out=${usage.outputTokens} cache_read=${usage.cacheReadTokens} cache_write=${usage.cacheWriteTokens}`
   )
-  if (usage) {
-    console.log(
-      `tokens in=${usage.inputTokens} out=${usage.outputTokens} cache_read=${usage.cacheReadTokens} cache_write=${usage.cacheWriteTokens} reasoning=${usage.reasoningTokens}`
-    )
-  }
-  try {
-    const billed = await agent.getUsage()
-    if (billed.cost)
-      console.log(
-        `cost charged_cents=${billed.cost.chargedCents} raw_cents=${billed.cost.rawCostCents}`
-      )
-  } catch (error) {
-    console.log(`cost unavailable (${error.code ?? error.message})`)
-  }
+  if (lastResult !== undefined) console.log(`cost estimated_usd=${lastResult.total_cost_usd}`)
   if (process.env.REVIEW_METRICS_FILE) {
     await writeFile(
       process.env.REVIEW_METRICS_FILE,
-      JSON.stringify({ status: result.status, elapsedMs: elapsed, tools, usage, findings }, null, 2)
+      JSON.stringify(
+        { status: run.status, elapsedMs: elapsed, tools: run.tools, usage, findings },
+        null,
+        2
+      )
     )
   }
 
-  await agent[Symbol.asyncDispose]()
-
   const outcome = reviewOutcome({
-    status: result.status,
-    error: result.error,
-    tools,
-    tokens: totals.inputTokens + totals.outputTokens,
+    status: run.status,
+    error: run.error,
+    tools: run.tools,
+    tokens: run.tokens,
     findings
   })
   if (outcome.kind === 'skip') {
