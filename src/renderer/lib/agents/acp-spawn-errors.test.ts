@@ -6,11 +6,16 @@ import {
   ACP_STREAM_INTERRUPT_MESSAGE,
   AGENT_AUTH_REQUIRED_CODE,
   AmbiguousAuthError,
+  accountSignedOutMessage,
+  antigravityAccountSignedOutMessage,
   classifySetupError,
   formatAcpAgentError,
   formatAcpSpawnError,
+  isAccountSignedOutError,
   isAgentAuthRequiredError,
   isAmbiguousAuthError,
+  isAntigravityAccountSignedOutError,
+  isCodexAccountSignedOutError,
   isDefiniteSpawnRejection,
   PROVIDER_ERROR_LABELS,
   PROVIDER_ERROR_MESSAGES,
@@ -498,5 +503,28 @@ describe('definite spawn rejections (AD-5)', () => {
   it('leaves ordinary spawn/transport failures retryable (no definite flag)', () => {
     expect(classifySetupError(new Error('failed to spawn agent')).definite).toBeUndefined()
     expect(classifySetupError(new Error('connection refused')).definite).toBeUndefined()
+  })
+})
+
+describe('signed-out Antigravity Account', () => {
+  const reason = 'The Antigravity account "Work" is not signed in.'
+
+  it('reads the /ws code and the desktop invoke prefix the same way', () => {
+    const viaWs = new AcpTransportError('antigravity_account_signed_out', reason)
+    const viaInvoke = `ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`
+    for (const error of [viaWs, viaInvoke, new Error(viaInvoke)]) {
+      expect(isAntigravityAccountSignedOutError(error)).toBe(true)
+      expect(isAccountSignedOutError(error)).toBe(true)
+      expect(isCodexAccountSignedOutError(error)).toBe(false)
+      expect(antigravityAccountSignedOutMessage(error)).toBe(reason)
+      expect(accountSignedOutMessage(error)).toBe(reason)
+    }
+    expect(isAntigravityAccountSignedOutError(new Error(reason))).toBe(false)
+  })
+
+  it('classifies as sign-in guidance without the transport tag', () => {
+    const result = classifySetupError(`ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`)
+    expect(result.category).toBe('auth')
+    expect(result.detail).toBe(reason)
   })
 })

@@ -27,6 +27,10 @@ pub struct Slots<'a> {
     pub leading: Vec<El>,
     /// What a pane with no tab shows (the launcher greeting).
     pub empty: &'a dyn Fn() -> El,
+    /// The body of a tab the app draws itself (a chat), or None for the placeholder.
+    pub tab: &'a dyn Fn(&Tab) -> Option<El>,
+    /// The label of a tab the app names itself (a chat's title), or None for the default.
+    pub title: &'a dyn Fn(&Tab) -> Option<String>,
     pub dark: bool,
 }
 
@@ -38,6 +42,8 @@ struct Ctx<'a, S> {
     t: &'static Tokens,
     geometry: Rc<Geometry>,
     dark: bool,
+    tab: &'a dyn Fn(&Tab) -> Option<El>,
+    title: &'a dyn Fn(&Tab) -> Option<String>,
 }
 
 fn content_key(pane: &str) -> String {
@@ -91,6 +97,8 @@ pub fn view<S: 'static>(
         t,
         geometry: Rc::new(geometry(ws, cx)),
         dark: slots.dark,
+        tab: slots.tab,
+        title: slots.title,
     };
     let tree = &ws.store.tree;
     let fullscreen = tree
@@ -272,7 +280,7 @@ fn pane<S: 'static>(
         .fill(t.colors.terminal_bg)
         .clip_rounded(0.0)
         .child(match active_tab(leaf) {
-            Some(tab) => placeholder(ctx, tab),
+            Some(tab) => (ctx.tab)(tab).unwrap_or_else(|| placeholder(ctx, tab)),
             None => col().w_full().grow(1.0).min_h(0.0).center().child(empty()),
         });
     let dragging = ws.drag.as_ref().filter(|d| d.moving);
@@ -339,7 +347,7 @@ fn identity<S>(ctx: &Ctx<'_, S>, tab: &Tab) -> (&'static Icon, String) {
         Tab::Browser { .. } => (&i::GLOBE, "New Tab".to_owned()),
         Tab::Git { .. } => (&i::GIT_BRANCH, "Git Changes".to_owned()),
         Tab::GitHistory { .. } => (&i::HISTORY, "Git History".to_owned()),
-        Tab::AgentChat { .. } => (&i::CIRCLE_DOT, "New chat".to_owned()),
+        Tab::AgentChat { .. } => (&i::CIRCLE_DOT, (ctx.title)(tab).unwrap_or_else(|| "New chat".to_owned())),
         Tab::GithubItem { number, title, .. } => (
             &i::GITHUB,
             if title.is_empty() {

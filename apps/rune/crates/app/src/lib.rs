@@ -12,6 +12,9 @@
 
 #![forbid(unsafe_code)]
 
+mod chat;
+mod chat_images;
+mod chat_view;
 mod host;
 mod ids;
 mod keys;
@@ -98,6 +101,8 @@ pub struct State {
     pub zoom: ui::Zoom,
     /// The visible project's panes and tabs.
     pub workspace: Workspace,
+    /// The chats the workspace shows: their transcripts and the transcript's own UI state.
+    pub chat: chat::ChatUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -142,6 +147,7 @@ impl Default for State {
             phone: phone::PhoneUi::default(),
             zoom: ui::Zoom::DEFAULT,
             workspace: Workspace::new(Box::new(Uuids::new(seed()))),
+            chat: chat::ChatUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -209,6 +215,7 @@ fn seed() -> u64 {
 
 fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
+    state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
         state.connect(Host::connect(config, wake));
     }
@@ -221,6 +228,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         changed |= state.close_top();
     }
     changed |= state.pump(now);
+    state.sync_chats();
+    changed |= state.flush_chat();
     if let Some(due) = state.toasts.next_expiry() {
         tx.wake_at(due);
     }

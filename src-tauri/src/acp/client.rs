@@ -222,6 +222,22 @@ pub(crate) fn chunk_parent_tool_call_id(
         .map(str::to_owned)
 }
 
+/// The Antigravity plan-limit message in an `agent_message_chunk`, if
+/// `update` is one. Antigravity sends the whole "Usage Limit Reached" text in
+/// one chunk, then ends the turn normally. The caller decides whether the
+/// agent is Antigravity (`ANTIGRAVITY_ACP_CONFIG_ID`).
+pub(crate) fn antigravity_quota_chunk(
+    update: &SessionUpdate,
+) -> Option<crate::acp::antigravity_accounts::usage::AntigravityQuotaHit> {
+    let SessionUpdate::AgentMessageChunk(chunk) = update else {
+        return None;
+    };
+    let agent_client_protocol::schema::v1::ContentBlock::Text(text) = &chunk.content else {
+        return None;
+    };
+    crate::acp::antigravity_accounts::usage::antigravity_quota_message(&text.text)
+}
+
 /// Translate an inbound `session/update` notification into the matching
 /// `acp:*` event and fan it out through the dispatcher's sinks.
 ///

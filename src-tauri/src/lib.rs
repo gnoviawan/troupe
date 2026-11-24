@@ -178,8 +178,8 @@ fn resolve_executable_from_path(command: &str) -> Option<String> {
 
 // Re-exports for commands
 pub use acp::{
-    AcpCatalogService, AcpInstallService, AcpManager, ChatHistoryStore, ClaudeAgentService,
-    ClaudeAuthMode, ClaudeAuthStatus, CodexAgentService, SessionPersistence,
+    AcpCatalogService, AcpInstallService, AcpManager, AntigravityAgentService, ChatHistoryStore,
+    ClaudeAgentService, ClaudeAuthMode, ClaudeAuthStatus, CodexAgentService, SessionPersistence,
 };
 // Host-injected `plan` MCP tool: the `--internal-mcp-plan-server`
 // subcommand branch in `main.rs` + `server_main.rs` reaches `host_mcp::CHILD_ARG`
@@ -194,6 +194,8 @@ pub use acp::orchestrator;
 // (`termul-server claude ...`): same re-export pattern as `host_mcp` — the
 // `acp` module is private, so `server_main.rs` reaches `claude_admin::run()`
 // through this path (mirrors how `onboard::run()` is dispatched).
+pub use acp::antigravity_admin;
+pub use acp::antigravity_limit;
 pub use acp::claude_admin;
 pub use acp::claude_limit;
 pub use acp::codex_admin;
@@ -203,6 +205,10 @@ pub use acp::worker_chats;
 // `AcpManager`; this re-export keeps the secret-free types part of the host
 // library surface the same way the Claude Account types are reachable.
 pub use acp::codex_accounts::{CodexAccount, CodexAccountStore, CodexAccountsSnapshot};
+// Antigravity Account store, reached the same way as the Codex one.
+pub use acp::antigravity_accounts::{
+    AntigravityAccount, AntigravityAccountStore, AntigravityAccountsSnapshot,
+};
 // Seam for the browser conformance runner (`tests/browser_conformance`), which
 // drives the real automation host from outside the crate. The runner reaches
 // the host only through these names, so a host refactor edits this list and
@@ -1719,6 +1725,12 @@ pub fn run() {
                 acp_install_root.clone(),
             ));
             app.manage(codex_agent_service.clone());
+            let antigravity_agent_service = Arc::new(
+                crate::acp::antigravity_agent::AntigravityAgentService::system(
+                    acp_install_root.clone(),
+                ),
+            );
+            app.manage(antigravity_agent_service.clone());
 
             // Create ACP Manager — spawns/owns ACP agent subprocesses.
             //
@@ -1737,27 +1749,45 @@ pub fn run() {
             let (claude_limit, claude_limit_inbox) =
                 acp::claude_limit::ClaudeLimitHandle::channel();
             let (codex_limit, codex_limit_inbox) = acp::codex_limit::CodexLimitHandle::channel();
+            let (antigravity_limit, antigravity_limit_inbox) =
+                acp::antigravity_limit::AntigravityLimitHandle::channel();
             let (ws_relay, acp_manager) = match &session_persistence {
                 Some(persistence) => {
                     let relay = Arc::new(WsRelaySink::with_persistence(
                         4096,
                         Arc::clone(persistence),
                     ));
-                    let manager = Arc::new(AcpManager::with_persistence_and_host_agents(
-                        vec![relay.clone(), claude_limit.sink(), codex_limit.sink()],
-                        Arc::clone(persistence),
-                        Arc::clone(&claude_agent_service),
-                        Arc::clone(&codex_agent_service),
-                    ));
+                    let manager = Arc::new(
+                        AcpManager::with_persistence_and_host_agents(
+                            vec![
+                                relay.clone(),
+                                claude_limit.sink(),
+                                codex_limit.sink(),
+                                antigravity_limit.sink(),
+                            ],
+                            Arc::clone(persistence),
+                            Arc::clone(&claude_agent_service),
+                            Arc::clone(&codex_agent_service),
+                        )
+                        .with_antigravity_agent(Arc::clone(&antigravity_agent_service)),
+                    );
                     (relay, manager)
                 }
                 None => {
                     let relay = Arc::new(WsRelaySink::new());
-                    let manager = Arc::new(AcpManager::with_host_agents(
-                        vec![relay.clone(), claude_limit.sink(), codex_limit.sink()],
-                        Arc::clone(&claude_agent_service),
-                        Arc::clone(&codex_agent_service),
-                    ));
+                    let manager = Arc::new(
+                        AcpManager::with_host_agents(
+                            vec![
+                                relay.clone(),
+                                claude_limit.sink(),
+                                codex_limit.sink(),
+                                antigravity_limit.sink(),
+                            ],
+                            Arc::clone(&claude_agent_service),
+                            Arc::clone(&codex_agent_service),
+                        )
+                        .with_antigravity_agent(Arc::clone(&antigravity_agent_service)),
+                    );
                     (relay, manager)
                 }
             };
@@ -1774,6 +1804,13 @@ pub fn run() {
                 &ws_relay,
                 codex_limit,
                 codex_limit_inbox,
+                tauri::async_runtime::handle().inner(),
+            );
+            acp::antigravity_limit::start(
+                &acp_manager,
+                &ws_relay,
+                antigravity_limit,
+                antigravity_limit_inbox,
                 tauri::async_runtime::handle().inner(),
             );
             acp::worker_chats::install(
@@ -2323,6 +2360,11 @@ pub fn run() {
             acp::commands::codex_accounts_set_default,
             acp::commands::codex_accounts_set_project,
             acp::commands::codex_accounts_set_auto_switch,
+            acp::commands::antigravity_accounts_list,
+            acp::commands::antigravity_accounts_usage,
+            acp::commands::antigravity_accounts_set_default,
+            acp::commands::antigravity_accounts_set_project,
+            acp::commands::antigravity_accounts_set_auto_switch,
             acp::commands::acp_factory_key_status,
             acp::commands::acp_factory_key_save,
             acp::commands::codex_cli_auth_status,

@@ -202,6 +202,33 @@ pub(super) async fn route_request(req: WsRequest, env: &HandlerEnv) -> WsReply {
         "start_codex_account_login" => {
             handle_start_codex_account_login(id, &req.payload, acp, req.command_id.clone()).await
         }
+        // Antigravity Accounts: the Codex Account surface for Google logins.
+        "list_antigravity_accounts" => handle_list_antigravity_accounts(id, acp).await,
+        "list_antigravity_usage" => handle_list_antigravity_usage(id, &req.payload, acp).await,
+        "set_default_antigravity_account" => {
+            handle_set_default_antigravity_account(id, &req.payload, acp).await
+        }
+        "set_project_antigravity_account" => {
+            handle_set_project_antigravity_account(id, &req.payload, acp).await
+        }
+        "set_chat_antigravity_account" => {
+            handle_set_chat_antigravity_account(id, &req.payload, acp).await
+        }
+        "set_antigravity_auto_switch" => {
+            handle_set_antigravity_auto_switch(id, &req.payload, acp).await
+        }
+        "set_antigravity_resume" => handle_set_antigravity_resume(id, &req.payload, acp).await,
+        "add_antigravity_account" => handle_add_antigravity_account(id, &req.payload, acp).await,
+        "rename_antigravity_account" => {
+            handle_rename_antigravity_account(id, &req.payload, acp).await
+        }
+        "remove_antigravity_account" => {
+            handle_remove_antigravity_account(id, &req.payload, acp).await
+        }
+        "start_antigravity_account_login" => {
+            handle_start_antigravity_account_login(id, &req.payload, acp, req.command_id.clone())
+                .await
+        }
         // CAP-6 / Story 8: host-owned ACP catalog resolution. The catalog
         // carries the host's OS/arch/runtime availability + per-agent
         // resolved `SupportedAcpAgentStatus`. The web client never probes

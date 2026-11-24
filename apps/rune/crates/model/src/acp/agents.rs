@@ -139,10 +139,19 @@ impl ErrorDetail {
     }
 
     /// `isAdapterPlanLimit`: a Codex plan or rate limit.
-    fn plan_limit(&self) -> bool {
+    /// `isAdapterPlanLimit`: an adapter's plan-limit error for the chat's
+    /// agent config. An Antigravity limit counts only for an Antigravity
+    /// chat, and an Antigravity chat counts only that limit.
+    fn plan_limit(&self, config_id: Option<&str>) -> bool {
         let Some(Value::Object(data)) = &self.data else {
             return false;
         };
+        if config_id == Some(ANTIGRAVITY_AGENT_CONFIG_ID) {
+            return antigravity_plan_limit(data);
+        }
+        if data.get("agent").and_then(Value::as_str) == Some(ANTIGRAVITY_ERROR_AGENT) {
+            return false;
+        }
         let kind = data.get("errorKind").and_then(Value::as_str);
         let info = data.get("codexErrorInfo").and_then(Value::as_str);
         matches!(kind, Some("rate_limited" | "quota_exhausted"))
@@ -150,8 +159,31 @@ impl ErrorDetail {
     }
 }
 
+const ANTIGRAVITY_AGENT_CONFIG_ID: &str = "acp-registry:antigravity-acp";
+const ANTIGRAVITY_ERROR_AGENT: &str = "antigravity";
+
+fn antigravity_plan_limit(data: &Object) -> bool {
+    data.get("agent").and_then(Value::as_str) == Some(ANTIGRAVITY_ERROR_AGENT)
+        && data.get("errorKind").and_then(Value::as_str) == Some("quota_exhausted")
+}
+
+/// `errorResetSeconds`: the Unix seconds of an Antigravity plan limit's
+/// `resetsAt` (epoch ms).
+fn error_reset_seconds(data: Option<&Value>) -> Value {
+    let Some(Value::Object(data)) = data else {
+        return Value::Null;
+    };
+    if !antigravity_plan_limit(data) {
+        return Value::Null;
+    }
+    match js::finite(data.get("resetsAt")) {
+        Some(at) if at > 0.0 => json!((at / 1000.0).floor()),
+        _ => Value::Null,
+    }
+}
+
 /// `rejectedRateLimit`.
-fn rejected_rate_limit(message: &str) -> Value {
+fn rejected_rate_limit(message: &str, data: Option<&Value>) -> Value {
     let lower = message.to_lowercase();
     let kind = if lower.contains("5-hour") {
         json!("five_hour")
@@ -162,7 +194,7 @@ fn rejected_rate_limit(message: &str) -> Value {
     };
     json!({
         "status": "rejected",
-        "resetsAt": null,
+        "resetsAt": error_reset_seconds(data),
         "kind": kind,
         "percent": null,
         "overageInUse": false,
@@ -177,6 +209,33 @@ fn web_url(value: &Value, secure: bool) -> Option<&str> {
 }
 
 impl State {
+    /// `sessionAgentConfigId`: the chat's agent config, from the live reuse
+    /// keys first, then the chat index.
+    fn session_agent_config_id(&self, session_id: &str) -> Option<String> {
+        let agent_id = self
+            .sessions
+            .get(session_id)
+            .map(|session| session.agent_id.as_str())
+            .filter(|id| !id.is_empty());
+        if let Some(agent_id) = agent_id {
+            let key = self
+                .config_to_live_agent
+                .iter()
+                .find(|(_, id)| id.as_str() == Some(agent_id));
+            if let Some((key, _)) = key {
+                return key.split('\0').next().map(str::to_owned);
+            }
+        }
+        let entry = self
+            .session_index
+            .iter()
+            .find(|entry| entry.get("id").and_then(Value::as_str) == Some(session_id))?;
+        entry
+            .get("agentConfigId")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+    }
+
     pub(crate) fn on_agent_spawned(&mut self, event: AgentSpawnedEvent) {
         let id = event.agent_id;
         let existing = self.agents.get(&id);
@@ -275,6 +334,7 @@ impl State {
             self.fail_live_sessions(&event.agent_id, &event.message, &detail, false);
             return;
         };
+        let config_id = self.session_agent_config_id(id);
         let Some(session) = self
             .sessions
             .get_mut(id)
@@ -287,7 +347,8 @@ impl State {
             self.agent_status
                 .insert(event.agent_id.clone(), json!("error"));
         }
-        if (detail.provider == Some("provider_quota_exceeded") || detail.plan_limit())
+        if (detail.provider == Some("provider_quota_exceeded")
+            || detail.plan_limit(config_id.as_deref()))
             && session.agent_id == event.agent_id
         {
             let usage = self.session_usage.entry(id.to_owned()).or_insert(Usage {
@@ -299,7 +360,7 @@ impl State {
                 updated_at: None,
                 source: "reported".into(),
             });
-            usage.rate_limit = Some(rejected_rate_limit(&event.message));
+            usage.rate_limit = Some(rejected_rate_limit(&event.message, detail.data.as_ref()));
             usage.updated_at = Some(env.now);
         }
         session.last_error = Some(detail.describe(&event.message));

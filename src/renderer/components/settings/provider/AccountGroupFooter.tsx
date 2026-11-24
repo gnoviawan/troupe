@@ -4,7 +4,7 @@ import { SettingsCard } from '../SettingsGroup'
 import { SettingsRow, settingsDescriptionId } from '../SettingsRow'
 
 /**
- * The one line under a provider's account rows (Claude and Codex alike).
+ * The one line under a provider's account rows (Claude, Codex and Antigravity alike).
  * Two or more accounts: the "Switch accounts automatically" setting. One
  * account: switching has nowhere to go, so a quiet hint says what a second
  * account gives (the group header's Add account adds it). Nothing on a
@@ -18,7 +18,7 @@ export function AccountGroupFooter({
   saving,
   onAutoSwitchChange
 }: {
-  /** Prefix of the switch id, e.g. "claude" or "codex". */
+  /** Prefix of the switch id, e.g. "claude", "codex" or "antigravity". */
   id: string
   accountCount: number
   canManage: boolean

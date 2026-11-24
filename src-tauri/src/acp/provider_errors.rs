@@ -64,7 +64,8 @@ impl ProviderErrorKind {
 
 /// `data.errorKind` values a provider adapter attaches to a quota error.
 /// `rate_limit` and `billing_error` come from Claude. `rate_limited` and
-/// `quota_exhausted` come from the Codex adapter.
+/// `quota_exhausted` come from the Codex adapter; the host also stamps
+/// `quota_exhausted` on an Antigravity "Usage Limit Reached" turn.
 const QUOTA_ERROR_KINDS: [&str; 4] = [
     "rate_limit",
     "billing_error",

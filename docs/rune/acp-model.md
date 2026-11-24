@@ -202,7 +202,10 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
 7. Agent roster, auth and browser. Split in two:
    - 7a (R6a-2). `agent_spawned` (the spawn response's fields win, an early
      browser-open is promoted), `agent_error` (the turn ends, the provider
-     failure text, the rejected rate limit, an auth-required agent marked),
+     failure text, the rejected rate limit, an auth-required agent marked;
+     since #2032 an Antigravity plan limit counts only for a chat whose
+     config, by reuse key or index row, is Antigravity's, and carries its
+     reset time),
      `agent_crashed` (the chats die, launch markers and warm slots go,
      running subagents end), `agent_disconnected` (a kill, reap or close
      drops the agent and its reuse keys; a crash keeps `error`), the

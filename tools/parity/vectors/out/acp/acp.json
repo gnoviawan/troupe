@@ -46508,6 +46508,2000 @@
  },
  {
   "store": "acp",
+  "name": "agent_error_at_an_antigravity_limit_counts_only_for_an_antigravity_chat",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s9": {
+     "id": "s9",
+     "agentId": "agent-2",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "work"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 2
+     }
+    ],
+    "s2": [],
+    "s9": [
+     {
+      "id": "a9",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "other"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 3
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "d1",
+      "title": "Task",
+      "status": "pending",
+      "seq": 3,
+      "timestamp": 3,
+      "subagent": {
+       "id": "sub-d1",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "d1",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": false,
+       "caps": {
+        "stop": "session-cancel",
+        "transcript": "live",
+        "liveProgress": true,
+        "usage": true
+       },
+       "activity": "running"
+      }
+     }
+    ],
+    "s2": [],
+    "s9": [
+     {
+      "toolCallId": "d9",
+      "title": "Task",
+      "status": "pending",
+      "seq": 4,
+      "timestamp": 4,
+      "subagent": {
+       "id": "sub-d9",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "d9",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": false,
+       "caps": {
+        "stop": "session-cancel",
+        "transcript": "live",
+        "liveProgress": true,
+        "usage": true
+       },
+       "activity": "running"
+      }
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1"
+    },
+    {
+     "id": "s2"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p9": {
+     "requestId": "p9",
+     "agentId": "agent-2",
+     "sessionId": "s9",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {
+    "e1": {
+     "requestId": "e1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "mode": "form",
+     "message": "m",
+     "fields": []
+    }
+   },
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected",
+    "agent-2": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "acp-registry:antigravity-acp\u0000/work\u0000p1": "agent-1",
+    "cfg-2\u0000/work\u0000p1": "agent-2"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s2",
+    "prep-9": "s9"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {
+    "agent-1": "https://login.example/a"
+   },
+   "launchingSessionIds": {
+    "s1": true,
+    "s9": true
+   },
+   "discoveredSessions": {
+    "agent-1\u0000/work": [],
+    "agent-2\u0000/work": []
+   },
+   "book": {
+    "seq": 20900,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onAgentError",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "message": "weekly cap",
+       "data": {
+        "errorKind": "rate_limited"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "weekly cap",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "errorKind": "rate_limited"
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s9": {
+       "id": "s9",
+       "agentId": "agent-2",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "work"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "id": "a9",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "d1",
+        "title": "Task",
+        "status": "pending",
+        "seq": 3,
+        "timestamp": 3,
+        "subagent": {
+         "id": "sub-d1",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d1",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "toolCallId": "d9",
+        "title": "Task",
+        "status": "pending",
+        "seq": 4,
+        "timestamp": 4,
+        "subagent": {
+         "id": "sub-d9",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d9",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p9": {
+       "requestId": "p9",
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {
+      "e1": {
+       "requestId": "e1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "mode": "form",
+       "message": "m",
+       "fields": []
+      }
+     },
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "acp-registry:antigravity-acp\u0000/work\u0000p1": "agent-1",
+      "cfg-2\u0000/work\u0000p1": "agent-2"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s2",
+      "prep-9": "s9"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/a"
+     },
+     "launchingSessionIds": {
+      "s1": true,
+      "s9": true
+     },
+     "discoveredSessions": {
+      "agent-1\u0000/work": [],
+      "agent-2\u0000/work": []
+     },
+     "book": {
+      "seq": 20900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentError",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "message": "boom",
+       "data": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": -5
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "boom",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": -5
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s9": {
+       "id": "s9",
+       "agentId": "agent-2",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "work"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "id": "a9",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "d1",
+        "title": "Task",
+        "status": "pending",
+        "seq": 3,
+        "timestamp": 3,
+        "subagent": {
+         "id": "sub-d1",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d1",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "toolCallId": "d9",
+        "title": "Task",
+        "status": "pending",
+        "seq": 4,
+        "timestamp": 4,
+        "subagent": {
+         "id": "sub-d9",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d9",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {
+      "s1": {
+       "used": 0,
+       "size": 0,
+       "baselineUsed": 0,
+       "source": "reported",
+       "rateLimit": {
+        "status": "rejected",
+        "resetsAt": null,
+        "kind": null,
+        "percent": null,
+        "overageInUse": false
+       },
+       "updatedAt": 1700000002000
+      }
+     },
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p9": {
+       "requestId": "p9",
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {
+      "e1": {
+       "requestId": "e1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "mode": "form",
+       "message": "m",
+       "fields": []
+      }
+     },
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "acp-registry:antigravity-acp\u0000/work\u0000p1": "agent-1",
+      "cfg-2\u0000/work\u0000p1": "agent-2"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s2",
+      "prep-9": "s9"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/a"
+     },
+     "launchingSessionIds": {
+      "s1": true,
+      "s9": true
+     },
+     "discoveredSessions": {
+      "agent-1\u0000/work": [],
+      "agent-2\u0000/work": []
+     },
+     "book": {
+      "seq": 20900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentError",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "message": "You hit your 5-hour limit",
+       "data": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123456
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "You hit your 5-hour limit",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123456
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s9": {
+       "id": "s9",
+       "agentId": "agent-2",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "work"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "id": "a9",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "d1",
+        "title": "Task",
+        "status": "pending",
+        "seq": 3,
+        "timestamp": 3,
+        "subagent": {
+         "id": "sub-d1",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d1",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "toolCallId": "d9",
+        "title": "Task",
+        "status": "pending",
+        "seq": 4,
+        "timestamp": 4,
+        "subagent": {
+         "id": "sub-d9",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d9",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {
+      "s1": {
+       "used": 0,
+       "size": 0,
+       "baselineUsed": 0,
+       "source": "reported",
+       "rateLimit": {
+        "status": "rejected",
+        "resetsAt": 1700000123,
+        "kind": "five_hour",
+        "percent": null,
+        "overageInUse": false
+       },
+       "updatedAt": 1700000003000
+      }
+     },
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p9": {
+       "requestId": "p9",
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {
+      "e1": {
+       "requestId": "e1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "mode": "form",
+       "message": "m",
+       "fields": []
+      }
+     },
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "acp-registry:antigravity-acp\u0000/work\u0000p1": "agent-1",
+      "cfg-2\u0000/work\u0000p1": "agent-2"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s2",
+      "prep-9": "s9"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/a"
+     },
+     "launchingSessionIds": {
+      "s1": true,
+      "s9": true
+     },
+     "discoveredSessions": {
+      "agent-1\u0000/work": [],
+      "agent-2\u0000/work": []
+     },
+     "book": {
+      "seq": 20900,
+      "historyWatermarks": {}
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "_onAgentError",
+     "args": [
+      {
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "message": "boom",
+       "data": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123456
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "You hit your 5-hour limit",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123456
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s9": {
+       "id": "s9",
+       "agentId": "agent-2",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "boom",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123456
+       }
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "work"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "id": "a9",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "d1",
+        "title": "Task",
+        "status": "pending",
+        "seq": 3,
+        "timestamp": 3,
+        "subagent": {
+         "id": "sub-d1",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d1",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "toolCallId": "d9",
+        "title": "Task",
+        "status": "pending",
+        "seq": 4,
+        "timestamp": 4,
+        "subagent": {
+         "id": "sub-d9",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d9",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {
+      "s1": {
+       "used": 0,
+       "size": 0,
+       "baselineUsed": 0,
+       "source": "reported",
+       "rateLimit": {
+        "status": "rejected",
+        "resetsAt": 1700000123,
+        "kind": "five_hour",
+        "percent": null,
+        "overageInUse": false
+       },
+       "updatedAt": 1700000003000
+      }
+     },
+     "sessionIndex": [
+      {
+       "id": "s1"
+      },
+      {
+       "id": "s2"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p9": {
+       "requestId": "p9",
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {
+      "e1": {
+       "requestId": "e1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "mode": "form",
+       "message": "m",
+       "fields": []
+      }
+     },
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "acp-registry:antigravity-acp\u0000/work\u0000p1": "agent-1",
+      "cfg-2\u0000/work\u0000p1": "agent-2"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s2",
+      "prep-9": "s9"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/a"
+     },
+     "launchingSessionIds": {
+      "s1": true,
+      "s9": true
+     },
+     "discoveredSessions": {
+      "agent-1\u0000/work": [],
+      "agent-2\u0000/work": []
+     },
+     "book": {
+      "seq": 20900,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "agent_error_reads_an_antigravity_chat_from_the_index",
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s2": {
+     "id": "s2",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s3": {
+     "id": "s3",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "closed",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    },
+    "s9": {
+     "id": "s9",
+     "agentId": "agent-2",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": true,
+     "openTurnId": "turn:t1",
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "u1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 1
+     },
+     {
+      "id": "a1",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "work"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 2
+     }
+    ],
+    "s2": [],
+    "s9": [
+     {
+      "id": "a9",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "other"
+       }
+      ],
+      "streaming": true,
+      "timestamp": 1,
+      "seq": 3
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "d1",
+      "title": "Task",
+      "status": "pending",
+      "seq": 3,
+      "timestamp": 3,
+      "subagent": {
+       "id": "sub-d1",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "d1",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": false,
+       "caps": {
+        "stop": "session-cancel",
+        "transcript": "live",
+        "liveProgress": true,
+        "usage": true
+       },
+       "activity": "running"
+      }
+     }
+    ],
+    "s2": [],
+    "s9": [
+     {
+      "toolCallId": "d9",
+      "title": "Task",
+      "status": "pending",
+      "seq": 4,
+      "timestamp": 4,
+      "subagent": {
+       "id": "sub-d9",
+       "rootSessionId": "s1",
+       "dispatchToolCallId": "d9",
+       "source": "claude-meta",
+       "title": "Explore",
+       "background": false,
+       "caps": {
+        "stop": "session-cancel",
+        "transcript": "live",
+        "liveProgress": true,
+        "usage": true
+       },
+       "activity": "running"
+      }
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "agentConfigId": "acp-registry:antigravity-acp"
+    }
+   ],
+   "pendingPermissions": {
+    "p1": {
+     "requestId": "p1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "options": [],
+     "toolCall": null
+    },
+    "p9": {
+     "requestId": "p9",
+     "agentId": "agent-2",
+     "sessionId": "s9",
+     "options": [],
+     "toolCall": null
+    }
+   },
+   "pendingQuestions": {
+    "q1": {
+     "questionId": "q1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "question": "q",
+     "options": []
+    }
+   },
+   "pendingElicitations": {
+    "e1": {
+     "requestId": "e1",
+     "agentId": "agent-1",
+     "sessionId": "s1",
+     "mode": "form",
+     "message": "m",
+     "fields": []
+    }
+   },
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected",
+    "agent-2": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {},
+   "activeSessionId": null,
+   "preparedSessions": {
+    "prep-1": "s2",
+    "prep-9": "s9"
+   },
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {},
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {
+    "agent-1": {
+     "kind": "browser",
+     "url": "https://login.example/a"
+    }
+   },
+   "autoOpenBrowserUrl": {
+    "agent-1": "https://login.example/a"
+   },
+   "launchingSessionIds": {
+    "s1": true,
+    "s9": true
+   },
+   "discoveredSessions": {
+    "agent-1\u0000/work": [],
+    "agent-2\u0000/work": []
+   },
+   "book": {
+    "seq": 21000,
+    "historyWatermarks": {}
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "_onAgentError",
+     "args": [
+      {
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "message": "boom",
+       "data": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123999.5
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": "boom",
+       "createdAt": 1,
+       "lastErrorCode": null,
+       "lastErrorData": {
+        "agent": "antigravity",
+        "errorKind": "quota_exhausted",
+        "resetsAt": 1700000123999.5
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s3": {
+       "id": "s3",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      },
+      "s9": {
+       "id": "s9",
+       "agentId": "agent-2",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "openTurnId": "turn:t1",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "u1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "a1",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "work"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "id": "a9",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "other"
+         }
+        ],
+        "streaming": true,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "d1",
+        "title": "Task",
+        "status": "pending",
+        "seq": 3,
+        "timestamp": 3,
+        "subagent": {
+         "id": "sub-d1",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d1",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ],
+      "s2": [],
+      "s9": [
+       {
+        "toolCallId": "d9",
+        "title": "Task",
+        "status": "pending",
+        "seq": 4,
+        "timestamp": 4,
+        "subagent": {
+         "id": "sub-d9",
+         "rootSessionId": "s1",
+         "dispatchToolCallId": "d9",
+         "source": "claude-meta",
+         "title": "Explore",
+         "background": false,
+         "caps": {
+          "stop": "session-cancel",
+          "transcript": "live",
+          "liveProgress": true,
+          "usage": true
+         },
+         "activity": "running"
+        }
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {
+      "s1": {
+       "used": 0,
+       "size": 0,
+       "baselineUsed": 0,
+       "source": "reported",
+       "rateLimit": {
+        "status": "rejected",
+        "resetsAt": 1700000123,
+        "kind": null,
+        "percent": null,
+        "overageInUse": false
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "agentConfigId": "acp-registry:antigravity-acp"
+      }
+     ],
+     "pendingPermissions": {
+      "p1": {
+       "requestId": "p1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "options": [],
+       "toolCall": null
+      },
+      "p9": {
+       "requestId": "p9",
+       "agentId": "agent-2",
+       "sessionId": "s9",
+       "options": [],
+       "toolCall": null
+      }
+     },
+     "pendingQuestions": {
+      "q1": {
+       "questionId": "q1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "question": "q",
+       "options": []
+      }
+     },
+     "pendingElicitations": {
+      "e1": {
+       "requestId": "e1",
+       "agentId": "agent-1",
+       "sessionId": "s1",
+       "mode": "form",
+       "message": "m",
+       "fields": []
+      }
+     },
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-2": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {},
+     "activeSessionId": null,
+     "preparedSessions": {
+      "prep-1": "s2",
+      "prep-9": "s9"
+     },
+     "agentSwitches": {},
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {},
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {
+      "agent-1": {
+       "kind": "browser",
+       "url": "https://login.example/a"
+      }
+     },
+     "autoOpenBrowserUrl": {
+      "agent-1": "https://login.example/a"
+     },
+     "launchingSessionIds": {
+      "s1": true,
+      "s9": true
+     },
+     "discoveredSessions": {
+      "agent-1\u0000/work": [],
+      "agent-2\u0000/work": []
+     },
+     "book": {
+      "seq": 21000,
+      "historyWatermarks": {}
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
   "name": "agent_error_without_a_session_marks_every_live_one",
   "initial": {
    "sessions": {
@@ -46760,7 +48754,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 20900,
+    "seq": 21100,
     "historyWatermarks": {}
    }
   },
@@ -47033,7 +49027,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 20900,
+      "seq": 21100,
       "historyWatermarks": {}
      }
     }
@@ -47294,7 +49288,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21000,
+    "seq": 21200,
     "historyWatermarks": {}
    }
   },
@@ -47578,7 +49572,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21000,
+      "seq": 21200,
       "historyWatermarks": {}
      }
     }
@@ -47839,7 +49833,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21100,
+    "seq": 21300,
     "historyWatermarks": {}
    }
   },
@@ -48127,7 +50121,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21100,
+      "seq": 21300,
       "historyWatermarks": {}
      }
     }
@@ -48388,7 +50382,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21200,
+    "seq": 21400,
     "historyWatermarks": {}
    }
   },
@@ -48668,7 +50662,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21200,
+      "seq": 21400,
       "historyWatermarks": {}
      }
     }
@@ -48929,7 +50923,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21300,
+    "seq": 21500,
     "historyWatermarks": {}
    }
   },
@@ -49176,7 +51170,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21300,
+      "seq": 21500,
       "historyWatermarks": {}
      }
     }
@@ -49408,7 +51402,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21300,
+      "seq": 21500,
       "historyWatermarks": {}
      }
     }
@@ -49669,7 +51663,7 @@
     "agent-2\u0000/work": []
    },
    "book": {
-    "seq": 21400,
+    "seq": 21600,
     "historyWatermarks": {}
    }
   },
@@ -49952,7 +51946,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21400,
+      "seq": 21600,
       "historyWatermarks": {}
      }
     }
@@ -50200,7 +52194,7 @@
       "agent-2\u0000/work": []
      },
      "book": {
-      "seq": 21400,
+      "seq": 21600,
       "historyWatermarks": {}
      }
     }
@@ -50278,7 +52272,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21500,
+    "seq": 21700,
     "historyWatermarks": {}
    }
   },
@@ -50362,7 +52356,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21500,
+      "seq": 21700,
       "historyWatermarks": {}
      }
     }
@@ -50501,7 +52495,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21600,
+    "seq": 21800,
     "historyWatermarks": {}
    }
   },
@@ -50783,7 +52777,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21600,
+      "seq": 21800,
       "historyWatermarks": {}
      }
     }
@@ -50912,7 +52906,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21700,
+    "seq": 21900,
     "historyWatermarks": {}
    }
   },
@@ -51174,7 +53168,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21700,
+      "seq": 21900,
       "historyWatermarks": {}
      }
     }
@@ -51212,7 +53206,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21800,
+    "seq": 22000,
     "historyWatermarks": {}
    }
   },
@@ -51260,7 +53254,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21800,
+      "seq": 22000,
       "historyWatermarks": {}
      }
     }
@@ -51308,7 +53302,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21800,
+      "seq": 22000,
       "historyWatermarks": {}
      }
     }
@@ -51357,7 +53351,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21800,
+      "seq": 22000,
       "historyWatermarks": {}
      }
     }
@@ -51496,7 +53490,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 21900,
+    "seq": 22100,
     "historyWatermarks": {}
    }
   },
@@ -51781,7 +53775,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21900,
+      "seq": 22100,
       "historyWatermarks": {}
      }
     }
@@ -52059,7 +54053,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 21900,
+      "seq": 22100,
       "historyWatermarks": {}
      }
     }
@@ -52164,7 +54158,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22000,
+    "seq": 22200,
     "historyWatermarks": {}
    }
   },
@@ -52362,7 +54356,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22000,
+      "seq": 22200,
       "historyWatermarks": {}
      }
     }
@@ -52499,7 +54493,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22100,
+    "seq": 22300,
     "historyWatermarks": {}
    }
   },
@@ -52648,7 +54642,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22100,
+      "seq": 22300,
       "historyWatermarks": {}
      }
     }
@@ -52787,7 +54781,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22200,
+    "seq": 22400,
     "historyWatermarks": {}
    }
   },
@@ -53038,7 +55032,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22200,
+      "seq": 22400,
       "historyWatermarks": {}
      }
     }
@@ -53278,7 +55272,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22200,
+      "seq": 22400,
       "historyWatermarks": {}
      }
     }
@@ -53533,7 +55527,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22300,
+    "seq": 22500,
     "historyWatermarks": {}
    }
   },
@@ -53799,7 +55793,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22300,
+      "seq": 22500,
       "historyWatermarks": {}
      }
     }
@@ -54059,7 +56053,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22300,
+      "seq": 22500,
       "historyWatermarks": {}
      }
     }
@@ -54255,7 +56249,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22400,
+    "seq": 22600,
     "historyWatermarks": {}
    }
   },
@@ -54502,7 +56496,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22400,
+      "seq": 22600,
       "historyWatermarks": {}
      }
     }
@@ -54624,7 +56618,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22500,
+    "seq": 22700,
     "historyWatermarks": {}
    }
   },
@@ -54836,7 +56830,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22500,
+      "seq": 22700,
       "historyWatermarks": {}
      }
     }
@@ -54948,7 +56942,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22600,
+    "seq": 22800,
     "historyWatermarks": {}
    }
   },
@@ -55145,7 +57139,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22600,
+      "seq": 22800,
       "historyWatermarks": {}
      }
     }
@@ -55282,7 +57276,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22700,
+    "seq": 22900,
     "historyWatermarks": {}
    }
   },
@@ -55433,7 +57427,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22700,
+      "seq": 22900,
       "historyWatermarks": {}
      }
     }
@@ -55489,7 +57483,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22800,
+    "seq": 23000,
     "historyWatermarks": {}
    }
   },
@@ -55592,7 +57586,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22800,
+      "seq": 23000,
       "historyWatermarks": {}
      }
     }
@@ -55686,7 +57680,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22800,
+      "seq": 23000,
       "historyWatermarks": {}
      }
     }
@@ -55778,7 +57772,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 22900,
+    "seq": 23100,
     "historyWatermarks": {}
    }
   },
@@ -55919,7 +57913,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 22900,
+      "seq": 23100,
       "historyWatermarks": {}
      }
     }
@@ -56009,7 +58003,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23000,
+    "seq": 23200,
     "historyWatermarks": {}
    }
   },
@@ -56135,7 +58129,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23000,
+      "seq": 23200,
       "historyWatermarks": {}
      }
     }
@@ -56222,7 +58216,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23100,
+    "seq": 23300,
     "historyWatermarks": {}
    }
   },
@@ -56315,7 +58309,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23100,
+      "seq": 23300,
       "historyWatermarks": {}
      }
     }
@@ -56364,7 +58358,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23200,
+    "seq": 23400,
     "historyWatermarks": {}
    }
   },
@@ -56508,7 +58502,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23200,
+      "seq": 23400,
       "historyWatermarks": {}
      }
     }
@@ -56571,7 +58565,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23300,
+    "seq": 23500,
     "historyWatermarks": {}
    }
   },
@@ -56658,7 +58652,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23300,
+      "seq": 23500,
       "historyWatermarks": {}
      }
     }
@@ -56800,7 +58794,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23400,
+    "seq": 23600,
     "historyWatermarks": {}
    }
   },
@@ -57090,7 +59084,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23400,
+      "seq": 23600,
       "historyWatermarks": {}
      }
     }
@@ -57228,7 +59222,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23500,
+    "seq": 23700,
     "historyWatermarks": {}
    }
   },
@@ -57466,7 +59460,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23500,
+      "seq": 23700,
       "historyWatermarks": {}
      }
     }
@@ -57606,7 +59600,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23600,
+    "seq": 23800,
     "historyWatermarks": {}
    }
   },
@@ -57744,7 +59738,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23600,
+      "seq": 23800,
       "historyWatermarks": {}
      }
     }
@@ -57871,7 +59865,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23700,
+    "seq": 23900,
     "historyWatermarks": {}
    }
   },
@@ -58168,7 +60162,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23700,
+      "seq": 23900,
       "historyWatermarks": {}
      }
     }
@@ -58405,7 +60399,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23700,
+      "seq": 23900,
       "historyWatermarks": {}
      }
     }
@@ -58532,7 +60526,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23800,
+    "seq": 24000,
     "historyWatermarks": {}
    }
   },
@@ -58787,7 +60781,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23800,
+      "seq": 24000,
       "historyWatermarks": {}
      }
     }
@@ -58910,7 +60904,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 23900,
+    "seq": 24100,
     "historyWatermarks": {}
    }
   },
@@ -59244,7 +61238,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 23900,
+      "seq": 24100,
       "historyWatermarks": {}
      }
     }
@@ -59357,7 +61351,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24000,
+    "seq": 24200,
     "historyWatermarks": {}
    }
   },
@@ -59555,7 +61549,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24000,
+      "seq": 24200,
       "historyWatermarks": {}
      }
     }
@@ -59668,7 +61662,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24100,
+    "seq": 24300,
     "historyWatermarks": {}
    }
   },
@@ -59885,7 +61879,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24100,
+      "seq": 24300,
       "historyWatermarks": {}
      }
     }
@@ -59923,7 +61917,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24200,
+    "seq": 24400,
     "historyWatermarks": {}
    }
   },
@@ -59971,7 +61965,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24200,
+      "seq": 24400,
       "historyWatermarks": {}
      }
     }
@@ -60105,7 +62099,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24300,
+    "seq": 24500,
     "historyWatermarks": {}
    }
   },
@@ -60252,7 +62246,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24300,
+      "seq": 24500,
       "historyWatermarks": {}
      }
     }
@@ -60388,7 +62382,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24400,
+    "seq": 24600,
     "historyWatermarks": {}
    }
   },
@@ -60691,7 +62685,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24400,
+      "seq": 24600,
       "historyWatermarks": {}
      }
     }
@@ -60818,7 +62812,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24500,
+    "seq": 24700,
     "historyWatermarks": {}
    }
   },
@@ -61055,7 +63049,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24500,
+      "seq": 24700,
       "historyWatermarks": {}
      }
     }
@@ -61197,7 +63191,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24600,
+    "seq": 24800,
     "historyWatermarks": {}
    }
   },
@@ -61597,7 +63591,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24600,
+      "seq": 24800,
       "historyWatermarks": {}
      }
     }
@@ -61733,7 +63727,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24700,
+    "seq": 24900,
     "historyWatermarks": {}
    }
   },
@@ -62019,7 +64013,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24700,
+      "seq": 24900,
       "historyWatermarks": {}
      }
     }
@@ -62155,7 +64149,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24800,
+    "seq": 25000,
     "historyWatermarks": {}
    }
   },
@@ -62485,7 +64479,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24800,
+      "seq": 25000,
       "historyWatermarks": {}
      }
     }
@@ -62809,7 +64803,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24800,
+      "seq": 25000,
       "historyWatermarks": {}
      }
     }
@@ -62922,7 +64916,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 24900,
+    "seq": 25100,
     "historyWatermarks": {}
    }
   },
@@ -63203,7 +65197,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 24900,
+      "seq": 25100,
       "historyWatermarks": {}
      }
     }
@@ -63350,7 +65344,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25000,
+    "seq": 25200,
     "historyWatermarks": {}
    }
   },
@@ -63781,7 +65775,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25000,
+      "seq": 25200,
       "historyWatermarks": {}
      }
     }
@@ -63883,7 +65877,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25100,
+    "seq": 25300,
     "historyWatermarks": {}
    }
   },
@@ -64057,7 +66051,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25100,
+      "seq": 25300,
       "historyWatermarks": {}
      }
     }
@@ -64204,7 +66198,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25200,
+    "seq": 25400,
     "historyWatermarks": {}
    }
   },
@@ -64503,7 +66497,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25200,
+      "seq": 25400,
       "historyWatermarks": {}
      }
     }
@@ -64627,7 +66621,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25300,
+    "seq": 25500,
     "historyWatermarks": {}
    }
   },
@@ -64918,7 +66912,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25300,
+      "seq": 25500,
       "historyWatermarks": {}
      }
     }
@@ -65060,7 +67054,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25400,
+    "seq": 25600,
     "historyWatermarks": {}
    }
   },
@@ -65342,7 +67336,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25400,
+      "seq": 25600,
       "historyWatermarks": {}
      }
     }
@@ -65474,7 +67468,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25500,
+    "seq": 25700,
     "historyWatermarks": {}
    }
   },
@@ -65760,7 +67754,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25500,
+      "seq": 25700,
       "historyWatermarks": {}
      }
     }
@@ -65815,7 +67809,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25600,
+    "seq": 25800,
     "historyWatermarks": {}
    }
   },
@@ -65892,7 +67886,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25600,
+      "seq": 25800,
       "historyWatermarks": {}
      }
     }
@@ -65966,7 +67960,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25700,
+    "seq": 25900,
     "historyWatermarks": {}
    }
   },
@@ -66051,7 +68045,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25700,
+      "seq": 25900,
       "historyWatermarks": {}
      }
     }
@@ -66096,7 +68090,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25800,
+    "seq": 26000,
     "historyWatermarks": {}
    }
   },
@@ -66161,7 +68155,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25800,
+      "seq": 26000,
       "historyWatermarks": {}
      }
     }
@@ -66265,7 +68259,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 25900,
+    "seq": 26100,
     "historyWatermarks": {}
    }
   },
@@ -66331,7 +68325,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 25900,
+      "seq": 26100,
       "historyWatermarks": {}
      }
     }
@@ -66424,7 +68418,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26000,
+    "seq": 26200,
     "historyWatermarks": {}
    }
   },
@@ -66523,7 +68517,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26000,
+      "seq": 26200,
       "historyWatermarks": {}
      }
     }
@@ -66614,7 +68608,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26100,
+    "seq": 26300,
     "historyWatermarks": {}
    }
   },
@@ -66717,7 +68711,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26100,
+      "seq": 26300,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -66826,7 +68820,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26100,
+      "seq": 26300,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -66929,7 +68923,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26100,
+      "seq": 26300,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -67021,7 +69015,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26200,
+    "seq": 26400,
     "historyWatermarks": {}
    }
   },
@@ -67118,7 +69112,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26200,
+      "seq": 26400,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -67224,7 +69218,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26200,
+      "seq": 26400,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -67313,7 +69307,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26300,
+    "seq": 26500,
     "historyWatermarks": {}
    }
   },
@@ -67409,7 +69403,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26300,
+      "seq": 26500,
       "historyWatermarks": {}
      }
     }
@@ -67505,7 +69499,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26300,
+      "seq": 26500,
       "historyWatermarks": {}
      }
     }
@@ -67603,7 +69597,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26400,
+    "seq": 26600,
     "historyWatermarks": {}
    }
   },
@@ -67715,7 +69709,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26400,
+      "seq": 26600,
       "historyWatermarks": {}
      }
     }
@@ -67808,7 +69802,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26500,
+    "seq": 26700,
     "historyWatermarks": {}
    }
   },
@@ -67906,7 +69900,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26500,
+      "seq": 26700,
       "historyWatermarks": {}
      }
     }
@@ -68008,7 +70002,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26500,
+      "seq": 26700,
       "historyWatermarks": {}
      }
     }
@@ -68108,7 +70102,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26500,
+      "seq": 26700,
       "historyWatermarks": {}
      }
     }
@@ -68208,7 +70202,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26500,
+      "seq": 26700,
       "historyWatermarks": {}
      }
     }
@@ -68306,7 +70300,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26500,
+      "seq": 26700,
       "historyWatermarks": {}
      }
     }
@@ -68399,7 +70393,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26600,
+    "seq": 26800,
     "historyWatermarks": {}
    }
   },
@@ -68496,7 +70490,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26600,
+      "seq": 26800,
       "historyWatermarks": {}
      }
     }
@@ -68596,7 +70590,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26600,
+      "seq": 26800,
       "historyWatermarks": {}
      }
     }
@@ -68693,7 +70687,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26600,
+      "seq": 26800,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -68785,7 +70779,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26700,
+    "seq": 26900,
     "historyWatermarks": {}
    }
   },
@@ -68888,7 +70882,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26700,
+      "seq": 26900,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -68962,7 +70956,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26700,
+      "seq": 26900,
       "historyWatermarks": {},
       "rememberedAuthMethods": {
        "cfg-1": "oauth"
@@ -69051,7 +71045,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26800,
+    "seq": 27000,
     "historyWatermarks": {}
    }
   },
@@ -69154,7 +71148,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26800,
+      "seq": 27000,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -69255,7 +71249,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26800,
+      "seq": 27000,
       "historyWatermarks": {},
       "rememberedAuthMethods": {
        "cfg-1": "oauth"
@@ -69373,7 +71367,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 26900,
+    "seq": 27100,
     "historyWatermarks": {}
    }
   },
@@ -69489,7 +71483,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26900,
+      "seq": 27100,
       "historyWatermarks": {}
      }
     }
@@ -69613,7 +71607,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26900,
+      "seq": 27100,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -69745,7 +71739,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 26900,
+      "seq": 27100,
       "historyWatermarks": {},
       "authenticatedAgents": [
        "agent-1"
@@ -69844,7 +71838,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 27000,
+    "seq": 27200,
     "historyWatermarks": {}
    }
   },
@@ -69955,7 +71949,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 27000,
+      "seq": 27200,
       "historyWatermarks": {}
      }
     }
@@ -70048,7 +72042,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 27100,
+    "seq": 27300,
     "historyWatermarks": {}
    }
   },
@@ -70152,7 +72146,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 27100,
+      "seq": 27300,
       "historyWatermarks": {}
      }
     }
@@ -70243,7 +72237,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 27200,
+    "seq": 27400,
     "historyWatermarks": {}
    }
   },
@@ -70339,7 +72333,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 27200,
+      "seq": 27400,
       "historyWatermarks": {}
      }
     }
@@ -70439,7 +72433,7 @@
    "launchingSessionIds": {},
    "discoveredSessions": {},
    "book": {
-    "seq": 27300,
+    "seq": 27500,
     "historyWatermarks": {}
    }
   },
@@ -70560,7 +72554,7 @@
      "launchingSessionIds": {},
      "discoveredSessions": {},
      "book": {
-      "seq": 27300,
+      "seq": 27500,
       "historyWatermarks": {}
      }
     }
