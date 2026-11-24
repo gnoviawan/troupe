@@ -605,7 +605,7 @@ impl State {
         self.run(effects);
     }
 
-    fn write(&mut self, key: &str, value: Value, pending: Pending) {
+    pub(crate) fn write(&mut self, key: &str, value: Value, pending: Pending) {
         let key = self.device_key(key);
         self.call(
             WsRequestType::StoreWrite,

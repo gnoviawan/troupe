@@ -316,3 +316,42 @@ fn the_chip_names_the_agent_of_the_chat_config_exactly() {
     s.composer.namespaces.insert("chat-1".into(), "config:claude-code".into());
     assert_eq!(s.agent_label(&host).as_deref(), Some("Claude Code"));
 }
+
+#[test]
+fn the_launcher_chip_switches_the_agent_and_remembers_it() {
+    let mut rt = crate::tests::runtime_at((1280.0, 800.0));
+    rt.update_if(|s, _| {
+        s.agents_loaded(Some(json!([
+            { "id": "cfg-a", "name": "Chat Scenario Agent" },
+            { "id": "cfg-b", "name": "Second Agent" }
+        ])));
+        true
+    });
+    rt.frame(0.05);
+    crate::tests::tap(&mut rt, "composer-launcher-p-a-agent");
+    assert!(
+        crate::tests::present(&rt, "composer-launcher-p-a-agent-menu-item1"),
+        "the chip opens the agent menu"
+    );
+    crate::tests::tap(&mut rt, "composer-launcher-p-a-agent-menu-item1");
+    let host = Host::Launcher("p-a".into());
+    assert_eq!(rt.state.agent_label(&host).as_deref(), Some("Second Agent"));
+    let saved: Vec<Value> = rt
+        .state
+        .sync
+        .sent
+        .iter()
+        .filter_map(|c| match c {
+            Command::Call {
+                kind: WsRequestType::StoreWrite,
+                payload,
+                ..
+            } if payload["key"].as_str().is_some_and(|k| k.ends_with("/agents/last-selected")) => {
+                Some(payload["value"]["data"].clone())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(saved, [json!({ "agentId": "cfg-b", "mode": "acp" })]);
+    assert!(!rt.state.draft(&host).is_some_and(|d| d.agent_open), "the menu closes");
+}

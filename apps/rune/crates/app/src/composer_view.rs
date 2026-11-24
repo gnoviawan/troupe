@@ -40,6 +40,8 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
             },
         placeholder: placeholder.to_owned(),
         agent: s.agent_label(host),
+        agents: s.agent_choices(host),
+        agent_open: draft.agent_open,
         foot: match host {
             Host::Chat(_) => "Current checkout · main".to_owned(),
             Host::Launcher(_) => "Current checkout".to_owned(),

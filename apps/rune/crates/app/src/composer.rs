@@ -47,6 +47,7 @@ pub struct Draft {
     dismissed: Option<usize>,
     pub add_open: bool,
     pub tools_open: bool,
+    pub agent_open: bool,
 }
 
 impl Default for Draft {
@@ -59,6 +60,7 @@ impl Default for Draft {
             dismissed: None,
             add_open: false,
             tools_open: false,
+            agent_open: false,
         }
     }
 }
@@ -123,6 +125,11 @@ impl State {
 
     /// The agent a composer's chip names.
     pub fn agent_label(&self, host: &Host) -> Option<String> {
+        self.shown_agent(host).map(|a| a.name.clone())
+    }
+
+    /// The chat's own agent, else the launcher's pick, else the first config.
+    fn shown_agent(&self, host: &Host) -> Option<&AgentConfig> {
         let agents = &self.composer.agents;
         let by_id = |id: &str| agents.iter().find(|a| a.id == id);
         let found = match host {
@@ -136,7 +143,6 @@ impl State {
         found
             .or_else(|| self.composer.picked.as_deref().and_then(by_id))
             .or_else(|| agents.first())
-            .map(|a| a.name.clone())
     }
 
     /// The trigger at the draft's caret, unless Escape closed it there.
@@ -460,6 +466,7 @@ impl State {
             let host = host.clone();
             Rc::new(move |s: &mut State, tx: &mut Tx| f(s, &host, tx)) as Rc<dyn Fn(&mut State, &mut Tx)>
         };
+        let (agent_host, pick_agent_host) = (host.clone(), host.clone());
         let (edit_host, key_host, paste_host, pick_host, hover_host, menu_host, add_host, rm_host) = (
             host.clone(),
             host.clone(),
@@ -493,7 +500,12 @@ impl State {
                 draft.tools_open &= open;
             }),
             add: Rc::new(move |s: &mut State, what: &str, tx: &mut Tx| s.composer_add(&add_host, what, tx)),
-            agent: h(|s, _, _| s.toast_later("Switching agents from the composer")),
+            agent: Rc::new(move |s: &mut State, open: bool| match &agent_host {
+                Host::Chat(_) if open => s.toast_later("Switching agents in a chat"),
+                Host::Chat(_) => {}
+                Host::Launcher(_) => s.draft_mut(&agent_host).agent_open = open,
+            }),
+            pick_agent: Rc::new(move |s: &mut State, id: &str, tx: &mut Tx| s.composer_pick_agent(&pick_agent_host, id, tx)),
             remove_attachment: Rc::new(move |s: &mut State, n: usize| {
                 let draft = s.draft_mut(&rm_host);
                 if n < draft.attachments.len() {
@@ -501,6 +513,36 @@ impl State {
                 }
             }),
         }
+    }
+
+    /// The launcher's agent menu: `rememberLastSelectedAgent`, then back to the field.
+    pub fn composer_pick_agent(&mut self, host: &Host, id: &str, tx: &mut Tx) {
+        self.draft_mut(host).agent_open = false;
+        if !self.composer.agents.iter().any(|a| a.id == id) {
+            return;
+        }
+        log::info!("[composer] launcher agent: {id}");
+        self.composer.picked = Some(id.to_owned());
+        let key = "agents/last-selected";
+        self.write(key, serde_json::json!({ "agentId": id, "mode": "acp" }), Pending::Write(key.to_owned()));
+        tx.focus(format!("{}-field", host.key()), false);
+    }
+
+    /// What the launcher's agent menu lists; a chat's chip has no menu.
+    pub fn agent_choices(&self, host: &Host) -> Vec<ui::composer::view::AgentChoice> {
+        if matches!(host, Host::Chat(_)) {
+            return Vec::new();
+        }
+        let shown = self.shown_agent(host).map(|a| a.id.as_str());
+        self.composer
+            .agents
+            .iter()
+            .map(|a| ui::composer::view::AgentChoice {
+                id: a.id.clone(),
+                name: a.name.clone(),
+                picked: shown == Some(a.id.as_str()),
+            })
+            .collect()
     }
 
     /// The agent configs (`acp/agents`) as read.
