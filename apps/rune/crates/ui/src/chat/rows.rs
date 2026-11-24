@@ -17,7 +17,7 @@ pub(super) fn build<S: 'static>(ctx: &Ctx<S>, s: &S, r: &Row, n: usize) -> El {
         RowKind::User(i) => messages.get(*i).map(|m| user(ctx, &message_text(m), last)),
         RowKind::Reply { index, tail } => messages.get(*index).map(|m| {
             let streaming = m.streaming && last;
-            reply(ctx, &m.id, &message_text(m), streaming, *tail && !m.streaming)
+            reply(ctx, &m.id, &message_text(m), streaming, *tail && !m.streaming, last)
         }),
         RowKind::Activity(a) => Some(activity(ctx, s, &r.key, a)),
     };
@@ -76,12 +76,13 @@ fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
         .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, words.to_owned(), true, last)))
 }
 
-/// A visible reply: its prose in a ghost bubble, then the turn's actions on its tail.
-fn reply<S: 'static>(ctx: &Ctx<S>, id: &str, words: &str, streaming: bool, tail: bool) -> El {
+/// A visible reply: its prose in a ghost bubble, then the turn's actions on its tail, shown
+/// at rest only on the last row.
+fn reply<S: 'static>(ctx: &Ctx<S>, id: &str, words: &str, streaming: bool, tail: bool, pinned: bool) -> El {
     let prose = markdown::prose(ctx.t, &format!("md-{id}"), words, streaming, &ctx.hooks);
     let mut content = col().w_full().min_w(0.0).gap(4.0).child(prose);
     if tail {
-        content = content.child(actions(ctx, words.to_owned(), false, true));
+        content = content.child(actions(ctx, words.to_owned(), false, pinned));
     }
     col().w_full().py(8.0).hover_group().child(content)
 }
