@@ -81,6 +81,16 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .cloned()
         .unwrap_or_default()
         .into();
+    let mut set_replies: VecDeque<Value> = context
+        .get("setReplies")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .into();
+    let factory_key = context
+        .get("factoryKey")
+        .cloned()
+        .unwrap_or(Value::Bool(false));
     let mut outcomes: VecDeque<Value> = context
         .get("dispatch")
         .and_then(Value::as_array)
@@ -141,6 +151,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::SetModel { .. }
                         | Effect::SetConfigOption { .. }
                         | Effect::ReadComposerOptions { .. }
+                        | Effect::ReadFactoryKeyStatus { .. }
                         | Effect::SpawnAgent { .. }
                         | Effect::KillAgent { .. }
                         | Effect::Authenticate { .. }
@@ -182,8 +193,21 @@ fn replay(vector: &Value) -> Result<usize, String> {
                             ),
                         }
                     }
+                    // `setReplies`: `{ reject }` fails the set, else it is acknowledged.
                     Effect::SetMode { .. } | Effect::SetModel { .. } => {
-                        Event::ControlSet(command, None)
+                        let reply = set_replies.pop_front().unwrap_or(Value::Null);
+                        match reply.get("reject") {
+                            Some(reason) => Event::ControlFailed(command, js_string(Some(reason))),
+                            None => Event::ControlSet(command, None),
+                        }
+                    }
+                    // `factoryKey`: the stored-key answer, `{ reject }` when unread.
+                    Effect::ReadFactoryKeyStatus { .. } => {
+                        let stored = match factory_key.get("reject") {
+                            Some(_) => None,
+                            None => Some(model::acp::js::truthy(&factory_key)),
+                        };
+                        Event::FactoryKeyStatus(command, stored)
                     }
                     // A payload read answers `context.payloads` the way an
                     // agent command answers its reply.
@@ -294,7 +318,11 @@ fn replay(vector: &Value) -> Result<usize, String> {
             )));
         }
         for (what, want, got) in [
-            ("effects", &recorded["effects"], &to_value(&effects)),
+            (
+                "effects",
+                &writes_last(&recorded["effects"]),
+                &writes_last(&to_value(&effects)),
+            ),
             ("state", &recorded["state"], &to_value(&state)),
         ] {
             if let Some(problem) = diff(what, want, got) {
@@ -355,6 +383,19 @@ fn acp_vectors_are_not_older_than_their_sources() {
         "TypeScript changed after the acp vectors were recorded; rerun \
          `RECORD_VECTORS=1 bun run test tools/parity/vectors` and port the change: {stale:?}"
     );
+}
+
+/// The effects with the remembered-auth writes moved to the end, in their
+/// own order. The TypeScript saves them through a promise chain, so where a
+/// save lands among the other calls depends on how many microtasks the chain
+/// still has queued; the model does not count them.
+fn writes_last(effects: &Value) -> Value {
+    let (writes, rest): (Vec<&Value>, Vec<&Value>) = effects
+        .as_array()
+        .into_iter()
+        .flatten()
+        .partition(|effect| effect["kind"] == "persistAuthMethods");
+    Value::Array(rest.into_iter().chain(writes).cloned().collect())
 }
 
 /// A `{ hold }` reply keeps the command in flight: for the rest of the

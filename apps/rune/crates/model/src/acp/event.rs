@@ -113,6 +113,10 @@ pub enum Event {
     /// The agent rejected a set command; the text is the error's message.
     #[serde(skip_deserializing)]
     ControlFailed(Effect, String),
+    /// What an [`Effect::ReadFactoryKeyStatus`] read; `None` when the host
+    /// could not say.
+    #[serde(skip_deserializing)]
+    FactoryKeyStatus(Effect, Option<bool>),
     /// The saved picks an [`Effect::ReadComposerOptions`] read; null when
     /// none are saved.
     #[serde(skip_deserializing)]

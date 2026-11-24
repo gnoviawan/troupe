@@ -73,6 +73,18 @@ export const dispatchOutcomes: unknown[] = []
 /** What the mocked `setConfigOption` answers, in order; a vector's `context.configReplies`. */
 export const configReplies: unknown[] = []
 
+/**
+ * How the mocked `setMode` and `setModel` answer, in order, as the agent
+ * commands do; a vector's `context.setReplies`.
+ */
+export const setReplies: unknown[] = []
+
+/**
+ * What the mocked `factoryKeyApi.status` answers: whether the host stores a
+ * Factory key, or `{ reject }`; a vector's `context.factoryKey`.
+ */
+export const factoryKey: { stored: unknown } = { stored: false }
+
 /** What the mocked `readComposerOptions` answers; a vector's `context.composerOptions`. */
 export const composerRecord: { saved: unknown } = { saved: null }
 

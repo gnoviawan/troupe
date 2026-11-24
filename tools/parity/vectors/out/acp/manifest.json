@@ -47,7 +47,8 @@
         "src/renderer/lib/env-parser.ts": "e06c0d320abcaeb134605a97dd1b0a4126e3a29c",
         "src/renderer/lib/agents/agent-aliases.ts": "0a5430d9172f39f34622ca50ba2459661ee0fa7a",
         "src/shared/acp-agent-aliases.json": "06a6ef341f46af33e723b0da32c2a11ca938d77a",
-        "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c"
+        "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c",
+        "src/renderer/lib/agents/acp-registry.ts": "4824ebd1194ee3e0d32d116bab7803135220c28a"
       },
       "vectors": [
         "chunks_coalesce_into_one_message",
@@ -303,7 +304,21 @@
         "prewarm_detaches_an_agent_spawned_before_new_credentials",
         "prewarm_does_not_join_a_spawn_started_with_an_older_launch",
         "prewarm_kills_the_agent_when_its_config_went_meanwhile",
-        "prewarm_resolves_a_legacy_id_a_worktree_and_another_projects_agent"
+        "prewarm_resolves_a_legacy_id_a_worktree_and_another_projects_agent",
+        "set_mode_signs_in_with_the_only_method_and_sends_again",
+        "set_model_failing_again_after_the_sign_in_forgets_the_method",
+        "set_mode_with_several_methods_asks_for_a_new_chat_then_uses_the_remembered_one",
+        "set_mode_whose_remembered_method_is_refused_asks_for_a_new_chat",
+        "set_mode_forgets_a_remembered_method_the_agent_no_longer_lists",
+        "set_mode_forgets_a_remembered_method_that_needs_the_user",
+        "set_mode_without_a_usable_method_keeps_the_first_error",
+        "set_mode_with_only_a_terminal_method_keeps_the_first_error",
+        "set_mode_with_only_the_gateway_keeps_the_first_error",
+        "set_mode_on_a_host_signed_in_agent_keeps_the_first_error",
+        "set_mode_on_factory_droid_signs_in_with_the_stored_key",
+        "set_mode_on_factory_droid_without_a_key_leaves_the_sign_in_to_the_banner",
+        "set_mode_joins_the_sign_in_a_click_started",
+        "a_click_joining_a_sign_in_on_demand_fails_with_it"
       ]
     }
   }

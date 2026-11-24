@@ -262,6 +262,25 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      `prepareChat`, PR 8), `stoppingAgentIds` (read only by the warm-pool
      reap, PR 8), and the sign-in before a session call
      (`authenticateBeforeSession`, `withAuthRetry`, PR 8).
+   - 7c (R6a-5). The sign-in on demand (`acp/auth_retry.rs`):
+     `withAuthRetry` and `authenticateBeforeSession` around `setMode` and
+     `setModel`, the two session calls the model sends so far. A set
+     command that fails with the auth-required prefix, a signed-out
+     Account, or wording `classifySetupError` files under `auth`
+     (`is_auth_retriable`, checked against the TypeScript classifier's
+     answers in `auth_retry_tests.rs`) signs in and is sent once more
+     (`retried`, not serialized). The method: none when the agent is
+     already signed in or the host prepared its auth, the only usable one,
+     or the remembered one (a stale or non-agent memory is forgotten and
+     the user is sent to a new chat's picker). Factory Droid reads whether
+     the host stores its key (`readFactoryKeyStatus`, answered by
+     `factoryKeyStatus`) and otherwise leaves a several-method sign-in to
+     the banner. The authenticate shares the click's in-flight one of the
+     same agent and method, and a click joining it fails with its error.
+     A retry that fails again forgets the remembered method. Not here: the
+     other session calls (`session/new`, `list`, `load`, `resume`), which
+     their slices wrap when they are ported, and the forget tombstone the
+     shared config sync reads.
    - 7b, rest (R6a-4). The host's `agents` watch and the agent browser
      tabs (`acp/roster.rs`). The watch's full state (`agentsWatchState`)
      spawns the agents the model lacks, disconnects the connected ones the
@@ -463,6 +482,13 @@ its pinned sources match a path glob of both workflows.
   `renewAgentCredentials` calls the module function. The spawn bookkeeping
   (`inFlightWarms`, the definite rejections, the signatures) is reset per
   vector.
+- `context.setReplies` answers `setMode` and `setModel` in order, as the
+  agent commands do; `context.factoryKey` is the stored-key answer (`true`,
+  `false`, or `{ "reject": text }`).
+- The remembered-auth writes (`persistAuthMethods`) go through a promise
+  chain, so where one lands among a step's other effects depends on the
+  chain's queued microtasks. The replay compares them after the other
+  effects, in their own order.
 - `context.composerOptions` is the saved record every `readComposerOptions`
   answers (null by default). A `context.configReplies` entry
   `{ "reject": text }` fails that `setConfigOption` with `text`.

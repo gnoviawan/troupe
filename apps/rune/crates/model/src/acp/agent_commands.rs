@@ -12,6 +12,7 @@
 
 use serde_json::{Map, Value, json};
 
+use super::auth_retry::AuthFailure;
 use super::ensure::EnsureId;
 use super::types::SessionStatus;
 use super::{Effect, State};
@@ -161,6 +162,7 @@ impl State {
             method_id: method_id.to_owned(),
             input: input.filter(super::js::truthy),
             flight,
+            on_demand: None,
         });
     }
 
@@ -246,7 +248,10 @@ impl State {
                 method_id,
                 input,
                 flight,
+                ..
             } => {
+                // An on-demand method always runs by itself without input,
+                // so the click's rule remembers it too.
                 self.book.authenticated_agents.insert(agent_id.clone());
                 if let Some(config_id) = self.config_id_for_agent(&agent_id)
                     && input.is_none()
@@ -257,6 +262,7 @@ impl State {
                 }
                 self.clear_pending_sign_in(&agent_id);
                 self.settle_flight(&agent_id, &method_id, flight);
+                self.settle_auth_retries(flight, Ok(true), fx);
             }
             Effect::Logout { agent_id } => {
                 self.book.authenticated_agents.remove(&agent_id);
@@ -273,6 +279,7 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let mut waiters = 0;
+        let mut message = message;
         match command {
             Effect::SpawnAgent { config, ensure, .. } => {
                 let name = super::js::string_of(config.get("name"));
@@ -290,6 +297,22 @@ impl State {
                 agent_id,
                 method_id,
                 flight,
+                on_demand: Some(on_demand),
+                ..
+            } => {
+                let failure = self.on_demand_failed(&agent_id, &on_demand, message, fx);
+                message = failure.message().to_owned();
+                // Only the clicks that shared it reject; its owner is a retry.
+                let clicks = self.settle_flight(&agent_id, &method_id, flight);
+                for _ in 0..clicks {
+                    fx.push(Effect::rejected(&message));
+                }
+                return self.settle_auth_retries(flight, Err(failure), fx);
+            }
+            Effect::Authenticate {
+                agent_id,
+                method_id,
+                flight,
                 ..
             } => {
                 // No method id and no reason: an agent's auth failure may
@@ -299,6 +322,10 @@ impl State {
                     "Agent authenticate request failed".into(),
                 ));
                 waiters = self.settle_flight(&agent_id, &method_id, flight);
+                for _ in 0..=waiters {
+                    fx.push(Effect::rejected(&message));
+                }
+                return self.settle_auth_retries(flight, Err(AuthFailure::Other(message)), fx);
             }
             Effect::Logout { agent_id } => fx.push(Effect::warn(
                 "acp.logoutAgent",

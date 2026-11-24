@@ -11,6 +11,9 @@ mod agent_commands;
 mod agent_commands_tests;
 pub mod agents;
 pub mod approvals;
+mod auth_retry;
+#[cfg(test)]
+mod auth_retry_tests;
 mod clamp;
 mod close;
 pub mod controls;
@@ -281,6 +284,9 @@ pub struct Book {
     /// The spawns `ensureLiveAgent` runs and what it remembers about them.
     #[serde(skip)]
     pub(crate) ensure: ensure::EnsureBook,
+    /// Session calls waiting on an authenticate on demand.
+    #[serde(skip)]
+    pub(crate) auth_retry: auth_retry::AuthRetryBook,
     /// The shared MCP registry watch started; the store starts it once.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub mcp_shared_sync: bool,
@@ -409,16 +415,17 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.set_config_option(session_id, config_id, value, options, None, &mut fx);
         }
         Event::ControlSet(command, reply) => {
+            auth_retry::note_retry_succeeded(&command, &mut fx);
             let run = command.run();
             state.on_control_set(command, reply, env, &mut fx);
             if let Some(run) = run {
                 state.on_run_command(run, None, &mut fx);
             }
         }
-        Event::ControlFailed(command, message) => match command.run() {
-            Some(run) => state.on_run_command(run, Some(message), &mut fx),
-            None => fx.push(Effect::rejected(message)),
-        },
+        Event::ControlFailed(command, message) => {
+            state.on_control_failed(command, message, &mut fx)
+        }
+        Event::FactoryKeyStatus(read, stored) => state.on_factory_key_status(read, stored, &mut fx),
         Event::ComposerOptionsRead(read, saved) => {
             if let Effect::ReadComposerOptions { run, .. } = read {
                 state.on_composer_options_read(run, saved, &mut fx);

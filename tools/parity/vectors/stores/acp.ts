@@ -31,13 +31,15 @@ import {
   configReplies,
   dispatchOutcomes,
   emit,
+  factoryKey,
   heldReplies,
   mcpReplies,
   mcpSharedSync,
   openChatTabs,
   platform,
   type StoreRecorder,
-  sessionPayloads
+  sessionPayloads,
+  setReplies
 } from '../record'
 
 /**
@@ -195,7 +197,8 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/env-parser.ts',
     'src/renderer/lib/agents/agent-aliases.ts',
     'src/shared/acp-agent-aliases.json',
-    'src/renderer/lib/acp-transport/tauri-verdicts.ts'
+    'src/renderer/lib/acp-transport/tauri-verdicts.ts',
+    'src/renderer/lib/agents/acp-registry.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -235,6 +238,8 @@ export const acpRecorder: StoreRecorder = {
     agentReplies.splice(0, agentReplies.length, ...((context.agentReplies as unknown[]) ?? []))
     mcpReplies.splice(0, mcpReplies.length, ...((context.mcpReplies as unknown[]) ?? []))
     heldReplies.length = 0
+    setReplies.splice(0, setReplies.length, ...((context.setReplies as unknown[]) ?? []))
+    factoryKey.stored = context.factoryKey ?? false
     _resetAcpAuthForTesting()
     _resetComposerSessionsForTesting()
     platform.desktop = context.desktop === true
@@ -313,6 +318,7 @@ function peekSeq(): number {
 import { transcriptScenarios } from './acp-scenarios'
 import { agentCommandScenarios } from './acp-scenarios-agent-commands'
 import { agentScenarios } from './acp-scenarios-agents'
+import { authRetryScenarios } from './acp-scenarios-auth-retry'
 import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
 import { ensureScenarios } from './acp-scenarios-ensure'
@@ -345,5 +351,6 @@ export const acpScenarios = [
   ...mcpScenarios,
   ...launchScenarios,
   ...closeScenarios,
-  ...ensureScenarios
+  ...ensureScenarios,
+  ...authRetryScenarios
 ]

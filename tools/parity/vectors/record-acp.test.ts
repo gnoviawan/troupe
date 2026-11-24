@@ -8,6 +8,7 @@ import {
   dispatchOutcomes,
   drawId,
   emit,
+  factoryKey,
   heldReplies,
   type Manifest,
   manifestEntry,
@@ -18,6 +19,7 @@ import {
   platform,
   recordVector,
   sessionPayloads,
+  setReplies,
   sourcesOutsideWorkflow,
   storeText,
   type Vector,
@@ -283,6 +285,16 @@ function mcpCommand(
   }
   return Promise.resolve(reply as never)
 }
+// The stored Factory key check is the model's `readFactoryKeyStatus` effect.
+vi.mock(`${renderer}/lib/factory-key-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  factoryKeyApi: {
+    status: () => {
+      emit({ kind: 'readFactoryKeyStatus' })
+      return answer(factoryKey.stored)
+    }
+  }
+}))
 vi.mock(`${renderer}/lib/acp-auth-method-memory`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   saveAuthMethodMemory: async (methods: unknown) => emit({ kind: 'persistAuthMethods', methods })
@@ -328,10 +340,14 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
         agentCommand({ kind: 'respondElicitation', agentId, requestId, action }),
       cancelPrompt: async (agentId: string, sessionId: string) =>
         emit({ kind: 'cancelPrompt', agentId, sessionId }),
-      setMode: async (agentId: string, sessionId: string, modeId: string) =>
-        emit({ kind: 'setMode', agentId, sessionId, modeId }),
-      setModel: async (agentId: string, sessionId: string, modelId: string) =>
-        emit({ kind: 'setModel', agentId, sessionId, modelId }),
+      setMode: (agentId: string, sessionId: string, modeId: string) => {
+        emit({ kind: 'setMode', agentId, sessionId, modeId })
+        return answer(setReplies.shift() ?? null)
+      },
+      setModel: (agentId: string, sessionId: string, modelId: string) => {
+        emit({ kind: 'setModel', agentId, sessionId, modelId })
+        return answer(setReplies.shift() ?? null)
+      },
       setConfigOption: async (
         agentId: string,
         sessionId: string,

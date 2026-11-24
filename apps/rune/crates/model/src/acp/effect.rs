@@ -6,6 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::FlightId;
+use super::auth_retry::{AuthRetryId, OnDemand};
 use super::ensure::EnsureId;
 use super::mcp::TokenCheck;
 use super::restore::RunId;
@@ -67,6 +68,9 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         mode_id: String,
+        /// Sent again after an authenticate on demand (`withAuthRetry`).
+        #[serde(skip_serializing)]
+        retried: bool,
     },
     /// Send `session/set_model`, then `Event::ControlSet` with this effect.
     SetModel {
@@ -81,6 +85,9 @@ pub enum Effect {
         /// The restore that sent it, which its outcome moves on.
         #[serde(skip_serializing)]
         run: Option<RunId>,
+        /// Sent again after an authenticate on demand (`withAuthRetry`).
+        #[serde(skip_serializing)]
+        retried: bool,
     },
     /// Send `session/set_config_option`, then `Event::ControlSet` with this
     /// effect and the agent's option snapshot.
@@ -145,6 +152,9 @@ pub enum Effect {
         input: Option<Value>,
         #[serde(skip_serializing)]
         flight: FlightId,
+        /// Sent by `authenticateBeforeSession`, not by a click.
+        #[serde(skip_serializing)]
+        on_demand: Option<OnDemand>,
     },
     /// Sign the agent out; then `AgentCommandDone` or `AgentCommandFailed`.
     Logout { agent_id: String },
@@ -280,6 +290,13 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Whether the host stores a Factory API key; then
+    /// `Event::FactoryKeyStatus` with this effect and the answer, or false
+    /// with `failed` when it could not be read.
+    ReadFactoryKeyStatus {
+        #[serde(skip_serializing)]
+        retry: AuthRetryId,
+    },
     /// Send `Event::ReadvertiseWaitOver` with `run` after `delay_ms`, unless
     /// the agent re-advertised the session's options first.
     WaitForReadvertisedOptions {
@@ -297,6 +314,14 @@ impl Effect {
             source: source.to_owned(),
             message,
         }
+    }
+
+    /// A set command sent again after an authenticate on demand.
+    pub(crate) fn retried(&self) -> bool {
+        matches!(
+            self,
+            Self::SetMode { retried: true, .. } | Self::SetModel { retried: true, .. }
+        )
     }
 
     /// The restore a set command belongs to.
