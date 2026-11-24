@@ -157,8 +157,8 @@ fn main_area(
         .border_sides([0.0, 0.0, 0.0, 1.0], t.colors.border);
     let shown = s.active_project().filter(|p| s.workspace.project() == Some(p.id.as_str()));
     if let Some(project) = shown {
-        let name = project.name.clone();
-        let empty = move || shell::launcher_heading(t, &name);
+        let (id, name) = (project.id.clone(), project.name.clone());
+        let empty = move || crate::composer_view::launcher(s, t, &id, &name);
         let leading = start
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
@@ -236,7 +236,7 @@ fn main_body(s: &State, t: &'static Tokens) -> El {
             .color(t.colors.muted_foreground)
     };
     if let Some(project) = s.active_project() {
-        return shell::launcher_heading(t, &project.name);
+        return crate::composer_view::launcher(s, t, &project.id, &project.name);
     }
     match &s.status {
         Status::Halted { code, message } => note(format!(
@@ -342,5 +342,13 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
 
 /// The main area under the phone header.
 fn workspace_main(s: &State, t: &'static Tokens) -> El {
+    if let Some(project) = s.active_project() {
+        return col()
+            .key("workspace-main")
+            .grow(1.0)
+            .w_full()
+            .min_h(0.0)
+            .child(crate::composer_view::launcher_phone(s, t, &project.id, &project.name));
+    }
     col().key("workspace-main").grow(1.0).w_full().min_h(0.0).center().child(main_body(s, t))
 }

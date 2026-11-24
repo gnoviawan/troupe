@@ -177,3 +177,91 @@ pub fn context_preview(text: &str, max: usize) -> String {
         flat
     }
 }
+
+fn after(value: &str, from: usize, c: char) -> Option<usize> {
+    value.get(from..)?.find(c).map(|i| i + from)
+}
+
+/// The pill a well-formed token at the start of `rest` makes, and the token's length (the
+/// inverse of [`Pill::token`]; a skill's padding block is consumed with it). Malformed tokens
+/// make none and read as text, as `parseSkillSegments` and its siblings treat them.
+fn token_at(rest: &str) -> Option<(Pill, usize)> {
+    let start = rest.chars().next()?;
+    let (end_char, body_at) = match start {
+        SKILL_START => (SKILL_END, SKILL_START.len_utf8()),
+        CMD_START => (CMD_END, CMD_START.len_utf8()),
+        FILE_START => (FILE_END, FILE_START.len_utf8()),
+        CONTEXT_START => (CONTEXT_END, CONTEXT_START.len_utf8()),
+        CONV_START => (CONV_END, CONV_START.len_utf8()),
+        TOOL_START => (TOOL_END, TOOL_START.len_utf8()),
+        _ => return None,
+    };
+    let end = after(rest, body_at, end_char)?;
+    let inner = &rest[body_at..end];
+    let mut len = end + end_char.len_utf8();
+    let pill = match start {
+        SKILL_START if !inner.is_empty() => {
+            if rest[len..].starts_with(PAD_START)
+                && let Some(pad_end) = after(rest, len, PAD_END)
+            {
+                len = pad_end + PAD_END.len_utf8();
+            }
+            Pill::Skill {
+                name: inner.to_owned(),
+                path: String::new(),
+            }
+        }
+        CMD_START if !inner.is_empty() => Pill::Command { name: inner.to_owned() },
+        FILE_START => match inner.split_once(SEP) {
+            Some((d, p)) if !d.is_empty() && !p.is_empty() => Pill::File {
+                display: d.into(),
+                abs_path: p.into(),
+            },
+            _ => return None,
+        },
+        CONTEXT_START => {
+            let (language, payload) = match inner.split_once(SEP) {
+                Some((l, p)) => (Some(l.to_owned()), p),
+                None => (None, inner),
+            };
+            let text = super::uri::decode_uri_component(payload).filter(|t| !t.is_empty())?;
+            Pill::Context { text, language }
+        }
+        CONV_START => match inner.split_once(SEP) {
+            Some((t, id)) if !t.is_empty() && !id.is_empty() => Pill::Conversation {
+                title: t.into(),
+                session_id: id.into(),
+            },
+            _ => return None,
+        },
+        TOOL_START if super::wire::tool(inner).is_some() => Pill::Tool { id: inner.to_owned() },
+        _ => return None,
+    };
+    Some((pill, len))
+}
+
+/// The document a display string holds: what a sent message's bubble shows as pills.
+pub fn parse_display(value: &str) -> Doc {
+    let mut parts = Vec::new();
+    let mut text = String::new();
+    let mut i = 0;
+    while let Some(c) = value[i..].chars().next() {
+        match token_at(&value[i..]) {
+            Some((pill, len)) => {
+                if !text.is_empty() {
+                    parts.push(Part::Text(std::mem::take(&mut text)));
+                }
+                parts.push(Part::Pill(pill));
+                i += len;
+            }
+            None => {
+                text.push(c);
+                i += c.len_utf8();
+            }
+        }
+    }
+    if !text.is_empty() {
+        parts.push(Part::Text(text));
+    }
+    Doc { parts }
+}

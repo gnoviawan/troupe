@@ -4,13 +4,19 @@
 //! recorded from `lib/composer/` (`tools/parity/vectors/composer.ts`).
 
 mod doc;
+pub mod field;
+pub mod menu;
 mod send;
 mod uri;
+pub mod view;
 pub mod wire;
 
 #[cfg(test)]
+mod field_tests;
+#[cfg(test)]
 mod serialize_tests;
 
-pub use doc::{Doc, Part, Pill, context_preview, conversation_title_text, is_js_space, js_trim};
+pub use doc::{Doc, Part, Pill, context_preview, conversation_title_text, is_js_space, js_trim, parse_display};
 pub use send::{Attachment, ChatContexts, MissingSkillPath, Send, compose, file_url, guess_mime_type};
+pub use uri::{base64, encode_uri_component as encode_query};
 pub use wire::{Context, Gap, create_context};

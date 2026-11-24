@@ -3951,6 +3951,7 @@ dependencies = [
  "troupe-protocol",
  "ui",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 

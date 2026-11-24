@@ -1,0 +1,131 @@
+//! Starting a chat from the launcher's composer (`AgentLauncher.launch`): spawn the picked
+//! agent for the project, create a session in the project's folder, open its tab, then send
+//! the draft through `model::acp` as a chat's composer does. The model's launch slice (warm
+//! sessions, configs) is a later R6a unit; until then the app runs these three commands.
+
+use model::acp::Event;
+use model::acp::prompt::SendOptions;
+use serde_json::{Value, json};
+use troupe_protocol::ws::{WsError, WsRequestType};
+use ui::composer::Send;
+use ui::composer::field;
+
+use crate::State;
+use crate::composer::Host;
+use crate::sync::Pending;
+
+/// A launch in flight: the draft's send, waiting for its session.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Launch {
+    pub project_id: String,
+    pub cwd: String,
+    pub send: Send,
+}
+
+impl State {
+    pub(crate) fn launch_from(&mut self, host: &Host) {
+        let Host::Launcher(project_id) = host else { return };
+        if self.composer.launching.is_some() {
+            return;
+        }
+        let Some(draft) = self.draft(host) else { return };
+        let doc = field::doc_of(&draft.edit);
+        let send = match ui::composer::compose(&doc, &[], None, &draft.attachments) {
+            Ok(Some(send)) => send,
+            Ok(None) => return,
+            Err(e) => {
+                self.toast_error(&e.to_string(), "");
+                return;
+            }
+        };
+        let picked = self.composer.picked.clone();
+        let agents = &self.composer.agents;
+        let Some(config) = picked
+            .and_then(|id| agents.iter().find(|a| a.id == id))
+            .or_else(|| agents.first())
+            .map(|a| a.raw.clone())
+        else {
+            self.toast_error("No agent to start", "Add an agent in Settings first.");
+            return;
+        };
+        let cwd = self
+            .projects
+            .store
+            .projects
+            .iter()
+            .find(|p| &p.id == project_id)
+            .and_then(|p| p.path.clone())
+            .unwrap_or_default();
+        log::info!(
+            "[launch] starting {} in {project_id}",
+            config.get("id").and_then(Value::as_str).unwrap_or("?")
+        );
+        self.composer.launching = Some(Launch {
+            project_id: project_id.clone(),
+            cwd,
+            send,
+        });
+        self.command(
+            WsRequestType::SpawnAgent,
+            json!({ "config": config, "projectId": project_id }),
+            Pending::LaunchSpawn,
+        );
+    }
+
+    fn launch_failed(&mut self, step: &str, e: &WsError) {
+        log::warn!("[launch] {step} failed: {}: {}", e.code, e.message);
+        self.composer.launching = None;
+        self.toast_error("Could not start the chat", &e.message);
+    }
+
+    pub(crate) fn launch_spawned(&mut self, result: Result<Option<Value>, WsError>) {
+        let reply = match result {
+            Ok(reply) => reply.unwrap_or(Value::Null),
+            Err(e) => return self.launch_failed("spawning the agent", &e),
+        };
+        let (Some(agent_id), Some(launch)) = (
+            reply.get("agentId").and_then(Value::as_str).map(str::to_owned),
+            self.composer.launching.clone(),
+        ) else {
+            self.composer.launching = None;
+            return log::warn!("[launch] the spawn reply names no agent");
+        };
+        self.command(
+            WsRequestType::CreateSession,
+            json!({ "agentId": agent_id, "cwd": launch.cwd, "projectId": launch.project_id }),
+            Pending::LaunchSession(agent_id),
+        );
+    }
+
+    pub(crate) fn launch_created(&mut self, agent_id: String, result: Result<Option<Value>, WsError>) {
+        let reply = match result {
+            Ok(reply) => reply.unwrap_or(Value::Null),
+            Err(e) => return self.launch_failed("creating the session", &e),
+        };
+        let Some(launch) = self.composer.launching.take() else {
+            return;
+        };
+        let Some(session_id) = reply.get("sessionId").and_then(Value::as_str).map(str::to_owned) else {
+            return log::warn!("[launch] the session reply names no session");
+        };
+        log::info!("[launch] chat {session_id} on agent {agent_id}");
+        self.install_new_chat(&session_id, &agent_id);
+        let host = Host::Launcher(launch.project_id);
+        let draft = self.draft_mut(&host);
+        draft.edit.clear();
+        draft.attachments.clear();
+        self.workspace
+            .step(model::workspace::Event::AddAgentChatTab(session_id.clone(), None));
+        let event = match launch.send {
+            Send::Text { text } => Event::SendPrompt(session_id, text),
+            Send::Blocks { wire, display } => Event::SendPromptBlocks(
+                session_id,
+                wire,
+                Some(SendOptions {
+                    display_blocks: display,
+                }),
+            ),
+        };
+        self.acp_step(event);
+    }
+}

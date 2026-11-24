@@ -9,10 +9,13 @@
  * - `matrix hold` replies, then keeps the turn open for `HOLD_MS` (or until
  *   cancelled), so a second prompt lands in the prompt queue.
  *
- * Every other frame passes through to the scenario agent unchanged.
+ * Every other frame passes through to the scenario agent unchanged. With
+ * `PARITY_PROMPT_LOG` set, each prompt's blocks are appended to that file as
+ * one JSON line, so two clients' sends can be compared byte for byte.
  */
 
 import { spawn } from 'node:child_process'
+import { appendFileSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
 
@@ -141,6 +144,9 @@ function intercept(frame: Frame): boolean {
   }
   if (frame.method === 'session/cancel') cancelled = true
   if (frame.method !== 'session/prompt' || frame.id === undefined) return false
+  // Lane 4 compares the prompt each client sent, block for block.
+  const promptLog = process.env.PARITY_PROMPT_LOG
+  if (promptLog) appendFileSync(promptLog, `${JSON.stringify(frame.params?.prompt ?? [])}\n`)
   const text = (frame.params?.prompt ?? [])
     .map((block) => block.text ?? '')
     .join('')

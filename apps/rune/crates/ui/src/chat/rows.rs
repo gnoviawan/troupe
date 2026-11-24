@@ -64,7 +64,10 @@ fn actions<S: 'static>(ctx: &Ctx<S>, text: String, user: bool, pinned: bool) -> 
 
 /// The user's turn: a tinted bubble at the end of the row, `max-w-[85%]`, with its actions.
 fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
+    let (words, spans) = pills_inline(ctx.t, words);
+    let words = words.as_str();
     let bubble = crate::Bubble::new(words.to_owned())
+        .spans(spans)
         .variant(BubbleVariant::Tinted)
         .align(BubbleAlign::End)
         .build(ctx.t);
@@ -74,6 +77,27 @@ fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
         .items_end()
         .hover_group()
         .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, words.to_owned(), true, last)))
+}
+
+/// A sent message's composer tokens as their labels on a chip (`ChatMessage`'s inline pills).
+fn pills_inline(t: &theme::Tokens, display: &str) -> (String, Vec<rune::Span>) {
+    if !display.contains(|c: char| ('\u{E000}'..='\u{E00F}').contains(&c)) {
+        return (display.to_owned(), Vec::new());
+    }
+    let mut out = String::new();
+    let mut spans = Vec::new();
+    for part in crate::composer::parse_display(display).parts {
+        match part {
+            crate::composer::Part::Text(text) => out.push_str(&text),
+            crate::composer::Part::Pill(pill) => {
+                let start = out.len();
+                out.push_str(&pill.label());
+                let ink = if matches!(pill, crate::composer::Pill::Skill { .. }) { t.colors.primary } else { t.colors.foreground };
+                spans.push(rune::Span::new(start, out.len()).bg(t.colors.muted, 3.0).color(ink).weight(500.0));
+            }
+        }
+    }
+    (out, spans)
 }
 
 /// A visible reply: its prose in a ghost bubble, then the turn's actions on its tail, shown

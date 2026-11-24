@@ -44,3 +44,23 @@ pub fn decode_uri_component(text: &str) -> Option<String> {
     }
     String::from_utf8(out).ok()
 }
+
+/// Standard base64 with padding (`btoa`), for an image block's data.
+pub fn base64(bytes: &[u8]) -> String {
+    const ABC: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |n, (i, b)| n | u32::from(*b) << (16 - 8 * i));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(ABC[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}

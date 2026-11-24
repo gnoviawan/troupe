@@ -5,8 +5,19 @@
 //! when an output is queued. Web: the page's `client::web::WebDriver` is pumped from `poll`,
 //! and a `setTimeout` wakes the page for the machine's next timer.
 
+use client::http::{HttpError, HttpRequest};
 use client::{Config, ws};
 use rune::Waker;
+use serde_json::Value;
+
+/// What an HTTP read is for.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Fetch {
+    /// `/skills` for a project folder.
+    Skills(String),
+}
+
+pub type Fetched = (Fetch, Result<Value, HttpError>);
 
 #[cfg(not(target_arch = "wasm32"))]
 mod imp {
@@ -24,6 +35,9 @@ mod imp {
     pub struct Host {
         commands: Sender<ws::Command>,
         outputs: Receiver<ws::Output>,
+        config: Config,
+        wake: Waker,
+        fetched: (Sender<Fetched>, Receiver<Fetched>),
     }
 
     impl Host {
@@ -31,10 +45,11 @@ mod imp {
             let (commands, inbox) = mpsc::channel::<ws::Command>();
             let (outbox, outputs) = mpsc::channel();
             let url = config.base_url.clone();
+            let (link_config, link_wake) = (config.clone(), wake.clone());
             thread::Builder::new()
                 .name("troupe-ws".into())
                 .spawn(move || {
-                    let mut driver = Driver::new(ws::WsClient::new(config));
+                    let mut driver = Driver::new(ws::WsClient::new(link_config));
                     driver.start();
                     loop {
                         loop {
@@ -57,13 +72,31 @@ mod imp {
                             wait = Duration::ZERO;
                         }
                         if woke {
-                            wake();
+                            link_wake();
                         }
                     }
                 })
                 .expect("spawn the /ws thread");
             log::info!("[app] connecting to {url}");
-            Host { commands, outputs }
+            Host { commands, outputs, config, wake, fetched: mpsc::channel() }
+        }
+
+        /// GETs `path` off the window's thread; the answer comes back through [`Host::fetched`].
+        pub fn fetch(&mut self, path: String, tag: Fetch) {
+            let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.0.clone());
+            let spawned = thread::Builder::new().name("troupe-http".into()).spawn(move || {
+                let result = client::native::http_send(&config, &HttpRequest::get(&path));
+                if done.send((tag, result)).is_ok() {
+                    wake();
+                }
+            });
+            if let Err(e) = spawned {
+                log::warn!("[app] could not start an HTTP read: {e}");
+            }
+        }
+
+        pub fn fetched(&mut self) -> Vec<Fetched> {
+            self.fetched.1.try_iter().collect()
         }
 
         pub fn send(&mut self, command: ws::Command) {
@@ -80,6 +113,7 @@ mod imp {
 
 #[cfg(target_arch = "wasm32")]
 mod imp {
+    use std::cell::RefCell;
     use std::rc::Rc;
 
     use client::Event;
@@ -96,6 +130,8 @@ mod imp {
         wake: Waker,
         /// The wake time a `setTimeout` is already armed for.
         armed: Option<f64>,
+        config: Config,
+        fetched: Rc<RefCell<Vec<Fetched>>>,
     }
 
     impl Host {
@@ -103,12 +139,28 @@ mod imp {
             log::info!("[app] connecting to {}", config.base_url);
             let notify = wake.clone();
             Host {
-                driver: WebDriver::new(ws::WsClient::new(config), Rc::new(move || notify())),
+                driver: WebDriver::new(ws::WsClient::new(config.clone()), Rc::new(move || notify())),
                 queued: Vec::new(),
                 started: false,
                 wake,
                 armed: None,
+                config,
+                fetched: Rc::default(),
             }
+        }
+
+        /// GETs `path` with the page's `fetch`; the answer comes back through [`Host::fetched`].
+        pub fn fetch(&mut self, path: String, tag: Fetch) {
+            let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.clone());
+            wasm_bindgen_futures::spawn_local(async move {
+                let result = client::web::http_send(&config, &HttpRequest::get(&path)).await;
+                done.borrow_mut().push((tag, result));
+                wake();
+            });
+        }
+
+        pub fn fetched(&mut self) -> Vec<Fetched> {
+            std::mem::take(&mut *self.fetched.borrow_mut())
         }
 
         pub fn send(&mut self, command: ws::Command) {

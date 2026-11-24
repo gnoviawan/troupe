@@ -1,20 +1,16 @@
-//! What a chat tab draws: the transcript of its session from `State::chat`, with a stand-in
-//! for the composer (a later unit) under it, and the full-window table above everything.
+//! What a chat tab draws: the transcript of its session from `State::chat` with the chat's
+//! composer under it, and the full-window table above everything.
 
 use std::rc::Rc;
 
 use model::workspace::Tab;
-use rune::{El, col, row, text};
+use rune::{El, col, text};
 use theme::Tokens;
 use ui::chat::{Lenses, Reader};
 use ui::markdown::{Hooks, LinkTarget, TABLE_ZOOM};
 use ui::type_::sans;
 
 use crate::State;
-
-/// The composer dock's height in the web client (`ChatInputBar` in its tray), held empty
-/// until the composer unit draws it.
-const COMPOSER_H: f32 = 176.0;
 
 fn lenses() -> Lenses<State> {
     Lenses {
@@ -57,12 +53,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
         )
     };
-    let composer = row()
-        .key(format!("composer-slot-{session_id}"))
-        .w_full()
-        .h(COMPOSER_H)
-        .center()
-        .child(text("Composer (R6 composer unit)").font(sans(12.0, 400.0, 16.0)).color(c.disabled_foreground));
+    let composer = crate::composer_view::chat_dock(s, t, session_id);
     Some(
         col()
             .key(format!("tab-body-{}", tab.id()))

@@ -95,6 +95,9 @@ fn every_recorded_document_serializes_and_sends_as_the_web_client_does() {
                 vector["display"]
             ));
         }
+        if super::parse_display(&display).display_text() != display {
+            failures.push(format!("{name}: the display string does not parse back to itself"));
+        }
         let send = send_json(vector);
         if send != vector["send"] {
             failures.push(format!("{name}: send\n  want {}\n  got  {send}", vector["send"]));

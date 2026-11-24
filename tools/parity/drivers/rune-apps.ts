@@ -92,7 +92,10 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'phone.project-sheet',
   'phone.recents-actions',
   'terminal.new-tab-menu',
-  'chat.transcript'
+  'chat.transcript',
+  'composer.mention',
+  'composer.slash',
+  'composer.add-menu'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {

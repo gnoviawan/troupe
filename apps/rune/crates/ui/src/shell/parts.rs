@@ -156,7 +156,7 @@ pub fn connection_lamp(t: &Tokens, live: bool) -> El {
 }
 
 /// The launcher's greeting in the main area: the mark and "What should we do in <project>?".
-/// The space below holds the composer's place until the composer is ported.
+/// The composer goes under it.
 pub fn launcher_heading(t: &Tokens, project: &str) -> El {
     col()
         .w_full()
@@ -173,5 +173,4 @@ pub fn launcher_heading(t: &Tokens, project: &str) -> El {
                 .color(t.colors.foreground)
                 .role("heading"),
         )
-        .child(el().w(1.0).h(188.0))
 }
