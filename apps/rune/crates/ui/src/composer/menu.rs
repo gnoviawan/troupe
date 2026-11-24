@@ -243,21 +243,22 @@ pub fn mention_sections(panel: &Panel, root: &str, chats: &[ChatRef], filter: &s
                 .collect();
             if items.is_empty() { vec![] } else { vec![Section::of(Some("Conversations".into()), items)] }
         }
-        Panel::Root => vec![Section::of(
-            None,
-            vec![
-                Item {
-                    label: "Conversations".into(),
-                    description: Some(format!("{} in this project", chats.len())),
-                    row: Row::Conversations,
-                },
-                Item {
+        Panel::Root => {
+            let mut items = vec![Item {
+                label: "Conversations".into(),
+                description: Some(format!("{} in this project", chats.len())),
+                row: Row::Conversations,
+            }];
+            // With no folder to read (`!rootPath`) there is nothing to explore.
+            if !root.is_empty() {
+                items.push(Item {
                     label: "Explorer".into(),
                     description: Some(format!("Files and folders in {}/", folder_name(root))),
                     row: Row::Explorer,
-                },
-            ],
-        )],
+                });
+            }
+            vec![Section::of(None, items)]
+        }
     }
 }
 
