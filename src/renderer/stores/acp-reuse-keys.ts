@@ -29,6 +29,12 @@ const NUL = '\0'
 /** Marker segment of a Project-scoped key; the following segment is the Project id. */
 const PROJECT_SEGMENT = 'project'
 
+/**
+ * The cwd a quick chat's agent is spawned under. It is not a folder: the host
+ * picks the quick chat's folder at `session/new`, and no project env applies.
+ */
+export const QUICK_CHAT_AGENT_CWD = 'quick-chat'
+
 /** Marker segment of a chat's own key; the following segment is the chat (session) id. */
 const CHAT_SEGMENT = 'chat'
 

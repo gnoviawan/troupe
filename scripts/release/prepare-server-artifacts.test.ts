@@ -34,20 +34,20 @@ describe('prepareServerArtifacts', () => {
     expect(JSON.parse(await readFile(outPath, 'utf8'))).toEqual(manifest)
   })
 
-  test('targets the versioned tag for stable / insider RC channels', async () => {
+  test('targets the versioned tag for the stable channel', async () => {
     const dir = await fixtureDir()
     const sigPath = join(dir, 'troupe-server.sig')
     await writeFile(sigPath, 'sig\n')
 
     const manifest = await prepareServerArtifacts({
       signaturePath: sigPath,
-      tag: 'v0.5.0-rc.1',
-      version: '0.5.0-rc.1',
+      tag: 'v0.5.0',
+      version: '0.5.0',
       outputPath: join(dir, 'out.json')
     })
 
     expect(manifest.platforms[SERVER_PLATFORM_KEY].url).toBe(
-      'https://github.com/gnoviawan/termul/releases/download/v0.5.0-rc.1/troupe-server'
+      'https://github.com/gnoviawan/termul/releases/download/v0.5.0/troupe-server'
     )
   })
 

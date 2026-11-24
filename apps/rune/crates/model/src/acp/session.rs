@@ -325,7 +325,7 @@ impl State {
                     agent_working: None,
                     replaying: Some(None),
                     opencode_notice: None,
-                    last_error: None,
+                    last_error: Some(None),
                     last_error_code: None,
                     last_error_data: None,
                     background_commands: None,
@@ -354,6 +354,10 @@ impl State {
             return;
         }
         self.cancel_running_subagents(std::slice::from_ref(&id), env.now, fx);
+        // The app's staged files for the chat (pasted images) go with it.
+        fx.push(Effect::DeleteSessionTempFiles {
+            session_id: id.clone(),
+        });
         self.pending_permissions
             .retain(|_, pending| pending.session_id != id);
         self.pending_questions
@@ -390,7 +394,7 @@ impl State {
     /// host pushes it. A relay (`live_only`) app skips the reload too.
     fn refresh_index(&self, env: &Env<'_>, fx: &mut Vec<Effect>) {
         if !env.server_history {
-            fx.push(Effect::RefreshSessionIndex);
+            fx.push(Effect::RefreshSessionIndex { import: None });
         }
     }
 
@@ -399,6 +403,9 @@ impl State {
     pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
         self.book.history_watermarks.remove(session_id);
         self.book.active_wire_turns.remove(session_id);
+        self.book.backfill_counts.remove(session_id);
+        self.book.durability_probes.remove(session_id);
+        self.book.untrimmable.remove(session_id);
         self.forget_composer_session(session_id);
     }
 
@@ -482,7 +489,7 @@ impl State {
         let Some(session) = self.sessions.get_mut(session_id) else {
             return;
         };
-        let last = session.last_error.as_deref();
+        let last = session.last_error.as_ref().and_then(Option::as_deref);
         if session.status != SessionStatus::Closed
             || last.is_some_and(|last| last.starts_with(RESUME_FAILED_PREFIX))
             || last == Some(CODEX_CLI_SIGNED_OUT_MESSAGE)
@@ -494,7 +501,7 @@ impl State {
             .find_map(|tag| reason.strip_prefix(tag))
             .unwrap_or(reason);
         session.replaying = Some(None);
-        session.last_error = Some(format!("{RESUME_FAILED_PREFIX}{message}"));
+        session.last_error = Some(Some(format!("{RESUME_FAILED_PREFIX}{message}")));
         session.last_error_code = Some(None);
         session.last_error_data = None;
     }

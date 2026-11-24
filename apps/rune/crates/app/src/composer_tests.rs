@@ -222,7 +222,7 @@ fn a_refused_prompt_shows_the_host_error_once_prefixed() {
     };
     s.prompt_settled("chat-1".into(), turn, Err(error));
     let session = &s.chat.acp.sessions["chat-1"];
-    assert_eq!(session.last_error.as_deref(), Some("Error: agent busy elsewhere"));
+    assert_eq!(session.last_error, Some(Some("Error: agent busy elsewhere".to_owned())));
 }
 
 #[test]
@@ -300,7 +300,7 @@ fn a_busy_host_queues_the_prompt_and_the_retry_sends_it() {
         details: None,
     };
     s.prompt_settled("chat-1".into(), turn, Err(busy));
-    assert_eq!(s.chat.acp.sessions["chat-1"].last_error, None, "busy is not a failure");
+    assert_eq!(s.chat.acp.sessions["chat-1"].last_error.clone().flatten(), None, "busy is not a failure");
     assert!(s.toasts.visible().is_empty(), "no failure toast");
 
     let (fired, next) = s.fire_retries(s.now + 1.0);

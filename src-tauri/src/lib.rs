@@ -56,8 +56,6 @@ pub mod server_update;
 // `standalone-server`.
 pub mod onboard;
 mod shell_paths;
-// Desktop-side channel manifest fetch for the insider/nightly updater path.
-// Routes the manifest fetch through Rust (reqwest) so CSP/CORS do not block it.
 mod skills;
 mod ssh;
 mod trackers;
@@ -2382,8 +2380,6 @@ pub fn run() {
             acp::commands::acp_mcp_oauth_disconnect,
             acp_registry_snapshot::acp_fetch_registry_snapshot,
             acp_binary_install::acp_install_registry_binary,
-            // Desktop updater: channel manifest fetch (CSP/CORS-free server-side
-            // reqwest for the insider/nightly paths).
             updater_api::updater_fetch_channel_manifest,
             updater_api::updater_check_channel,
             // Agent Skills (Zed-compatible SKILL.md packages)

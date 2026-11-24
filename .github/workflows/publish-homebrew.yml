@@ -31,7 +31,6 @@ jobs:
     outputs:
       version: ${{ steps.metadata.outputs.version }}
       tag: ${{ steps.metadata.outputs.tag }}
-      is_prerelease: ${{ steps.metadata.outputs.is_prerelease }}
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2
@@ -43,29 +42,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Resolve authoritative release metadata
+      - name: Resolve release metadata
         id: metadata
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           source scripts/release/homebrew.sh
           VERSION="$(normalize_release_version "$INPUT_VERSION")"
-          TAG="v$VERSION"
-          IS_PRERELEASE="$(gh release view "$TAG" \
-            --repo gnoviawan/troupe \
-            --json isPrerelease \
-            --jq '.isPrerelease')"
-
-          if [[ "$IS_PRERELEASE" != "true" && "$IS_PRERELEASE" != "false" ]]; then
-            echo "Unable to determine prerelease metadata for $TAG" >&2
-            exit 1
-          fi
-
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "is_prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
   checksums:
     name: Generate SHA256SUMS
@@ -127,7 +113,6 @@ jobs:
   homebrew:
     name: Update Homebrew cask
     needs: [release_metadata, checksums]
-    if: needs.release_metadata.outputs.is_prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Harden runner
