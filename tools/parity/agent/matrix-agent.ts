@@ -142,7 +142,10 @@ async function question(sessionId: string): Promise<void> {
     options: QUESTION_OPTIONS
   })
   const values = reply.result?.values ?? []
-  say(sessionId, reply.result?.cancelled ? 'Question answer: cancelled' : `Question answer: ${values.join(', ')}`)
+  say(
+    sessionId,
+    reply.result?.cancelled ? 'Question answer: cancelled' : `Question answer: ${values.join(', ')}`
+  )
 }
 
 const running = new Set<string>()
