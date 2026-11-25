@@ -128,6 +128,7 @@ async fn the_view_lists_the_gates_and_the_implicit_default() {
             "enabled": true,
             "maxRunning": 4,
             "maxDepth": 2,
+            "agents": [],
             "profiles": [implicit_codex()],
         })
     );

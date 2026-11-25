@@ -53,6 +53,10 @@ pub(super) async fn handle_stop_subagent(
 
 /// The orchestrator's settings view: the gates and every profile, stored
 /// then implicit.
+///
+/// `agents` is always empty: a 0.5.x client, from before profiles, reads
+/// `view.agents.length` and crashes without it. Remove it in 0.7.0, one
+/// stable release after the profiles page shipped.
 fn settings_view(engine: &OrchestratorEngine) -> Value {
     let launchable = engine.launchable();
     let settings = engine.settings_view();
@@ -61,6 +65,7 @@ fn settings_view(engine: &OrchestratorEngine) -> Value {
         "enabled": settings.enabled,
         "maxRunning": settings.max_running,
         "maxDepth": settings.max_depth,
+        "agents": [],
         "profiles": profiles.iter().map(profile_view).collect::<Vec<_>>(),
     })
 }

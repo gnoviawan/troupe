@@ -252,6 +252,8 @@ export interface SubagentSettingsView {
   maxRunning: number
   maxDepth: number
   profiles: SubagentProfileView[]
+  /** @deprecated Always empty, kept for 0.5.x clients; the host drops it in 0.7.0. */
+  agents?: readonly never[]
 }
 
 /**
