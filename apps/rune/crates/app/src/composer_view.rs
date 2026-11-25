@@ -42,6 +42,7 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         agent: s.agent_label(host),
         agents: s.agent_choices(host),
         agent_open: draft.agent_open,
+        switch: s.switch_view(host),
         foot: s.foot(host),
         attachments: &draft.attachments,
         menu: s.menu_view(host),

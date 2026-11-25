@@ -67,8 +67,8 @@ pub(crate) enum Pending {
         record: Option<Value>,
     },
     WriteWorkspace(String),
-    /// A chat's history (`get_session_payload`).
-    ChatPayload(String),
+    /// A session payload the model's history read asked for (`get_session_payload`).
+    Payload(Box<model::acp::Effect>),
     /// The agent configs (`acp/agents`).
     ReadAgents,
     /// The launcher's last agent (`agents/last-selected`).
@@ -87,6 +87,8 @@ pub(crate) enum Pending {
     StopSubagent(String),
     /// A browser consent answer, with the ticket to restore if the host refuses it.
     BrowserConsent(Box<Value>),
+    /// An agent, session or switch command the model sent; its reply goes back to the model.
+    Agent(Box<model::acp::Effect>),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
@@ -414,6 +416,7 @@ impl State {
             Pending::Control(effect) => self.control_settled(*effect, result),
             Pending::ComposerOptions(effect) => self.composer_options_read(*effect, result),
             Pending::SavedPicks(config_id) => self.saved_picks_read(config_id, result),
+            Pending::Agent(effect) => self.agent_command_settled(*effect, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ReadHistory(project) => self.history_read(project, result),
@@ -490,7 +493,7 @@ impl State {
                     self.toast_error("Failed to create the project", &e.message);
                 }
             },
-            Pending::ChatPayload(session_id) => self.chat_payload(session_id, result),
+            Pending::Payload(effect) => self.history_payload_read(*effect, result),
             Pending::WriteWorkspace(project_id) => {
                 if let Err(e) = result {
                     log::warn!(

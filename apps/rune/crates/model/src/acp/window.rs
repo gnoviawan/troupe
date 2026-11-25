@@ -41,6 +41,19 @@ pub enum PayloadRead {
     History(super::history::OpenId),
     /// `loadOlderMessages`, for a page of `count` messages.
     Older { count: usize },
+    /// A source session a switched chat's reopen walks, after the host's
+    /// re-read missed (`loadFreshSourcePayload`).
+    Walk(super::history::OpenId),
+}
+
+/// Why the model asked the host to read a session's payload again.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Reload {
+    /// `loadOlderMessages` paging from `cached` when the host has none.
+    Older { count: usize, cached: Value },
+    /// A source session a switched chat's reopen walks
+    /// (`loadFreshSourcePayload`).
+    Walk(super::history::OpenId),
 }
 
 /// How a [`Effect::ReadSessionPayload`] ended: the payload, `None` when the
@@ -152,15 +165,19 @@ impl State {
             Effect::ReadSessionPayload { session_id, read } => (session_id, read),
             Effect::ReloadSessionPayload {
                 session_id,
-                count,
-                cached,
+                read: Reload::Older { count, cached },
             } => return self.on_older_reload(session_id, count, cached, outcome, fx),
+            Effect::ReloadSessionPayload {
+                session_id,
+                read: Reload::Walk(open),
+            } => return self.on_walk_reload(open, &session_id, outcome, fx),
             _ => return,
         };
         match read {
             PayloadRead::Probe => self.on_durability_probe(session_id, outcome, fx),
             PayloadRead::History(open) => self.on_history_payload(open, outcome, fx),
             PayloadRead::Older { count } => self.on_older_payload(session_id, count, outcome, fx),
+            PayloadRead::Walk(open) => self.on_walk_payload(open, outcome.ok().flatten(), fx),
         }
     }
 

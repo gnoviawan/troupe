@@ -12,6 +12,10 @@
 
 #![forbid(unsafe_code)]
 
+mod agent_host;
+mod agent_switch;
+#[cfg(test)]
+mod agent_switch_tests;
 mod answers;
 #[cfg(test)]
 mod answers_tests;
@@ -29,10 +33,14 @@ mod controls;
 mod editor_host;
 #[cfg(test)]
 mod controls_tests;
+mod history_host;
 mod host;
 mod ids;
 mod keys;
 mod launch;
+mod model_sheet;
+#[cfg(test)]
+mod model_sheet_tests;
 mod phone;
 mod rail;
 mod rail_forms;
@@ -269,11 +277,20 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     changed |= state.flush_chat();
     let (retried, next_retry) = state.fire_retries(now);
     let (waited, next_wait) = state.fire_readvertise_waits(now);
-    changed |= retried | waited;
+    let (gave_up, next_arm) = state.expire_pending_arms(now);
+    changed |= retried | waited | gave_up;
     state.editors.now = editor_host::epoch_ms();
     state.sync_editors();
     state.sync_drafts(now);
-    let waits = [state.toasts.next_expiry(), next_retry, next_wait, state.next_blink(), state.next_find_refresh(), state.next_draft_sync()];
+    let waits = [
+        state.toasts.next_expiry(),
+        next_retry,
+        next_wait,
+        next_arm,
+        state.next_blink(),
+        state.next_find_refresh(),
+        state.next_draft_sync(),
+    ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);
     }

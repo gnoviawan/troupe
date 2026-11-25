@@ -35,7 +35,7 @@ impl State {
 }
 
 /// `SheetIconWell`: an 18-point muted glyph.
-fn well(t: &Tokens, glyph: &'static rune::Icon) -> El {
+pub(crate) fn well(t: &Tokens, glyph: &'static rune::Icon) -> El {
     row().w(18.0).h(18.0).center().child(icon(glyph, 18.0).color(t.colors.muted_foreground))
 }
 
@@ -78,7 +78,7 @@ fn sheet_row(t: &Tokens, key: &str, well: El, title: &str, subtitle: &str, chevr
 }
 
 /// `SheetGroup`: a rounded muted card, rows split by a hairline after the icon column.
-fn group(t: &Tokens, rows: Vec<El>) -> El {
+pub(crate) fn group(t: &Tokens, rows: Vec<El>) -> El {
     let c = &t.colors;
     let mut card = col().w_full().radius(12.0).fill(c.muted).clip_rounded(12.0);
     for (n, r) in rows.into_iter().enumerate() {

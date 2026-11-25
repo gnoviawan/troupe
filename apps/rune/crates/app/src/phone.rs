@@ -388,6 +388,7 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             PROJECTS => projects_sheet(s, t, window, layer),
             RECENTS => recents_sheet(s, t, window, layer),
             crate::composer_sheet::ADD_SHEET => crate::composer_sheet::add_sheet(s, t, window, layer),
+            crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
             _ => {}
         }
     }

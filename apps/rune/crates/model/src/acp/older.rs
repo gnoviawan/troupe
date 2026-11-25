@@ -14,7 +14,7 @@ use std::collections::BTreeSet;
 use serde_json::Value;
 
 use super::types::{ChatMessage, Role};
-use super::window::{PayloadRead, PayloadReadOutcome};
+use super::window::{PayloadRead, PayloadReadOutcome, Reload};
 use super::{Effect, State};
 
 const SOURCE: &str = "acp.loadOlderMessages";
@@ -157,8 +157,10 @@ impl State {
         if head.is_some_and(|head| !payload_reaches_head(&payload, head)) {
             return fx.push(Effect::ReloadSessionPayload {
                 session_id,
-                count,
-                cached: payload,
+                read: Reload::Older {
+                    count,
+                    cached: payload,
+                },
             });
         }
         self.page_older(&session_id, count, &payload, fx);
