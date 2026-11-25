@@ -155,8 +155,8 @@ describe('use-app-settings', () => {
     })
   })
 
-  it('defaults terminal URL open mode when persisted settings are missing the key', async () => {
-    const { terminalUrlOpenMode: _terminalUrlOpenMode, ...legacySettings } = DEFAULT_APP_SETTINGS
+  it('defaults link open mode when persisted settings are missing the key', async () => {
+    const { linkOpenMode: _linkOpenMode, ...legacySettings } = DEFAULT_APP_SETTINGS
     mockPersistenceRead.mockResolvedValueOnce({
       success: true,
       data: legacySettings
@@ -166,8 +166,27 @@ describe('use-app-settings', () => {
 
     await waitFor(() => {
       expect(useAppSettingsStore.getState().isLoaded).toBe(true)
-      expect(useAppSettingsStore.getState().settings.terminalUrlOpenMode).toBe('system')
+      expect(useAppSettingsStore.getState().settings.linkOpenMode).toBe('system')
     })
+  })
+
+  it.each([
+    ['termul', 'troupe'],
+    ['system', 'system']
+  ])('moves the old terminal-only link mode "%s" to the app-wide "%s"', async (oldMode, newMode) => {
+    const { linkOpenMode: _linkOpenMode, ...rest } = DEFAULT_APP_SETTINGS
+    mockPersistenceRead.mockResolvedValueOnce({
+      success: true,
+      data: { ...rest, terminalUrlOpenMode: oldMode }
+    })
+
+    renderHook(() => useAppSettingsLoader())
+
+    await waitFor(() => {
+      expect(useAppSettingsStore.getState().isLoaded).toBe(true)
+      expect(useAppSettingsStore.getState().settings.linkOpenMode).toBe(newMode)
+    })
+    expect('terminalUrlOpenMode' in useAppSettingsStore.getState().settings).toBe(false)
   })
 
   it('loads an old persisted per-project terminal limit and drops the retired key', async () => {

@@ -12,7 +12,7 @@ use super::approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PermissionRequestEvent,
     QuestionCancelledEvent, QuestionRequestEvent,
 };
-use super::controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent};
+use super::controls::{ConfigOptionsUpdateEvent, ModeUpdateEvent, ModelsUpdateEvent};
 use super::mcp::McpError;
 use super::picks::PickOptions;
 use super::prompt::{PromptSettled, SendOptions};
@@ -59,6 +59,8 @@ pub enum Event {
     BrowserTicketClosed(BrowserTicketClosedEvent),
     #[serde(rename = "_onModeUpdate")]
     ModeUpdate(ModeUpdateEvent),
+    #[serde(rename = "_onModelsUpdate")]
+    ModelsUpdate(ModelsUpdateEvent),
     #[serde(rename = "_onConfigOptionsUpdate")]
     ConfigOptionsUpdate(ConfigOptionsUpdateEvent),
     #[serde(rename = "_onPromptComplete")]

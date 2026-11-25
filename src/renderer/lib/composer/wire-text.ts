@@ -6,6 +6,7 @@ import {
   replaceFileTokensInline
 } from '@/lib/skill-tokens'
 import { type FramedSkill, formatPromptWithSkills } from '@/lib/skills-prompt'
+import { canvasRefKey, canvasWireLabel, replaceCanvasTokensInline } from './canvas-tokens'
 import { serializeSelectionContexts } from './selection-context'
 import { replaceToolTokensInline } from './tool-tokens'
 
@@ -15,8 +16,9 @@ import { replaceToolTokensInline } from './tool-tokens'
  * sentinel reaches the wire. Shared by the composer send and the chat's
  * Retry, which re-frames the last user message from its display text.
  *
- * `contexts` is the resolved conversation transcripts; without it every
- * mentioned conversation is labelled as unavailable.
+ * `contexts` is the resolved conversation transcripts and canvas layers;
+ * without it every mentioned conversation is labelled as unavailable, and
+ * every canvas pill as the canvas not being open.
  */
 export function composerWireText(
   value: string,
@@ -35,5 +37,13 @@ export function composerWireText(
         contexts === undefined ? 'unavailable' : (contexts.gaps.get(sessionId) ?? null)
       )
   )
-  return formatPromptWithSkills(skills, replaceToolTokensInline(plain))
+  const withCanvas = replaceCanvasTokensInline(plain, (ref) =>
+    canvasWireLabel(
+      ref,
+      contexts?.canvasGaps === undefined
+        ? 'closed'
+        : (contexts.canvasGaps.get(canvasRefKey(ref)) ?? null)
+    )
+  )
+  return formatPromptWithSkills(skills, replaceToolTokensInline(withCanvas))
 }

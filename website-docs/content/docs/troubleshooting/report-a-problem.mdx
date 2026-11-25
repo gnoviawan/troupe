@@ -8,22 +8,24 @@ When something goes wrong, the Troupe log usually shows why. Attach it to a bug 
 ## Copy the log
 
 1. Open app settings with `Ctrl+,` (`Cmd+,` on macOS, `Alt+,` in the browser version).
-2. Select **Diagnostics & Logs**.
-3. Select **Copy Log Contents**.
+2. Select **About**.
+3. Under **Logs and bug reports**, find **Application log**.
+4. Select **Copy**.
 
 The log is now on your clipboard. Paste it into your bug report. Read it first, and remove anything you do not want to share, such as folder names.
 
-![The Diagnostics and Logs tab with the Copy Log Contents button](/screenshots/settings-diagnostics.png)
+![The Logs and bug reports group on the About page, with the Copy button](/screenshots/settings-diagnostics.png)
 
-In the desktop app, the tab has more buttons:
+In the desktop app, **Application log** has more buttons:
 
-- **Reveal Log Folder** opens the folder with the log file.
-- **Export Log File...** saves a copy where you choose.
-- **Export to Default Directory** saves `termul.log` in your Downloads folder.
+- **Export** opens a menu. **Save as…** saves a copy where you choose. **Save to Downloads** saves `termul.log` in your Downloads folder.
+- **Show in Finder** opens the folder with the log file. On Windows the button is **Show in File Explorer**. On Linux it is **Show in file manager**.
 
 On macOS, the **Help** menu has the same actions, for example **Reveal Log File** and **Copy Log Contents**.
 
-In the browser version, the log is on the computer that runs the server. **Copy Log Contents** copies the server's log.
+In the browser version, the log is on the computer that runs the server. **Copy** copies the server's log.
+
+To start a bug report from the app, select **Report** next to **Report a bug**. The **Report a bug** window opens. It adds a redacted diagnostics bundle to the report and shows the exact text that goes to GitHub.
 
 ## Find the log file
 
@@ -39,8 +41,8 @@ The desktop app writes its log to `termul.log` in this folder:
 
 A bug report needs the Troupe version.
 
-- In the desktop app, open **Settings** > **Updates** and read **Current Version**.
-- In the browser version, open **Settings** and scroll down to **Updates**, above **Diagnostics & Logs**. **Server Version** shows the version of the server.
+- In the desktop app, open **Settings** > **About**. The card at the top shows **Troupe** and the version number.
+- In the browser version, open **Settings** > **About**. The first row shows `termul-server` and the version of the server.
 
 ## Report a bug on GitHub
 

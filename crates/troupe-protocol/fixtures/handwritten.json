@@ -121,6 +121,34 @@
   },
   {
     "file": "ws-event.json",
+    "name": "models_update",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs ModelsUpdateEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "models_update",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "models": {
+          "currentModelId": "openrouter:openai/gpt-5",
+          "availableModels": [
+            {
+              "modelId": "openrouter:anthropic/claude-sonnet-4",
+              "name": "anthropic/claude-sonnet-4"
+            },
+            {
+              "modelId": "openrouter:openai/gpt-5",
+              "name": "openai/gpt-5"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
     "name": "mcp_install_request",
     "_handwritten": true,
     "source": "src-tauri/src/acp/host_mcp/parent/mcp_install/mod.rs Card",

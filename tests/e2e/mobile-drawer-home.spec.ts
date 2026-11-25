@@ -904,7 +904,7 @@ test('Settings hands the drawer off: it closes and the settings dialog keeps foc
   const drawer = await openDrawer(page)
   await drawer.getByRole('button', { name: 'Settings', exact: true }).tap()
   await expect(drawer).toBeHidden()
-  const settings = page.getByRole('dialog', { name: 'Application Preferences' })
+  const settings = page.getByRole('dialog', { name: 'Preferences', exact: true })
   await expect(settings).toBeVisible()
   // The drawer must not pull focus back to ☰ behind the dialog that opened.
   await expect
@@ -913,7 +913,7 @@ test('Settings hands the drawer off: it closes and the settings dialog keeps foc
         () => document.activeElement?.closest('[role="dialog"][aria-label]')?.ariaLabel ?? null
       )
     )
-    .toBe('Application Preferences')
+    .toBe('Preferences')
   await expect(menuButton(page)).not.toBeFocused()
 })
 

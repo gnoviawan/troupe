@@ -291,6 +291,7 @@ wire_enum! {
         ToolCall = "tool_call",
         ModeUpdate = "mode_update",
         ConfigOptionsUpdate = "config_options_update",
+        ModelsUpdate = "models_update",
         SessionInfoUpdate = "session_info_update",
         UsageUpdate = "usage_update",
         PermissionRequest = "permission_request",

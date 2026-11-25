@@ -109,6 +109,8 @@ mod agent_tools_loop_tests;
 #[cfg(test)]
 mod background_commands_tests;
 #[cfg(test)]
+mod legacy_model_switch_tests;
+#[cfg(test)]
 mod native_subagents_loop_tests;
 #[cfg(test)]
 mod native_subagents_tests;

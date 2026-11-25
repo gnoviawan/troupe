@@ -668,6 +668,7 @@ A session log event has one of three delivery tiers (`tier_of` in `src-tauri/src
 | `acp:commands_update` | session | Session log event (lossy). The available slash commands changed. |
 | `acp:mode_update` | session | Session log event (reliable). |
 | `acp:config_options_update` | session | Session log event (reliable). |
+| `acp:models_update` | session | Session log event (reliable). A legacy-only session's model switch (`session/set_model`) with the whole model list. |
 | `acp:usage_update` | session | Session log event (reliable). Context-window use and optional cost. |
 | `acp:claude_limit_action` | session | Session log event (reliable). The host acted on a Claude chat at its Account's limit, `{sessionId, projectId, action}`. `action` is `switched` (`{from, to, fromAgentId, newAgentId}`), `resume_scheduled` (`{at}`, epoch ms), `resume_cancelled`, `resumed` (`{fromAgentId, newAgentId}`) or `failed` (`{reason}`). `switched` moves only that chat; other chats on the same agent keep running there. |
 | `acp:codex_limit_action` | session | Session log event (reliable). The host acted on a Codex chat at its Account's limit, `{sessionId, projectId, action}`. `action` is `switched` (`{from, to, fromAgentId, newAgentId}`), `resume_scheduled` (`{at}`, epoch ms), `resume_cancelled`, `resumed` (`{fromAgentId, newAgentId}`) or `failed` (`{reason}`). `switched` moves only that chat; other chats on the same agent keep running there. |

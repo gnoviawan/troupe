@@ -45,7 +45,7 @@ test.setTimeout(90_000)
 
 const SETTINGS_KEY = 'settings/app'
 const SWITCH_NAME = 'Screen reader mode'
-const PREFERENCES_NAME = 'Application Preferences'
+const PREFERENCES_NAME = 'Preferences'
 /** The line of terminal output the tests feed in and then look for. */
 const OUTPUT_MARKER = 'srm-e2e-marker'
 
@@ -190,18 +190,31 @@ async function bootMobileShell(page: Page): Promise<void> {
   await warmedUp
 }
 
-/** Drawer -> Settings: the phone's way into App Preferences. */
+function preferencesDialog(page: Page): Locator {
+  return page.getByRole('dialog', { name: PREFERENCES_NAME, exact: true })
+}
+
+/** Tap a page in the Settings rail. */
+async function showSettingsPage(dialog: Locator, name: string): Promise<void> {
+  await dialog
+    .getByRole('navigation', { name: 'Settings pages' })
+    .getByRole('button', { name, exact: true })
+    .tap()
+}
+
+/** Drawer -> Settings -> Terminal: the phone's way to the switch. */
 async function openAppPreferences(page: Page): Promise<Locator> {
   await page.getByRole('button', { name: 'Open menu' }).tap()
   await page.getByRole('button', { name: 'Settings', exact: true }).tap()
-  const dialog = page.getByRole('dialog', { name: PREFERENCES_NAME })
+  const dialog = preferencesDialog(page)
   await expect(dialog).toBeVisible()
+  await showSettingsPage(dialog, 'Terminal')
   return dialog
 }
 
 async function closeAppPreferences(page: Page): Promise<void> {
   await page.getByRole('button', { name: `Close ${PREFERENCES_NAME}` }).tap()
-  await expect(page.getByRole('dialog', { name: PREFERENCES_NAME })).toBeHidden()
+  await expect(preferencesDialog(page)).toBeHidden()
 }
 
 function screenReaderSwitch(dialog: Locator): Locator {
@@ -295,7 +308,7 @@ test.beforeEach(async () => {
 // setting off, whatever the test did, so later specs build ordinary terminals.
 test.afterEach(async ({ page }) => {
   try {
-    const dialog = page.getByRole('dialog', { name: PREFERENCES_NAME })
+    const dialog = preferencesDialog(page)
     if (await dialog.isVisible()) {
       await page.getByRole('button', { name: `Close ${PREFERENCES_NAME}` }).tap()
       await expect(dialog).toBeHidden()
@@ -315,7 +328,7 @@ test.afterEach(async ({ page }) => {
   }
 })
 
-test('Screen reader mode is an off switch in Terminal Appearance, between Terminal Renderer and Preview', async ({
+test('Screen reader mode is an off switch in New terminals, between Default shell and Advanced', async ({
   page
 }) => {
   await bootMobileShell(page)
@@ -332,27 +345,27 @@ test('Screen reader mode is an off switch in Terminal Appearance, between Termin
   await expect(toggle).toHaveAccessibleDescription(/Changes apply to new terminals\./)
   await expect(toggle).toHaveAccessibleDescription(/Can repeat typed characters in some setups\./)
 
-  // Order inside Terminal Appearance, in the DOM and on screen.
-  const renderer = dialog.getByText('Terminal Renderer', { exact: true })
-  const preview = dialog.getByText('Preview', { exact: true })
+  // Order on the Terminal page, in the DOM and on screen.
+  const shell = dialog.getByText('Default shell', { exact: true })
+  const advanced = dialog.getByText('Advanced', { exact: true })
   const toggleHandle = await toggle.elementHandle()
-  const rendererHandle = await renderer.elementHandle()
-  const previewHandle = await preview.elementHandle()
-  if (!toggleHandle || !rendererHandle || !previewHandle) throw new Error('rows not rendered')
+  const shellHandle = await shell.elementHandle()
+  const advancedHandle = await advanced.elementHandle()
+  if (!toggleHandle || !shellHandle || !advancedHandle) throw new Error('rows not rendered')
   const domOrder = await page.evaluate(
     ([sw, before, after]) => ({
-      afterRenderer: Boolean(before.compareDocumentPosition(sw) & Node.DOCUMENT_POSITION_FOLLOWING),
-      beforePreview: Boolean(sw.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING)
+      afterShell: Boolean(before.compareDocumentPosition(sw) & Node.DOCUMENT_POSITION_FOLLOWING),
+      beforeAdvanced: Boolean(sw.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING)
     }),
-    [toggleHandle, rendererHandle, previewHandle]
+    [toggleHandle, shellHandle, advancedHandle]
   )
-  expect(domOrder).toEqual({ afterRenderer: true, beforePreview: true })
-  const rendererBox = await renderer.boundingBox()
+  expect(domOrder).toEqual({ afterShell: true, beforeAdvanced: true })
+  const shellBox = await shell.boundingBox()
   const toggleBox = await toggle.boundingBox()
-  const previewBox = await preview.boundingBox()
-  if (!rendererBox || !toggleBox || !previewBox) throw new Error('rows have no layout box')
-  expect(toggleBox.y).toBeGreaterThan(rendererBox.y)
-  expect(toggleBox.y + toggleBox.height).toBeLessThanOrEqual(previewBox.y)
+  const advancedBox = await advanced.boundingBox()
+  if (!shellBox || !toggleBox || !advancedBox) throw new Error('rows have no layout box')
+  expect(toggleBox.y).toBeGreaterThan(shellBox.y)
+  expect(toggleBox.y + toggleBox.height).toBeLessThanOrEqual(advancedBox.y)
 
   // The row is a 44px-tall touch row that stays inside the 390px viewport.
   const row = toggle.locator('xpath=..')
@@ -424,22 +437,23 @@ test('the settings search finds Screen reader mode by name, "talkback" and "voic
   await bootMobileShell(page)
   const dialog = await openAppPreferences(page)
   const search = dialog.getByRole('textbox', { name: 'Search settings' })
-  const results = dialog.getByRole('navigation', { name: 'Settings categories' })
+  const results = dialog.getByRole('navigation', { name: 'Settings pages' })
 
   for (const query of ['screen reader', 'talkback', 'voiceover']) {
     await search.fill(query)
     const first = results.getByRole('button').first()
-    // Result = the setting's label over its category.
+    // Result = the setting's label over its page.
     await expect(first).toContainText(SWITCH_NAME)
-    await expect(first).toContainText('Terminal Appearance')
+    await expect(first).toContainText('Terminal')
   }
 
-  // Choosing the result scrolls the Terminal Appearance section into view.
+  // Choosing the result opens the Terminal page and scrolls the switch into view.
   await results.getByRole('button').first().tap()
-  await expect(dialog.getByRole('heading', { name: 'Terminal Appearance' })).toBeInViewport()
+  await expect(dialog.getByRole('heading', { name: 'Terminal', exact: true })).toBeVisible()
+  await expect(screenReaderSwitch(dialog)).toBeInViewport()
 })
 
-test('Reset to Defaults turns an enabled Screen reader mode back off', async ({ page }) => {
+test('Reset settings turns an enabled Screen reader mode back off', async ({ page }) => {
   await seedScreenReaderMode(true)
   await bootMobileShell(page)
   const dialog = await openAppPreferences(page)
@@ -447,12 +461,16 @@ test('Reset to Defaults turns an enabled Screen reader mode back off', async ({ 
   await toggle.scrollIntoViewIfNeeded()
   await expect(toggle).toBeChecked()
 
-  await dialog.getByRole('button', { name: 'Reset to Defaults' }).tap()
+  // Reset is on the About page now.
+  await showSettingsPage(dialog, 'About')
+  await dialog.getByRole('button', { name: 'Reset settings', exact: true }).tap()
   await page
     .locator('[data-sibling-dialog]')
-    .getByRole('button', { name: 'Reset', exact: true })
+    .getByRole('button', { name: 'Reset settings', exact: true })
     .tap()
 
+  await showSettingsPage(dialog, 'Terminal')
+  await toggle.scrollIntoViewIfNeeded()
   await expect(toggle).not.toBeChecked()
   await expectPersistedScreenReaderMode(false)
 })

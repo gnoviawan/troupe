@@ -393,7 +393,7 @@ test('a drawer row that navigates leaves no dead back press on the way back', as
 
 test('drawer to Settings swaps in one tap: one entry, back closes Settings', async ({ page }) => {
   const { base } = await bootMobileShell(page)
-  const settings = page.getByRole('dialog', { name: 'Application Preferences' })
+  const settings = page.getByRole('dialog', { name: 'Preferences', exact: true })
 
   await openDrawer(page)
   await page.getByRole('button', { name: 'Settings', exact: true }).tap()
@@ -409,15 +409,15 @@ test('drawer to Settings swaps in one tap: one entry, back closes Settings', asy
   await expectHistory(page, { index: base.index, hash: '#/', sentinelDepth: 0 })
 })
 
-test('closing Application Preferences by its close button consumes its entry', async ({ page }) => {
+test('closing Preferences by its close button consumes its entry', async ({ page }) => {
   const { base } = await bootMobileShell(page)
-  const settings = page.getByRole('dialog', { name: 'Application Preferences' })
+  const settings = page.getByRole('dialog', { name: 'Preferences', exact: true })
 
   await openDrawer(page)
   await page.getByRole('button', { name: 'Settings', exact: true }).tap()
   await expect(settings).toBeVisible()
 
-  await settings.getByRole('button', { name: 'Close Application Preferences' }).tap()
+  await settings.getByRole('button', { name: 'Close Preferences' }).tap()
 
   await expect(settings).toBeHidden()
   await expectHistory(page, { index: base.index, hash: '#/', sentinelDepth: 0 })

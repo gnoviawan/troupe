@@ -963,6 +963,7 @@ export type WsEventType =
   | 'tool_call'
   | 'mode_update'
   | 'config_options_update'
+  | 'models_update'
   | 'session_info_update'
   | 'usage_update'
   | 'permission_request'
@@ -999,6 +1000,7 @@ export const WsEventTypeValues = [
   'tool_call',
   'mode_update',
   'config_options_update',
+  'models_update',
   'session_info_update',
   'usage_update',
   'permission_request',

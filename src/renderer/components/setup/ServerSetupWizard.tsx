@@ -36,6 +36,10 @@ import type {
 } from '@shared/types/server-setup.types'
 import { type FormEvent, useEffect, useState } from 'react'
 import { AlertTriangle, ChevronDown } from '@/components/icons'
+import { SettingsDisclosure } from '@/components/settings/SettingsDisclosure'
+import { SettingsCard } from '@/components/settings/SettingsGroup'
+import { SettingsRow, settingsDescriptionId } from '@/components/settings/SettingsRow'
+import { SettingsSelect } from '@/components/settings/SettingsSelect'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
@@ -578,20 +582,238 @@ export function ServerSetupWizard({
     )
   }
 
-  // Reconfigure: embedded inside the Server preferences page — the section
-  // provides the surrounding chrome, the wizard is just the form.
+  // Reconfigure: embedded in Settings → About → Server, so it uses the
+  // settings rows (label and help left, control right) instead of the
+  // stacked first-run form.
   if (loading) return loadingBody
   if (loadError) return errorBody
+  if (answers === null) return null
   return (
     <form
-      className="flex max-w-md flex-col gap-5"
+      className="flex flex-col gap-3"
       aria-label="Server settings"
       noValidate
       onSubmit={(event) => {
         void handleSubmit(event)
       }}
     >
-      {form}
+      <SettingsCard>
+        <SettingsRow
+          label="Where can Troupe be reached?"
+          htmlFor="server-setup-host"
+          description={
+            <RowHelp id="server-setup-host" error={fieldErrors.host}>
+              {answers.host === '0.0.0.0'
+                ? 'Phones, tablets and computers that can reach this machine can connect.'
+                : 'Safest. Nothing else on the network can connect.'}
+            </RowHelp>
+          }
+        >
+          <SettingsSelect
+            id="server-setup-host"
+            options={HOST_OPTIONS}
+            value={answers.host}
+            onValueChange={handleHostChange}
+            disabled={submitting}
+            aria-describedby={rowDescribedBy('server-setup-host', fieldErrors.host)}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="Port"
+          htmlFor="server-setup-port"
+          description={
+            <RowHelp id="server-setup-port" error={fieldErrors.port}>
+              The part after the colon in the address, like <span className="font-mono">:8080</span>
+              .
+            </RowHelp>
+          }
+        >
+          <Input
+            id="server-setup-port"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={65535}
+            className={ROW_INPUT_CLASS}
+            value={Number.isFinite(answers.port) ? answers.port : ''}
+            onChange={(e) => update('port', e.target.valueAsNumber)}
+            disabled={submitting}
+            aria-describedby={rowDescribedBy('server-setup-port', fieldErrors.port)}
+            aria-invalid={fieldErrors.port ? true : undefined}
+          />
+        </SettingsRow>
+        {answers.host === '0.0.0.0' ? (
+          <SettingsRow
+            layout="inline"
+            label="Let other devices make changes"
+            htmlFor="server-setup-remote-writes"
+            description={
+              <RowHelp id="server-setup-remote-writes" error={fieldErrors.allowRemoteWrites}>
+                Off: other devices can watch terminals and browse files, but can't type or edit.
+              </RowHelp>
+            }
+          >
+            <Switch
+              id="server-setup-remote-writes"
+              checked={answers.allowRemoteWrites}
+              onCheckedChange={(checked) => update('allowRemoteWrites', checked)}
+              disabled={submitting}
+              aria-describedby={rowDescribedBy(
+                'server-setup-remote-writes',
+                fieldErrors.allowRemoteWrites
+              )}
+              aria-invalid={fieldErrors.allowRemoteWrites ? true : undefined}
+            />
+          </SettingsRow>
+        ) : null}
+        <SettingsRow
+          label="Updates"
+          htmlFor="server-setup-channel"
+          description={
+            <RowHelp id="server-setup-channel" error={fieldErrors.updateChannel}>
+              {CHANNEL_HINTS[answers.updateChannel ?? 'none']}
+            </RowHelp>
+          }
+        >
+          <SettingsSelect
+            id="server-setup-channel"
+            options={CHANNEL_OPTIONS}
+            value={answers.updateChannel ?? 'none'}
+            onValueChange={handleChannelChange}
+            disabled={submitting}
+            aria-describedby={rowDescribedBy('server-setup-channel', fieldErrors.updateChannel)}
+          />
+        </SettingsRow>
+      </SettingsCard>
+
+      <SettingsDisclosure
+        title="Advanced"
+        summary="Where the server keeps terminal data and the project list."
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+      >
+        <SettingsRow
+          layout="stacked"
+          label="Folder for terminal data"
+          htmlFor="server-setup-sessions-dir"
+          description={
+            <RowHelp id="server-setup-sessions-dir" error={fieldErrors.sessionsDir}>
+              Where Troupe keeps terminal sessions.
+            </RowHelp>
+          }
+        >
+          <Input
+            id="server-setup-sessions-dir"
+            type="text"
+            className={cn(ROW_INPUT_CLASS, 'w-full font-mono @[35rem]:w-full')}
+            value={answers.sessionsDir}
+            onChange={(e) => update('sessionsDir', e.target.value)}
+            disabled={submitting}
+            aria-describedby={rowDescribedBy('server-setup-sessions-dir', fieldErrors.sessionsDir)}
+            aria-invalid={fieldErrors.sessionsDir ? true : undefined}
+            spellCheck={false}
+          />
+        </SettingsRow>
+        <SettingsRow
+          layout="stacked"
+          label="Projects list file"
+          htmlFor="server-setup-projects-file"
+          description={
+            <RowHelp id="server-setup-projects-file" error={fieldErrors.projectsFile}>
+              Where Troupe stores your project list.
+            </RowHelp>
+          }
+        >
+          <Input
+            id="server-setup-projects-file"
+            type="text"
+            className={cn(ROW_INPUT_CLASS, 'w-full font-mono @[35rem]:w-full')}
+            value={answers.projectsFile}
+            onChange={(e) => update('projectsFile', e.target.value)}
+            disabled={submitting}
+            aria-describedby={rowDescribedBy(
+              'server-setup-projects-file',
+              fieldErrors.projectsFile
+            )}
+            aria-invalid={fieldErrors.projectsFile ? true : undefined}
+            spellCheck={false}
+          />
+        </SettingsRow>
+        {answers.updateChannel !== null ? (
+          <SettingsRow
+            label="How often to check for updates"
+            htmlFor="server-setup-update-interval"
+            description={
+              <RowHelp id="server-setup-update-interval" error={fieldErrors.updateIntervalSecs}>
+                Seconds between checks. 21600 is every 6 hours.
+              </RowHelp>
+            }
+          >
+            <Input
+              id="server-setup-update-interval"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              className={ROW_INPUT_CLASS}
+              value={Number.isFinite(answers.updateIntervalSecs) ? answers.updateIntervalSecs : ''}
+              onChange={(e) => update('updateIntervalSecs', e.target.valueAsNumber)}
+              disabled={submitting}
+              aria-describedby={rowDescribedBy(
+                'server-setup-update-interval',
+                fieldErrors.updateIntervalSecs
+              )}
+              aria-invalid={fieldErrors.updateIntervalSecs ? true : undefined}
+            />
+          </SettingsRow>
+        ) : null}
+      </SettingsDisclosure>
+
+      <div className="flex items-center justify-end gap-3">
+        {formError ? (
+          <p role="alert" className="min-w-0 flex-1 text-xs text-destructive">
+            {formError}
+          </p>
+        ) : null}
+        <Button type="submit" size="xs" disabled={submitting}>
+          {submitting ? <Spinner size={12} decorative /> : null}
+          {submitting ? 'Saving…' : 'Save and restart'}
+        </Button>
+      </div>
     </form>
+  )
+}
+
+/** A settings text field: 32px, full width when narrow, 240px beside the label. */
+const ROW_INPUT_CLASS = 'h-8 w-full text-xs md:text-xs pointer-coarse:text-base @[35rem]:w-60'
+
+const HOST_OPTIONS = [
+  { value: '127.0.0.1', label: 'Only this computer' },
+  { value: '0.0.0.0', label: 'Other devices on the network' }
+] as const
+
+/** The row's description id plus its error id (when set), for `aria-describedby`. */
+function rowDescribedBy(id: string, error: string | undefined): string | undefined {
+  return describedBy(settingsDescriptionId(id), error ? fieldErrorId(id) : undefined)
+}
+
+/** A row's help line, with the field's error under it. */
+function RowHelp({
+  id,
+  error,
+  children
+}: {
+  id: string
+  error?: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <>
+      {children}
+      {error ? (
+        <span id={fieldErrorId(id)} role="alert" className="mt-0.5 block text-destructive">
+          {error}
+        </span>
+      ) : null}
+    </>
   )
 }

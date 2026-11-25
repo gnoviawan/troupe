@@ -93,7 +93,8 @@ export function StatusDot({ tone }: { tone: AccountTone }): React.JSX.Element {
 }
 
 const BAR_FILL: Record<UsageTone, string> = {
-  normal: 'bg-muted-foreground',
+  // Primary blue reads as "in use"; amber and red still mark the limits.
+  normal: 'bg-primary-fill',
   warning: 'bg-warning',
   critical: 'bg-destructive'
 }
