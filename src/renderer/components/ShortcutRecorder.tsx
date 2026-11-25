@@ -184,7 +184,9 @@ export function ShortcutRecorder({
             }`}
           >
             {keys.length === 0 ? (
-              <span className="text-xs text-muted-foreground">Press keys…</span>
+              <span className="text-xs text-muted-foreground">
+                {isRecording ? 'Press keys…' : 'Not set'}
+              </span>
             ) : (
               keys.map((part, index) => (
                 <kbd

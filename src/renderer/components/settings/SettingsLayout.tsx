@@ -75,6 +75,8 @@ export const SETTINGS_COLUMN_CLASS = 'mx-auto w-full max-w-[640px]'
 
 const ActivePageContext = createContext<string | undefined>(undefined)
 const SectionVisibleContext = createContext(true)
+/** Lets a page say it shows a subpage, which has its own header. */
+const SubpageContext = createContext<(pageId: string, on: boolean) => void>(() => {})
 
 /** False while this settings page is mounted but hidden behind another page. */
 export function useSettingsSectionVisible(): boolean {
@@ -89,19 +91,27 @@ const RAIL_ACTIVE_CLASS = 'bg-foreground/10 text-foreground'
 /**
  * One settings page. It stays mounted (form state and search anchors keep
  * working) and is hidden unless it is the active page. Sections on a page
- * are 32px apart.
+ * are 32px apart. Set `subpage` while the page shows a subpage with its own
+ * header (an MCP server's detail page): the page title then hides.
  */
 export function SettingsSection({
   id,
   children,
-  className
+  className,
+  subpage = false
 }: {
   id: string
   children: React.ReactNode
   className?: string
+  subpage?: boolean
 }): React.JSX.Element {
   const activeId = useContext(ActivePageContext)
   const hidden = activeId !== undefined && activeId !== id
+  const setSubpage = useContext(SubpageContext)
+  useEffect(() => {
+    setSubpage(id, subpage)
+    return () => setSubpage(id, false)
+  }, [id, subpage, setSubpage])
   return (
     <section
       id={`settings-section-${id}`}
@@ -148,6 +158,17 @@ export function SettingsLayout({
   const markedRef = useRef<HTMLElement | null>(null)
   const rafRef = useRef<number | null>(null)
 
+  const [subpages, setSubpages] = useState<ReadonlySet<string>>(() => new Set())
+  const setSubpage = useCallback((pageId: string, on: boolean) => {
+    setSubpages((previous) => {
+      if (previous.has(pageId) === on) return previous
+      const next = new Set(previous)
+      if (on) next.add(pageId)
+      else next.delete(pageId)
+      return next
+    })
+  }, [])
+
   const results = useMemo(() => searchSettings(query, searchIndex), [query, searchIndex])
   const isSearching = query.trim().length > 0
   const active = categories.find((category) => category.id === activeId) ?? categories[0]
@@ -180,11 +201,32 @@ export function SettingsLayout({
     }
   }, [cancelJump, clearMark])
 
-  // A new page starts at the top.
+  const activeIsSubpage = active !== undefined && subpages.has(active.id)
+
+  // Narrow layout: the rail is a sideways strip, so keep the chosen page in
+  // view in it. Only the strip scrolls; the page does not move.
+  const navRef = useRef<HTMLElement | null>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: active?.id re-runs this when the chosen page changes
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || isSearching || nav.scrollWidth <= nav.clientWidth) return
+    const button = nav.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!button) return
+    const start =
+      button.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft
+    const end = start + button.getBoundingClientRect().width
+    const edge = 24
+    if (start < nav.scrollLeft + edge) nav.scrollLeft = Math.max(0, start - edge)
+    else if (end > nav.scrollLeft + nav.clientWidth - edge)
+      nav.scrollLeft = end - nav.clientWidth + edge
+  }, [active?.id, isSearching])
+
+  // A new page, or a subpage opening or closing, starts at the top.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeIsSubpage re-runs this when a subpage opens or closes
   useEffect(() => {
     if (activeId === undefined) return
-    bodyRef.current?.scrollTo({ top: 0 })
-  }, [activeId])
+    bodyRef.current?.scrollTo?.({ top: 0 })
+  }, [activeId, activeIsSubpage])
 
   const openResult = useCallback(
     (categoryId: string, anchorId?: string) => {
@@ -314,6 +356,7 @@ export function SettingsLayout({
           </div>
 
           <nav
+            ref={navRef}
             aria-label="Settings pages"
             className="flex flex-1 gap-px overflow-x-auto px-3 pb-2 md:flex-col md:overflow-y-auto md:pb-3"
           >
@@ -418,7 +461,7 @@ export function SettingsLayout({
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-20 pt-6 md:px-8 md:pt-4"
           >
             <div className={SETTINGS_COLUMN_CLASS}>
-              {active && (
+              {active && !activeIsSubpage && (
                 <header className="mb-8 flex flex-col gap-1.5">
                   <h2 className="text-xl font-medium tracking-[-0.01em] text-foreground">
                     {active.label}
@@ -428,7 +471,7 @@ export function SettingsLayout({
                   )}
                 </header>
               )}
-              {children}
+              <SubpageContext.Provider value={setSubpage}>{children}</SubpageContext.Provider>
             </div>
           </div>
           {footer && (

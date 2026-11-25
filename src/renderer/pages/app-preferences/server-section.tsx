@@ -84,20 +84,20 @@ function ServerSectionInner(): React.JSX.Element {
         Saving these settings restarts the server. You're taken to the new address automatically —
         anyone else connected has to reload.
       </SettingsNotice>
-      <div id={rowId('server-config')} className={cn('p-4', SETTINGS_CARD_CLASS)}>
+      <div id={rowId('server-config')} className="scroll-mt-4">
         {loading ? (
-          <div className="flex items-center justify-center py-6">
+          <div className={cn('flex items-center justify-center py-6', SETTINGS_CARD_CLASS)}>
             <Spinner label="Loading server settings" />
           </div>
         ) : error ? (
-          <div className="flex flex-col items-start gap-3">
-            <p role="alert" className="text-sm text-destructive">
+          <div className={cn('flex items-center gap-3 px-4 py-3', SETTINGS_CARD_CLASS)}>
+            <p role="alert" className="min-w-0 flex-1 text-xs text-destructive">
               {error}
             </p>
             <Button
               type="button"
               size="xs"
-              variant="outline"
+              variant="secondary"
               onClick={() => setAttempt((n) => n + 1)}
             >
               Try again
