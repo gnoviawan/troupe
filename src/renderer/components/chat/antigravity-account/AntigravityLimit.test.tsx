@@ -142,13 +142,16 @@ describe('AntigravityLimitNotice', () => {
     api.usage.mockResolvedValue([read('default', 40), read('ab12', 90), read('cd34', 4)])
     reachLimit()
     render(<AntigravityLimitNotice sessionId="s1" />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Personal reached its usage limit')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Personal reached its usage limit')
     const switchButton = await screen.findByRole('button', { name: 'Switch to Work and continue' })
+    expect(alert).toHaveTextContent('Switch to Work and continue?')
+    expect(alert).not.toHaveTextContent('% used')
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Other account' }), {
       button: 0,
       ctrlKey: false
     })
-    expect(await screen.findByRole('menuitem', { name: /Side/ })).toHaveTextContent('4% used')
+    expect((await screen.findByRole('menuitem', { name: /Side/ })).textContent).toBe('Side')
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
     fireEvent.click(switchButton)
     await vi.waitFor(() =>
