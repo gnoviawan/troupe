@@ -239,10 +239,18 @@ impl State {
             ControlAct::Usage(open) => self.draft_mut(host).usage_open = open,
             ControlAct::Mode(mode_id) => {
                 self.draft_mut(host).mode_open = false;
-                if let Host::Chat(session) = host {
-                    log::info!("[composer] chat {session} mode: {mode_id}");
-                    self.acp_step(Event::SetMode(session.clone(), mode_id));
+                let Host::Chat(session) = host else { return };
+                // An armed switch takes the pick for its target (`handleSetMode`).
+                if self.armed_config(session).is_some() {
+                    log::info!("[composer] chat {session} picks mode {mode_id} for its switch");
+                    match serde_json::from_value(serde_json::json!({ "modeId": mode_id })) {
+                        Ok(picks) => self.acp_step(Event::SetSwitchPendingOption(session.clone(), picks)),
+                        Err(e) => log::warn!("[composer] unreadable switch pick: {e}"),
+                    }
+                    return;
                 }
+                log::info!("[composer] chat {session} mode: {mode_id}");
+                self.acp_step(Event::SetMode(session.clone(), mode_id));
             }
         }
     }

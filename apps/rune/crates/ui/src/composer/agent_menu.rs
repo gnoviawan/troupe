@@ -57,15 +57,25 @@ fn chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<
         .radius(8.0)
         .role("button")
         .label(label.to_owned())
-        .hover(c.foreground.alpha(0.06))
+        .hover(c.foreground.alpha(0.06));
+    if phone_sheet(spec) {
+        // `MobileModelPill`: a 36px chip, 14/20 text, a 44px hit area.
+        let switch = hooks.switch.clone();
+        return chip
+            .h(44.0)
+            .my(-4.0)
+            .pl(4.0)
+            .pr(6.0)
+            .radius(10.0)
+            .child(icon(&i::BOT, 14.0).color(c.muted_foreground))
+            .child(text(label.to_owned()).font(sans(14.0, 400.0, 20.0)).color(ink).single_line().truncate().min_w(0.0))
+            .on_press_tx(move |s: &mut S, tx: &mut Tx| switch(s, SwitchAct::OpenSheet, tx));
+    }
+    chip = chip
         .child(icon(&i::BOT, 12.0).color(c.muted_foreground))
         .child(text(label.to_owned()).font(sans(12.0, 400.0, 16.0)).color(ink).single_line().truncate().min_w(0.0));
     if !armed {
         chip = chip.child(icon(&i::CHEVRON_DOWN, 12.0).color(c.muted_foreground));
-    }
-    if phone_sheet(spec) {
-        let switch = hooks.switch.clone();
-        return chip.on_press_tx(move |s: &mut S, tx: &mut Tx| switch(s, SwitchAct::OpenSheet, tx));
     }
     chip.on_press(move |s: &mut S| agent(s, true))
 }
@@ -87,10 +97,14 @@ pub(super) fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &st
         return menu;
     }
     let switch = hooks.switch.clone();
+    // A phone gets a 44px hit area around the 22px button, as `before:-inset-2.5` does.
+    let reach = if spec.place == Place::Phone { 11.0 } else { 0.0 };
     let cancel = row()
         .key(format!("{}-agent-switch-cancel", spec.key))
-        .w(22.0)
-        .h(22.0)
+        .w(22.0 + 2.0 * reach)
+        .h(22.0 + 2.0 * reach)
+        .mx(-reach)
+        .my(-reach)
         .center()
         .radius(4.0)
         .role("button")
