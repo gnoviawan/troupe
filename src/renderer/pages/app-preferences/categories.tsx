@@ -4,6 +4,7 @@ import {
   Download,
   FileEdit,
   FileText,
+  GitBranch,
   Globe,
   Keyboard,
   KeyRound,
@@ -75,6 +76,13 @@ const ALL_APP_PREF_CATEGORIES: SettingsCategory[] = [
     label: 'Agent chats',
     description: 'Time limits for agent chats, and the agents Troupe can start.',
     icon: <Bot size={16} />
+  },
+  {
+    id: 'subagents',
+    group: 'Agents',
+    label: 'Sub-agents',
+    description: 'Agents your chats can hand work to, and what each one runs with.',
+    icon: <GitBranch size={16} />
   },
   {
     id: 'skills',
@@ -293,7 +301,7 @@ const ALL_APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     anchorId: rowId('suggest-automations')
   },
   {
-    categoryId: 'ai-agents',
+    categoryId: 'subagents',
     label: 'Let agents start other agents',
     description: 'An agent chat can hand parts of a task to your other installed agents.',
     keywords: [
@@ -308,14 +316,14 @@ const ALL_APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     anchorId: rowId('subagent-enabled')
   },
   {
-    categoryId: 'ai-agents',
+    categoryId: 'subagents',
     label: 'Max running sub-agents',
     description: 'Per chat. Extra starts are refused until one finishes.',
     keywords: ['subagent', 'sub-agent', 'limit', 'parallel', 'capacity'],
     anchorId: rowId('subagent-max-running')
   },
   {
-    categoryId: 'ai-agents',
+    categoryId: 'subagents',
     label: 'Max depth',
     description: 'How many levels of sub-agents can start their own sub-agents.',
     keywords: ['subagent', 'sub-agent', 'depth', 'nesting', 'levels'],

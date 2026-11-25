@@ -96,9 +96,9 @@ describe('CodexProviderSettings', () => {
     expect(work).toHaveTextContent('Signed out')
     expect(work).toHaveTextContent('m-pos')
     expect(screen.getByLabelText('Switch accounts automatically')).toBeChecked()
-    expect(
-      screen.getByText(/continue it on the signed-in account with the most room/)
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Switch accounts automatically')).toHaveAccessibleDescription(
+      "When a chat reaches its account's limit, move it to another signed-in account. Off by default, because OpenAI's terms may not allow it."
+    )
   })
 
   it('shows 5-hour and weekly usage bars', async () => {
@@ -166,6 +166,9 @@ describe('CodexProviderSettings', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add account' }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Add a Codex account')).toBeInTheDocument()
+    expect(within(dialog).getByTestId('second-account-notice')).toHaveTextContent(
+      "Troupe does not recommend using many Codex accounts. A separate work account is fine. Using several accounts to get past usage limits can break OpenAI's terms and get your accounts suspended. More info"
+    )
     expect(within(dialog).getByLabelText('Steps')).toHaveTextContent('1Name2Sign in3Done')
     // "Work" and "Personal" are in use, so only "Team" is suggested.
     expect(within(dialog).queryByRole('button', { name: 'Work' })).not.toBeInTheDocument()

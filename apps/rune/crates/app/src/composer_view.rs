@@ -55,13 +55,20 @@ pub fn composer(s: &State, t: &'static Tokens, host: &Host, place: Place) -> El 
         // `defaultOpen={!isMobileShell}`.
         queue_open: (place != Place::Phone) != draft.queue_toggled,
         prompt: match host {
-            Host::Chat(id) => s
-                .chat
-                .acp
-                .pending_permissions
-                .values()
-                .find(|p| &p.session_id == id)
-                .map(|p| ui::chat::approvals::permission_prompt(t, p, place == Place::Phone, crate::chat_view::lenses())),
+            Host::Chat(id) => {
+                let notice = crate::chat_view::error_notice(s, t, id);
+                let permission = s
+                    .chat
+                    .acp
+                    .pending_permissions
+                    .values()
+                    .find(|p| &p.session_id == id)
+                    .map(|p| ui::chat::approvals::permission_prompt(t, p, place == Place::Phone, crate::chat_view::lenses()));
+                match (notice, permission) {
+                    (Some(n), Some(p)) => Some(col().w_full().child(n).child(p)),
+                    (n, p) => n.or(p),
+                }
+            }
             Host::Launcher(_) => None,
         },
         mode: s.mode_view(host),

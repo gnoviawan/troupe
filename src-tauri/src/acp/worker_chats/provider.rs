@@ -101,7 +101,7 @@ impl Provider {
                 let agent = acp.antigravity_agent();
                 let snapshot = agent.profile_list().await?;
                 let usage = if snapshot.auto_switch {
-                    self.usage_or_empty(agent.accounts_usage(true).await)
+                    self.usage_or_empty(agent.accounts_usage())
                 } else {
                     Vec::new()
                 };

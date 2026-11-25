@@ -184,13 +184,10 @@ impl Supervisor {
             .account_for(Some(&project_id), Some(&session_id.0))
             .to_string();
         let usage = if snapshot.auto_switch && agent_account == chat_account {
-            antigravity
-                .accounts_usage(true)
-                .await
-                .unwrap_or_else(|error| {
-                    log::warn!("[antigravity-limit] usage read failed: {error}");
-                    Vec::new()
-                })
+            antigravity.accounts_usage().unwrap_or_else(|error| {
+                log::warn!("[antigravity-limit] usage read failed: {error}");
+                Vec::new()
+            })
         } else {
             Vec::new()
         };
@@ -199,6 +196,9 @@ impl Supervisor {
         let resets_at = reported_reset
             .map(|ms| ms.div_euclid(1000))
             .or_else(|| blocking_reset(usage.iter().find(|u| u.account_id == agent_account)));
+        if resets_at.is_none() {
+            log::info!("[antigravity-limit] chat {chat}: no reset time is known for this limit");
+        }
         if !self.attempts.insert(Attempt {
             session_id: session_id.0.clone(),
             resets_at,
