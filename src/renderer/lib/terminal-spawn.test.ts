@@ -110,7 +110,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('@/lib/env-parser', () => ({
-  resolveEnvForSpawn: () => ({
+  passThroughProjectEnv: () => ({
     env: { ...mockProjectEnv.current },
     hasProjectEnv: Object.keys(mockProjectEnv.current).length > 0
   })

@@ -146,64 +146,12 @@ pub(crate) fn resolve_spawn_project(
     }
 }
 
-fn is_ident_start(c: char) -> bool {
-    c.is_ascii_alphabetic() || c == '_'
-}
-
-fn is_ident(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_'
-}
-
-/// The length of the identifier at the start of `text`, if one starts there.
-fn ident_len(text: &str) -> Option<usize> {
-    let mut chars = text.char_indices();
-    let (_, first) = chars.next()?;
-    if !is_ident_start(first) {
-        return None;
-    }
-    Some(
-        chars
-            .find(|(_, c)| !is_ident(*c))
-            .map_or(text.len(), |(at, _)| at),
-    )
-}
-
-/// One `replace(/.../g, '')` pass: `matched` returns the length of the
-/// reference that starts at the given text, if one does.
-fn drop_references(value: &str, matched: impl Fn(&str) -> Option<usize>) -> String {
-    let mut out = String::with_capacity(value.len());
-    let mut rest = value;
-    while let Some(c) = rest.chars().next() {
-        match matched(rest) {
-            Some(len) => rest = &rest[len..],
-            None => {
-                out.push(c);
-                rest = &rest[c.len_utf8()..];
-            }
-        }
-    }
-    out
-}
-
-/// `expandEnvReferences` against the empty inherited env the renderer passes:
-/// every `${VAR}`, `$VAR` and `%VAR%` reference becomes empty.
-fn expand_env_references(value: &str) -> String {
-    let braced = drop_references(value, |text| {
-        let name = ident_len(text.strip_prefix("${")?)?;
-        (text[2 + name..].starts_with('}')).then_some(name + 3)
-    });
-    let bare = drop_references(&braced, |text| {
-        let name = ident_len(text.strip_prefix('$')?)?;
-        (!text[1 + name..].starts_with('{')).then_some(name + 1)
-    });
-    drop_references(&bare, |text| {
-        let name = ident_len(text.strip_prefix('%')?)?;
-        (text[1 + name..].starts_with('%')).then_some(name + 2)
-    })
-}
-
 /// `resolveAgentSpawnEnv`: the Project's env vars with the agent's own env
-/// on top; an agent value `$NAME` reads the Project's `NAME`.
+/// on top; an agent value `$NAME` reads the Project's `NAME`. Project values
+/// pass through unchanged, like the renderer's `passThroughProjectEnv`: the
+/// backend expands any remaining `$VAR` against the process env at spawn,
+/// which is the only place the real inherited env exists. Expanding here
+/// would resolve every reference against nothing.
 pub(crate) fn resolve_agent_spawn_env(
     project_env_vars: Option<&Value>,
     agent_env: Option<&Value>,
@@ -218,9 +166,8 @@ pub(crate) fn resolve_agent_spawn_env(
         if crate::js_trim(&key).is_empty() || var.get("key").is_none_or(Value::is_null) {
             continue;
         }
-        let value =
-            expand_env_references(var.get("value").and_then(Value::as_str).unwrap_or_default());
-        env.insert(key, Value::String(value));
+        let value = var.get("value").and_then(Value::as_str).unwrap_or_default();
+        env.insert(key, Value::String(value.to_owned()));
     }
     let project_env = env.clone();
     for (key, raw) in agent_env.and_then(Value::as_object).into_iter().flatten() {

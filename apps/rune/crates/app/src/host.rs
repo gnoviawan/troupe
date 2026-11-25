@@ -27,6 +27,10 @@ pub enum Fetch {
     ExplorerList(String),
     /// An explorer change (`/fs/write`, `/fs/mkdir`, `/fs/rename`, `/fs/delete`).
     ExplorerOp(model::explorer::Op),
+    /// A `gitApi` call of a `model::git` task.
+    Git(model::git::TaskId),
+    /// A history read (`/git/log`, `/git/commit-detail`, `/git/commit-file-diff`).
+    History(crate::git_history::HistoryFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);
@@ -98,7 +102,8 @@ mod imp {
             self.request(HttpRequest::get(&path), tag);
         }
 
-        /// Sends `request` off the window's thread; the answer comes back through [`Host::fetched`].
+        /// Sends `request` off the window's thread; the answer comes back through
+        /// [`Host::fetched`].
         pub fn request(&mut self, request: HttpRequest, tag: Fetch) {
             let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.0.clone());
             let spawned = thread::Builder::new().name("troupe-http".into()).spawn(move || {
@@ -171,7 +176,8 @@ mod imp {
             self.request(HttpRequest::get(&path), tag);
         }
 
-        /// Sends `request` with the page's `fetch`; the answer comes back through [`Host::fetched`].
+        /// Sends `request` with the page's `fetch`; the answer comes back through
+        /// [`Host::fetched`].
         pub fn request(&mut self, request: HttpRequest, tag: Fetch) {
             let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.clone());
             wasm_bindgen_futures::spawn_local(async move {

@@ -4,6 +4,7 @@
 
 pub mod claims;
 pub mod da_filter;
+pub mod env_expand;
 pub mod env_refresh;
 pub mod manager;
 pub mod session_protocol;
@@ -14,3 +15,4 @@ pub mod windows;
 pub use claims::RotatedClaim;
 pub use da_filter::DaFilter;
 pub use manager::{PtyManager, SpawnOptions};
+

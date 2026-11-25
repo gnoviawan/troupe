@@ -399,6 +399,11 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
             ui::explorer::FILES => crate::phone_files::files_sheet(s, t, window, layer),
             crate::phone_files::FILE_ACTIONS => crate::phone_files::actions_sheet(s, t, window, layer),
+            crate::git::GIT_SHEET => {
+                sheet(crate::git::GIT_SHEET, "Git changes".to_owned(), s)
+                    .child(crate::git_view::phone_panel(s, t, window, layer))
+                    .build(t, window, layer);
+            }
             _ => {}
         }
     }
@@ -430,7 +435,10 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
         .child(stack(
             vec![
                 mobile::sheet_subtitle(t, &project_line(s)),
-                row_of("GitBranch", "Git changes"),
+                mobile::sheet_row(t, glyph("GitBranch"), "Git changes", false).key("more-git").on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.overlays.open(crate::git::GIT_SHEET);
+                }),
                 mobile::sheet_row(t, glyph("FolderOpen"), "Files", false).on_press(|s: &mut State| {
                     s.close(MORE);
                     s.open_files();
