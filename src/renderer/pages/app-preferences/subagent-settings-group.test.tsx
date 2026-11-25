@@ -280,9 +280,10 @@ describe('SubagentSettingsGroup', () => {
 
   it("deletes one of an agent's profiles, but not its only one", async () => {
     await renderPage()
-    expect(within(openMenu(PI)).getByRole('menuitem', { name: 'Delete' })).toHaveAttribute(
-      'aria-disabled',
-      'true'
+    const onlyDelete = within(openMenu(PI)).getByRole('menuitem', { name: 'Delete' })
+    expect(onlyDelete).toHaveAttribute('aria-disabled', 'true')
+    expect(onlyDelete).toHaveAccessibleDescription(
+      "This agent's only profile. Switch it off instead."
     )
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
 

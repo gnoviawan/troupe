@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { SEGMENTED_TRACK_CLASS, segmentClass } from '@/components/ui/panel-styles'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SubagentApprovals, SubagentProfile, SubagentProfileView } from '@/lib/acp-api'
 import { cn } from '@/lib/utils'
 import { AgentRowIcon } from './AgentRowIcon'
@@ -184,6 +183,7 @@ function NoteField({
   )
 }
 
+/** An agent's only profile says why it stays, in the menu itself: a phone has no hover. */
 function DeleteItem({
   deletable,
   onDelete
@@ -191,28 +191,24 @@ function DeleteItem({
   deletable: boolean
   onDelete: () => void
 }): React.JSX.Element {
-  const item = (
-    <DropdownMenuItem
-      disabled={!deletable}
-      onSelect={onDelete}
-      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-    >
-      <Trash2 size={14} />
-      Delete
-    </DropdownMenuItem>
-  )
-  if (deletable) return item
+  const reasonId = useId()
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span>{item}</span>
-        </TooltipTrigger>
-        <TooltipContent side="left">
+    <>
+      <DropdownMenuItem
+        disabled={!deletable}
+        aria-describedby={deletable ? undefined : reasonId}
+        onSelect={onDelete}
+        className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
+      >
+        <Trash2 size={14} />
+        Delete
+      </DropdownMenuItem>
+      {deletable ? null : (
+        <p id={reasonId} className="max-w-52 px-2 pb-1.5 text-xs text-muted-foreground">
           This agent's only profile. Switch it off instead.
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+        </p>
+      )}
+    </>
   )
 }
 
@@ -307,7 +303,7 @@ export function ProfileRow({
             onCheckedChange={(enabled) => update({ enabled })}
           />
           <RowMenu label={`Actions for ${profile.id}`}>
-            <DropdownMenuItem onSelect={onDuplicate}>
+            <DropdownMenuItem className="gap-2" onSelect={onDuplicate}>
               <Copy size={14} />
               Duplicate
             </DropdownMenuItem>
