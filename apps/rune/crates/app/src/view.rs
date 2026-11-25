@@ -331,14 +331,11 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
         .border_sides([0.0, 0.0, 0.0, 1.0], t.colors.border)
         .children(views)
         .child(el().grow(1.0).w_full().window_drag())
-        .child(shell::tool_button(
-            t,
-            &i::TERMINAL,
-            "New terminal",
-            false,
-            true,
-            None,
-        ))
+        .child(
+            shell::tool_button(t, &i::TERMINAL, "New terminal", false, project.is_none() || s.terms.host.is_none(), None)
+                .key("tool-strip-terminal")
+                .on_press(|s: &mut State| s.new_terminal(None)),
+        )
         .child(shell::connection_lamp(t, s.status == Status::Live))
 }
 
