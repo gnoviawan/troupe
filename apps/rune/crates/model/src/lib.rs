@@ -15,6 +15,7 @@ pub mod prefs;
 pub mod projects;
 pub mod shell_layout;
 pub mod shortcuts;
+pub mod terminal;
 pub mod workspace;
 
 use serde::{Deserialize, Serialize};
