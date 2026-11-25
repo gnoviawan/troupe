@@ -105,6 +105,7 @@ impl State {
             Op::Create { path, kind: Kind::File } => ("/fs/write", json!({ "path": path, "content": "", "expected": "absent" })),
             Op::Create { path, kind: Kind::Folder } => ("/fs/mkdir", json!({ "path": path })),
             Op::Rename { from, to } => ("/fs/rename", json!({ "from": from, "to": to })),
+            Op::Copy { from, to } => ("/fs/copy", json!({ "from": from, "to": to })),
             Op::Delete { entry } => ("/fs/delete", json!({ "path": entry.path, "recursive": entry.dir })),
         };
         log::info!("[explorer] {path} {op:?}");

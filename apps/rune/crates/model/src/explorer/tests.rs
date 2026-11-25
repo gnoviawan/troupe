@@ -152,3 +152,22 @@ fn a_new_root_resets_the_tree_and_a_late_listing_of_the_old_one_is_dropped() {
 fn parent_of_keeps_the_root_slash() {
     assert_eq!((parent_of("/p/a"), parent_of("/a"), parent_of("C:\\p\\a")), ("/p", "/", "C:\\p"));
 }
+
+#[test]
+fn duplicate_copies_beside_the_entry_with_copy_before_the_extension() {
+    let mut x = tree();
+    let fx = step(&mut x, Event::Duplicate("/p/README.md".into()));
+    let op = Op::Copy { from: "/p/README.md".into(), to: "/p/README copy.md".into() };
+    assert_eq!(fx, [Effect::Run(op.clone())]);
+    assert_eq!(step(&mut x, Event::Done { op, result: Ok(()) }), [Effect::List("/p".into())]);
+    let fx = step(&mut x, Event::Duplicate("/p/src".into()));
+    assert_eq!(fx, [Effect::Run(Op::Copy { from: "/p/src".into(), to: "/p/src copy".into() })]);
+}
+
+#[test]
+fn browsing_a_folder_lists_it_once_without_opening_it() {
+    let mut x = tree();
+    assert_eq!(step(&mut x, Event::Browse("/p/src".into())), [Effect::List("/p/src".into())]);
+    assert_eq!(step(&mut x, Event::Browse("/p/src".into())), []);
+    assert!(!x.open.contains("/p/src"));
+}

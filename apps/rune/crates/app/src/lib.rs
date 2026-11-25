@@ -32,6 +32,7 @@ mod composer_view;
 mod controls;
 mod editor_host;
 mod explorer_host;
+mod phone_files;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;

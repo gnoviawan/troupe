@@ -369,6 +369,12 @@ pub fn layer<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, 
     {
         row_menu(entry, *at, lens, hooks).build(t, layer, el());
     }
+    confirm(s, get, lens, t, layer);
+}
+
+/// The delete confirm, when open (the tree's and the phone's).
+pub fn confirm<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, layer: &mut Vec<El>) {
+    let x = get(s);
     if let Some(entry) = &x.tree.deleting {
         ConfirmDialog::new(DELETE, model::explorer::delete_title(entry), model::explorer::delete_message(entry))
             .variant(ConfirmVariant::Danger)
@@ -381,8 +387,8 @@ pub fn layer<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, 
     }
 }
 
-/// `FileTreeContextMenuContent` for one entry: a folder's create items, Rename, Copy Path, Open
-/// in Terminal for a folder, then Delete.
+/// `FileTreeContextMenuContent` for one entry: a folder's create items, Duplicate, Rename, Copy
+/// Path, Open in Terminal for a folder, then Delete.
 fn row_menu<S: 'static>(entry: &Entry, at: rune::PointerPress, lens: Lens<S>, hooks: Hooks<S>) -> Menu {
     let close = move |s: &mut S| lens(s).menu = None;
     let path = entry.path.clone();
@@ -400,8 +406,13 @@ fn row_menu<S: 'static>(entry: &Entry, at: rune::PointerPress, lens: Lens<S>, ho
             }))
             .separator();
     }
-    let (renamed, copied, deleted, terminal) = (path.clone(), path.clone(), path.clone(), path);
+    let (renamed, copied, deleted, terminal, duplicated) = (path.clone(), path.clone(), path.clone(), path.clone(), path);
     menu = menu
+        .item(MenuItem::new("Duplicate").icon(glyph("Files")).on_select(move |s: &mut S| {
+            close(s);
+            lens(s).step(Event::Duplicate(duplicated.clone()));
+        }))
+        .separator()
         .item(MenuItem::new("Rename").icon(glyph("Edit")).on_select_tx(move |s: &mut S, tx: &mut Tx| {
             close(s);
             act(s, lens, Event::StartRename(renamed.clone()), tx);

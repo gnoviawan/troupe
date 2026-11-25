@@ -401,6 +401,12 @@ fn workspace_main(s: &State, t: &'static Tokens) -> El {
         }
         return main;
     }
+    // A file the Files sheet opened.
+    if let Some(tab @ model::workspace::Tab::Editor { .. }) = active_phone_tab(s)
+        && let Some(body) = editor_body(s, t, tab)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
     if let Some(tab) = active_chat_tab(s) {
         let body = crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Phone);
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).children(body);

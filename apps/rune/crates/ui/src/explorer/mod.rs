@@ -8,6 +8,7 @@
 //! workspace; the app drains it. [`view`] draws the panel body and [`layer`] its menus and
 //! confirm.
 
+mod phone;
 mod view;
 
 #[cfg(test)]
@@ -16,7 +17,8 @@ mod tests;
 use model::explorer::{self as store, Effect, Event, Inline};
 use rune::{PointerPress, TextEdit};
 
-pub use view::{NAME_KEY, Hooks, TREE_KEY, header_actions, layer, row_key, view};
+pub use phone::{FILES, PHONE_NAME_KEY, PhoneHooks, files_sheet, phone_confirm};
+pub use view::{Hooks, NAME_KEY, TREE_KEY, confirm, header_actions, layer, row_key, view};
 
 /// A file row dragged toward a pane (`startFileDrag`).
 #[derive(Clone, Debug, PartialEq)]
@@ -45,6 +47,8 @@ pub struct Explorer {
     /// The header's More menu.
     pub more: bool,
     pub drag: Option<FileDrag>,
+    /// The folder the phone's Files sheet shows.
+    pub phone_dir: Option<String>,
 }
 
 impl Explorer {
@@ -53,6 +57,14 @@ impl Explorer {
     pub fn step(&mut self, event: Event) {
         let before = self.tree.inline.clone();
         let fx = store::step(&mut self.tree, event);
+        for effect in &fx {
+            if let Effect::Deleted { path } = effect
+                && let Some(dir) = &self.phone_dir
+                && (dir == path || dir.strip_prefix(path.as_str()).is_some_and(|r| r.starts_with(['/', '\\'])))
+            {
+                self.phone_dir = Some(store::parent_of(path).to_owned());
+            }
+        }
         self.effects.extend(fx);
         if self.tree.inline != before {
             self.name = match &self.tree.inline {

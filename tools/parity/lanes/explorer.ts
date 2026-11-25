@@ -2,7 +2,8 @@
  * The R8a explorer lane: each client opens the Explorer panel, opens `src`, renames
  * `src/utils.ts` from its row menu, creates a file from the header's New File, deletes it from
  * its row menu through the confirm, and opens `README.md` in an editor tab. After each step
- * the tree and the disk are compared.
+ * the tree and the disk are compared. With `--phone` the same steps run in the phone's Files
+ * sheet, through each row's actions sheet.
  *
  *   bun tools/parity/lanes/explorer.ts --port 8198 --root /tmp/rune-r8a/explorer \
  *     --server-bin <troupe-server> --dist <dist-web> [--only react|rune]
@@ -25,12 +26,13 @@ const { values } = parseArgs({
     root: { type: 'string', default: '/tmp/troupe-parity/explorer' },
     'server-bin': { type: 'string' },
     dist: { type: 'string', default: path.join(REPO_DIR, 'dist-web') },
-    only: { type: 'string' }
+    only: { type: 'string' },
+    phone: { type: 'boolean', default: false }
   }
 })
 const options: LaneOptions = {
   root: path.resolve(values.root as string),
-  phone: false,
+  phone: values.phone as boolean,
   dist: path.resolve(values.dist as string),
   device: 'explorer-lane'
 }
@@ -59,7 +61,7 @@ async function rightClick(client: Client, text: string): Promise<void> {
 async function run(client: Client, alpha: string): Promise<Step[]> {
   const out: Step[] = []
   try {
-    await steps(client, alpha, out)
+    await (options.phone ? phoneSteps : steps)(client, alpha, out)
   } catch (e) {
     out.push({ step: String(e).split('\n')[0] ?? 'error', ok: false })
   }
@@ -123,6 +125,60 @@ async function steps(client: Client, alpha: string, out: Step[]): Promise<void> 
   await client.click('README.md')
   check('README opens in a tab', await client.sees('The matrix project.', 15_000))
   await shot(client, options.root, '8-opened')
+}
+
+async function phoneSteps(client: Client, alpha: string, out: Step[]): Promise<void> {
+  const page = client.page
+  const check = (step: string, ok: boolean) => out.push({ step, ok })
+  const disk = (rel: string) => existsSync(path.join(alpha, rel))
+
+  await client.click('More')
+  await page.waitForTimeout(400)
+  await client.click('Files')
+  check('files sheet shows', await client.sees('Project files', 30_000))
+  await shot(client, options.root, 'p1-files')
+
+  await client.click('Open folder src')
+  check('src opens', await client.sees('utils.ts', 15_000))
+  await shot(client, options.root, 'p2-src')
+
+  await client.click('Actions for utils.ts')
+  await page.waitForTimeout(400)
+  await shot(client, options.root, 'p3-actions')
+  await client.click('Rename')
+  await page.waitForTimeout(500)
+  if (client.name === 'react') await page.getByRole('textbox', { name: 'Rename utils.ts' }).click()
+  await page.keyboard.press('Control+a')
+  await page.keyboard.type('helpers.ts', { delay: 20 })
+  await page.keyboard.press('Enter')
+  check(
+    'renamed on disk',
+    await until(async () => disk('src/helpers.ts') && !disk('src/utils.ts'), 10_000)
+  )
+  check('renamed in list', await client.sees('helpers.ts', 10_000))
+
+  await client.click('New file')
+  await page.waitForTimeout(500)
+  if (client.name === 'react') await page.getByRole('textbox', { name: 'New file name' }).click()
+  await page.keyboard.type('created.rs', { delay: 20 })
+  await page.keyboard.press('Enter')
+  check('created on disk', await until(async () => disk('src/created.rs'), 10_000))
+  check('created in list', await client.sees('created.rs', 10_000))
+  await shot(client, options.root, 'p4-created')
+
+  await client.click('Actions for created.rs')
+  await page.waitForTimeout(400)
+  await client.click('Delete')
+  check('confirm shows', await client.sees('This cannot be undone', 10_000))
+  await shot(client, options.root, 'p5-confirm')
+  await client.click('Delete')
+  check('deleted on disk', await until(async () => !disk('src/created.rs'), 10_000))
+
+  await client.click('Back to parent folder')
+  check('back at the root', await client.sees('Project files', 10_000))
+  await client.click('Open README.md')
+  check('README opens', await client.sees('The matrix project.', 15_000))
+  await shot(client, options.root, 'p6-opened')
 }
 
 const world = await createWorld({

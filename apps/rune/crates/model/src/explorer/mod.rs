@@ -81,6 +81,8 @@ impl Inline {
 pub enum Op {
     Create { path: String, kind: Kind },
     Rename { from: String, to: String },
+    /// Duplicate: a copy beside the entry.
+    Copy { from: String, to: String },
     Delete { entry: Entry },
 }
 
@@ -122,6 +124,11 @@ pub enum Nav {
 pub enum Event {
     /// The active project's folder changed (or there is none).
     Root(Option<String>),
+    /// The phone explorer shows `dir`: list it if it has no listing, without opening it in the
+    /// tree.
+    Browse(String),
+    /// Duplicate an entry as `<stem> copy<ext>` beside it (`handleDuplicate`).
+    Duplicate(String),
     Listed { dir: String, result: Result<Vec<Entry>, String> },
     /// A press on a row: a folder opens or closes, a file opens in an editor tab.
     Press(String),
@@ -322,6 +329,7 @@ impl Explorer {
                     self.busy = false;
                     format!("Failed to delete {}: {message}", entry.path)
                 }
+                Op::Copy { .. } => format!("Failed to copy: {message}"),
                 _ => message.clone(),
             };
             fx.push(Effect::Toast(toast));
@@ -344,6 +352,7 @@ impl Explorer {
                 self.relist(parent_of(&to), fx);
                 fx.push(Effect::Renamed { from, to });
             }
+            Op::Copy { to, .. } => self.relist(parent_of(&to), fx),
             Op::Delete { entry } => {
                 self.busy = false;
                 self.deleting = None;
@@ -396,6 +405,22 @@ pub fn step(x: &mut Explorer, event: Event) -> Vec<Effect> {
                 }
             };
             x.listings.insert(dir, listing);
+        }
+        Event::Browse(dir) => {
+            if !matches!(x.listings.get(&dir), Some(Listing::Ready(_) | Listing::Loading)) {
+                x.listings.insert(dir.clone(), Listing::Loading);
+                fx.push(Effect::List(dir));
+            }
+        }
+        Event::Duplicate(path) => {
+            if let Some(entry) = x.entry(&path) {
+                let (stem, ext) = match entry.name.rfind('.') {
+                    Some(dot) if dot > 0 => entry.name.split_at(dot),
+                    _ => (entry.name.as_str(), ""),
+                };
+                let to = join(parent_of(&path), &format!("{stem} copy{ext}"));
+                fx.push(Effect::Run(Op::Copy { from: path, to }));
+            }
         }
         Event::Press(path) => x.press(&path, &mut fx),
         Event::Select(path) => x.selected = Some(path),
