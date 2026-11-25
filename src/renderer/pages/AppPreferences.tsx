@@ -2,7 +2,7 @@ import type { DetectedShells } from '@shared/types/ipc.types'
 import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import {
   queueAgentIdleWindowPush,
   useResetAppSettings,
@@ -302,7 +302,7 @@ export function AppPreferencesModal(): React.JSX.Element {
 
   return (
     <>
-      <SettingsModal isOpen={isOpen} onClose={close} title="Preferences">
+      <SettingsWindow isOpen={isOpen} onClose={close} title="Preferences">
         <SettingsLayout
           title="Preferences"
           categories={categories}
@@ -398,7 +398,7 @@ export function AppPreferencesModal(): React.JSX.Element {
           <DiagnosticsSection />
           <ResetSection setIsResetDialogOpen={setIsResetDialogOpen} />
         </SettingsLayout>
-      </SettingsModal>
+      </SettingsWindow>
 
       {/* Reset Confirmation Dialog */}
       <ConfirmDialog

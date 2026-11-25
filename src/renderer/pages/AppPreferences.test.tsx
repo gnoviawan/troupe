@@ -19,6 +19,13 @@ const mockWrite = vi.fn().mockResolvedValue({ success: true, data: undefined })
 const mockLogFrontendError = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/api', () => ({
+  // The settings window draws the Windows and Linux window controls on desktop.
+  windowApi: {
+    onMaximizeChange: vi.fn(() => () => undefined),
+    minimize: vi.fn(),
+    toggleMaximize: vi.fn(),
+    close: vi.fn()
+  },
   acpApi: {
     setTurnTimeout: vi.fn().mockResolvedValue({ success: true }),
     setTurnIdleTimeout: vi.fn().mockResolvedValue({ success: true }),

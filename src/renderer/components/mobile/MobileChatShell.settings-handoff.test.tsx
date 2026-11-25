@@ -3,14 +3,14 @@ import { useState } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewProjectModal } from '@/components/NewProjectModal'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import { _resetSheetFocusReturnForTests } from '@/lib/sheet-focus-return'
 import { useOverlayRegistration, useOverlayStackStore } from '@/stores/overlay-stack-store'
 import { useSettingsModalStore, useSettingsModalView } from '@/stores/settings-modal-store'
 import { MobileChatShell } from './MobileChatShell'
 
 // The phone shell's hand-offs from a sheet to the Project settings modal or the
-// New project modal, with the real Radix sheets, the real SettingsModal and the
+// New project modal, with the real Radix sheets, the real SettingsWindow and the
 // real NewProjectModal. The settings host below mirrors WorkspaceModals and the
 // overlay back stack: the modal mounts while the store has a view, and
 // registers as `settings-modal`.
@@ -108,9 +108,9 @@ function SettingsHost(): React.JSX.Element | null {
   useOverlayRegistration('settings-modal', view !== null, close)
   if (view === null) return null
   return (
-    <SettingsModal isOpen onClose={close} title={SETTINGS_TITLE[view]}>
+    <SettingsWindow isOpen onClose={close} title={SETTINGS_TITLE[view]}>
       <input aria-label="Project name" />
-    </SettingsModal>
+    </SettingsWindow>
   )
 }
 
