@@ -3,7 +3,7 @@ import type {
   AntigravityAccountUsage
 } from '@shared/types/antigravity-accounts.types'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANTIGRAVITY_USAGE_POLL_MS } from '@/hooks/use-antigravity-accounts'
 import { useProjectStore } from '@/stores/project-store'
 import type { Project } from '@/types/project'
@@ -97,6 +97,10 @@ beforeEach(() => {
   api.usage.mockResolvedValue([])
   signInAntigravityAccount.mockResolvedValue(undefined)
   applyProjectAntigravityAccount.mockResolvedValue([])
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('AntigravityProviderSettings', () => {
@@ -281,6 +285,16 @@ describe('AntigravityProviderSettings', () => {
 
   it('checks usage only when its button is clicked, then shows the meters and the time', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
+    api.usage.mockResolvedValue([
+      {
+        accountId: 'default',
+        status: 'not_checked',
+        planType: 'Google AI Pro',
+        windows: [],
+        checkedAt: 0,
+        message: null
+      }
+    ])
     let answer: (read: AntigravityAccountUsage) => void = () => undefined
     api.checkUsage.mockReturnValue(
       new Promise<AntigravityAccountUsage>((resolve) => {
@@ -289,6 +303,7 @@ describe('AntigravityProviderSettings', () => {
     )
     render(<AntigravityProviderSettings />)
     const personal = await screen.findByTestId('antigravity-account-default')
+    await waitFor(() => expect(personal).toHaveTextContent('Google AI Pro'))
     await vi.advanceTimersByTimeAsync(ANTIGRAVITY_USAGE_POLL_MS * 2)
     expect(api.checkUsage).not.toHaveBeenCalled()
     expect(
@@ -327,7 +342,6 @@ describe('AntigravityProviderSettings', () => {
     expect(personal).toHaveTextContent('Overage: Disabled')
     expect(personal).toHaveTextContent(formatAntigravityChecked(checkedAt))
     expect(api.checkUsage).toHaveBeenCalledTimes(1)
-    vi.useRealTimers()
   })
 
   it('shows the agent line when a check reads no meter', async () => {
