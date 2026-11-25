@@ -47,6 +47,42 @@ const DOCS_KEY = `gemini${NUL}/work${NUL}${JSON.stringify(DOCS)}`
 
 export const warmScenarios: Scenario[] = [
   {
+    name: 'retarget_warm_pool_drains_other_configs_in_the_folder',
+    context: { projects: [WORK] },
+    initial: live({
+      agentConfigs: [GEMINI, DROID],
+      preparedSessions: {
+        [KEY]: 'w1',
+        [`factory-droid${NUL}/work/${NUL}`]: 'w9',
+        [`factory-droid${NUL}/other${NUL}`]: 'w8'
+      },
+      sessions: { ...warm('w1'), ...warm('w9'), w8: { ...warm('w8').w8, cwd: '/other' } }
+    }),
+    steps: [ev('retargetWarmPool', 'gemini', ' /work ', 'p1')]
+  },
+  {
+    name: 'retarget_warm_pool_seeds_the_target_silently',
+    context: { projects: [WORK], agentReplies: [opened('w1')] },
+    initial: live(),
+    steps: [ev('retargetWarmPool', 'gemini', ' /work ', 'p1')]
+  },
+  {
+    name: 'retarget_warm_pool_seed_failure_does_not_toast',
+    context: { projects: [WORK], agentReplies: [{ reject: 'spawn gemini-acp ENOENT' }] },
+    initial: live({ configToLiveAgent: {} }),
+    steps: [ev('retargetWarmPool', 'gemini', ' /work ', 'p1')]
+  },
+  {
+    name: 'retarget_warm_pool_ignores_an_empty_folder',
+    initial: live(),
+    steps: [ev('retargetWarmPool', 'gemini', '   ', 'p1')]
+  },
+  {
+    name: 'retarget_warm_pool_ignores_an_empty_config',
+    initial: live({ preparedSessions: { [KEY]: 'w1' }, sessions: warm('w1') }),
+    steps: [ev('retargetWarmPool', '', ' /work ', 'p1')]
+  },
+  {
     name: 'prepare_chat_fills_a_warm_slot',
     context: { projects: [WORK], agentReplies: [opened('w1')] },
     initial: live(),

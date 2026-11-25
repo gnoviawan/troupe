@@ -1,7 +1,7 @@
 // The ACP store's agent-switch scenarios for `acp.ts`: `armAgentSwitch` and
-// its busy gate, `_onAgentSwitch`, `cancelAgentSwitch` and the continuation edges
-// (`slices/switch.ts`, `stampSwitchContinuation`). Each restates a case of
-// `agent-switch.test.ts`.
+// its busy gate, `setSwitchPendingOption`, `_onAgentSwitch`, `cancelAgentSwitch`
+// and the continuation edges (`slices/switch.ts`, `stampSwitchContinuation`).
+// Each restates a case of `agent-switch.test.ts`.
 import type { Scenario } from '../record'
 import { AGENT, ev, idle, S, seeded } from './acp-fixtures'
 
@@ -310,5 +310,137 @@ export const switchScenarios: Scenario[] = [
         switches: [{ ...installed, seq: 12 }, { seq: 40 }]
       })
     ]
+  }
+]
+
+const option = (id: string, current: string, values: string[], category?: string) => ({
+  id,
+  name: id,
+  type: 'select',
+  currentValue: current,
+  options: values.map((value) => ({ value, name: value.toUpperCase() })),
+  ...(category ? { category } : {})
+})
+const TARGET_OPTIONS = [
+  option('model', 'm1', ['m1', 'm2'], 'model'),
+  option('thought_level', 'low', ['low', 'max']),
+  option('permission', 'ask', ['ask', 'auto'], 'mode')
+]
+/** `s1` armed for `codex`, with `pendingOptions` when given. */
+const armed = (pendingOptions?: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
+  armable(extra, {
+    switching: {
+      toConfigId: 'codex',
+      status: 'pending',
+      ...(pendingOptions ? { pendingOptions } : {})
+    }
+  })
+/** The warm session prepared for `codex` in `/work`, and its key. */
+const WARM_KEY = `codex${NUL}/work${NUL}`
+const warm = (configOptions: unknown[], models: unknown = null) => ({
+  id: 'w1',
+  agentId: 'agent-9',
+  cwd: '/work',
+  projectId: 'p1',
+  status: 'active',
+  title: null,
+  activeTurn: false,
+  openTurnId: null,
+  modes: null,
+  models,
+  configOptions,
+  lastError: null,
+  createdAt: 1
+})
+const pick = (patch: Record<string, unknown>, session = S) =>
+  ev('setSwitchPendingOption', session, patch)
+
+export const pendingPickScenarios: Scenario[] = [
+  {
+    name: 'set_switch_pending_option_queues_picks_for_the_target',
+    initial: armed(undefined, {
+      preparedSessions: { [WARM_KEY]: 'w1' }
+    }),
+    steps: [pick({ modeId: 'code', configValues: { thought_level: 'max' } })]
+  },
+  {
+    name: 'set_switch_pending_option_saves_scoped_values_under_the_warm_model',
+    initial: (() => {
+      const state = armed(undefined, { preparedSessions: { [WARM_KEY]: 'w1' } })
+      const sessions = state.sessions as Record<string, unknown>
+      return { ...state, sessions: { ...sessions, w1: warm(TARGET_OPTIONS) } }
+    })(),
+    steps: [pick({ configValues: { thought_level: 'max', permission: 'auto', gone: 'x' } })]
+  },
+  {
+    name: 'set_switch_pending_option_model_pick_keeps_only_agent_wide_values',
+    initial: armed(
+      { modeId: 'code', configValues: { thought_level: 'max', permission: 'auto' } },
+      { agentOptionsCache: { codex: { configOptions: TARGET_OPTIONS, models: null } } }
+    ),
+    steps: [pick({ modelId: 'm2', configValues: { thought_level: 'low' } })]
+  },
+  {
+    name: 'set_switch_pending_option_model_pick_drops_the_last_models_values',
+    initial: armed(
+      { modelId: 'm1', configValues: { thought_level: 'max', permission: 'auto' } },
+      { agentOptionsCache: { codex: { configOptions: TARGET_OPTIONS, models: null } } }
+    ),
+    steps: [pick({ modelId: 'm2' })]
+  },
+  {
+    name: 'set_switch_pending_option_after_a_cancel_is_dropped',
+    initial: armable({}, { switching: null }),
+    steps: [pick({ modeId: 'code' })]
+  },
+  {
+    name: 'set_switch_pending_option_model_pick_keeps_every_value_with_no_options',
+    initial: armed({ modelId: 'm1', configValues: { thought_level: 'max' } }),
+    steps: [pick({ modelId: 'm2' })]
+  },
+  {
+    name: 'set_switch_pending_option_value_pick_keeps_the_armed_model',
+    initial: armed(
+      { modelId: 'm2', configValues: { permission: 'auto' } },
+      { agentOptionsCache: { codex: { configOptions: TARGET_OPTIONS, models: null } } }
+    ),
+    steps: [pick({ configValues: { thought_level: 'max' } }), pick({ modeId: 'plan' })]
+  },
+  {
+    name: 'set_switch_pending_option_reads_the_cached_native_model',
+    initial: armed(undefined, {
+      agentOptionsCache: {
+        codex: {
+          configOptions: [option('thought_level', 'low', ['low', 'max'])],
+          models: {
+            currentModelId: 'gpt-5',
+            availableModels: [{ modelId: 'gpt-5', name: 'GPT-5' }]
+          }
+        }
+      }
+    }),
+    steps: [pick({ configValues: { thought_level: 'max' } })]
+  },
+  {
+    name: 'set_switch_pending_option_prefers_the_warm_session_over_the_cache',
+    initial: (() => {
+      const state = armed(undefined, {
+        preparedSessions: { [WARM_KEY]: 'w1' },
+        agentOptionsCache: { codex: { configOptions: TARGET_OPTIONS, models: null } }
+      })
+      const sessions = state.sessions as Record<string, unknown>
+      return { ...state, sessions: { ...sessions, w1: warm([]) } }
+    })(),
+    steps: [pick({ modelId: 'm2', configValues: { thought_level: 'max' } })]
+  },
+  {
+    name: 'set_switch_pending_option_without_a_pick_only_sets_the_overlay',
+    initial: armed({ modeId: 'code' }),
+    steps: [pick({}), pick({ configValues: {} })]
+  },
+  {
+    name: 'set_switch_pending_option_drops_picks_when_no_switch_is_armed',
+    initial: armable(),
+    steps: [pick({ modeId: 'code' }), pick({ modeId: 'code' }, 's9')]
   }
 ]

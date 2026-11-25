@@ -83,6 +83,9 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         mode_id: String,
+        /// The run that sent it, which its outcome moves on.
+        #[serde(skip_serializing)]
+        run: Option<RunId>,
         /// Sent again after an authenticate on demand (`withAuthRetry`).
         #[serde(skip_serializing)]
         retried: bool,
@@ -128,6 +131,31 @@ pub enum Effect {
     /// Close the chat tab of this session in every project's tree: the chat
     /// is neither live nor in the index, so the tab could show nothing.
     CloseChatTab { session_id: String },
+    /// Write the durable switch marker on the old session's log, then send
+    /// `Event::AgentCommandDone` or `AgentCommandFailed` with this effect.
+    RecordAgentSwitch {
+        session_id: String,
+        marker: Value,
+        #[serde(skip)]
+        switch: super::switch_run::SwitchId,
+    },
+    /// Answer a browser consent ticket (`answerBrowserConsent`), then send
+    /// `Event::AgentCommandDone` with the result (`ok`, `stale`,
+    /// `too_early` or `refused`), or `AgentCommandFailed`.
+    AnswerBrowserConsent {
+        request_id: String,
+        option_id: String,
+        agent_id: String,
+        /// The ticket, put back when the answer is refused.
+        #[serde(skip)]
+        ticket: Value,
+    },
+    /// Show the session's agent browser as stopped, or running again.
+    SetBrowserStopped { session_id: String, stopped: bool },
+    /// Delete this key from the app's persisted records.
+    DeletePersisted { key: String },
+    /// Point the chat tab of `from` at `to`, in the pane that shows it.
+    RemapChatTab { from: String, to: String },
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
@@ -497,7 +525,9 @@ impl Effect {
     /// The restore a set command belongs to.
     pub(crate) fn run(&self) -> Option<RunId> {
         match self {
-            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
+            Self::SetMode { run, .. }
+            | Self::SetModel { run, .. }
+            | Self::SetConfigOption { run, .. } => *run,
             _ => None,
         }
     }

@@ -158,6 +158,28 @@ pub enum Event {
     ),
     #[serde(rename = "cancelAgentSwitch")]
     CancelAgentSwitch(String),
+    /// Answered by `actionResolved` once every pick was tried.
+    #[serde(rename = "applyPendingLauncherOptions")]
+    ApplyPendingLauncherOptions(
+        String,
+        #[serde(default)] Option<super::switch::LauncherPicks>,
+        #[serde(default)] super::import::RequestId,
+    ),
+    /// Answered by `actionResolved` with the new session id, or null.
+    #[serde(rename = "switchAgent")]
+    SwitchAgent(super::switch_run::SwitchRequest),
+    /// `respondBrowserConsent`: the request id, then the option the user
+    /// chose.
+    #[serde(rename = "respondBrowserConsent")]
+    RespondBrowserConsent(String, String),
+    #[serde(rename = "setSelectedAgentConfigId")]
+    SetSelectedAgentConfigId(Option<String>),
+    #[serde(rename = "retargetWarmPool")]
+    RetargetWarmPool(String, String, String),
+    #[serde(rename = "_onBrowserStopChanged")]
+    BrowserStopChanged(Value),
+    #[serde(rename = "setSwitchPendingOption")]
+    SetSwitchPendingOption(String, super::switch::LauncherPicks),
     /// Answered by `actionResolved` with whether the switch armed.
     #[serde(rename = "armAgentSwitch")]
     ArmAgentSwitch(String, String, #[serde(default)] super::import::RequestId),

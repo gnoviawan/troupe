@@ -140,6 +140,7 @@ pub struct AntigravityAgentService {
     active: bool,
     profile_store: Option<Arc<AntigravityAccountStore>>,
     login_probe: Arc<dyn AntigravityLoginStatus>,
+    usage: Arc<usage::UsageBook>,
 }
 
 impl AntigravityAgentService {
@@ -174,6 +175,7 @@ impl AntigravityAgentService {
             active,
             profile_store,
             login_probe,
+            usage: Arc::default(),
         }
     }
 
@@ -350,6 +352,7 @@ fn set_home_env(env: &mut HashMap<String, String>, home: Option<&Path>) -> Resul
 mod accounts;
 mod usage;
 pub use accounts::{AntigravitySignInCheck, CLI_LOGIN_UNSUPPORTED};
+pub use usage::{antigravity_tier_name, check_antigravity_usage};
 
 #[cfg(test)]
 #[path = "antigravity_agent/tests.rs"]

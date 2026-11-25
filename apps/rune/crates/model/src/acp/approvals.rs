@@ -295,13 +295,23 @@ impl State {
         );
     }
 
-    /// `_onBrowserConsentTicket`: hold the ticket and ask the workspace to
-    /// bring the session's chat tab forward if another tab hides it.
+    /// `_onBrowserConsentTicket`: hold the ticket and, when a pane shows the
+    /// session's chat tab, ask the workspace to bring it forward. The model
+    /// does not know which tab is active, so the app skips an active one.
     fn on_browser_consent_ticket(&mut self, ticket: Value, fx: &mut Vec<Effect>) {
         let request_id = ticket["requestId"].as_str().unwrap_or_default().to_owned();
         let session_id = ticket["sessionId"].as_str().unwrap_or_default().to_owned();
-        self.pending_browser_consents.insert(request_id, ticket);
-        fx.push(Effect::RevealChatTab { session_id });
+        self.pending_browser_consents
+            .insert(request_id.clone(), ticket);
+        if self.book.open_chat_tabs.contains(&session_id) {
+            fx.push(Effect::info(
+                "acp-store:_onBrowserConsentTicket",
+                format!(
+                    "[acp] browser consent ticket activated chat tab (requestId={request_id}, sessionId={session_id})"
+                ),
+            ));
+            fx.push(Effect::RevealChatTab { session_id });
+        }
     }
 
     pub(crate) fn on_browser_ticket_closed(&mut self, event: BrowserTicketClosedEvent) {
@@ -390,5 +400,86 @@ impl State {
                 allow_other: event.allow_other,
             },
         );
+    }
+}
+
+/// `_onBrowserStopChanged`: the Stop control of the session's agent browser.
+pub(crate) fn on_browser_stop_changed(event: &Value, fx: &mut Vec<Effect>) {
+    let Some(session_id) = event
+        .get("sessionId")
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+    else {
+        return;
+    };
+    fx.push(Effect::SetBrowserStopped {
+        session_id: session_id.to_owned(),
+        stopped: event.get("stopped") == Some(&Value::Bool(true)),
+    });
+}
+
+const CONSENT_FAILED: &str = "Could not send the browser consent answer. Try again.";
+const CONSENT_TOO_EARLY: &str = "That was too quick. Check the request, then choose again.";
+
+impl State {
+    /// `respondBrowserConsent`: the ticket leaves the queue while its answer
+    /// is in flight.
+    pub(crate) fn respond_browser_consent(
+        &mut self,
+        request_id: String,
+        option_id: String,
+        fx: &mut Vec<Effect>,
+    ) {
+        let Some(ticket) = self.pending_browser_consents.remove(&request_id) else {
+            return;
+        };
+        let session_id = ticket["sessionId"].as_str().unwrap_or_default();
+        let agent_id = self
+            .sessions
+            .get(session_id)
+            .map(|session| session.agent_id.clone())
+            .unwrap_or_default();
+        fx.push(Effect::AnswerBrowserConsent {
+            request_id,
+            option_id,
+            agent_id,
+            ticket,
+        });
+    }
+
+    /// The answer is over, with the host's reply or `None` for a failed
+    /// call. A refused one puts the ticket back so the user can answer
+    /// again; one that lost to another surface stays gone.
+    pub(crate) fn on_browser_consent_answered(
+        &mut self,
+        command: Effect,
+        reply: Option<&Value>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let Effect::AnswerBrowserConsent {
+            request_id, ticket, ..
+        } = command
+        else {
+            return;
+        };
+        let result = reply.map(|reply| reply.as_str().unwrap_or_default());
+        let message = match result {
+            Some("ok" | "stale") => return,
+            Some("too_early") => CONSENT_TOO_EARLY,
+            Some(_) | None => CONSENT_FAILED,
+        };
+        self.pending_browser_consents
+            .entry(request_id.clone())
+            .or_insert(ticket);
+        fx.push(Effect::Toast {
+            level: "error".into(),
+            message: message.into(),
+        });
+        if let Some(result) = result {
+            fx.push(Effect::warn(
+                "acp-store:respondBrowserConsent",
+                format!("browser consent answer refused: requestId={request_id} result={result}"),
+            ));
+        }
     }
 }

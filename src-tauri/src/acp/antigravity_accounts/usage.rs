@@ -5,32 +5,35 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// One usage window of an Account: the quota bucket of one model.
+/// One usage window of an Account: one quota bucket the agent's `/usage`
+/// reported with a percent.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AntigravityUsageWindow {
     /// Always `model`.
     pub kind: String,
-    /// Model display name, e.g. "Gemini 3 Pro".
+    /// Group and bucket, e.g. "Gemini Models · Weekly Limit Remaining".
     pub label: String,
     pub model_id: String,
     /// Percent used, 0–100.
     pub percent: f64,
-    /// ISO-8601 reset time; `None` when Antigravity did not send one.
+    /// ISO-8601 reset time; `None` when the reply named none in its usual format.
     pub resets_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AntigravityUsageStatus {
-    /// Windows were read.
+    /// The agent's `/usage` reply had at least one quota meter.
     Ok,
-    /// Troupe does not read the quota; see `message`.
+    /// The agent's `/usage` reply had no meter; `message` holds its lines.
     Unavailable,
     /// The Account has no Google login.
     SignedOut,
-    /// The usage could not be read; see `message`.
+    /// The check did not finish; see `message`.
     Error,
+    /// Nobody has asked for a check since the host started.
+    NotChecked,
 }
 
 /// The usage of one Account at `checked_at`.
@@ -42,9 +45,10 @@ pub struct AntigravityAccountUsage {
     /// Plan / tier name when Antigravity sent one. Never an email.
     pub plan_type: Option<String>,
     pub windows: Vec<AntigravityUsageWindow>,
-    /// Unix epoch milliseconds of the read.
+    /// Unix epoch milliseconds of the check; `0` when `not_checked`.
     pub checked_at: i64,
-    /// Human-readable reason for `error` or `unavailable`. No login details.
+    /// The agent's lines the meters cannot show, or why the check failed. No
+    /// login details.
     pub message: Option<String>,
 }
 

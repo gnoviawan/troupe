@@ -148,7 +148,22 @@ pub(super) fn merge_config_options(
 /// `sessionModelSnapshot`: the model the composer shows, and its name. A
 /// `model` config option wins over the native `models` state.
 pub(super) fn model_snapshot(session: &Session) -> Option<(String, String)> {
-    let config_model = config_options(session).iter().find(|option| {
+    model_snapshot_of(
+        config_options(session),
+        session
+            .rest
+            .get("models")
+            .filter(|models| !models.is_null()),
+    )
+}
+
+/// [`model_snapshot`] of any record with `configOptions` and `models`: a
+/// session, or a config's options cache entry.
+pub(super) fn model_snapshot_of(
+    options: &[Value],
+    models: Option<&Value>,
+) -> Option<(String, String)> {
+    let config_model = options.iter().find(|option| {
         category(option) == Some(MODEL_CATEGORY)
             && option
                 .get("currentValue")
@@ -160,10 +175,7 @@ pub(super) fn model_snapshot(session: &Session) -> Option<(String, String)> {
     let option = match config_model {
         Some(option) => option,
         None => {
-            let models = session
-                .rest
-                .get("models")
-                .filter(|models| !models.is_null())?;
+            let models = models?;
             let available = models.get("availableModels").and_then(Value::as_array)?;
             if available.is_empty() {
                 return None;

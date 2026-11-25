@@ -28,8 +28,9 @@ import {
 } from './use-antigravity-limit'
 
 /**
- * In-chat card for an Antigravity chat at its Account's limit: switch to the Account
- * with the most room and continue, or wait until the window resets.
+ * In-chat card for an Antigravity chat at its Account's limit: switch to the next
+ * signed-in Account and continue, or wait until the window resets. It shows no
+ * usage check data.
  * The near-limit warning is `AntigravityLimitWarning`, in the composer.
  */
 export function AntigravityLimitNotice({
@@ -70,7 +71,7 @@ export function AntigravityLimitNotice({
         <ComposerDockMessage title={`${name} reached its ${windowName(limit)} limit.`}>
           {reset ? `${reset[0].toUpperCase()}${reset.slice(1)}.` : 'It resets soon.'}{' '}
           {best
-            ? `Switch to ${best.account.name}${best.window ? ` (${Math.round(best.window.percent)}% used)` : ''} and continue?`
+            ? `Switch to ${best.account.name} and continue?`
             : 'No other account has room left right now.'}
         </ComposerDockMessage>
       </ComposerDockRow>
@@ -116,7 +117,6 @@ export function AntigravityLimitNotice({
                       onSelect={() => void switchTo(option)}
                     >
                       {option.account.name}
-                      {option.window ? ` · ${Math.round(option.window.percent)}% used` : ''}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
