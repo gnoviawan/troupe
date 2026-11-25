@@ -119,7 +119,7 @@ vi.mock('../../../src/renderer/stores/quick-chat-store', async (importOriginal) 
 }))
 
 // The git store's host calls answer the vector's `context.git` queue.
-vi.mock(`${lib}/git-api`, async () => {
+vi.mock(`${lib}/git-api`, async (importOriginal) => {
   const { gitCall } = await import('./stores/git-mock')
   const ops = [
     'getStatus',
@@ -143,7 +143,12 @@ vi.mock(`${lib}/git-api`, async () => {
     'branchSwitch',
     'createBranch'
   ]
-  return { gitApi: Object.fromEntries(ops.map((op) => [op, gitCall(op)])) }
+  // `realGitApi` is the web client's own facade, for the route vectors.
+  const actual = await importOriginal<{ gitApi: object }>()
+  return {
+    gitApi: Object.fromEntries(ops.map((op) => [op, gitCall(op)])),
+    realGitApi: actual.gitApi
+  }
 })
 vi.mock(`${lib}/worktree-reconciler`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -171,6 +176,10 @@ const { shellLayoutRecorder, shellLayoutScenarios } = await import('./stores/she
 const { paneTreeRecorder, paneTreeScenarios } = await import('./stores/pane-tree')
 const { gitStatusRecorder, gitStatusScenarios } = await import('./stores/git-status')
 const { gitMock } = await import('./stores/git-mock')
+const { gitRoutesRecorder, gitRoutesScenarios } = await import('./stores/git-routes')
+const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
+  realGitApi: Record<string, (...args: unknown[]) => unknown>
+}
 
 const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [workspaceRecorder, workspaceScenarios],
@@ -179,7 +188,8 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [projectsRecorder, projectScenarios],
   [shellLayoutRecorder, shellLayoutScenarios],
   [paneTreeRecorder, paneTreeScenarios],
-  [gitStatusRecorder, gitStatusScenarios]
+  [gitStatusRecorder, gitStatusScenarios],
+  [gitRoutesRecorder(realGitApi), gitRoutesScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

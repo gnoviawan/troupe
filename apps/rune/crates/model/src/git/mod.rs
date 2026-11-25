@@ -255,6 +255,15 @@ pub enum Call {
     CreateBranch { cwd: String, name: String },
 }
 
+/// A ledgered call's identity in the host's command ledger.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Ledger {
+    pub kind: &'static str,
+    pub entity: String,
+    /// Never reuse an unresolved id: the body carries content the key cannot name.
+    pub fresh: bool,
+}
+
 /// An HTTP route of `webServerGit`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Route {
@@ -294,6 +303,65 @@ impl Call {
             Call::BranchSwitch { cwd, name } => ("branchSwitch", vec![json!(cwd), json!(name)]),
             Call::CreateBranch { cwd, name } => ("createBranch", vec![json!(cwd), json!(name)]),
         }
+    }
+
+    /// The call for a `gitApi` method and its arguments (the inverse of [`Call::api`]); `None`
+    /// for a method or arguments this model does not send.
+    #[must_use]
+    pub fn from_api(op: &str, args: &[Value]) -> Option<Call> {
+        let text = |i: usize| args.get(i).and_then(Value::as_str).map(str::to_owned);
+        let cwd = text(0)?;
+        let index = || args.get(1).and_then(Value::as_u64).and_then(|i| u32::try_from(i).ok());
+        Some(match op {
+            "getStatus" => Call::Status { cwd },
+            "getDiffStat" => Call::DiffStat { cwd },
+            "getDiff" => Call::Diff { cwd, path: text(1)?, staged: args.get(2).and_then(Value::as_bool)? },
+            "getCommitContext" => Call::CommitContext { cwd },
+            "getLog" if args.get(1).and_then(Value::as_u64) == Some(1) => Call::Head { cwd },
+            "stage" => Call::Stage { cwd, path: text(1)? },
+            "unstage" => Call::Unstage { cwd, path: text(1)? },
+            "discard" => Call::Discard { cwd, path: text(1)? },
+            "stageHunk" => Call::StageHunk { cwd, path: text(1)?, hunk_patch: text(2)? },
+            "unstageHunk" => Call::UnstageHunk { cwd, path: text(1)?, hunk_patch: text(2)? },
+            "commit" => Call::Commit {
+                cwd,
+                summary: text(1)?,
+                description: text(2)?,
+                amend: args.get(3).and_then(Value::as_bool)?,
+                expected_head: text(4)?,
+            },
+            "push" => Call::Push { cwd },
+            "stashList" => Call::StashList { cwd },
+            "branchList" => Call::BranchList { cwd },
+            "stashSave" => Call::StashSave { cwd, message: text(1), include_untracked: args.get(2).and_then(Value::as_bool) },
+            "stashApply" => Call::StashApply { cwd, index: index()? },
+            "stashPop" => Call::StashPop { cwd, index: index()? },
+            "stashDrop" => Call::StashDrop { cwd, index: index()? },
+            "branchSwitch" => Call::BranchSwitch { cwd, name: text(1)? },
+            "createBranch" => Call::CreateBranch { cwd, name: text(1)? },
+            _ => return None,
+        })
+    }
+
+    /// How the host ledgers this call (`LEDGERED_ROUTES` in `lib/ipc/http.ts`): its command
+    /// kind, the entity key a retry of the same intent is journaled under, and whether every
+    /// send takes a new id. `None` for a route the host does not ledger.
+    #[must_use]
+    pub fn ledger(&self) -> Option<Ledger> {
+        let key = |fields: &[&str]| serde_json::to_string(fields).unwrap_or_default();
+        let (kind, entity, fresh) = match self {
+            Call::Discard { cwd, path } => ("git_discard", key(&[cwd, path]), false),
+            Call::StageHunk { cwd, path, .. } => ("git_stage_hunk", key(&[cwd, path]), true),
+            Call::UnstageHunk { cwd, path, .. } => ("git_unstage_hunk", key(&[cwd, path]), true),
+            Call::Commit { cwd, .. } => ("git_commit", cwd.clone(), true),
+            Call::CreateBranch { cwd, name } => ("git_create_branch", key(&[cwd, name, ""]), false),
+            Call::StashSave { cwd, .. } => ("git_stash_save", cwd.clone(), true),
+            Call::StashApply { cwd, index } => ("git_stash_apply", key(&[cwd, &index.to_string()]), false),
+            Call::StashPop { cwd, index } => ("git_stash_pop", key(&[cwd, &index.to_string()]), false),
+            Call::StashDrop { cwd, index } => ("git_stash_drop", key(&[cwd, &index.to_string()]), false),
+            _ => return None,
+        };
+        Some(Ledger { kind, entity, fresh })
     }
 
     /// The server route `webServerGit` sends this call to.

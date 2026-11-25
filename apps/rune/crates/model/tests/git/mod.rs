@@ -140,3 +140,27 @@ pub fn replay(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays `git-routes`: each step's `gitApi` call must map to the request the web client
+/// sent (method, path, JSON body) and carry `X-Command-Id` exactly when the host ledgers it.
+pub fn replay_routes(vector: &Value) -> Result<usize, String> {
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, recorded) in steps.iter().enumerate() {
+        let event = &recorded["event"];
+        let op = event["action"].as_str().unwrap_or_default();
+        let args = event["args"].as_array().cloned().unwrap_or_default();
+        let call = model::git::Call::from_api(op, &args).ok_or_else(|| format!("step {index}: no call for {op}"))?;
+        let route = call.route();
+        let got = json!({
+            "kind": "http",
+            "method": if route.post { "POST" } else { "GET" },
+            "path": route.path,
+            "body": route.body,
+            "commandId": call.ledger().is_some(),
+        });
+        if let Some(problem) = diff(&format!("step {index} ({op})"), &recorded["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
