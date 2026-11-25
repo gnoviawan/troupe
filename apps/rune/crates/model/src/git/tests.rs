@@ -91,3 +91,17 @@ fn ledger_keys_match_the_web_clients_journal() {
     assert_eq!(branch.entity, r#"["/p","x",""]"#);
     assert!(Call::Stage { cwd: "/p".into(), path: "a".into() }.ledger().is_none());
 }
+
+#[test]
+fn the_diff_revision_moves_only_when_a_diff_changes() {
+    let mut state = State::default();
+    let start = state.diff_revision();
+    let read = step(&mut state, Event::FetchDiff("/p".into(), "a".into(), false, None), 0.0);
+    assert_eq!(state.diff_revision(), start, "a read in flight changes nothing");
+    let (task, _) = calls(&read.effects)[0];
+    step(&mut state, Event::Reply(task, Ok(json!("diff"))), 0.0);
+    let after = state.diff_revision();
+    assert!(after > start);
+    step(&mut state, Event::RefreshStatus("/p".into()), 0.0);
+    assert_eq!(state.diff_revision(), after);
+}
