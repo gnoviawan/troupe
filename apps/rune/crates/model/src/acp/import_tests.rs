@@ -34,7 +34,7 @@ fn resolved(effects: &[Effect]) -> Vec<Value> {
     effects
         .iter()
         .filter_map(|effect| match effect {
-            Effect::ActionResolved { value } => Some(value.clone()),
+            Effect::ActionResolved { value, .. } => Some(value.clone()),
             _ => None,
         })
         .collect()
@@ -43,7 +43,11 @@ fn resolved(effects: &[Effect]) -> Vec<Value> {
 /// Imports one session and answers it; returns the reload the import then
 /// waits on.
 fn imported(state: &mut State, session_id: &str) -> Effect {
-    let request = json!({ "importAgentSessions": { "agentId": "agent-1", "cwd": "/w", "sessions": [{ "sessionId": session_id }] } });
+    imported_as(state, session_id, 0)
+}
+
+fn imported_as(state: &mut State, session_id: &str, request: u64) -> Effect {
+    let request = json!({ "importAgentSessions": { "agentId": "agent-1", "cwd": "/w", "sessions": [{ "sessionId": session_id }], "request": request } });
     let sent = apply(state, event(request));
     let command = sent
         .into_iter()
@@ -107,6 +111,7 @@ fn an_import_answers_after_a_failed_reload_too() {
                 "Chat history refresh after import failed: Error: disk gone".into()
             ),
             Effect::ActionResolved {
+                request: 0,
                 value: json!([{ "sessionId": "a", "status": "imported" }])
             },
         ]
@@ -118,8 +123,48 @@ fn an_import_answers_after_a_failed_reload_too() {
     assert_eq!(none, Vec::new());
 }
 
+/// Every answer an effect list holds, with the request it answers.
+fn answers(effects: &[Effect]) -> Vec<(u64, Value)> {
+    effects
+        .iter()
+        .filter_map(|effect| match effect {
+            Effect::ActionResolved { request, value } => Some((*request, value.clone())),
+            Effect::ImportProgress {
+                request, outcome, ..
+            } => Some((*request, outcome.clone())),
+            _ => None,
+        })
+        .collect()
+}
+
 #[test]
-fn a_listing_answered_with_no_page_fails() {
+fn each_import_names_its_request_on_progress_and_answer() {
+    let mut state = State::default();
+    let request = json!({ "importAgentSessions": { "agentId": "agent-1", "cwd": "/w", "sessions": [{ "sessionId": "a" }], "request": 7 } });
+    let sent = apply(&mut state, event(request));
+    let command = sent
+        .into_iter()
+        .find(|effect| matches!(effect, Effect::ImportAgentSession { .. }))
+        .expect("the import is sent");
+    let first = imported_as(&mut state, "b", 8);
+    let done = apply(&mut state, Event::AgentCommandDone(command, Value::Null));
+    let imported = json!({ "sessionId": "a", "status": "imported" });
+    assert_eq!(answers(&done), vec![(7, imported.clone())]);
+    let reload = done
+        .into_iter()
+        .find(|effect| matches!(effect, Effect::RefreshSessionIndex { .. }))
+        .expect("the import reloads the index");
+    let answered = apply(&mut state, Event::SessionIndexReloaded(reload, vec![]));
+    assert_eq!(answers(&answered), vec![(7, json!([imported]))]);
+    let answered = apply(&mut state, Event::SessionIndexReloaded(first, vec![]));
+    assert_eq!(
+        answers(&answered),
+        vec![(8, json!([{ "sessionId": "b", "status": "imported" }]))]
+    );
+}
+
+/// A state with a connected Claude agent in `/work` that can list and load.
+fn listing_state() -> State {
     let mut fields = serde_json::to_value(State::default()).expect("a state");
     let live = json!({
         "agentConfigs": [{ "id": "claude", "name": "Claude", "command": "c" }],
@@ -130,7 +175,39 @@ fn a_listing_answered_with_no_page_fails() {
     for (key, value) in live.as_object().expect("an object") {
         fields[key] = value.clone();
     }
-    let mut state: State = serde_json::from_value(fields).expect("a state");
+    serde_json::from_value(fields).expect("a state")
+}
+
+#[test]
+fn each_listing_names_its_request_on_its_answer() {
+    let mut state = listing_state();
+    let pages: Vec<Effect> = [3, 4]
+        .into_iter()
+        .map(|request| {
+            let asked = json!({ "listImportableSessions": ["claude", "/work", null, request] });
+            apply(&mut state, event(asked))
+                .into_iter()
+                .find(|effect| matches!(effect, Effect::ListSessions { .. }))
+                .expect("a page is asked for")
+        })
+        .collect();
+    let page = |id: &str| json!({ "sessions": [{ "sessionId": id }] });
+    let second = apply(
+        &mut state,
+        Event::AgentCommandDone(pages[1].clone(), page("y")),
+    );
+    let first = apply(
+        &mut state,
+        Event::AgentCommandDone(pages[0].clone(), page("x")),
+    );
+    let ready = |id: &str| json!({ "status": "ready", "agentId": "agent-1", "sessions": [{ "sessionId": id }] });
+    assert_eq!(answers(&second), vec![(4, ready("y"))]);
+    assert_eq!(answers(&first), vec![(3, ready("x"))]);
+}
+
+#[test]
+fn a_listing_answered_with_no_page_fails() {
+    let mut state = listing_state();
     let sent = apply(
         &mut state,
         event(json!({ "listImportableSessions": ["claude", "/work"] })),

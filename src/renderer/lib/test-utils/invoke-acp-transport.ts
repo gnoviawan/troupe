@@ -324,6 +324,12 @@ export function createInvokeAcpTransport(): AcpTransport {
     listAntigravityAccounts: () => invoke<AntigravityAccountsSnapshot>('antigravity_accounts_list'),
     listAntigravityUsage: (force = false) =>
       invoke<AntigravityAccountUsage[]>('antigravity_accounts_usage', { force }),
+    checkAntigravityUsage: (accountId, config, options) =>
+      invokeCommand<AntigravityAccountUsage>(
+        'antigravity_accounts_check_usage',
+        { accountId, config },
+        options
+      ),
     setDefaultAntigravityAccount: async (accountId) => {
       await invoke('antigravity_accounts_set_default', { accountId })
     },

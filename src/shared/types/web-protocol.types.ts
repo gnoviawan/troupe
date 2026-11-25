@@ -255,6 +255,7 @@ export const WS_COMMAND_CLASSES: Readonly<
   start_codex_account_login: ['command', 'payload'],
   list_antigravity_accounts: ['read', null],
   list_antigravity_usage: ['read', null],
+  check_antigravity_usage: ['command', 'payload'],
   set_default_antigravity_account: ['idempotent', null],
   set_project_antigravity_account: ['idempotent', null],
   set_chat_antigravity_account: ['idempotent', null],

@@ -13,9 +13,11 @@
 use serde_json::{Map, Value, json};
 
 use super::auth_retry::AuthFailure;
+use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
 use super::host_error::HostError;
+use super::oneshot::Disposer;
 use super::types::SessionStatus;
 use super::{Effect, State};
 
@@ -30,6 +32,21 @@ fn present(value: Option<&Value>) -> Option<&Value> {
 
 fn flight_key(agent_id: &str, method_id: &str) -> String {
     format!("{agent_id}\0{method_id}")
+}
+
+/// Who asked for a kill, which its outcome moves on.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Killer {
+    /// The user's `killAgent`.
+    User,
+    /// The `ensureLiveAgent` whose spawn the kill cleans up.
+    Ensure(EnsureId),
+    /// The `createSession` whose broken connection discards the process.
+    Evict(CreateId),
+    /// A cleanup whose failure nobody sees.
+    Quiet,
+    /// The rollback of a switch whose session failed to open.
+    Switch(super::switch_run::SwitchId),
 }
 
 impl State {
@@ -108,13 +125,8 @@ impl State {
         });
     }
 
-    pub(crate) fn kill_agent(
-        &mut self,
-        agent_id: String,
-        ensure: Option<EnsureId>,
-        fx: &mut Vec<Effect>,
-    ) {
-        fx.push(Effect::KillAgent { agent_id, ensure });
+    pub(crate) fn kill_agent(&mut self, agent_id: String, by: Killer, fx: &mut Vec<Effect>) {
+        fx.push(Effect::KillAgent { agent_id, by });
     }
 
     pub(crate) fn authenticate_agent(
@@ -230,6 +242,7 @@ impl State {
         &mut self,
         command: Effect,
         reply: Value,
+        env: &mut super::Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
         match command {
@@ -248,16 +261,31 @@ impl State {
                 super::auth_retry::note_retry_succeeded(&command, fx);
                 self.on_session_imported(import, session_id, fx);
             }
+            Effect::NewSession { create, .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_session_new(create, &reply, env, fx);
+            }
+            Effect::LoadSession { .. } | Effect::ResumeSession { .. } => {
+                super::auth_retry::note_retry_succeeded(&command, fx);
+                self.on_reopen_done(&command, &reply, fx);
+            }
+            Effect::DisposeEphemeralSession { by, .. } => match by {
+                Disposer::OneShot(oneshot) => self.on_oneshot_disposed(oneshot, None, fx),
+                reap @ Disposer::Reap { .. } => self.on_reaped(reap, None, fx),
+            },
             Effect::SpawnAgent { config, ensure, .. } => {
                 let agent_id = self.on_agent_spawn_reply(&config, &reply);
                 if let Some(ensure) = ensure {
                     self.on_ensure_spawned(ensure, agent_id, fx);
                 }
             }
-            Effect::KillAgent { agent_id, ensure } => {
+            Effect::KillAgent { agent_id, by } => {
                 self.on_agent_killed(&agent_id);
-                if let Some(ensure) = ensure {
-                    self.finish_spawn(ensure, Ok(None), fx);
+                match by {
+                    Killer::User | Killer::Quiet => {}
+                    Killer::Ensure(ensure) => self.finish_spawn(ensure, Ok(None), fx),
+                    Killer::Evict(create) => self.on_create_evicted(create, fx),
+                    Killer::Switch(id) => self.on_switch_kill(id, None, fx),
                 }
             }
             Effect::Authenticate {
@@ -284,6 +312,9 @@ impl State {
             Effect::Logout { agent_id } => {
                 self.book.authenticated_agents.remove(&agent_id);
             }
+            Effect::AnswerBrowserConsent { .. } => {
+                self.on_browser_consent_answered(command, Some(&reply), fx);
+            }
             _ => {}
         }
     }
@@ -300,7 +331,14 @@ impl State {
         let mut waiters = 0;
         let mut message = message;
         match command {
-            Effect::ListSessions { .. } | Effect::ImportAgentSession { .. } => {
+            Effect::AnswerBrowserConsent { .. } => {
+                return self.on_browser_consent_answered(command, None, fx);
+            }
+            Effect::ListSessions { .. }
+            | Effect::ImportAgentSession { .. }
+            | Effect::NewSession { .. }
+            | Effect::LoadSession { .. }
+            | Effect::ResumeSession { .. } => {
                 return self.on_session_call_failed(command, HostError::new(message, code), fx);
             }
             Effect::SpawnAgent { config, ensure, .. } => {
@@ -310,11 +348,22 @@ impl State {
                     return self.finish_spawn(ensure, Err(HostError::new(message, code)), fx);
                 }
             }
-            // The ensure's cleanup kill is best effort.
+            // The ensure's cleanup kill and the eviction are best effort.
             Effect::KillAgent {
-                ensure: Some(ensure),
+                by: Killer::Ensure(ensure),
                 ..
             } => return self.finish_spawn(ensure, Ok(None), fx),
+            Effect::KillAgent {
+                by: Killer::Evict(create),
+                ..
+            } => return self.on_create_evicted(create, fx),
+            Effect::KillAgent {
+                by: Killer::Quiet, ..
+            } => return,
+            Effect::KillAgent {
+                by: Killer::Switch(id),
+                ..
+            } => return self.on_switch_kill(id, Some(message), fx),
             Effect::Authenticate {
                 agent_id,
                 method_id,
@@ -349,6 +398,18 @@ impl State {
                     fx.push(Effect::rejected(&message));
                 }
                 return self.settle_auth_retries(flight, Err(AuthFailure::Other(message)), fx);
+            }
+            Effect::DisposeEphemeralSession { by, .. } => {
+                return match by {
+                    Disposer::OneShot(oneshot) => {
+                        let error = super::effect::error_text(&HostError::new(message, code));
+                        self.on_oneshot_disposed(oneshot, Some(error), fx)
+                    }
+                    reap @ Disposer::Reap { .. } => self.on_reaped(reap, Some(message), fx),
+                };
+            }
+            Effect::PromoteSession { session_id, .. } => {
+                return self.on_promotion_failed(&session_id, fx);
             }
             Effect::Logout { agent_id } => fx.push(Effect::warn(
                 "acp.logoutAgent",

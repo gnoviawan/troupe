@@ -111,16 +111,16 @@ async fn a_chat_choice_is_a_compare_and_set_and_remove_clears_it() {
 }
 
 #[tokio::test]
-async fn automatic_switching_is_on_by_default_and_toggles_on_the_host() {
+async fn automatic_switching_is_off_by_default_and_toggles_on_the_host() {
     let (root, acp) = manager_with_account(&[]);
     let listed = handle_list_antigravity_accounts("1".into(), &acp).await;
-    assert_eq!(listed.payload.unwrap()["autoSwitch"], true);
-    let reply =
-        handle_set_antigravity_auto_switch("2".into(), &json!({ "enabled": false }), &acp).await;
-    assert_eq!(reply.payload.unwrap(), json!({}));
-    assert_eq!(stored(&root)["autoSwitch"], false);
-    let listed = handle_list_antigravity_accounts("3".into(), &acp).await;
     assert_eq!(listed.payload.unwrap()["autoSwitch"], false);
+    let reply =
+        handle_set_antigravity_auto_switch("2".into(), &json!({ "enabled": true }), &acp).await;
+    assert_eq!(reply.payload.unwrap(), json!({}));
+    assert_eq!(stored(&root)["autoSwitchOptIn"], true);
+    let listed = handle_list_antigravity_accounts("3".into(), &acp).await;
+    assert_eq!(listed.payload.unwrap()["autoSwitch"], true);
     let malformed = handle_set_antigravity_auto_switch("4".into(), &json!({}), &acp).await;
     assert_eq!(malformed.err.unwrap().code, "unsupported");
 }
@@ -276,4 +276,133 @@ async fn a_signed_out_spawn_error_maps_to_the_antigravity_code() {
         err.message,
         "The Antigravity account \"Work\" is not signed in."
     );
+}
+
+fn antigravity_config(config_id: &str) -> Value {
+    json!({
+        "configId": config_id,
+        "name": "Antigravity",
+        "command": "agy_acp_server_that_does_not_exist",
+        "args": [],
+        "env": {}
+    })
+}
+
+fn record_tier(acp: &AcpManager, account_id: &str, tier: &str) {
+    acp.antigravity_agent().record_session_tier(
+        Some(crate::acp::antigravity_agent::AntigravityLaunchAuth::Account(account_id.to_string())),
+        Some(tier.to_string()),
+    );
+}
+
+#[tokio::test]
+async fn listing_usage_never_starts_a_check() {
+    let (_root, acp) = manager_with_account(&[]);
+    record_tier(&acp, "ab12", "Google AI Pro");
+
+    for n in 0..3 {
+        assert!(
+            handle_list_antigravity_accounts(n.to_string(), &acp)
+                .await
+                .ok
+        );
+        let reply = handle_list_antigravity_usage(n.to_string(), &acp);
+        let usage = reply.payload.unwrap()["usage"].clone();
+        assert_eq!(usage[0]["status"], "not_checked");
+        assert_eq!(usage[1]["status"], "not_checked");
+        assert_eq!(usage[1]["planType"], "Google AI Pro");
+        assert_eq!(usage[1]["checkedAt"], 0);
+    }
+    for _ in 0..10 {
+        tokio::task::yield_now().await;
+    }
+    assert_eq!(acp.antigravity_agent().usage_checks_started(), 0);
+    assert!(acp.list_agents().is_empty());
+}
+
+#[tokio::test]
+async fn a_usage_check_refuses_other_agents_and_unknown_accounts_before_a_process_starts() {
+    let (_root, acp) = manager_with_account(&[]);
+
+    let other = handle_check_antigravity_usage(
+        "1".into(),
+        &json!({ "accountId": "ab12", "config": antigravity_config("acp-registry:claude-acp") }),
+        &acp,
+    )
+    .await;
+    let unknown = handle_check_antigravity_usage(
+        "2".into(),
+        &json!({ "accountId": "ffff", "config": antigravity_config("acp-registry:antigravity-acp") }),
+        &acp,
+    )
+    .await;
+    let malformed =
+        handle_check_antigravity_usage("3".into(), &json!({ "accountId": "ab12" }), &acp).await;
+
+    assert_eq!(
+        other.err.unwrap().message,
+        "Usage checks run only on the Antigravity agent"
+    );
+    assert_eq!(
+        unknown.err.unwrap().message,
+        "That Antigravity account does not exist"
+    );
+    assert_eq!(malformed.err.unwrap().code, "unsupported");
+    assert!(acp.list_agents().is_empty());
+}
+
+#[tokio::test]
+async fn a_signed_out_check_is_a_message_on_that_check_without_a_process() {
+    let (_root, acp) = manager_with_account(&["ab12"]);
+    record_tier(&acp, "ab12", "Google AI Pro");
+
+    let reply = handle_check_antigravity_usage(
+        "1".into(),
+        &json!({ "accountId": "ab12", "config": antigravity_config("acp-registry:antigravity-acp") }),
+        &acp,
+    )
+    .await;
+
+    let usage = reply.payload.unwrap()["usage"].clone();
+    assert_eq!(usage["status"], "error");
+    assert_eq!(
+        usage["message"],
+        "This account is not signed in. Sign in to it, then check again."
+    );
+    assert_eq!(usage["accountId"], "ab12");
+    assert_eq!(usage["planType"], "Google AI Pro");
+    assert!(acp.list_agents().is_empty());
+    assert_eq!(acp.antigravity_agent().usage_checks_started(), 1);
+    let listed = handle_list_antigravity_usage("2".into(), &acp);
+    let listed = listed.payload.unwrap()["usage"][1].clone();
+    assert_eq!(listed["status"], "error");
+    assert_eq!(listed["planType"], "Google AI Pro");
+}
+
+#[tokio::test]
+async fn starting_a_sign_in_drops_the_tier_and_the_last_check_of_that_account() {
+    let (_root, acp) = manager_with_account(&["ab12"]);
+    record_tier(&acp, "ab12", "Google AI Pro");
+    record_tier(&acp, "default", "Google AI Ultra");
+    let config = antigravity_config("acp-registry:antigravity-acp");
+    handle_check_antigravity_usage(
+        "1".into(),
+        &json!({ "accountId": "ab12", "config": config }),
+        &acp,
+    )
+    .await;
+
+    handle_start_antigravity_account_login(
+        "2".into(),
+        &json!({ "accountId": "ab12", "config": config }),
+        &acp,
+        None,
+    )
+    .await;
+
+    let listed = handle_list_antigravity_usage("3".into(), &acp);
+    let usage = listed.payload.unwrap()["usage"].clone();
+    assert_eq!(usage[1]["status"], "not_checked");
+    assert_eq!(usage[1]["planType"], Value::Null);
+    assert_eq!(usage[0]["planType"], "Google AI Ultra");
 }

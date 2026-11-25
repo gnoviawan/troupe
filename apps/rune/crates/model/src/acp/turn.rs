@@ -63,7 +63,7 @@ pub struct HostReports {
 }
 
 /// `noteForStopReason`: the line a stop reason other than a normal end shows.
-fn note_for_stop_reason(reason: &str) -> Option<String> {
+pub(crate) fn note_for_stop_reason(reason: &str) -> Option<String> {
     Some(match reason {
         "refusal" => "The agent refused to continue.".into(),
         "max_tokens" => "Response stopped: token limit reached.".into(),
@@ -78,7 +78,7 @@ fn note_for_stop_reason(reason: &str) -> Option<String> {
 }
 
 /// `settleRunningPlan`: nothing runs once the turn is over.
-fn settle_running_plan(entries: &[PlanEntry]) -> Option<Vec<PlanEntry>> {
+pub(crate) fn settle_running_plan(entries: &[PlanEntry]) -> Option<Vec<PlanEntry>> {
     let running = |entry: &PlanEntry| entry.text("status") == Some("in_progress");
     if !entries.iter().any(running) {
         return None;
@@ -148,7 +148,7 @@ fn append_plan_snapshot(messages: &mut [ChatMessage], plan: &[PlanEntry]) {
 
 /// `normalizeUserMessageBlocks` without the composer's wire reverse (ported
 /// with the composer): the read-only guard and a handoff preamble come off.
-fn normalize_user_message(message: &mut ChatMessage) {
+pub(crate) fn normalize_user_message(message: &mut ChatMessage) {
     if message.role != Role::User {
         return;
     }
@@ -197,7 +197,7 @@ pub(crate) fn finalize_streaming(messages: Option<&mut Vec<ChatMessage>>) {
 
 impl State {
     /// `claimPromptTurnEnd`: true the first time a turn id ends.
-    fn claim_turn_end(&mut self, turn_id: &str) -> bool {
+    pub(crate) fn claim_turn_end(&mut self, turn_id: &str) -> bool {
         let ended = &mut self.book.ended_prompt_turns;
         if ended.iter().any(|id| id == turn_id) {
             return false;
@@ -263,6 +263,9 @@ impl State {
                 self.flush_next_queued_prompt(session_id, env, fx);
                 return;
             }
+        }
+        if self.settle_collector(session_id, Ok(event.stop_reason.clone())) {
+            return;
         }
         let live_plan = self.plans.get(session_id);
         let settled = live_plan.and_then(|plan| settle_running_plan(plan));
@@ -366,7 +369,7 @@ impl State {
         if let Some(reason) = &end.stop_reason {
             self.last_error_after_stop(session_id, reason);
         }
-        self.book.active_wire_turns.remove(session_id);
+        self.forget_prompt_turn(session_id);
         if self.indexed(session_id) {
             fx.push(Effect::PersistSession {
                 session_id: session_id.to_owned(),

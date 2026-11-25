@@ -282,6 +282,9 @@ pub(super) async fn run_command_loop(
                                 // supplies every id, so no parent walk.
                                 if let Some(origin) = &child_origin {
                                     state.seed_child_route(origin, &session_id.0);
+                                    if origin.auto_approve {
+                                        state.auto_approve(session_id.0.clone());
+                                    }
                                 }
                             }
 
@@ -323,6 +326,9 @@ pub(super) async fn run_command_loop(
                                     models: resolved.models,
                                     config_options: response.config_options,
                                     cwd: quick_chat_id.map(|_| cwd),
+                                    antigravity_tier: response.meta.as_ref().and_then(
+                                        crate::acp::antigravity_agent::antigravity_tier_name,
+                                    ),
                                 }),
                             );
                         }

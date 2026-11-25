@@ -38,7 +38,7 @@ export function ProviderGroupHeader({
   }, [catalog, iconKey])
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border/60 pb-3">
+    <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-2">
       {svg && (
         <span
           aria-hidden="true"
@@ -47,8 +47,8 @@ export function ProviderGroupHeader({
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       )}
-      <h3 className="text-sm font-semibold leading-none text-foreground">{name}</h3>
-      {count && <span className="text-2xs text-muted-foreground">{count}</span>}
+      <h3 className="text-sm font-medium leading-5 text-foreground">{name}</h3>
+      {count && <span className="text-xs tabular-nums text-muted-foreground">{count}</span>}
       <span
         className="ml-auto flex items-center gap-1.5 text-2xs text-muted-foreground"
         aria-live="polite"

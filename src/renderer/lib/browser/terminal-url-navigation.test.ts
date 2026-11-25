@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAppSettingsStore } from '@/stores/app-settings-store'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { DEFAULT_APP_SETTINGS, type TerminalUrlOpenMode } from '@/types/settings'
+import { DEFAULT_APP_SETTINGS, type LinkOpenMode } from '@/types/settings'
 
-const { mockOpenUrlWithSystemBrowser } = vi.hoisted(() => ({
-  mockOpenUrlWithSystemBrowser: vi.fn()
+const { mockOpenUrlWithSystemBrowser, tauriRef } = vi.hoisted(() => ({
+  mockOpenUrlWithSystemBrowser: vi.fn(),
+  tauriRef: { current: true }
 }))
 
 vi.mock('@/lib/api', () => ({
@@ -13,12 +14,29 @@ vi.mock('@/lib/api', () => ({
     openUrlWithSystemBrowser: mockOpenUrlWithSystemBrowser
   }
 }))
+vi.mock('@/lib/tauri-runtime', () => ({ isTauriContext: () => tauriRef.current }))
+vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 
-import { openTerminalUrl, openTerminalUrlInDedicatedBrowser } from './terminal-url-navigation'
+import { openLink } from './open-link'
+import { openTerminalUrl } from './terminal-url-navigation'
 
-describe('terminal-url-navigation', () => {
+function setMode(mode: LinkOpenMode): void {
+  useAppSettingsStore.setState((state) => ({
+    ...state,
+    settings: { ...state.settings, linkOpenMode: mode }
+  }))
+}
+
+function rootTabs() {
+  const root = useWorkspaceStore.getState().root
+  if (root.type !== 'leaf') throw new Error('Expected root pane to be a leaf')
+  return root.tabs
+}
+
+describe('openLink and openTerminalUrl', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    tauriRef.current = true
     useAppSettingsStore.setState({
       settings: { ...DEFAULT_APP_SETTINGS },
       isLoaded: true
@@ -32,24 +50,16 @@ describe('terminal-url-navigation', () => {
     mockOpenUrlWithSystemBrowser.mockResolvedValue({ success: true, data: undefined })
   })
 
-  it('opens URLs in the system browser when mode is system', async () => {
+  it('opens links in the default browser when the setting is system', async () => {
     await openTerminalUrl('https://example.com')
 
     expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('https://example.com')
     expect(useBrowserSessionStore.getState().tabs.size).toBe(0)
-    const root = useWorkspaceStore.getState().root
-    expect(root.type).toBe('leaf')
-    if (root.type !== 'leaf') {
-      throw new Error('Expected root pane to be a leaf')
-    }
-    expect(root.tabs).toHaveLength(0)
+    expect(rootTabs()).toHaveLength(0)
   })
 
-  it('opens URLs in a new Troupe browser tab when mode is termul', async () => {
-    useAppSettingsStore.setState((state) => ({
-      ...state,
-      settings: { ...state.settings, terminalUrlOpenMode: 'termul' }
-    }))
+  it('opens links in a new Troupe browser tab when the setting is troupe', async () => {
+    setMode('troupe')
 
     await openTerminalUrl('https://example.com')
 
@@ -57,22 +67,28 @@ describe('terminal-url-navigation', () => {
     const tabs = Array.from(useBrowserSessionStore.getState().tabs.values())
     expect(tabs).toHaveLength(1)
     expect(tabs[0]?.url).toBe('https://example.com')
-
-    const root = useWorkspaceStore.getState().root
-    expect(root.type).toBe('leaf')
-    if (root.type !== 'leaf') {
-      throw new Error('Expected root pane to be a leaf')
-    }
-
-    expect(root.tabs).toHaveLength(1)
-    expect(root.tabs[0]).toMatchObject({
-      type: 'browser',
-      browserTabId: tabs[0]?.id,
-      id: `browser-${tabs[0]?.id}`
-    })
+    expect(rootTabs()[0]).toMatchObject({ type: 'browser', browserTabId: tabs[0]?.id })
   })
 
-  it('throws when system browser opening fails', async () => {
+  it('sends a mailto link to the default browser even when the setting is troupe', async () => {
+    setMode('troupe')
+
+    await openLink('mailto:hi@example.com')
+
+    expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('mailto:hi@example.com')
+    expect(useBrowserSessionStore.getState().tabs.size).toBe(0)
+  })
+
+  it('uses the default browser in the web client, which has no Troupe browser', async () => {
+    tauriRef.current = false
+    setMode('troupe')
+
+    await openLink('https://example.com')
+
+    expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('https://example.com')
+  })
+
+  it('throws when the default browser refuses the link', async () => {
     mockOpenUrlWithSystemBrowser.mockResolvedValueOnce({
       success: false,
       error: 'open failed',
@@ -82,31 +98,11 @@ describe('terminal-url-navigation', () => {
     await expect(openTerminalUrl('https://example.com')).rejects.toThrow('open failed')
   })
 
-  it('treats an invalid persisted mode as system browser mode', async () => {
-    useAppSettingsStore.setState((state) => ({
-      ...state,
-      settings: {
-        ...state.settings,
-        terminalUrlOpenMode: 'invalid-mode' as TerminalUrlOpenMode
-      }
-    }))
+  it('treats an unknown stored value as the default browser', async () => {
+    setMode('invalid-mode' as LinkOpenMode)
 
-    await openTerminalUrl('https://example.com')
+    await openLink('https://example.com')
 
     expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('https://example.com')
-    expect(useBrowserSessionStore.getState().tabs.size).toBe(0)
-  })
-
-  it('opens a user tab under a label the host registry accepts', async () => {
-    const randomUuidSpy = vi
-      .spyOn(globalThis.crypto, 'randomUUID')
-      .mockReturnValue('00000000-0000-4000-8000-000000000001')
-
-    await openTerminalUrlInDedicatedBrowser('https://example.com')
-
-    const tab = useBrowserSessionStore.getState().getTab('tab-00000000-0000-4000-8000-000000000001')
-
-    expect(tab?.url).toBe('https://example.com')
-    randomUuidSpy.mockRestore()
   })
 })

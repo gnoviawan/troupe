@@ -5,17 +5,21 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 use serde_json::Value;
 
-use super::FlightId;
+use super::answer::Answer;
 use super::auth_retry::{AuthRetryId, OnDemand};
+use super::create::CreateId;
 use super::discovery::SessionList;
 use super::ensure::EnsureId;
+use super::history::OpenId;
 use super::host_error::HostError;
-use super::import::ImportId;
+use super::import::{ImportId, RequestId};
 use super::mcp::TokenCheck;
+use super::oneshot::{Disposer, OneShotId};
 use super::restore::RunId;
 use super::turn::TurnEnd;
 use super::types::Object;
-use super::window::PayloadRead;
+use super::window::{PayloadRead, Reload};
+use super::{FlightId, Killer};
 use crate::Level;
 
 /// What a step asks the world to do. The caller runs these in order.
@@ -64,6 +68,14 @@ pub enum Effect {
         #[serde(skip_serializing)]
         generation: u64,
     },
+    /// Send `Event::PromptResendDue` with this generation after `delay_ms`:
+    /// the next resend of a prompt waiting to be confirmed.
+    PromptResendAfter {
+        session_id: String,
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        generation: u64,
+    },
     /// Save the config's model list, so the pickers show it after a restart.
     PersistModelCatalog { config_id: String, catalog: Value },
     /// Send `session/set_mode`, then `Event::ControlSet` with this effect.
@@ -71,6 +83,9 @@ pub enum Effect {
         agent_id: String,
         session_id: String,
         mode_id: String,
+        /// The run that sent it, which its outcome moves on.
+        #[serde(skip_serializing)]
+        run: Option<RunId>,
         /// Sent again after an authenticate on demand (`withAuthRetry`).
         #[serde(skip_serializing)]
         retried: bool,
@@ -116,6 +131,31 @@ pub enum Effect {
     /// Close the chat tab of this session in every project's tree: the chat
     /// is neither live nor in the index, so the tab could show nothing.
     CloseChatTab { session_id: String },
+    /// Write the durable switch marker on the old session's log, then send
+    /// `Event::AgentCommandDone` or `AgentCommandFailed` with this effect.
+    RecordAgentSwitch {
+        session_id: String,
+        marker: Value,
+        #[serde(skip)]
+        switch: super::switch_run::SwitchId,
+    },
+    /// Answer a browser consent ticket (`answerBrowserConsent`), then send
+    /// `Event::AgentCommandDone` with the result (`ok`, `stale`,
+    /// `too_early` or `refused`), or `AgentCommandFailed`.
+    AnswerBrowserConsent {
+        request_id: String,
+        option_id: String,
+        agent_id: String,
+        /// The ticket, put back when the answer is refused.
+        #[serde(skip)]
+        ticket: Value,
+    },
+    /// Show the session's agent browser as stopped, or running again.
+    SetBrowserStopped { session_id: String, stopped: bool },
+    /// Delete this key from the app's persisted records.
+    DeletePersisted { key: String },
+    /// Point the chat tab of `from` at `to`, in the pane that shows it.
+    RemapChatTab { from: String, to: String },
     /// Merge this patch into the config's saved composer picks.
     PersistComposerOptions { config_id: String, patch: Value },
     /// Reload the chat index from the desktop's history store, then send
@@ -148,9 +188,8 @@ pub enum Effect {
     /// Stop the agent process; then `AgentCommandDone` or `AgentCommandFailed`.
     KillAgent {
         agent_id: String,
-        /// The `ensureLiveAgent` whose spawn this kill cleans up.
         #[serde(skip_serializing)]
-        ensure: Option<EnsureId>,
+        by: Killer,
     },
     /// Send `authenticate`; then `AgentCommandDone` or `AgentCommandFailed`.
     Authenticate {
@@ -205,6 +244,9 @@ pub enum Effect {
     },
     /// Delete the files the app staged for the session (pasted images).
     DeleteSessionTempFiles { session_id: String },
+    /// Send the user's answer to a prompt; hand a refusal back as
+    /// `Event::AnswerFailed`.
+    Answer(Answer),
     /// Ask the agent to delete its own session (`session/delete`); then
     /// `SessionCommandDone` or `SessionCommandFailed`.
     DeleteAgentSession {
@@ -298,6 +340,97 @@ pub enum Effect {
         #[serde(skip_serializing)]
         read: PayloadRead,
     },
+    /// Read the session's payload again from the host
+    /// (`reloadSessionPayloadFromHost`), then send `Event::SessionPayloadRead`
+    /// with this effect and the payload, `None` when the host has none, or
+    /// the error.
+    ReloadSessionPayload {
+        session_id: String,
+        #[serde(skip_serializing)]
+        read: Reload,
+    },
+    /// Send `session/new`; then `AgentCommandDone` with the new session
+    /// (`lookup` set when a resend was answered from the host's records),
+    /// or `AgentCommandFailed`.
+    NewSession {
+        agent_id: String,
+        cwd: String,
+        mcp_servers: Vec<Value>,
+        ephemeral: bool,
+        promotable: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        project_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        worktree_path: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        worktree_branch: Option<String>,
+        /// `quick` for a quick chat.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        session_kind: Option<String>,
+        additional_directories: Vec<Value>,
+        #[serde(skip_serializing)]
+        create: CreateId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Send `session/load` to bring the chat's session back on the agent,
+    /// which replays it; then `AgentCommandDone` with the agent's controls,
+    /// or `AgentCommandFailed`.
+    LoadSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        additional_directories: Vec<Value>,
+        mcp_servers: Vec<Value>,
+        #[serde(skip_serializing)]
+        open: OpenId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Send `session/resume`, which brings the session back without a
+    /// replay; answered as `LoadSession` is.
+    ResumeSession {
+        agent_id: String,
+        session_id: String,
+        cwd: String,
+        additional_directories: Vec<Value>,
+        mcp_servers: Vec<Value>,
+        #[serde(skip_serializing)]
+        open: OpenId,
+        #[serde(skip_serializing)]
+        retried: bool,
+    },
+    /// Send `Event::OneShotTimerDue` with this effect after `delay_ms`: the
+    /// run's overall time, or its session's dispose time (`cleanup`).
+    StartOneShotTimer {
+        delay_ms: f64,
+        #[serde(skip_serializing)]
+        oneshot: OneShotId,
+        #[serde(skip_serializing)]
+        cleanup: bool,
+    },
+    /// Dispose a one-shot's temporary session; then `AgentCommandDone` or
+    /// `AgentCommandFailed`.
+    DisposeEphemeralSession {
+        agent_id: String,
+        session_id: String,
+        #[serde(skip_serializing)]
+        by: Disposer,
+    },
+    /// Make a claimed warm session durable (`promote_session`); then
+    /// `AgentCommandDone` or `AgentCommandFailed`.
+    PromoteSession {
+        agent_id: String,
+        session_id: String,
+    },
+    /// Send `Event::ReplayEnd` with this effect once the events already
+    /// queued have been applied, so replayed chunks racing the reply still
+    /// land in the replay window.
+    EndReplay {
+        session_id: String,
+        #[serde(skip_serializing)]
+        generation: u64,
+    },
     /// Send `session/list` for one page of the agent's sessions in `cwd`;
     /// then `AgentCommandDone` with the page, or `AgentCommandFailed`.
     ListSessions {
@@ -333,10 +466,19 @@ pub enum Effect {
         #[serde(skip_serializing)]
         retried: bool,
     },
-    /// An import finished its `done`-th session with `outcome`.
-    ImportProgress { done: usize, outcome: Value },
-    /// The user's action answered `value`.
-    ActionResolved { value: Value },
+    /// The import `request` finished its `done`-th session with `outcome`.
+    ImportProgress {
+        #[serde(skip_serializing)]
+        request: RequestId,
+        done: usize,
+        outcome: Value,
+    },
+    /// The user's action `request` answered `value`.
+    ActionResolved {
+        #[serde(skip_serializing)]
+        request: RequestId,
+        value: Value,
+    },
     /// Whether the host stores a Factory API key; then
     /// `Event::FactoryKeyStatus` with this effect and the answer, or false
     /// with `failed` when it could not be read.
@@ -371,13 +513,18 @@ impl Effect {
                 | Self::SetModel { retried: true, .. }
                 | Self::ListSessions { retried: true, .. }
                 | Self::ImportAgentSession { retried: true, .. }
+                | Self::NewSession { retried: true, .. }
+                | Self::LoadSession { retried: true, .. }
+                | Self::ResumeSession { retried: true, .. }
         )
     }
 
     /// The restore a set command belongs to.
     pub(crate) fn run(&self) -> Option<RunId> {
         match self {
-            Self::SetModel { run, .. } | Self::SetConfigOption { run, .. } => *run,
+            Self::SetMode { run, .. }
+            | Self::SetModel { run, .. }
+            | Self::SetConfigOption { run, .. } => *run,
             _ => None,
         }
     }
@@ -399,16 +546,10 @@ impl Effect {
     }
 
     /// The user's action failed with this host error, shown the way
-    /// `String(error)` prints it: an `AcpTransportError` when the host sent
-    /// a code, else an `Error`.
+    /// `String(error)` prints it.
     pub(crate) fn rejected_by(error: &HostError) -> Self {
-        let name = if error.code.is_some() {
-            "AcpTransportError"
-        } else {
-            "Error"
-        };
         Self::ActionRejected {
-            message: format!("{name}: {}", error.message),
+            message: error_text(error),
         }
     }
 
@@ -419,4 +560,15 @@ impl Effect {
             message,
         }
     }
+}
+
+/// `String(error)` of a host error: an `AcpTransportError` when the host sent
+/// a code, a model-made error by its class, else an `Error`.
+pub(crate) fn error_text(error: &HostError) -> String {
+    let name = match (error.name, &error.code) {
+        (Some(name), _) => name,
+        (None, Some(_)) => "AcpTransportError",
+        (None, None) => "Error",
+    };
+    format!("{name}: {}", error.message)
 }

@@ -5,174 +5,24 @@ use super::*;
 const NOW: i64 = 1_700_000_000_000;
 
 #[test]
-fn models_with_quota_become_windows_sorted_by_use() {
-    let reply = json!({
-        "models": {
-            "gemini-3-pro": {
-                "displayName": "Gemini 3 Pro",
-                "quotaInfo": { "remainingFraction": 0.25, "resetTime": "2026-01-05T14:30:00Z" }
-            },
-            "gemini-3-flash": {
-                "displayName": "Gemini 3 Flash",
-                "quotaInfo": { "remainingFraction": 1.0 }
-            },
-            "claude-sonnet": {
-                "quotaInfo": { "resetTime": "2026-01-05T10:00:00Z" }
-            },
-            "internal-model": {
-                "displayName": "Internal",
-                "isInternal": true,
-                "quotaInfo": { "remainingFraction": 0.0 }
-            },
-            "off": {
-                "displayName": "Off",
-                "disabled": true,
-                "quotaInfo": { "remainingFraction": 0.0 }
-            },
-            "no-quota": { "displayName": "No quota" }
-        }
-    });
-    let usage = usage_from_models("acct", Some("Pro".to_string()), &reply, NOW);
-    assert_eq!(usage.status, AntigravityUsageStatus::Ok);
-    assert_eq!(usage.plan_type.as_deref(), Some("Pro"));
-    assert_eq!(usage.checked_at, NOW);
-    let labels: Vec<&str> = usage.windows.iter().map(|w| w.label.as_str()).collect();
-    // A reset time without a remaining fraction is a used-up bucket; a model
-    // without a display name is labelled by its id.
-    assert_eq!(labels, ["claude-sonnet", "Gemini 3 Pro", "Gemini 3 Flash"]);
-    assert_eq!(usage.windows[0].percent, 100.0);
-    assert_eq!(usage.windows[1].percent, 75.0);
-    assert_eq!(usage.windows[1].model_id, "gemini-3-pro");
-    assert_eq!(
-        usage.windows[1].resets_at.as_deref(),
-        Some("2026-01-05T14:30:00Z")
-    );
-    assert_eq!(usage.windows[2].percent, 0.0);
-    assert_eq!(usage.windows[2].resets_at, None);
-    assert!(usage.windows.iter().all(|w| w.kind == "model"));
-}
-
-#[test]
-fn percent_is_clamped_and_ties_sort_by_label() {
-    let reply = json!({
-        "models": {
-            "b": { "displayName": "B", "quotaInfo": { "remainingFraction": -0.5 } },
-            "a": { "displayName": "A", "quotaInfo": { "remainingFraction": 0.0 } },
-            "c": { "displayName": "C", "quotaInfo": { "remainingFraction": 1.5 } }
-        }
-    });
-    let usage = usage_from_models("acct", None, &reply, NOW);
-    let shown: Vec<(&str, f64)> = usage
-        .windows
-        .iter()
-        .map(|w| (w.label.as_str(), w.percent))
-        .collect();
-    assert_eq!(shown, [("A", 100.0), ("B", 100.0), ("C", 0.0)]);
-}
-
-#[test]
-fn a_reply_without_quota_is_unavailable() {
-    for reply in [
-        json!({}),
-        json!({ "models": {} }),
-        json!({ "models": { "m": { "displayName": "M" } } }),
-        json!({ "models": [] }),
-    ] {
-        let usage = usage_from_models("acct", Some("Pro".to_string()), &reply, NOW);
-        assert_eq!(usage.status, AntigravityUsageStatus::Unavailable);
-        assert!(usage.windows.is_empty());
-        assert_eq!(
-            usage.message.as_deref(),
-            Some("Antigravity did not report plan limits")
-        );
-    }
-}
-
-#[test]
-fn verdicts_map_to_statuses() {
-    let signed_out = usage_from_verdict("a", ProbeVerdict::SignedOut, NOW);
-    assert_eq!(signed_out.status, AntigravityUsageStatus::SignedOut);
-    assert_eq!(signed_out.message, None);
-    let keychain = usage_from_verdict("a", ProbeVerdict::Unavailable(KEYCHAIN_UNAVAILABLE), NOW);
-    assert_eq!(keychain.status, AntigravityUsageStatus::Unavailable);
-    assert_eq!(
-        keychain.message.as_deref(),
-        Some("Antigravity usage is not available for a keychain login")
-    );
-    let failed = usage_from_verdict(
-        "a",
-        ProbeVerdict::Failed("Antigravity usage timed out"),
-        NOW,
-    );
-    assert_eq!(failed.status, AntigravityUsageStatus::Error);
-    let ok = usage_from_verdict(
-        "a",
-        ProbeVerdict::Models {
-            plan_type: None,
-            reply: json!({ "models": { "m": { "quotaInfo": { "remainingFraction": 0.5 } } } }),
-        },
-        NOW,
-    );
-    assert_eq!(ok.status, AntigravityUsageStatus::Ok);
-    assert_eq!(ok.windows[0].percent, 50.0);
-}
-
-#[test]
 fn usage_serializes_with_the_renderer_field_names() {
-    let usage = usage_from_models(
+    let usage = AntigravityAccountUsage::status_only(
         "acct",
-        Some("Pro".to_string()),
-        &json!({ "models": { "m": { "displayName": "M", "quotaInfo": { "remainingFraction": 0.5, "resetTime": "r" } } } }),
+        AntigravityUsageStatus::Unavailable,
+        "not read",
         NOW,
     );
     assert_eq!(
         serde_json::to_value(&usage).unwrap(),
         json!({
             "accountId": "acct",
-            "status": "ok",
-            "planType": "Pro",
-            "windows": [{ "kind": "model", "label": "M", "modelId": "m", "percent": 50.0, "resetsAt": "r" }],
+            "status": "unavailable",
+            "planType": null,
+            "windows": [],
             "checkedAt": NOW,
-            "message": null
+            "message": "not read"
         })
     );
-    let signed_out = usage_from_verdict("acct", ProbeVerdict::SignedOut, NOW);
-    assert_eq!(
-        serde_json::to_value(&signed_out).unwrap()["status"],
-        "signed_out"
-    );
-}
-
-#[test]
-fn load_code_assist_fields_are_read() {
-    let load = json!({
-        "cloudaicompanionProject": { "id": "proj-1" },
-        "currentTier": { "id": "free-tier", "name": "Free" },
-        "paidTier": { "id": "g1-pro-tier", "name": "Google AI Pro", "usesGcpTos": true }
-    });
-    assert_eq!(code_assist_project(&load).as_deref(), Some("proj-1"));
-    assert_eq!(plan_name(&load).as_deref(), Some("Google AI Pro"));
-    assert_eq!(quota_endpoint(&load), GCP_TOS_ENDPOINT);
-
-    let load = json!({
-        "cloudaicompanionProject": "proj-2",
-        "currentTier": { "id": "free-tier" }
-    });
-    assert_eq!(code_assist_project(&load).as_deref(), Some("proj-2"));
-    assert_eq!(plan_name(&load).as_deref(), Some("free-tier"));
-    assert_eq!(quota_endpoint(&load), DAILY_ENDPOINT);
-
-    let load = json!({ "paidTier": { "id": "", "name": " " }, "cloudaicompanionProject": "" });
-    assert_eq!(code_assist_project(&load), None);
-    assert_eq!(plan_name(&load), None);
-    assert_eq!(quota_endpoint(&load), DAILY_ENDPOINT);
-}
-
-#[test]
-fn invalid_grant_is_recognized() {
-    assert!(is_invalid_grant(&json!({ "error": "invalid_grant" })));
-    assert!(!is_invalid_grant(&json!({ "error": "invalid_client" })));
-    assert!(!is_invalid_grant(&json!({})));
 }
 
 const BODY: &str = "Usage Limit Reached\n\nYou have reached your current quota for this period.";

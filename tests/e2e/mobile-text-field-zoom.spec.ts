@@ -315,28 +315,25 @@ async function checkEverySurface(page: Page, landscape: boolean): Promise<void> 
   await expectSixteenPx(page, 'Theme picker', 1)
   await dismiss(page, page.getByLabel('Search themes'))
 
-  // App Preferences: the search field, then the four categories with native selects.
+  // Preferences: the search field, then the three pages with native selects.
   await runPaletteCommand(page, 'App Preferences')
-  const preferences = page.getByRole('dialog', { name: 'Application Preferences' })
+  const preferences = page.getByRole('dialog', { name: 'Preferences' })
   await expect(preferences).toBeVisible()
-  const categories = [
-    ['appearance', 'Terminal Appearance'],
-    ['shell', 'Default Shell'],
-    ['behavior', 'Behavior'],
-    ['ai-agents', 'AI Agents']
+  const settingsPages = [
+    ['preferences', 'Preferences'],
+    ['terminal', 'Terminal'],
+    ['ai-agents', 'Agents']
   ] as const
-  for (const [id, name] of categories) {
+  for (const [id, name] of settingsPages) {
     await preferences
-      .getByRole('navigation', { name: 'Settings categories' })
+      .getByRole('navigation', { name: 'Settings pages' })
       .getByRole('button', { name, exact: true })
       .tap()
-    await expectSixteenPx(page, `App Preferences > ${name}`, 1, `[data-settings-section="${id}"]`)
+    await expectSixteenPx(page, `Preferences > ${name}`, 1, `[data-settings-section="${id}"]`)
   }
-  await expectSixteenPx(page, 'App Preferences', 1)
-  // Escape cannot close Preferences: its Shortcuts section keeps a `data-shortcut-recorder` in the
-  // DOM, and `SettingsModal` yields Escape to one. Use the dialog's own close button.
-  await preferences.getByRole('button', { name: 'Close Application Preferences' }).tap()
-  await expect(preferences).toBeHidden()
+  await expectSixteenPx(page, 'Preferences', 1)
+  // Escape closes Settings unless a shortcut recorder is recording.
+  await dismiss(page, preferences)
 
   // Project Settings.
   await runPaletteCommand(page, 'Project Settings')

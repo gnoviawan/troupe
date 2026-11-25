@@ -14,8 +14,6 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use usage::UsageCache;
-
 /// Antigravity home override. Unset means the host default (`~/.gemini`).
 pub use super::antigravity_accounts::GEMINI_HOME_ENV;
 use super::antigravity_accounts::{
@@ -142,9 +140,7 @@ pub struct AntigravityAgentService {
     active: bool,
     profile_store: Option<Arc<AntigravityAccountStore>>,
     login_probe: Arc<dyn AntigravityLoginStatus>,
-    usage_cache: UsageCache,
-    usage_probe: Arc<dyn usage::AntigravityUsageProbe>,
-    usage_inflight: usage::UsageInflight,
+    usage: Arc<usage::UsageBook>,
 }
 
 impl AntigravityAgentService {
@@ -179,9 +175,7 @@ impl AntigravityAgentService {
             active,
             profile_store,
             login_probe,
-            usage_cache: Arc::new(parking_lot::Mutex::new(HashMap::new())),
-            usage_probe: Arc::new(usage::SystemAntigravityUsageProbe),
-            usage_inflight: usage::UsageInflight::default(),
+            usage: Arc::default(),
         }
     }
 
@@ -358,8 +352,7 @@ fn set_home_env(env: &mut HashMap<String, String>, home: Option<&Path>) -> Resul
 mod accounts;
 mod usage;
 pub use accounts::{AntigravitySignInCheck, CLI_LOGIN_UNSUPPORTED};
-#[cfg(test)]
-pub(crate) use usage::AntigravityUsageProbe;
+pub use usage::{antigravity_tier_name, check_antigravity_usage};
 
 #[cfg(test)]
 #[path = "antigravity_agent/tests.rs"]

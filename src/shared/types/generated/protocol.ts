@@ -1166,6 +1166,7 @@ export type WsRequestType =
   | 'start_codex_account_login'
   | 'list_antigravity_accounts'
   | 'list_antigravity_usage'
+  | 'check_antigravity_usage'
   | 'set_default_antigravity_account'
   | 'set_project_antigravity_account'
   | 'set_chat_antigravity_account'
@@ -1270,6 +1271,7 @@ export const WsRequestTypeValues = [
   'start_codex_account_login',
   'list_antigravity_accounts',
   'list_antigravity_usage',
+  'check_antigravity_usage',
   'set_default_antigravity_account',
   'set_project_antigravity_account',
   'set_chat_antigravity_account',

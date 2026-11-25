@@ -3,6 +3,7 @@ import { commandToken, fileToken, SKILL_PAD_CHAR, skillToken } from '@/lib/skill
 import {
   activeMentionToken,
   buildMentionSections,
+  type CanvasListing,
   type DirListing,
   isMentionTrigger,
   MAX_FOLDER_RESULTS,
@@ -384,5 +385,64 @@ describe('mentionPanelHeader / relativeDir', () => {
 
   it('does not treat a sibling with a shared prefix as inside the root', () => {
     expect(relativeDir(ROOT, `${ROOT}-other/src`)).toBe('')
+  })
+})
+
+describe('canvas mentions', () => {
+  const canvasInput = (over: Partial<MentionMenuInput>): MentionMenuInput => ({
+    panel: { kind: 'root' },
+    root: '/w/app',
+    filter: '',
+    matches: [],
+    recents: [],
+    conversations: [],
+    ...over
+  })
+  const ready: CanvasListing = {
+    status: 'ready',
+    pageName: 'ds4a',
+    selection: { ref: { label: 'Card +1', ids: ['12', '13'] }, detail: '2 selected layers' },
+    layers: [
+      { id: '1', name: 'ds4a / Foundation', detail: 'FRAME · 265×700' },
+      { id: '2', name: 'ds4a / Components', detail: 'SECTION · 80×400' }
+    ]
+  }
+
+  it('lists the Canvas category only while the canvas is open', () => {
+    const keys = (available: boolean): string[] =>
+      buildMentionSections(canvasInput({ canvasAvailable: available }))[0].items.map((i) => i.key)
+    expect(keys(false)).toEqual(['category:conversations', 'category:explorer'])
+    expect(keys(true)).toEqual(['category:conversations', 'category:explorer', 'category:canvas'])
+  })
+
+  it('shows the selection first, then the page layers under the page name', () => {
+    const sections = buildMentionSections(canvasInput({ panel: { kind: 'canvas' }, canvas: ready }))
+    expect(sections.map((s) => [s.heading, s.items.map((i) => i.label)])).toEqual([
+      ['Selection', ['Card +1']],
+      ['ds4a', ['ds4a / Foundation', 'ds4a / Components']]
+    ])
+    expect(sections[1].items[0].row).toEqual({
+      kind: 'canvas-layer',
+      ref: { label: 'ds4a / Foundation', ids: ['1'] },
+      selection: false
+    })
+    expect(mentionPanelHeader({ kind: 'canvas' }, '/w/app')).toEqual({ title: 'Canvas', crumb: '' })
+  })
+
+  it('filters layers by name and keeps the selection for "sel"', () => {
+    const labels = (filter: string): string[] =>
+      buildMentionSections(
+        canvasInput({ panel: { kind: 'canvas' }, canvas: ready, filter })
+      ).flatMap((s) => s.items.map((i) => i.label))
+    expect(labels('compo')).toEqual(['ds4a / Components'])
+    expect(labels('sel')).toEqual(['Card +1'])
+    expect(labels('zzz')).toEqual([])
+  })
+
+  it('shows loading and error notices while the canvas is read', () => {
+    const notice = (canvas: CanvasListing | undefined): string | undefined =>
+      buildMentionSections(canvasInput({ panel: { kind: 'canvas' }, canvas }))[0]?.notice
+    expect(notice(undefined)).toBe('Loading…')
+    expect(notice({ status: 'error' })).toBe("Couldn't read the canvas")
   })
 })

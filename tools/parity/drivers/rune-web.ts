@@ -66,7 +66,7 @@ export const runeWebArgs = (args: string[]) => (runeWebGpu() ? [...args, ...WEBG
  * `exact` is false, with its centre inside `within` when given. Null while
  * no element matches.
  */
-function mirrorPoint(
+export function mirrorPoint(
   page: Page,
   want: string,
   exact: boolean,
@@ -275,6 +275,8 @@ export interface RuneWebOptions {
   clock?: number
   /** localStorage entries written before the page loads. */
   storage?: Record<string, string>
+  /** Play motion (the matrix reduces it, so frames settle at once). */
+  motion?: boolean
 }
 
 /** Opens `url` in a fresh context of `browser`, waits for `ready` in the mirror and for the GPU hand-over. */
@@ -287,7 +289,7 @@ export async function openRuneWeb(opts: RuneWebOptions): Promise<RuneWebSession>
     permissions: ['clipboard-read', 'clipboard-write'],
     deviceScaleFactor: 1,
     colorScheme: 'dark',
-    reducedMotion: 'reduce',
+    reducedMotion: opts.motion ? 'no-preference' : 'reduce',
     serviceWorkers: 'block'
   })
   try {

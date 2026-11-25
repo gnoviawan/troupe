@@ -69,34 +69,39 @@ export const SETTINGS: Surface[] = [
   {
     id: 'settings.app',
     area: 'settings',
-    title: 'App preferences: Interface',
-    source: { overlay: ['components/settings/SettingsModal.tsx'] },
+    title: 'App preferences: Preferences',
+    source: { overlay: ['components/settings/SettingsWindow.tsx'] },
     steps: [DASHBOARD, PREFERENCES]
   },
-  pref('interface', 'Interface', 'Size of the whole interface and defaults for new projects.'),
-  pref('notifications', 'Notifications', 'Choose when Troupe sends you a system notification.'),
-  pref('editor', 'Editor', 'How code files save while you work.'),
-  pref('appearance', 'Appearance', 'How terminals look, draw text and open links.'),
-  pref('shell', 'Shell', 'The shell that new terminals start with.'),
+  pref(
+    'preferences',
+    'Preferences',
+    'How Troupe looks, when it notifies you, where links open and how files save.'
+  ),
+  pref('terminal', 'Terminal', 'How terminals draw text, and what new terminals start with.'),
   pref('terminal-profiles', 'Profiles', 'No terminal profiles'),
-  pref('ai-agents', 'Agent chats', 'Time limits for agent chats, and the agents Troupe can start.'),
+  pref('ai-agents', 'Agents', 'The agents Troupe can start, and how long their chats may run.'),
+  pref(
+    'subagents',
+    'Sub-agents',
+    'Agents your chats can hand work to, and what each one runs with.'
+  ),
   pref('skills', 'Skills', 'Skills in your home folder and in the open project.'),
   pref('provider', 'Accounts', 'The Claude and Codex accounts that agent chats use'),
-  pref('mcp-servers', 'MCP servers', 'No MCP servers configured', [
+  pref('mcp-servers', 'MCP servers', 'No MCP servers yet', [
     { text: 'Loading the catalog', gone: true, timeoutMs: 15_000 }
   ]),
   pref('browser', 'Browser', "Browser rules aren't available on this host."),
-  pref('shortcuts', 'Keyboard shortcuts', 'Reset all shortcuts'),
-  pref('server', 'Server', 'Where this Troupe server can be reached, and how it updates.'),
-  pref('diagnostics', 'Logs', 'Copy or export the application log to report a problem.'),
-  pref('reset', 'Reset', 'Every setting goes back to its default'),
+  pref('shortcuts', 'Keyboard shortcuts', 'Reset all'),
+  pref('about', 'About', 'This Troupe server, logs for bug reports, and a full reset.'),
   {
     id: 'settings.app-updates',
     area: 'settings',
-    title: 'App preferences: Updates',
-    source: { screen: 'settings', name: 'app:updates' },
+    title: 'App preferences: About, Updates',
+    source: { screen: 'settings', name: 'app:about-updates' },
     reference: 'tauri',
-    blocked: 'the Updates page is desktop-only (the web client updates with its server)',
+    blocked:
+      'the version card and Updates are desktop-only (the web client updates with its server)',
     steps: []
   },
   projectPage('shell', 'Shell', 'The shell new terminals in this project open with.'),
@@ -126,15 +131,15 @@ export const SETTINGS: Surface[] = [
       DASHBOARD,
       PROJECT_SETTINGS,
       step('c-edit', [click(css('input[value="beta"]')), type('x')], see('Save')),
-      step('d-confirm', [press('escape')], see('Unsaved Changes'))
+      step('d-confirm', [press('escape')], see('Unsaved changes'))
     ]
   },
   prefDialog(
     'reset-all',
     'Reset all settings confirm',
     'pages/AppPreferences.tsx',
-    'Reset',
-    'Reset settings…',
+    'About',
+    'Reset settings',
     ['Reset all settings?']
   ),
   prefDialog(
@@ -142,7 +147,7 @@ export const SETTINGS: Surface[] = [
     'Reset all shortcuts confirm',
     'pages/AppPreferences.tsx',
     'Keyboard shortcuts',
-    'Reset all shortcuts',
+    'Reset all',
     ['Reset all shortcuts?']
   ),
   prefDialog(
@@ -157,7 +162,7 @@ export const SETTINGS: Surface[] = [
     'custom-agent',
     'Add custom agent dialog',
     'components/agents/CustomAcpAgentDialog.tsx',
-    'Agent chats',
+    'Agents',
     'Add custom agent',
     ['Add custom agent']
   ),
@@ -169,7 +174,7 @@ export const SETTINGS: Surface[] = [
     steps: [
       DASHBOARD,
       PREFERENCES,
-      step('c-page', [page('Agent chats')], see('Add custom agent')),
+      step('c-page', [page('Agents')], see('Add custom agent')),
       step('d-dialog', [click(css('[role="dialog"] button:has-text("Add custom agent")'))]),
       step('e-picker', [click(css('button[title="Choose icon"]'))], see('Choose icon'))
     ]
@@ -210,7 +215,7 @@ export const SETTINGS: Surface[] = [
       step(
         'c-page',
         [page('MCP servers')],
-        [...see('MCP catalog'), { text: 'Loading the catalog', gone: true, timeoutMs: 15_000 }]
+        [...see('From the catalog'), { text: 'Loading the catalog', gone: true, timeoutMs: 15_000 }]
       ),
       step(
         'd-dialog',
@@ -311,6 +316,14 @@ export const SETTINGS: Surface[] = [
     title: 'Remove Codex account confirm',
     source: { overlay: ['components/settings/provider/CodexProviderSettings.tsx'] },
     blocked: NO_ACCOUNT_ROWS,
+    steps: []
+  },
+  {
+    id: 'settings.auto-switch-risk',
+    area: 'settings',
+    title: 'Automatic account switching risk confirm',
+    source: { overlay: ['components/settings/provider/account-provider-terms.tsx'] },
+    blocked: 'needs two accounts of one provider; the seeded host has only the default row',
     steps: []
   },
   {

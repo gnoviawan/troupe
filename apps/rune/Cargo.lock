@@ -2757,6 +2757,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex-lite"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cab834c73d247e67f4fae452806d17d3c7501756d98c8808d7c9c7aa7d18f973"
+
+[[package]]
 name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3945,12 +3951,15 @@ dependencies = [
  "js-sys",
  "log",
  "model",
+ "regex-lite",
  "rune",
  "serde_json",
  "theme",
  "troupe-protocol",
+ "troupe-term",
  "ui",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -3970,6 +3979,15 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "troupe-term"
+version = "0.0.1"
+dependencies = [
+ "regex-lite",
+ "serde_json",
+ "vte",
 ]
 
 [[package]]
@@ -4028,8 +4046,11 @@ dependencies = [
  "model",
  "rune",
  "rune-kit",
+ "serde",
  "serde_json",
+ "sha1",
  "theme",
+ "troupe-term",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -4158,6 +4179,16 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vte"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5924018406ce0063cd67f8e008104968b74b563ee1b85dde3ed1f7cb87d3dbd"
+dependencies = [
+ "arrayvec",
+ "memchr",
+]
 
 [[package]]
 name = "walkdir"

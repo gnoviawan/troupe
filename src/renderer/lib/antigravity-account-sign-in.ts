@@ -25,7 +25,7 @@ export function isAntigravitySignInMethod(methodId: string): boolean {
   return methodId === ANTIGRAVITY_GOOGLE_METHOD || methodId === ANTIGRAVITY_BUSINESS_METHOD
 }
 
-function antigravityLaunchConfig(): AgentConfig {
+export function antigravityLaunchConfig(): AgentConfig {
   const stored = useAcpStore
     .getState()
     .agentConfigs.find((config) => config.id === ANTIGRAVITY_AGENT_CONFIG_ID)

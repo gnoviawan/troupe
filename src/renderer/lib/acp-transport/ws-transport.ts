@@ -201,6 +201,8 @@ const FALLBACK_SEND_PROMPT_INACTIVITY_MS = 3_600_000
  */
 const HEARTBEAT_INTERVAL_MS = 30_000
 
+const ANTIGRAVITY_USAGE_CHECK_TIMEOUT_MS = 90_000
+
 type Pending = {
   resolve: (value: unknown) => void
   reject: (err: unknown) => void
@@ -1380,6 +1382,21 @@ export class WsAcpTransport implements AcpTransport {
       { force }
     )
     return reply?.usage ?? []
+  }
+
+  async checkAntigravityUsage(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<AntigravityAccountUsage> {
+    await this.connect()
+    const reply = await this.request<{ usage: AntigravityAccountUsage }>(
+      'check_antigravity_usage',
+      { accountId, config },
+      ANTIGRAVITY_USAGE_CHECK_TIMEOUT_MS,
+      options
+    )
+    return reply.usage
   }
 
   async setDefaultAntigravityAccount(accountId: string): Promise<void> {

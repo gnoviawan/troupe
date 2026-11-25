@@ -54,7 +54,7 @@ const KINDS: [Syntax; 17] = [
     Syntax::Variable,
 ];
 
-fn syntax_theme(t: &Tokens) -> SyntaxTheme {
+pub fn syntax_theme(t: &Tokens) -> SyntaxTheme {
     let mut theme = SyntaxTheme::neutral(true);
     for kind in KINDS {
         theme = theme.with(kind, syntax_colour(t, kind));

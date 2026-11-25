@@ -134,6 +134,9 @@ pub struct HistoryPayload {
     pub messages: Vec<Value>,
     #[serde(default)]
     pub tool_calls: Option<Value>,
+    /// The durable agent switch markers, which share the timeline's seqs.
+    #[serde(default)]
+    pub switches: Option<Value>,
 }
 
 impl HistoryPayload {
@@ -159,7 +162,21 @@ impl HistoryPayload {
             .iter()
             .filter_map(|m| js::finite(m.get("seq")));
         let calls = self.tool_calls().filter_map(|c| js::finite(c.get("seq")));
-        messages.chain(calls).fold(0.0, f64::max)
+        // `normalizedSwitches`: a record with a finite seq and an id.
+        let switches = self
+            .switches
+            .as_ref()
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|record| {
+                record
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| !id.is_empty())
+            })
+            .filter_map(|record| js::finite(record.get("seq")));
+        messages.chain(calls).chain(switches).fold(0.0, f64::max)
     }
 
     /// `payloadSeqFloor`: above every timeline seq and subagent message seq.
@@ -330,7 +347,18 @@ impl State {
         env: &mut Env<'_>,
     ) {
         let session_id = event.session_id;
+        // An echo citing a turn id proves the host accepted that command,
+        // even one the installed history already covers.
+        if let Some(turn_id) = event.turn_id.as_deref().filter(|id| !id.is_empty()) {
+            self.on_prompt_echo(&session_id, turn_id);
+        }
         if self.book.history_covered(&session_id, event_seq) {
+            return;
+        }
+        // The echo of a summary-only handoff shows no user bubble.
+        if let Some(turn_id) = event.turn_id.as_deref()
+            && self.book.handoff_only_turns.remove(turn_id)
+        {
             return;
         }
         let (guard, blocks) = split_read_only_guard(event.content.unwrap_or_default());
@@ -407,6 +435,10 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
+        let agent = event.role == Role::Agent;
+        if self.collect_chunk(&event.session_id, agent, &event.content) {
+            return;
+        }
         if event
             .parent_tool_call_id
             .as_deref()

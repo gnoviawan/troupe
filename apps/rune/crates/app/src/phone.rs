@@ -69,7 +69,7 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
         )
         .child(mobile::header_title(
             t,
-            "Troupe",
+            &header_title(s),
             mobile::header_subtitle(
                 t,
                 &project_line(s),
@@ -93,6 +93,21 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
         frame = frame.child(drawer(s, t));
     }
     frame
+}
+
+/// `MobileChatShell`'s `headerTitle`: a chat shows its own title ("Agent Chat" before it has
+/// one); everything else still reads "Troupe".
+fn header_title(s: &State) -> String {
+    let active = model::workspace::query(&s.workspace.store, model::workspace::Query::GetActiveTab);
+    match active {
+        model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::AgentChat { .. })) => {
+            crate::chat_view::tab_title(s, &tab).unwrap_or_else(|| "Agent Chat".to_owned())
+        }
+        model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::Terminal { .. })) => {
+            crate::terminal_view::tab_title(s, &tab).unwrap_or_else(|| "Terminal".to_owned())
+        }
+        _ => "Troupe".to_owned(),
+    }
 }
 
 /// The full-screen drawer.
@@ -282,7 +297,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
         .border_sides([1.0, 0.0, 0.0, 0.0], c.border)
         .child(foot("Settings", "Settings", "Settings"))
         .child(foot("Camera", "Screenshot", "Screenshots"))
-        .child(foot("History", "Command history", "Command history"))
+        .child(foot("History", "Git history", "Git history"))
         .child(foot("CalendarClock", "Automations", "Automations"))
         .child(new_chat);
     col()
@@ -372,12 +387,14 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             MORE => more_sheet(s, t, window, layer),
             PROJECTS => projects_sheet(s, t, window, layer),
             RECENTS => recents_sheet(s, t, window, layer),
+            crate::composer_sheet::ADD_SHEET => crate::composer_sheet::add_sheet(s, t, window, layer),
+            crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
             _ => {}
         }
     }
 }
 
-fn sheet(key: &'static str, title: String, s: &State) -> MobileSheet {
+pub(crate) fn sheet(key: &'static str, title: String, s: &State) -> MobileSheet {
     MobileSheet::new(key, title)
         .open(true)
         .drag(if s.overlays.top() == Some(key) {
@@ -406,7 +423,10 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
                 row_of("GitBranch", "Git changes"),
                 row_of("FolderOpen", "Files"),
                 row_of("Search", "Command palette"),
-                row_of("TerminalSquare", "New terminal"),
+                mobile::sheet_row(t, glyph("TerminalSquare"), "New terminal", false).on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.new_terminal(None);
+                }),
                 row_of("Settings", "Project settings"),
                 row_of("Bug", "Report a bug"),
             ],

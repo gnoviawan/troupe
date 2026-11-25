@@ -92,6 +92,7 @@ fn origin(root: &str, parent: &str, parent_dispatch: Option<&str>) -> crate::acp
         parent_dispatch_id: parent_dispatch.map(str::to_string),
         dispatch_id: "termul-subagent:sub-9f2c1a".to_string(),
         depth: 1,
+        auto_approve: false,
     }
 }
 

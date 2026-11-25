@@ -24,6 +24,10 @@ use super::{Effect, State};
 /// Names one listing or import.
 pub type ImportId = u64;
 
+/// The app's name for one `listImportableSessions` or `importAgentSessions`
+/// call, echoed on every `actionResolved` and `importProgress` it answers.
+pub type RequestId = u64;
+
 const LIST_SOURCE: &str = "acp.importSessions.list";
 const IMPORT_SOURCE: &str = "acp.importSessions.import";
 
@@ -45,10 +49,13 @@ pub struct ImportRequest {
     pub project_id: Option<String>,
     /// The `SessionInfo` records the listing returned.
     pub sessions: Vec<Value>,
+    #[serde(default)]
+    pub request: RequestId,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 struct Listing {
+    request: RequestId,
     agent_id: String,
     cwd: String,
     project_id: Option<String>,
@@ -72,7 +79,7 @@ pub(crate) struct ImportBook {
     listings: BTreeMap<ImportId, Listing>,
     imports: BTreeMap<ImportId, Import>,
     /// Finished imports waiting on their index reload, with their outcomes.
-    reloading: BTreeMap<ImportId, Vec<Value>>,
+    reloading: BTreeMap<ImportId, (RequestId, Vec<Value>)>,
 }
 
 impl ImportBook {
@@ -82,8 +89,11 @@ impl ImportBook {
     }
 }
 
-fn unavailable() -> Value {
-    json!({ "status": "unavailable" })
+fn unavailable(request: RequestId) -> Effect {
+    Effect::ActionResolved {
+        request,
+        value: json!({ "status": "unavailable" }),
+    }
 }
 
 impl State {
@@ -94,6 +104,7 @@ impl State {
         config_id: &str,
         cwd: &str,
         project_id: Option<String>,
+        request: RequestId,
         fx: &mut Vec<Effect>,
     ) {
         let cwd = crate::js_trim(cwd).to_owned();
@@ -107,6 +118,7 @@ impl State {
         self.book.imports.listings.insert(
             id,
             Listing {
+                request,
                 agent_id: String::new(),
                 cwd: cwd.clone(),
                 project_id: project_id.clone(),
@@ -143,15 +155,17 @@ impl State {
         agent_id: Option<String>,
         fx: &mut Vec<Effect>,
     ) {
+        let Some(listing) = self.book.imports.listings.get(&id) else {
+            return;
+        };
+        let request = listing.request;
         let Some(agent_id) = agent_id else {
             self.book.imports.listings.remove(&id);
             fx.push(Effect::warn(
                 LIST_SOURCE,
                 "Agent unavailable: no sessions listed for import".into(),
             ));
-            return fx.push(Effect::ActionResolved {
-                value: unavailable(),
-            });
+            return fx.push(unavailable(request));
         };
         let capabilities = self
             .agents
@@ -169,6 +183,7 @@ impl State {
                 "Agent cannot list and load sessions: import is not offered".into(),
             ));
             return fx.push(Effect::ActionResolved {
+                request,
                 value: json!({ "status": "unsupported" }),
             });
         }
@@ -242,9 +257,7 @@ impl State {
                 LIST_SOURCE,
                 "Agent disconnected while listing sessions for import".into(),
             ));
-            return fx.push(Effect::ActionResolved {
-                value: unavailable(),
-            });
+            return fx.push(unavailable(listing.request));
         }
         fx.push(Effect::info(
             LIST_SOURCE,
@@ -255,6 +268,7 @@ impl State {
             ),
         ));
         fx.push(Effect::ActionResolved {
+            request: listing.request,
             value: json!({
                 "status": "ready",
                 "agentId": listing.agent_id,
@@ -330,6 +344,7 @@ impl State {
         };
         import.outcomes.push(outcome.clone());
         fx.push(Effect::ImportProgress {
+            request: import.request.request,
             done: import.outcomes.len(),
             outcome,
         });
@@ -392,7 +407,11 @@ impl State {
         // Desktop gets no `chat_history` watch delta: reread the index so
         // the imported chats show up.
         fx.push(Effect::RefreshSessionIndex { import: Some(id) });
-        self.book.imports.reloading.insert(id, import.outcomes);
+        let request = import.request.request;
+        self.book
+            .imports
+            .reloading
+            .insert(id, (request, import.outcomes));
     }
 
     /// The import's own index reload is over, read or failed: the import
@@ -406,7 +425,7 @@ impl State {
         let Effect::RefreshSessionIndex { import: Some(id) } = reload else {
             return;
         };
-        let Some(outcomes) = self.book.imports.reloading.remove(id) else {
+        let Some((request, outcomes)) = self.book.imports.reloading.remove(id) else {
             return;
         };
         if let Some(message) = failure {
@@ -416,6 +435,7 @@ impl State {
             ));
         }
         fx.push(Effect::ActionResolved {
+            request,
             value: Value::Array(outcomes),
         });
     }

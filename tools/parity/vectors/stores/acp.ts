@@ -4,23 +4,29 @@ import {
   _setAcpTransportForTests,
   type AcpTransport
 } from '../../../../src/renderer/lib/acp-transport'
+import { __resetCommandEngineForTesting } from '../../../../src/renderer/lib/command-engine'
 import {
   _flushCoalescedForTesting,
   _resetCoalesceForTesting,
   _resetHistorySeqWatermarksForTesting,
+  _resetInFlightHistoryOpensForTesting,
   type AcpState,
   useAcpStore
 } from '../../../../src/renderer/stores/acp-store'
 import { attachAgentRosterWatch } from '../../../../src/renderer/stores/acp-store/agent-roster-watch'
 import { _resetComposerSessionsForTesting } from '../../../../src/renderer/stores/acp-store/composer-options'
 import { forgetHostReports } from '../../../../src/renderer/stores/acp-store/host-session-reports'
+import { _resetRegistryMcpFingerprintsForTesting } from '../../../../src/renderer/stores/acp-store/registry-mcp-fingerprints'
 import * as shared from '../../../../src/renderer/stores/acp-store/shared-state'
 import {
   _resetAcpAuthForTesting,
   authenticatedAgents,
   rememberedAuthMethods
 } from '../../../../src/renderer/stores/acp-store/slices/agent'
-import { dropSessionTranscriptState } from '../../../../src/renderer/stores/acp-store/slices/transcript'
+import {
+  _resetLoadingOlderForTesting,
+  dropSessionTranscriptState
+} from '../../../../src/renderer/stores/acp-store/slices/transcript'
 import { _resetSubagentRecordLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-lifecycle'
 import { _resetSubagentTranscriptLogsForTesting } from '../../../../src/renderer/stores/acp-store/subagent-transcript'
 import { FRESH, flushTurnEnd } from '../../../../src/renderer/stores/acp-store/testkit'
@@ -33,6 +39,7 @@ import {
   emit,
   factoryKey,
   heldReplies,
+  hostPayloads,
   mcpReplies,
   mcpSharedSync,
   openChatTabs,
@@ -95,6 +102,10 @@ attachAgentRosterWatch(
 /** The MCP and launch fields, snapshotted only once a vector set one. */
 const MCP_KEYS = [
   'agentConfigs',
+  'selectedAgentConfigId',
+  'preparingChatKeys',
+  'prepareChatErrors',
+  'promptCommandStates',
   'warmingConfigs',
   'discoveringKeys',
   'mcpServers',
@@ -112,6 +123,10 @@ const MCP_KEYS = [
 
 const MCP_FRESH = {
   agentConfigs: [],
+  selectedAgentConfigId: null,
+  preparingChatKeys: {},
+  prepareChatErrors: {},
+  promptCommandStates: {},
   warmingConfigs: {},
   discoveringKeys: {},
   mcpServers: [],
@@ -127,10 +142,10 @@ const MCP_FRESH = {
   mcpProbeError: {}
 }
 
-/** `value` as JSON keeps it, when that is not empty, `false` or `[]`. */
+/** `value` as JSON keeps it, when that is not empty, null, `false` or `[]`. */
 function setField(value: unknown): unknown {
   const plain = value === undefined ? undefined : JSON.parse(JSON.stringify(value))
-  if (plain === false || plain === undefined) return undefined
+  if (plain === false || plain === undefined || plain === null) return undefined
   if (typeof plain === 'object' && plain !== null && Object.keys(plain).length === 0)
     return undefined
   return plain
@@ -165,8 +180,22 @@ const MODULE_CALLS: Record<string, (...args: never[]) => void> = {
 /** A `stopImport` step asked the running import to stop. */
 const importStop = { requested: false }
 
+/** Actions that return their answer at once: it is the `actionResolved` effect. */
+const SYNC_RESOLVES = new Set(['claimPreparedChat'])
+
 /** Actions whose answer the caller reads: it is the `actionResolved` effect. */
-const RESOLVES = new Set(['listImportableSessions', 'importAgentSessions'])
+const RESOLVES = new Set([
+  'listImportableSessions',
+  'importAgentSessions',
+  'createSession',
+  'openHistorySession',
+  'generateCommitMessage',
+  'assistTerminal',
+  'draftBugReport',
+  'armAgentSwitch',
+  'applyPendingLauncherOptions',
+  'switchAgent'
+])
 
 export const acpRecorder: StoreRecorder = {
   store: 'acp',
@@ -218,7 +247,12 @@ export const acpRecorder: StoreRecorder = {
     'src/renderer/lib/agents/agent-aliases.ts',
     'src/shared/acp-agent-aliases.json',
     'src/renderer/lib/acp-transport/tauri-verdicts.ts',
-    'src/renderer/lib/agents/acp-registry.ts'
+    'src/renderer/lib/agents/acp-registry.ts',
+    'src/renderer/stores/acp-store/slices/misc.ts',
+    'src/renderer/stores/acp-store/slices/switch.ts',
+    'src/renderer/stores/acp-store/registry-mcp-fingerprints.ts',
+    'src/renderer/stores/acp-store/ephemeral-ids.ts',
+    'src/renderer/stores/acp-store/slices/prompt-reconcile.ts'
   ],
   reset(context) {
     const state = useAcpStore.getState()
@@ -240,14 +274,27 @@ export const acpRecorder: StoreRecorder = {
     )) {
       sessionPayloads.set(id, payload)
     }
+    hostPayloads.clear()
+    for (const [id, payload] of Object.entries(
+      (context.hostPayloads as Record<string, unknown>) ?? {}
+    )) {
+      hostPayloads.set(id, payload)
+    }
+    _resetLoadingOlderForTesting()
     _resetCoalesceForTesting()
     _resetHistorySeqWatermarksForTesting()
+    // A vector may leave a history open in flight; the next one starts clean.
+    _resetInFlightHistoryOpensForTesting()
     _resetSubagentRecordLogsForTesting()
     _resetSubagentTranscriptLogsForTesting()
     shared._resetPromptReconcileForTesting()
     shared._resetBusyQueueRetriesForTesting()
     shared._resetDefiniteSpawnRejectionsForTesting()
     shared._resetInFlightPreparedForTesting()
+    shared._resetEphemeralSessionIdsForTesting()
+    __resetCommandEngineForTesting()
+    shared._resetInFlightPromotionsForTesting()
+    _resetRegistryMcpFingerprintsForTesting()
     shared.inFlightWarms.clear()
     useProjectStore.setState({
       projects: (context.projects as unknown[]) ?? []
@@ -318,9 +365,11 @@ export const acpRecorder: StoreRecorder = {
     const rejected = (error: unknown) => emit({ kind: 'actionRejected', message: String(error) })
     try {
       const result = (call as (...a: unknown[]) => unknown)(...args)
+      if (SYNC_RESOLVES.has(action)) emit({ kind: 'actionResolved', value: result ?? null })
       if (result instanceof Promise) {
         result.then(
-          (value: unknown) => RESOLVES.has(action) && emit({ kind: 'actionResolved', value }),
+          (value: unknown) =>
+            RESOLVES.has(action) && emit({ kind: 'actionResolved', value: value ?? null }),
           rejected
         )
       }
@@ -329,7 +378,10 @@ export const acpRecorder: StoreRecorder = {
     }
     _flushCoalescedForTesting()
     // The deferred turn end (`scheduleTurnEnd`) runs on the next macrotask.
+    // Stop on a prompt still waiting to be confirmed schedules it only once
+    // the cancel command answered: one macrotask more.
     await flushTurnEnd()
+    if (action === 'cancelPrompt') await flushTurnEnd()
   }
 }
 
@@ -347,19 +399,29 @@ import { agentScenarios } from './acp-scenarios-agents'
 import { authRetryScenarios } from './acp-scenarios-auth-retry'
 import { closeScenarios } from './acp-scenarios-close'
 import { controlScenarios } from './acp-scenarios-controls'
+import { createScenarios } from './acp-scenarios-create'
 import { discoveryScenarios } from './acp-scenarios-discovery'
 import { ensureScenarios } from './acp-scenarios-ensure'
+import { historyScenarios } from './acp-scenarios-history'
 import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
+import { launcherOptionScenarios } from './acp-scenarios-launcher'
 import { mcpScenarios } from './acp-scenarios-mcp'
+import { olderScenarios } from './acp-scenarios-older'
+import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
+import { reconcileScenarios } from './acp-scenarios-reconcile'
+import { reopenSwitchScenarios } from './acp-scenarios-reopen-switch'
 import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
+import { armScenarios, pendingPickScenarios, switchScenarios } from './acp-scenarios-switch'
+import { switchRunScenarios } from './acp-scenarios-switch-run'
 import { turnScenarios } from './acp-scenarios-turn'
+import { warmScenarios } from './acp-scenarios-warm'
 import { windowScenarios } from './acp-scenarios-window'
 
 export const acpScenarios = [
@@ -382,5 +444,17 @@ export const acpScenarios = [
   ...ensureScenarios,
   ...authRetryScenarios,
   ...discoveryScenarios,
-  ...importScenarios
+  ...importScenarios,
+  ...createScenarios,
+  ...historyScenarios,
+  ...oneShotScenarios,
+  ...switchScenarios,
+  ...warmScenarios,
+  ...reconcileScenarios,
+  ...olderScenarios,
+  ...armScenarios,
+  ...pendingPickScenarios,
+  ...launcherOptionScenarios,
+  ...switchRunScenarios,
+  ...reopenSwitchScenarios
 ]

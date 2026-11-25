@@ -57,6 +57,10 @@ pub(crate) struct EnsureOptions {
 pub(crate) enum Caller {
     Prewarm,
     ImportList(super::import::ImportId),
+    HistoryOpen(super::history::OpenId),
+    OneShot(super::oneshot::OneShotId),
+    Prepare(super::warm::PrepareId),
+    Switch(super::switch_run::SwitchId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -230,13 +234,25 @@ impl State {
         }
     }
 
-    /// `agentHolder`: what the agent serves now. Warm-pool sessions are not
-    /// ported yet (PR 8), so every session counts as a chat.
+    /// `releaseWarmAgent`: a warm prepare no longer holds the agent.
+    pub(crate) fn release_warm_agent(&mut self, agent_id: &str) {
+        let warm = &mut self.book.ensure.pending_warm_agents;
+        match warm.get_mut(agent_id) {
+            Some(count) if *count > 1 => *count -= 1,
+            _ => {
+                warm.remove(agent_id);
+            }
+        }
+    }
+
+    /// `agentHolder`: what the agent serves now. An ephemeral session (a
+    /// warm or one-shot one) is not a chat.
     fn agent_holder(&mut self, agent_id: &str) -> Option<Holder> {
+        let ephemeral = &self.book.ephemeral_sessions;
         let mut chats = self
             .sessions
             .values()
-            .filter(|session| session.agent_id == agent_id)
+            .filter(|session| session.agent_id == agent_id && !ephemeral.contains(&session.id))
             .peekable();
         let book = &mut self.book.ensure;
         if chats.peek().is_some() {
@@ -463,7 +479,7 @@ impl State {
             config.get("id").and_then(Value::as_str) == Some(spawn.launch_id.as_str())
         });
         if !still_configured {
-            return self.kill_agent(agent_id, Some(id), fx);
+            return self.kill_agent(agent_id, super::Killer::Ensure(id), fx);
         }
         book.signatures
             .insert(agent_id.clone(), spawn.signature.clone());
@@ -542,6 +558,10 @@ impl State {
             (Caller::ImportList(id), Err(error)) => {
                 self.on_import_list_failed(id, &error, fx);
             }
+            (Caller::HistoryOpen(id), outcome) => self.on_history_agent(id, outcome, fx),
+            (Caller::OneShot(id), outcome) => self.on_oneshot_agent(id, outcome, fx),
+            (Caller::Prepare(id), outcome) => self.on_prepare_agent(id, outcome, fx),
+            (Caller::Switch(id), outcome) => self.on_switch_agent(id, outcome, fx),
         }
     }
 }

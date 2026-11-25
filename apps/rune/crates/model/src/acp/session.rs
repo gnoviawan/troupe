@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 use super::types::{Object, Session, SessionStatus};
 use super::{Effect, Env, State, clamp, js};
 
-const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
+pub(super) const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
 const CODEX_CLI_SIGNED_OUT_MESSAGE: &str = "Codex signed out. Sign in again to continue this chat.";
 /// The transport tags a host sign-in refusal carries before its sentence.
 const SIGNED_OUT_TAGS: [&str; 2] = [
@@ -41,7 +41,7 @@ pub struct SessionClosedEvent {
 
 /// `creationOptionDefaultsFrom`: the option values a session was created
 /// with, the baseline the stale-echo guards compare against.
-fn creation_option_defaults(
+pub(super) fn creation_option_defaults(
     modes: Option<&Value>,
     models: Option<&Value>,
     config_options: &[Value],
@@ -162,7 +162,7 @@ fn append_unseen_config_values(option: &Value, other: &Value) -> Value {
 
 /// `addAdvertisedOptionsKeepingCurrent`: keep the session's current picks
 /// and add the modes, models and option values it did not list yet.
-fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
+pub(super) fn add_advertised_options(session: &mut Session, event: &SessionCreatedEvent) {
     for (field, list, id, payload) in [
         ("modes", "availableModes", "id", event.modes.as_ref()),
         (
@@ -271,6 +271,24 @@ fn running_background(calls: &[Object], boundary: Option<&Boundary>) -> Vec<Stri
 }
 
 impl State {
+    /// `runningBackgroundSubagents(...).length > 0` for the session.
+    pub(crate) fn runs_background_subagents(&self, session_id: &str) -> bool {
+        let Some(calls) = self.tool_calls.get(session_id) else {
+            return false;
+        };
+        let boundary = self.messages.get(session_id).and_then(|messages| {
+            messages
+                .iter()
+                .rev()
+                .find(|message| message.role == super::types::Role::User)
+                .map(|message| Boundary {
+                    seq: message.seq,
+                    timestamp: Some(message.timestamp),
+                })
+        });
+        !running_background(calls, boundary.as_ref()).is_empty()
+    }
+
     pub(crate) fn on_session_created(
         &mut self,
         event: SessionCreatedEvent,
@@ -354,10 +372,27 @@ impl State {
             return;
         }
         self.cancel_running_subagents(std::slice::from_ref(&id), env.now, fx);
+        let closed = Err("Error: The temporary ACP session closed unexpectedly".to_owned());
+        if self.settle_collector(&id, closed) {
+            return;
+        }
+        self.invalidate_session_reopen(&id);
         // The app's staged files for the chat (pasted images) go with it.
         fx.push(Effect::DeleteSessionTempFiles {
             session_id: id.clone(),
         });
+        if self.book.ephemeral_sessions.remove(&id)
+            && self.messages.get(&id).is_none_or(Vec::is_empty)
+        {
+            // A warm session that never held a chat goes without a trace.
+            self.sessions.remove(&id);
+            self.prepared_sessions.retain(|_, prepared| *prepared != id);
+            self.pending_permissions
+                .retain(|_, pending| pending.session_id != id);
+            self.pending_questions
+                .retain(|_, pending| pending.session_id != id);
+            return self.drop_session_transcript(&id);
+        }
         self.pending_permissions
             .retain(|_, pending| pending.session_id != id);
         self.pending_questions
@@ -380,7 +415,7 @@ impl State {
             .is_some_and(|session| session.status != SessionStatus::Error)
             && self.book.open_chat_tabs.contains(&id);
         if keep_transcript {
-            self.drop_session_bookkeeping(&id);
+            self.drop_session_bookkeeping(&id, true);
         } else if self.sessions.contains_key(&id) {
             fx.push(Effect::DropSessionTranscript { session_id: id });
         } else {
@@ -400,19 +435,28 @@ impl State {
 
     /// `dropSessionBookkeeping`: what the model keeps per session beside its
     /// transcript.
-    pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
+    pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str, keep_switch_links: bool) {
         self.book.history_watermarks.remove(session_id);
-        self.book.active_wire_turns.remove(session_id);
+        self.forget_prompt_turn(session_id);
         self.book.backfill_counts.remove(session_id);
+        self.book.loading_older.remove(session_id);
         self.book.durability_probes.remove(session_id);
         self.book.untrimmable.remove(session_id);
         self.forget_composer_session(session_id);
+        // A transcript kept for an open tab keeps its links: a later history
+        // reopen splices the pre-switch conversation again through them.
+        if keep_switch_links {
+            return;
+        }
+        let links = &mut self.book.switch.live_sources;
+        links.remove(session_id);
+        links.retain(|_, (source, _)| source != session_id);
     }
 
     /// `dropSessionTranscriptState`: free the transcript maps of a session
     /// whose last tab closed, and forget its clamp logs.
     pub(crate) fn drop_session_transcript(&mut self, session_id: &str) {
-        self.drop_session_bookkeeping(session_id);
+        self.drop_session_bookkeeping(session_id, false);
         for call in self.tool_calls.get(session_id).into_iter().flatten() {
             let key = clamp::log_key(&js::string_of(call.get("toolCallId")));
             self.book.clamp_logged.retain(|logged| *logged != key);

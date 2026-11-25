@@ -1,0 +1,694 @@
+{
+ "sources": {
+  "src/renderer/components/chat/chat-attachments.ts": "73c209ccc477fe3277aa4947c4a87c8480ba2e8a",
+  "src/renderer/components/chat/composer-send-blocks.ts": "d770fad76299e3291856ab8db04f56b3565b3838",
+  "src/renderer/components/chat/use-chat-composer.ts": "5aa9af7e638cb6aff4c3fd950b71ec0d5622e4bb",
+  "src/renderer/lib/composer/doc-to-prompt.ts": "5ea8c476731c49ff7de58e9854a27e0956e31ec4",
+  "src/renderer/lib/composer/retry-wire.ts": "d0183e079743378cbff4255c177eeb5160fe5948",
+  "src/renderer/lib/composer/selection-context.ts": "7964520ef6aafd360721e71fd92bb36fe7df1c32",
+  "src/renderer/lib/composer/termul-tools.ts": "b85342c5e94a7b678b9d69e2c61a2b0943dc9a8e",
+  "src/renderer/lib/composer/tool-tokens.ts": "3119ea47b97e5b4e04825622d4de84d694bdfdf3",
+  "src/renderer/lib/composer/wire-text.ts": "1168e5cd133cc708c5f6c9dd5805209309af222d",
+  "src/renderer/lib/conversation-envelope.ts": "c48e28de37038dd70e06ab44f3660fafd4c4e472",
+  "src/renderer/lib/media-kind.ts": "a200e169ac0e964cd29dee3d7254595b1a6127eb",
+  "src/renderer/lib/path-basename.ts": "c608df8af3b4281bd9c21724bbbf5eaccdcc593e",
+  "src/renderer/lib/skill-tokens.ts": "1585268e05484febaec238dbf4475822b1a2fe05",
+  "src/renderer/lib/skills-prompt.ts": "d2a198c473b229bd309c5c8755170ae4308ac1e3"
+ },
+ "documents": [
+  {
+   "name": "one_pill_of_each_type",
+   "doc": [
+    {
+     "text": "Use "
+    },
+    {
+     "skill": "parity-skill",
+     "path": "/tmp/world/alpha/.claude/skills/parity-skill/SKILL.md"
+    },
+    {
+     "text": " on "
+    },
+    {
+     "file": "README.md",
+     "path": "/tmp/world/alpha/README.md"
+    },
+    {
+     "text": " and "
+    },
+    {
+     "command": "review"
+    },
+    {
+     "text": " with "
+    },
+    {
+     "conversation": "Scripted chat",
+     "sessionId": "sess-1"
+    },
+    {
+     "text": ", "
+    },
+    {
+     "tool": "browser"
+    },
+    {
+     "text": "\nabout "
+    },
+    {
+     "context": "line one\n\nline three"
+    },
+    {
+     "text": " "
+    }
+   ],
+   "display": "Use parity-skill  on README.md\u001f/tmp/world/alpha/README.md and review with Scripted chat\u001fsess-1, browser\nabout line%20one%0A%0Aline%20three ",
+   "copy": "Context 1 (selected from the conversation):\n> line one\n>\n> line three\n\nUse (parity-skill) on (README.md) and /review with (conversation: Scripted chat), (Use the browser tool from the troupe MCP server)\nabout [Context 1]",
+   "queuePreview": "Use (parity-skill) on (README.md) and /review with (conversation: Scripted chat), (Use the browser tool from the troupe MCP server)\nabout [Context 1]",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "# Agent Skills\n\nparity-skill: /tmp/world/alpha/.claude/skills/parity-skill/SKILL.md\n\n---\n\nContext 1 (selected from the conversation):\n> line one\n>\n> line three\n\nUse (parity-skill) on (README.md) and /review with (conversation: Scripted chat, transcript unavailable [termul-chat:sess-1]), (Use the browser tool from the troupe MCP server)\nabout [Context 1]"
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///tmp/world/alpha/README.md",
+      "name": "README.md",
+      "mimeType": "text/markdown"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "Use parity-skill  on README.md\u001f/tmp/world/alpha/README.md and review with Scripted chat\u001fsess-1, browser\nabout line%20one%0A%0Aline%20three "
+     }
+    ]
+   }
+  },
+  {
+   "name": "plain_text_is_trimmed",
+   "doc": [
+    {
+     "text": "  hello there \n"
+    }
+   ],
+   "display": "  hello there \n",
+   "copy": "  hello there \n",
+   "queuePreview": "hello there",
+   "send": {
+    "kind": "text",
+    "text": "hello there"
+   }
+  },
+  {
+   "name": "empty_doc_sends_nothing",
+   "doc": [],
+   "display": "",
+   "copy": "",
+   "queuePreview": "",
+   "send": null
+  },
+  {
+   "name": "paragraphs_and_blank_lines",
+   "doc": [
+    {
+     "text": "first\n\nthird\n"
+    }
+   ],
+   "display": "first\n\nthird\n",
+   "copy": "first\n\nthird\n",
+   "queuePreview": "first\n\nthird",
+   "send": {
+    "kind": "text",
+    "text": "first\n\nthird"
+   }
+  },
+  {
+   "name": "leading_command_stays_first_before_contexts",
+   "doc": [
+    {
+     "command": "review"
+    },
+    {
+     "text": " compare "
+    },
+    {
+     "context": "const x = 1",
+     "language": "ts"
+    },
+    {
+     "text": " with "
+    },
+    {
+     "context": "uses ``` fences\nand `ticks`",
+     "language": ""
+    }
+   ],
+   "display": "review compare ts\u001fconst%20x%20%3D%201 with \u001fuses%20%60%60%60%20fences%0Aand%20%60ticks%60",
+   "copy": "/review\n\nContext 1 (selected from the conversation):\n> ```ts\n> const x = 1\n> ```\n\nContext 2 (selected from the conversation):\n> ````\n> uses ``` fences\n> and `ticks`\n> ````\n\ncompare [Context 1] with [Context 2]",
+   "queuePreview": "/review compare [Context 1] with [Context 2]",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "/review\n\nContext 1 (selected from the conversation):\n> ```ts\n> const x = 1\n> ```\n\nContext 2 (selected from the conversation):\n> ````\n> uses ``` fences\n> and `ticks`\n> ````\n\ncompare [Context 1] with [Context 2]"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "review compare ts\u001fconst%20x%20%3D%201 with \u001fuses%20%60%60%60%20fences%0Aand%20%60ticks%60"
+     }
+    ]
+   }
+  },
+  {
+   "name": "typed_markers_are_escaped",
+   "doc": [
+    {
+     "text": "see [Context 1] and \\[Context 2] near "
+    },
+    {
+     "context": "quoted"
+    }
+   ],
+   "display": "see [Context 1] and \\[Context 2] near quoted",
+   "copy": "Context 1 (selected from the conversation):\n> quoted\n\nsee \\[Context 1] and \\\\[Context 2] near [Context 1]",
+   "queuePreview": "see [Context 1] and \\[Context 2] near [Context 1]",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "Context 1 (selected from the conversation):\n> quoted\n\nsee \\[Context 1] and \\\\[Context 2] near [Context 1]"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "see [Context 1] and \\[Context 2] near quoted"
+     }
+    ]
+   }
+  },
+  {
+   "name": "typed_markers_without_chips_need_the_label",
+   "doc": [
+    {
+     "text": "Context 1 (selected from the conversation):\n> x\n\nsee [Context 1]"
+    }
+   ],
+   "display": "Context 1 (selected from the conversation):\n> x\n\nsee [Context 1]",
+   "copy": "Context 1 (selected from the conversation):\n> x\n\nsee \\[Context 1]",
+   "queuePreview": "Context 1 (selected from the conversation):\n> x\n\nsee [Context 1]",
+   "send": {
+    "kind": "text",
+    "text": "Context 1 (selected from the conversation):\n> x\n\nsee \\[Context 1]"
+   }
+  },
+  {
+   "name": "folder_pill_reads_bare",
+   "doc": [
+    {
+     "text": "look in "
+    },
+    {
+     "file": "src",
+     "path": "/tmp/world/alpha/src/"
+    }
+   ],
+   "display": "look in src\u001f/tmp/world/alpha/src/",
+   "copy": "look in src",
+   "queuePreview": "look in src",
+   "send": {
+    "kind": "text",
+    "text": "look in src"
+   }
+  },
+  {
+   "name": "same_file_twice_links_once",
+   "doc": [
+    {
+     "file": "a.ts",
+     "path": "/w/a.ts"
+    },
+    {
+     "text": " vs "
+    },
+    {
+     "file": "a.ts",
+     "path": "/w/a.ts"
+    },
+    {
+     "text": " and "
+    },
+    {
+     "file": "photo.PNG",
+     "path": "C:\\Users\\me\\photo.PNG"
+    }
+   ],
+   "display": "a.ts\u001f/w/a.ts vs a.ts\u001f/w/a.ts and photo.PNG\u001fC:\\Users\\me\\photo.PNG",
+   "copy": "(a.ts) vs (a.ts) and (photo.PNG)",
+   "queuePreview": "(a.ts) vs (a.ts) and (photo.PNG)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "(a.ts) vs (a.ts) and (photo.PNG)"
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///w/a.ts",
+      "name": "a.ts",
+      "mimeType": "text/typescript"
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///C:/Users/me/photo.PNG",
+      "name": "photo.PNG",
+      "mimeType": "image/png"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "a.ts\u001f/w/a.ts vs a.ts\u001f/w/a.ts and photo.PNG\u001fC:\\Users\\me\\photo.PNG"
+     }
+    ]
+   }
+  },
+  {
+   "name": "skill_without_a_path_blocks_the_send",
+   "doc": [
+    {
+     "skill": "gone"
+    },
+    {
+     "text": " run it"
+    }
+   ],
+   "display": "gone  run it",
+   "copy": "(gone) run it",
+   "queuePreview": "(gone) run it",
+   "send": {
+    "error": "Skill 'gone' is missing a path"
+   }
+  },
+  {
+   "name": "skill_path_from_the_skills_list",
+   "doc": [
+    {
+     "skill": "listed"
+    },
+    {
+     "text": " twice "
+    },
+    {
+     "skill": "listed"
+    }
+   ],
+   "skills": [
+    {
+     "name": "listed",
+     "path": "/skills/listed/SKILL.md"
+    }
+   ],
+   "display": "listed  twice listed ",
+   "copy": "(listed) twice (listed)",
+   "queuePreview": "(listed) twice (listed)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "# Agent Skills\n\nlisted: /skills/listed/SKILL.md\n\n---\n\n(listed) twice (listed)"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "listed  twice listed "
+     }
+    ]
+   }
+  },
+  {
+   "name": "skill_alone",
+   "doc": [
+    {
+     "skill": "parity-skill",
+     "path": "/tmp/world/alpha/.claude/skills/parity-skill/SKILL.md"
+    }
+   ],
+   "display": "parity-skill ",
+   "copy": "(parity-skill)",
+   "queuePreview": "(parity-skill)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "# Agent Skills\n\nparity-skill: /tmp/world/alpha/.claude/skills/parity-skill/SKILL.md\n\n---\n\n(parity-skill)"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "parity-skill "
+     }
+    ]
+   }
+  },
+  {
+   "name": "conversation_with_resolved_transcript",
+   "doc": [
+    {
+     "text": "compare "
+    },
+    {
+     "conversation": "Fix  web\nreconnect ",
+     "sessionId": "sess-2"
+    },
+    {
+     "text": " and "
+    },
+    {
+     "conversation": "Old chat",
+     "sessionId": "sess-3"
+    }
+   ],
+   "contexts": {
+    "gaps": {
+     "sess-3": "partial"
+    },
+    "blocks": [
+     {
+      "type": "resource",
+      "resource": {
+       "uri": "termul-chat://sess-2",
+       "mimeType": "text/plain",
+       "text": "transcript"
+      }
+     }
+    ]
+   },
+   "display": "compare Fix web reconnect\u001fsess-2 and Old chat\u001fsess-3",
+   "copy": "compare (conversation: Fix web reconnect) and (conversation: Old chat)",
+   "queuePreview": "compare (conversation: Fix web reconnect) and (conversation: Old chat)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "compare (conversation: Fix web reconnect [termul-chat:sess-2]) and (conversation: Old chat, transcript partial: earlier history unavailable [termul-chat:sess-3])"
+     },
+     {
+      "type": "resource",
+      "resource": {
+       "uri": "termul-chat://sess-2",
+       "mimeType": "text/plain",
+       "text": "transcript"
+      }
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "compare Fix web reconnect\u001fsess-2 and Old chat\u001fsess-3"
+     }
+    ]
+   }
+  },
+  {
+   "name": "tools_alone",
+   "doc": [
+    {
+     "tool": "canvas"
+    },
+    {
+     "text": " then "
+    },
+    {
+     "tool": "orchestrate"
+    },
+    {
+     "tool": "automations"
+    }
+   ],
+   "display": "canvas then orchestrateautomations",
+   "copy": "(Use the canvas tools from the troupe MCP server) then (Use the subagent tools from the troupe MCP server)(Use the automation tools from the troupe MCP server)",
+   "queuePreview": "(Use the canvas tools from the troupe MCP server) then (Use the subagent tools from the troupe MCP server)(Use the automation tools from the troupe MCP server)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "(Use the canvas tools from the troupe MCP server) then (Use the subagent tools from the troupe MCP server)(Use the automation tools from the troupe MCP server)"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "canvas then orchestrateautomations"
+     }
+    ]
+   }
+  },
+  {
+   "name": "image_only",
+   "doc": [
+    {
+     "text": "   "
+    }
+   ],
+   "attachments": [
+    {
+     "kind": "image",
+     "id": "img-1",
+     "name": "pasted-image.png",
+     "mimeType": "image/png",
+     "previewUrl": "data:image/png;base64,iVBORw0KGgo=",
+     "base64": "iVBORw0KGgo="
+    }
+   ],
+   "display": "   ",
+   "copy": "   ",
+   "queuePreview": "",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "image",
+      "mimeType": "image/png",
+      "data": "iVBORw0KGgo="
+     }
+    ]
+   }
+  },
+  {
+   "name": "text_with_image_and_file",
+   "doc": [
+    {
+     "text": "what is this?"
+    }
+   ],
+   "attachments": [
+    {
+     "kind": "image",
+     "id": "img-1",
+     "name": "pasted-image.png",
+     "mimeType": "image/png",
+     "previewUrl": "data:image/png;base64,iVBORw0KGgo=",
+     "base64": "iVBORw0KGgo="
+    },
+    {
+     "kind": "file-ref",
+     "id": "/tmp/world/alpha/notes/plan v2.md",
+     "name": "plan v2.md",
+     "mimeType": "text/markdown",
+     "path": "/tmp/world/alpha/notes/plan v2.md"
+    }
+   ],
+   "display": "what is this?",
+   "copy": "what is this?",
+   "queuePreview": "what is this?",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "what is this?"
+     },
+     {
+      "type": "image",
+      "mimeType": "image/png",
+      "data": "iVBORw0KGgo="
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///tmp/world/alpha/notes/plan%20v2.md",
+      "name": "plan v2.md",
+      "mimeType": "text/markdown"
+     }
+    ]
+   }
+  },
+  {
+   "name": "pills_with_attachments_keep_display",
+   "doc": [
+    {
+     "command": "explain"
+    },
+    {
+     "text": " "
+    },
+    {
+     "file": "plan v2.md",
+     "path": "/tmp/world/alpha/notes/plan v2.md"
+    }
+   ],
+   "attachments": [
+    {
+     "kind": "file-ref",
+     "id": "/tmp/world/alpha/notes/plan v2.md",
+     "name": "plan v2.md",
+     "mimeType": "text/markdown",
+     "path": "/tmp/world/alpha/notes/plan v2.md"
+    },
+    {
+     "kind": "image",
+     "id": "img-1",
+     "name": "pasted-image.png",
+     "mimeType": "image/png",
+     "previewUrl": "data:image/png;base64,iVBORw0KGgo=",
+     "base64": "iVBORw0KGgo="
+    }
+   ],
+   "display": "explain plan v2.md\u001f/tmp/world/alpha/notes/plan v2.md",
+   "copy": "/explain (plan v2.md)",
+   "queuePreview": "/explain (plan v2.md)",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "/explain (plan v2.md)"
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///tmp/world/alpha/notes/plan%20v2.md",
+      "name": "plan v2.md",
+      "mimeType": "text/markdown"
+     },
+     {
+      "type": "image",
+      "mimeType": "image/png",
+      "data": "iVBORw0KGgo="
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "explain plan v2.md\u001f/tmp/world/alpha/notes/plan v2.md"
+     },
+     {
+      "type": "resource_link",
+      "uri": "file:///tmp/world/alpha/notes/plan%20v2.md",
+      "name": "plan v2.md",
+      "mimeType": "text/markdown"
+     },
+     {
+      "type": "image",
+      "mimeType": "image/png",
+      "data": "iVBORw0KGgo="
+     }
+    ]
+   }
+  },
+  {
+   "name": "unicode_text",
+   "doc": [
+    {
+     "text": "naïve 日本語 😀 "
+    },
+    {
+     "context": "emoji 😀 & spaces/slashes?"
+    }
+   ],
+   "display": "naïve 日本語 😀 emoji%20%F0%9F%98%80%20%26%20spaces%2Fslashes%3F",
+   "copy": "Context 1 (selected from the conversation):\n> emoji 😀 & spaces/slashes?\n\nnaïve 日本語 😀 [Context 1]",
+   "queuePreview": "naïve 日本語 😀 [Context 1]",
+   "send": {
+    "kind": "blocks",
+    "wire": [
+     {
+      "type": "text",
+      "text": "Context 1 (selected from the conversation):\n> emoji 😀 & spaces/slashes?\n\nnaïve 日本語 😀 [Context 1]"
+     }
+    ],
+    "display": [
+     {
+      "type": "text",
+      "text": "naïve 日本語 😀 emoji%20%F0%9F%98%80%20%26%20spaces%2Fslashes%3F"
+     }
+    ]
+   }
+  }
+ ],
+ "contexts": [
+  {
+   "raw": "  prose\r\nline  ",
+   "context": {
+    "text": "prose\nline"
+   }
+  },
+  {
+   "raw": "   ",
+   "context": null
+  },
+  {
+   "raw": "```ts\nconst x = 1\n```",
+   "context": {
+    "text": "const x = 1",
+    "language": "ts"
+   }
+  },
+  {
+   "raw": "```\n\n```",
+   "context": {
+    "text": "```\n\n```"
+   }
+  },
+  {
+   "raw": "\n\n  code line\n  more  \n",
+   "language": "type/script!",
+   "context": {
+    "text": "  code line\n  more",
+    "language": "typescript"
+   }
+  },
+  {
+   "raw": "x",
+   "language": "text",
+   "context": {
+    "text": "x",
+    "language": ""
+   }
+  },
+  {
+   "raw": " \n ",
+   "language": "rs",
+   "context": null
+  },
+  {
+   "raw": "hassentinels\u001fhere",
+   "context": {
+    "text": "hassentinelshere"
+   }
+  }
+ ]
+}

@@ -7,6 +7,7 @@ use super::agents::{
     AgentDisconnectedEvent, AgentFailureEvent, AgentSignInRequestEvent, AgentSignInResolvedEvent,
     AgentSpawnedEvent, BrowserOpenRequestEvent,
 };
+use super::answer::Answer;
 use super::approvals::{
     BrowserTicketClosedEvent, ElicitationRequestEvent, PermissionRequestEvent,
     QuestionCancelledEvent, QuestionRequestEvent,
@@ -129,13 +130,83 @@ pub enum Event {
     ReadvertiseWaitOver(RunId),
     #[serde(rename = "spawnAgent")]
     SpawnAgent(Value, Value, #[serde(default)] Option<String>),
+    #[serde(rename = "generateCommitMessage")]
+    GenerateCommitMessage(String, String, #[serde(default)] super::import::RequestId),
+    #[serde(rename = "assistTerminal")]
+    AssistTerminal(
+        String,
+        String,
+        String,
+        #[serde(default)] Value,
+        #[serde(default)] super::import::RequestId,
+    ),
+    #[serde(rename = "draftBugReport")]
+    DraftBugReport(
+        super::oneshot::BugReportInput,
+        #[serde(default)] super::import::RequestId,
+    ),
+    /// A timer an [`Effect::StartOneShotTimer`] started ran out.
+    #[serde(skip_deserializing)]
+    OneShotTimerDue(Effect),
+    #[serde(rename = "openHistorySession")]
+    OpenHistorySession(super::history::OpenHistoryRequest),
+    /// The replay window an [`Effect::EndReplay`] asked to close.
+    #[serde(skip_deserializing)]
+    ReplayEnd(Effect),
+    #[serde(rename = "_onAgentSwitch")]
+    AgentSwitch(
+        super::switch::AgentSwitchEvent,
+        #[serde(default)] Option<f64>,
+    ),
+    #[serde(rename = "cancelAgentSwitch")]
+    CancelAgentSwitch(String),
+    /// Answered by `actionResolved` once every pick was tried.
+    #[serde(rename = "applyPendingLauncherOptions")]
+    ApplyPendingLauncherOptions(
+        String,
+        #[serde(default)] Option<super::switch::LauncherPicks>,
+        #[serde(default)] super::import::RequestId,
+    ),
+    /// Answered by `actionResolved` with the new session id, or null.
+    #[serde(rename = "switchAgent")]
+    SwitchAgent(super::switch_run::SwitchRequest),
+    /// `respondBrowserConsent`: the request id, then the option the user
+    /// chose.
+    #[serde(rename = "respondBrowserConsent")]
+    RespondBrowserConsent(String, String),
+    #[serde(rename = "setSelectedAgentConfigId")]
+    SetSelectedAgentConfigId(Option<String>),
+    #[serde(rename = "retargetWarmPool")]
+    RetargetWarmPool(String, String, String),
+    #[serde(rename = "_onBrowserStopChanged")]
+    BrowserStopChanged(Value),
+    #[serde(rename = "setSwitchPendingOption")]
+    SetSwitchPendingOption(String, super::switch::LauncherPicks),
+    /// Answered by `actionResolved` with whether the switch armed.
+    #[serde(rename = "armAgentSwitch")]
+    ArmAgentSwitch(String, String, #[serde(default)] super::import::RequestId),
+    #[serde(rename = "prepareChat")]
+    PrepareChat(super::warm::PrepareRequest),
+    #[serde(rename = "cancelPreparedChat")]
+    CancelPreparedChat(String),
+    /// Answered by `actionResolved` with the claimed session id, or null.
+    #[serde(rename = "claimPreparedChat")]
+    ClaimPreparedChat(String, String, #[serde(default)] super::import::RequestId),
+    #[serde(rename = "createSession")]
+    CreateSession(super::create::CreateRequest),
     #[serde(rename = "killAgent")]
     KillAgent(String),
     #[serde(rename = "discoverSessions")]
     DiscoverSessions(String, String),
-    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`.
+    /// Answered by `actionResolved` with `{ status, agentId?, sessions? }`
+    /// and the trailing request id.
     #[serde(rename = "listImportableSessions")]
-    ListImportableSessions(String, String, #[serde(default)] Option<String>),
+    ListImportableSessions(
+        String,
+        String,
+        #[serde(default)] Option<String>,
+        #[serde(default)] import::RequestId,
+    ),
     /// Each session's outcome is an `importProgress`; the outcomes are
     /// answered once the reloaded index arrives.
     #[serde(rename = "importAgentSessions")]
@@ -208,6 +279,23 @@ pub enum Event {
     /// The timer an [`Effect::RetryQueueAfter`] started ran out.
     #[serde(rename = "queueRetryDue")]
     QueueRetryDue(String, u64),
+    /// The reader scrolled up past the window's head: page in `count` older
+    /// messages.
+    #[serde(rename = "loadOlderMessages")]
+    LoadOlderMessages(String, usize),
+    /// The user asked whether a prompt waiting to be confirmed went through.
+    #[serde(rename = "recheckPromptCommand")]
+    RecheckPromptCommand(String),
+    /// The timer an [`Effect::PromptResendAfter`] started ran out.
+    #[serde(rename = "promptResendDue")]
+    PromptResendDue(String, u64),
+    /// The transport started (`true`) or ended a reconnect.
+    #[serde(rename = "transportReconnecting")]
+    TransportReconnecting(bool),
+    /// The transport recovered: the waiting prompts, or one session's, go
+    /// out again.
+    #[serde(rename = "resendPendingPrompts")]
+    ResendPendingPrompts(#[serde(default)] Option<String>),
     /// The deferred close an [`Effect::EndTurn`] asked for.
     #[serde(rename = "turnEnd")]
     TurnEnd(TurnEnd),
@@ -296,4 +384,15 @@ pub enum Event {
     /// What an [`Effect::ReadSessionPayload`] read.
     #[serde(skip_deserializing)]
     SessionPayloadRead(Effect, PayloadReadOutcome),
+    /// The user picked a permission option; none cancels the request.
+    #[serde(rename = "respondPermission")]
+    RespondPermission(String, #[serde(default)] Option<String>),
+    #[serde(rename = "answerQuestion")]
+    AnswerQuestion(String, Vec<String>),
+    /// The user answered an elicitation: its action and the form's content.
+    #[serde(rename = "respondElicitation")]
+    RespondElicitation(String, String, #[serde(default)] Option<Value>),
+    /// The host refused an [`Effect::Answer`]: its message and code.
+    #[serde(skip_deserializing)]
+    AnswerFailed(Answer, String, Option<String>),
 }

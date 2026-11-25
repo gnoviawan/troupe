@@ -197,7 +197,8 @@ impl State {
         self.mcp_servers.iter().find(|server| id_of(server) == id)
     }
 
-    pub(super) fn mcp_deletions(&self, id: &str) -> u64 {
+    /// `mcpServerDeletionCount`.
+    pub fn mcp_deletions(&self, id: &str) -> u64 {
         self.book.mcp.deletions.get(id).copied().unwrap_or(0)
     }
 

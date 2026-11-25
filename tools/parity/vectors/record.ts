@@ -101,6 +101,13 @@ export const agentReplies: unknown[] = []
  */
 export const sessionPayloads = new Map<string, unknown>()
 
+/**
+ * What the host's re-read of a session's payload answers
+ * (`reloadSessionPayloadFromHost`), by session id; a vector's
+ * `context.hostPayloads`, shaped like `context.payloads`.
+ */
+export const hostPayloads = new Map<string, unknown>()
+
 /** The app runs native panes (`isTauriContext`); a vector's `context.desktop`. */
 export const platform = { desktop: false }
 

@@ -102,6 +102,12 @@ impl State {
             }
             GROUP_MENU | DELETE_GROUP => r.group = None,
             CHAT_MENU | DELETE_CHAT => r.chat = None,
+            // A closed sheet drops the pick a busy chat held, as the desktop menu does.
+            crate::model_sheet::MODEL_SHEET => {
+                if let Some(host) = self.composer.sheet_host.clone() {
+                    self.draft_mut(&host).switch_confirm = None;
+                }
+            }
             crate::theme_picker::KEY => self.picker_closed(),
             crate::keys::MENU => self.keys.recording = None,
             crate::phone::MORE | crate::phone::PROJECTS | crate::phone::RECENTS => {

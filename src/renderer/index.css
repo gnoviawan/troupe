@@ -27,7 +27,18 @@
   /* Status rail "new changes" dot: pops once when it mounts (--ease-bounce,
      250ms). Reduced motion: motion-reduce:animate-none, it just shows. */
   --animate-mark-pop: mark-pop 250ms cubic-bezier(0.34, 1.36, 0.64, 1) both;
+  /* Indeterminate progress bar: a sliver crosses the track. Reduced motion:
+     motion-reduce:animate-none, it stays still in the middle. */
+  --animate-progress-sliver: progress-sliver 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 
+  @keyframes progress-sliver {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 500% 0;
+    }
+  }
   @keyframes accordion-down {
     from {
       height: 0;

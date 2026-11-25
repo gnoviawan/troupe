@@ -108,6 +108,19 @@ const PROVIDER_FAILURES: [(&str, &str); 3] = [
     ),
 ];
 
+/// `describeProviderFailure` for a known provider code, else `None`.
+pub(crate) fn describe_provider_failure(provider: Option<&str>, own: &str) -> Option<String> {
+    let (code, plain) = PROVIDER_FAILURES
+        .iter()
+        .find(|(code, _)| Some(*code) == provider)?;
+    let trimmed = own.trim();
+    Some(if trimmed.is_empty() || trimmed == *code {
+        (*plain).to_owned()
+    } else {
+        format!("{plain} ({trimmed})")
+    })
+}
+
 impl ErrorDetail {
     fn of(event: &AgentFailureEvent) -> Self {
         let code = js::finite(event.code.as_ref()).filter(|code| code.fract() == 0.0);
@@ -283,7 +296,7 @@ impl State {
             );
         }
         for id in ended {
-            self.book.active_wire_turns.remove(&id);
+            self.forget_prompt_turn(&id);
         }
     }
 
@@ -330,6 +343,9 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let session_id = event.session_id.as_deref().filter(|id| !id.is_empty());
+        if self.collector_failed(session_id, &event, "The ACP agent reported an error") {
+            return;
+        }
         self.end_prompt_tracking(&event.agent_id, session_id);
         let detail = ErrorDetail::of(&event);
         let Some(id) = session_id else {
@@ -388,6 +404,9 @@ impl State {
     ) {
         let agent_id = event.agent_id.as_str();
         let session_id = event.session_id.as_deref().filter(|id| !id.is_empty());
+        if self.collector_failed(session_id, &event, "The ACP agent crashed") {
+            return;
+        }
         self.end_prompt_tracking(agent_id, session_id);
         let detail = ErrorDetail::of(&event);
         self.agent_status
@@ -429,6 +448,10 @@ impl State {
         fx: &mut Vec<Effect>,
     ) {
         let agent_id = event.agent_id.as_str();
+        for session_id in self.oneshot_sessions_of(agent_id) {
+            let gone = Err("Error: The ACP agent disconnected".to_owned());
+            self.settle_collector(&session_id, gone);
+        }
         self.forget_agent_auth(agent_id);
         let gone = self.agent_session_ids(agent_id);
         if event.reason == "crashed" {
@@ -443,6 +466,32 @@ impl State {
         self.drop_agent_launch_state(agent_id);
         let mut retired = Vec::new();
         let mut emptied = Vec::new();
+        // A one-shot's temporary session, or a warm one with no transcript,
+        // goes, transcript and all; a warm one that held a chat stays.
+        let dropped: Vec<String> = self
+            .sessions
+            .values()
+            .filter(|s| s.agent_id == agent_id && s.status != SessionStatus::Closed)
+            .filter(|s| {
+                self.is_oneshot_session(&s.id)
+                    || (self.book.ephemeral_sessions.contains(&s.id)
+                        && self.messages.get(&s.id).is_none_or(Vec::is_empty))
+            })
+            .map(|s| s.id.clone())
+            .collect();
+        for id in &dropped {
+            self.sessions.remove(id);
+            emptied.push(id.clone());
+        }
+        let gone_ephemeral: Vec<String> = self
+            .sessions
+            .values()
+            .filter(|s| s.agent_id == agent_id && s.status != SessionStatus::Closed)
+            .map(|s| s.id.clone())
+            .collect();
+        for id in gone_ephemeral.iter().chain(&dropped) {
+            self.book.ephemeral_sessions.remove(id);
+        }
         for (id, session) in &mut self.sessions {
             if session.agent_id != agent_id || session.status == SessionStatus::Closed {
                 continue;
@@ -475,6 +524,25 @@ impl State {
         for id in emptied {
             fx.push(Effect::DropSessionTranscript { session_id: id });
         }
+    }
+
+    /// A one-shot's session failed: its collector takes the error, and
+    /// nothing else happens to the chat.
+    fn collector_failed(
+        &mut self,
+        session_id: Option<&str>,
+        event: &AgentFailureEvent,
+        fallback: &str,
+    ) -> bool {
+        let Some(session_id) = session_id else {
+            return false;
+        };
+        let message = event
+            .message
+            .as_deref()
+            .filter(|message| !message.is_empty())
+            .unwrap_or(fallback);
+        self.settle_collector(session_id, Err(format!("Error: {message}")))
     }
 
     /// The agent's sessions, closed ones included.

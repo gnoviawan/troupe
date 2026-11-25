@@ -12,7 +12,8 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 use super::discovery::SessionList;
-use super::host_error::{self, HostError};
+use super::host_error::HostError;
+use super::setup_error::{SetupCategory, setup_category};
 use super::{Effect, FlightId, State};
 
 /// Names one session call waiting on an authenticate on demand.
@@ -84,6 +85,9 @@ fn auth_op(command: &Effect) -> Option<&'static str> {
         Effect::SetModel { .. } => Some("session/set_model"),
         Effect::ListSessions { .. } => Some("session/list"),
         Effect::ImportAgentSession { .. } => Some("session/load"),
+        Effect::NewSession { .. } => Some("session/new"),
+        Effect::LoadSession { .. } => Some("session/load"),
+        Effect::ResumeSession { .. } => Some("session/resume"),
         _ => None,
     }
 }
@@ -93,7 +97,10 @@ fn agent_of(command: &Effect) -> &str {
         Effect::SetMode { agent_id, .. }
         | Effect::SetModel { agent_id, .. }
         | Effect::ListSessions { agent_id, .. }
-        | Effect::ImportAgentSession { agent_id, .. } => agent_id,
+        | Effect::ImportAgentSession { agent_id, .. }
+        | Effect::NewSession { agent_id, .. }
+        | Effect::LoadSession { agent_id, .. }
+        | Effect::ResumeSession { agent_id, .. } => agent_id,
         _ => "",
     }
 }
@@ -102,127 +109,20 @@ fn mark_retried(mut command: Effect) -> Effect {
     if let Effect::SetMode { retried, .. }
     | Effect::SetModel { retried, .. }
     | Effect::ListSessions { retried, .. }
-    | Effect::ImportAgentSession { retried, .. } = &mut command
+    | Effect::ImportAgentSession { retried, .. }
+    | Effect::NewSession { retried, .. }
+    | Effect::LoadSession { retried, .. }
+    | Effect::ResumeSession { retried, .. } = &mut command
     {
         *retried = true;
     }
     command
 }
 
-const ENOENT: [&str; 5] = [
-    "enoent",
-    "no such file",
-    "program not found",
-    "command not found",
-    "failed to spawn",
-];
-
-const TRANSPORT: [&str; 18] = [
-    "destroyed",
-    "broken pipe",
-    "econnreset",
-    "econnrefused",
-    "disconnected",
-    "connection closed",
-    "connection lost",
-    "connection reset",
-    "connection refused",
-    "connection aborted",
-    "stream closed",
-    "stream ended",
-    "stream destroyed",
-    "stream error",
-    "transport",
-    "agent thread is no longer running",
-    "agent thread dropped",
-    "pipe",
-];
-
-const AUTH: [&str; 7] = [
-    "auth",
-    "login",
-    "credential",
-    "unauthoris",
-    "unauthoriz",
-    "logged out",
-    "forbidden",
-];
-
-fn word(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_'
-}
-
-/// `needle` starts somewhere in `text` and the test accepts what follows.
-fn find_with(text: &str, needle: &str, rest: impl Fn(&str) -> bool) -> bool {
-    text.match_indices(needle)
-        .any(|(at, _)| rest(&text[at + needle.len()..]))
-}
-
-/// `a.*b` on one line, as `.` stops at a line break.
-fn on_a_line(text: &str, a: &str, b: &str) -> bool {
-    text.split(['\n', '\r', '\u{2028}', '\u{2029}'])
-        .any(|line| find_with(line, a, |rest| rest.contains(b)))
-}
-
-/// `word[\s-]?word`.
-fn joined(text: &str, head: &str, tail: &str) -> bool {
-    find_with(text, head, |rest| {
-        let rest = rest
-            .strip_prefix(|c: char| c == '-' || c.is_whitespace())
-            .unwrap_or(rest);
-        rest.starts_with(tail)
-    }) || text.contains(&format!("{head}{tail}"))
-}
-
-/// `\bcode\b`.
-fn whole_number(text: &str, code: &str) -> bool {
-    text.match_indices(code).any(|(at, _)| {
-        let before = text[..at].chars().next_back().is_none_or(|c| !word(c));
-        let after = text[at + code.len()..]
-            .chars()
-            .next()
-            .is_none_or(|c| !word(c));
-        before && after
-    })
-}
-
-/// `isAuthRetriableSessionError`: the explicit auth-required signal, or a
-/// failure `classifySetupError` files under `auth`, in its order.
+/// `isAuthRetriableSessionError`: a failure `classifySetupError` files
+/// under `auth`.
 pub(crate) fn is_auth_retriable(error: &HostError) -> bool {
-    let code = error.code.as_deref();
-    if code == Some(host_error::AMBIGUOUS_AUTH) {
-        return false;
-    }
-    if code == Some(host_error::AUTH_REQUIRED) || error.message.starts_with("ACP_AUTH_REQUIRED") {
-        return true;
-    }
-    if error.is(&host_error::SIGNED_OUT) {
-        return true;
-    }
-    if error.is(&host_error::DEFINITE_SPAWN_REJECTION)
-        || code.is_some_and(|code| host_error::PROVIDER.contains(&code))
-    {
-        return false;
-    }
-    let text = error.message.to_ascii_lowercase();
-    if ENOENT.iter().any(|needle| text.contains(needle)) || on_a_line(&text, "spawn", "fail") {
-        return false;
-    }
-    let pipe = find_with(&text, "pipe", |rest| {
-        rest.chars().next().is_none_or(|c| !word(c))
-    });
-    let transport = TRANSPORT[..17].iter().any(|needle| text.contains(needle))
-        || pipe
-        || on_a_line(&text, "connection", "timed out");
-    if transport {
-        return false;
-    }
-    AUTH.iter().any(|needle| text.contains(needle))
-        || joined(&text, "sign", "in")
-        || joined(&text, "api", "key")
-        || text.contains("not logged in")
-        || whole_number(&text, "401")
-        || whole_number(&text, "403")
+    setup_category(error, None) == SetupCategory::Auth
 }
 
 /// `withAuthRetry` logs a retry that went through.
@@ -291,6 +191,10 @@ impl State {
             Effect::ImportAgentSession {
                 import, session_id, ..
             } => self.on_import_session_failed(import, session_id, error, fx),
+            Effect::NewSession { create, .. } => self.on_create_failed(create, error, fx),
+            command @ (Effect::LoadSession { .. } | Effect::ResumeSession { .. }) => {
+                self.on_reopen_failed(command, error, fx);
+            }
             command => match command.run() {
                 Some(run) => self.on_run_command(run, Some(error.message), fx),
                 None => fx.push(Effect::rejected_by(&error)),
@@ -583,6 +487,13 @@ impl State {
         match outcome {
             Ok(true) => fx.push(mark_retried(waiting.command)),
             Ok(false) => self.control_rejected(waiting.command, waiting.first_error, fx),
+            // `session/new` is the picker surface: the launcher lists the
+            // methods. Every other call shows text.
+            Err(AuthFailure::Ambiguous(message))
+                if matches!(waiting.command, Effect::NewSession { .. }) =>
+            {
+                self.control_rejected(waiting.command, HostError::ambiguous(message), fx);
+            }
             Err(AuthFailure::Ambiguous(_)) => {
                 let error = HostError::new(PICKER_UNAVAILABLE.into(), None);
                 self.control_rejected(waiting.command, error, fx);

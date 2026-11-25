@@ -4,16 +4,34 @@
 //! when scrolled up (`ScrollSpec::stick_bottom`; virtual rows keep their first visible row),
 //! with `MessageScrollerButton`'s "Scroll to latest" over the bottom while it is scrolled up.
 //!
-//! The inline cards (tool calls, approvals, the plan, subagents) are later units; each draws a
-//! placeholder row here so the transcript shows where it goes.
+//! Tool calls draw as `ToolCallCard`s and subagent dispatches as their group; thoughts still
+//! draw a placeholder row.
 
+pub mod approvals;
+pub mod consent;
+pub mod diff;
+pub mod elicitation;
+pub mod notice;
+pub mod plan;
 mod rows;
+pub mod subagents;
+mod switch;
+pub use switch::strip_handoff_header;
 pub mod timeline;
+pub mod tool_call;
 
+#[cfg(test)]
+mod diff_tests;
+#[cfg(test)]
+mod elicitation_tests;
+#[cfg(test)]
+mod notice_tests;
 #[cfg(test)]
 mod scroll_tests;
 #[cfg(test)]
 mod timeline_tests;
+#[cfg(test)]
+mod tool_call_tests;
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
@@ -44,6 +62,27 @@ pub fn scroll_key(session_id: &str) -> String {
 pub struct Reader {
     folds: BTreeMap<String, bool>,
     away: BTreeSet<String>,
+    /// The options picked in the open questions.
+    pub picks: approvals::Picks,
+    /// Per session, the subagent dispatch whose panel is open.
+    subagent_panels: BTreeMap<String, String>,
+    /// Subagents a stop was sent for, until their record leaves running.
+    stopping: BTreeSet<String>,
+    /// Tool call cards whose result the reader opened, by card key.
+    tools_open: BTreeSet<String>,
+    /// Edit diffs shown in full, as `{card key}-diff-{n}`.
+    diffs_open: BTreeSet<String>,
+    /// Per session, the plan bar the reader folded or opened, and whether the plan was
+    /// finished then.
+    plan_folds: BTreeMap<String, (bool, bool)>,
+    /// Plan entries showing their detail.
+    plan_entries: BTreeSet<(String, usize)>,
+    /// Per session, the error the reader dismissed (`dismissedError`).
+    pub dismissed_error: BTreeMap<String, String>,
+    /// Sessions whose error notice shows its details.
+    pub error_details: BTreeSet<String>,
+    /// What the reader entered in each open elicitation form, by request.
+    forms: BTreeMap<String, elicitation::Form>,
 }
 
 impl Reader {
@@ -68,6 +107,84 @@ impl Reader {
         self.away.contains(session_id)
     }
 
+    /// Opens the panel of the dispatch `tool_call_id` in `session_id`.
+    pub fn open_subagent(&mut self, session_id: &str, tool_call_id: &str) {
+        self.subagent_panels.insert(session_id.to_owned(), tool_call_id.to_owned());
+    }
+
+    pub fn close_subagent(&mut self, session_id: &str) {
+        self.subagent_panels.remove(session_id);
+    }
+
+    /// The dispatch whose panel is open in `session_id`.
+    pub fn subagent_panel(&self, session_id: &str) -> Option<&str> {
+        self.subagent_panels.get(session_id).map(String::as_str)
+    }
+
+    /// A stop was sent for `subagent_id` (`setStopping(true)`), or it settled.
+    pub fn set_stopping(&mut self, subagent_id: &str, on: bool) {
+        if on {
+            self.stopping.insert(subagent_id.to_owned());
+        } else {
+            self.stopping.remove(subagent_id);
+        }
+    }
+
+    pub fn is_stopping(&self, subagent_id: &str) -> bool {
+        self.stopping.contains(subagent_id)
+    }
+
+    pub fn is_tool_open(&self, key: &str) -> bool {
+        self.tools_open.contains(key)
+    }
+
+    pub fn toggle_tool(&mut self, key: &str) {
+        if !self.tools_open.remove(key) {
+            self.tools_open.insert(key.to_owned());
+        }
+    }
+
+    pub fn is_diff_open(&self, key: &str) -> bool {
+        self.diffs_open.contains(key)
+    }
+
+    pub fn open_diff(&mut self, key: String) {
+        self.diffs_open.insert(key);
+    }
+
+    /// Whether `session`'s plan shows only its bar: the reader's pick, closed again once the plan
+    /// finishes; else folded on a phone or when finished.
+    pub fn plan_collapsed(&self, session: &str, settled: bool, phone: bool) -> bool {
+        match self.plan_folds.get(session) {
+            Some(&(collapsed, was_settled)) => collapsed || (settled && !was_settled),
+            None => phone || settled,
+        }
+    }
+
+    pub fn toggle_plan(&mut self, session: &str, collapsed: bool, settled: bool) {
+        self.plan_folds.insert(session.to_owned(), (!collapsed, settled));
+    }
+
+    pub fn is_plan_entry_open(&self, session: &str, n: usize) -> bool {
+        self.plan_entries.contains(&(session.to_owned(), n))
+    }
+
+    pub fn toggle_plan_entry(&mut self, session: &str, n: usize) {
+        let key = (session.to_owned(), n);
+        if !self.plan_entries.remove(&key) {
+            self.plan_entries.insert(key);
+        }
+    }
+
+    /// The form of the elicitation `request_id`.
+    pub fn form(&mut self, request_id: &str) -> &mut elicitation::Form {
+        self.forms.entry(request_id.to_owned()).or_default()
+    }
+
+    pub fn form_of(&self, request_id: &str) -> Option<&elicitation::Form> {
+        self.forms.get(request_id)
+    }
+
     /// Records whether the transcript shows its end; true when that changed.
     pub fn set_at_end(&mut self, session_id: &str, at_end: bool) -> bool {
         if at_end { self.away.remove(session_id) } else { self.away.insert(session_id.to_owned()) }
@@ -79,6 +196,12 @@ pub struct Lenses<S> {
     pub acp: fn(&S) -> &acp::State,
     pub reader: fn(&S) -> &Reader,
     pub reader_mut: fn(&mut S) -> &mut Reader,
+    /// Applies one model action and runs its effects; the cards answer through it.
+    pub step: fn(&mut S, acp::Event),
+    /// Asks the host to stop a subagent (`stop_subagent`): the session and the record's id.
+    pub stop_subagent: fn(&mut S, String, String),
+    /// Opens a file a card names, as `path` or `path:line`.
+    pub open_file: fn(&mut S, String),
 }
 
 impl<S> Clone for Lenses<S> {
@@ -105,6 +228,10 @@ impl<S> Ctx<S> {
     pub fn tools<'s>(&self, s: &'s S) -> &'s [acp::types::Object] {
         (self.lenses.acp)(s).tool_calls.get(&self.session).map_or(&[], Vec::as_slice)
     }
+
+    pub fn switches<'s>(&self, s: &'s S) -> &'s [serde_json::Value] {
+        (self.lenses.acp)(s).agent_switches.get(&self.session).map_or(&[], Vec::as_slice)
+    }
 }
 
 /// Whether the session has a turn open (`activeTurn`).
@@ -123,8 +250,9 @@ pub fn transcript<S: 'static>(
     let acp_state = (lenses.acp)(state);
     let messages = acp_state.messages.get(session_id).map_or(&[][..], Vec::as_slice);
     let tools = acp_state.tool_calls.get(session_id).map_or(&[][..], Vec::as_slice);
+    let switches = acp_state.agent_switches.get(session_id).map_or(&[][..], Vec::as_slice);
     let active = turn_active(acp_state, session_id);
-    let rows = rows(messages, tools, active);
+    let rows = rows(messages, tools, switches, active);
     if rows.is_empty() {
         return empty(t, session_id);
     }

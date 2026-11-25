@@ -77,13 +77,7 @@ impl AntigravityAgentService {
                 log::warn!("[antigravity-accounts] login probe failed");
                 None
             });
-        }
-        for row in snapshot
-            .profiles
-            .iter()
-            .filter(|row| row.signed_in == Some(true))
-        {
-            self.forget_signed_out_usage(&row.id);
+            self.usage.observe_login(&row.id, row.signed_in);
         }
         Ok(snapshot)
     }
@@ -296,7 +290,7 @@ impl AntigravityAgentService {
                 Err(_error) => log::warn!("[antigravity-accounts] sign-out failed"),
             }
         }
-        store.remove(id)
+        store.remove(id).inspect(|_| self.usage.forget(id))
     }
 
     /// Headless `troupe-server antigravity account login`: Antigravity has no
@@ -326,7 +320,6 @@ impl AntigravityAgentService {
         if !self.has_account(account_id)? {
             return Err("That Antigravity account does not exist".to_string());
         }
-        self.forget_usage(account_id);
         let home = if account_id == BUILTIN_ACCOUNT_ID {
             None
         } else {
@@ -355,6 +348,9 @@ impl AntigravityAgentService {
             );
         }
         set_home_env(&mut config.env, home.as_deref())?;
+        // A sign-in can change the Google login behind the Account, so the
+        // tier and the last check no longer describe it.
+        self.usage.forget(account_id);
         log::info!("[antigravity-accounts] sign-in spawn prepared");
         Ok(())
     }

@@ -1,11 +1,12 @@
 //! One transcript row: the user's message, a turn's activity disclosure, or a visible reply.
 
 use rune::{El, col, el, icon, row, text};
-use serde_json::Value;
 use theme::icons as i;
 
+use std::rc::Rc;
+
 use super::timeline::{Activity, Item, Row, RowKind, message_text, tool_id};
-use super::{Ctx, placeholder};
+use super::{Ctx, placeholder, tool_call};
 use crate::markdown;
 use crate::type_::sans;
 use crate::{BubbleAlign, BubbleVariant, IconActionButton, IconActionSize};
@@ -20,6 +21,7 @@ pub(super) fn build<S: 'static>(ctx: &Ctx<S>, s: &S, r: &Row, n: usize) -> El {
             reply(ctx, &m.id, &message_text(m), streaming, *tail && !m.streaming, last)
         }),
         RowKind::Activity(a) => Some(activity(ctx, s, &r.key, a)),
+        RowKind::Switch(i) => ctx.switches(s).get(*i).map(|record| super::switch::separator(ctx, s, &r.key, record)),
     };
     // Rows pad inside rather than gap: virtual rows measure each row's own box.
     col().w_full().child(body.unwrap_or_else(el))
@@ -64,7 +66,9 @@ fn actions<S: 'static>(ctx: &Ctx<S>, text: String, user: bool, pinned: bool) -> 
 
 /// The user's turn: a tinted bubble at the end of the row, `max-w-[85%]`, with its actions.
 fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
-    let bubble = crate::Bubble::new(words.to_owned())
+    let (shown, spans) = pills_inline(ctx.t, words);
+    let bubble = crate::Bubble::new(shown)
+        .spans(spans)
         .variant(BubbleVariant::Tinted)
         .align(BubbleAlign::End)
         .build(ctx.t);
@@ -73,7 +77,28 @@ fn user<S: 'static>(ctx: &Ctx<S>, words: &str, last: bool) -> El {
         .py(8.0)
         .items_end()
         .hover_group()
-        .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, words.to_owned(), true, last)))
+        .child(col().w_frac(0.85).items_end().gap(4.0).child(bubble).child(actions(ctx, crate::composer::wire::copy_text(words), true, last)))
+}
+
+/// A sent message's composer tokens as their labels on a chip (`ChatMessage`'s inline pills).
+fn pills_inline(t: &theme::Tokens, display: &str) -> (String, Vec<rune::Span>) {
+    if !display.contains(|c: char| ('\u{E000}'..='\u{E00F}').contains(&c)) {
+        return (display.to_owned(), Vec::new());
+    }
+    let mut out = String::new();
+    let mut spans = Vec::new();
+    for part in crate::composer::parse_display(display).parts {
+        match part {
+            crate::composer::Part::Text(text) => out.push_str(&text),
+            crate::composer::Part::Pill(pill) => {
+                let start = out.len();
+                out.push_str(&pill.label());
+                let ink = if matches!(pill, crate::composer::Pill::Skill { .. }) { t.colors.primary } else { t.colors.foreground };
+                spans.push(rune::Span::new(start, out.len()).bg(t.colors.muted, 3.0).color(ink).weight(500.0));
+            }
+        }
+    }
+    (out, spans)
 }
 
 /// A visible reply: its prose in a ghost bubble, then the turn's actions on its tail, shown
@@ -107,8 +132,15 @@ fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
         .min_h(28.0)
         .gap(6.0)
         .items_center()
-        .child(icon(&i::CHEVRON_RIGHT, 13.0).color(ink).rotate(if open { std::f32::consts::FRAC_PI_2 } else { 0.0 }))
+        // A down chevron, not a rotated right one: the web client's CPU canvas stops presenting
+        // frames while a rotated icon is on screen (Rune at the pin).
+        .child(icon(if open { &i::CHEVRON_DOWN } else { &i::CHEVRON_RIGHT }, 13.0).color(ink))
         .child(text(label).font(sans(12.0, 500.0, 16.0)).color(ink));
+    let tools = ctx.tools(s);
+    let calls: Vec<&model::acp::types::Object> = a.items.iter().filter_map(|i| if let Item::Tool(n) = i { tools.get(*n) } else { None }).collect();
+    if let Some((_, added, removed)) = tool_call::summarize(&calls, 0).filter(|(_, a, r)| a + r > 0) {
+        header = header.child(super::diff::stat(t, added, removed, false, sans(crate::type_::MICRO, 400.0, 18.0)));
+    }
     if a.attention && !a.active {
         header = header.child(text("· needs attention").font(sans(12.0, 400.0, 16.0)).color(ink));
     }
@@ -116,8 +148,93 @@ fn activity<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, a: &Activity) -> El {
     let header = header.on_press(move |s: &mut S| reader(s).toggle(&row_key, &toggled));
     let mut frame = col().w_full().my(4.0).min_w(0.0).child(header);
     if open {
-        let steps = a.items.iter().map(|item| step(ctx, s, item, a.active));
-        frame = frame.child(col().w_full().min_w(0.0).pl(16.0).pb(4.0).gap(4.0).children(steps));
+        frame = frame.child(col().w_full().min_w(0.0).pl(16.0).pb(4.0).gap(4.0).children(steps(ctx, s, a)));
+    }
+    frame
+}
+
+/// The turn's steps (`TurnSteps`): each run of tool calls and thoughts between two narration
+/// messages folds into one `WorkRunGroup`, and each run of subagent dispatches into one
+/// `SubagentGroup`, at the first one's place.
+fn steps<S: 'static>(ctx: &Ctx<S>, s: &S, a: &Activity) -> Vec<El> {
+    let tools = ctx.tools(s);
+    let dispatch = |item: &Item| match item {
+        Item::Tool(i) => tools.get(*i).filter(|t| t.get("subagent").is_some_and(|v| !v.is_null())),
+        _ => None,
+    };
+    let mut out = Vec::new();
+    let mut group = Vec::new();
+    let mut run: Vec<&Item> = Vec::new();
+    let last = a.items.last();
+    let flush_run = |run: &mut Vec<&Item>, out: &mut Vec<El>| {
+        if run.is_empty() {
+            return;
+        }
+        let items = std::mem::take(run);
+        let live = a.active && items.last().copied() == last;
+        out.push(work_run(ctx, s, &items, live));
+    };
+    for item in &a.items {
+        if let Some(tool) = dispatch(item) {
+            flush_run(&mut run, &mut out);
+            group.push(tool);
+            continue;
+        }
+        if !group.is_empty() {
+            out.push(super::subagents::group(ctx.t, &ctx.session, &std::mem::take(&mut group), a.active, ctx.lenses));
+        }
+        match item {
+            Item::Tool(_) | Item::Thoughts(_) => run.push(item),
+            Item::Message(_) => {
+                flush_run(&mut run, &mut out);
+                out.push(step(ctx, s, item, a.active));
+            }
+            Item::Switch(_) => {}
+        }
+    }
+    flush_run(&mut run, &mut out);
+    if !group.is_empty() {
+        out.push(super::subagents::group(ctx.t, &ctx.session, &group, a.active, ctx.lenses));
+    }
+    out
+}
+
+/// `WorkRunGroup`: the run's rollup ("Read 1 file, ran 2 commands" and `+N −M`), red when a
+/// call failed, folded until pressed. A run of thoughts alone draws them bare.
+fn work_run<S: 'static>(ctx: &Ctx<S>, s: &S, items: &[&Item], live: bool) -> El {
+    let t = ctx.t;
+    let c = &t.colors;
+    let tools = ctx.tools(s);
+    let calls: Vec<&model::acp::types::Object> = items.iter().filter_map(|i| if let Item::Tool(n) = i { tools.get(*n) } else { None }).collect();
+    let thoughts = items.len() - calls.len();
+    let Some((label, added, removed)) = tool_call::summarize(&calls, thoughts).filter(|_| !calls.is_empty()) else {
+        return col().w_full().children(items.iter().map(|i| step(ctx, s, i, live)).collect::<Vec<_>>());
+    };
+    let failed = calls.iter().any(|t| t.get("status").and_then(serde_json::Value::as_str) == Some("failed"));
+    let key = format!("run-{}", calls.first().map_or("", |t| tool_id(t)));
+    let open = (ctx.lenses.reader)(s).is_tool_open(&key);
+    let ink = if failed { c.destructive } else { c.muted_foreground };
+    let font = sans(12.0, 400.0, 16.0);
+    let mut trigger = row()
+        .key(format!("{key}-toggle"))
+        .role("button")
+        .label(label.clone())
+        .w_full()
+        .min_h(28.0)
+        .gap(6.0)
+        .items_center()
+        .focusable(true)
+        // A down chevron, not a rotated right one: a rotated icon stops the CPU canvas (pin).
+        .child(icon(if open { &i::CHEVRON_DOWN } else { &i::CHEVRON_RIGHT }, 13.0).color(ink).a11y_hidden())
+        .child(if live { crate::shimmer_text(t, label, font, false).min_w(0.0) } else { text(label).font(font).color(ink).single_line().truncate().min_w(0.0) });
+    if added > 0 || removed > 0 {
+        trigger = trigger.child(super::diff::stat(t, added, removed, false, sans(crate::type_::MICRO, 400.0, 18.0)));
+    }
+    let (reader, toggled) = (ctx.lenses.reader_mut, key.clone());
+    let trigger = trigger.on_press(move |s: &mut S| reader(s).toggle_tool(&toggled));
+    let mut frame = col().key(key).w_full().min_w(0.0).child(trigger);
+    if open {
+        frame = frame.child(col().w_full().min_w(0.0).pl(16.0).children(items.iter().map(|i| step(ctx, s, i, live)).collect::<Vec<_>>()));
     }
     frame
 }
@@ -133,14 +250,29 @@ fn step<S: 'static>(ctx: &Ctx<S>, s: &S, item: &Item, active: bool) -> El {
         }
         Item::Tool(i) => {
             let Some(tool) = tools.get(*i) else { return el() };
-            let title = tool.get("title").and_then(Value::as_str).unwrap_or_else(|| tool_id(tool));
-            let status = tool.get("status").and_then(Value::as_str).unwrap_or("pending");
-            let kind = if tool.get("subagent").is_some_and(|v| !v.is_null()) { "Subagent" } else { "Tool call" };
-            placeholder(t, kind, &format!("{title} · {status}")).key(format!("tool-{}", tool_id(tool)))
+            tool_card(ctx, s, tool)
         }
         Item::Message(i) => {
             let Some(m) = messages.get(*i) else { return el() };
             markdown::prose(t, &format!("md-{}", m.id), &message_text(m), active && m.streaming, &ctx.hooks)
         }
+        Item::Switch(_) => el(),
     }
+}
+
+/// `ToolCallCard` for `tool`, with the reader's open result and full diffs.
+fn tool_card<S: 'static>(ctx: &Ctx<S>, s: &S, tool: &model::acp::types::Object) -> El {
+    let key = format!("tool-{}", tool_id(tool));
+    let lenses = ctx.lenses;
+    let reader = (lenses.reader)(s);
+    let expanded = |n: usize| reader.is_diff_open(&format!("{key}-diff-{n}"));
+    let (toggled, expand) = (key.clone(), key.clone());
+    let actions = tool_call::Actions {
+        toggle: Box::new(move |s: &mut S| (lenses.reader_mut)(s).toggle_tool(&toggled)),
+        expand_diff: Rc::new(move |s: &mut S, n| (lenses.reader_mut)(s).open_diff(format!("{expand}-diff-{n}"))),
+        open_file: Some(Rc::new(move |s: &mut S, path: String, line: Option<usize>| {
+            (lenses.open_file)(s, line.map_or_else(|| path.clone(), |l| format!("{path}:{l}")))
+        })),
+    };
+    tool_call::card(ctx.t, &key, tool, tool_call::Shown { open: reader.is_tool_open(&key), expanded: &expanded }, actions)
 }

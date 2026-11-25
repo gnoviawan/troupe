@@ -24,7 +24,9 @@ import {
   parseSkillSegments,
   type SkillSegment
 } from '@/lib/skill-tokens'
+import { type CanvasSegment, parseCanvasSegments } from './canvas-tokens'
 import {
+  CANVAS_PILL_NODE,
   CMD_PILL_NODE,
   CONTEXT_PILL_NODE,
   CONVERSATION_PILL_NODE,
@@ -68,6 +70,7 @@ type ComposerSegment =
   | { kind: 'context'; context: SelectionContext }
   | { kind: 'conversation'; title: string; sessionId: string }
   | ToolSegment
+  | Extract<CanvasSegment, { kind: 'canvas' }>
 
 /**
  * Split a composer value into ordered text/skill/command segments. Delegates
@@ -90,11 +93,20 @@ function parseComposerSegments(value: string): ComposerSegment[] {
       seg.kind === 'skill' ? [seg] : parseSelectionContextSegments(seg.text)
   )
   const pillSegments = skillSegments.flatMap(
-    (seg): Array<SkillSegment | SelectionContextSegment | ConversationSegment | ToolSegment> =>
+    (
+      seg
+    ): Array<
+      SkillSegment | SelectionContextSegment | ConversationSegment | ToolSegment | CanvasSegment
+    > =>
       seg.kind === 'text'
         ? parseConversationSegments(seg.text).flatMap(
-            (c): Array<ConversationSegment | ToolSegment> =>
-              c.kind === 'text' ? parseToolSegments(c.text) : [c]
+            (c): Array<ConversationSegment | ToolSegment | CanvasSegment> =>
+              c.kind === 'text'
+                ? parseCanvasSegments(c.text).flatMap(
+                    (v): Array<ToolSegment | CanvasSegment> =>
+                      v.kind === 'text' ? parseToolSegments(v.text) : [v]
+                  )
+                : [c]
           )
         : [seg]
   )
@@ -104,7 +116,12 @@ function parseComposerSegments(value: string): ComposerSegment[] {
       segments.push({ kind: 'skill', name: seg.name })
       continue
     }
-    if (seg.kind === 'context' || seg.kind === 'conversation' || seg.kind === 'tool') {
+    if (
+      seg.kind === 'context' ||
+      seg.kind === 'conversation' ||
+      seg.kind === 'tool' ||
+      seg.kind === 'canvas'
+    ) {
       segments.push(seg)
       continue
     }
@@ -229,6 +246,13 @@ export function draftFromTokens(
     }
     if (seg.kind === 'tool') {
       paragraphs.at(-1)!.push({ type: TOOL_PILL_NODE, attrs: { id: seg.tool.id } })
+      continue
+    }
+    if (seg.kind === 'canvas') {
+      paragraphs.at(-1)!.push({
+        type: CANVAS_PILL_NODE,
+        attrs: { label: seg.ref.label, ids: seg.ref.ids.join(',') }
+      })
       continue
     }
     // Text segment: split on `\n` to open new paragraphs.

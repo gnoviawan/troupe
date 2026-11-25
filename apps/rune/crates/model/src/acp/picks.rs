@@ -62,7 +62,13 @@ impl State {
             .map(|(model_id, _)| model_id)
     }
 
-    pub(crate) fn set_mode(&self, session_id: String, mode_id: String, fx: &mut Vec<Effect>) {
+    pub(crate) fn set_mode(
+        &self,
+        session_id: String,
+        mode_id: String,
+        run: Option<RunId>,
+        fx: &mut Vec<Effect>,
+    ) {
         let Some(session) = self.sessions.get(&session_id) else {
             fx.push(unknown_session(&session_id));
             return;
@@ -71,6 +77,7 @@ impl State {
             agent_id: session.agent_id.clone(),
             session_id,
             mode_id,
+            run,
             retried: false,
         });
     }

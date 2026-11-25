@@ -80,26 +80,53 @@ pub(super) struct StartAntigravityAccountLoginPayload {
     config: AgentConfig,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct ListAntigravityUsagePayload {
-    #[serde(default)]
-    force: bool,
+pub(super) struct CheckAntigravityUsagePayload {
+    account_id: String,
+    config: AgentConfig,
 }
 
-/// `list_antigravity_usage { force? }` → the usage windows of every Account.
-/// Reads are cached 5 minutes; a forced read still reuses one younger than 60 seconds.
-pub(super) async fn handle_list_antigravity_usage(
+pub(super) fn handle_list_antigravity_usage(id: String, acp: &Arc<AcpManager>) -> WsReply {
+    match acp.antigravity_agent().accounts_usage() {
+        Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),
+        Err(error) => {
+            warn!(error = %error, "list_antigravity_usage failed");
+            WsReply::err(id, WsErrorCode::Unsupported, error)
+        }
+    }
+}
+
+pub(super) async fn handle_check_antigravity_usage(
     id: String,
     payload: &Value,
     acp: &Arc<AcpManager>,
 ) -> WsReply {
-    let parsed: ListAntigravityUsagePayload =
-        serde_json::from_value(payload.clone()).unwrap_or_default();
-    match acp.antigravity_agent().accounts_usage(parsed.force).await {
+    let mut parsed: CheckAntigravityUsagePayload = match serde_json::from_value(payload.clone()) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            return WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                format!(
+                    "malformed check_antigravity_usage payload (want accountId, config): {error}"
+                ),
+            )
+        }
+    };
+    if let Err(error) = crate::acp::config::validate_spawn_config(&mut parsed.config) {
+        return acp_err_to_reply(id, error);
+    }
+    match crate::acp::antigravity_agent::check_antigravity_usage(
+        acp,
+        &parsed.account_id,
+        parsed.config,
+    )
+    .await
+    {
         Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),
         Err(error) => {
-            warn!(error = %error, "list_antigravity_usage failed");
+            warn!(error = %error, "check_antigravity_usage refused");
             WsReply::err(id, WsErrorCode::Unsupported, error)
         }
     }

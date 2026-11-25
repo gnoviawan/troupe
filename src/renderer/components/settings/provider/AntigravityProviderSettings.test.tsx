@@ -1,9 +1,14 @@
-import type { AntigravityAccountsSnapshot } from '@shared/types/antigravity-accounts.types'
+import type {
+  AntigravityAccountsSnapshot,
+  AntigravityAccountUsage
+} from '@shared/types/antigravity-accounts.types'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ANTIGRAVITY_USAGE_POLL_MS } from '@/hooks/use-antigravity-accounts'
 import { useProjectStore } from '@/stores/project-store'
 import type { Project } from '@/types/project'
 import { AntigravityProviderSettings } from './AntigravityProviderSettings'
+import { formatAntigravityChecked } from './AntigravityUsageCheck'
 
 const {
   api,
@@ -26,7 +31,8 @@ const {
     setProjectAccount: vi.fn(),
     setAutoSwitch: vi.fn(),
     startLogin: vi.fn(),
-    usage: vi.fn()
+    usage: vi.fn(),
+    checkUsage: vi.fn()
   },
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() }
 }))
@@ -38,6 +44,7 @@ vi.mock('@/lib/antigravity-account-sign-in', () => ({
     { id: 'oauth-business', label: 'Log in with Gemini Enterprise' }
   ],
   isAntigravitySignInMethod: (id: string) => id === 'oauth-personal' || id === 'oauth-business',
+  antigravityLaunchConfig: () => LAUNCH_CONFIG,
   signInAntigravityAccount
 }))
 vi.mock('sonner', () => ({ toast }))
@@ -48,6 +55,14 @@ vi.mock('@/stores/antigravity-account-switch', () => ({
 vi.mock('@/hooks/use-server-admits-remote-writes', () => ({
   useServerAdmitsRemoteWrites: () => admits.value
 }))
+
+const LAUNCH_CONFIG = {
+  configId: 'acp-registry:antigravity-acp',
+  name: 'Antigravity',
+  command: 'agy',
+  args: [],
+  env: {}
+}
 
 const SNAPSHOT: AntigravityAccountsSnapshot = {
   accounts: [
@@ -84,6 +99,10 @@ beforeEach(() => {
   applyProjectAntigravityAccount.mockResolvedValue([])
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('AntigravityProviderSettings', () => {
   it('lists each Antigravity account and automatic switching', async () => {
     render(<AntigravityProviderSettings />)
@@ -96,9 +115,9 @@ describe('AntigravityProviderSettings', () => {
     expect(work).toHaveTextContent('Signed out')
     expect(work).toHaveTextContent('m-pos')
     expect(screen.getByLabelText('Switch accounts automatically')).toBeChecked()
-    expect(
-      screen.getByText(/continue it on the signed-in account with the most room/)
-    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Switch accounts automatically')).toHaveAccessibleDescription(
+      "When a chat reaches its account's limit, move it to another signed-in account. Off by default, because Google's terms may not allow it."
+    )
   })
 
   it('shows one usage bar per model and the plan', async () => {
@@ -168,6 +187,9 @@ describe('AntigravityProviderSettings', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add account' }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Add an Antigravity account')).toBeInTheDocument()
+    expect(within(dialog).getByTestId('second-account-notice')).toHaveTextContent(
+      "Troupe does not recommend using many Antigravity accounts. A separate work account is fine. Using several accounts to get past usage limits can break Google's terms and get your accounts suspended. More info"
+    )
     expect(within(dialog).getByLabelText('Steps')).toHaveTextContent('1Name2Sign in3Done')
     // "Work" and "Personal" are in use, so only "Team" is suggested.
     expect(within(dialog).queryByRole('button', { name: 'Work' })).not.toBeInTheDocument()
@@ -264,12 +286,115 @@ describe('AntigravityProviderSettings', () => {
     expect(api.setDefault).not.toHaveBeenCalled()
   })
 
+  it('checks usage only when its button is clicked, then shows the meters and the time', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    api.usage.mockResolvedValue([
+      {
+        accountId: 'default',
+        status: 'not_checked',
+        planType: 'Google AI Pro',
+        windows: [],
+        checkedAt: 0,
+        message: null
+      }
+    ])
+    let answer: (read: AntigravityAccountUsage) => void = () => undefined
+    api.checkUsage.mockReturnValue(
+      new Promise<AntigravityAccountUsage>((resolve) => {
+        answer = resolve
+      })
+    )
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    await waitFor(() => expect(personal).toHaveTextContent('Google AI Pro'))
+    await vi.advanceTimersByTimeAsync(ANTIGRAVITY_USAGE_POLL_MS * 2)
+    expect(api.checkUsage).not.toHaveBeenCalled()
+    expect(
+      within(screen.getByTestId('antigravity-account-ab12')).queryByRole('button', {
+        name: /Check usage/
+      })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(within(personal).getByRole('button', { name: 'Check usage of Personal' }))
+
+    expect(api.checkUsage).toHaveBeenCalledWith('default', LAUNCH_CONFIG)
+    expect(await within(personal).findByText('Reading usage…')).toBeInTheDocument()
+    expect(within(personal).getByRole('button', { name: 'Check usage of Personal' })).toBeDisabled()
+    const checkedAt = new Date(2026, 10, 24, 14, 5).getTime()
+    vi.setSystemTime(checkedAt + 60_000)
+    answer({
+      accountId: 'default',
+      status: 'ok',
+      planType: 'Google AI Pro',
+      windows: [
+        {
+          kind: 'model',
+          label: 'Gemini Models · Weekly Limit Remaining',
+          modelId: 'Gemini Models · Weekly Limit Remaining',
+          percent: 9,
+          resetsAt: null
+        }
+      ],
+      checkedAt,
+      message: 'Overage: Disabled'
+    })
+    await waitFor(() =>
+      expect(personal).toHaveTextContent('Gemini Models · Weekly Limit Remaining')
+    )
+    expect(personal).toHaveTextContent('Google AI Pro')
+    expect(personal).toHaveTextContent('Overage: Disabled')
+    expect(personal).toHaveTextContent(formatAntigravityChecked(checkedAt))
+    expect(api.checkUsage).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the agent line when a check reads no meter', async () => {
+    api.checkUsage.mockResolvedValue({
+      accountId: 'default',
+      status: 'unavailable',
+      planType: null,
+      windows: [],
+      checkedAt: Date.now(),
+      message: 'Not applicable for current authentication method.'
+    })
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    fireEvent.click(within(personal).getByRole('button', { name: 'Check usage of Personal' }))
+    expect(
+      await within(personal).findByText('Not applicable for current authentication method.')
+    ).toBeInTheDocument()
+    expect(within(personal).queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+
+  it('keeps a signed-in account ready with its button whatever its last check said', async () => {
+    api.usage.mockResolvedValue([
+      {
+        accountId: 'default',
+        status: 'signed_out',
+        planType: null,
+        windows: [],
+        checkedAt: Date.now(),
+        message: 'This account is not signed in. Sign in to it, then check again.'
+      }
+    ])
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    await waitFor(() =>
+      expect(personal).toHaveTextContent(
+        'This account is not signed in. Sign in to it, then check again.'
+      )
+    )
+    expect(personal).toHaveTextContent('Signed in')
+    expect(personal).not.toHaveTextContent('Signed out')
+    expect(within(personal).getByRole('button', { name: 'Check usage of Personal' })).toBeEnabled()
+  })
+
   it('hides writes on a view-only connection', async () => {
     admits.value = false
     render(<AntigravityProviderSettings />)
     await screen.findByTestId('antigravity-account-default')
     expect(screen.queryByRole('button', { name: 'Add account' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Actions for/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Check usage/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Switch accounts automatically')).toBeDisabled()
     expect(screen.getByText(/troupe-server antigravity account/)).toBeInTheDocument()
   })

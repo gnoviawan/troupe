@@ -45,6 +45,11 @@ fn dispatch_outcome(outcome: Option<Value>) -> DispatchOutcome {
             message: error.to_owned(),
             agent_dead: false,
         }
+    } else if let Some(code) = outcome.get("uncertain").and_then(Value::as_str) {
+        DispatchOutcome::Uncertain {
+            message: "connection lost".into(),
+            outcome_unknown: code == "outcome_unknown",
+        }
     } else if outcome.get("agentDead").is_some() {
         DispatchOutcome::Failed {
             message: "agent thread is no longer running".into(),
@@ -99,9 +104,13 @@ fn replay(vector: &Value) -> Result<usize, String> {
         .unwrap_or_default()
         .into();
     let payloads = context.get("payloads").cloned().unwrap_or(json!({}));
+    let host_payloads = context.get("hostPayloads").cloned().unwrap_or(json!({}));
     // Commands a `{ hold, release }` reply keeps in flight, oldest first,
     // with the reply a `releaseHeld` step answers them with.
     let mut held: VecDeque<(Effect, Value)> = VecDeque::new();
+    // A replay window's end runs on a timer the recorder's step does not
+    // wait for: it lands in the next step, after that step's own commands.
+    let mut replay_ends: Vec<Effect> = Vec::new();
     let mut state: State = parse(&vector["initial"])?;
     if let Some(problem) = diff("initial", &vector["initial"], &to_value(&state)) {
         return Err(format!("initial state does not round-trip: {problem}"));
@@ -157,10 +166,16 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::KillAgent { .. }
                         | Effect::ListSessions { .. }
                         | Effect::ImportAgentSession { .. }
+                        | Effect::NewSession { .. }
+                        | Effect::LoadSession { .. }
+                        | Effect::DisposeEphemeralSession { .. }
+                        | Effect::PromoteSession { .. }
+                        | Effect::ResumeSession { .. }
                         | Effect::Authenticate { .. }
                         | Effect::Logout { .. }
                         | Effect::RespondElicitation { .. }
                         | Effect::ReadSessionPayload { .. }
+                        | Effect::ReloadSessionPayload { .. }
                         | Effect::CloseAgentSession { .. }
                         | Effect::DeleteAgentSession { .. }
                         | Effect::DeleteSessionPayload { .. }
@@ -172,6 +187,8 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::HasMcpOAuthToken { .. }
                         | Effect::DisconnectMcpOAuth { .. }
                         | Effect::AnswerMcpInstall { .. }
+                        | Effect::RecordAgentSwitch { .. }
+                        | Effect::AnswerBrowserConsent { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
@@ -221,6 +238,17 @@ fn replay(vector: &Value) -> Result<usize, String> {
                     // agent command answers its reply.
                     Effect::ReadSessionPayload { ref session_id, .. } => {
                         let reply = payloads.get(session_id).cloned().unwrap_or(Value::Null);
+                        match hold(command, reply, &mut held) {
+                            Some((command, reply)) => answer(command, reply),
+                            None => continue,
+                        }
+                    }
+                    // The host's re-read answers `context.hostPayloads`.
+                    Effect::ReloadSessionPayload { ref session_id, .. } => {
+                        let reply = host_payloads
+                            .get(session_id)
+                            .cloned()
+                            .unwrap_or(Value::Null);
                         match hold(command, reply, &mut held) {
                             Some((command, reply)) => answer(command, reply),
                             None => continue,
@@ -307,6 +335,12 @@ fn replay(vector: &Value) -> Result<usize, String> {
                 effects.extend(more);
                 continue;
             }
+            if !replay_ends.is_empty() {
+                for end in std::mem::take(&mut replay_ends) {
+                    effects.extend(acp::step(&mut state, Event::ReplayEnd(end), &mut env));
+                }
+                continue;
+            }
             if let Some(index) = effects.iter().position(|e| matches!(e, Effect::EndTurn(_))) {
                 let Effect::EndTurn(end) = effects.remove(index) else {
                     unreachable!()
@@ -316,8 +350,23 @@ fn replay(vector: &Value) -> Result<usize, String> {
             }
             break;
         }
-        // The recorder cannot see the busy-retry timer (`setTimeout`).
-        effects.retain(|effect| !matches!(effect, Effect::RetryQueueAfter { .. }));
+        // The recorder cannot see the busy-retry timer (`setTimeout`), the
+        // one-shots' timeouts or the prompt resend ladder.
+        effects.retain(|effect| {
+            !matches!(
+                effect,
+                Effect::RetryQueueAfter { .. }
+                    | Effect::StartOneShotTimer { .. }
+                    | Effect::PromptResendAfter { .. }
+            )
+        });
+        replay_ends.extend(
+            effects
+                .iter()
+                .filter(|effect| matches!(effect, Effect::EndReplay { .. }))
+                .cloned(),
+        );
+        effects.retain(|effect| !matches!(effect, Effect::EndReplay { .. }));
         if !ids.ids.is_empty() || ids.overdrawn > 0 {
             return Err(at(&format!(
                 "drew {} ids too few or {} too many",
@@ -427,7 +476,7 @@ fn hold(
 fn answer(command: Effect, reply: Value) -> Event {
     let rejected = reply.get("reject").map(|reason| js_string(Some(reason)));
     match command {
-        Effect::ReadSessionPayload { .. } => {
+        Effect::ReadSessionPayload { .. } | Effect::ReloadSessionPayload { .. } => {
             let outcome = match rejected {
                 Some(reason) => Err(reason),
                 None => Ok(Some(reply).filter(|reply| !reply.is_null())),

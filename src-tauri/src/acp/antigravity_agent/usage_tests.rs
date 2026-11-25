@@ -1,311 +1,279 @@
-use std::path::Path;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use super::super::{AntigravityAgentService, AntigravityLoginStatus};
-use super::{remember, AntigravityUsageProbe, CachedUsage};
-use crate::acp::antigravity_accounts::usage::{
-    AntigravityAccountUsage, AntigravityUsageStatus, ProbeVerdict, USAGE_UNAVAILABLE,
-};
-use crate::acp::antigravity_accounts::AntigravityAccountStore;
+use super::super::{AntigravityAgentService, AntigravityLaunchAuth};
+use super::{antigravity_tier_name, CheckRun};
+use crate::acp::antigravity_accounts::usage::{AntigravityAccountUsage, AntigravityUsageStatus};
 
-#[tokio::test]
-async fn a_failed_probe_keeps_the_last_good_read() {
-    let mut cache = std::collections::HashMap::new();
-    let good = AntigravityAccountUsage {
-        account_id: "default".to_string(),
+fn checked(account_id: &str, percent: f64) -> AntigravityAccountUsage {
+    AntigravityAccountUsage {
+        account_id: account_id.to_string(),
         status: AntigravityUsageStatus::Ok,
-        plan_type: Some("Google AI Pro".to_string()),
-        windows: vec![],
-        checked_at: 10,
+        plan_type: None,
+        windows: vec![
+            crate::acp::antigravity_accounts::usage::AntigravityUsageWindow {
+                kind: "model".to_string(),
+                label: "Gemini Models · Weekly".to_string(),
+                model_id: "Gemini Models · Weekly".to_string(),
+                percent,
+                resets_at: None,
+            },
+        ],
+        checked_at: 1_700_000_000_000,
         message: None,
-    };
-    remember(&mut cache, good.clone());
-    remember(
-        &mut cache,
-        AntigravityAccountUsage::status_only(
-            "default",
-            AntigravityUsageStatus::Error,
-            "Antigravity usage timed out",
-            12,
-        ),
-    );
-    let kept = cache.get("default").expect("cached read");
-    assert_eq!(kept.usage, good);
-    assert_eq!(kept.attempted_at, 12);
-    remember(
-        &mut cache,
-        AntigravityAccountUsage {
-            account_id: "default".to_string(),
-            status: AntigravityUsageStatus::SignedOut,
-            plan_type: None,
-            windows: vec![],
-            checked_at: 3,
-            message: None,
-        },
-    );
-    assert_eq!(
-        cache.get("default").map(|entry| entry.usage.status),
-        Some(AntigravityUsageStatus::Ok)
-    );
-    remember(
-        &mut cache,
-        AntigravityAccountUsage {
-            account_id: "default".to_string(),
-            status: AntigravityUsageStatus::SignedOut,
-            plan_type: None,
-            windows: vec![],
-            checked_at: 13,
-            message: None,
-        },
-    );
-    assert_eq!(
-        cache.get("default").map(|entry| entry.usage.status),
-        Some(AntigravityUsageStatus::SignedOut)
-    );
-}
-
-struct Boom;
-
-#[async_trait::async_trait]
-impl AntigravityUsageProbe for Boom {
-    async fn probe(&self, _home: &Path, _builtin: bool) -> ProbeVerdict {
-        ProbeVerdict::Failed("Antigravity usage timed out")
     }
 }
 
-struct SignedIn;
-
-#[async_trait::async_trait]
-impl AntigravityLoginStatus for SignedIn {
-    async fn login_status(&self, _antigravity_home: Option<&Path>) -> Result<Option<bool>, String> {
-        Ok(Some(true))
+fn ran(usage: AntigravityAccountUsage) -> CheckRun {
+    CheckRun {
+        usage,
+        session_tier: None,
     }
+}
+
+fn ran_with_tier(usage: AntigravityAccountUsage, tier: Option<&str>) -> CheckRun {
+    CheckRun {
+        usage,
+        session_tier: Some(tier.map(str::to_string)),
+    }
+}
+
+fn with_plan(usage: AntigravityAccountUsage, plan: &str) -> AntigravityAccountUsage {
+    AntigravityAccountUsage {
+        plan_type: Some(plan.to_string()),
+        ..usage
+    }
+}
+
+#[test]
+fn every_account_reads_not_checked_until_someone_asks() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let work = service.insert_profile("Work").unwrap().id;
+
+    let usage = service.accounts_usage().unwrap();
+
+    let ids: Vec<&str> = usage.iter().map(|read| read.account_id.as_str()).collect();
+    assert_eq!(ids, vec!["default", work.as_str()]);
+    for read in &usage {
+        assert_eq!(read.status, AntigravityUsageStatus::NotChecked);
+        assert_eq!(read.plan_type, None);
+        assert!(read.windows.is_empty());
+        assert_eq!(read.checked_at, 0);
+        assert_eq!(read.message, None);
+    }
+}
+
+fn account(id: &str) -> Option<AntigravityLaunchAuth> {
+    Some(AntigravityLaunchAuth::Account(id.to_string()))
+}
+
+#[test]
+fn the_tier_from_a_chat_session_is_the_plan_until_a_session_names_none() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let plan =
+        |service: &AntigravityAgentService| service.accounts_usage().unwrap()[0].plan_type.clone();
+
+    service.record_session_tier(account("default"), Some("Google AI Pro".to_string()));
+    assert_eq!(plan(&service).as_deref(), Some("Google AI Pro"));
+    assert_eq!(
+        service.accounts_usage().unwrap()[0].status,
+        AntigravityUsageStatus::NotChecked
+    );
+
+    service.record_session_tier(Some(AntigravityLaunchAuth::Fixed), None);
+    service.record_session_tier(None, None);
+    assert_eq!(plan(&service).as_deref(), Some("Google AI Pro"));
+
+    service.record_session_tier(account("default"), None);
+    assert_eq!(plan(&service), None);
+}
+
+#[test]
+fn the_tier_name_comes_from_the_antigravity_meta_only() {
+    let meta = |value: serde_json::Value| value.as_object().unwrap().clone();
+
+    assert_eq!(
+        antigravity_tier_name(&meta(serde_json::json!({
+            "antigravity": { "tier": { "name": "Google AI Pro", "id": "g1-pro-tier", "upgradeUri": "" } }
+        }))),
+        Some("Google AI Pro".to_string())
+    );
+    assert_eq!(
+        antigravity_tier_name(&meta(serde_json::json!({
+            "antigravity": { "tier": { "name": " ", "id": "free-tier" } }
+        }))),
+        None
+    );
+    assert_eq!(
+        antigravity_tier_name(&meta(serde_json::json!({ "tier": { "name": "Pro" } }))),
+        None
+    );
 }
 
 #[tokio::test]
-async fn the_service_keeps_a_good_read_when_the_next_probe_fails() {
+async fn a_second_check_joins_the_running_one_and_the_result_is_kept() {
     let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    service.usage_probe = Arc::new(Boom);
-    service.usage_cache.lock().insert(
-        "default".to_string(),
-        CachedUsage {
-            usage: AntigravityAccountUsage {
-                account_id: "default".to_string(),
-                status: AntigravityUsageStatus::Ok,
-                plan_type: Some("Google AI Pro".to_string()),
-                windows: vec![],
-                checked_at: 0,
-                message: None,
-            },
-            attempted_at: 0,
-        },
-    );
-    let usage = service.accounts_usage(true).await.unwrap();
-    assert_eq!(usage.len(), 1);
-    assert_eq!(usage[0].status, AntigravityUsageStatus::Ok);
-    assert_eq!(usage[0].plan_type.as_deref(), Some("Google AI Pro"));
-}
-
-struct SignsOut;
-
-#[async_trait::async_trait]
-impl AntigravityUsageProbe for SignsOut {
-    async fn probe(&self, _home: &Path, _builtin: bool) -> ProbeVerdict {
-        ProbeVerdict::SignedOut
-    }
-}
-
-struct Gate {
-    hits: std::sync::atomic::AtomicUsize,
-    hold: Arc<tokio::sync::Mutex<()>>,
-}
-
-#[async_trait::async_trait]
-impl AntigravityUsageProbe for Gate {
-    async fn probe(&self, _home: &Path, _builtin: bool) -> ProbeVerdict {
-        self.hits.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let _guard = self.hold.lock().await;
-        ProbeVerdict::Unavailable(USAGE_UNAVAILABLE)
-    }
-}
-
-#[tokio::test]
-async fn concurrent_usage_reads_share_one_probe() {
-    let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    let hold = Arc::new(tokio::sync::Mutex::new(()));
-    let guard = hold.lock().await;
-    let gate = Arc::new(Gate {
-        hits: std::sync::atomic::AtomicUsize::new(0),
-        hold: Arc::clone(&hold),
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    service
+        .usage_book()
+        .record_tier("default", Some("Google AI Ultra".to_string()));
+    let book = Arc::clone(service.usage_book());
+    let runs = Arc::new(AtomicUsize::new(0));
+    let (release, released) = tokio::sync::oneshot::channel::<()>();
+    let first_runs = Arc::clone(&runs);
+    let first = book.join_or_start("default", async move {
+        first_runs.fetch_add(1, Ordering::SeqCst);
+        released.await.unwrap();
+        ran(checked("default", 9.0))
     });
-    service.usage_probe = Arc::clone(&gate) as Arc<dyn AntigravityUsageProbe>;
-    let first = service.accounts_usage(true);
-    tokio::pin!(first);
-    for _ in 0..50 {
-        if gate.hits.load(std::sync::atomic::Ordering::SeqCst) >= 1 {
-            break;
-        }
-        tokio::select! {
-            result = &mut first => panic!("probe finished before it was shared: {result:?}"),
-            () = tokio::task::yield_now() => {}
-        }
-    }
-    assert_eq!(gate.hits.load(std::sync::atomic::Ordering::SeqCst), 1);
-    let second = service.accounts_usage(true);
-    drop(guard);
+    let second_runs = Arc::clone(&runs);
+    let second = book.join_or_start("default", async move {
+        second_runs.fetch_add(1, Ordering::SeqCst);
+        ran(checked("default", 50.0))
+    });
+
+    release.send(()).unwrap();
     let (first, second) = tokio::join!(first, second);
-    assert!(first.is_ok());
-    assert!(second.is_ok());
-    assert_eq!(gate.hits.load(std::sync::atomic::Ordering::SeqCst), 1);
+
+    assert_eq!(runs.load(Ordering::SeqCst), 1);
+    assert_eq!(first, with_plan(checked("default", 9.0), "Google AI Ultra"));
+    assert_eq!(second, first);
+    let kept = &service.accounts_usage().unwrap()[0];
+    assert_eq!(kept.windows, checked("default", 9.0).windows);
+    assert_eq!(kept.plan_type.as_deref(), Some("Google AI Ultra"));
 }
 
 #[tokio::test]
-async fn a_cancelled_usage_read_still_caches_the_probe() {
+async fn a_check_after_the_last_one_finished_runs_again() {
     let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    let hold = Arc::new(tokio::sync::Mutex::new(()));
-    let guard = hold.lock().await;
-    let gate = Arc::new(Gate {
-        hits: std::sync::atomic::AtomicUsize::new(0),
-        hold: Arc::clone(&hold),
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let book = Arc::clone(service.usage_book());
+
+    book.join_or_start("default", async { ran(checked("default", 9.0)) })
+        .await;
+    let again = book
+        .join_or_start("default", async { ran(checked("default", 30.0)) })
+        .await;
+
+    assert_eq!(again, checked("default", 30.0));
+    assert_eq!(
+        service.accounts_usage().unwrap()[0].windows[0].percent,
+        30.0
+    );
+}
+
+#[tokio::test]
+async fn a_panicking_check_answers_an_error_and_the_next_click_runs_again() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let book = Arc::clone(service.usage_book());
+
+    let broken = || -> CheckRun { panic!("the check broke") };
+    let failed = book.join_or_start("default", async move { broken() }).await;
+    let again = book
+        .join_or_start("default", async { ran(checked("default", 30.0)) })
+        .await;
+
+    assert_eq!(failed.status, AntigravityUsageStatus::Error);
+    assert_eq!(
+        failed.message.as_deref(),
+        Some("The usage check stopped before it finished.")
+    );
+    assert_eq!(again, checked("default", 30.0));
+    assert_eq!(service.usage_checks_started(), 2);
+}
+
+#[tokio::test]
+async fn a_check_that_finishes_after_its_account_was_forgotten_is_not_kept() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let book = Arc::clone(service.usage_book());
+    let (release, released) = tokio::sync::oneshot::channel::<()>();
+    let running = book.join_or_start("default", async move {
+        released.await.unwrap();
+        ran_with_tier(checked("default", 9.0), Some("Google AI Pro"))
     });
-    service.usage_probe = Arc::clone(&gate) as Arc<dyn AntigravityUsageProbe>;
-    {
-        let first = service.accounts_usage(true);
-        tokio::pin!(first);
-        for _ in 0..50 {
-            if gate.hits.load(std::sync::atomic::Ordering::SeqCst) >= 1 {
-                break;
-            }
-            tokio::select! {
-                result = &mut first => panic!("probe finished before cancel: {result:?}"),
-                () = tokio::task::yield_now() => {}
-            }
-        }
-    }
-    drop(guard);
-    for _ in 0..50 {
-        if !service.usage_cache.lock().is_empty() {
-            break;
-        }
-        tokio::task::yield_now().await;
-    }
-    assert!(!service.usage_cache.lock().is_empty());
-    let again = service.accounts_usage(true).await.unwrap();
-    assert_eq!(again.len(), 1);
-    assert_eq!(gate.hits.load(std::sync::atomic::Ordering::SeqCst), 1);
-}
 
-#[tokio::test]
-async fn a_recent_attempt_is_not_probed_again() {
-    let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    service.usage_probe = Arc::new(SignsOut);
-    service.usage_cache.lock().insert(
-        "default".to_string(),
-        CachedUsage {
-            usage: AntigravityAccountUsage {
-                account_id: "default".to_string(),
-                status: AntigravityUsageStatus::Ok,
-                plan_type: Some("Google AI Pro".to_string()),
-                windows: vec![],
-                checked_at: 0,
-                message: None,
-            },
-            attempted_at: chrono::Utc::now().timestamp_millis(),
-        },
+    book.forget("default");
+    release.send(()).unwrap();
+
+    assert_eq!(
+        running.await,
+        with_plan(checked("default", 9.0), "Google AI Pro")
     );
-    let usage = service.accounts_usage(true).await.unwrap();
-    assert_eq!(usage[0].status, AntigravityUsageStatus::Ok);
-    assert_eq!(usage[0].plan_type.as_deref(), Some("Google AI Pro"));
-}
-
-/// Records whether each probe was for the built-in Account.
-struct Builtins(parking_lot::Mutex<Vec<bool>>);
-
-#[async_trait::async_trait]
-impl AntigravityUsageProbe for Builtins {
-    async fn probe(&self, _home: &Path, builtin: bool) -> ProbeVerdict {
-        self.0.lock().push(builtin);
-        ProbeVerdict::SignedOut
-    }
+    assert!(!book.entries.lock().contains_key("default"));
+    let read = &service.accounts_usage().unwrap()[0];
+    assert_eq!(read.status, AntigravityUsageStatus::NotChecked);
+    assert_eq!(read.plan_type, None);
 }
 
 #[tokio::test]
-async fn only_the_builtin_account_is_probed_as_the_host_home() {
+async fn a_check_answers_with_the_tier_its_session_named_or_the_one_kept_before() {
     let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    store.add("Work").unwrap();
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    let probe = Arc::new(Builtins(parking_lot::Mutex::new(Vec::new())));
-    service.usage_probe = Arc::clone(&probe) as Arc<dyn AntigravityUsageProbe>;
-    let usage = service.accounts_usage(false).await.unwrap();
-    assert_eq!(usage.len(), 2);
-    assert!(usage
-        .iter()
-        .all(|read| read.status == AntigravityUsageStatus::SignedOut));
-    let mut seen = probe.0.lock().clone();
-    seen.sort_unstable();
-    assert_eq!(seen, [false, true]);
-}
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let book = Arc::clone(service.usage_book());
+    book.record_tier("default", Some("Google AI Pro".to_string()));
 
-/// A sign-in after a `signed_out` read: the next list sees the login, so the
-/// stale read is dropped and the usage is probed again instead of showing the
-/// Account signed out until the cache expires.
-#[tokio::test]
-async fn a_sign_in_replaces_a_recent_signed_out_read() {
-    let root = tempfile::tempdir().unwrap();
-    let state = root.path().join("state");
-    let store = Arc::new(AntigravityAccountStore::new(
-        &state,
-        root.path().join("shared"),
-    ));
-    let mut service = AntigravityAgentService::with_probe(store, Arc::new(SignedIn));
-    service.usage_probe = Arc::new(Boom);
-    let now = chrono::Utc::now().timestamp_millis();
-    service.usage_cache.lock().insert(
-        "default".to_string(),
-        CachedUsage {
-            usage: AntigravityAccountUsage {
-                account_id: "default".to_string(),
-                status: AntigravityUsageStatus::SignedOut,
-                plan_type: None,
-                windows: vec![],
-                checked_at: now,
-                message: None,
-            },
-            attempted_at: now,
-        },
+    let before_session = book
+        .join_or_start("default", async { ran(checked("default", 9.0)) })
+        .await;
+    let renamed = book
+        .join_or_start("default", async {
+            ran_with_tier(checked("default", 30.0), Some("Google AI Ultra"))
+        })
+        .await;
+    let cleared = book
+        .join_or_start("default", async {
+            ran_with_tier(checked("default", 40.0), None)
+        })
+        .await;
+
+    assert_eq!(
+        before_session,
+        with_plan(checked("default", 9.0), "Google AI Pro")
     );
-    let snapshot = service.accounts_snapshot().await.unwrap();
-    assert_eq!(snapshot.profiles[0].signed_in, Some(true));
-    let usage = service.accounts_usage(true).await.unwrap();
-    assert_eq!(usage.len(), 1);
-    assert_eq!(usage[0].status, AntigravityUsageStatus::Error);
+    assert_eq!(
+        renamed,
+        with_plan(checked("default", 30.0), "Google AI Ultra")
+    );
+    assert_eq!(cleared, checked("default", 40.0));
+    assert_eq!(service.accounts_usage().unwrap()[0].plan_type, None);
+}
+
+#[tokio::test]
+async fn a_login_change_drops_the_tier_and_the_last_check() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let book = Arc::clone(service.usage_book());
+    book.observe_login("default", Some(true));
+    book.record_tier("default", Some("Google AI Pro".to_string()));
+    book.join_or_start("default", async { ran(checked("default", 9.0)) })
+        .await;
+
+    book.observe_login("default", None);
+    book.observe_login("default", Some(true));
+    let kept = &service.accounts_usage().unwrap()[0];
+    assert_eq!(kept.status, AntigravityUsageStatus::Ok);
+    assert_eq!(kept.plan_type.as_deref(), Some("Google AI Pro"));
+
+    book.observe_login("default", Some(false));
+    let dropped = &service.accounts_usage().unwrap()[0];
+    assert_eq!(dropped.status, AntigravityUsageStatus::NotChecked);
+    assert_eq!(dropped.plan_type, None);
+}
+
+#[tokio::test]
+async fn removing_an_account_drops_its_entry() {
+    let root = tempfile::tempdir().unwrap();
+    let service = AntigravityAgentService::with_logins_for_test(root.path(), &[]);
+    let work = service.insert_profile("Work").unwrap().id;
+    service
+        .usage_book()
+        .record_tier(&work, Some("Google AI Pro".to_string()));
+
+    service.remove_account(&work).await.unwrap();
+
+    assert!(!service.usage_book().entries.lock().contains_key(&work));
 }

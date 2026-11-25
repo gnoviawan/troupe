@@ -15,7 +15,7 @@ name: Rune
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*"]
+    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*"]
     paths:
       - '.github/workflows/rune.yml'
       - 'apps/rune/**'
@@ -26,6 +26,15 @@ on:
       # staleness test on its own PR; record.ts checks this list is complete.
       - 'src/renderer/components/chat/agent-model-selector/selector-model.ts'
       - 'src/renderer/components/chat/background-commands.ts'
+      - 'src/renderer/components/chat/chat-attachments.ts'
+      - 'src/renderer/components/chat/composer-send-blocks.ts'
+      - 'src/renderer/components/chat/use-chat-composer.ts'
+      - 'src/renderer/lib/composer/**'
+      - 'src/renderer/lib/conversation-envelope.ts'
+      - 'src/renderer/lib/media-kind.ts'
+      - 'src/renderer/lib/path-basename.ts'
+      - 'src/renderer/lib/skill-tokens.ts'
+      - 'src/renderer/lib/skills-prompt.ts'
       - 'src/renderer/components/chat/chat-input-bar-config.ts'
       - 'src/renderer/components/chat/handoff-summary.ts'
       - 'src/renderer/components/chat/subagent-strip.ts'
@@ -72,6 +81,11 @@ on:
       - 'src/renderer/lib/acp-transport/tauri-verdicts.ts'
       - 'src/renderer/lib/agents/acp-registry.ts'
       - 'src/renderer/stores/acp-store/slices/mcp.ts'
+      - 'src/renderer/stores/acp-store/slices/misc.ts'
+      - 'src/renderer/stores/acp-store/slices/switch.ts'
+      - 'src/renderer/stores/acp-store/registry-mcp-fingerprints.ts'
+      - 'src/renderer/stores/acp-store/ephemeral-ids.ts'
+      - 'src/renderer/stores/acp-store/slices/prompt-reconcile.ts'
       - 'src/renderer/stores/acp-store/slices/prompt.ts'
       - 'src/renderer/stores/acp-store/slices/session.ts'
       - 'src/renderer/stores/acp-store/slices/transcript.ts'
@@ -286,9 +300,9 @@ jobs:
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/dev' }}
 
-      - name: Check client (wasm32)
+      - name: Check client and the terminal model (wasm32)
         working-directory: apps/rune
-        run: cargo check --target wasm32-unknown-unknown -p client
+        run: cargo check --target wasm32-unknown-unknown -p client -p troupe-term
 
       # Off Unix the live driver is a no-op; this proves it still builds.
       - name: Check hello with the live driver (wasm32)

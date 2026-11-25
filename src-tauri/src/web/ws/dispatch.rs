@@ -204,7 +204,8 @@ pub(super) async fn route_request(req: WsRequest, env: &HandlerEnv) -> WsReply {
         }
         // Antigravity Accounts: the Codex Account surface for Google logins.
         "list_antigravity_accounts" => handle_list_antigravity_accounts(id, acp).await,
-        "list_antigravity_usage" => handle_list_antigravity_usage(id, &req.payload, acp).await,
+        "list_antigravity_usage" => handle_list_antigravity_usage(id, acp),
+        "check_antigravity_usage" => handle_check_antigravity_usage(id, &req.payload, acp).await,
         "set_default_antigravity_account" => {
             handle_set_default_antigravity_account(id, &req.payload, acp).await
         }

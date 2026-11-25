@@ -2131,7 +2131,11 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
       // conversations their transcript again. No skill paths are at hand here,
       // so a skill pill reads `(name)`. The original (token) blocks stay as the
       // display so the timeline keeps chips.
-      const wireBlocks = await retryWireBlocks(lastUserBlocks, [])
+      const wireBlocks = await retryWireBlocks(
+        lastUserBlocks,
+        [],
+        get().sessions[sessionId]?.projectId
+      )
       const only = wireBlocks.length === 1 ? wireBlocks[0] : null
       await runPromptTurn(
         set,

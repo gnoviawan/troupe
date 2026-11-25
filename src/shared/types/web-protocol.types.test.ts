@@ -95,8 +95,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     expect(WS_REQUEST_TYPES).toContain('get_session_payload')
   })
 
-  it('exports exactly 102 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, and the agent overlay', () => {
-    expect(WS_REQUEST_TYPES).toHaveLength(102)
+  it('exports exactly 103 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, the Antigravity usage check, and the agent overlay', () => {
+    expect(WS_REQUEST_TYPES).toHaveLength(103)
     const expected = [
       'send_prompt',
       'cancel_prompt',
@@ -205,6 +205,7 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
       'start_codex_account_login',
       'list_antigravity_accounts',
       'list_antigravity_usage',
+      'check_antigravity_usage',
       'set_default_antigravity_account',
       'set_project_antigravity_account',
       'set_chat_antigravity_account',

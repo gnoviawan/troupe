@@ -79,8 +79,7 @@ export const useSuggestAutomations = () =>
   useAppSettingsStore((state) => state.settings.suggestAutomations !== false)
 export const useConfirmTerminalClose = () =>
   useAppSettingsStore((state) => state.settings.confirmTerminalClose)
-export const useTerminalUrlOpenMode = () =>
-  useAppSettingsStore((state) => state.settings.terminalUrlOpenMode)
+export const useLinkOpenMode = () => useAppSettingsStore((state) => state.settings.linkOpenMode)
 export const useColorTheme = () => useAppSettingsStore((state) => state.settings.colorTheme)
 export const useAppearanceMode = () => useAppSettingsStore((state) => state.settings.appearanceMode)
 export const useUiZoomLevel = () => useAppSettingsStore((state) => state.settings.uiZoomLevel)

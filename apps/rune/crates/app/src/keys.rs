@@ -108,8 +108,20 @@ pub fn on_key(s: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
         record(s, key);
         return true;
     }
+    if matches!(key.key, Key::Escape) && s.close_top() {
+        return true;
+    }
+    if matches!(key.key, Key::Escape) && s.close_focused_find(tx) {
+        return true;
+    }
+    if matches!(key.key, Key::Escape) && s.close_terminal_assist() {
+        return true;
+    }
+    if s.question_key(key) {
+        return true;
+    }
     if matches!(key.key, Key::Escape) {
-        return s.close_top();
+        return false;
     }
     let Some(chord) = chord(key, s.shortcuts.platform) else {
         return false;
@@ -199,6 +211,12 @@ impl State {
                 self.layout_step(Layout::SetSidePanelVisible(json!(!visible)));
             }
             "colorThemePicker" => self.open_theme_picker(),
+            "commandHistory" => self.open_command_history(),
+            "terminalSearch" => {
+                if !self.open_terminal_find(tx) {
+                    self.toast_later(&label);
+                }
+            }
             "newProject" => self.overlays.open(crate::rail::NEW_PROJECT),
             "zoomIn" => self.set_zoom(self.zoom.zoom_in()),
             "zoomOut" => self.set_zoom(self.zoom.zoom_out()),

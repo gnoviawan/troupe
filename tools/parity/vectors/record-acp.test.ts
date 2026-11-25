@@ -10,6 +10,7 @@ import {
   emit,
   factoryKey,
   heldReplies,
+  hostPayloads,
   type Manifest,
   manifestEntry,
   mcpReplies,
@@ -81,7 +82,13 @@ vi.mock(`${renderer}/lib/acp-history-persistence`, async (importOriginal) => {
       emit({ kind: 'readSessionPayload', sessionId: id })
       return answer(sessionPayloads.get(id) ?? null)
     },
-    loadSessionPayloadTail: async () => null
+    loadSessionPayloadTail: async () => null,
+    // The host re-read is the model's `reloadSessionPayload` effect; it
+    // answers `context.hostPayloads`.
+    reloadSessionPayloadFromHost: (id: string) => {
+      emit({ kind: 'reloadSessionPayload', sessionId: id })
+      return answer(hostPayloads.get(id) ?? null)
+    }
   }
 })
 vi.mock(`${renderer}/lib/acp-agents-persistence`, async (importOriginal) => ({
@@ -109,12 +116,18 @@ vi.mock(`${renderer}/lib/api`, async (importOriginal) => ({
     read: async () => ({ success: false }),
     write: async () => ({ success: true }),
     writeDebounced: async () => ({ success: true }),
-    delete: async () => ({ success: true }),
+    // A delete is the model's `deletePersisted` effect.
+    delete: async (key: string) => {
+      emit({ kind: 'deletePersisted', key })
+      return { success: true }
+    },
     flushPendingWrites: async () => undefined
   }
 }))
-// One tree holds a chat tab per `context.openChatTabs` session; the index
-// prune's tab removal is the model's `closeChatTab` effect.
+// One pane holds a chat tab per `context.openChatTabs` session, none of them
+// active; the index prune's tab removal is the model's `closeChatTab` effect,
+// a tab brought forward its `revealChatTab`, and a remapped tab its
+// `remapChatTab`.
 vi.mock(`${renderer}/stores/workspace-store`, () => ({
   getAllLeafPanes: () => [
     {
@@ -126,19 +139,17 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
     }
   ],
   getAllTreeRoots: () => [{}],
-  // A consent ticket asks for its chat tab; the vector keeps the ask, as the
-  // model's `revealChatTab` effect, and finds no pane.
-  findPaneContainingTab: (_root: unknown, tabId: string) => {
-    emit({ kind: 'revealChatTab', sessionId: tabId.replace(/^chat-/, '') })
-    return null
-  },
+  findPaneContainingTab: (_root: unknown, tabId: string) =>
+    openChatTabs.has(tabId.replace(/^chat-/, ''))
+      ? { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
+      : null,
   agentChatTabId: (sessionId: string) => `chat-${sessionId}`,
   browserTabId: (tabId: string) => `browser-${tabId}`,
   getAgentChatSessionIdsInAllTrees: () => new Set(openChatTabs),
   useWorkspaceStore: {
     subscribe: () => () => {},
     getState: () => ({
-      addAgentChatTab: () => {},
+      addAgentChatTab: (sessionId: string) => emit({ kind: 'revealChatTab', sessionId }),
       // An agent's browser tab opens and closes as one workspace effect; the
       // browser session store beside it follows the tab.
       openAgentBrowserTab: (tabId: string, url?: string) =>
@@ -147,7 +158,11 @@ vi.mock(`${renderer}/stores/workspace-store`, () => ({
         tabId.startsWith('browser-')
           ? emit({ kind: 'closeAgentBrowserTab', tabId: tabId.replace(/^browser-/, '') })
           : emit({ kind: 'closeChatTab', sessionId: tabId.replace(/^chat-/, '') }),
-      remapAgentChatSession: () => {},
+      remapAgentChatSession: (from: string, to: string) => {
+        openChatTabs.delete(from)
+        openChatTabs.add(to)
+        emit({ kind: 'remapChatTab', from, to })
+      },
       root: { type: 'leaf', id: 'pane-1', tabs: [], activeTabId: null }
     })
   }
@@ -161,9 +176,17 @@ vi.mock(`${renderer}/stores/browser-control-store`, () => ({
     getState: () => ({
       trackAgentTab: (tabId: string, sessionId: string) =>
         emit({ kind: 'trackAgentTab', tabId, sessionId }),
-      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId })
+      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId }),
+      setStopped: (sessionId: string, stopped: boolean) =>
+        emit({ kind: 'setBrowserStopped', sessionId, stopped })
     })
   }
+}))
+// A consent answer is an agent command; its reply is the answer's result.
+vi.mock(`${renderer}/lib/browser-consent-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  answerBrowserConsent: (ticket: { requestId: string }, optionId: string, agentId: string) =>
+    agentCommand({ kind: 'answerBrowserConsent', requestId: ticket.requestId, optionId, agentId })
 }))
 // The roster watch hands policy and automation hints to their own modules.
 vi.mock(`${renderer}/lib/browser-policy-api`, async (importOriginal) => ({
@@ -225,6 +248,9 @@ function dispatchPrompt(
     return Promise.reject(new Error('ACP_TURN_IN_PROGRESS: a prompt turn is already in progress'))
   }
   if ('error' in fields) return Promise.reject(new Error(String(fields.error)))
+  if ('uncertain' in fields) {
+    return Promise.reject(new AcpTransportError(String(fields.uncertain), 'connection lost'))
+  }
   if ('agentDead' in fields) {
     return Promise.reject(new Error('agent thread is no longer running'))
   }
@@ -310,10 +336,18 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
   return {
     ...actual,
     answerMcpInstall: (request: unknown) => mcpCommand({ kind: 'answerMcpInstall', request }),
+    // The durable switch marker answers the next `context.agentReplies` entry.
+    acpRecordAgentSwitch: (sessionId: string, marker: unknown) =>
+      agentCommand({ kind: 'recordAgentSwitch', sessionId, marker }),
     acpApi: {
       ...actual.acpApi,
-      sendPrompt: (agentId: string, sessionId: string, text: string, turnId: string) =>
-        dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId),
+      sendPrompt: (
+        agentId: string,
+        sessionId: string,
+        text: string,
+        turnId: string,
+        displayBlocks?: unknown[]
+      ) => dispatchPrompt(agentId, sessionId, [{ type: 'text', text }], turnId, displayBlocks),
       sendPromptBlocks: dispatchPrompt,
       spawnAgent: (config: unknown, projectId: unknown, sessionId?: string) =>
         agentCommand({
@@ -331,6 +365,55 @@ vi.mock(`${renderer}/lib/acp-api`, async (importOriginal) => {
           ...(cursor === undefined ? {} : { cursor }),
           ...(projectId === undefined ? {} : { projectId })
         }),
+      // The `kind` option is `sessionKind`: `kind` names the effect.
+      newSession: (
+        agentId: string,
+        cwd: string,
+        mcpServers: unknown[],
+        { kind, ...options }: Record<string, unknown> = {}
+      ) =>
+        agentCommand({
+          kind: 'newSession',
+          agentId,
+          cwd,
+          mcpServers,
+          ...options,
+          ...(kind === undefined ? {} : { sessionKind: kind })
+        }),
+      loadSession: (
+        agentId: string,
+        sessionId: string,
+        cwd: string,
+        additionalDirectories: unknown[],
+        mcpServers: unknown[]
+      ) =>
+        agentCommand({
+          kind: 'loadSession',
+          agentId,
+          sessionId,
+          cwd,
+          additionalDirectories,
+          mcpServers
+        }),
+      resumeSession: (
+        agentId: string,
+        sessionId: string,
+        cwd: string,
+        additionalDirectories: unknown[],
+        mcpServers: unknown[]
+      ) =>
+        agentCommand({
+          kind: 'resumeSession',
+          agentId,
+          sessionId,
+          cwd,
+          additionalDirectories,
+          mcpServers
+        }),
+      promoteSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'promoteSession', agentId, sessionId }),
+      disposeEphemeralSession: (agentId: string, sessionId: string) =>
+        agentCommand({ kind: 'disposeEphemeralSession', agentId, sessionId }),
       importAgentSession: (input: Record<string, unknown>) =>
         agentCommand({ kind: 'importAgentSession', ...input }),
       closeSession: (agentId: string, sessionId: string) =>
