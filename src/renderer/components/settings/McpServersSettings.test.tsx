@@ -564,8 +564,81 @@ describe('McpServersSettings', () => {
           'OAuth flow failed. Check your browser for the authorization page.'
         )
       )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Discovery failed', 'OAUTH_DISCOVERY_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Could not discover OAuth settings for this MCP server. Check the server URL and try again.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Registration failed', 'OAUTH_REGISTRATION_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'This MCP server rejected OAuth client registration or does not support dynamic client registration.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(new McpOAuthError('Denied', 'OAUTH_DENIED'))
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Sign-in was cancelled or denied by the authorization server.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Exchange failed', 'OAUTH_EXCHANGE_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Authorization completed, but exchanging the token failed. Try connecting again.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(new McpOAuthError('Timed out', 'OAUTH_TIMEOUT'))
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Sign-in timed out before authorization completed. Try connecting again.'
+        )
+      )
     } finally {
       useAcpStore.setState({ connectMcpOAuth: realConnect, checkMcpOAuthStatus: realCheck })
+    }
+  })
+
+  it('keeps Connect visible when probe reports authRequired even if a stale token is stored', () => {
+    const { checkMcpOAuthStatus: realCheck } = useAcpStore.getState()
+    useAcpStore.setState({
+      mcpServers: [
+        {
+          id: 's-stale',
+          type: 'http',
+          name: 'Craftwork',
+          url: 'https://craftwork.design/api/mcp',
+          enabled: true
+        }
+      ],
+      mcpProbeStatus: { 's-stale': 'authRequired' },
+      mcpOAuthConnected: { 's-stale': true },
+      checkMcpOAuthStatus: vi.fn(async () => {})
+    })
+    try {
+      render(<McpServersSettings />)
+      expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Craftwork' }))
+      expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+      expect(screen.getByText('OAuth · sign-in expired')).toBeInTheDocument()
+    } finally {
+      useAcpStore.setState({ checkMcpOAuthStatus: realCheck, mcpOAuthConnected: {} })
     }
   })
 

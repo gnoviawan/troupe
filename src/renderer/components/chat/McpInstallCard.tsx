@@ -7,11 +7,14 @@ import {
   McpInstallForm,
   splitInstallValues
 } from '@/components/settings/McpInstallForm'
+import { oauthFailureMessage } from '@/components/settings/McpServersSettings'
 import { Button } from '@/components/ui/button'
 import { logFrontendError } from '@/lib/log-api'
 import type { PendingMcpInstall } from '@/lib/mcp-install-request'
+import { isTauriContext } from '@/lib/tauri-runtime'
 import { cn } from '@/lib/utils'
 import { useAcpStore } from '@/stores/acp-store'
+import { useProjectStore } from '@/stores/project-store'
 import { CHAT_GUTTER_X, PROMPT_PANEL_CLASS, QUESTION_PANEL_MAX_H } from './chat-layout'
 
 interface McpInstallCardProps {
@@ -27,6 +30,16 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
   const answer = useAcpStore((s) => s.answerMcpInstall)
   const dismiss = useAcpStore((s) => s.dismissMcpInstall)
   const connect = useAcpStore((s) => s.connectMcpOAuth)
+  const loadMcpServers = useAcpStore((s) => s.loadMcpServers)
+  const mcpServers = useAcpStore((s) => s.mcpServers)
+  const resultServerId = install.result?.serverId
+  const oauthConnecting = useAcpStore((s) =>
+    Boolean(resultServerId && s.mcpOAuthConnecting?.[resultServerId])
+  )
+  const oauthConnected = useAcpStore((s) =>
+    Boolean(resultServerId && s.mcpOAuthConnected?.[resultServerId])
+  )
+  const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const [values, setValues] = useState(() => initialInstallValues(install.form.fields))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const valuesRef = useRef(values)
@@ -81,14 +94,43 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
     })
   }
 
-  const signIn = (): void => {
+  const signIn = async (): Promise<void> => {
     const serverId = install.result?.serverId
-    if (!serverId || projectId === null) return
-    void connect(projectId, serverId)
-      .then((connected) => {
-        if (connected) toast.success(`Connected to ${install.name}`)
+    if (!serverId || oauthConnecting) return
+    const targetProjectId = projectId || activeProjectId || (isTauriContext() ? '' : null)
+    if (targetProjectId === null) {
+      void logFrontendError({
+        level: 'warn',
+        source: 'chat.McpInstallCard',
+        message: 'mcp install sign-in skipped: no active project id on web'
       })
-      .catch(() => toast.error('Could not start sign-in. Try again from Settings.'))
+      toast.error('Select a project or sign in from Settings.')
+      return
+    }
+    try {
+      if (Array.isArray(mcpServers) && !mcpServers.some((server) => server.id === serverId)) {
+        await loadMcpServers?.()
+      }
+      const latestServers = useAcpStore.getState?.().mcpServers
+      if (Array.isArray(latestServers) && !latestServers.some((server) => server.id === serverId)) {
+        void logFrontendError({
+          level: 'warn',
+          source: 'chat.McpInstallCard',
+          message: 'mcp install sign-in aborted: installed server not yet in registry'
+        })
+        toast.error('Could not find the installed server yet. Open Settings to connect.')
+        return
+      }
+      const connected = await connect(targetProjectId, serverId)
+      if (connected) toast.success(`Connected to ${install.name}`)
+    } catch (error: unknown) {
+      void logFrontendError({
+        level: 'warn',
+        source: 'chat.McpInstallCard',
+        message: `mcp install sign-in failed (${error instanceof Error ? error.name : 'error'})`
+      })
+      toast.error(oauthFailureMessage(error))
+    }
   }
 
   const result = install.result
@@ -149,10 +191,13 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
           {result ? (
             <>
-              {result.oauth && result.serverId && (
-                <Button type="button" onClick={signIn}>
-                  Sign in
+              {result.oauth && result.serverId && !oauthConnected && (
+                <Button type="button" disabled={oauthConnecting} onClick={() => void signIn()}>
+                  {oauthConnecting ? 'Signing in…' : 'Sign in'}
                 </Button>
+              )}
+              {result.oauth && oauthConnected && (
+                <span className="text-xs font-medium text-muted-foreground">Signed in</span>
               )}
               <Button type="button" variant="outline" onClick={() => dismiss(install.requestId)}>
                 Dismiss

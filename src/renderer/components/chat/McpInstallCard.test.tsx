@@ -1,20 +1,71 @@
 import type { McpConsentView, McpInstallForm } from '@shared/types/mcp-install.types'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { McpOAuthError } from '@/lib/acp-api'
 import type { PendingMcpInstall } from '@/lib/mcp-install-request'
 
-const { answer, dismiss, connect, logFrontendError } = vi.hoisted(() => ({
-  answer: vi.fn(async () => {}),
-  dismiss: vi.fn(),
-  connect: vi.fn(async () => true),
-  logFrontendError: vi.fn()
-}))
+const {
+  answer,
+  dismiss,
+  connect,
+  loadMcpServers,
+  logFrontendError,
+  toastError,
+  toastSuccess,
+  isTauriContext,
+  storeState,
+  projectState
+} = vi.hoisted(() => {
+  const answer = vi.fn(async () => {})
+  const dismiss = vi.fn()
+  const connect = vi.fn(async () => true)
+  const loadMcpServers = vi.fn(async () => {})
+  const logFrontendError = vi.fn()
+  const toastError = vi.fn()
+  const toastSuccess = vi.fn()
+  const isTauriContext = vi.fn(() => false)
+  const storeState: {
+    answerMcpInstall: typeof answer
+    dismissMcpInstall: typeof dismiss
+    connectMcpOAuth: typeof connect
+    loadMcpServers: typeof loadMcpServers
+    mcpServers: Array<{ id: string; name: string }>
+    mcpOAuthConnecting: Record<string, boolean>
+    mcpOAuthConnected: Record<string, boolean>
+  } = {
+    answerMcpInstall: answer,
+    dismissMcpInstall: dismiss,
+    connectMcpOAuth: connect,
+    loadMcpServers,
+    mcpServers: [{ id: 'srv-1', name: 'keys' }],
+    mcpOAuthConnecting: {},
+    mcpOAuthConnected: {}
+  }
+  const projectState: { activeProjectId: string } = { activeProjectId: '' }
+  return {
+    answer,
+    dismiss,
+    connect,
+    loadMcpServers,
+    logFrontendError,
+    toastError,
+    toastSuccess,
+    isTauriContext,
+    storeState,
+    projectState
+  }
+})
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('sonner', () => ({ toast: { error: toastError, success: toastSuccess } }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError }))
+vi.mock('@/lib/tauri-runtime', () => ({ isTauriContext }))
+vi.mock('@/stores/project-store', () => ({
+  useProjectStore: (sel: (s: typeof projectState) => unknown) => sel(projectState)
+}))
 vi.mock('@/stores/acp-store', () => ({
-  useAcpStore: (sel: (s: unknown) => unknown) =>
-    sel({ answerMcpInstall: answer, dismissMcpInstall: dismiss, connectMcpOAuth: connect })
+  useAcpStore: Object.assign((sel: (s: typeof storeState) => unknown) => sel(storeState), {
+    getState: () => storeState
+  })
 }))
 
 import { McpInstallCard } from './McpInstallCard'
@@ -85,7 +136,15 @@ describe('McpInstallCard', () => {
     answer.mockReset().mockResolvedValue(undefined)
     dismiss.mockReset()
     connect.mockReset().mockResolvedValue(true)
+    loadMcpServers.mockReset().mockResolvedValue(undefined)
     logFrontendError.mockReset()
+    toastError.mockReset()
+    toastSuccess.mockReset()
+    isTauriContext.mockReset().mockReturnValue(false)
+    storeState.mcpServers = [{ id: 'srv-1', name: 'keys' }]
+    storeState.mcpOAuthConnecting = {}
+    storeState.mcpOAuthConnected = {}
+    projectState.activeProjectId = ''
   })
 
   it('shows the server, the URL, and the secret field', () => {
@@ -210,5 +269,110 @@ describe('McpInstallCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(connect).toHaveBeenCalledWith('project-1', 'srv-1')
     expect(screen.queryByDisplayValue(SECRET)).not.toBeInTheDocument()
+  })
+
+  it('reloads mcpServers before sign-in when the newly installed server is not yet in store', async () => {
+    storeState.mcpServers = []
+    loadMcpServers.mockImplementationOnce(async () => {
+      storeState.mcpServers = [{ id: 'srv-1', name: 'keys' }]
+    })
+    render(
+      <McpInstallCard
+        projectId="project-1"
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(loadMcpServers).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(connect).toHaveBeenCalledWith('project-1', 'srv-1'))
+  })
+
+  it('falls back to activeProjectId or desktop empty projectId when session projectId is null', async () => {
+    isTauriContext.mockReturnValue(true)
+    render(
+      <McpInstallCard
+        projectId={null}
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(connect).toHaveBeenCalledWith('', 'srv-1'))
+  })
+
+  it('disables Sign in while connecting, shows Signed in once connected, and surfaces oauthFailureMessage', async () => {
+    storeState.mcpOAuthConnecting = { 'srv-1': true }
+    const { rerender } = render(
+      <McpInstallCard
+        projectId="project-1"
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Signing in…' })).toBeDisabled()
+
+    storeState.mcpOAuthConnecting = {}
+    connect.mockRejectedValueOnce(new McpOAuthError('exchange failed', 'OAUTH_EXCHANGE_FAILED'))
+    rerender(
+      <McpInstallCard
+        projectId="project-1"
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith(
+        'Authorization completed, but exchanging the token failed. Try connecting again.'
+      )
+    )
+    expect(logFrontendError).toHaveBeenCalled()
+
+    storeState.mcpOAuthConnected = { 'srv-1': true }
+    rerender(
+      <McpInstallCard
+        projectId="project-1"
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    expect(screen.queryByRole('button', { name: 'Sign in' })).not.toBeInTheDocument()
+    expect(screen.getByText('Signed in')).toBeInTheDocument()
   })
 })

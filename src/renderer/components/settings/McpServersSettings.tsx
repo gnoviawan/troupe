@@ -17,8 +17,23 @@ import { useProjectStore } from '@/stores/project-store'
 import { mcpServerIsRemote, mcpServerStatus, mcpToolCount } from './mcp-server-view'
 
 export function oauthFailureMessage(error: unknown): string {
-  if (error instanceof McpOAuthError && error.code === MCP_UNSAFE_URL) {
-    return "This server's sign-in link isn't a secure https link, so Troupe didn't open it."
+  if (error instanceof McpOAuthError) {
+    switch (error.code) {
+      case MCP_UNSAFE_URL:
+        return "This server's sign-in link isn't a secure https link, so Troupe didn't open it."
+      case 'OAUTH_DISCOVERY_FAILED':
+        return 'Could not discover OAuth settings for this MCP server. Check the server URL and try again.'
+      case 'OAUTH_REGISTRATION_FAILED':
+        return 'This MCP server rejected OAuth client registration or does not support dynamic client registration.'
+      case 'OAUTH_DENIED':
+        return 'Sign-in was cancelled or denied by the authorization server.'
+      case 'OAUTH_EXCHANGE_FAILED':
+        return 'Authorization completed, but exchanging the token failed. Try connecting again.'
+      case 'OAUTH_TIMEOUT':
+        return 'Sign-in timed out before authorization completed. Try connecting again.'
+      case 'UNAUTHORIZED_SERVER_URL':
+        return 'This MCP server is not enabled in the host server list. Save or enable it, then try again.'
+    }
   }
   return 'OAuth flow failed. Check your browser for the authorization page.'
 }
@@ -217,14 +232,13 @@ export function McpServersSettings({
             {servers.map((server) => {
               const probeStatus = mcpProbeStatus[server.id]
               const enabled = server.enabled !== false
-              const oauthConnected = Boolean(mcpOAuthConnected[server.id])
               return (
                 <McpServerCard
                   key={server.id}
                   server={server}
                   status={statusOf(server)}
                   toolCount={mcpToolCount(mcpTools[server.id])}
-                  canConnect={enabled && probeStatus === 'authRequired' && !oauthConnected}
+                  canConnect={enabled && probeStatus === 'authRequired'}
                   connecting={Boolean(mcpOAuthConnecting[server.id])}
                   onConnect={() => connect(server)}
                   canRetry={enabled && probeStatus === 'disconnected' && !mcpProbing[server.id]}
