@@ -28,6 +28,9 @@ pub enum TermEvent {
     Link(Output),
 }
 
+/// What React writes after a replay that lost output (`web-terminal-api.ts`).
+const GAP_MARKER: &str = "\x1b[33m\r\n[output gap \u{2014} some history was evicted]\r\n\x1b[0m";
+
 /// Calls the link makes on its own (writing the terminal's replies to the PTY) count down
 /// from here, so their replies never meet an app call.
 const OWN_CALLS: CallId = 1 << 62;
@@ -79,9 +82,10 @@ impl Feed {
     fn output(&mut self, output: Output, events: &mut Vec<TermEvent>, writes: &mut Vec<Command>) {
         let (id, reset, bytes) = match output {
             Output::Data { terminal_id, bytes, .. } => (terminal_id, false, bytes),
-            Output::Replay { terminal_id, reset, bytes, gap, .. } => {
+            Output::Replay { terminal_id, reset, mut bytes, gap, .. } => {
                 if gap {
                     log::info!("[term] {terminal_id} replay lost output; the screen may be incomplete");
+                    bytes.extend_from_slice(GAP_MARKER.as_bytes());
                 }
                 (terminal_id, reset, bytes)
             }
@@ -198,8 +202,19 @@ mod imp {
 
     use super::*;
 
+    /// The bytes an output carries for the parser.
+    fn output_len(output: &Output) -> usize {
+        match output {
+            Output::Data { bytes, .. } | Output::Replay { bytes, .. } => bytes.len(),
+            _ => 0,
+        }
+    }
+
     /// Output bytes parsed per frame on the page's one thread.
     const BUDGET: usize = 256 * 1024;
+    /// The most output bytes left waiting for later frames. A frame parses past its budget
+    /// rather than let a flood grow the queue without bound.
+    const MAX_BACKLOG: usize = 4 * 1024 * 1024;
 
     pub struct TermHost {
         driver: WebDriver<terminal::TerminalClient>,
@@ -210,6 +225,8 @@ mod imp {
         feed: Feed,
         /// Output waiting for a frame's parse budget, in arrival order.
         backlog: VecDeque<Output>,
+        /// The output bytes in `backlog`.
+        backlog_bytes: usize,
         armed: Option<f64>,
     }
 
@@ -225,6 +242,7 @@ mod imp {
                 feed: Feed::new(shared.clone()),
                 shared,
                 backlog: VecDeque::new(),
+                backlog_bytes: 0,
                 armed: None,
             }
         }
@@ -244,15 +262,18 @@ mod imp {
                 outputs.extend(self.driver.pump(Some(Event::Command(command)), now));
             }
             outputs.extend(self.driver.pump(None, now));
+            self.backlog_bytes += outputs.iter().map(output_len).sum::<usize>();
             self.backlog.extend(outputs);
             let (mut events, mut writes, mut spent) = (Vec::new(), Vec::new(), 0);
-            while spent < BUDGET {
+            while spent < BUDGET || self.backlog_bytes > MAX_BACKLOG {
                 let Some(output) = self.backlog.pop_front() else { break };
-                spent += match &output {
-                    Output::Data { bytes, .. } | Output::Replay { bytes, .. } => bytes.len(),
-                    _ => 0,
-                };
+                let len = output_len(&output);
+                spent += len;
+                self.backlog_bytes -= len;
                 self.feed.output(output, &mut events, &mut writes);
+            }
+            if spent > BUDGET {
+                log::debug!("[term] parsed {spent} bytes this frame to keep the backlog under {MAX_BACKLOG}");
             }
             for write in writes {
                 self.send(write);
