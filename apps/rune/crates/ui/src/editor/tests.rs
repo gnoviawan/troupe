@@ -91,7 +91,8 @@ fn an_input_method_commit_types_into_the_focused_editor() {
 #[test]
 fn go_to_line_moves_the_caret_and_closes() {
     let mut e = loaded("a\nb\nc\n", None, 1.0);
-    e.key(PATH, &ctrl('g'));
+    // Ctrl, which sets `cmd` too off macOS.
+    e.key(PATH, &key(Key::Command('g'), Mods { ctrl: true, cmd: !cfg!(target_os = "macos"), ..Mods::default() }));
     e.field(PATH, super::Field::GoTo).text = "3".into();
     assert!(e.go_to_line(PATH));
     assert_eq!(e.docs.docs[PATH].editor.line_col(), (3, 1));
