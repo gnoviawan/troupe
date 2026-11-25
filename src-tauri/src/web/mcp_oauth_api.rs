@@ -88,9 +88,8 @@ pub async fn oauth_start(
     }
     // Restrict OAuth discovery to a configured MCP server URL so a web
     // client cannot make the host probe an attacker-selected internal
-    // service, and reuse its configured headers for challenge discovery.
-    let Some(configured_headers) =
-        authorized_mcp_server_headers(state.store.as_deref(), &request.server_url)
+    // service. Use the store's own URL and configured headers downstream.
+    let Some(authorized) = authorized_mcp_server(state.store.as_deref(), &request.server_url)
     else {
         log::warn!(
             "[mcp-oauth] web flow start rejected: server URL not in authorized registry (url redacted)"
@@ -104,8 +103,8 @@ pub async fn oauth_start(
         "{}/oauth/callback",
         state.oauth_base_url.trim_end_matches('/')
     );
-    let token_generation = mcp_oauth::token_generation(&request.server_url);
-    match build_web_auth_url(&request.server_url, &redirect_uri, &configured_headers).await {
+    let token_generation = mcp_oauth::token_generation(&authorized.url);
+    match build_web_auth_url(&authorized.url, &redirect_uri, &authorized.headers).await {
         Ok((auth_url, csrf_token, session)) => {
             let now = Instant::now();
             let mut flows = state.pending_oauth_flows.write();
@@ -113,7 +112,7 @@ pub async fn oauth_start(
             flows.insert(
                 csrf_token,
                 mcp_oauth::PendingOAuthFlow {
-                    server_url: request.server_url.clone(),
+                    server_url: authorized.url,
                     redirect_uri: session.redirect_uri.clone(),
                     session,
                     created_at: now,
@@ -486,23 +485,30 @@ pub async fn oauth_disconnect(
     }
 }
 
-/// Return the configured headers for `server_url` when it is an enabled
-/// HTTP/SSE entry of the host's MCP server list. A host without a store, or
-/// without a matching entry, returns `None` (authorizes none).
-pub(crate) fn authorized_mcp_server_headers(
+/// An enabled HTTP/SSE MCP server resolved from the host's store.
+pub(crate) struct AuthorizedMcpServer {
+    pub url: String,
+    pub headers: Vec<crate::acp::mcp_probe::McpNameValuePair>,
+}
+
+/// Look up `server_url` in the host's MCP server list and return the stored
+/// URL and configured headers when it matches an enabled HTTP/SSE entry.
+/// A host without a store, or without a matching entry, returns `None`.
+pub(crate) fn authorized_mcp_server(
     store: Option<&WebStore>,
     server_url: &str,
-) -> Option<Vec<crate::acp::mcp_probe::McpNameValuePair>> {
+) -> Option<AuthorizedMcpServer> {
     let value = store.and_then(|store| store.peek(STORE_KEY).ok().flatten())?;
     let normalized = server_url.trim_end_matches('/');
     parse_registry(&value).into_iter().find_map(|entry| {
-        let is_match = matches!(entry.config.r#type.as_deref(), Some("http" | "sse"))
-            && entry
-                .config
-                .url
-                .as_deref()
-                .is_some_and(|url| url.trim_end_matches('/') == normalized);
-        is_match.then_some(entry.config.headers)
+        if !matches!(entry.config.r#type.as_deref(), Some("http" | "sse")) {
+            return None;
+        }
+        let stored_url = entry.config.url?;
+        (stored_url.trim_end_matches('/') == normalized).then_some(AuthorizedMcpServer {
+            url: stored_url,
+            headers: entry.config.headers,
+        })
     })
 }
 

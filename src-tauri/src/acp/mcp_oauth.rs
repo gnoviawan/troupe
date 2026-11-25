@@ -336,8 +336,11 @@ pub(crate) async fn probe_www_authenticate(
     server_url: &str,
     headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Option<String> {
+    let url = crate::acp::safe_url::check_safe_url(server_url, crate::acp::safe_url::Opener::Host)
+        .ok()?;
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .ok()?;
     let body = serde_json::json!({
@@ -351,7 +354,7 @@ pub(crate) async fn probe_www_authenticate(
         }
     });
     let mut request = client
-        .post(server_url)
+        .post(url)
         .header(
             reqwest::header::ACCEPT,
             "application/json, text/event-stream",

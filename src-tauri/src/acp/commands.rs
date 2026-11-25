@@ -368,19 +368,23 @@ pub async fn acp_mcp_oauth_start(
     );
 
     // 1. Challenge-aware metadata discovery + PKCE dynamic client registration.
-    //    Forward any configured headers for this server from the host store so
-    //    tenant-scoped servers return the same challenge as `mcp_probe`.
-    let configured_headers = app
+    //    Resolve the stored server URL and configured headers from the host
+    //    store when present so tenant-scoped servers return the same challenge
+    //    as `mcp_probe`.
+    let (target_url, configured_headers) = app
         .try_state::<crate::remote::SharedLiveData>()
         .and_then(|shared| {
-            crate::web::mcp_oauth_api::authorized_mcp_server_headers(
+            crate::web::mcp_oauth_api::authorized_mcp_server(
                 Some(shared.store.as_ref()),
                 &server_url,
             )
         })
-        .unwrap_or_default();
+        .map_or_else(
+            || (server_url.clone(), Vec::new()),
+            |authorized| (authorized.url, authorized.headers),
+        );
     let session = match crate::acp::mcp_oauth::start_authorization_session(
-        &server_url,
+        &target_url,
         &redirect_uri,
         &configured_headers,
     )
@@ -430,7 +434,7 @@ pub async fn acp_mcp_oauth_start(
         listener,
         port,
         &expected_state,
-        &server_url,
+        &target_url,
         session,
         std::time::Duration::from_secs(crate::acp::mcp_oauth::OAUTH_FLOW_TIMEOUT_SECS),
     )
