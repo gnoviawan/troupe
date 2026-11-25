@@ -115,7 +115,9 @@ impl Failure {
 
     fn into_usage(self, account_id: &str, checked_at: i64) -> AntigravityAccountUsage {
         let (status, message) = match self {
-            Self::SignedOut(message) => (AntigravityUsageStatus::SignedOut, message),
+            // Readiness comes from the login probe only, so a signed-out
+            // answer is a message on this check, not a login state.
+            Self::SignedOut(message) => (AntigravityUsageStatus::Error, message),
             Self::NoUsageCommand => (
                 AntigravityUsageStatus::Unavailable,
                 NO_USAGE_COMMAND.to_string(),
@@ -182,9 +184,9 @@ async fn run_usage_command(
         )
         .await
         .map_err(Failure::from_error)?;
-    if let Some(tier) = &created.antigravity_tier {
-        acp.antigravity_agent().record_tier(account_id, tier);
-    }
+    acp.antigravity_agent()
+        .usage_book()
+        .record_tier(account_id, created.antigravity_tier.clone());
     if !reader.offers(USAGE_COMMAND, COMMANDS_WAIT).await {
         log::info!("[antigravity-usage] the agent did not advertise /usage");
         return Err(Failure::NoUsageCommand);
@@ -224,31 +226,38 @@ impl Drop for AgentGuard {
 }
 
 struct UsageReader {
-    commands: watch::Sender<Option<Vec<String>>>,
-    text: Mutex<String>,
+    commands: watch::Sender<Vec<String>>,
+    reply: Mutex<Reply>,
+}
+
+#[derive(Default)]
+struct Reply {
+    text: String,
+    /// A chunk did not fit; every later chunk is dropped too, so the text
+    /// stays a prefix of the reply.
+    full: bool,
 }
 
 impl Default for UsageReader {
     fn default() -> Self {
         Self {
-            commands: watch::Sender::new(None),
-            text: Mutex::new(String::new()),
+            commands: watch::Sender::new(Vec::new()),
+            reply: Mutex::new(Reply::default()),
         }
     }
 }
 
 impl UsageReader {
+    /// Whether an `available_commands_update` within `wait` lists `command`.
+    /// The agent can send several updates; any of them counts.
     async fn offers(&self, command: &str, wait: Duration) -> bool {
         let mut commands = self.commands.subscribe();
-        tokio::time::timeout(wait, commands.wait_for(Option::is_some))
-            .await
-            .ok()
-            .and_then(Result::ok)
-            .is_some_and(|names| names.iter().flatten().any(|name| name == command))
+        let listed = commands.wait_for(|names| names.iter().any(|name| name == command));
+        matches!(tokio::time::timeout(wait, listed).await, Ok(Ok(_)))
     }
 
     fn take_text(&self) -> String {
-        std::mem::take(&mut *self.text.lock())
+        std::mem::take(&mut self.reply.lock().text)
     }
 }
 
@@ -263,7 +272,7 @@ impl EventSink for UsageReader {
                     .flatten()
                     .filter_map(|command| command["name"].as_str().map(str::to_string))
                     .collect();
-                self.commands.send_replace(Some(names));
+                self.commands.send_replace(names);
             }
             events::EVENT_MESSAGE_CHUNK
                 if payload["role"] == "agent"
@@ -271,9 +280,11 @@ impl EventSink for UsageReader {
                     && payload.get("parentToolCallId").is_none() =>
             {
                 if let Some(chunk) = payload["content"]["text"].as_str() {
-                    let mut text = self.text.lock();
-                    if text.len() + chunk.len() <= MAX_REPLY_BYTES {
-                        text.push_str(chunk);
+                    let mut reply = self.reply.lock();
+                    if reply.full || reply.text.len() + chunk.len() > MAX_REPLY_BYTES {
+                        reply.full = true;
+                    } else {
+                        reply.text.push_str(chunk);
                     }
                 }
             }

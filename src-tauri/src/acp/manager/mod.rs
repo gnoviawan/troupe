@@ -1535,15 +1535,10 @@ impl AcpManager {
                     self.host_plan_server
                         .bind_session(&token, &outcome.session_id.0);
                 }
-                if let (Some(tier), Some(launch)) =
-                    (&outcome.antigravity_tier, self.agent_launch(agent_id))
-                {
-                    if let crate::acp::antigravity_agent::AntigravityLaunchAuth::Account(account) =
-                        launch.antigravity
-                    {
-                        self.antigravity_agent.record_tier(&account, tier);
-                    }
-                }
+                self.antigravity_agent.record_session_tier(
+                    self.agent_launch(agent_id).map(|launch| launch.antigravity),
+                    outcome.antigravity_tier.clone(),
+                );
                 self.record_launch_recipe(
                     agent_id,
                     &outcome.session_id.0,
