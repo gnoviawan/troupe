@@ -1,5 +1,6 @@
-"""The R7b input probe: `mouse OUT` turns on SGR mouse reporting and records the first report;
-`paste OUT` turns on bracketed paste and records one paste. OUT gets the bytes' repr."""
+"""The R7b input probe: `mouse OUT` turns on SGR mouse reporting and records the first click;
+`paste OUT` turns on bracketed paste and records one paste; `keys OUT` records keys up to Tab.
+OUT gets the bytes' repr."""
 
 import os
 import select
@@ -11,6 +12,7 @@ mode, out = sys.argv[1], sys.argv[2]
 on, off, end = {
     "mouse": (b"\x1b[?1000h\x1b[?1006h", b"\x1b[?1000l\x1b[?1006l", (b"m",)),
     "paste": (b"\x1b[?2004h", b"\x1b[?2004l", (b"\x1b[201~",)),
+    "keys": (b"", b"", (b"\t",)),
 }[mode]
 saved = termios.tcgetattr(0)
 tty.setraw(0)

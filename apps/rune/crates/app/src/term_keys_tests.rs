@@ -43,7 +43,7 @@ fn the_phone_shows_the_key_bar_under_a_terminal_and_its_keys_write_their_bytes()
     let mut rt = phone();
     assert!(present(&rt, "terminal-pty-1"), "the phone main area shows the terminal");
     assert!(present(&rt, "terminal-key-bar-pty-1"), "with the key bar under it");
-    for (label, bytes, _) in [KEYS[2], KEYS[4]] {
+    for (label, bytes, _) in [KEYS[2], KEYS[0]] {
         let (x, y) = rt.find(&format!("terminal-key-{label}")).expect("the key");
         rt.pointer_down(x, y);
         rt.pointer_up(x, y);

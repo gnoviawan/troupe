@@ -34,6 +34,8 @@ pub fn bar(s: &State, t: &'static Tokens, id: &str) -> El {
         .variant(ButtonVariant::Ghost)
         .build(t)
         .key("terminal-keys-toggle")
+        .min_w(44.0)
+        .px(12.0)
         .expanded(expanded)
         .on_press(|s: &mut State| s.terms.keys_hidden = !s.terms.keys_hidden);
     let paste_id = id.to_owned();
@@ -43,6 +45,7 @@ pub fn bar(s: &State, t: &'static Tokens, id: &str) -> El {
         .size(ButtonSize::Touch)
         .build(t)
         .key("terminal-keys-paste")
+        .px(12.0)
         .on_press_tx(move |s: &mut State, tx: &mut Tx| s.key_bar_paste(&paste_id, tx));
     let mut group = row()
         .key("terminal-keys")
