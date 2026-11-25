@@ -337,3 +337,42 @@ is in another block shows as text. A loose list splits at its blank lines.
 
 **Source.** R8b (`reports/R8b.md`). Tests:
 `apps/rune/crates/ui/src/editor/markdown_tests.rs` (20 fixture files).
+
+## PDF engine
+
+**Answer.** hayro 0.9, a pure-Rust PDF rasteriser (MIT or Apache-2.0), on
+both targets. `ui::viewers::PdfDoc` parses the file once, keeps each page's
+size, and rasterises a page on the CPU at the scale it draws at, the first
+time `virtual_rows` shows it. Rune decodes the pixels into its image atlas
+off the UI thread. Fonts are hayro's embedded standard 14; the CJK CMaps are
+left out to keep the wasm build small.
+
+**Candidates weighed (architect, one sequential pass: no subagents in this
+unit).**
+
+| Candidate | Native | Web | Verdict |
+|---|---|---|---|
+| hayro everywhere | pure Rust, a thread-free call | the same code in wasm | chosen: one path, headless tests render real pages |
+| pdfium (`pdfium-render`) | a 5 MB native library per OS to ship | needs a pdfium wasm build | rejected: three binaries to ship, no shared test path |
+| Native engine plus the browser's viewer in an `<iframe>` | hayro or pdfium | DOM over the canvas | rejected: two engines, and Rune menus cannot draw over the iframe |
+| Server-side page images | none | none | rejected for now: needs a `troupe-server` route, outside R8 |
+| MuPDF | C library | wasm build exists | rejected: AGPL |
+
+**Limits.** hayro does not open encrypted PDFs (the viewer says the file is
+password-protected) and lacks some blend and knockout features. A page
+renders on the UI thread when it first shows; a 612x792 page at 2x took
+tens of milliseconds in a debug test build. Move rendering to a worker if
+large documents stall.
+
+**Source.** R8b (`reports/R8b.md`). Tests:
+`apps/rune/crates/ui/src/viewers/tests.rs` (a 10-page fixture, page 5
+rasterised and its pixels checked).
+
+## Video viewer
+
+**Answer.** The desktop player follows "Video on Linux": ffprobe reads the
+clip's size, rate and length, and an ffmpeg subprocess decodes NV12 frames
+into a `NativeSurface`, paced on the player's own clock. It has no sound
+yet. The web client hands the bytes to a hidden `<video>` element, which
+plays with sound, and copies its frames into `Pixels` every 33 ms, so Rune
+draws the picture and menus stay over it.

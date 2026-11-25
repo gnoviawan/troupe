@@ -15,6 +15,7 @@ use troupe_editor::{Editor, Rope};
 use crate::Level;
 
 pub mod markdown;
+pub mod media;
 
 /// A draft the record kept for a file.
 #[derive(Clone, Debug, PartialEq)]

@@ -425,7 +425,7 @@ fn row_starts(editors: &Editors, path: &str, line: usize) -> Vec<usize> {
 }
 
 /// `UnsupportedFileView`: the file's name, why it shows no text, and Copy Path.
-fn unavailable<S: 'static>(t: &'static Tokens, path: &str, why: &model::editor::Unavailable) -> El {
+pub(crate) fn unavailable<S: 'static>(t: &'static Tokens, path: &str, why: &model::editor::Unavailable) -> El {
     let c = &t.colors;
     let name = path.rsplit(['/', '\\']).next().unwrap_or(path).to_owned();
     let mut lines = col()

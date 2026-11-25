@@ -351,6 +351,36 @@ pub fn http_send(config: &Config, request: &HttpRequest) -> Result<Value, HttpEr
     parse_body(status, &bytes)
 }
 
+/// The largest body [`http_get_bytes`] reads: the host's video limit (`MEDIA_MAX_BYTES`).
+pub const MAX_RAW_BYTES: u64 = 100 * 1024 * 1024;
+
+/// `GET path` for a raw body (`/fs/raw`): the bytes on success, else the Troupe refusal.
+pub fn http_get_bytes(config: &Config, path: &str) -> Result<Vec<u8>, HttpError> {
+    let tls = ureq::tls::TlsConfig::builder()
+        .provider(ureq::tls::TlsProvider::Rustls)
+        .root_certs(ureq::tls::RootCerts::PlatformVerifier)
+        .build();
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .tls_config(tls)
+        .http_status_as_error(false)
+        .timeout_global(Some(Duration::from_secs(120)))
+        .build()
+        .into();
+    let url = format!("{}{}", config.base_url.trim_end_matches('/'), path);
+    let network = |e: ureq::Error| HttpError::Network(e.to_string());
+    let mut builder = agent.get(&url);
+    if let Some(token) = &config.token {
+        builder = builder.header("Authorization", &format!("Bearer {token}"));
+    }
+    let mut response = builder.call().map_err(network)?;
+    let status = response.status().as_u16();
+    let bytes = response.body_mut().with_config().limit(MAX_RAW_BYTES + 1).read_to_vec().map_err(network)?;
+    if (200..300).contains(&status) {
+        return Ok(bytes);
+    }
+    parse_body(status, &bytes).and(Err(HttpError::Network(format!("HTTP {status}"))))
+}
+
 #[cfg(test)]
 #[path = "native_tests.rs"]
 mod native_tests;

@@ -29,6 +29,7 @@ use troupe_editor::{Command, Selection};
 pub use keys::Outcome;
 pub use markdown::is_markdown;
 pub use view::{LINE, surface_key, view};
+pub(crate) use view::unavailable;
 
 /// The find widget over the editor's top right (`FindPanel` in `codemirror-find.tsx`).
 pub struct FindBar {

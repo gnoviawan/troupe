@@ -51,6 +51,10 @@ impl State {
             return;
         }
         for path in &shown {
+            if let Some(kind) = ui::viewers::viewer_for_path(path) {
+                self.viewers.open(path, kind);
+                continue;
+            }
             if self.editors.docs.docs.contains_key(path) {
                 continue;
             }
@@ -81,7 +85,12 @@ impl State {
             self.editors.close(&path);
             self.editor_host.drafted.remove(&path);
         }
+        let gone: Vec<String> = self.viewers.files.keys().filter(|p| !shown.contains(*p)).cloned().collect();
+        for path in gone {
+            self.viewers.close(&path);
+        }
         self.run_editor_effects();
+        self.run_viewer_effects();
     }
 
     pub(crate) fn run_editor_effects(&mut self) {

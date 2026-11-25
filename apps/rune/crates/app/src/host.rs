@@ -34,6 +34,12 @@ pub enum Fetch {
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);
+/// A media file's path and its raw bytes (`GET /fs/raw`).
+pub type MediaFetched = (String, Result<Vec<u8>, HttpError>);
+
+fn raw_path(path: &str) -> String {
+    format!("/fs/raw?path={}", ui::composer::encode_query(path))
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 mod imp {
@@ -54,6 +60,7 @@ mod imp {
         config: Config,
         wake: Waker,
         fetched: (Sender<Fetched>, Receiver<Fetched>),
+        media: (Sender<MediaFetched>, Receiver<MediaFetched>),
     }
 
     impl Host {
@@ -94,7 +101,7 @@ mod imp {
                 })
                 .expect("spawn the /ws thread");
             log::info!("[app] connecting to {url}");
-            Host { commands, outputs, config, wake, fetched: mpsc::channel() }
+            Host { commands, outputs, config, wake, fetched: mpsc::channel(), media: mpsc::channel() }
         }
 
         /// GETs `path` off the window's thread; the answer comes back through [`Host::fetched`].
@@ -119,6 +126,25 @@ mod imp {
 
         pub fn fetched(&mut self) -> Vec<Fetched> {
             self.fetched.1.try_iter().collect()
+        }
+
+        /// Reads `path`'s raw bytes off the window's thread; they come back through
+        /// [`Host::media_fetched`].
+        pub fn fetch_bytes(&mut self, path: String) {
+            let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.media.0.clone());
+            let spawned = thread::Builder::new().name("troupe-media".into()).spawn(move || {
+                let result = client::native::http_get_bytes(&config, &raw_path(&path));
+                if done.send((path, result)).is_ok() {
+                    wake();
+                }
+            });
+            if let Err(e) = spawned {
+                log::warn!("[app] could not start a media read: {e}");
+            }
+        }
+
+        pub fn media_fetched(&mut self) -> Vec<MediaFetched> {
+            self.media.1.try_iter().collect()
         }
 
         pub fn send(&mut self, command: ws::Command) {
@@ -154,6 +180,7 @@ mod imp {
         armed: Option<f64>,
         config: Config,
         fetched: Rc<RefCell<Vec<Fetched>>>,
+        media: Rc<RefCell<Vec<MediaFetched>>>,
     }
 
     impl Host {
@@ -168,6 +195,7 @@ mod imp {
                 armed: None,
                 config,
                 fetched: Rc::default(),
+                media: Rc::default(),
             }
         }
 
@@ -189,6 +217,21 @@ mod imp {
 
         pub fn fetched(&mut self) -> Vec<Fetched> {
             std::mem::take(&mut *self.fetched.borrow_mut())
+        }
+
+        /// Reads `path`'s raw bytes with the page's `fetch`; they come back through
+        /// [`Host::media_fetched`].
+        pub fn fetch_bytes(&mut self, path: String) {
+            let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.media.clone());
+            wasm_bindgen_futures::spawn_local(async move {
+                let result = client::web::http_get_bytes(&config, &raw_path(&path)).await;
+                done.borrow_mut().push((path, result));
+                wake();
+            });
+        }
+
+        pub fn media_fetched(&mut self) -> Vec<MediaFetched> {
+            std::mem::take(&mut *self.media.borrow_mut())
         }
 
         pub fn send(&mut self, command: ws::Command) {
