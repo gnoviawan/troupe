@@ -56,6 +56,10 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
             move |s: &mut State, p, _tx| {
                 s.terminal_hover(&id, p.x, p.y);
             }
+        })
+        .on_secondary_press({
+            let id = id.clone();
+            move |s: &mut State, at, _tx| s.open_terminal_menu(&id, at)
         });
     let (measured, keyed, wheeled) = (id.clone(), id.clone(), id.clone());
     let mut surface = col()
@@ -71,6 +75,9 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
         .child(screen);
     if let Some(find) = &view.find {
         surface = surface.child(find_bar(t, &id, find));
+    }
+    if let Some(card) = crate::term_menu::assist_card(s, t, &id) {
+        surface = surface.child(rune::el().pin(None, None, Some(12.0), Some(12.0)).child(card));
     }
     let mut body = body.child(surface);
     match s.terms.sessions.get(terminal_id).map(|session| &session.status) {

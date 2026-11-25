@@ -3951,6 +3951,7 @@ dependencies = [
  "js-sys",
  "log",
  "model",
+ "regex-lite",
  "rune",
  "serde_json",
  "theme",

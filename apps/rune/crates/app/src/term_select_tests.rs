@@ -62,7 +62,7 @@ fn the_find_count_reads_like_a_find_widget() {
 }
 
 /// A state showing one terminal tab whose cells already hold `output`.
-fn shown(output: &[u8]) -> rune::Runtime<crate::State> {
+pub(crate) fn shown(output: &[u8]) -> rune::Runtime<crate::State> {
     let mut s = crate::tests::showing_alpha();
     s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
     s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });

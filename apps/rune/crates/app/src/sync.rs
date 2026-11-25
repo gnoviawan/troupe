@@ -91,6 +91,10 @@ pub(crate) enum Pending {
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
     LaunchSession(String),
+    /// A project's saved commands, for the command history modal.
+    ReadHistory(String),
+    /// The empty list the history's Clear wrote for a project.
+    ClearHistory(String),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -411,6 +415,8 @@ impl State {
             Pending::SavedPicks(config_id) => self.saved_picks_read(config_id, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
+            Pending::ReadHistory(project) => self.history_read(project, result),
+            Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::ListChats => {
                 match result.map(|r| r.map(serde_json::from_value::<Vec<Chat>>)) {
                     Ok(Some(Ok(list))) => self.chats.replace(list),

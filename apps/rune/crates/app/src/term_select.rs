@@ -137,14 +137,17 @@ impl State {
         true
     }
 
+    /// Terminal `id`'s selected text, when it has a selection that is not empty.
+    pub(crate) fn terminal_selection_text(&self, id: &str) -> Option<String> {
+        let view = self.terms.views.get(id)?;
+        let term = view.cells.lock().ok()?;
+        let text = view.selection.and_then(|h| h.current(&term)).map(|s| s.text(term.lines()))?;
+        (!text.is_empty()).then_some(text)
+    }
+
     /// Copies terminal `id`'s selection: true when there was one.
     pub(crate) fn terminal_copy(&mut self, id: &str, tx: &mut Tx) -> bool {
-        let Some(view) = self.terms.views.get(id) else { return false };
-        let Ok(term) = view.cells.lock() else { return false };
-        let text = view.selection.and_then(|h| h.current(&term)).map(|s| s.text(term.lines())).unwrap_or_default();
-        if text.is_empty() {
-            return false;
-        }
+        let Some(text) = self.terminal_selection_text(id) else { return false };
         log::info!("[term] copied {} characters from {id}", text.chars().count());
         tx.copy(text);
         true
@@ -283,4 +286,4 @@ pub fn marks(view: &TermView, term: &Term, palette: &Palette, search: [rune::Col
 
 #[cfg(test)]
 #[path = "term_select_tests.rs"]
-mod tests;
+pub(crate) mod tests;

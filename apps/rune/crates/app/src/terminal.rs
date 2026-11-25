@@ -59,6 +59,16 @@ pub struct TerminalUi {
     pub spare_edit: rune::TextEdit,
     /// When the cursor's blink last restarted (input or output).
     pub blink_from: f64,
+    /// The terminal whose context menu is open, and where it was asked for.
+    pub menu: Option<(String, rune::PointerPress)>,
+    /// The assist card, over the terminal it names.
+    pub assist: Option<crate::term_menu::Assist>,
+    /// Restarts waiting for their new PTY: the spawn call and the terminal it replaces.
+    pub restarts: BTreeMap<CallId, String>,
+    pub history: crate::command_history::HistoryUi,
+    /// Every command sent, for the tests (a test state has no terminal link).
+    #[cfg(test)]
+    pub(crate) sent: Vec<Command>,
 }
 
 impl TerminalUi {
@@ -73,6 +83,8 @@ impl TerminalUi {
     }
 
     fn send(&mut self, command: Command) {
+        #[cfg(test)]
+        self.sent.push(command.clone());
         match &mut self.host {
             Some(host) => host.send(command),
             None => log::warn!("[term] no terminal link; {command:?} dropped"),
@@ -89,9 +101,15 @@ impl TerminalUi {
 impl State {
     /// The `+` menu's "New terminal": a login shell in the visible project's folder.
     pub(crate) fn new_terminal(&mut self, pane: Option<String>) {
+        self.spawn_terminal(pane);
+    }
+
+    /// Asks the host for a shell in the visible project's folder; the spawn's call, when a
+    /// project is shown.
+    pub(crate) fn spawn_terminal(&mut self, pane: Option<String>) -> Option<CallId> {
         let Some(project) = self.active_project().cloned() else {
             log::warn!("[term] new terminal with no project shown");
-            return;
+            return None;
         };
         let (cols, rows) = DEFAULT_SIZE;
         let options = TerminalSpawnOptions {
@@ -106,6 +124,7 @@ impl State {
         let call = self.terms.request(WebTerminalRequestType::Spawn, payload, true);
         self.terms.sessions.spawn(call, &project.id, pane);
         log::info!("[term] spawning a terminal for {} (call {call})", project.id);
+        Some(call)
     }
 
     /// Carries out what the terminal link said; true when the view must redraw.
@@ -132,18 +151,20 @@ impl State {
         changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn)
     }
 
-    fn terminal_output(&mut self, output: Output) {
+    pub(crate) fn terminal_output(&mut self, output: Output) {
         match output {
             Output::Reply { call, result } if self.terms.sessions.spawning.contains_key(&call) => match result {
                 Ok(data) => match serde_json::from_value::<SpawnedTerminal>(data) {
                     Ok(spawned) => self.terminal_spawned(call, spawned),
                     Err(e) => {
                         self.terms.sessions.spawn_failed(call);
+                        self.terms.restarts.remove(&call);
                         log::error!("[term] unreadable spawn reply: {e}");
                     }
                 },
                 Err(e) => {
                     self.terms.sessions.spawn_failed(call);
+                    self.terms.restarts.remove(&call);
                     log::error!("[term] spawn failed: {} {}", e.code, e.message);
                     self.toast_error("Couldn't open a terminal", &e.message);
                 }
@@ -168,6 +189,7 @@ impl State {
     }
 
     fn terminal_spawned(&mut self, call: CallId, s: SpawnedTerminal) {
+        let restarted = self.terms.restarts.remove(&call);
         let spawned = Spawned { id: s.id.clone(), shell: s.shell, cwd: s.cwd, pid: s.pid, cols: s.cols, rows: s.rows, claim: s.claim.clone() };
         let Some((session, pane)) = self.terms.sessions.spawned(call, spawned) else { return };
         let (project, cols, rows) = (session.project_id.clone(), session.cols, session.rows);
@@ -181,7 +203,12 @@ impl State {
             return;
         }
         self.terminal_attach(&s.id, &s.claim, cols, rows);
-        self.workspace.step(WorkspaceEvent::AddTerminalTab(s.id, pane));
+        match restarted {
+            Some(old) => self.terminal_restarted(&old, &s.id),
+            None => {
+                self.workspace.step(WorkspaceEvent::AddTerminalTab(s.id, pane));
+            }
+        }
     }
 
     /// Opens the cells of a session this client now holds and attaches from the start, so the
@@ -218,7 +245,7 @@ impl State {
     /// A closed terminal tab kills its PTY, when this client holds it. A tab that went because
     /// the project switched is not closed: its session stays. A shown tab for a PTY this client
     /// does not hold (a saved layout brought it back) asks the host whether it still runs.
-    fn reap_closed_tabs(&mut self) -> bool {
+    pub(crate) fn reap_closed_tabs(&mut self) -> bool {
         let Some(project) = self.workspace.project().map(str::to_owned) else { return false };
         let now: BTreeSet<String> = model::workspace::leaves(self.workspace.root())
             .into_iter()
