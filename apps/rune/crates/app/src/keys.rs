@@ -210,6 +210,7 @@ impl State {
                 let visible = self.layout.record.side_panel_visible;
                 self.layout_step(Layout::SetSidePanelVisible(json!(!visible)));
             }
+            "commandPalette" | "commandPaletteAlt" => self.open_palette(false),
             "colorThemePicker" => self.open_theme_picker(),
             "settings" => self.open_settings(None),
             "commandHistory" => self.open_command_history(),

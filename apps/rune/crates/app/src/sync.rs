@@ -33,6 +33,8 @@ pub enum Shared {
     AppSettings,
     /// `settings/keyboard-shortcuts`.
     Shortcuts,
+    /// `settings/pinned-commands`: the palette's pinned rows.
+    PinnedCommands,
 }
 
 impl Shared {
@@ -40,6 +42,7 @@ impl Shared {
         match self {
             Shared::AppSettings => "shared/lww/settings/app",
             Shared::Shortcuts => "shared/lww/settings/keyboard-shortcuts",
+            Shared::PinnedCommands => "shared/lww/settings/pinned-commands",
         }
     }
 }
@@ -51,6 +54,8 @@ pub(crate) enum Pending {
     ReadActiveProject,
     ReadPrefs,
     ReadShared(Shared),
+    /// This device's recent palette commands.
+    ReadRecentCommands,
     WriteShared(Shared),
     ListChats,
     Write(String),
@@ -191,6 +196,25 @@ impl State {
         }
         self.list_chats();
         self.layout_step(LayoutEvent::StartHydrate);
+        self.palette.read = false;
+    }
+
+    /// The palette's pinned and recent lists, read the first time it opens on this link.
+    pub(crate) fn read_palette_lists(&mut self) {
+        if self.palette.read {
+            return;
+        }
+        self.palette.read = true;
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": Shared::PinnedCommands.host_key() }),
+            Pending::ReadShared(Shared::PinnedCommands),
+        );
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": self.device_key(model::settings::palette::RECENT_KEY) }),
+            Pending::ReadRecentCommands,
+        );
     }
 
     /// The composers' agent reads (`acp/agents`, `agents/last-selected`), once the first
@@ -360,6 +384,10 @@ impl State {
                 self.sync.prefs = Read::Read(());
                 self.release_held();
             }
+            Pending::ReadRecentCommands => match result {
+                Ok(reply) => self.recent_commands_loaded(stored_value(reply)),
+                Err(e) => log::warn!("[app] reading the recent commands failed: {}", e.code),
+            },
             Pending::ReadShared(shared) => match result {
                 Ok(reply) => {
                     let revision = reply

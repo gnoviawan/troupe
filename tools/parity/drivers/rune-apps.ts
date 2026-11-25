@@ -108,7 +108,14 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'git.history',
   'git.history-scope',
   'git.history-author',
-  'git.commit-diff'
+  'git.commit-diff',
+  'palette.open',
+  'settings.app',
+  'settings.app-preferences',
+  'settings.app-terminal',
+  'settings.app-ai-agents',
+  'settings.app-shortcuts',
+  'settings.app-about'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {

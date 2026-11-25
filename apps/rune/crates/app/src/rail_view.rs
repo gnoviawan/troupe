@@ -45,7 +45,7 @@ pub fn body(
         .child(
             shell::nav_row(t, &i::SEARCH_LIST, "Search", collapsed, false)
                 .key("rail-search")
-                .on_press(|s: &mut State| s.toast_later("Search")),
+                .on_press(|s: &mut State| s.open_palette(false)),
         )
         .child(shell::nav_row(t, &i::CANVAS, "Canvas", collapsed, !can_canvas).key("rail-canvas"))
         .child(

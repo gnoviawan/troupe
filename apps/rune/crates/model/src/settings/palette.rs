@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+/// This device's recent commands (a device key).
 pub const RECENT_KEY: &str = "settings/recent-commands";
 pub const PINNED_KEY: &str = "settings/pinned-commands";
 const MAX_RECENT: usize = 5;
@@ -169,3 +170,115 @@ pub fn command_score(value: &str, search: &str, keywords: &[String]) -> f64 {
     Scorer { string: &string, abbreviation: &abbreviation, lower_string: &lower_string, lower_abbreviation: &lower_abbreviation, memo: HashMap::new() }
         .score(0, 0)
 }
+
+/// `CommandCategory`, in `COMMAND_CATEGORY_ORDER`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Category {
+    Projects,
+    Workspace,
+    Navigation,
+    Tools,
+}
+
+impl Category {
+    pub const ORDER: [Category; 4] = [Category::Projects, Category::Workspace, Category::Navigation, Category::Tools];
+
+    #[must_use]
+    pub fn id(self) -> &'static str {
+        match self {
+            Category::Projects => "projects",
+            Category::Workspace => "workspace",
+            Category::Navigation => "navigation",
+            Category::Tools => "tools",
+        }
+    }
+
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Category::Projects => "Projects",
+            Category::Workspace => "Workspace",
+            Category::Navigation => "Navigation",
+            Category::Tools => "Tools",
+        }
+    }
+}
+
+/// One palette command (`CommandDef` without its icon and action).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Row {
+    pub id: String,
+    pub category: Category,
+    pub label: String,
+    pub description: Option<String>,
+    pub keywords: Vec<String>,
+    pub shortcut: Option<String>,
+}
+
+impl Row {
+    /// `getSearchableValue`, trimmed as cmdk trims an item's value.
+    #[must_use]
+    pub fn searchable(&self) -> String {
+        let mut parts: Vec<&str> = vec![&self.label];
+        parts.extend(self.description.as_deref());
+        parts.push(self.category.id());
+        parts.push(self.category.label());
+        parts.extend(self.keywords.iter().map(String::as_str));
+        parts.into_iter().filter(|p| !p.is_empty()).collect::<Vec<_>>().join(" ").trim().to_owned()
+    }
+}
+
+/// A group heading of the palette's list.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Heading {
+    Pinned,
+    Recent,
+    Category(Category),
+}
+
+impl Heading {
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Heading::Pinned => "Pinned",
+            Heading::Recent => "Recent",
+            Heading::Category(c) => c.label(),
+        }
+    }
+}
+
+/// The groups the palette shows for `query`, each with its rows in order, as cmdk 1.1 leaves
+/// them: with no query, Pinned and Recent above every category, unfiltered; with one, only the
+/// categories, each keeping the rows that score above 0, best first (a stable sort). cmdk does
+/// not reorder the groups.
+#[must_use]
+pub fn groups<'a>(rows: &'a [Row], query: &str, lists: &Commands) -> Vec<(Heading, Vec<&'a Row>)> {
+    let mut out = Vec::new();
+    if query.is_empty() {
+        let find = |id: &String| rows.iter().find(|r| r.id == *id);
+        out.push((Heading::Pinned, lists.pinned_command_ids.iter().filter_map(find).collect()));
+        let mut recent: Vec<&Row> = rows.iter().filter(|r| lists.recent_command_ids.contains(&r.id)).collect();
+        recent.sort_by_key(|r| lists.recent_command_ids.iter().position(|id| *id == r.id));
+        out.push((Heading::Recent, recent));
+        for category in Category::ORDER {
+            out.push((Heading::Category(category), rows.iter().filter(|r| r.category == category).collect()));
+        }
+    } else {
+        for category in Category::ORDER {
+            let mut scored: Vec<(f64, &Row)> = rows
+                .iter()
+                .filter(|r| r.category == category)
+                .map(|r| (command_score(&r.searchable(), query, &[]), r))
+                .filter(|(score, _)| *score > 0.0)
+                .collect();
+            scored.sort_by(|a, b| b.0.total_cmp(&a.0));
+            out.push((Heading::Category(category), scored.into_iter().map(|(_, r)| r).collect()));
+        }
+    }
+    out.retain(|(_, rows)| !rows.is_empty());
+    out
+}
+
+#[cfg(test)]
+#[path = "palette_tests.rs"]
+mod tests;

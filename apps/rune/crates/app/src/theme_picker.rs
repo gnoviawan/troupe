@@ -355,6 +355,7 @@ impl State {
         match shared {
             Shared::AppSettings => self.settings_loaded(Ok(value)),
             Shared::Shortcuts => self.shortcuts_loaded(value),
+            Shared::PinnedCommands => self.pinned_commands_loaded(value),
         }
     }
 }

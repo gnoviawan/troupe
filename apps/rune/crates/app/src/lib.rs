@@ -49,6 +49,7 @@ mod launch;
 mod model_sheet;
 #[cfg(test)]
 mod model_sheet_tests;
+mod palette;
 mod phone;
 mod rail;
 mod rail_forms;
@@ -139,6 +140,7 @@ pub struct State {
     pub now: f64,
     pub rail: rail::RailUi,
     pub picker: theme_picker::Picker,
+    pub palette: palette::PaletteUi,
     pub keys: keys::KeysUi,
     pub phone: phone::PhoneUi,
     /// `settings/app` `uiZoomLevel`.
@@ -199,6 +201,7 @@ impl Default for State {
             now: 0.0,
             rail: rail::RailUi::default(),
             picker: theme_picker::Picker::default(),
+            palette: palette::PaletteUi::default(),
             keys: keys::KeysUi::default(),
             phone: phone::PhoneUi::default(),
             zoom: ui::Zoom::DEFAULT,
