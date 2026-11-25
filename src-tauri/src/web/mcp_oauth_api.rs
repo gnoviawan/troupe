@@ -62,6 +62,7 @@ pub struct OAuthStartRequest {
 pub struct OAuthStartResponse {
     pub auth_url: String,
     pub redirect_uri: String,
+    pub token_generation: u64,
 }
 
 /// Start the OAuth flow: discover metadata, register the client (PKCE), and
@@ -101,6 +102,7 @@ pub async fn oauth_start(
         "{}/oauth/callback",
         state.oauth_base_url.trim_end_matches('/')
     );
+    let token_generation = mcp_oauth::token_generation(&request.server_url);
     match build_web_auth_url(&request.server_url, &redirect_uri).await {
         Ok((auth_url, csrf_token, session)) => {
             let now = Instant::now();
@@ -120,10 +122,14 @@ pub async fn oauth_start(
             Json(IpcBody::ok(OAuthStartResponse {
                 auth_url,
                 redirect_uri,
+                token_generation,
             }))
         }
         Err(e) => {
-            log::warn!("[mcp-oauth] web flow start failed (url redacted): {e}");
+            log::warn!(
+                "[mcp-oauth] web flow start failed (url redacted): {}: {e}",
+                start_error_code(&e)
+            );
             Json(IpcBody::err(
                 e.to_string(),
                 start_error_code(&e).to_string(),
@@ -135,7 +141,7 @@ pub async fn oauth_start(
 fn start_error_code(error: &mcp_oauth::McpOAuthError) -> &'static str {
     match error {
         mcp_oauth::McpOAuthError::UnsafeUrl(_) => MCP_UNSAFE_URL,
-        _ => "OAUTH_START_FAILED",
+        other => other.code(),
     }
 }
 
@@ -416,6 +422,7 @@ pub struct OAuthStatusRequest {
 #[serde(rename_all = "camelCase")]
 pub struct OAuthStatusResponse {
     pub has_token: bool,
+    pub token_generation: u64,
 }
 
 pub async fn oauth_status(
@@ -437,7 +444,11 @@ pub async fn oauth_status(
     let has_token = mcp_oauth::load_stored_token(&request.server_url)
         .map(|t| t.is_some())
         .unwrap_or(false);
-    Json(IpcBody::ok(OAuthStatusResponse { has_token }))
+    let token_generation = mcp_oauth::token_generation(&request.server_url);
+    Json(IpcBody::ok(OAuthStatusResponse {
+        has_token,
+        token_generation,
+    }))
 }
 
 pub async fn oauth_disconnect(
@@ -495,19 +506,7 @@ async fn build_web_auth_url(
     server_url: &str,
     redirect_uri: &str,
 ) -> Result<(String, String, AuthorizationSession), mcp_oauth::McpOAuthError> {
-    use rmcp::transport::auth::{AuthorizationManager, AuthorizationRequest};
-    let mut manager = AuthorizationManager::new(server_url)
-        .await
-        .map_err(|e| mcp_oauth::McpOAuthError::DiscoveryFailed(e.to_string()))?;
-    let resolution = manager
-        .resolve_metadata()
-        .await
-        .map_err(|e| mcp_oauth::McpOAuthError::DiscoveryFailed(e.to_string()))?;
-    manager.set_metadata(resolution.metadata);
-    let request = AuthorizationRequest::new(redirect_uri).with_client_name("Troupe");
-    let session = AuthorizationSession::new(manager, request)
-        .await
-        .map_err(|(_manager, e)| mcp_oauth::McpOAuthError::RegistrationFailed(e.to_string()))?;
+    let session = mcp_oauth::start_authorization_session(server_url, redirect_uri).await?;
     let (auth_url, csrf_token) = remote_auth_url(session.get_authorization_url())?;
     Ok((auth_url, csrf_token, session))
 }

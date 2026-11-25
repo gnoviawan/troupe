@@ -639,7 +639,13 @@ async fn check_oauth_required(url: &str, headers: &[McpNameValuePair]) -> Option
             "clientInfo": { "name": "termul-probe", "version": "0.1" }
         }
     });
-    let mut request = client.post(url).json(&body);
+    let mut request = client
+        .post(url)
+        .header(
+            reqwest::header::ACCEPT,
+            "application/json, text/event-stream",
+        )
+        .json(&body);
     // Forward configured headers so the pre-flight matches what the real
     // rmcp client would send (a server may return a Bearer challenge only
     // when an API-key header is absent — sending it avoids a false
