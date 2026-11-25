@@ -40,6 +40,35 @@ fn extract_www_authenticate_prefers_bearer_across_multiple_headers() {
         Some(r#"Bearer resource_metadata="https://x.test/.well-known/oauth-protected-resource""#)
     );
 }
+
+#[test]
+fn extract_www_authenticate_isolates_bearer_and_normalizes_param_whitespace() {
+    let mut combined = reqwest::header::HeaderMap::new();
+    combined.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Basic realm="proxy", scope="proxy.read", Bearer resource_metadata = "https://mcp.example/custom/prm?a = 1", scope = "mcp.read", Digest realm="d", scope="d.read""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&combined).as_deref(),
+        Some(
+            r#"Bearer resource_metadata="https://mcp.example/custom/prm?a = 1", scope="mcp.read""#
+        )
+    );
+
+    let mut compact = reqwest::header::HeaderMap::new();
+    compact.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Bearer resource_metadata="https://mcp.example/prm", scope="mcp.read""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&compact).as_deref(),
+        Some(r#"Bearer resource_metadata="https://mcp.example/prm", scope="mcp.read""#)
+    );
+}
 #[test]
 fn key_normalizes() {
     assert_eq!(

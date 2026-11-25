@@ -301,9 +301,12 @@ async fn refresh_expired(server_url: &str) -> Result<Option<String>, McpOAuthErr
     }
 }
 
-/// Pick the `WWW-Authenticate` header from a `401` response, checking all
-/// header values per RFC 9110 §11.6.1 and preferring the first `Bearer`
-/// challenge when multiple `WWW-Authenticate` headers are present.
+/// Pick the `WWW-Authenticate` challenge from a `401` response, checking all
+/// header values per RFC 9110 §11.6.1. When a `Bearer` challenge is present
+/// (standalone or combined with other schemes in one header), returns only
+/// that `Bearer` challenge with whitespace around `=` normalized outside
+/// quoted values so `rmcp`'s parser reads its `resource_metadata` and `scope`
+/// parameters accurately.
 pub(crate) fn extract_www_authenticate(headers: &reqwest::header::HeaderMap) -> Option<String> {
     let mut fallback: Option<String> = None;
     for value in headers.get_all(reqwest::header::WWW_AUTHENTICATE) {
@@ -314,8 +317,8 @@ pub(crate) fn extract_www_authenticate(headers: &reqwest::header::HeaderMap) -> 
         if trimmed.is_empty() {
             continue;
         }
-        if is_auth_required(trimmed) {
-            return Some(trimmed.to_string());
+        if let Some(bearer) = extract_bearer_challenge(trimmed) {
+            return Some(normalize_auth_params(&bearer));
         }
         if fallback.is_none() {
             fallback = Some(trimmed.to_string());
@@ -589,11 +592,16 @@ mod callback;
 pub use callback::complete_desktop_flow;
 
 pub fn is_auth_required(header: &str) -> bool {
+    extract_bearer_challenge(header).is_some()
+}
+
+/// Split an HTTP `WWW-Authenticate` header on commas outside quoted strings.
+fn split_header_segments(header: &str) -> Vec<&str> {
+    let mut segments = Vec::new();
     let mut in_quotes = false;
     let mut escaped = false;
     let mut start = 0;
-    let bytes = header.as_bytes();
-    for (idx, &byte) in bytes.iter().enumerate() {
+    for (idx, &byte) in header.as_bytes().iter().enumerate() {
         if escaped {
             escaped = false;
             continue;
@@ -607,20 +615,99 @@ pub fn is_auth_required(header: &str) -> bool {
             continue;
         }
         if byte == b',' && !in_quotes {
-            if is_bearer_challenge(&header[start..idx]) {
-                return true;
-            }
+            segments.push(&header[start..idx]);
             start = idx + 1;
         }
     }
-    is_bearer_challenge(&header[start..])
+    segments.push(&header[start..]);
+    segments
 }
 
-fn is_bearer_challenge(segment: &str) -> bool {
-    segment
-        .split_whitespace()
-        .next()
-        .is_some_and(|scheme| scheme.eq_ignore_ascii_case("bearer"))
+/// Return the leading auth-scheme token if `segment` starts a new challenge
+/// (either a bare scheme with no `=`, or `<scheme> <rest>` where whitespace
+/// precedes any `=`). Returns `None` for a `name = value` auth-param segment.
+fn leading_auth_scheme(segment: &str) -> Option<&str> {
+    let trimmed = segment.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let first_sep = trimmed.find(|c: char| c.is_whitespace() || c == '=');
+    match first_sep {
+        None => Some(trimmed),
+        Some(pos) if trimmed.as_bytes()[pos] == b'=' => None,
+        Some(pos) => {
+            let after_ws = trimmed[pos..].trim_start();
+            if after_ws.starts_with('=') {
+                None
+            } else {
+                Some(&trimmed[..pos])
+            }
+        }
+    }
+}
+
+/// Extract only the `Bearer` challenge and its own auth-params from a single
+/// `WWW-Authenticate` header value, excluding parameters of other schemes.
+fn extract_bearer_challenge(header: &str) -> Option<String> {
+    let mut collected: Vec<&str> = Vec::new();
+    let mut in_bearer = false;
+    for segment in split_header_segments(header) {
+        let trimmed = segment.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Some(scheme) = leading_auth_scheme(trimmed) {
+            if in_bearer {
+                break;
+            }
+            if scheme.eq_ignore_ascii_case("bearer") {
+                in_bearer = true;
+                collected.push(trimmed);
+            }
+        } else if in_bearer {
+            collected.push(trimmed);
+        }
+    }
+    (!collected.is_empty()).then(|| collected.join(", "))
+}
+
+/// Remove optional whitespace around `=` outside quoted strings (RFC 9110
+/// allows `BWS "=" BWS`, whereas `rmcp`'s parser looks for compact `key=`).
+fn normalize_auth_params(challenge: &str) -> String {
+    let mut out = String::with_capacity(challenge.len());
+    let mut in_quotes = false;
+    let mut escaped = false;
+    let mut skip_after_eq = false;
+    for ch in challenge.chars() {
+        if in_quotes {
+            out.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_quotes = false;
+            }
+            continue;
+        }
+        if skip_after_eq && ch.is_whitespace() {
+            continue;
+        }
+        skip_after_eq = false;
+        if ch == '"' {
+            in_quotes = true;
+            out.push(ch);
+        } else if ch == '=' {
+            while out.ends_with(|c: char| c.is_whitespace()) {
+                out.pop();
+            }
+            out.push('=');
+            skip_after_eq = true;
+        } else {
+            out.push(ch);
+        }
+    }
+    out
 }
 
 pub fn bearer_header(token: &str) -> String {
