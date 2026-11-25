@@ -206,24 +206,6 @@ export interface AgentIdleWindowStatus {
 }
 
 /**
- * Legacy: one launchable agent in the sub-agent orchestrator's settings
- * view, read from the agent's default profile (the one whose id is the
- * agent's key). An agent without one has no row. Replaced by `profiles`.
- */
-export interface SubagentSettingsAgentView {
-  agentId: string
-  name: string
-  allowed: boolean
-  /** The model a sub-agent of this agent starts with; `null` is the agent's own default. */
-  model: string | null
-  /**
-   * The user's note on what this agent is good at, which
-   * `subagent_list_agents` hands to the calling agent; `null` is no note.
-   */
-  description: string | null
-}
-
-/**
  * How the host treats a sub-agent's tool permission requests: `ask` waits
  * for the user in the chat, `allowAll` picks the request's allow-once
  * option (never allow-always).
@@ -261,15 +243,14 @@ export interface SubagentProfileView extends SubagentProfile {
 
 /**
  * The orchestrator's settings view (`subagent_settings_get` reply):
- * `{ enabled, maxRunning, maxDepth, agents, profiles }`. `profiles` lists
- * the stored profiles in the user's order, then each untouched agent's
- * implicit default. `agents` is the legacy per-agent view.
+ * `{ enabled, maxRunning, maxDepth, profiles }`. `profiles` lists the
+ * stored profiles in the user's order, then each untouched agent's
+ * implicit default.
  */
 export interface SubagentSettingsView {
   enabled: boolean
   maxRunning: number
   maxDepth: number
-  agents: SubagentSettingsAgentView[]
   profiles: SubagentProfileView[]
 }
 
@@ -277,18 +258,12 @@ export interface SubagentSettingsView {
  * A `subagent_settings_set` call: every field optional, an omitted field
  * keeps its value. Applied in order: `deleteProfiles` (idempotent), then
  * `upsertProfiles` (`previousId` renames a stored or implicit profile and
- * must exist), then the legacy `agents` allow toggles, `models` default
- * models (`null` clears) and `descriptions` notes (`null` or blank clears),
- * keyed by `agentId` and applied to that agent's default profile. The
- * reply is the new full view.
+ * must exist). The reply is the new full view.
  */
 export interface SubagentSettingsInput {
   enabled?: boolean
   maxRunning?: number
   maxDepth?: number
-  agents?: Array<{ agentId: string; allowed: boolean }>
-  models?: Array<{ agentId: string; model: string | null }>
-  descriptions?: Array<{ agentId: string; description: string | null }>
   upsertProfiles?: Array<{ previousId?: string; profile: SubagentProfile }>
   deleteProfiles?: string[]
 }

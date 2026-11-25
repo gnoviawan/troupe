@@ -36,7 +36,6 @@ import {
   type SubagentApprovals,
   type SubagentProfile,
   type SubagentProfileView,
-  type SubagentSettingsAgentView,
   type SubagentSettingsInput,
   type SubagentSettingsView
 } from '@/lib/acp-transport'
@@ -58,7 +57,6 @@ export type {
   SubagentApprovals,
   SubagentProfile,
   SubagentProfileView,
-  SubagentSettingsAgentView,
   SubagentSettingsInput,
   SubagentSettingsView
 }
