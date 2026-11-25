@@ -159,3 +159,32 @@ fn meters_become_an_ok_record_and_agent_lines_an_unavailable_one() {
     assert!(none.windows.is_empty());
     assert_eq!(none.message.as_deref(), Some("data not available yet"));
 }
+
+#[test]
+fn a_bucket_indented_with_four_spaces_or_a_tab_is_still_a_meter() {
+    let reply = "### Quota Limits\n- **Gemini Models**\n    - **Weekly:** 75% remaining\n- **Claude and GPT models**\n\t- **Weekly:** 50% remaining";
+
+    assert_eq!(
+        parse_usage_reply(reply),
+        QuotaReport::Meters {
+            windows: vec![
+                window("Claude and GPT models · Weekly", 50.0, None),
+                window("Gemini Models · Weekly", 25.0, None),
+            ],
+            notes: vec![],
+        }
+    );
+}
+
+#[test]
+fn a_long_top_level_line_is_clipped_to_300_characters() {
+    let long = "x".repeat(400);
+    let reply = format!("### Quota Limits\n- **Overage:** {long}\n- {long}");
+
+    let QuotaReport::NoMeters(notes) = parse_usage_reply(&reply) else {
+        panic!("no meter in the reply");
+    };
+    assert_eq!(notes.len(), 2);
+    assert!(notes.iter().all(|note| note.chars().count() == 300));
+    assert!(notes[0].starts_with("Overage: xxx"));
+}

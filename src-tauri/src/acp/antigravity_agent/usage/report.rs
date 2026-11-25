@@ -50,17 +50,16 @@ pub(crate) fn parse_usage_reply(text: &str) -> QuotaReport {
         }
         match (indent, bold(item)) {
             (0, Some(Bold::Heading(name))) => group = Some(name),
-            (0, Some(Bold::Field(name, value))) => notes.push(format!("{name}: {value}")),
+            (0, Some(Bold::Field(name, value))) => notes.push(clip(&format!("{name}: {value}"))),
             (0, None) => notes.push(clip(item)),
-            (1..=3, Some(Bold::Field(name, value))) => {
+            (_, Some(Bold::Field(name, value))) => {
                 let label = bucket_label(group, name);
                 match window(&label, value) {
                     Some(window) => windows.push(window),
                     None => notes.push(clip(&format!("{label}: {value}"))),
                 }
             }
-            (1..=3, _) => notes.push(clip(&bucket_label(group, item))),
-            _ => {}
+            (_, _) => notes.push(clip(&bucket_label(group, item))),
         }
     }
     if windows.is_empty() {

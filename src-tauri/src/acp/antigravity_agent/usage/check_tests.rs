@@ -2,11 +2,35 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use super::{run_usage_command, Failure};
+use super::{run_usage_command, Failure, UsageReader, MAX_REPLY_BYTES};
 use crate::acp::antigravity_accounts::usage::AntigravityUsageStatus;
 use crate::acp::config::AgentConfig;
+use crate::acp::events;
 use crate::acp::manager::real_loop_tests::{find_python, SKIP_ENV, TIMEOUT_TEST_LOCK};
 use crate::acp::manager::AcpManager;
+use crate::web::sink::{AcpEvent, EventSink};
+
+fn agent_chunk(text: &str) -> AcpEvent {
+    AcpEvent {
+        sid: Some("s1".to_string()),
+        type_: events::EVENT_MESSAGE_CHUNK,
+        payload: serde_json::json!({
+            "role": "agent",
+            "content": { "type": "text", "text": text }
+        }),
+    }
+}
+
+#[test]
+fn a_reply_over_the_cap_keeps_only_the_text_before_the_first_chunk_that_did_not_fit() {
+    let reader = UsageReader::default();
+
+    reader.emit(&agent_chunk("### Quota Limits\n"));
+    reader.emit(&agent_chunk(&"x".repeat(MAX_REPLY_BYTES)));
+    reader.emit(&agent_chunk("- tail"));
+
+    assert_eq!(reader.take_text(), "### Quota Limits\n");
+}
 
 const MOCK_AGENT: &str = r#"
 import json, os, sys
@@ -33,7 +57,10 @@ for line in sys.stdin:
             "antigravity": {"tier": {"name": "Google AI Pro", "id": "g1-pro-tier",
                                      "upgradeUri": ""}}}}})
         commands = [{"name": "logout", "description": "Sign out."}]
-        if os.environ.get("MOCK_USAGE") == "1":
+        if os.environ["MOCK_USAGE"] == "late":
+            update({"sessionUpdate": "available_commands_update",
+                    "availableCommands": list(commands)})
+        if os.environ["MOCK_USAGE"] != "none":
             commands.append({"name": "usage",
                              "description": "Show model token usage and quota limits."})
         update({"sessionUpdate": "available_commands_update",
@@ -55,6 +82,24 @@ const REPLY: &str = "### Session Usage
   - **Weekly Limit Remaining:** 91% remaining (resets Oct 02, 2026, 14:00 UTC)
 - **Claude and GPT models**
   - **Weekly Limit Remaining:** 100% remaining";
+
+/// When the mock agent lists `usage` among its commands.
+#[derive(Clone, Copy)]
+enum Offer {
+    First,
+    SecondUpdate,
+    Never,
+}
+
+impl Offer {
+    fn env(self) -> &'static str {
+        match self {
+            Self::First => "first",
+            Self::SecondUpdate => "late",
+            Self::Never => "none",
+        }
+    }
+}
 
 struct Mock {
     acp: Arc<AcpManager>,
@@ -83,9 +128,9 @@ impl Mock {
         })
     }
 
-    fn config(&self, offers_usage: bool) -> AgentConfig {
+    fn config(&self, usage: Offer) -> AgentConfig {
         let env = HashMap::from([
-            ("MOCK_USAGE".to_string(), u8::from(offers_usage).to_string()),
+            ("MOCK_USAGE".to_string(), usage.env().to_string()),
             ("MOCK_REPLY".to_string(), REPLY.to_string()),
             (
                 "MOCK_PROMPTS_FILE".to_string(),
@@ -117,11 +162,11 @@ impl Mock {
         std::fs::read_to_string(self.prompts_file()).unwrap_or_default()
     }
 
-    async fn run(&self, offers_usage: bool) -> Result<String, Failure> {
+    async fn run(&self, usage: Offer) -> Result<String, Failure> {
         run_usage_command(
             &self.acp,
             "work",
-            self.config(offers_usage),
+            self.config(usage),
             self.dir.path().join("scratch"),
         )
         .await
@@ -145,7 +190,10 @@ async fn the_check_sends_usage_returns_the_agent_text_and_stops_the_agent() {
         return;
     };
 
-    let reply = mock.run(true).await.expect("the check reads the reply");
+    let reply = mock
+        .run(Offer::First)
+        .await
+        .expect("the check reads the reply");
 
     assert_eq!(reply, REPLY);
     assert_eq!(mock.prompts(), "/usage\n");
@@ -162,9 +210,25 @@ async fn an_agent_without_usage_is_never_prompted_and_is_stopped() {
         return;
     };
 
-    let failure = mock.run(false).await.expect_err("no /usage command");
+    let failure = mock.run(Offer::Never).await.expect_err("no /usage command");
 
     assert!(matches!(failure, Failure::NoUsageCommand), "{failure:?}");
     assert_eq!(mock.prompts(), "");
+    assert!(mock.no_agent_left());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn usage_listed_in_a_later_commands_update_still_counts() {
+    let Some(mock) = Mock::new().await else {
+        return;
+    };
+
+    let reply = mock
+        .run(Offer::SecondUpdate)
+        .await
+        .expect("the check reads the reply");
+
+    assert_eq!(reply, REPLY);
+    assert_eq!(mock.prompts(), "/usage\n");
     assert!(mock.no_agent_left());
 }
