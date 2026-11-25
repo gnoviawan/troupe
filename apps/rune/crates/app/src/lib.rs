@@ -31,6 +31,7 @@ mod composer_view;
 mod controls;
 #[cfg(test)]
 mod controls_tests;
+mod history_host;
 mod host;
 mod ids;
 mod keys;

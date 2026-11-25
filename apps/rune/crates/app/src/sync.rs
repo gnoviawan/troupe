@@ -67,8 +67,8 @@ pub(crate) enum Pending {
         record: Option<Value>,
     },
     WriteWorkspace(String),
-    /// A chat's history (`get_session_payload`).
-    ChatPayload(String),
+    /// A session payload the model's history read asked for (`get_session_payload`).
+    Payload(Box<model::acp::Effect>),
     /// The agent configs (`acp/agents`).
     ReadAgents,
     /// The launcher's last agent (`agents/last-selected`).
@@ -486,7 +486,7 @@ impl State {
                     self.toast_error("Failed to create the project", &e.message);
                 }
             },
-            Pending::ChatPayload(session_id) => self.chat_payload(session_id, result),
+            Pending::Payload(effect) => self.history_payload_read(*effect, result),
             Pending::WriteWorkspace(project_id) => {
                 if let Err(e) = result {
                     log::warn!(

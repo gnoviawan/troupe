@@ -186,3 +186,65 @@ fn the_next_send_runs_the_switch_and_the_tab_follows_the_new_session() {
     rt.frame(0.3);
     assert!(crate::tests::present(&rt, &format!("{id}-toggle")), "the transcript draws the separator {id}");
 }
+
+fn payload(id: &str, config: &str, switches: Value) -> Value {
+    json!({
+        "metadata": { "id": id, "agentId": "agent-old", "agentConfigId": config, "cwd": "/work", "projectId": "p-a",
+            "title": format!("Chat {id}"), "status": "closed", "createdAt": 5, "lastSeq": 3 },
+        "messages": [
+            { "id": format!("turn:{id}-1"), "role": "user", "seq": 1, "timestamp": 1, "streaming": false, "blocks": [{ "type": "text", "text": format!("ask {id}") }] },
+            { "id": format!("{id}-m2"), "role": "agent", "seq": 2, "timestamp": 2, "streaming": false, "blocks": [{ "type": "text", "text": format!("answer {id}") }] },
+        ],
+        "toolCalls": [],
+        "switches": switches,
+    })
+}
+
+fn settle(rt: &mut Runtime<State>) {
+    rt.update_if(|s, _| {
+        s.flush_chat();
+        true
+    });
+    rt.frame(0.3);
+}
+
+#[test]
+fn a_reopened_switched_chat_opens_its_continuation_with_the_whole_transcript() {
+    let mut rt = claude_chat();
+    rt.update_if(|s, _| {
+        s.workspace.step(model::workspace::Event::AddAgentChatTab("old".into(), None));
+        // A test state has no link, so `sync_chats` asks for nothing; reopen as it would.
+        s.sync_chats();
+        s.reopen_chat("old");
+        true
+    });
+    rt.frame(0.1);
+    let marker = json!([{ "id": "switch:seq-3", "seq": 3, "fromConfigId": "claude", "toConfigId": "gemini",
+        "newSessionId": "new", "summaryText": "", "timestamp": 3 }]);
+    let reads = |s: &State| calls(s, WsRequestType::GetSessionPayload).into_iter().map(|(_, p)| p["sessionId"].clone()).collect::<Vec<_>>();
+    assert_eq!(reads(&rt.state), [json!("old")], "the tab reopens through the model's history read");
+    answer(&mut rt, WsRequestType::GetSessionPayload, payload("old", "claude", marker));
+    settle(&mut rt);
+    assert_eq!(reads(&rt.state), [json!("old"), json!("new")], "the walk reads the continuation");
+    answer(&mut rt, WsRequestType::GetSessionPayload, payload("new", "gemini", json!([])));
+    settle(&mut rt);
+    assert_eq!(reads(&rt.state).len(), 3, "then opens it");
+    answer(&mut rt, WsRequestType::GetSessionPayload, payload("new", "gemini", json!([])));
+    settle(&mut rt);
+    let spawns = calls(&rt.state, WsRequestType::SpawnAgent);
+    assert_eq!(spawns.last().map(|(_, p)| p["config"]["configId"].clone()), Some(json!("gemini")), "on the agent it ended with");
+    answer(&mut rt, WsRequestType::SpawnAgent, json!({ "agentId": "agent-9", "capabilities": { "loadSession": true }, "authMethods": [] }));
+    settle(&mut rt);
+    let loads = calls(&rt.state, WsRequestType::LoadSession);
+    assert_eq!(loads.last().map(|(_, p)| p["sessionId"].clone()), Some(json!("new")));
+    answer(&mut rt, WsRequestType::LoadSession, json!({}));
+    settle(&mut rt);
+    let tabs: Vec<String> = model::workspace::leaves(rt.state.workspace.root())
+        .into_iter()
+        .flat_map(|leaf| leaf.tabs.iter().map(|tab| tab.id().to_owned()))
+        .collect();
+    assert!(tabs.iter().any(|t| t.ends_with("new")) && !tabs.iter().any(|t| t.ends_with("old")), "the tab moved: {tabs:?}");
+    let ids: Vec<&str> = rt.state.chat.acp.messages["new"].iter().map(|m| m.id.as_str()).collect();
+    assert_eq!(ids, ["switch-splice:old:turn:old-1", "switch-splice:old:old-m2", "turn:new-1", "new-m2"]);
+    assert!(rt.state.chat.loaded.contains("new"), "the continuation is followed live");
+}

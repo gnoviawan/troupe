@@ -1,10 +1,7 @@
-//! Chats in the workspace: a rail row opens its chat's tab, a visible chat tab loads the
-//! chat's history from the host (`get_session_payload`) and follows its live log
-//! (`subscribe`), and each session event the link delivers becomes a `model::acp` event.
-//!
-//! The model's history open (index, tail window, agent adoption) is a later slice of R6a. Until
-//! it lands, this installs the whole payload and treats the chat as live, so a turn another
-//! client sends streams in.
+//! Chats in the workspace: a rail row opens its chat's tab, a visible chat tab reopens through
+//! the model's history open (`history_host.rs`) and follows its live log (`subscribe`), and
+//! each session event the link delivers becomes a `model::acp` event. A chat the launcher
+//! started is installed here from the launch.
 
 use std::collections::BTreeSet;
 
@@ -36,7 +33,7 @@ pub struct ChatUi {
     pub acp: acp::State,
     pub reader: ui::chat::Reader,
     /// Sessions whose payload was asked for (loaded or not).
-    requested: BTreeSet<String>,
+    pub(crate) requested: BTreeSet<String>,
     /// Sessions whose payload is in.
     pub loaded: BTreeSet<String>,
     /// A chat to open once its project's workspace is showing.
@@ -46,7 +43,7 @@ pub struct ChatUi {
     /// The link waiting for the user's "Open" (`ExternalLinkConfirm`); only one at a time.
     pub link_confirm: Option<String>,
     /// Turn ends the model asked for, run after the events already delivered.
-    deferred: Vec<Event>,
+    pub(crate) deferred: Vec<Event>,
     /// Busy-queue retries the model asked for: (due on the frame clock, session, generation).
     retries: Vec<(f64, String, u64)>,
     /// Waits for re-advertised options a model pick asked for: (due on the frame clock, run).
@@ -148,11 +145,7 @@ impl State {
         self.chat.acp.book.open_chat_tabs = tabs.iter().cloned().collect();
         for session in tabs {
             if self.host.is_some() && self.chat.requested.insert(session.clone()) {
-                self.call(
-                    troupe_protocol::ws::WsRequestType::GetSessionPayload,
-                    json!({ "sessionId": session }),
-                    Pending::ChatPayload(session),
-                );
+                self.reopen_chat(&session);
             }
         }
     }
@@ -331,7 +324,11 @@ impl State {
                     log::info!("[chat] model list of {config_id} not saved: the Rune client has no catalog store yet");
                 }
                 other => {
-                    if let Some(other) = self.run_control(other).and_then(|other| self.run_agent_command(other)) {
+                    if let Some(other) = self
+                        .run_control(other)
+                        .and_then(|other| self.run_agent_command(other))
+                        .and_then(|other| self.run_history_effect(other))
+                    {
                         log::info!("[chat] effect not wired in the Rune client yet: {other:?}");
                     }
                 }
