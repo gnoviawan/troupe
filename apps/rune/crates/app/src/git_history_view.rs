@@ -204,7 +204,9 @@ fn history_tab(s: &State, t: &'static Tokens, id: &str, cwd: &str, layer: &mut V
             if let Some(hash) = selected.filter(|_| !s.history.detail_hidden)
                 && let Some(commit) = visible.iter().find(|c| c.hash == hash)
             {
-                split = split.child(detail_pane(s, t, cwd, commit));
+                // React's narrow layout: the detail pane floats over the table's right edge,
+                // so the table keeps its columns.
+                split = split.child(detail_pane(s, t, cwd, commit).fill(c.background).pin(None, Some(0.0), Some(0.0), Some(0.0)));
             }
             split
         }
