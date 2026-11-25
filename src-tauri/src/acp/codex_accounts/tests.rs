@@ -299,21 +299,45 @@ fn removing_an_account_or_deleting_a_chat_drops_the_chat_choice() {
 }
 
 #[test]
-fn automatic_switching_defaults_on_and_persists_when_turned_off() {
+fn automatic_switching_is_off_in_a_new_store() {
     let f = fixture();
-    assert!(store(&f).snapshot().unwrap().auto_switch);
+    assert!(!store(&f).snapshot().unwrap().auto_switch);
+}
+
+#[test]
+fn automatic_switching_an_older_build_turned_on_reads_as_off_and_the_next_save_writes_it_off() {
+    let f = fixture();
     fs::create_dir_all(&f.state).unwrap();
     fs::write(
         f.state.join("codex-accounts.json"),
-        br#"{"version":1,"accounts":[],"defaultAccountId":"default"}"#,
+        br#"{"version":1,"accounts":[{"id":"default","name":"Default","createdAt":0},{"id":"ab12","name":"Work","createdAt":1}],"defaultAccountId":"default","autoSwitch":true}"#,
     )
     .unwrap();
-    assert!(store(&f).snapshot().unwrap().auto_switch);
-    store(&f).set_auto_switch(false).unwrap();
-    assert!(!store(&f).snapshot().unwrap().auto_switch);
+    let snapshot = store(&f).snapshot().unwrap();
+    assert!(!snapshot.auto_switch);
+    let names: Vec<&str> = snapshot.profiles.iter().map(|p| p.name.as_str()).collect();
+    assert_eq!(names, vec!["Default", "Work"]);
+    store(&f).rename("ab12", "Office").unwrap();
     let file: serde_json::Value =
         serde_json::from_slice(&fs::read(f.state.join("codex-accounts.json")).unwrap()).unwrap();
     assert_eq!(file["autoSwitch"], false);
+    assert_eq!(file["autoSwitchOptIn"], false);
+}
+
+#[test]
+fn automatic_switching_persists_under_the_opt_in_key_and_mirrors_it_for_older_builds() {
+    let f = fixture();
+    let read = || -> serde_json::Value {
+        serde_json::from_slice(&fs::read(f.state.join("codex-accounts.json")).unwrap()).unwrap()
+    };
+    store(&f).set_auto_switch(true).unwrap();
+    assert!(store(&f).snapshot().unwrap().auto_switch);
+    assert_eq!(read()["autoSwitchOptIn"], true);
+    assert_eq!(read()["autoSwitch"], true);
+    store(&f).set_auto_switch(false).unwrap();
+    assert!(!store(&f).snapshot().unwrap().auto_switch);
+    assert_eq!(read()["autoSwitchOptIn"], false);
+    assert_eq!(read()["autoSwitch"], false);
 }
 
 #[test]
