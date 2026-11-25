@@ -60,6 +60,7 @@ import { ServerSection } from './app-preferences/server-section'
 import { ShellSection } from './app-preferences/shell-section'
 import { ShortcutsSection } from './app-preferences/shortcuts-section'
 import { SkillsSection } from './app-preferences/skills-section'
+import { SubagentsSection } from './app-preferences/subagents-section'
 import { TerminalProfilesSection } from './app-preferences/terminal-profiles-section'
 import { UpdatesSection } from './app-preferences/updates-section'
 
@@ -364,6 +365,7 @@ export function AppPreferencesModal(): React.JSX.Element {
             handleAcpSessionReopenTimeoutChange={handleAcpSessionReopenTimeoutChange}
             handleAgentIdleWindowChange={handleAgentIdleWindowChange}
           />
+          <SubagentsSection />
           <SkillsSection />
           <ProviderSection />
           <McpServersSection />

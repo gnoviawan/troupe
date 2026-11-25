@@ -292,6 +292,76 @@ describe('AppPreferences idle chat window', () => {
   })
 })
 
+describe('AppPreferences Sub-agents page', () => {
+  const ENABLE_SWITCH = { name: 'Let agents start other agents' }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useAppSettingsStore.setState({ settings: { ...DEFAULT_APP_SETTINGS }, isLoaded: true })
+    // jsdom has no scrollIntoView; a search jump scrolls to its row.
+    window.HTMLElement.prototype.scrollIntoView = vi.fn()
+  })
+
+  it.each([
+    ['desktop', true],
+    ['web', false]
+  ])('lists Sub-agents right after Agent chats on %s', (_runtime, isTauri) => {
+    tauriRef.current = isTauri
+    renderPage()
+
+    const nav = screen.getByRole('navigation', { name: 'Settings pages' })
+    const pages = within(nav)
+      .getAllByRole('button')
+      .map((button) => button.textContent)
+    expect(pages.slice(pages.indexOf('Agent chats'), pages.indexOf('Agent chats') + 2)).toEqual([
+      'Agent chats',
+      'Sub-agents'
+    ])
+  })
+
+  it('opens a page that holds the sub-agent settings', async () => {
+    tauriRef.current = true
+    renderPage()
+    goTo('Sub-agents')
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Sub-agents' })).toBeInTheDocument()
+    expect(
+      screen.getByText('Agents your chats can hand work to, and what each one runs with.')
+    ).toBeInTheDocument()
+    expect(await screen.findByRole('switch', ENABLE_SWITCH)).toBeInTheDocument()
+  })
+
+  it('no longer shows the sub-agent settings on Agent chats', async () => {
+    tauriRef.current = true
+    renderPage()
+    goTo('Agent chats')
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Close idle chats after' })
+    ).toBeInTheDocument()
+    await screen.findByRole('switch', { ...ENABLE_SWITCH, hidden: true })
+    expect(screen.queryByRole('switch', ENABLE_SWITCH)).toBeNull()
+  })
+
+  it('jumps from a "sub-agent" search to the Sub-agents page', async () => {
+    tauriRef.current = true
+    renderPage()
+    fireEvent.change(screen.getByLabelText('Search settings'), { target: { value: 'sub-agent' } })
+
+    const nav = screen.getByRole('navigation', { name: 'Settings pages' })
+    fireEvent.click(within(nav).getByRole('button', { name: /Let agents start other agents/ }))
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Sub-agents' })).toBeInTheDocument()
+    const target = await screen.findByRole('switch', ENABLE_SWITCH)
+    await waitFor(() =>
+      expect(target.closest('[data-settings-target]')).toHaveAttribute(
+        'id',
+        'setting-subagent-enabled'
+      )
+    )
+  })
+})
+
 describe('AppPreferences notification switches (issue #865)', () => {
   beforeEach(() => {
     tauriRef.current = true

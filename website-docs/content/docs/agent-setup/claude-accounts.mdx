@@ -1,9 +1,9 @@
 ---
 title: Claude accounts
-description: Sign in to more than one Claude account, pick one per project or per chat, watch your limits, and switch when one runs out.
+description: Sign in to more than one Claude account, pick one per project or per chat, and watch your limits.
 ---
 
-If you have more than one Claude subscription, for example a personal one and a work one, Troupe can keep them all signed in. Each project has an account for its Claude Agent chats, and one chat can use an account of its own. When a chat's account reaches its limit, Troupe moves that chat to another account, or offers you the choice.
+If you have more than one Claude subscription, for example a personal one and a work one, Troupe can keep them all signed in. Each project has an account for its Claude Agent chats, and one chat can use an account of its own. When a chat's account reaches its limit, Troupe tells you and lets you choose what to do next. Before you add more accounts, read [Risks of switching accounts](#risks-of-switching-accounts).
 
 Accounts apply to **Claude Agent** chats only. To set up Claude Agent itself, see [Set up Claude Agent](/docs/agent-setup/install-agents#set-up-claude-agent).
 
@@ -94,7 +94,7 @@ When the account has used 80% of a limit, a notice at the top of the chat box sa
 
 ### Switch automatically
 
-**Switch accounts automatically** shows under the accounts in the **Claude Code** group of **Settings** > **Provider** when you have two or more accounts. It is on by default.
+**Switch accounts automatically** shows under the accounts in the **Claude Code** group of **Settings** > **Provider** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
 
 When a chat reaches its account's limit, Troupe moves the chat to the signed-in account with the most room and continues it. Troupe does this on the computer that runs it, so it also works when no app window or browser has the chat open. The chat gets a short message instead of your last message again, for example "Troupe moved this chat from Claude account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on." Subagents and background commands that were running are stopped, and the message asks the agent to start again the ones it still needs.
 
@@ -116,6 +116,18 @@ Project Settings shows the same warning when the project's account is at its lim
 ### Worker chats
 
 An agent can start worker chats for parts of a task. When **Switch accounts automatically** is on, each worker chat of a Claude Agent chat runs on its own account: the signed-in account with the most room, unless the agent names one. Troupe moves a worker chat at its limit like any other chat. When the setting is off, worker chats follow the project's account. See [Let an agent start worker chats](/docs/agents/chat-history#let-an-agent-start-worker-chats).
+
+## Risks of switching accounts
+
+More than one account lets you keep, for example, a personal account and a work account apart. A separate work account is fine. Troupe does not recommend that you add many accounts of one provider, or that you use several accounts to get past usage limits.
+
+Anthropic's [legal and compliance page for Claude Code](https://code.claude.com/docs/en/legal-and-compliance) says that plan limits assume ordinary, individual usage of Claude Code and the Agent SDK. The [Consumer Terms](https://www.anthropic.com/legal/consumer-terms) do not allow access to the services through automated or non-human means, except where Anthropic permits it. Anthropic can suspend or end your access without prior notice.
+
+A provider can flag all the accounts of one person and suspend them together. If you often reach your limits, these options are safer:
+
+- Switch by hand: in the notice at the limit, pick an account and click **Switch and continue**, or click **Continue when it resets**.
+- Buy extra usage for your Claude plan.
+- Use Claude Code with an Anthropic API key, which is billed per use.
 
 ## Manage accounts on a server
 

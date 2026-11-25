@@ -1,9 +1,9 @@
 ---
 title: Codex accounts
-description: Sign in to more than one ChatGPT account for Codex, pick one per project or per chat, watch your limits, and switch when one runs out.
+description: Sign in to more than one ChatGPT account for Codex, pick one per project or per chat, and watch your limits.
 ---
 
-If you use Codex with more than one ChatGPT account, for example a personal one and a work one, Troupe can keep them all signed in. Each project uses one account for its Codex chats, and one chat can use an account of its own. When a chat's account reaches its limit, Troupe moves that chat to another account.
+If you use Codex with more than one ChatGPT account, for example a personal one and a work one, Troupe can keep them all signed in. Each project uses one account for its Codex chats, and one chat can use an account of its own. When a chat's account reaches its limit, Troupe tells you and lets you choose what to do next. Before you add more accounts, read [Risks of switching accounts](#risks-of-switching-accounts).
 
 Accounts apply to the **Codex** agent that Troupe installs. To set up Codex itself, see [Install an agent](/docs/agent-setup/install-agents). For Claude, see [Claude accounts](/docs/agent-setup/claude-accounts).
 
@@ -90,11 +90,25 @@ In the notice at the limit, you can:
 
 ### Switch automatically
 
-**Switch accounts automatically** in the **Codex** group of **Settings** > **Provider** is on by default. When a chat reaches its account's limit, Troupe moves only that chat to the signed-in account with the most room and continues it with a short message, for example "Troupe moved this chat from Codex account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
+**Switch accounts automatically** shows in the **Codex** group of **Settings** > **Provider** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
+
+When a chat reaches its account's limit, Troupe moves only that chat to the signed-in account with the most room and continues it with a short message, for example "Troupe moved this chat from Codex account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
 
 When no other account has room, Troupe continues the chat when the limit resets. The notice shows when, for example "Continues at 14:05", on every device that has the chat open. Click **Cancel** to stop the wait. The wait stays in place if you close the app, and it is still there after Troupe starts again.
 
 Turn the switch off to choose yourself in the notice.
+
+## Risks of switching accounts
+
+More than one account lets you keep, for example, a personal account and a work account apart. A separate work account is fine. Troupe does not recommend that you add many accounts of one provider, or that you use several accounts to get past usage limits.
+
+OpenAI's [Terms of Use](https://openai.com/policies/terms-of-use/) do not allow you to circumvent any rate limits or restrictions. When you reach a Codex limit, OpenAI's [pricing page](https://learn.chatgpt.com/docs/pricing) tells you to buy credits or to use an API key.
+
+A provider can flag all the accounts of one person and suspend them together. If you often reach your limits, these options are safer:
+
+- Switch by hand: in the notice at the limit, click **Switch to** _account_ **and continue**, or click **Continue when it resets**.
+- Buy credits for Codex from OpenAI.
+- Use the OpenAI API with an API key, which is billed per use. Troupe does not run Codex with an API key.
 
 ## Manage accounts on a server
 

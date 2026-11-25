@@ -15,9 +15,8 @@ use crate::acp::{AntigravityAgentService, AntigravitySignInCheck};
 #[tauri::command]
 pub async fn antigravity_accounts_usage(
     service: State<'_, Arc<AntigravityAgentService>>,
-    force: Option<bool>,
 ) -> Result<Vec<AntigravityAccountUsage>, String> {
-    service.accounts_usage(force.unwrap_or(false)).await
+    service.accounts_usage()
 }
 
 #[tauri::command]
