@@ -595,6 +595,8 @@
         "switch_agent_session_failure_stops_a_reused_agent_no_chat_uses",
         "switch_agent_session_failure_keeps_an_agent_a_history_open_waits_on",
         "switch_agent_marker_failure_does_not_stop_the_switch",
+        "switch_agent_survives_its_source_chat_closing_mid_switch",
+        "switch_agent_survives_its_source_chat_deleted_mid_switch",
         "switch_agent_dispatch_failure_banners_the_new_session",
         "switch_agent_busy_dispatch_queues_the_handoff",
         "switch_agent_busy_summary_only_dispatch_shows_its_bubble",

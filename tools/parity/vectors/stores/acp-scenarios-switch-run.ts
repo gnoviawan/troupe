@@ -214,6 +214,24 @@ export const switchRunScenarios: Scenario[] = [
     steps: [switchTo({ pendingText: 'go' })]
   },
   {
+    name: 'switch_agent_survives_its_source_chat_closing_mid_switch',
+    context: {
+      projects: PROJECTS,
+      agentReplies: [SPAWNED, OPENED, { hold: true, release: null }]
+    },
+    initial: armed(),
+    steps: [switchTo({ pendingText: 'go' }), ev('closeSession', S), ev('releaseHeld')]
+  },
+  {
+    name: 'switch_agent_survives_its_source_chat_deleted_mid_switch',
+    context: {
+      projects: PROJECTS,
+      agentReplies: [SPAWNED, OPENED, { hold: true, release: null }, null]
+    },
+    initial: armed(),
+    steps: [switchTo({ pendingText: 'go' }), ev('deleteHistorySession', S), ev('releaseHeld')]
+  },
+  {
     name: 'switch_agent_dispatch_failure_banners_the_new_session',
     context: { ...happy, dispatch: [{ error: 'prompt refused' }] },
     initial: armed(),
