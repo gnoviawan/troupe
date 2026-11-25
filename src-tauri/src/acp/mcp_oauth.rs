@@ -301,6 +301,29 @@ async fn refresh_expired(server_url: &str) -> Result<Option<String>, McpOAuthErr
     }
 }
 
+/// Pick the `WWW-Authenticate` header from a `401` response, checking all
+/// header values per RFC 9110 §11.6.1 and preferring the first `Bearer`
+/// challenge when multiple `WWW-Authenticate` headers are present.
+pub(crate) fn extract_www_authenticate(headers: &reqwest::header::HeaderMap) -> Option<String> {
+    let mut fallback: Option<String> = None;
+    for value in headers.get_all(reqwest::header::WWW_AUTHENTICATE) {
+        let Ok(raw) = value.to_str() else {
+            continue;
+        };
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if is_auth_required(trimmed) {
+            return Some(trimmed.to_string());
+        }
+        if fallback.is_none() {
+            fallback = Some(trimmed.to_string());
+        }
+    }
+    fallback
+}
+
 /// Probe `server_url` for a `401` `WWW-Authenticate` challenge header so
 /// reactive OAuth discovery can follow custom `resource_metadata` URLs and
 /// seed `scope` selection from the challenge (RFC 9728 + RFC 6750).
@@ -332,13 +355,7 @@ pub(crate) async fn probe_www_authenticate(server_url: &str) -> Option<String> {
     if response.status() != reqwest::StatusCode::UNAUTHORIZED {
         return None;
     }
-    response
-        .headers()
-        .get(reqwest::header::WWW_AUTHENTICATE)
-        .and_then(|value| value.to_str().ok())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
+    extract_www_authenticate(response.headers())
 }
 
 /// Discover OAuth authorization server metadata for `server_url`, preferring
@@ -555,197 +572,8 @@ pub fn extract_resource_metadata_url(header: &str) -> Option<String> {
     None
 }
 
-/// Outcome parsed from a loopback desktop OAuth redirect whose `state` matches
-/// the started authorization flow.
-enum DesktopCallback {
-    Code {
-        code: String,
-        state: String,
-        issuer: Option<String>,
-    },
-    Denied(String),
-}
-
-const CALLBACK_HEADER_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
-const CALLBACK_SUCCESS_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization complete</h2><p>You can close this tab and return to Troupe.</p><script>window.close();</script></body></html>";
-const CALLBACK_DENIED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization cancelled</h2><p>Sign-in was not completed. You can close this tab and return to Troupe.</p></body></html>";
-const CALLBACK_FAILED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization failed</h2><p>Troupe could not finish signing in. You can close this tab and return to Troupe.</p></body></html>";
-
-async fn write_http_response(
-    stream: &mut tokio::net::TcpStream,
-    status: &str,
-    html_body: Option<&str>,
-) {
-    use tokio::io::AsyncWriteExt;
-    let response = match html_body {
-        Some(body) => format!(
-            "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-            body.len()
-        ),
-        None => format!("HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"),
-    };
-    let _ = stream.write_all(response.as_bytes()).await;
-    let _ = stream.flush().await;
-}
-
-fn parse_desktop_callback(
-    target: &str,
-    port: u16,
-    expected_state: &str,
-) -> Option<DesktopCallback> {
-    let url = url::Url::parse(&format!("http://127.0.0.1:{port}{target}")).ok()?;
-    if url.path() != OAUTH_REDIRECT_PATH {
-        return None;
-    }
-    let mut code: Option<String> = None;
-    let mut state: Option<String> = None;
-    let mut issuer: Option<String> = None;
-    let mut error: Option<String> = None;
-    let mut error_description: Option<String> = None;
-    for (key, value) in url.query_pairs() {
-        match key.as_ref() {
-            "code" => code = Some(value.into_owned()),
-            "state" => state = Some(value.into_owned()),
-            "iss" => issuer = Some(value.into_owned()),
-            "error" => error = Some(value.into_owned()),
-            "error_description" => error_description = Some(value.into_owned()),
-            _ => {}
-        }
-    }
-    if state.as_deref() != Some(expected_state) {
-        return None;
-    }
-    if let Some(err) = error {
-        let description = error_description
-            .filter(|text| !text.trim().is_empty())
-            .unwrap_or(err);
-        return Some(DesktopCallback::Denied(description));
-    }
-    let code = code?;
-    Some(DesktopCallback::Code {
-        code,
-        state: expected_state.to_string(),
-        issuer,
-    })
-}
-
-async fn read_callback_connection(
-    stream: tokio::net::TcpStream,
-    port: u16,
-    expected_state: String,
-    tx: tokio::sync::mpsc::Sender<(DesktopCallback, tokio::net::TcpStream)>,
-) {
-    use tokio::io::{AsyncBufReadExt, BufReader};
-    let mut reader = BufReader::new(stream);
-    let read_result = tokio::time::timeout(CALLBACK_HEADER_READ_TIMEOUT, async {
-        let mut first_line = String::new();
-        if reader.read_line(&mut first_line).await.ok()? == 0 {
-            return None;
-        }
-        let mut header_lines = Vec::new();
-        for _ in 0..100 {
-            let mut line = String::new();
-            if reader.read_line(&mut line).await.ok()? == 0 {
-                return None;
-            }
-            let is_end = line.trim().is_empty();
-            header_lines.push(line);
-            if is_end {
-                return Some((first_line, header_lines));
-            }
-        }
-        None
-    })
-    .await;
-
-    let Ok(Some((first_line, header_lines))) = read_result else {
-        return;
-    };
-    let mut stream = reader.into_inner();
-    if !crate::web::host_allow::HostAllowList::loopback()
-        .allows_header_block(&mut header_lines.into_iter().map(Ok))
-    {
-        log::warn!("[mcp-oauth] rejected callback request: foreign or missing host");
-        write_http_response(&mut stream, "403 Forbidden", None).await;
-        return;
-    }
-    let target = first_line.split_whitespace().nth(1).unwrap_or("/");
-    let Some(callback) = parse_desktop_callback(target, port, &expected_state) else {
-        write_http_response(&mut stream, "404 Not Found", None).await;
-        return;
-    };
-    if tx.try_send((callback, stream)).is_err() {
-        // Another matching callback already claimed the flow.
-    }
-}
-
-/// Wait for the desktop loopback OAuth redirect on `listener`, validate `Host`
-/// and CSRF `state`, exchange the authorization code (including RFC 9207 `iss`
-/// validation), persist the token, and send the final browser response.
-pub async fn complete_desktop_flow(
-    listener: tokio::net::TcpListener,
-    port: u16,
-    expected_state: &str,
-    server_url: &str,
-    session: AuthorizationSession,
-    timeout: std::time::Duration,
-) -> Result<StoredToken, McpOAuthError> {
-    let deadline = tokio::time::Instant::now() + timeout;
-    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
-    let mut readers = tokio::task::JoinSet::new();
-
-    let (callback, mut stream) = loop {
-        tokio::select! {
-            received = rx.recv() => {
-                match received {
-                    Some(item) => break item,
-                    None => return Err(McpOAuthError::Timeout),
-                }
-            }
-            accepted = listener.accept() => {
-                match accepted {
-                    Ok((stream, _addr)) => {
-                        readers.spawn(read_callback_connection(
-                            stream,
-                            port,
-                            expected_state.to_string(),
-                            tx.clone(),
-                        ));
-                    }
-                    Err(e) => {
-                        return Err(McpOAuthError::Http(format!("callback listener error: {e}")));
-                    }
-                }
-            }
-            () = tokio::time::sleep_until(deadline) => {
-                return Err(McpOAuthError::Timeout);
-            }
-        }
-    };
-    readers.abort_all();
-
-    match callback {
-        DesktopCallback::Denied(description) => {
-            write_http_response(&mut stream, "400 Bad Request", Some(CALLBACK_DENIED_HTML)).await;
-            Err(McpOAuthError::Denied(description))
-        }
-        DesktopCallback::Code {
-            code,
-            state,
-            issuer,
-        } => match finish_session(server_url, session, &code, &state, issuer.as_deref()).await {
-            Ok(stored) => {
-                write_http_response(&mut stream, "200 OK", Some(CALLBACK_SUCCESS_HTML)).await;
-                Ok(stored)
-            }
-            Err(error) => {
-                write_http_response(&mut stream, "502 Bad Gateway", Some(CALLBACK_FAILED_HTML))
-                    .await;
-                Err(error)
-            }
-        },
-    }
-}
+mod callback;
+pub use callback::complete_desktop_flow;
 
 pub fn is_auth_required(header: &str) -> bool {
     let mut in_quotes = false;

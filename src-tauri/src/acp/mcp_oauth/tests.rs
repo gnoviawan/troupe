@@ -21,6 +21,25 @@ fn auth_required() {
     assert!(!is_auth_required(r#"Basic realm="bearer""#));
     assert!(!is_auth_required(""));
 }
+
+#[test]
+fn extract_www_authenticate_prefers_bearer_across_multiple_headers() {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(r#"Basic realm="fallback""#),
+    );
+    headers.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Bearer resource_metadata="https://x.test/.well-known/oauth-protected-resource""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&headers).as_deref(),
+        Some(r#"Bearer resource_metadata="https://x.test/.well-known/oauth-protected-resource""#)
+    );
+}
 #[test]
 fn key_normalizes() {
     assert_eq!(

@@ -660,11 +660,7 @@ async fn check_oauth_required(url: &str, headers: &[McpNameValuePair]) -> Option
     }
     let response = request.send().await.ok()?;
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-        if let Some(header) = response.headers().get(reqwest::header::WWW_AUTHENTICATE) {
-            if let Ok(value) = header.to_str() {
-                return Some(value.to_string());
-            }
-        }
+        return crate::acp::mcp_oauth::extract_www_authenticate(response.headers());
     }
     None
 }
