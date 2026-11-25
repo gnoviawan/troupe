@@ -18,16 +18,17 @@
 import type { ServerSetupAnswers } from '@shared/types/server-setup.types'
 import { useEffect, useState } from 'react'
 import { rowId } from '@/components/settings/row-id'
-import { SettingsGroup } from '@/components/settings/SettingsGroup'
-import { SettingsSection } from '@/components/settings/SettingsLayout'
+import { SETTINGS_CARD_CLASS, SettingsGroup } from '@/components/settings/SettingsGroup'
 import { SettingsNotice } from '@/components/settings/SettingsNotice'
 import { ServerSetupWizard } from '@/components/setup/ServerSetupWizard'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { logFrontendError } from '@/lib/log-api'
 import { isTauriContext } from '@/lib/tauri-runtime'
+import { cn } from '@/lib/utils'
 import { webSetupApi } from '@/lib/web-setup-api'
 
+/** The web-only Server section of About. Renders nothing on the desktop. */
 export function ServerSection(): React.JSX.Element | null {
   // Web-only (AGENTS.md): the whole page is hidden on the desktop runtime.
   if (isTauriContext()) return null
@@ -78,36 +79,34 @@ function ServerSectionInner(): React.JSX.Element {
   }, [attempt])
 
   return (
-    <SettingsSection id="server">
-      <SettingsGroup>
-        <SettingsNotice tone="warning">
-          Saving these settings restarts the server. You're taken to the new address automatically —
-          anyone else connected has to reload.
-        </SettingsNotice>
-        <div id={rowId('server-config')} className="rounded-lg border border-border bg-card p-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-6">
-              <Spinner label="Loading server settings" />
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-start gap-3">
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                onClick={() => setAttempt((n) => n + 1)}
-              >
-                Try again
-              </Button>
-            </div>
-          ) : config ? (
-            <ServerSetupWizard mode="reconfigure" initial={config} />
-          ) : null}
-        </div>
-      </SettingsGroup>
-    </SettingsSection>
+    <SettingsGroup title="Server">
+      <SettingsNotice tone="warning">
+        Saving these settings restarts the server. You're taken to the new address automatically —
+        anyone else connected has to reload.
+      </SettingsNotice>
+      <div id={rowId('server-config')} className="scroll-mt-4">
+        {loading ? (
+          <div className={cn('flex items-center justify-center py-6', SETTINGS_CARD_CLASS)}>
+            <Spinner label="Loading server settings" />
+          </div>
+        ) : error ? (
+          <div className={cn('flex items-center gap-3 px-4 py-3', SETTINGS_CARD_CLASS)}>
+            <p role="alert" className="min-w-0 flex-1 text-xs text-destructive">
+              {error}
+            </p>
+            <Button
+              type="button"
+              size="xs"
+              variant="secondary"
+              onClick={() => setAttempt((n) => n + 1)}
+            >
+              Try again
+            </Button>
+          </div>
+        ) : config ? (
+          <ServerSetupWizard mode="reconfigure" initial={config} />
+        ) : null}
+      </div>
+    </SettingsGroup>
   )
 }

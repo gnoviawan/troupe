@@ -43,7 +43,7 @@ export function AccountGroupFooter({
   if (accountCount >= 2) {
     return (
       <>
-        <SettingsCard className="mt-3">
+        <SettingsCard>
           <SettingsRow
             htmlFor={switchId}
             label="Switch accounts automatically"

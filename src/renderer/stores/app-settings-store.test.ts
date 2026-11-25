@@ -6,8 +6,8 @@ import {
   useAppearanceMode,
   useAppSettingsStore,
   useColorTheme,
-  useTerminalScreenReaderMode,
-  useTerminalUrlOpenMode
+  useLinkOpenMode,
+  useTerminalScreenReaderMode
 } from './app-settings-store'
 
 describe('app-settings-store', () => {
@@ -53,9 +53,9 @@ describe('app-settings-store', () => {
       expect(isLoaded).toBe(false)
     })
 
-    it('should default terminal URL open mode to system', () => {
+    it('should default link open mode to system', () => {
       const { settings } = useAppSettingsStore.getState()
-      expect(settings.terminalUrlOpenMode).toBe('system')
+      expect(settings.linkOpenMode).toBe('system')
     })
   })
 
@@ -98,13 +98,13 @@ describe('app-settings-store', () => {
       expect(settings.defaultShell).toBe('')
     })
 
-    it('should update terminalUrlOpenMode', () => {
+    it('should update linkOpenMode', () => {
       const { updateSetting } = useAppSettingsStore.getState()
 
-      updateSetting('terminalUrlOpenMode', 'termul')
+      updateSetting('linkOpenMode', 'troupe')
 
       const { settings } = useAppSettingsStore.getState()
-      expect(settings.terminalUrlOpenMode).toBe('termul')
+      expect(settings.linkOpenMode).toBe('troupe')
     })
   })
 
@@ -131,7 +131,7 @@ describe('app-settings-store', () => {
         terminalRenderer: 'auto' as const,
         defaultProjectColor: 'blue',
         confirmTerminalClose: true,
-        terminalUrlOpenMode: 'termul' as const,
+        linkOpenMode: 'troupe' as const,
         remoteBindMode: 'localhost' as const,
         colorTheme: 'dracula',
         appearanceMode: 'dark' as const,
@@ -167,7 +167,7 @@ describe('app-settings-store', () => {
           terminalRenderer: 'dom' as const,
           defaultProjectColor: 'red',
           confirmTerminalClose: false,
-          terminalUrlOpenMode: 'termul',
+          linkOpenMode: 'troupe',
           remoteBindMode: 'all' as const,
           colorTheme: 'nord',
           appearanceMode: 'light' as const,
@@ -242,14 +242,14 @@ describe('app-settings-store', () => {
       expect(settings).toEqual(DEFAULT_APP_SETTINGS)
     })
 
-    it('useTerminalUrlOpenMode should select the terminal URL mode', () => {
+    it('useLinkOpenMode should select the link open mode', () => {
       useAppSettingsStore.setState((state) => ({
         ...state,
-        settings: { ...state.settings, terminalUrlOpenMode: 'termul' }
+        settings: { ...state.settings, linkOpenMode: 'troupe' }
       }))
 
-      const { result } = renderHook(() => useTerminalUrlOpenMode())
-      expect(result.current).toBe('termul')
+      const { result } = renderHook(() => useLinkOpenMode())
+      expect(result.current).toBe('troupe')
     })
 
     it('useColorTheme should select the app color theme', () => {

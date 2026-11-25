@@ -73,6 +73,7 @@ describe('Troupe tool pill', () => {
         displayTrimmed: value.trim(),
         fileBlocks: [],
         hasConversations: false,
+        hasCanvas: false,
         hasTools: true,
         contextBlocks: []
       },
