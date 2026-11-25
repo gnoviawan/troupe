@@ -3,6 +3,7 @@ import type { EnvVariable } from '@/types/project'
 import {
   mergeEnvVars,
   parseEnvFile,
+  passThroughProjectEnv,
   projectForCwd,
   resolveAgentSpawnEnv,
   resolveEnvForSpawn,
@@ -256,6 +257,56 @@ describe('env-parser', () => {
       expect(result.env.FULL).toBe('/data') // $BASE resolves to empty
     })
   })
+
+  describe('passThroughProjectEnv', () => {
+    it('should return empty env for undefined project env vars', () => {
+      const result = passThroughProjectEnv(undefined)
+
+      expect(result.env).toEqual({})
+      expect(result.hasProjectEnv).toBe(false)
+    })
+
+    it('should return empty env for empty project env vars', () => {
+      const result = passThroughProjectEnv([])
+
+      expect(result.env).toEqual({})
+      expect(result.hasProjectEnv).toBe(false)
+    })
+
+    it('should pass values through raw, without expanding references', () => {
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: literal placeholder text under test
+      const envVars: EnvVariable[] = [
+        { key: 'PATH', value: '$HOME/bin:$PATH' },
+        { key: 'FULL_PATH', value: '${HOME}/workspace' },
+        { key: 'WIN_PATH', value: '%USERPROFILE%\\workspace' },
+        { key: 'PLAIN', value: 'production' }
+      ]
+
+      const result = passThroughProjectEnv(envVars)
+
+      // The backend expands these against the process env at spawn; the
+      // renderer must not resolve them against nothing first.
+      expect(result.env).toEqual({
+        PATH: '$HOME/bin:$PATH',
+        FULL_PATH: '${HOME}/workspace',
+        WIN_PATH: '%USERPROFILE%\\workspace',
+        PLAIN: 'production'
+      })
+      expect(result.hasProjectEnv).toBe(true)
+    })
+
+    it('should skip empty keys', () => {
+      const envVars: EnvVariable[] = [
+        { key: 'VALID', value: 'value' },
+        { key: '', value: 'empty-key' },
+        { key: '   ', value: 'whitespace-key' }
+      ]
+
+      const result = passThroughProjectEnv(envVars)
+
+      expect(result.env).toEqual({ VALID: 'value' })
+    })
+  })
 })
 
 describe('project env for agent spawns', () => {
@@ -301,6 +352,15 @@ describe('project env for agent spawns', () => {
     it('is empty when neither side contributes', () => {
       expect(resolveAgentSpawnEnv(undefined, undefined)).toEqual({})
       expect(resolveAgentSpawnEnv([], {})).toEqual({})
+    })
+
+    it('passes project values through raw for the backend to expand', () => {
+      const env = resolveAgentSpawnEnv([{ key: 'PATH', value: '$HOME/bin:$PATH' }], {
+        EXTRA: 'plain'
+      })
+      // The backend expands `$HOME`/`$PATH` against the process env at
+      // spawn; the renderer must not empty them out first.
+      expect(env).toEqual({ PATH: '$HOME/bin:$PATH', EXTRA: 'plain' })
     })
   })
 })

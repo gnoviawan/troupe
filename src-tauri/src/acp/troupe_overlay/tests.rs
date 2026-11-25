@@ -346,12 +346,15 @@ async fn remote_overlay_agents_launch_only_under_the_opt_in() {
     let root = tempfile::tempdir().unwrap();
     let (fetch, _) = counting_fetch(Ok(remote_document()));
     let service = TroupeOverlayService::with_fetch(root.path(), fetch);
-    assert_eq!(launchable_ids(&service, false), ["oh-my-pi"]);
-    assert_eq!(launchable_ids(&service, true), ["oh-my-pi"]);
+    assert_eq!(launchable_ids(&service, false), ["oh-my-pi", "hermes"]);
+    assert_eq!(launchable_ids(&service, true), ["oh-my-pi", "hermes"]);
 
     assert!(service.refresh_if_stale().await);
-    assert_eq!(launchable_ids(&service, false), ["oh-my-pi"]);
-    assert_eq!(launchable_ids(&service, true), ["remote-only", "oh-my-pi"]);
+    assert_eq!(launchable_ids(&service, false), ["oh-my-pi", "hermes"]);
+    assert_eq!(
+        launchable_ids(&service, true),
+        ["remote-only", "oh-my-pi", "hermes"]
+    );
     assert_eq!(
         service.current().presentation().overrides[0]
             .name
@@ -375,10 +378,13 @@ async fn an_opted_in_remote_entry_replaces_the_bundled_one_with_its_id() {
     let service = TroupeOverlayService::with_fetch(root.path(), fetch);
     assert!(service.refresh_if_stale().await);
 
-    let off = service.launchable_agents(false);
-    assert_eq!(off.len(), 1);
-    assert_eq!(off[0].version, "18.12.6");
-    let on = service.launchable_agents(true);
-    assert_eq!(on.len(), 1);
-    assert_eq!(on[0].version, "99.0.0");
+    let omp = |agents: Vec<_>| -> Vec<String> {
+        agents
+            .into_iter()
+            .filter(|agent: &AcpRegistrySnapshotAgent| agent.id == "oh-my-pi")
+            .map(|agent| agent.version)
+            .collect()
+    };
+    assert_eq!(omp(service.launchable_agents(false)), ["18.12.6"]);
+    assert_eq!(omp(service.launchable_agents(true)), ["99.0.0"]);
 }

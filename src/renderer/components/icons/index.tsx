@@ -47,6 +47,7 @@ import {
   CopyIcon,
   CopyXIcon,
   CpuIcon,
+  CropIcon,
   Cursor01Icon,
   Delete01Icon,
   DotIcon,
@@ -101,6 +102,7 @@ import {
   ListIcon,
   LoaderCircleIcon,
   Loading02Icon,
+  LockIcon,
   MapsIcon,
   Menu01Icon,
   MessageQuestionIcon,
@@ -118,8 +120,10 @@ import {
   PanelLeftOpenIcon,
   PanelRightIcon,
   PaperclipIcon as PaperclipIconData,
+  PauseIcon,
   PenTool01Icon,
   PinIcon,
+  Plug01Icon,
   PlusIcon,
   Redo02Icon,
   RefreshCcwIcon,
@@ -128,7 +132,9 @@ import {
   RepeatIcon,
   ReplaceAllIcon,
   ReplaceIcon,
+  Rotate01Icon,
   RotateCcwIcon,
+  RulerIcon,
   SaveIcon,
   ScissorsIcon,
   Search01Icon,
@@ -140,9 +146,11 @@ import {
   ShuffleIcon,
   SkullIcon,
   SlidersHorizontalIcon,
+  SmartPhone01Icon,
   SparklesIcon,
   SquareTerminalIcon,
   StarIcon,
+  Tablet01Icon,
   Tag01Icon,
   TriangleAlertIcon,
   TypeIcon,
@@ -333,6 +341,14 @@ export const Repeat = hugeIcon('Repeat', RepeatIcon)
 export const Replace = hugeIcon('Replace', ReplaceIcon)
 export const ReplaceAll = hugeIcon('ReplaceAll', ReplaceAllIcon)
 export const RotateCcw = hugeIcon('RotateCcw', RotateCcwIcon)
+export const RotateCw = hugeIcon('RotateCw', Rotate01Icon)
+export const Crop = hugeIcon('Crop', CropIcon)
+export const Lock = hugeIcon('Lock', LockIcon)
+export const Pause = hugeIcon('Pause', PauseIcon)
+export const Plug = hugeIcon('Plug', Plug01Icon)
+export const Ruler = hugeIcon('Ruler', RulerIcon)
+export const Smartphone = hugeIcon('Smartphone', SmartPhone01Icon)
+export const Tablet = hugeIcon('Tablet', Tablet01Icon)
 export const Scissors = hugeIcon('Scissors', ScissorsIcon)
 export const Server = hugeIcon('Server', ServerIcon)
 export const ShieldAlert = hugeIcon('ShieldAlert', ShieldAlertIcon)

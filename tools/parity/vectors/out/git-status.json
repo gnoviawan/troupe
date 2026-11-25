@@ -1,0 +1,7740 @@
+[
+ {
+  "store": "git-status",
+  "name": "fetch_commit_context_stores_it_with_its_head",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "dev",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": false,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/other"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/other"
+      ]
+     }
+    ],
+    "result": {
+     "branch": "dev",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": false,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo",
+      "/other": "/other"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      },
+      "/other": {
+       "branch": "dev",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": false,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "fetch_commit_context_failure_drops_the_stale_context",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "reject": "not a repository"
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] commit context fetch failed for /repo: not a repository"
+     }
+    ],
+    "result": null,
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "commitContext": "not a repository"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_stale_commit_context_is_ignored",
+  "context": {
+   "git": [
+    {
+     "hold": true
+    },
+    {
+     "ok": {
+      "branch": "new",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h-new"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "new",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "new",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "ok": {
+        "branch": "old",
+        "hasUpstream": true,
+        "ahead": 1,
+        "behind": 0,
+        "stagedCount": 1,
+        "hasHead": true,
+        "lastSubject": "last subject",
+        "lastBody": ""
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "new",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_superseded_context_records_no_head",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "hold": true
+    },
+    {
+     "ok": {
+      "branch": "second",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h-new"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "second",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "second",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "ok": [
+        {
+         "hash": "h-old"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "second",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h-new"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_stale_status_is_ignored",
+  "context": {
+   "git": [
+    {
+     "hold": true
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": true,
+     "statusFetchCount": 1
+    }
+   },
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": true,
+     "statusFetchCount": 1
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "ok": []
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_status_failure_keeps_the_previous_status_and_clears_on_success",
+  "context": {
+   "git": [
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "reject": "index.lock exists"
+    },
+    {
+     "ok": []
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] status refresh failed for /repo: index.lock exists"
+     }
+    ],
+    "result": {
+     "reject": "index.lock exists"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "status": "index.lock exists"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": []
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "commit_sends_the_head_last_shown_and_refreshes",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "fix: thing",
+      "body",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "fix: thing",
+       "body",
+       false,
+       "h1"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "commit_on_an_unborn_branch_expects_the_empty_head",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": false,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": false,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": false,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "first",
+      "",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "first",
+       "",
+       true,
+       ""
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_commit_before_any_context_reads_the_head_first",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h0"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h0"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_commit_refused_because_head_moved_refreshes_and_rejects",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "reject": "HEAD moved",
+     "code": "precondition_failed"
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h-moved"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h1"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "reject": "HEAD moved"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h-moved"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_head_that_cannot_be_read_refuses_the_commit",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "reject": "log failed"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "reject": "HEAD could not be read. Refresh and try again."
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_failed_context_forgets_the_head_and_the_commit_refetches_it",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "reject": "gone"
+    },
+    {
+     "reject": "still gone"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] commit context fetch failed for /repo: gone"
+     }
+    ],
+    "result": null,
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "commitContext": "gone"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] commit context fetch failed for /repo: still gone"
+     }
+    ],
+    "result": {
+     "reject": "HEAD could not be read. Refresh and try again."
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "commitContext": "still gone"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "commit_errors_reject_without_a_refresh",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "reject": "hook rejected"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h1"
+      ]
+     }
+    ],
+    "result": {
+     "reject": "hook rejected"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_commit_resolves_when_its_refresh_fails",
+  "context": {
+   "git": [
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "reject": "status down"
+    },
+    {
+     "reject": "context down"
+    },
+    {
+     "reject": "stash down"
+    },
+    {
+     "reject": "branches down"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchCommitContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "branch": "main",
+     "hasUpstream": true,
+     "ahead": 1,
+     "behind": 0,
+     "stagedCount": 1,
+     "hasHead": true,
+     "lastSubject": "last subject",
+     "lastBody": ""
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "/repo",
+      "summary",
+      "",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "commit",
+      "args": [
+       "/repo",
+       "summary",
+       "",
+       false,
+       "h1"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] status refresh failed for /repo: status down"
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] commit context fetch failed for /repo: context down"
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "status": "status down",
+       "commitContext": "context down"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "push_refreshes_and_a_failed_push_rejects",
+  "context": {
+   "git": [
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    },
+    {
+     "reject": "no upstream"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "push",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "push",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "push",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "push",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "result": {
+     "reject": "no upstream"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "stage_files_stages_each_then_refreshes_once",
+  "context": {
+   "git": [
+    {
+     "ok": "diff a"
+    },
+    {
+     "ok": "diff a staged"
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "diff a"
+     },
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       true
+      ]
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "diff a",
+      "/repo:a.ts:true": "diff a staged"
+     },
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stageFiles",
+     "args": [
+      "/repo",
+      [
+       "a.ts",
+       "b.ts"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "a.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "b.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_mid_batch_stage_failure_still_refreshes_and_rejects",
+  "context": {
+   "git": [
+    {
+     "ok": null
+    },
+    {
+     "reject": "b.ts is locked"
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "stageFiles",
+     "args": [
+      "/repo",
+      [
+       "a.ts",
+       "b.ts",
+       "c.ts"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "a.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "b.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "reject": "b.ts is locked"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "single_file_writes_and_an_empty_batch",
+  "context": {
+   "git": [
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": []
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "stageFile",
+     "args": [
+      "/repo",
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "a.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "unstageFile",
+     "args": [
+      "/repo",
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "unstage",
+      "args": [
+       "/repo",
+       "a.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "discardFile",
+     "args": [
+      "/repo",
+      "b.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "discard",
+      "args": [
+       "/repo",
+       "b.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": []
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "unstageFiles",
+     "args": [
+      "/repo",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": []
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "discardFiles",
+     "args": [
+      "/repo",
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": []
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "hunk_writes_invalidate_the_file_and_refresh",
+  "context": {
+   "git": [
+    {
+     "ok": "diff"
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "reject": "patch does not apply"
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "diff"
+     },
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stageHunk",
+     "args": [
+      "/repo",
+      "a.ts",
+      "@@ -1 +1 @@\n-a\n+b\n"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stageHunk",
+      "args": [
+       "/repo",
+       "a.ts",
+       "@@ -1 +1 @@\n-a\n+b\n"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "unstageHunk",
+     "args": [
+      "/repo",
+      "a.ts",
+      "@@ -1 +1 @@\n-a\n+b\n"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "unstageHunk",
+      "args": [
+       "/repo",
+       "a.ts",
+       "@@ -1 +1 @@\n-a\n+b\n"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "result": {
+     "reject": "patch does not apply"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "stash_and_branch_lists_and_writes",
+  "context": {
+   "git": [
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main"
+     ]
+    },
+    {
+     "reject": "no stashes"
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": []
+    },
+    {
+     "reject": "stash has conflicts"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchStashes",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchBranches",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchStashes",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stashSave",
+     "args": [
+      "/repo",
+      "wip",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashSave",
+      "args": [
+       "/repo",
+       "wip",
+       true
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stashApply",
+     "args": [
+      "/repo",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashApply",
+      "args": [
+       "/repo",
+       0
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stashPop",
+     "args": [
+      "/repo",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashPop",
+      "args": [
+       "/repo",
+       0
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stashDrop",
+     "args": [
+      "/repo",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashDrop",
+      "args": [
+       "/repo",
+       0
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": []
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stashApply",
+     "args": [
+      "/repo",
+      3
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stashApply",
+      "args": [
+       "/repo",
+       3
+      ]
+     }
+    ],
+    "result": {
+     "reject": "stash has conflicts"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": []
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "branch_switch_and_create_clear_the_selection_and_refresh",
+  "context": {
+   "git": [
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature"
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    },
+    {
+     "ok": [
+      {
+       "index": 0,
+       "name": "stash@{0}",
+       "message": "WIP on main: abc wip"
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main",
+      "feature",
+      "new"
+     ]
+    },
+    {
+     "reject": "exists"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setSelectedFile",
+     "args": [
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": "a.ts",
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "branchSwitch",
+     "args": [
+      "/repo",
+      "feature"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "branchSwitch",
+      "args": [
+       "/repo",
+       "feature"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "reconcileWorktree",
+      "cwd": "/repo"
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "setSelectedFile",
+     "args": [
+      "b.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature"
+      ]
+     },
+     "selectedFile": "b.ts",
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "branchCreate",
+     "args": [
+      "/repo",
+      "new"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "createBranch",
+      "args": [
+       "/repo",
+       "new"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "stashList",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature",
+       "new"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "branchCreate",
+     "args": [
+      "/repo",
+      "new"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "createBranch",
+      "args": [
+       "/repo",
+       "new"
+      ]
+     }
+    ],
+    "result": {
+     "reject": "exists"
+    },
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {
+      "/repo": [
+       {
+        "index": 0,
+        "name": "stash@{0}",
+        "message": "WIP on main: abc wip"
+       }
+      ]
+     },
+     "branches": {
+      "/repo": [
+       "main",
+       "feature",
+       "new"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_failed_diff_notifies_by_default_and_clears_on_success",
+  "context": {
+   "git": [
+    {
+     "reject": "binary file"
+    },
+    {
+     "reject": "gone",
+     "code": "command_conflict"
+    },
+    {
+     "ok": "diff"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Failed to load diff: Error: binary file"
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": ""
+     },
+     "diffErrors": {
+      "/repo:a.ts:false": "binary file"
+     },
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "b.ts",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "b.ts",
+       true
+      ]
+     },
+     {
+      "kind": "toast",
+      "level": "error",
+      "message": "Failed to load diff: AcpTransportError: gone"
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "",
+      "/repo:b.ts:true": ""
+     },
+     "diffErrors": {
+      "/repo:a.ts:false": "binary file",
+      "/repo:b.ts:true": "gone"
+     },
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "diff",
+      "/repo:b.ts:true": ""
+     },
+     "diffErrors": {
+      "/repo:b.ts:true": "gone"
+     },
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_quiet_diff_failure_keeps_the_cache_empty_and_logs",
+  "context": {
+   "git": [
+    {
+     "reject": "binary file"
+    },
+    {
+     "ok": "diff"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false,
+      {
+       "notify": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] diff fetch failed for /repo: binary file"
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {
+      "/repo:a.ts:false": "binary file"
+     },
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false,
+      {
+       "notify": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     }
+    ],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {
+      "/repo:a.ts:false": "diff"
+     },
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_diff_invalidated_in_flight_is_discarded",
+  "context": {
+   "git": [
+    {
+     "hold": true
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h2"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "fetchDiff",
+     "args": [
+      "/repo",
+      "a.ts",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiff",
+      "args": [
+       "/repo",
+       "a.ts",
+       false
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "stageFile",
+     "args": [
+      "/repo",
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "stage",
+      "args": [
+       "/repo",
+       "a.ts"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "ok": "stale"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_watched_diff_stat_reads_and_an_unwatched_one_does_not",
+  "context": {
+   "git": [
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": {
+      "added": 3,
+      "removed": 1
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    },
+    {
+     "ok": {
+      "added": 1,
+      "removed": 0
+     }
+    },
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": {
+      "branch": "main",
+      "hasUpstream": true,
+      "ahead": 1,
+      "behind": 0,
+      "stagedCount": 1,
+      "hasHead": true,
+      "lastSubject": "last subject",
+      "lastBody": ""
+     }
+    },
+    {
+     "ok": [
+      {
+       "hash": "h1"
+      }
+     ]
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "refreshDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {},
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "watchDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshWorkingCopy",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getDiffStat",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshDiffStat",
+     "args": [
+      "/other"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "watchDiffStat",
+     "args": [
+      "/other"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo",
+      "/other": "/other"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshDiffStat",
+     "args": [
+      "/other"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiffStat",
+      "args": [
+       "/other"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo",
+      "/other": "/other"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      },
+      "/other": {
+       "added": 1,
+       "removed": 0
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "unwatchDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo",
+      "/other": "/other"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      },
+      "/other": {
+       "added": 1,
+       "removed": 0
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshWorkingCopy",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getLog",
+      "args": [
+       "/repo",
+       1
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo",
+      "/other": "/other"
+     },
+     "statuses": {
+      "/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {
+      "/repo": {
+       "branch": "main",
+       "hasUpstream": true,
+       "ahead": 1,
+       "behind": 0,
+       "stagedCount": 1,
+       "hasHead": true,
+       "lastSubject": "last subject",
+       "lastBody": ""
+      }
+     },
+     "diffStats": {
+      "/repo": {
+       "added": 3,
+       "removed": 1
+      },
+      "/other": {
+       "added": 1,
+       "removed": 0
+      }
+     },
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "a_diff_stat_failure_is_stored_and_logged",
+  "context": {
+   "git": [
+    {
+     "reject": "stat failed"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "watchDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getDiffStat",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] diff stat refresh failed for /repo: stat failed"
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "diffStat": "stat failed"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "refresh_working_copy_never_rejects",
+  "context": {
+   "git": [
+    {
+     "reject": "status down"
+    },
+    {
+     "reject": "context down"
+    },
+    {
+     "reject": "stat down"
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "watchDiffStat",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshWorkingCopy",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getCommitContext",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "git",
+      "op": "getDiffStat",
+      "args": [
+       "/repo"
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] status refresh failed for /repo: status down"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] commit context fetch failed for /repo: context down"
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "git-status-store",
+      "message": "[git-status] diff stat refresh failed for /repo: stat down"
+     }
+    ],
+    "state": {
+     "paths": {
+      "/repo": "/repo"
+     },
+     "statuses": {},
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {
+      "/repo": {
+       "status": "status down",
+       "commitContext": "context down",
+       "diffStat": "stat down"
+      }
+     },
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ },
+ {
+  "store": "git-status",
+  "name": "two_spellings_of_a_windows_path_share_one_entry",
+  "context": {
+   "git": [
+    {
+     "ok": [
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": true
+      },
+      {
+       "path": "a.ts",
+       "status": "modified",
+       "staged": false
+      },
+      {
+       "path": "b.ts",
+       "status": "untracked",
+       "staged": false
+      }
+     ]
+    },
+    {
+     "ok": [
+      "main"
+     ]
+    },
+    {
+     "ok": []
+    }
+   ]
+  },
+  "initial": {
+   "paths": {},
+   "statuses": {},
+   "diffs": {},
+   "diffErrors": {},
+   "commitContexts": {},
+   "diffStats": {},
+   "errors": {},
+   "stashes": {},
+   "branches": {},
+   "selectedFile": null,
+   "isFetchingStatus": false,
+   "statusFetchCount": 0
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "C:\\Repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "C:\\Repo"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "c:/repo": "C:\\Repo"
+     },
+     "statuses": {
+      "c:/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {},
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "fetchBranches",
+     "args": [
+      "c:/repo/"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "branchList",
+      "args": [
+       "c:/repo/"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "c:/repo": "C:\\Repo"
+     },
+     "statuses": {
+      "c:/repo": [
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": true
+       },
+       {
+        "path": "a.ts",
+        "status": "modified",
+        "staged": false
+       },
+       {
+        "path": "b.ts",
+        "status": "untracked",
+        "staged": false
+       }
+      ]
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {
+      "c:/repo": [
+       "main"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   },
+   {
+    "event": {
+     "action": "refreshStatus",
+     "args": [
+      "c:/repo/"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "git",
+      "op": "getStatus",
+      "args": [
+       "c:/repo/"
+      ]
+     }
+    ],
+    "state": {
+     "paths": {
+      "c:/repo": "C:\\Repo"
+     },
+     "statuses": {
+      "c:/repo": []
+     },
+     "diffs": {},
+     "diffErrors": {},
+     "commitContexts": {},
+     "diffStats": {},
+     "errors": {},
+     "stashes": {},
+     "branches": {
+      "c:/repo": [
+       "main"
+      ]
+     },
+     "selectedFile": null,
+     "isFetchingStatus": false,
+     "statusFetchCount": 0
+    }
+   }
+  ]
+ }
+]
