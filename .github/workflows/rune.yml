@@ -15,7 +15,7 @@ name: Rune
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*"]
+    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*", "rune/r8a-editor-*"]
     paths:
       - '.github/workflows/rune.yml'
       - 'apps/rune/**'
@@ -312,9 +312,9 @@ jobs:
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/dev' }}
 
-      - name: Check client and the terminal model (wasm32)
+      - name: Check client and the terminal and editor models (wasm32)
         working-directory: apps/rune
-        run: cargo check --target wasm32-unknown-unknown -p client -p troupe-term
+        run: cargo check --target wasm32-unknown-unknown -p client -p troupe-term -p troupe-editor
 
       # Off Unix the live driver is a no-op; this proves it still builds.
       - name: Check hello with the live driver (wasm32)
