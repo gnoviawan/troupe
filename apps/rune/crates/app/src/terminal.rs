@@ -61,6 +61,11 @@ pub struct TerminalUi {
     pub blink_from: f64,
     /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
     pub blink_shown: Option<bool>,
+    /// The last pointer report, by terminal: a move to the same cell is not sent again.
+    pub last_mouse: Option<(String, troupe_term::mouse::MouseEvent)>,
+    /// Every command sent, for the tests (a test state has no terminal link).
+    #[cfg(test)]
+    pub(crate) sent: Vec<Command>,
 }
 
 impl TerminalUi {
@@ -75,6 +80,8 @@ impl TerminalUi {
     }
 
     fn send(&mut self, command: Command) {
+        #[cfg(test)]
+        self.sent.push(command.clone());
         match &mut self.host {
             Some(host) => host.send(command),
             None => log::warn!("[term] no terminal link; {command:?} dropped"),
@@ -310,7 +317,7 @@ impl State {
         view.wheel += e.dy / cell_h;
         let lines = view.wheel.trunc();
         view.wheel -= lines;
-        if self.terminal_wheel_input(id, lines as i32, e.x, e.y) {
+        if self.terminal_wheel_input(id, lines as i32, e) {
             return true;
         }
         let Some(view) = self.terms.views.get_mut(id) else { return false };

@@ -77,11 +77,19 @@ pub fn report(modes: &Modes, e: &MouseEvent) -> Option<Vec<u8>> {
         let end = if e.action == Action::Up { 'm' } else { 'M' };
         return Some(format!("\x1b[<{code};{x};{y}{end}").into_bytes());
     }
-    // The default encoding carries each value plus 32 in one byte, up to 223.
-    if x > 223 || y > 223 {
+    // The default encoding carries each value plus 32 in one byte. xterm.js hands these
+    // reports to `onBinary`, which the client does not forward as text; a byte of 0x80 or
+    // more would not survive the text path to the PTY, so such a report is not sent.
+    let bytes = [code + 32, x as u32 + 32, y as u32 + 32];
+    if bytes.iter().any(|&b| b >= 0x80) {
         return None;
     }
-    Some(vec![0x1b, b'[', b'M', (code + 32) as u8, (x + 32) as u8, (y + 32) as u8])
+    Some([0x1b, b'[', b'M'].into_iter().chain(bytes.map(|b| b as u8)).collect())
+}
+
+/// Whether the protocol in `modes` takes the wheel (`VT200` and up; X10 reports presses only).
+pub fn wants_wheel(modes: &Modes) -> bool {
+    matches!(modes.mouse, MouseProtocol::Vt200 | MouseProtocol::Drag | MouseProtocol::Any)
 }
 
 /// The bytes a paste of `text` sends: newlines become carriage returns, and with bracketed
