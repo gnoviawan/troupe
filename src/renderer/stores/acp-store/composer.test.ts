@@ -144,6 +144,7 @@ import { _resetAcpTransportForTests } from '@/lib/acp-transport'
 import { logFrontendError } from '@/lib/log-api'
 import {
   _addEphemeralSessionIdForTesting,
+  _installTransportRecoveryForTesting,
   _resetAcpAuthForTesting,
   _resetCoalesceForTesting,
   _resetEphemeralSessionIdsForTesting,
@@ -223,6 +224,126 @@ describe('acp-store: composer-selection persistence', () => {
         expect.objectContaining({ modelId: 'm2' })
       )
     )
+  })
+
+  it('a legacy model switch from another client is not undone by the saved model', async () => {
+    await useAcpStore
+      .getState()
+      .saveAgentConfig({ id: 'cfg-1', name: 'Hermes', command: 'hermes', args: ['acp'], env: {} })
+    seedSession('sess-legacy', 'agent-9', false)
+    const availableModels = [
+      { modelId: 'm1', name: 'Model One' },
+      { modelId: 'm2', name: 'Model Two' }
+    ]
+    useAcpStore.setState((s) => ({
+      sessions: {
+        ...s.sessions,
+        'sess-legacy': {
+          ...s.sessions['sess-legacy'],
+          models: { currentModelId: 'm1', availableModels }
+        }
+      },
+      configToLiveAgent: { ...s.configToLiveAgent, [agentReuseKey('cfg-1', '/work')]: 'agent-9' }
+    }))
+    // This client's saved record still holds the model before the switch.
+    const stored: Record<string, unknown> = { 'agents/composer-options/cfg-1': { modelId: 'm1' } }
+    mockPersistenceApi.read.mockImplementation(async (key: string) =>
+      key in stored ? { success: true, data: stored[key] } : { success: false }
+    )
+    mockPersistenceApi.writeDebounced.mockImplementation(async (key: string, data: unknown) => {
+      stored[key] = data
+      return { success: true }
+    })
+    ;(invoke as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+
+    useAcpStore.getState()._onModelsUpdate({
+      agentId: 'agent-9',
+      sessionId: 'sess-legacy',
+      models: { currentModelId: 'm2', availableModels }
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(useAcpStore.getState().sessions['sess-legacy'].models?.currentModelId).toBe('m2')
+    expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
+    // The options cache still learns the new model.
+    expect(useAcpStore.getState().agentOptionsCache['cfg-1']?.models?.currentModelId).toBe('m2')
+    // The accepted model is saved, so a later heal (here a mode update) reads
+    // it and leaves the agent on the switched model.
+    await vi.waitFor(() =>
+      expect(stored['agents/composer-options/cfg-1']).toEqual(
+        expect.objectContaining({ modelId: 'm2' })
+      )
+    )
+    useAcpStore.getState()._onModeUpdate({
+      agentId: 'agent-9',
+      sessionId: 'sess-legacy',
+      currentModeId: 'default'
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
+    expect(useAcpStore.getState().sessions['sess-legacy'].models?.currentModelId).toBe('m2')
+  })
+
+  it('a legacy model switch recovered on reconnect is saved on this device', async () => {
+    await useAcpStore
+      .getState()
+      .saveAgentConfig({ id: 'cfg-1', name: 'Hermes', command: 'hermes', args: ['acp'], env: {} })
+    seedSession('sess-legacy', 'agent-9', false)
+    const availableModels = [
+      { modelId: 'm1', name: 'Model One' },
+      { modelId: 'm2', name: 'Model Two' }
+    ]
+    useAcpStore.setState((s) => ({
+      sessions: {
+        ...s.sessions,
+        'sess-legacy': {
+          ...s.sessions['sess-legacy'],
+          models: { currentModelId: 'm1', availableModels }
+        }
+      },
+      configToLiveAgent: { ...s.configToLiveAgent, [agentReuseKey('cfg-1', '/work')]: 'agent-9' }
+    }))
+    const stored: Record<string, unknown> = { 'agents/composer-options/cfg-1': { modelId: 'm1' } }
+    mockPersistenceApi.read.mockImplementation(async (key: string) =>
+      key in stored ? { success: true, data: stored[key] } : { success: false }
+    )
+    mockPersistenceApi.writeDebounced.mockImplementation(async (key: string, data: unknown) => {
+      stored[key] = data
+      return { success: true }
+    })
+    ;(invoke as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+
+    await _installTransportRecoveryForTesting({
+      sessionId: 'sess-legacy',
+      watermark: 2,
+      events: [
+        {
+          sid: 'sess-legacy',
+          seq: 2,
+          type: 'models_update',
+          payload: {
+            agentId: 'agent-9',
+            sessionId: 'sess-legacy',
+            models: { currentModelId: 'm2', availableModels }
+          }
+        }
+      ]
+    } as never)
+
+    expect(useAcpStore.getState().sessions['sess-legacy'].models?.currentModelId).toBe('m2')
+    await vi.waitFor(() =>
+      expect(stored['agents/composer-options/cfg-1']).toEqual(
+        expect.objectContaining({ modelId: 'm2' })
+      )
+    )
+    // A later heal reads the switched model and sends nothing.
+    useAcpStore.getState()._onModeUpdate({
+      agentId: 'agent-9',
+      sessionId: 'sess-legacy',
+      currentModeId: 'default'
+    })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(invoke).not.toHaveBeenCalledWith('acp_set_model', expect.anything())
   })
 
   it('setMode persists the modeId to persistenceApi (debounced)', async () => {

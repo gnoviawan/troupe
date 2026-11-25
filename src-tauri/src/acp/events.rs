@@ -138,6 +138,9 @@ pub const EVENT_PLAN_UPDATE: &str = "acp:plan_update";
 pub const EVENT_COMMANDS_UPDATE: &str = "acp:commands_update";
 /// Event name: the active session mode changed.
 pub const EVENT_MODE_UPDATE: &str = "acp:mode_update";
+/// Event name: the model of a session whose models come only from the legacy
+/// `models` field changed (a host `session/set_model`).
+pub const EVENT_MODELS_UPDATE: &str = "acp:models_update";
 /// Event name: session configuration options changed.
 pub const EVENT_CONFIG_OPTIONS_UPDATE: &str = "acp:config_options_update";
 /// Event name: the agent requested a permission decision from the user.
@@ -395,6 +398,16 @@ pub struct ModeUpdateEvent {
     pub current_mode_id: SessionModeId,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub available_modes: Vec<SessionMode>,
+}
+
+/// `acp:models_update`: the whole legacy model list with its new current
+/// model, so the durable fold and every client replace their copy.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelsUpdateEvent {
+    pub agent_id: AgentId,
+    pub session_id: SessionId,
+    pub models: SessionModelState,
 }
 
 /// `acp:config_options_update`

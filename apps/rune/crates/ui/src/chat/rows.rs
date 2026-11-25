@@ -21,6 +21,7 @@ pub(super) fn build<S: 'static>(ctx: &Ctx<S>, s: &S, r: &Row, n: usize) -> El {
             reply(ctx, &m.id, &message_text(m), streaming, *tail && !m.streaming, last)
         }),
         RowKind::Activity(a) => Some(activity(ctx, s, &r.key, a)),
+        RowKind::Switch(i) => ctx.switches(s).get(*i).map(|record| super::switch::separator(ctx, s, &r.key, record)),
     };
     // Rows pad inside rather than gap: virtual rows measure each row's own box.
     col().w_full().child(body.unwrap_or_else(el))
@@ -188,6 +189,7 @@ fn steps<S: 'static>(ctx: &Ctx<S>, s: &S, a: &Activity) -> Vec<El> {
                 flush_run(&mut run, &mut out);
                 out.push(step(ctx, s, item, a.active));
             }
+            Item::Switch(_) => {}
         }
     }
     flush_run(&mut run, &mut out);
@@ -254,6 +256,7 @@ fn step<S: 'static>(ctx: &Ctx<S>, s: &S, item: &Item, active: bool) -> El {
             let Some(m) = messages.get(*i) else { return el() };
             markdown::prose(t, &format!("md-{}", m.id), &message_text(m), active && m.streaming, &ctx.hooks)
         }
+        Item::Switch(_) => el(),
     }
 }
 

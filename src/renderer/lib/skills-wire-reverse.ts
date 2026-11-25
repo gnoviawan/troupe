@@ -17,6 +17,7 @@
  * prose, were this ever misapplied) is never partially rewritten.
  */
 import { fileUrlToPath } from '@/components/chat/chat-attachments'
+import { isCanvasEnvelope, restoreCanvasLabels } from '@/lib/composer/canvas-tokens'
 import { selectionContextsToDisplay } from '@/lib/composer/selection-context'
 import { restoreToolTokens } from '@/lib/composer/tool-tokens'
 import { parseConversationEnvelope, restoreConversationLabels } from '@/lib/conversation-envelope'
@@ -206,7 +207,7 @@ export function wireBlocksToDisplay<T extends WireBlock>(blocks: T[] | null | un
     (block) =>
       block?.type !== 'text' ||
       typeof block.text !== 'string' ||
-      parseConversationEnvelope(block.text) === null
+      (parseConversationEnvelope(block.text) === null && !isCanvasEnvelope(block.text))
   )
   let changed = kept.length !== blocks.length
   const next = kept.map((block) => {
@@ -216,7 +217,7 @@ export function wireBlocksToDisplay<T extends WireBlock>(blocks: T[] | null | un
       .map((s) =>
         s.kind === 'conversation'
           ? conversationToken(s.title, s.sessionId)
-          : restoreFileTokens(restoreToolTokens(s.text), filePaths)
+          : restoreFileTokens(restoreToolTokens(restoreCanvasLabels(s.text)), filePaths)
       )
       .join('')
     if (text === block.text) return block

@@ -16,7 +16,16 @@ describe('browser-session-store', () => {
       title: '',
       loading: true,
       canGoBack: false,
-      canGoForward: false
+      canGoForward: false,
+      zoomFactor: 1,
+      viewportPreset: 'desktop',
+      viewportOrientation: 'portrait',
+      annotateMode: false,
+      annotateTool: 'comment',
+      animationsPaused: false,
+      pinsHidden: false,
+      pendingAnnotations: [],
+      loadError: null
     })
   })
 

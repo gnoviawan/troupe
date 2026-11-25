@@ -17,8 +17,12 @@ use crate::acp::events::models_from_config_options;
 use crate::acp::session_persistence::PersistedEventRecord;
 
 /// The durable record types that carry controls.
-pub(crate) const CONTROLS_RECORD_TYPES: [&str; 3] =
-    ["session_created", "config_options_update", "mode_update"];
+pub(crate) const CONTROLS_RECORD_TYPES: [&str; 4] = [
+    "session_created",
+    "config_options_update",
+    "mode_update",
+    "models_update",
+];
 
 /// The session controls a payload carries. Each control is omitted when no
 /// record set it; `controls_seq` is the seq of the newest record that
@@ -103,6 +107,12 @@ impl ControlsFold {
                 set(&mut self.models, seq, models_of_options(options).as_ref());
             }
             "mode_update" => self.observe_modes(seq, payload),
+            // A legacy-only session's model switch (`session/set_model`).
+            "models_update" => set(
+                &mut self.models,
+                seq,
+                payload.get("models").filter(|models| models.is_object()),
+            ),
             _ => {}
         }
     }

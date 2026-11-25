@@ -1,10 +1,14 @@
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react'
-import { RotateCcw, Search } from '@/components/icons'
+import { RotateCcw } from '@/components/icons'
 import { ShortcutRecorder } from '@/components/ShortcutRecorder'
-import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
+import { SettingsFilter } from '@/components/settings/SettingsFilter'
+import {
+  SETTINGS_CARD_CLASS,
+  SettingsCard,
+  SettingsGroup
+} from '@/components/settings/SettingsGroup'
 import { SettingsSection } from '@/components/settings/SettingsLayout'
 import { Button } from '@/components/ui/button'
-import { PANEL_FIELD_CLASS, PANEL_FIELD_ICON_CLASS } from '@/components/ui/panel-styles'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { cn } from '@/lib/utils'
 import type { KeyboardShortcut, KeyboardShortcutsConfig } from '@/types/settings'
@@ -103,39 +107,29 @@ export function ShortcutsSection({
   return (
     <SettingsSection id="shortcuts">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search size={13} aria-hidden className={PANEL_FIELD_ICON_CLASS} />
-          <input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter shortcuts"
-            aria-label="Filter shortcuts"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            enterKeyHint="search"
-            className={cn(
-              PANEL_FIELD_CLASS,
-              'h-8 pointer-coarse:h-11 w-full bg-background pl-7 pr-3'
-            )}
-          />
-        </div>
+        <SettingsFilter
+          className="flex-1"
+          label="Filter shortcuts"
+          value={filter}
+          onValueChange={setFilter}
+        />
         <Button
           type="button"
-          size="xs"
-          variant="outline"
+          size="sm"
+          variant="secondary"
+          className="h-8"
+          aria-label="Reset all shortcuts"
           onClick={() => setIsResetShortcutsDialogOpen(true)}
         >
-          <RotateCcw size={13} />
-          Reset all shortcuts
+          <RotateCcw size={12} />
+          Reset all
         </Button>
       </div>
 
       {groups.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-5 text-center">
+        <div className={cn('flex flex-col items-center gap-3 px-4 py-8', SETTINGS_CARD_CLASS)}>
           <p className="text-xs text-muted-foreground">No shortcuts match "{filter.trim()}".</p>
-          <Button type="button" size="xs" variant="outline" onClick={() => setFilter('')}>
+          <Button type="button" size="xs" variant="secondary" onClick={() => setFilter('')}>
             Clear filter
           </Button>
         </div>

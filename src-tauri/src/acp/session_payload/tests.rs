@@ -1485,6 +1485,30 @@ fn the_payload_carries_the_newest_controls_over_session_created() {
     assert_eq!(payload["controlsSeq"], json!(5));
 }
 
+/// A legacy-only session's model switch (Hermes Agent) is restored on reload.
+#[test]
+fn a_models_update_replaces_the_created_models() {
+    let switched = json!({
+        "currentModelId": "openrouter:openai/gpt-5",
+        "availableModels": [
+            {"modelId": "openrouter:anthropic/claude-sonnet-4", "name": "anthropic/claude-sonnet-4"},
+            {"modelId": "openrouter:openai/gpt-5", "name": "openai/gpt-5"}
+        ]
+    });
+    let payload = wire_payload(&[
+        session_created(1),
+        user_prompt(2, Some("t1"), "hi"),
+        record(
+            3,
+            "models_update",
+            json!({"agentId": "runtime-1", "sessionId": "session-1", "models": switched}),
+        ),
+        prompt_complete(4, "t1"),
+    ]);
+    assert_eq!(payload["models"], switched);
+    assert_eq!(payload["controlsSeq"], json!(3));
+}
+
 #[test]
 fn an_update_without_a_model_selector_keeps_the_created_models() {
     let payload = wire_payload(&[

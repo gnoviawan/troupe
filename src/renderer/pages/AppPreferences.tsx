@@ -2,7 +2,7 @@ import type { DetectedShells } from '@shared/types/ipc.types'
 import { useEffect, useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SettingsLayout } from '@/components/settings/SettingsLayout'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import {
   queueAgentIdleWindowPush,
   useResetAppSettings,
@@ -14,55 +14,27 @@ import {
   useUpdateShortcut
 } from '@/hooks/use-keyboard-shortcuts'
 import { acpApi, shellApi } from '@/lib/api'
-import { scheduleAllDirtyAutoSaves } from '@/lib/editor-auto-save'
-import { logFrontendError } from '@/lib/log-api'
-import { isAurUpdateMode } from '@/lib/tauri-updater-api'
 import {
   useAcpSessionNewTimeout,
   useAcpSessionReopenTimeout,
   useAcpTurnIdleTimeout,
   useAcpTurnTimeout,
-  useAgentIdleWindow,
-  useAutomaticCompletionRefresh,
-  useConfirmTerminalClose,
-  useDefaultProjectColor,
-  useDefaultShell,
-  useEditorAutoSave,
-  useEditorAutoSaveDelayMs,
-  useNotifyOnAgentChatNeedsYou,
-  useNotifyOnAgentChatTurnFinished,
-  useNotifyOnTerminalIdle,
-  useTerminalBufferSize,
-  useTerminalFontSize,
-  useTerminalRenderer,
-  useTerminalScreenReaderMode,
-  useTerminalUrlOpenMode,
-  useTranslucentRail,
-  useUiZoomLevel
+  useAgentIdleWindow
 } from '@/stores/app-settings-store'
 import { useKeyboardShortcutsStore } from '@/stores/keyboard-shortcuts-store'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
-import { useUpdaterActions, useUpdaterState } from '@/stores/updater-store'
-import type { ProjectColor } from '@/types/project'
-import { TERMINAL_URL_OPEN_MODE_OPTIONS, type TerminalUrlOpenMode } from '@/types/settings'
+import { AboutSection } from './app-preferences/about-section'
 import { AiAgentsSection } from './app-preferences/ai-agents-section'
-import { AppearanceSection } from './app-preferences/appearance-section'
 import { BrowserSection } from './app-preferences/browser-section'
 import { appPrefCategories, appPrefSearchIndex } from './app-preferences/categories'
-import { DiagnosticsSection } from './app-preferences/diagnostics-section'
-import { EditorSection } from './app-preferences/editor-section'
-import { InterfaceSection } from './app-preferences/interface-section'
 import { McpServersSection } from './app-preferences/mcp-servers-section'
-import { NotificationsSection } from './app-preferences/notifications-section'
+import { PreferencesSection } from './app-preferences/preferences-section'
 import { ProviderSection } from './app-preferences/provider-section'
-import { ResetSection } from './app-preferences/reset-section'
-import { ServerSection } from './app-preferences/server-section'
-import { ShellSection } from './app-preferences/shell-section'
 import { ShortcutsSection } from './app-preferences/shortcuts-section'
 import { SkillsSection } from './app-preferences/skills-section'
 import { SubagentsSection } from './app-preferences/subagents-section'
 import { TerminalProfilesSection } from './app-preferences/terminal-profiles-section'
-import { UpdatesSection } from './app-preferences/updates-section'
+import { TerminalSection } from './app-preferences/terminal-section'
 
 export function AppPreferencesModal(): React.JSX.Element {
   const isOpen = useSettingsModalStore((state) => state.view === 'app')
@@ -72,24 +44,7 @@ export function AppPreferencesModal(): React.JSX.Element {
   const categories = useMemo(() => appPrefCategories(), [])
   const searchIndex = useMemo(() => appPrefSearchIndex(), [])
   const setAppPage = useSettingsModalStore((state) => state.setAppPage)
-  const isAurUpdater = isAurUpdateMode()
-  const fontSize = useTerminalFontSize()
-  const uiZoomLevel = useUiZoomLevel()
-  const translucentRail = useTranslucentRail()
-  const bufferSize = useTerminalBufferSize()
-  const terminalRenderer = useTerminalRenderer()
-  const terminalScreenReaderMode = useTerminalScreenReaderMode()
-  const automaticCompletionRefresh = useAutomaticCompletionRefresh()
-  const defaultShell = useDefaultShell()
-  const defaultProjectColor = useDefaultProjectColor() as ProjectColor
-  const _confirmTerminalClose = useConfirmTerminalClose()
-  const terminalUrlOpenMode = useTerminalUrlOpenMode()
   const acpTurnTimeoutSecs = useAcpTurnTimeout()
-  const editorAutoSave = useEditorAutoSave()
-  const editorAutoSaveDelayMs = useEditorAutoSaveDelayMs()
-  const notifyOnTerminalIdle = useNotifyOnTerminalIdle()
-  const notifyOnAgentChatTurnFinished = useNotifyOnAgentChatTurnFinished()
-  const notifyOnAgentChatNeedsYou = useNotifyOnAgentChatNeedsYou()
   const acpTurnIdleTimeoutSecs = useAcpTurnIdleTimeout()
   const acpSessionNewTimeoutSecs = useAcpSessionNewTimeout()
   const acpSessionReopenTimeoutSecs = useAcpSessionReopenTimeout()
@@ -107,28 +62,7 @@ export function AppPreferencesModal(): React.JSX.Element {
   const resetShortcut = useResetShortcut()
   const resetAllShortcuts = useResetAllShortcuts()
 
-  // Updater state
-  const {
-    isChecking,
-    updateAvailable,
-    version,
-    lastChecked,
-    autoUpdateEnabled,
-    skippedVersion,
-    error: updateError,
-    errorSource: updateErrorSource,
-    isManualUpdateMode,
-    updateChannel
-  } = useUpdaterState()
-  const {
-    checkForUpdates,
-    downloadUpdate,
-    installAndRestart,
-    setAutoUpdateEnabled,
-    setUpdateChannel
-  } = useUpdaterActions()
-
-  // Load available shells
+  // Profiles offer the detected shells.
   useEffect(() => {
     async function loadShells(): Promise<void> {
       try {
@@ -137,83 +71,11 @@ export function AppPreferencesModal(): React.JSX.Element {
           setAvailableShells(result.data)
         }
       } catch {
-        // Silently fail - user will see empty dropdown with System Default option
+        // Silently fail - the profile dialog still offers System default
       }
     }
     void loadShells()
   }, [])
-
-  const handleFontSizeChange = (value: number) => {
-    updateSetting('terminalFontSize', value)
-  }
-
-  const handleUiZoomChange = (value: number) => {
-    updateSetting('uiZoomLevel', value)
-  }
-
-  const handleTranslucentRailToggle = async (enabled: boolean) => {
-    await updateSetting('translucentRail', enabled)
-    void logFrontendError({
-      level: 'info',
-      source: 'AppPreferences.translucentRail',
-      message: `Translucent sidebar ${enabled ? 'enabled' : 'disabled'}`
-    })
-  }
-
-  const handleBufferSizeChange = (value: number) => {
-    updateSetting('terminalBufferSize', value)
-  }
-
-  const handleRendererChange = (value: string) => {
-    if (value === 'auto' || value === 'webgl' || value === 'dom') {
-      updateSetting('terminalRenderer', value)
-    }
-  }
-
-  const handleScreenReaderModeChange = async (enabled: boolean) => {
-    await updateSetting('terminalScreenReaderMode', enabled)
-    // Boundary log (not a failure): the setting only reaches terminals created
-    // after the toggle, and xterm.js #3467 / repo #267 can double typed bytes.
-    void logFrontendError({
-      level: 'info',
-      source: 'AppPreferences.terminalScreenReaderMode',
-      message: `Terminal screen reader mode ${enabled ? 'enabled' : 'disabled'}; applies to new terminals only (can repeat typed characters, xterm.js #3467 / repo #267)`
-    })
-  }
-
-  const handleAutomaticCompletionRefreshChange = async (enabled: boolean) => {
-    await updateSetting('automaticCompletionRefresh', enabled)
-    void logFrontendError({
-      level: 'info',
-      source: 'AppPreferences.automaticCompletionRefresh',
-      // The scheduler reads the setting live (see bind-session.ts), so the
-      // flip is immediate — unlike xterm options, which need a new terminal.
-      message: `Automatic completion refresh ${enabled ? 'enabled' : 'disabled'}; applies immediately`
-    })
-  }
-
-  const handleDefaultShellChange = (value: string) => {
-    updateSetting('defaultShell', value)
-  }
-
-  const handleDefaultProjectColorChange = (value: ProjectColor) => {
-    updateSetting('defaultProjectColor', value)
-  }
-
-  const isTerminalUrlOpenMode = (value: string): value is TerminalUrlOpenMode =>
-    TERMINAL_URL_OPEN_MODE_OPTIONS.some((option) => option.value === value)
-
-  const handleTerminalUrlOpenModeChange = (value: string) => {
-    if (!isTerminalUrlOpenMode(value)) {
-      return
-    }
-
-    updateSetting('terminalUrlOpenMode', value)
-  }
-
-  const _handleConfirmTerminalCloseToggle = async (enabled: boolean) => {
-    await updateSetting('confirmTerminalClose', enabled)
-  }
 
   const handleAcpTurnTimeoutChange = async (value: number | null) => {
     await updateSetting('acpTurnTimeoutSecs', value)
@@ -223,30 +85,6 @@ export function AppPreferencesModal(): React.JSX.Element {
     } catch (error) {
       console.error('Failed to apply ACP turn timeout:', error)
     }
-  }
-
-  const handleEditorAutoSaveToggle = async (enabled: boolean) => {
-    await updateSetting('editorAutoSave', enabled)
-    // Cover buffers that were already dirty when the setting was turned on.
-    if (enabled) {
-      scheduleAllDirtyAutoSaves()
-    }
-  }
-
-  const handleEditorAutoSaveDelayChange = async (value: number) => {
-    await updateSetting('editorAutoSaveDelayMs', value)
-  }
-
-  const handleNotifyOnTerminalIdleToggle = async (enabled: boolean) => {
-    await updateSetting('notifyOnTerminalIdle', enabled)
-  }
-
-  const handleNotifyOnAgentChatTurnFinishedToggle = async (enabled: boolean) => {
-    await updateSetting('notifyOnAgentChatTurnFinished', enabled)
-  }
-
-  const handleNotifyOnAgentChatNeedsYouToggle = async (enabled: boolean) => {
-    await updateSetting('notifyOnAgentChatNeedsYou', enabled)
   }
 
   const handleAcpTurnIdleTimeoutChange = async (value: number | null) => {
@@ -296,13 +134,9 @@ export function AppPreferencesModal(): React.JSX.Element {
     setIsResetShortcutsDialogOpen(false)
   }
 
-  const handleAutoUpdateToggle = async (enabled: boolean) => {
-    await setAutoUpdateEnabled(enabled)
-  }
-
   return (
     <>
-      <SettingsModal isOpen={isOpen} onClose={close} title="Preferences">
+      <SettingsWindow isOpen={isOpen} onClose={close} title="Preferences">
         <SettingsLayout
           title="Preferences"
           categories={categories}
@@ -311,47 +145,8 @@ export function AppPreferencesModal(): React.JSX.Element {
           page={appPage ?? categories[0]?.id}
           onPageChange={setAppPage}
         >
-          <InterfaceSection
-            uiZoomLevel={uiZoomLevel}
-            translucentRail={translucentRail}
-            defaultProjectColor={defaultProjectColor}
-            handleUiZoomChange={handleUiZoomChange}
-            handleTranslucentRailToggle={handleTranslucentRailToggle}
-            handleDefaultProjectColorChange={handleDefaultProjectColorChange}
-          />
-          <NotificationsSection
-            notifyOnTerminalIdle={notifyOnTerminalIdle}
-            notifyOnAgentChatTurnFinished={notifyOnAgentChatTurnFinished}
-            notifyOnAgentChatNeedsYou={notifyOnAgentChatNeedsYou}
-            handleNotifyOnTerminalIdleToggle={handleNotifyOnTerminalIdleToggle}
-            handleNotifyOnAgentChatTurnFinishedToggle={handleNotifyOnAgentChatTurnFinishedToggle}
-            handleNotifyOnAgentChatNeedsYouToggle={handleNotifyOnAgentChatNeedsYouToggle}
-          />
-          <EditorSection
-            editorAutoSave={editorAutoSave}
-            editorAutoSaveDelayMs={editorAutoSaveDelayMs}
-            handleEditorAutoSaveToggle={handleEditorAutoSaveToggle}
-            handleEditorAutoSaveDelayChange={handleEditorAutoSaveDelayChange}
-          />
-          <AppearanceSection
-            fontSize={fontSize}
-            bufferSize={bufferSize}
-            terminalRenderer={terminalRenderer}
-            screenReaderMode={terminalScreenReaderMode}
-            automaticCompletionRefresh={automaticCompletionRefresh}
-            terminalUrlOpenMode={terminalUrlOpenMode}
-            handleFontSizeChange={handleFontSizeChange}
-            handleBufferSizeChange={handleBufferSizeChange}
-            handleRendererChange={handleRendererChange}
-            handleScreenReaderModeChange={handleScreenReaderModeChange}
-            handleAutomaticCompletionRefreshChange={handleAutomaticCompletionRefreshChange}
-            handleTerminalUrlOpenModeChange={handleTerminalUrlOpenModeChange}
-          />
-          <ShellSection
-            defaultShell={defaultShell}
-            availableShells={availableShells}
-            handleDefaultShellChange={handleDefaultShellChange}
-          />
+          <PreferencesSection />
+          <TerminalSection />
           <TerminalProfilesSection availableShells={availableShells} />
           <AiAgentsSection
             acpTurnTimeoutSecs={acpTurnTimeoutSecs}
@@ -376,29 +171,9 @@ export function AppPreferencesModal(): React.JSX.Element {
             resetShortcut={resetShortcut}
             setIsResetShortcutsDialogOpen={setIsResetShortcutsDialogOpen}
           />
-          <UpdatesSection
-            isAurUpdater={isAurUpdater}
-            isChecking={isChecking}
-            updateAvailable={updateAvailable}
-            version={version}
-            lastChecked={lastChecked}
-            autoUpdateEnabled={autoUpdateEnabled}
-            skippedVersion={skippedVersion}
-            updateError={updateError}
-            updateErrorSource={updateErrorSource}
-            isManualUpdateMode={isManualUpdateMode}
-            updateChannel={updateChannel}
-            checkForUpdates={checkForUpdates}
-            downloadUpdate={downloadUpdate}
-            installAndRestart={installAndRestart}
-            handleAutoUpdateToggle={handleAutoUpdateToggle}
-            setUpdateChannel={setUpdateChannel}
-          />
-          <ServerSection />
-          <DiagnosticsSection />
-          <ResetSection setIsResetDialogOpen={setIsResetDialogOpen} />
+          <AboutSection onResetAll={() => setIsResetDialogOpen(true)} />
         </SettingsLayout>
-      </SettingsModal>
+      </SettingsWindow>
 
       {/* Reset Confirmation Dialog */}
       <ConfirmDialog

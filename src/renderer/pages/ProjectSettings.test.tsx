@@ -32,7 +32,18 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('@/components/settings/SettingsLayout', () => ({
-  SettingsLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SettingsLayout: ({
+    children,
+    footer
+  }: {
+    children: React.ReactNode
+    footer?: React.ReactNode
+  }) => (
+    <div>
+      {children}
+      {footer}
+    </div>
+  ),
   SettingsSection: ({ children }: { children: React.ReactNode }) => <section>{children}</section>
 }))
 

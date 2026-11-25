@@ -18,7 +18,7 @@ use super::oneshot::{Disposer, OneShotId};
 use super::restore::RunId;
 use super::turn::TurnEnd;
 use super::types::Object;
-use super::window::PayloadRead;
+use super::window::{PayloadRead, Reload};
 use super::{FlightId, Killer};
 use crate::Level;
 
@@ -347,10 +347,7 @@ pub enum Effect {
     ReloadSessionPayload {
         session_id: String,
         #[serde(skip_serializing)]
-        count: usize,
-        /// The cached copy, paged from when the host has none.
-        #[serde(skip_serializing)]
-        cached: Value,
+        read: Reload,
     },
     /// Send `session/new`; then `AgentCommandDone` with the new session
     /// (`lookup` set when a resend was answered from the host's records),

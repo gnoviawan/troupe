@@ -1,6 +1,6 @@
 import type { DetectedShells } from '@shared/types/ipc.types'
 import { useId, useState } from 'react'
-import { Edit, Plus, Terminal, TerminalSquare, Trash2 } from '@/components/icons'
+import { Edit, Plus, Terminal, Trash2 } from '@/components/icons'
 import { SettingsEmptyState } from '@/components/settings/SettingsEmptyState'
 import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
 import { SettingsSection } from '@/components/settings/SettingsLayout'
@@ -90,8 +90,14 @@ export function TerminalProfilesSection({
   }
 
   const addButton = (
-    <Button type="button" size="sm" disabled={!isLoaded} onClick={() => setEditor({ mode: 'add' })}>
-      <Plus size={14} /> Add profile
+    <Button
+      type="button"
+      variant="secondary"
+      size="xs"
+      disabled={!isLoaded}
+      onClick={() => setEditor({ mode: 'add' })}
+    >
+      <Plus size={12} /> Add profile
     </Button>
   )
 
@@ -111,50 +117,12 @@ export function TerminalProfilesSection({
         >
           <SettingsCard>
             {profiles.map((profile) => (
-              <div key={profile.id} className="flex items-center gap-3 px-4 py-3">
-                <span
-                  aria-hidden="true"
-                  className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-secondary-foreground"
-                >
-                  <TerminalSquare size={14} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">{profile.name}</div>
-                  <div className="flex min-w-0 gap-1.5 text-xs text-muted-foreground">
-                    <span
-                      className="truncate font-mono"
-                      title={terminalProfileCommandLine(profile)}
-                    >
-                      {terminalProfileCommandLine(profile)}
-                    </span>
-                    {profile.cwd && (
-                      <span className="hidden min-w-0 truncate sm:inline" title={profile.cwd}>
-                        · {profile.cwd}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="size-7 text-muted-foreground"
-                  onClick={() => setEditor({ mode: 'edit', profile })}
-                  aria-label={`Edit ${profile.name}`}
-                >
-                  <Edit size={14} />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="size-7 text-muted-foreground"
-                  onClick={() => remove(profile)}
-                  aria-label={`Delete ${profile.name}`}
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
+              <ProfileRow
+                key={profile.id}
+                profile={profile}
+                onEdit={() => setEditor({ mode: 'edit', profile })}
+                onDelete={() => remove(profile)}
+              />
             ))}
           </SettingsCard>
         </SettingsGroup>
@@ -169,6 +137,57 @@ export function TerminalProfilesSection({
         />
       )}
     </SettingsSection>
+  )
+}
+
+/**
+ * One saved profile: its name, then one line with the shell and arguments
+ * (mono) and the start folder, which fades out at the end instead of wrapping.
+ */
+function ProfileRow({
+  profile,
+  onEdit,
+  onDelete
+}: {
+  profile: TerminalProfile
+  onEdit: () => void
+  onDelete: () => void
+}): React.JSX.Element {
+  const usesDefaultShell = !profile.shell && profile.args.length === 0
+  const commandLine = terminalProfileCommandLine(profile)
+  const meta = [commandLine, profile.cwd].filter(Boolean).join(' · ')
+  return (
+    <div className="flex items-center gap-3 py-3 pl-4 pr-2.5">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs font-medium leading-4 text-foreground">{profile.name}</div>
+        <div className="fade-end mt-0.5 text-xs leading-4 text-muted-foreground" title={meta}>
+          <span className={usesDefaultShell ? undefined : 'font-mono'}>{commandLine}</span>
+          {profile.cwd && <span className="font-mono"> · {profile.cwd}</span>}
+        </div>
+      </div>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        className="size-7 text-muted-foreground"
+        onClick={onEdit}
+        aria-label={`Edit ${profile.name}`}
+        title="Edit"
+      >
+        <Edit size={14} />
+      </Button>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        className="size-7 text-muted-foreground"
+        onClick={onDelete}
+        aria-label={`Delete ${profile.name}`}
+        title="Delete"
+      >
+        <Trash2 size={14} />
+      </Button>
+    </div>
   )
 }
 
@@ -234,7 +253,7 @@ function TerminalProfileDialog({
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{profile ? 'Edit terminal profile' : 'New terminal profile'}</DialogTitle>
+          <DialogTitle>{profile ? 'Edit profile' : 'New profile'}</DialogTitle>
           <DialogDescription>
             Empty fields use what New Terminal uses: the default shell and the active folder.
           </DialogDescription>
@@ -298,7 +317,7 @@ function TerminalProfileDialog({
           )}
           <div className="space-y-1.5">
             <Label htmlFor={fieldId('args')} className="text-xs">
-              Arguments
+              Arguments <span className="font-normal text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
               id={fieldId('args')}
@@ -317,7 +336,7 @@ function TerminalProfileDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={fieldId('cwd')} className="text-xs">
-              Start folder
+              Start folder <span className="font-normal text-muted-foreground">(optional)</span>
             </Label>
             <Input
               id={fieldId('cwd')}
@@ -329,7 +348,8 @@ function TerminalProfileDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={fieldId('env')} className="text-xs">
-              Environment variables
+              Environment variables{' '}
+              <span className="font-normal text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
               id={fieldId('env')}
@@ -353,7 +373,7 @@ function TerminalProfileDialog({
             Cancel
           </Button>
           <Button type="button" size="sm" disabled={saving} onClick={() => void submit()}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save profile'}
           </Button>
         </DialogFooter>
       </DialogContent>

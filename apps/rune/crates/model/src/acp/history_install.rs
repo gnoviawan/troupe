@@ -6,6 +6,7 @@
 use serde_json::{Value, json};
 
 use super::host_error::HostError;
+use super::splice::Band;
 use super::subagent::Reader;
 use super::transcript::HistoryPayload;
 use super::types::{ChatMessage, LogPoint, Object, PlanEntry, Role, Session, SessionStatus};
@@ -18,13 +19,8 @@ pub(crate) struct Installed {
     pub turn_live: bool,
     /// The restored last-turn error stays once the chat is live again.
     pub keep_error: bool,
-}
-
-/// `projectTranscript` of a head-anchored payload.
-pub(crate) struct Projected {
-    pub messages: Vec<ChatMessage>,
-    pub tool_calls: Vec<Object>,
-    pub switches: Vec<Value>,
+    /// The projected transcript before the live window trimmed it.
+    pub band: Band,
 }
 
 /// `hasVisibleContent`.
@@ -224,15 +220,20 @@ fn scan_plan_fence(messages: &[ChatMessage]) -> Option<Vec<PlanEntry>> {
     parse_plan_fence(fenced)
 }
 
-/// `projectTranscript` for a payload that starts at the conversation head:
-/// hidden turns and their tool cards dropped, user bubbles normalized.
-pub(crate) fn project_transcript(
-    state: &mut State,
-    session_id: &str,
-    payload: &Value,
-) -> Option<Projected> {
+/// `installableTranscript`: the payload's watermark noted, then its
+/// projection.
+fn installable_transcript(state: &mut State, session_id: &str, payload: &Value) -> Option<Band> {
     let history: HistoryPayload = serde_json::from_value(payload.clone()).ok()?;
     state.note_history_watermark(session_id, &history);
+    project_transcript(state, payload)
+}
+
+/// `projectTranscript` for a payload that starts at the conversation head:
+/// hidden turns and their tool cards dropped, user bubbles normalized. A
+/// switch splice reads its sources with this and notes their watermarks only
+/// once the splice applies.
+pub(crate) fn project_transcript(state: &mut State, payload: &Value) -> Option<Band> {
+    serde_json::from_value::<HistoryPayload>(payload.clone()).ok()?;
     let messages: Vec<ChatMessage> =
         serde_json::from_value(payload.get("messages").cloned().unwrap_or(json!([]))).ok()?;
     let (mut visible, hidden) = partition(messages);
@@ -284,7 +285,7 @@ pub(crate) fn project_transcript(
         })
         .cloned()
         .collect();
-    Some(Projected {
+    Some(Band {
         messages: visible,
         tool_calls: calls,
         switches,
@@ -339,7 +340,7 @@ impl State {
     ) -> Option<Installed> {
         let meta = payload.get("metadata")?.clone();
         let controls = self.reopen_controls(session_id, payload, fx);
-        let projected = project_transcript(self, session_id, payload)?;
+        let projected = installable_transcript(self, session_id, payload)?;
         let turn_active = meta.get("turnActive").and_then(Value::as_bool);
         let open_turn = derive_open_turn(&projected.messages, turn_active);
         let turn_live = turn_active == Some(true)
@@ -390,6 +391,7 @@ impl State {
             super::controls::align_model_projection(&mut session);
         }
         self.sessions.insert(session_id.to_owned(), session);
+        let band = projected.clone();
         let messages = projected.messages;
         let plan = (!self.plans.contains_key(session_id)).then(|| scan_plan_fence(&messages));
         let last_agent_fenced = messages
@@ -448,6 +450,7 @@ impl State {
         Some(Installed {
             turn_live,
             keep_error,
+            band,
         })
     }
 
@@ -576,7 +579,7 @@ impl State {
         payload: &Value,
         fx: &mut Vec<Effect>,
     ) {
-        let Some(projected) = project_transcript(self, session_id, payload) else {
+        let Some(projected) = installable_transcript(self, session_id, payload) else {
             return;
         };
         self.messages
@@ -587,6 +590,31 @@ impl State {
         self.agent_switches
             .insert(session_id.to_owned(), projected.switches);
         self.trim_live_window(session_id, fx);
+    }
+}
+
+impl State {
+    /// The step's history work once its handler ran: a create the host
+    /// answered from its records answers once its session opened, and a
+    /// prompt typed while an open ran goes out once it ends.
+    pub(crate) fn after_history_step(&mut self, env: &mut super::Env<'_>, fx: &mut Vec<Effect>) {
+        // A redirected open finished below can queue a create of its own: drain until all
+        // three are empty, creates before flushes.
+        loop {
+            for (create, session_id) in std::mem::take(&mut self.book.history.created) {
+                self.resolve_create(create, session_id, env, fx);
+            }
+            for session_id in std::mem::take(&mut self.book.history.flush) {
+                self.flush_next_queued_prompt(&session_id, env, fx);
+            }
+            let redirected = std::mem::take(&mut self.book.history.redirected);
+            if redirected.is_empty() && self.book.history.created.is_empty() {
+                break;
+            }
+            for open in redirected {
+                self.finish_open(open, None, fx);
+            }
+        }
     }
 }
 
