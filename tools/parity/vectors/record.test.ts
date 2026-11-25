@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   drawId,
   emit,
+  idleWindowReplies,
   type Manifest,
   manifestEntry,
   OUT_DIR,
@@ -12,6 +13,7 @@ import {
   recordVector,
   type Scenario,
   type StoreRecorder,
+  settingsWatch,
   sourcesOutsideWorkflow,
   storeText,
   type Vector,
@@ -48,27 +50,67 @@ vi.mock(`${lib}/router-navigate`, async (importOriginal) => ({
   clearChatRoute: () => emit({ kind: 'clearChatRoute' })
 }))
 
-vi.mock(`${lib}/api`, async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  persistenceApi: {
-    read: async (key: string) => {
-      const failed = readFailures.get(key)
-      if (failed) return { success: false, code: failed, error: key }
-      const data = reads.get(key)
-      return data ? { success: true, data } : { success: false, code: 'KEY_NOT_FOUND', error: key }
-    },
-    write: async (key: string, record: Record<string, unknown>) => writeRecord(key, record, true),
-    writeDebounced: async (key: string, record: Record<string, unknown>) =>
-      writeRecord(key, record, false),
-    delete: async (key: string) => {
-      emit({ kind: 'deleteStoreKey', key })
-      return { success: true, data: undefined }
-    },
-    flushPendingWrites: async () => undefined
+vi.mock(`${lib}/api`, async (importOriginal) => {
+  const actual = await importOriginal<{ acpApi: object }>()
+  const push = (op: string) => async (secs: number | null) => {
+    emit({ kind: 'acp', op, secs })
+    const next = idleWindowReplies[0] as { failPush?: string } | undefined
+    if (op === 'setAgentIdleWindow' && next?.failPush) {
+      idleWindowReplies.shift()
+      throw new Error(next.failPush)
+    }
   }
-}))
+  return {
+    ...actual,
+    // The settings vectors record the ACP pushes; no other store here calls them.
+    acpApi: {
+      ...actual.acpApi,
+      setTurnTimeout: push('setTurnTimeout'),
+      setTurnIdleTimeout: push('setTurnIdleTimeout'),
+      setSessionNewTimeout: push('setSessionNewTimeout'),
+      setSessionReopenTimeout: push('setSessionReopenTimeout'),
+      setAgentIdleWindow: push('setAgentIdleWindow'),
+      getAgentIdleWindow: async () => {
+        emit({ kind: 'acp', op: 'getAgentIdleWindow' })
+        const reply = idleWindowReplies.shift() as { reject?: string } | undefined
+        if (!reply) throw new Error('no idle-window reply')
+        if (reply.reject) throw new Error(reply.reject)
+        return reply
+      }
+    },
+    persistenceApi: {
+      watchShared: (key: string, apply: (change: unknown) => void) => {
+        if (key !== 'settings/app') return () => undefined
+        settingsWatch.apply = apply
+        return () => {
+          settingsWatch.apply = null
+        }
+      },
+      read: async (key: string) => {
+        const failed = readFailures.get(key)
+        if (failed) return { success: false, code: failed, error: key }
+        const data = reads.get(key)
+        return data
+          ? { success: true, data }
+          : { success: false, code: 'KEY_NOT_FOUND', error: key }
+      },
+      write: async (key: string, record: Record<string, unknown>) => writeRecord(key, record, true),
+      writeDebounced: async (key: string, record: Record<string, unknown>) =>
+        writeRecord(key, record, false),
+      delete: async (key: string) => {
+        emit({ kind: 'deleteStoreKey', key })
+        return { success: true, data: undefined }
+      },
+      flushPendingWrites: async () => undefined
+    }
+  }
+})
 
 function writeRecord(key: string, record: Record<string, unknown>, immediate: boolean) {
+  if (key === 'settings/app') {
+    emit({ kind: 'writeSettings', record, immediate })
+    return { success: true, data: undefined }
+  }
   if (key !== 'shell-layout') return writePrefs(record)
   emit({ kind: 'writeShellLayout', record, immediate })
   return { success: true, data: undefined }
@@ -177,6 +219,8 @@ const { paneTreeRecorder, paneTreeScenarios } = await import('./stores/pane-tree
 const { gitStatusRecorder, gitStatusScenarios } = await import('./stores/git-status')
 const { gitMock } = await import('./stores/git-mock')
 const { gitRoutesRecorder, gitRoutesScenarios } = await import('./stores/git-routes')
+const { appSettingsRecorder, appSettingsScenarios } = await import('./stores/app-settings')
+const { settingsRoutesRecorder, settingsRoutesScenarios } = await import('./stores/settings-routes')
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -189,7 +233,9 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [shellLayoutRecorder, shellLayoutScenarios],
   [paneTreeRecorder, paneTreeScenarios],
   [gitStatusRecorder, gitStatusScenarios],
-  [gitRoutesRecorder(realGitApi), gitRoutesScenarios]
+  [gitRoutesRecorder(realGitApi), gitRoutesScenarios],
+  [appSettingsRecorder, appSettingsScenarios],
+  [settingsRoutesRecorder(), settingsRoutesScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

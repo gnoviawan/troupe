@@ -171,6 +171,36 @@
         "reads",
         "writes"
       ]
+    },
+    "app-settings": {
+      "sources": {
+        "src/renderer/stores/app-settings-store.ts": "b17bda9779bd0c4b63b24d68c48bc20ba3f50eee",
+        "src/renderer/hooks/use-app-settings.ts": "b2eb71771b3f47852dc0b7c4ff4e54fe74471318",
+        "src/renderer/types/settings.ts": "14f1da6819bae1619f530a723f4ea95704017ede",
+        "src/renderer/lib/terminal-profiles.ts": "1cec5dfe62d3e4be0c3c7174ff19b98559567799",
+        "src/renderer/lib/themes/theme-appearance.ts": "e5cc2d761062a7a057a2e0847aef9797c9ea83cf"
+      },
+      "vectors": [
+        "first_run_reads_nothing_and_keeps_the_defaults",
+        "a_failed_read_keeps_the_defaults_and_warns",
+        "a_stored_record_fills_in_from_the_defaults",
+        "old_records_migrate_and_rewrite",
+        "system_and_unknown_appearances_migrate",
+        "the_hosts_idle_window_replaces_the_saved_one",
+        "edits_write_the_whole_record",
+        "a_synced_change_replaces_the_settings_and_keeps_the_read",
+        "reset_keeps_profiles_and_onboarding",
+        "idle_window_choice_pushes_then_writes"
+      ]
+    },
+    "settings-routes": {
+      "sources": {
+        "src/renderer/lib/acp-transport/ws-transport.ts": "6bcbf55796ea7f0aff8c5ca7046c9d44fcbd29ca",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "idle_window"
+      ]
     }
   }
 }

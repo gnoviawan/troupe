@@ -5,6 +5,7 @@
 
 mod common;
 mod git;
+mod settings;
 
 use common::{Replay, call, diff, out_dir, parse, read_json, source_hash, to_value};
 
@@ -322,6 +323,8 @@ fn replays_every_vector() {
                 "pane-tree" => replay::<PaneTree>(vector),
                 "git-status" => git::replay(vector),
                 "git-routes" => git::replay_routes(vector),
+                "app-settings" => settings::replay(vector),
+                "settings-routes" => settings::replay_routes(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {
