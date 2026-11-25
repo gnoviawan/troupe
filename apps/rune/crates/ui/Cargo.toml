@@ -9,6 +9,7 @@ description = "Troupe's base components (components/ui) for the Rune client."
 rune = { workspace = true }
 theme = { path = "../theme" }
 model = { path = "../model" }
+troupe-term = { path = "../term" }
 rune-kit = { workspace = true, features = ["markdown", "mermaid"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { workspace = true }

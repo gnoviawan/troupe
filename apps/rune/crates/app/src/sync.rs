@@ -599,7 +599,10 @@ impl State {
         let logs = std::mem::take(&mut self.workspace.logs);
         self.run(logs);
         for request in std::mem::take(&mut self.workspace.requests) {
-            log::info!("[app] workspace request not wired in the Rune shell yet: {request:?}");
+            match request {
+                ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
+                other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
+            }
         }
         if self.workspace.revision == self.sync.persisted_revision {
             return;

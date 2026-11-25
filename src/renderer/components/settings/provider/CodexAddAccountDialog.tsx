@@ -10,6 +10,7 @@ interface CodexAddAccountDialogProps {
   /** Names already in use, so suggestions skip them. */
   existingNames: string[]
   defaultAccountName: string | null
+  hasSignedInAccount: boolean
   /** Latest usage reads, to summarise the new Account when it is ready. */
   usage: Record<string, CodexAccountUsage>
   /** Called after the Account list changed (created, signed in, default). */
@@ -28,7 +29,7 @@ export function CodexAddAccountDialog({
   ...props
 }: CodexAddAccountDialogProps): React.JSX.Element {
   const provider: AddAccountProvider<CodexAccountView> = {
-    name: 'Codex',
+    id: 'codex',
     create: async (name) => {
       const created = await codexAccountsApi.add(name)
       return { id: created.id, name: created.name, builtin: false, signedIn: false }

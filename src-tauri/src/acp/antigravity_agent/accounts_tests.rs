@@ -50,7 +50,7 @@ async fn the_snapshot_reports_each_home_login_and_no_secret() {
     };
     assert_eq!(signed_in("default"), Some(false));
     assert_eq!(signed_in(&work.id), Some(true));
-    assert!(snapshot.auto_switch);
+    assert!(!snapshot.auto_switch);
 }
 
 #[tokio::test]

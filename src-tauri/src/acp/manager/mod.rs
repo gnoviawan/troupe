@@ -169,6 +169,8 @@ pub struct NewSessionOutcome {
     /// Canonical quick-chat folder. Absent for a project chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cwd: Option<String>,
+    #[serde(skip)]
+    pub antigravity_tier: Option<String>,
 }
 
 /// Trusted server-side context attached to durable session registration.
@@ -1537,6 +1539,10 @@ impl AcpManager {
                     self.host_plan_server
                         .bind_session(&token, &outcome.session_id.0);
                 }
+                self.antigravity_agent.record_session_tier(
+                    self.agent_launch(agent_id).map(|launch| launch.antigravity),
+                    outcome.antigravity_tier.clone(),
+                );
                 self.record_launch_recipe(
                     agent_id,
                     &outcome.session_id.0,
@@ -2824,6 +2830,7 @@ impl AcpManager {
                             models: None,
                             config_options: None,
                             cwd: None,
+                            antigravity_tier: None,
                         }));
                     }
                     AcpCommand::OwnsSession { session_id, reply } => {

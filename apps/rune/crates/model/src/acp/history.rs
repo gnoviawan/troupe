@@ -19,6 +19,7 @@ use super::ensure::{Caller, EnsureOptions, Holder};
 use super::history_install::{Installed, resume_misses_session};
 use super::host_error::{HostError, SIGNED_OUT};
 use super::import::RequestId;
+use super::session::RESUME_FAILED_PREFIX;
 use super::types::{Replaying, SessionStatus};
 use super::window::PayloadRead;
 use super::{Effect, State, js};
@@ -27,7 +28,6 @@ use super::{Effect, State, js};
 pub type OpenId = u64;
 
 const SOURCE: &str = "acp.openHistorySession";
-const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
 
 /// `OpenHistoryOptions`.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]

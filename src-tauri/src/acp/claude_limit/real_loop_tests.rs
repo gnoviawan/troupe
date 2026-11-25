@@ -107,6 +107,7 @@ impl Host {
             percents.insert(id.clone(), *percent);
             accounts.insert(*name, id);
         }
+        claude.set_auto_switch(true).unwrap();
         claude.set_usage_probe_for_test(Arc::new(FixedUsage(percents)));
         claude
             .set_project_account(

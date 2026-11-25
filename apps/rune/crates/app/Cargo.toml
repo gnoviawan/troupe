@@ -13,6 +13,7 @@ rune = { workspace = true, features = ["tooling"] }
 serde_json = { workspace = true }
 theme = { path = "../theme" }
 troupe-protocol = { path = "../../../../crates/troupe-protocol" }
+troupe-term = { path = "../term" }
 ui = { path = "../ui" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

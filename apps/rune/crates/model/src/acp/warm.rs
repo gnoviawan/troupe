@@ -85,6 +85,44 @@ fn isolates_new_sessions(config_id: &str) -> bool {
 }
 
 impl State {
+    /// `retargetWarmPool`: the warm sessions for this folder of other
+    /// configs go, and the config's own pool is seeded.
+    pub(crate) fn retarget_warm_pool(
+        &mut self,
+        config_id: &str,
+        cwd: &str,
+        project_id: String,
+        fx: &mut Vec<Effect>,
+    ) {
+        let cwd = crate::js_trim(cwd);
+        if config_id.is_empty() || cwd.is_empty() {
+            return;
+        }
+        let target = super::discovery::normalize_cwd(cwd);
+        let mut keys: Vec<String> = self.prepared_sessions.keys().cloned().collect();
+        for key in self.preparing_chat_keys.keys() {
+            if !keys.contains(key) {
+                keys.push(key.clone());
+            }
+        }
+        for key in keys {
+            let parsed = super::reuse_key::parse_reuse_key(&key);
+            if parsed.config_id != config_id
+                && super::discovery::normalize_cwd(parsed.cwd) == target
+            {
+                self.cancel_prepared_chat(&key, fx);
+            }
+        }
+        let request = PrepareRequest(
+            config_id.to_owned(),
+            cwd.to_owned(),
+            None,
+            Some(project_id),
+            Some(PrepareOptions { silent: true }),
+        );
+        self.prepare_chat(request, fx);
+    }
+
     /// `prepareChat`.
     pub(crate) fn prepare_chat(&mut self, request: PrepareRequest, fx: &mut Vec<Effect>) {
         let PrepareRequest(config_id, cwd, servers, project_id, options) = &request;

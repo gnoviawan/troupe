@@ -60,6 +60,7 @@ pub(crate) enum Caller {
     HistoryOpen(super::history::OpenId),
     OneShot(super::oneshot::OneShotId),
     Prepare(super::warm::PrepareId),
+    Switch(super::switch_run::SwitchId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -560,6 +561,7 @@ impl State {
             (Caller::HistoryOpen(id), outcome) => self.on_history_agent(id, outcome, fx),
             (Caller::OneShot(id), outcome) => self.on_oneshot_agent(id, outcome, fx),
             (Caller::Prepare(id), outcome) => self.on_prepare_agent(id, outcome, fx),
+            (Caller::Switch(id), outcome) => self.on_switch_agent(id, outcome, fx),
         }
     }
 }

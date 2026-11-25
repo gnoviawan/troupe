@@ -23,6 +23,7 @@ pub mod overlay;
 pub mod markdown;
 pub mod paint;
 pub mod shell;
+pub mod terminal;
 pub mod type_;
 pub mod workspace;
 pub mod zoom;

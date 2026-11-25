@@ -1,14 +1,9 @@
-import type { AntigravityAccountUsage } from '@shared/types/antigravity-accounts.types'
 import type { ClaudeRateLimit } from '@shared/types/claude-accounts.types'
 import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { antigravityAccountsApi } from '@/lib/antigravity-accounts-api'
-import {
-  antigravityResetSeconds,
-  formatUsageReset,
-  primaryAntigravityWindow
-} from '@/lib/antigravity-usage-format'
+import { formatUsageReset } from '@/lib/antigravity-usage-format'
 import { logFrontendError } from '@/lib/log-api'
 import { useAcpStore } from '@/stores/acp-store'
 import {
@@ -44,31 +39,19 @@ export const isNearLimit = (limit: ClaudeRateLimit): boolean =>
 export const isAtLimit = (limit: ClaudeRateLimit): boolean => limit.status === 'rejected'
 
 /**
- * The limit to show: a rejected turn first, else the most used model of the
- * probe. Antigravity quotas are per model, not a 5-hour or weekly window, so
- * the limit has no window kind and reads as the "usage" limit. A rejected
- * turn keeps the reset time its error named, else the probe's.
+ * The limit to show: only a turn the agent rejected at its limit, with the
+ * reset time its error named. A usage check is for display only, so it never
+ * raises a warning, marks a limit or names a reset. Antigravity quotas are
+ * per model, not a 5-hour or weekly window, so the limit has no window kind
+ * and reads as the "usage" limit.
  */
-export function antigravityDisplayLimit(
-  live: ClaudeRateLimit | null,
-  usage: AntigravityAccountUsage | undefined
-): ClaudeRateLimit | null {
-  const window = primaryAntigravityWindow(usage)
-  if (live?.status === 'rejected') {
-    return {
-      status: 'rejected',
-      resetsAt: live.resetsAt ?? antigravityResetSeconds(window),
-      kind: live.kind ?? null,
-      percent: live.percent ?? window?.percent ?? 100,
-      overageInUse: false
-    }
-  }
-  if (!window || window.percent < 80) return null
+export function antigravityDisplayLimit(live: ClaudeRateLimit | null): ClaudeRateLimit | null {
+  if (live?.status !== 'rejected') return null
   return {
-    status: window.percent >= 100 ? 'rejected' : 'allowed_warning',
-    resetsAt: antigravityResetSeconds(window),
-    kind: null,
-    percent: window.percent,
+    status: 'rejected',
+    resetsAt: live.resetsAt,
+    kind: live.kind ?? null,
+    percent: live.percent ?? 100,
     overageInUse: false
   }
 }
@@ -221,7 +204,7 @@ export function useAntigravityLimit(sessionId: string): AntigravityLimit | null 
     if (turnReplaced(scheduledTurn, openTurnId)) cancelResume(sessionId)
   }, [scheduledTurn, openTurnId, sessionId, cancelResume])
   const [, rerender] = useState(0)
-  const limit = ctx ? antigravityDisplayLimit(live, ctx.current.usage) : null
+  const limit = ctx ? antigravityDisplayLimit(live) : null
   if (!ctx || !limit) return null
 
   const key = `${sessionId}:${limit.status}:${limit.resetsAt ?? ''}`

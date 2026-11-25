@@ -323,6 +323,9 @@ pub(super) async fn run_command_loop(
                                     models: resolved.models,
                                     config_options: response.config_options,
                                     cwd: quick_chat_id.map(|_| cwd),
+                                    antigravity_tier: response.meta.as_ref().and_then(
+                                        crate::acp::antigravity_agent::antigravity_tier_name,
+                                    ),
                                 }),
                             );
                         }

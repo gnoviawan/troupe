@@ -19,6 +19,7 @@ import { AccountNameDialog } from './AccountNameDialog'
 import { AntigravityAccountActions } from './AntigravityAccountActions'
 import { AntigravityAddAccountDialog } from './AntigravityAddAccountDialog'
 import { AntigravitySignInDialog } from './AntigravitySignInDialog'
+import { AntigravityUsageCheck } from './AntigravityUsageCheck'
 import { AntigravityUsageMeters } from './AntigravityUsageMeters'
 import { toastAccountChoiceError } from './account-choice-error'
 import { StatusDot } from './account-status'
@@ -39,10 +40,17 @@ const errorText = (error: unknown): string =>
  * Google. The automatic-switching control only stores the flag.
  */
 export function AntigravityProviderSettings(): React.JSX.Element {
-  const { snapshot, usage, loading, error, reload, refreshUsage, refreshingUsage } =
-    useAntigravityAccounts({
-      usage: true
-    })
+  const {
+    snapshot,
+    usage,
+    loading,
+    error,
+    reload,
+    refreshUsage,
+    refreshingUsage,
+    checkingAccountIds,
+    checkUsage
+  } = useAntigravityAccounts({ usage: true })
   const canManage = useServerAdmitsRemoteWrites()
   const projects = useProjectStore((s) => s.projects)
   const [addOpen, setAddOpen] = useState(false)
@@ -111,6 +119,14 @@ export function AntigravityProviderSettings(): React.JSX.Element {
     }
   }
 
+  const check = async (account: AntigravityAccountView): Promise<void> => {
+    try {
+      await checkUsage(account.id)
+    } catch (err) {
+      toast.error(`Could not check the usage of ${account.name}: ${errorText(err)}`)
+    }
+  }
+
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
@@ -166,7 +182,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
         <div>
           {accounts.map((account) => {
             const read = usage[account.id]
-            const readiness = antigravityAccountReadiness(account, read)
+            const readiness = antigravityAccountReadiness(account)
             const projectNames = (projectsByAccount[account.id] ?? []).map((p) => p.name)
             const windows = read?.status === 'ok' ? read.windows : []
             return (
@@ -197,6 +213,13 @@ export function AntigravityProviderSettings(): React.JSX.Element {
                     </span>
                   </span>
                   <AntigravityUsageMeters windows={windows} />
+                  <AntigravityUsageCheck
+                    accountName={account.name}
+                    read={read}
+                    checking={checkingAccountIds.has(account.id)}
+                    canCheck={canManage && readiness !== 'signed-out'}
+                    onCheck={() => void check(account)}
+                  />
                 </div>
                 {canManage && (
                   <AntigravityAccountActions
@@ -221,7 +244,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="antigravity"
+          provider="antigravity"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}
@@ -248,6 +271,9 @@ export function AntigravityProviderSettings(): React.JSX.Element {
             onOpenChange={setAddOpen}
             existingNames={accounts.map((a) => a.name)}
             defaultAccountName={defaultAccount?.name ?? null}
+            hasSignedInAccount={accounts.some(
+              (a) => antigravityAccountReadiness(a, usage[a.id]) === 'ready'
+            )}
             usage={usage}
             onChanged={reload}
             onSignedIn={() => refreshUsage(true)}

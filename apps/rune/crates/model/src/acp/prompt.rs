@@ -68,6 +68,9 @@ enum Caller {
     QueueFlush,
     /// Send-now of a queued item: a failure puts it back at the front.
     SendNow,
+    /// An agent switch's handoff prompt: the turn takes over no bubble of its
+    /// own, and the outcome moves the switch on.
+    Switch(super::switch_run::SwitchId),
 }
 
 /// What the outcome of a dispatched prompt needs from when it was sent.
@@ -130,6 +133,26 @@ impl State {
         self.run_prompt_turn(session_id, turn, env, fx);
     }
 
+    /// An agent switch's handoff prompt to its new session: the summary and
+    /// the draft on the wire, the draft alone as the bubble.
+    pub(crate) fn send_handoff_prompt(
+        &mut self,
+        session_id: &str,
+        switch: super::switch_run::SwitchId,
+        blocks: Vec<Value>,
+        display: Vec<Value>,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let turn = Turn {
+            caller: Caller::Switch(switch),
+            blocks,
+            display: Some(display),
+            queued_origin: None,
+        };
+        self.run_prompt_turn(session_id, turn, env, fx);
+    }
+
     /// The guard of a read-only GitHub chat, from the newest turn that
     /// carried it. The chat's link (`github-chat-links-store`) is not ported.
     fn read_only_guard(&self, session_id: &str) -> Option<String> {
@@ -149,20 +172,26 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
-        let reject = |fx: &mut Vec<Effect>, message: String| {
-            if turn.caller == Caller::User {
-                fx.push(Effect::rejected(message));
+        let refused = match self.sessions.get(session_id) {
+            None => Some(format!("unknown session {session_id}")),
+            Some(session) if session.status == SessionStatus::Closed => {
+                Some("session is closed".into())
             }
+            Some(_) if turn.blocks.is_empty() => Some("prompt content must not be empty".into()),
+            Some(_) => None,
         };
-        let Some(session) = self.sessions.get(session_id) else {
-            return reject(fx, format!("unknown session {session_id}"));
+        if let Some(message) = refused {
+            return match turn.caller {
+                Caller::User => fx.push(Effect::rejected(message)),
+                Caller::Switch(id) => self.on_switch_dispatched(id, Some(message), env, fx),
+                Caller::QueueFlush | Caller::SendNow => {}
+            };
+        }
+        let session = &self.sessions[session_id];
+        let switch = match turn.caller {
+            Caller::Switch(id) => Some(id),
+            _ => None,
         };
-        if session.status == SessionStatus::Closed {
-            return reject(fx, "session is closed".into());
-        }
-        if turn.blocks.is_empty() {
-            return reject(fx, "prompt content must not be empty".into());
-        }
         let turn_id = env.ids.next_id();
         let busy = session.turn_busy();
         let awaiting_agent = session.agent_id.is_empty();
@@ -176,7 +205,7 @@ impl State {
             .get(session_id)
             .is_some_and(|queue| !queue.is_empty());
         let hold = turn.queued_origin.is_none() && (queued_before || retry_armed);
-        if busy || awaiting_agent || hold {
+        if (busy || awaiting_agent || hold) && switch.is_none() {
             let drain = !busy && !awaiting_agent && !retry_armed;
             let item = match turn.queued_origin {
                 Some(origin) => Some((origin, true)),
@@ -197,25 +226,49 @@ impl State {
         }
         let open_turn_id = env.new_id("turn");
         let guard = self.read_only_guard(session_id);
-        let message = ChatMessage {
-            id: format!("turn:{turn_id}"),
-            role: Role::User,
-            blocks: turn.display.clone().unwrap_or_else(|| turn.blocks.clone()),
-            streaming: false,
-            timestamp: env.now,
-            seq: Some(self.book.next_seq()),
-            host_seq: None,
-            message_id: None,
-            read_only_guard: guard,
-            rest: Object::from_iter([("sentHere".to_owned(), json!(true))]),
+        let previous_open_turn_id = if switch.is_some() {
+            None
+        } else {
+            session.open_turn_id.clone()
         };
-        let user_message_id = message.id.clone();
-        self.messages
-            .entry(session_id.to_owned())
-            .or_default()
-            .push(message);
+        let list = self.messages.entry(session_id.to_owned()).or_default();
+        // A handoff takes over the trailing draft bubble its caller painted
+        // (never a spliced record of the old agent), or shows none for a
+        // summary-only handoff.
+        let own_user = list.iter().rposition(|message| {
+            message.role == Role::User && !message.id.starts_with(super::splice::SPLICE_PREFIX)
+        });
+        let user_message_id = match (switch, own_user) {
+            (Some(_), Some(at)) => {
+                list[at].id = format!("turn:{turn_id}");
+                if guard.is_some() {
+                    list[at].read_only_guard.clone_from(&guard);
+                }
+                list[at].id.clone()
+            }
+            (Some(_), None) if turn.display.as_ref().is_some_and(Vec::is_empty) => String::new(),
+            _ => {
+                let message = ChatMessage {
+                    id: format!("turn:{turn_id}"),
+                    role: Role::User,
+                    blocks: turn.display.clone().unwrap_or_else(|| turn.blocks.clone()),
+                    streaming: false,
+                    timestamp: env.now,
+                    seq: Some(self.book.next_seq()),
+                    host_seq: None,
+                    message_id: None,
+                    read_only_guard: guard,
+                    rest: Object::from_iter([("sentHere".to_owned(), json!(true))]),
+                };
+                let id = message.id.clone();
+                self.messages
+                    .entry(session_id.to_owned())
+                    .or_default()
+                    .push(message);
+                id
+            }
+        };
         let session = self.sessions.get_mut(session_id).expect("checked above");
-        let previous_open_turn_id = session.open_turn_id.clone();
         session.active_turn = true;
         session.open_turn_id = Some(open_turn_id.clone());
         session
@@ -242,12 +295,18 @@ impl State {
             }
             None => (
                 turn.blocks.clone(),
-                // Only a send-now passes its display blocks to the host.
-                turn.display
-                    .clone()
-                    .filter(|_| turn.caller == Caller::SendNow),
+                // A send-now and a handoff pass their display blocks to the
+                // host; a summary-only handoff passes none.
+                turn.display.clone().filter(|display| match turn.caller {
+                    Caller::SendNow => true,
+                    Caller::Switch(_) => !display.is_empty(),
+                    Caller::User | Caller::QueueFlush => false,
+                }),
             ),
         };
+        if switch.is_some() && turn.display.as_ref().is_some_and(Vec::is_empty) {
+            self.book.handoff_only_turns.insert(turn_id.clone());
+        }
         let wire = (blocks.clone(), display_blocks.clone());
         fx.push(Effect::DispatchPrompt {
             agent_id,
@@ -287,6 +346,11 @@ impl State {
         };
         let session_id = dispatch.session_id.clone();
         let caller = dispatch.caller.clone();
+        let switch = match caller {
+            Caller::Switch(id) => Some(id),
+            _ => None,
+        };
+        let mut failure = None;
         match settled.outcome {
             DispatchOutcome::Answered(result) => {
                 log_receipt(&settled.turn_id, &session_id, &result, fx);
@@ -301,6 +365,10 @@ impl State {
             DispatchOutcome::Busy => {
                 self.book.active_wire_turns.remove(&session_id);
                 self.book.reconcile.echoed.remove(&session_id);
+                if dispatch.user_message_id.is_empty() {
+                    // The summary-only handoff recovers a bubble of its own.
+                    self.book.next_seq();
+                }
                 self.recover_to_queue(&dispatch, env);
                 if !self
                     .sessions
@@ -314,11 +382,13 @@ impl State {
                 message,
                 agent_dead,
             } => {
+                let raw = message.clone();
                 // `String(error)`, as the store keeps and shows it.
                 let message = format!("Error: {message}");
                 self.reset_busy_retry(&session_id);
                 self.fail_prompt_turn(&session_id, message.clone(), agent_dead);
                 match dispatch.caller {
+                    Caller::Switch(_) => failure = Some(raw),
                     Caller::User => fx.push(Effect::ActionRejected { message }),
                     Caller::SendNow => {
                         if let Some(origin) = dispatch.queued_origin.clone() {
@@ -347,6 +417,9 @@ impl State {
         }
         if caller == Caller::SendNow {
             self.suppress_queue_flush.remove(&session_id);
+        }
+        if let Some(id) = switch {
+            self.on_switch_dispatched(id, failure, env, fx);
         }
     }
 

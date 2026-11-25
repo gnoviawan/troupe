@@ -70,6 +70,7 @@ impl Host {
             };
             accounts.insert(*name, id);
         }
+        antigravity.set_auto_switch(true).unwrap();
         antigravity
             .set_project_account(
                 PROJECT,

@@ -80,11 +80,53 @@ pub(super) struct StartAntigravityAccountLoginPayload {
     config: AgentConfig,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct CheckAntigravityUsagePayload {
+    account_id: String,
+    config: AgentConfig,
+}
+
 pub(super) fn handle_list_antigravity_usage(id: String, acp: &Arc<AcpManager>) -> WsReply {
     match acp.antigravity_agent().accounts_usage() {
         Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),
         Err(error) => {
             warn!(error = %error, "list_antigravity_usage failed");
+            WsReply::err(id, WsErrorCode::Unsupported, error)
+        }
+    }
+}
+
+pub(super) async fn handle_check_antigravity_usage(
+    id: String,
+    payload: &Value,
+    acp: &Arc<AcpManager>,
+) -> WsReply {
+    let mut parsed: CheckAntigravityUsagePayload = match serde_json::from_value(payload.clone()) {
+        Ok(parsed) => parsed,
+        Err(error) => {
+            return WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                format!(
+                    "malformed check_antigravity_usage payload (want accountId, config): {error}"
+                ),
+            )
+        }
+    };
+    if let Err(error) = crate::acp::config::validate_spawn_config(&mut parsed.config) {
+        return acp_err_to_reply(id, error);
+    }
+    match crate::acp::antigravity_agent::check_antigravity_usage(
+        acp,
+        &parsed.account_id,
+        parsed.config,
+    )
+    .await
+    {
+        Ok(usage) => ok_with_payload(id, &json!({ "usage": usage })),
+        Err(error) => {
+            warn!(error = %error, "check_antigravity_usage refused");
             WsReply::err(id, WsErrorCode::Unsupported, error)
         }
     }
