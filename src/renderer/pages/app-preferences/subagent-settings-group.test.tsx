@@ -2,10 +2,12 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type {
   SessionConfigOption,
+  SubagentProfile,
   SubagentProfileView,
   SubagentSettingsInput,
   SubagentSettingsView
 } from '@/lib/acp-api'
+import { storedProfile } from './subagent-profiles/profile-model'
 import { SubagentSettingsGroup } from './subagent-settings-group'
 
 if (typeof document.elementFromPoint !== 'function') {
@@ -155,27 +157,82 @@ const CACHE = {
   }
 }
 
-/** The host: applies upserts and deletes to the view it holds, as `subagent_settings_set` does. */
+const AGENTS: Readonly<Record<string, string>> = { [CLAUDE]: 'Claude Agent', [PI]: 'Pi' }
+
+/**
+ * The host's view of `stored`, as `Launchable::resolve` builds it: the stored
+ * profiles, then the implicit default of every agent that no stored profile
+ * points at or uses the key of.
+ */
+function resolve(stored: readonly SubagentProfile[]): SubagentProfileView[] {
+  const implicit = Object.entries(AGENTS)
+    .filter(
+      ([key]) => !stored.some((p) => p.agentId === key || p.id.toLowerCase() === key.toLowerCase())
+    )
+    .map(([key, name]) => profile({ id: key, agentId: key, agentName: name, implicit: true }))
+  return [
+    ...stored.map((p) => ({ ...p, agentName: AGENTS[p.agentId] ?? null, implicit: false })),
+    ...implicit
+  ]
+}
+
+/**
+ * The host: stores the profiles of `initial` that are not implicit and
+ * answers `subagent_settings_set` as it does, refusing the whole call on an
+ * upsert it refuses. `hold` keeps each call unapplied until `release`.
+ */
 function host(initial: SubagentSettingsView) {
-  let current = initial
-  getSettings.mockReset().mockImplementation(async () => current)
-  setSettings.mockReset().mockImplementation(async (input: SubagentSettingsInput) => {
-    let profiles = current.profiles.filter((p) => !input.deleteProfiles?.includes(p.id))
-    for (const { previousId, profile: next } of input.upsertProfiles ?? []) {
-      const agentName = next.agentId === PI ? 'Pi' : 'Claude Agent'
-      const stored = { ...next, agentName, implicit: false }
-      const at = profiles.findIndex((p) => p.id === (previousId ?? next.id))
-      profiles = at >= 0 ? profiles.map((p, i) => (i === at ? stored : p)) : [...profiles, stored]
+  let gates = {
+    enabled: initial.enabled,
+    maxRunning: initial.maxRunning,
+    maxDepth: initial.maxDepth
+  }
+  let stored: SubagentProfile[] = initial.profiles.filter((p) => !p.implicit).map(storedProfile)
+  const view = (): SubagentSettingsView => ({ ...gates, profiles: resolve(stored) })
+  const apply = (input: SubagentSettingsInput): SubagentSettingsView => {
+    let next = stored.filter((p) => !input.deleteProfiles?.includes(p.id))
+    for (const { previousId, profile: upsert } of input.upsertProfiles ?? []) {
+      const owner = Object.entries(AGENTS).find(
+        ([key]) => key.toLowerCase() === upsert.id.toLowerCase() && key !== upsert.agentId
+      )
+      if (owner) throw new Error(`the profile id ${upsert.id} is the id of the agent ${owner[1]}`)
+      if (previousId && !resolve(next).some((p) => p.id === previousId)) {
+        throw new Error(`no sub-agent profile is named ${previousId}`)
+      }
+      const at = next.findIndex((p) => p.id === (previousId ?? upsert.id))
+      next = at >= 0 ? next.map((p, i) => (i === at ? upsert : p)) : [...next, upsert]
     }
-    current = {
-      ...current,
-      enabled: input.enabled ?? current.enabled,
-      maxRunning: input.maxRunning ?? current.maxRunning,
-      maxDepth: input.maxDepth ?? current.maxDepth,
-      profiles
+    stored = next
+    gates = {
+      enabled: input.enabled ?? gates.enabled,
+      maxRunning: input.maxRunning ?? gates.maxRunning,
+      maxDepth: input.maxDepth ?? gates.maxDepth
     }
-    return current
-  })
+    return view()
+  }
+  const held: Array<() => void> = []
+  getSettings.mockReset().mockImplementation(async () => view())
+  setSettings.mockReset().mockImplementation(async (input: SubagentSettingsInput) => apply(input))
+  return {
+    stored: () => stored,
+    hold: () =>
+      setSettings.mockImplementation(
+        (input: SubagentSettingsInput) =>
+          new Promise<SubagentSettingsView>((resolve, reject) => {
+            held.push(() => {
+              try {
+                resolve(apply(input))
+              } catch (error) {
+                reject(error)
+              }
+            })
+          })
+      ),
+    /** Answers the newest held call: the host may run keyless calls in any order. */
+    release: async () => {
+      await act(async () => held.pop()?.())
+    }
+  }
 }
 
 const row = (id: string): HTMLElement => screen.getByTestId(`subagent-profile-${id}`)
@@ -200,6 +257,36 @@ function openMenu(id: string): HTMLElement {
   return screen.getByRole('menu')
 }
 
+/** Both agents installed, so the model picker shows their tabs. */
+function withAgentTabs(): void {
+  const configs = [
+    { id: CLAUDE, name: 'Claude Agent', command: 'claude', args: [] },
+    { id: PI, name: 'Pi', command: 'pi', args: [] }
+  ]
+  acpState.current = { agentOptionsCache: CACHE, agentConfigs: configs }
+  entries.current = configs.map((config) => ({
+    id: config.id,
+    configId: config.id,
+    agent: { id: config.id, name: config.name, version: '', description: '', distribution: {} },
+    config,
+    status: 'ready',
+    install: null,
+    manualInstall: null,
+    runtimeLauncher: null,
+    unavailableReason: null
+  }))
+}
+
+/** The agent tabs the model picker of profile `id` offers. */
+function agentTabs(id: string): string[] {
+  fireEvent.click(within(row(id)).getByTestId('agent-model-selector-trigger'))
+  const names = within(screen.getAllByTestId('agent-model-selector-panel').at(-1) as HTMLElement)
+    .queryAllByRole('tab')
+    .map((tab) => tab.getAttribute('aria-label') ?? '')
+  fireEvent.keyDown(document.body, { key: 'Escape' })
+  return names
+}
+
 describe('SubagentSettingsGroup', () => {
   beforeEach(() => {
     host(VIEW)
@@ -210,39 +297,51 @@ describe('SubagentSettingsGroup', () => {
   })
 
   it("offers other agents' tabs, except to a profile named after its own agent", async () => {
-    const configs = [
-      { id: CLAUDE, name: 'Claude Agent', command: 'claude', args: [] },
-      { id: PI, name: 'Pi', command: 'pi', args: [] }
-    ]
-    acpState.current = { agentOptionsCache: CACHE, agentConfigs: configs }
-    entries.current = configs.map((config) => ({
-      id: config.id,
-      configId: config.id,
-      agent: { id: config.id, name: config.name, version: '', description: '', distribution: {} },
-      config,
-      status: 'ready',
-      install: null,
-      manualInstall: null,
-      runtimeLauncher: null,
-      unavailableReason: null
-    }))
+    withAgentTabs()
     await renderPage()
-    const tabs = (id: string): string[] => {
-      fireEvent.click(within(row(id)).getByTestId('agent-model-selector-trigger'))
-      const names = within(
-        screen.getAllByTestId('agent-model-selector-panel').at(-1) as HTMLElement
-      )
-        .queryAllByRole('tab')
-        .map((tab) => tab.getAttribute('aria-label') ?? '')
-      fireEvent.keyDown(document.body, { key: 'Escape' })
-      return names
-    }
 
-    expect(tabs('claude-quick')).toEqual([
+    expect(agentTabs('claude-quick')).toEqual([
       expect.stringContaining('Claude Agent'),
       expect.stringContaining('Pi')
     ])
-    expect(tabs(PI).filter((name) => name.includes('Claude'))).toEqual([])
+    expect(agentTabs(PI).filter((name) => name.includes('Claude'))).toEqual([])
+  })
+
+  it("offers no other agent to an agent's only profile, and says why", async () => {
+    withAgentTabs()
+    host({ ...VIEW, profiles: VIEW.profiles.filter((p) => p.id !== 'claude-quick') })
+    await renderPage()
+
+    expect(agentTabs('claude-deep')).toEqual([])
+    expect(
+      within(expand('claude-deep')).getByText(
+        "This agent's only profile stays on it. Duplicate it to use another agent."
+      )
+    ).toBeInTheDocument()
+  })
+
+  it("stores the other agent's implicit default with a profile moved to it", async () => {
+    withAgentTabs()
+    const h = host(VIEW)
+    await renderPage()
+    fireEvent.click(within(row('claude-quick')).getByTestId('agent-model-selector-trigger'))
+    fireEvent.click(screen.getByRole('tab', { name: /Pi/ }))
+
+    await waitFor(() => expect(setSettings).toHaveBeenCalled())
+    expect(setSettings).toHaveBeenLastCalledWith({
+      upsertProfiles: [
+        { profile: storedProfile(VIEW.profiles[2]) },
+        { profile: expect.objectContaining({ id: 'claude-quick', agentId: PI, model: null }) }
+      ]
+    })
+    await waitFor(() =>
+      expect(h.stored().map((p) => [p.id, p.agentId])).toEqual([
+        ['claude-deep', CLAUDE],
+        ['claude-quick', PI],
+        [PI, PI]
+      ])
+    )
+    expect(row(PI)).toBeInTheDocument()
   })
 
   it('lists every profile with its note, and names the enabled ones the calling agent sees', async () => {
@@ -322,6 +421,23 @@ describe('SubagentSettingsGroup', () => {
     )
   })
 
+  it('keeps an implicit default listed when its duplicate is stored', async () => {
+    const h = host(VIEW)
+    await renderPage()
+    fireEvent.click(within(openMenu(PI)).getByRole('menuitem', { name: 'Duplicate' }))
+
+    await waitFor(() => expect(h.stored().map((p) => p.id)).toContain('pi-2'))
+    expect(setSettings).toHaveBeenLastCalledWith({
+      upsertProfiles: [
+        { profile: storedProfile(VIEW.profiles[2]) },
+        { profile: expect.objectContaining({ id: 'pi-2', agentId: PI }) }
+      ]
+    })
+    expect(h.stored().map((p) => p.id)).toEqual(['claude-deep', 'claude-quick', PI, 'pi-2'])
+    await waitFor(() => expect(row('pi-2')).toBeInTheDocument())
+    expect(row(PI)).toBeInTheDocument()
+  })
+
   it("deletes one of an agent's profiles, but not its only one", async () => {
     await renderPage()
     const onlyDelete = within(openMenu(PI)).getByRole('menuitem', { name: 'Delete' })
@@ -390,6 +506,7 @@ describe('SubagentSettingsGroup', () => {
     expect(prepareChat).toHaveBeenCalledWith(PI, '/work', undefined, 'p1', { silent: true })
 
     fireEvent.click(within(panel).getByRole('button', { name: /Gemini Pro/ }))
+    await waitFor(() => expect(setSettings).toHaveBeenCalled())
     expect(lastUpsert()).toEqual({
       previousId: undefined,
       profile: expect.objectContaining({
@@ -453,6 +570,87 @@ describe('SubagentSettingsGroup', () => {
         expect.arrayContaining([expect.stringMatching(/^(agents|models|descriptions)$/)])
       )
     }
+  })
+
+  it('sends one change at a time, each built on the answer to the one before', async () => {
+    const h = host(VIEW)
+    await renderPage()
+    h.hold()
+    const panel = expand('claude-quick')
+    fireEvent.click(within(row('claude-quick')).getByRole('switch'))
+    fireEvent.click(within(panel).getByRole('radio', { name: 'Allow everything' }))
+    const note = within(panel).getByLabelText('When to use')
+    fireEvent.change(note, { target: { value: 'Quick fixes.' } })
+    fireEvent.blur(note)
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1))
+
+    await h.release()
+    expect(within(panel).getByRole('radio', { name: 'Allow everything' })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    )
+    expect(within(row('claude-quick')).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(2))
+    await h.release()
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(3))
+    await h.release()
+
+    expect(h.stored().find((p) => p.id === 'claude-quick')).toEqual(
+      expect.objectContaining({
+        enabled: false,
+        approvals: 'allowAll',
+        description: 'Quick fixes.'
+      })
+    )
+  })
+
+  it('applies an edit made before a rename was answered to the renamed profile', async () => {
+    const h = host(VIEW)
+    await renderPage()
+    h.hold()
+    const name = within(expand('claude-deep')).getByLabelText('Name')
+    fireEvent.change(name, { target: { value: 'claude-rust' } })
+    fireEvent.keyDown(name, { key: 'Enter' })
+    fireEvent.click(within(row('claude-rust')).getByRole('switch'))
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1))
+
+    await h.release()
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(2))
+    await h.release()
+
+    expect(h.stored().map((p) => [p.id, p.enabled])).toEqual([
+      ['claude-rust', false],
+      ['claude-quick', true]
+    ])
+  })
+
+  it('keeps a profile open under its old name when the host refuses the rename', async () => {
+    const h = host({
+      ...VIEW,
+      profiles: [
+        ...VIEW.profiles.slice(0, 2),
+        profile({ id: 'pi-fast', agentId: PI, agentName: 'Pi' })
+      ]
+    })
+    await renderPage()
+    h.hold()
+    const name = within(expand('claude-deep')).getByLabelText('Name')
+    fireEvent.change(name, { target: { value: PI } })
+    fireEvent.keyDown(name, { key: 'Enter' })
+    fireEvent.click(within(row(PI)).getByRole('switch'))
+    await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1))
+
+    await h.release()
+    await waitFor(() => expect(row('claude-deep')).toBeInTheDocument())
+    expect(toastError).toHaveBeenCalledWith('Could not save the sub-agent setting.', {
+      description: `the profile id ${PI} is the id of the agent Pi`
+    })
+    expect(
+      within(row('claude-deep')).getByRole('region', { name: 'claude-deep settings' })
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId(`subagent-profile-${PI}`)).toBeNull()
+    expect(setSettings).toHaveBeenCalledTimes(1)
+    expect(h.stored().map((p) => p.id)).toEqual(['claude-deep', 'claude-quick', 'pi-fast'])
   })
 
   it('tells the user when the host refuses a change', async () => {

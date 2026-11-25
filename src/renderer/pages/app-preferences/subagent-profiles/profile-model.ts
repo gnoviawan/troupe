@@ -6,7 +6,9 @@ import type {
   SessionModelState,
   SessionModeState,
   SubagentProfile,
-  SubagentProfileView
+  SubagentProfileView,
+  SubagentSettingsInput,
+  SubagentSettingsView
 } from '@/lib/acp-api'
 
 /** The host's profile id rule: 1 to 64 of `[A-Za-z0-9._:-]`. */
@@ -63,6 +65,24 @@ export function canDeleteProfile(
   if (profile.implicit) return false
   if (profile.agentName === null) return true
   return all.filter((other) => other.agentId === profile.agentId).length > 1
+}
+
+/**
+ * Why `profile` cannot move to another agent, or null when it can. Moving an
+ * agent's only profile away is deleting it from that agent, so it is refused
+ * for the same reason. The host refuses an id that is another agent's key.
+ */
+export function agentLockReason(
+  profile: SubagentProfileView,
+  all: readonly SubagentProfileView[]
+): string | null {
+  if (!canDeleteProfile(profile, all)) {
+    return "This agent's only profile stays on it. Duplicate it to use another agent."
+  }
+  if (profile.id.toLowerCase() === profile.agentId.toLowerCase()) {
+    return 'Named after its agent, so it stays on it. Rename it to move it.'
+  }
+  return null
 }
 
 /** The profile runs without asking: a bypass-type mode, or Allow everything. */
@@ -154,12 +174,8 @@ export function withSavedValues(
   return { models, modes, configOptions }
 }
 
-/**
- * `profiles` with `profile` saved in place of `previousId` (else its own id),
- * or appended: what the host will answer, shown before it does so the next
- * edit builds on this one.
- */
-export function upsertProfileView(
+/** `profiles` with `profile` saved in place of `previousId` (else its own id), or appended. */
+function upsertProfileView(
   profiles: readonly SubagentProfileView[],
   profile: SubagentProfile,
   previousId?: string
@@ -171,4 +187,43 @@ export function upsertProfileView(
   return at >= 0
     ? profiles.map((other, index) => (index === at ? next : other))
     : [...profiles, next]
+}
+
+type ProfileUpsert = NonNullable<SubagentSettingsInput['upsertProfiles']>[number]
+
+/**
+ * The upserts that save `profile` (in place of `previousId` when renamed).
+ * The host drops an agent's implicit default once a stored profile points at
+ * the agent, so when `profile` would be its agent's first stored profile, the
+ * default is stored first, as shown, and stays in the list.
+ */
+export function profileUpserts(
+  profiles: readonly SubagentProfileView[],
+  profile: SubagentProfile,
+  previousId?: string
+): ProfileUpsert[] {
+  const target = previousId ?? profile.id
+  const implicit = profiles.find(
+    (other) => other.implicit && other.agentId === profile.agentId && other.id !== target
+  )
+  const upsert: ProfileUpsert = previousId ? { previousId, profile } : { profile }
+  return implicit ? [{ profile: storedProfile(implicit) }, upsert] : [upsert]
+}
+
+/** `view` with `input` applied as the host applies it: the gates, the deletes, then the upserts. */
+export function applySettingsInput(
+  view: SubagentSettingsView,
+  input: SubagentSettingsInput
+): SubagentSettingsView {
+  let profiles = view.profiles.filter((profile) => !input.deleteProfiles?.includes(profile.id))
+  for (const { previousId, profile } of input.upsertProfiles ?? []) {
+    profiles = upsertProfileView(profiles, profile, previousId)
+  }
+  return {
+    ...view,
+    enabled: input.enabled ?? view.enabled,
+    maxRunning: input.maxRunning ?? view.maxRunning,
+    maxDepth: input.maxDepth ?? view.maxDepth,
+    profiles
+  }
 }

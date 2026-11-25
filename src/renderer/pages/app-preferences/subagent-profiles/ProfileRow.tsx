@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useCallback, useId, useMemo, useState } from 'react'
 import { ModeChip } from '@/components/chat/AgentHeader'
 import { AgentModelSelector } from '@/components/chat/agent-model-selector/AgentModelSelector'
 import { AlertTriangle, Copy, ShieldAlert, Trash2 } from '@/components/icons'
@@ -12,16 +12,20 @@ import type { SubagentApprovals, SubagentProfile, SubagentProfileView } from '@/
 import { cn } from '@/lib/utils'
 import { AgentRowIcon } from './AgentRowIcon'
 import {
+  agentLockReason,
   canDeleteProfile,
   MAX_DESCRIPTION_CHARS,
   profileIdError,
   profileSkipsPrompts,
   storedProfile
 } from './profile-model'
-import { useProfilePicker } from './use-profile-picker'
+import { type EditProfile, useProfilePicker } from './use-profile-picker'
 
-/** Saves `profile`, in place of the profile `previousId` names when renamed. */
-export type SaveProfile = (profile: SubagentProfile, previousId?: string) => Promise<void>
+/**
+ * Saves `edit` of the profile named `id`, applied when the change is sent, so
+ * it lands on every earlier edit. A rename is an edit of the id.
+ */
+export type SaveProfile = (id: string, edit: EditProfile) => Promise<void>
 
 const APPROVALS: ReadonlyArray<{ value: SubagentApprovals; label: string }> = [
   { value: 'ask', label: 'Ask in chat' },
@@ -224,6 +228,7 @@ export function ProfileRow({
   expanded,
   onToggle,
   save,
+  rename,
   onDuplicate,
   onDelete
 }: {
@@ -233,18 +238,26 @@ export function ProfileRow({
   expanded: boolean
   onToggle: () => void
   save: SaveProfile
+  rename: (from: string, to: string) => void
   onDuplicate: () => void
   onDelete: () => void
 }): React.JSX.Element {
   const stored = useMemo(() => storedProfile(profile), [profile])
-  const picker = useProfilePicker({ profile: stored, launchableAgentIds, save })
+  const edit = useCallback((change: EditProfile) => save(profile.id, change), [save, profile.id])
+  const lockReason = agentLockReason(profile, profiles)
+  const picker = useProfilePicker({
+    profile: stored,
+    launchableAgentIds,
+    pinned: lockReason !== null,
+    edit
+  })
   const others = useMemo(() => profiles.filter((other) => other !== profile), [profiles, profile])
   const installed = profile.agentName !== null
   const agentName = profile.agentName ?? picker.agentName ?? profile.agentId
   const skips = profileSkipsPrompts(stored)
   const panelId = useId()
   const update = (patch: Partial<SubagentProfile>): void => {
-    void save({ ...stored, ...patch }).catch(() => {})
+    void edit((current) => ({ ...current, ...patch })).catch(() => {})
   }
   const subtitle = installed
     ? (profile.description ?? `${agentName}. No note yet.`)
@@ -318,11 +331,15 @@ export function ProfileRow({
           aria-label={`${profile.id} settings`}
           className="flex flex-col gap-4 px-4 pb-4 pt-1 @[35rem]:pl-14"
         >
-          <NameField
-            profile={profile}
-            others={others}
-            onRename={(id) => void save({ ...stored, id }, profile.id).catch(() => {})}
-          />
+          <NameField profile={profile} others={others} onRename={(id) => rename(profile.id, id)} />
+          {installed ? (
+            <FieldRow label="Agent">
+              <p className="pt-1.5 text-sm text-foreground">{agentName}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {lockReason ?? 'Pick another agent from the tabs of the model picker.'}
+              </p>
+            </FieldRow>
+          ) : null}
           {picker.modeSession ? (
             <FieldRow label="Mode">
               <ModeChip

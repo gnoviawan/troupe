@@ -32,6 +32,9 @@ const NO_PROJECT: PrepareChatError = {
   detail: 'Troupe starts the agent in the open project to read its models.'
 }
 
+/** A change to a profile, applied to the profile as it is when the change is sent. */
+export type EditProfile = (profile: SubagentProfile) => SubagentProfile
+
 /** Everything the profile row's model chip and Mode row need. */
 export interface ProfilePicker extends ComposerOptionControls {
   source: SelectorSource
@@ -59,12 +62,15 @@ export interface ProfilePicker extends ComposerOptionControls {
 export function useProfilePicker({
   profile,
   launchableAgentIds,
-  save
+  pinned,
+  edit
 }: {
   profile: SubagentProfile
   /** The agents the host can start; the picker's tabs. */
   launchableAgentIds: ReadonlySet<string>
-  save: (next: SubagentProfile) => Promise<void>
+  /** The profile cannot move to another agent, so the picker offers only its own. */
+  pinned: boolean
+  edit: (change: EditProfile) => Promise<void>
 }): ProfilePicker {
   const agentId = profile.agentId
   const agentConfigs = useAcpStore((s) => s.agentConfigs)
@@ -73,15 +79,12 @@ export function useProfilePicker({
     (entry: SupportedAcpAgentEntry) => armableConfigId(entry, agentConfigs) ?? entry.configId,
     [agentConfigs]
   )
-  // A profile named after its agent's key cannot move: the host refuses an id
-  // that is another agent's key, so its picker offers only its own agent.
-  const ownKey = profile.id.toLowerCase() === agentId.toLowerCase()
   const entries = useMemo(
     () =>
       supported.filter((entry) =>
-        ownKey ? tabId(entry) === agentId : launchableAgentIds.has(tabId(entry))
+        pinned ? tabId(entry) === agentId : launchableAgentIds.has(tabId(entry))
       ),
-    [supported, launchableAgentIds, tabId, ownKey, agentId]
+    [supported, launchableAgentIds, tabId, pinned, agentId]
   )
   const selectedEntry = entries.find((entry) => tabId(entry) === agentId) ?? null
   const config = agentConfigs.find((candidate) => candidate.id === agentId) ?? null
@@ -155,14 +158,15 @@ export function useProfilePicker({
     projectId,
     onSelectAgent: (entry) => {
       const next = tabId(entry)
-      if (next !== agentId) void save(withAgent(profile, next)).catch(noop)
+      if (next !== agentId) void edit((current) => withAgent(current, next)).catch(noop)
     },
     onSelectAgentWithModel: (entry, pick: SwitchModelPick) => {
       const configValues: Record<string, string> = { ...pick.values }
       if (pick.modelConfigId) configValues[pick.modelConfigId] = pick.modelId
-      void save(withAgent(profile, tabId(entry), { modelId: pick.modelId, configValues })).catch(
-        noop
-      )
+      const next = tabId(entry)
+      void edit((current) =>
+        withAgent(current, next, { modelId: pick.modelId, configValues })
+      ).catch(noop)
     },
     onInstall: noop,
     showModelLoading: !prepareError && preparing && !hasModels,
@@ -176,20 +180,22 @@ export function useProfilePicker({
 
   const { modelOption, modelSource } = controls
   const onSetModel = useCallback(
-    (modelId: string, values?: OptionValues) =>
-      save(
+    (modelId: string, values?: OptionValues) => {
+      const modelConfigId = modelSource === 'config' ? (modelOption?.id ?? null) : null
+      return edit((current) =>
         withPending(
-          profile,
+          current,
           pendingWithModel(
-            pendingOf(profile),
+            pendingOf(current),
             modelId,
             values ?? {},
-            modelSource === 'config' ? (modelOption?.id ?? null) : null,
+            modelConfigId,
             effective.configOptions
           )
         )
-      ),
-    [profile, modelSource, modelOption, effective.configOptions, save]
+      )
+    },
+    [modelSource, modelOption, effective.configOptions, edit]
   )
   const onSetConfig = useCallback(
     (configId: string, value: string | boolean) => {
@@ -197,13 +203,16 @@ export function useProfilePicker({
         return onSetModel(value)
       }
       const stored = typeof value === 'boolean' ? String(value) : value
-      return save({ ...profile, configOptions: { ...profile.configOptions, [configId]: stored } })
+      return edit((current) => ({
+        ...current,
+        configOptions: { ...current.configOptions, [configId]: stored }
+      }))
     },
-    [profile, modelSource, modelOption, onSetModel, save]
+    [modelSource, modelOption, onSetModel, edit]
   )
   const onSetMode = useCallback(
-    (modeId: string) => save({ ...profile, mode: modeId }),
-    [profile, save]
+    (modeId: string) => edit((current) => ({ ...current, mode: modeId })),
+    [edit]
   )
 
   const modes =

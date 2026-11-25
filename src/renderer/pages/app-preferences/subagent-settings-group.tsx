@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { useCallback, useMemo, useState } from 'react'
 import { Plus } from '@/components/icons'
 import { rowId } from '@/components/settings/row-id'
 import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
@@ -8,25 +7,22 @@ import { SettingsRow } from '@/components/settings/SettingsRow'
 import { SettingsStepper } from '@/components/settings/SettingsStepper'
 import { SettingsSwitchRow } from '@/components/settings/SettingsSwitchRow'
 import { Button } from '@/components/ui/button'
-import type { SubagentProfile, SubagentSettingsInput, SubagentSettingsView } from '@/lib/acp-api'
-import { acpApi } from '@/lib/api'
-import { logFrontendError } from '@/lib/log-api'
+import type { SubagentProfile } from '@/lib/acp-api'
 import { ProfileRow, type SaveProfile } from './subagent-profiles/ProfileRow'
 import {
   agentShortName,
+  profileUpserts,
   storedProfile,
-  uniqueProfileId,
-  upsertProfileView
+  uniqueProfileId
 } from './subagent-profiles/profile-model'
+import { useSubagentSettings } from './subagent-profiles/use-subagent-settings'
 
 const MIN_RUNNING = 1
 const MAX_RUNNING = 8
 const MIN_DEPTH = 1
 const MAX_DEPTH = 4
 
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
-}
+const noop = (): void => {}
 
 /** "a, b and c" */
 function listIds(ids: readonly string[]): React.ReactNode {
@@ -41,71 +37,32 @@ function listIds(ids: readonly string[]): React.ReactNode {
 /**
  * The Sub-agents preferences: the orchestrator's enable switch and caps, and
  * the profiles the calling agent can start, each with its agent, model,
- * thinking, mode, approvals and note. Every write applies the view the host
- * answers with, so the host stays the single source of truth.
+ * thinking, mode, approvals and note. Edits show at once and reach the host
+ * in order; its answers stay the source of truth.
  */
 export function SubagentSettingsGroup(): React.JSX.Element {
-  const [view, setView] = useState<SubagentSettingsView | null>(null)
-  const [failed, setFailed] = useState(false)
+  const { view, failed, change } = useSubagentSettings()
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const load = useCallback((isCurrent: () => boolean = () => true) => {
-    void acpApi
-      .getSubagentSettings()
-      .then((next) => {
-        if (!isCurrent()) return
-        setView(next)
-        setFailed(false)
-      })
-      .catch((error: unknown) => {
-        if (!isCurrent()) return
-        setView(null)
-        setFailed(true)
-        void logFrontendError({
-          level: 'warn',
-          source: 'SubagentSettingsGroup',
-          message: `Failed to read the sub-agent settings: ${errorText(error)}`
-        })
-      })
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    load(() => !cancelled)
-    return () => {
-      cancelled = true
-    }
-  }, [load])
-
-  // A refused write reads the host's view back, dropping what was shown early.
-  const write = useCallback(
-    async (input: SubagentSettingsInput): Promise<void> => {
-      try {
-        setView(await acpApi.setSubagentSettings(input))
-      } catch (error) {
-        toast.error('Could not save the sub-agent setting.', { description: errorText(error) })
-        void logFrontendError({
-          level: 'warn',
-          source: 'SubagentSettingsGroup',
-          message: `Failed to set subagent settings: ${errorText(error)}`
-        })
-        load()
-        throw error
-      }
-    },
-    [load]
-  )
-
   const save = useCallback<SaveProfile>(
-    async (profile, previousId) => {
-      setView(
-        (prev) =>
-          prev && { ...prev, profiles: upsertProfileView(prev.profiles, profile, previousId) }
+    (id, edit) =>
+      change((latest) => {
+        const current = latest.profiles.find((profile) => profile.id === id)
+        if (!current) return null
+        const next = edit(storedProfile(current))
+        const previousId = next.id === id ? undefined : id
+        return { upsertProfiles: profileUpserts(latest.profiles, next, previousId) }
+      }),
+    [change]
+  )
+  const rename = useCallback(
+    (from: string, to: string) => {
+      setExpandedId((open) => (open === from ? to : open))
+      void save(from, (profile) => ({ ...profile, id: to })).catch(() =>
+        setExpandedId((open) => (open === to ? from : open))
       )
-      if (previousId) setExpandedId((open) => (open === previousId ? profile.id : open))
-      await write({ upsertProfiles: [{ previousId, profile }] })
     },
-    [write]
+    [save]
   )
 
   const profiles = view?.profiles
@@ -151,9 +108,10 @@ export function SubagentSettingsGroup(): React.JSX.Element {
           approvals: 'ask',
           description: null
         }
-    void write({ upsertProfiles: [{ profile }] })
-      .then(() => setExpandedId(id))
-      .catch(() => {})
+    setExpandedId(id)
+    void change((latest) => ({ upsertProfiles: profileUpserts(latest.profiles, profile) })).catch(
+      () => setExpandedId((open) => (open === id ? null : open))
+    )
   }
   const firstAgent = profiles.find((profile) => profile.agentName !== null)?.agentId ?? null
   const enabledIds = profiles
@@ -169,7 +127,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
             label="Let agents start other agents"
             description="An agent chat can hand parts of a task to the profiles below. Their approvals come to that chat."
             checked={view.enabled}
-            onToggle={(enabled) => void write({ enabled }).catch(() => {})}
+            onToggle={(enabled) => void change(() => ({ enabled })).catch(noop)}
           />
           <SettingsRow
             id={rowId('subagent-max-running')}
@@ -183,7 +141,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
               max={MAX_RUNNING}
               decrementLabel="Fewer running sub-agents"
               incrementLabel="More running sub-agents"
-              onValueChange={(maxRunning) => void write({ maxRunning }).catch(() => {})}
+              onValueChange={(maxRunning) => void change(() => ({ maxRunning })).catch(noop)}
             />
           </SettingsRow>
           <SettingsRow
@@ -198,7 +156,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
               max={MAX_DEPTH}
               decrementLabel="Less depth"
               incrementLabel="More depth"
-              onValueChange={(maxDepth) => void write({ maxDepth }).catch(() => {})}
+              onValueChange={(maxDepth) => void change(() => ({ maxDepth })).catch(noop)}
             />
           </SettingsRow>
         </SettingsCard>
@@ -243,6 +201,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
                 expanded={expandedId === profile.id}
                 onToggle={() => setExpandedId((open) => (open === profile.id ? null : profile.id))}
                 save={save}
+                rename={rename}
                 onDuplicate={() =>
                   addProfile(
                     profile.agentId,
@@ -251,7 +210,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
                   )
                 }
                 onDelete={() => {
-                  void write({ deleteProfiles: [profile.id] }).catch(() => {})
+                  void change(() => ({ deleteProfiles: [profile.id] })).catch(noop)
                 }}
               />
             ))
