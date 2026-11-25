@@ -69,6 +69,8 @@ pub struct TerminalUi {
     /// Every command sent, for the tests (a test state has no terminal link).
     #[cfg(test)]
     pub(crate) sent: Vec<Command>,
+    /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
+    pub blink_shown: Option<bool>,
 }
 
 impl TerminalUi {

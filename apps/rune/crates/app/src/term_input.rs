@@ -131,6 +131,17 @@ impl State {
         (((self.now - self.terms.blink_from).max(0.0) / BLINK) as u64).is_multiple_of(2)
     }
 
+    /// Whether the focused cursor turned on or off since the last call: the frame redraws.
+    pub(crate) fn blink_flipped(&mut self) -> bool {
+        let shown = self.terms.focused.clone().and_then(|id| {
+            let blinks = self.terms.views.get(&id)?.cells.lock().ok()?.cursor().blink.unwrap_or(true);
+            Some(self.cursor_shown(&id, blinks))
+        });
+        let flipped = shown != self.terms.blink_shown;
+        self.terms.blink_shown = shown;
+        flipped
+    }
+
     /// When the focused terminal's cursor next turns on or off, if it blinks.
     pub(crate) fn next_blink(&self) -> Option<f64> {
         let id = self.terms.focused.as_deref()?;

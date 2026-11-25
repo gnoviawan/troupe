@@ -256,6 +256,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     }
     changed |= state.pump(now);
     changed |= state.pump_terminals(now);
+    changed |= state.blink_flipped();
     state.sync_chats();
     state.read_agents();
     changed |= state.flush_chat();
