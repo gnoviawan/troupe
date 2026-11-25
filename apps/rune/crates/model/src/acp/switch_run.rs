@@ -452,8 +452,12 @@ impl State {
                 format!("Live switch splice skipped: target {target} {reason}"),
             ));
         }
-        let messages: Vec<_> = self.messages[source]
-            .iter()
+        // A chat closed or deleted mid-switch has no live transcript left.
+        let messages: Vec<_> = self
+            .messages
+            .get(source)
+            .into_iter()
+            .flatten()
             .map(|message| {
                 let mut copy = message.clone();
                 copy.streaming = false;

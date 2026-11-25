@@ -2,6 +2,7 @@
 //! (`healChainEdges`): a payload with switch markers or a continuation runs
 //! the switch redirect and re-splice, which are not ported. An arm on a chat
 //! with no folder: the TypeScript fails with the engine's `TypeError` text.
+//! The live-switch links (`liveSwitchSources`), which no vector state shows.
 
 use serde_json::{Value, json};
 
@@ -108,4 +109,60 @@ fn an_arm_on_a_chat_with_no_folder_arms_and_then_fails() {
         Some(&json!({ "toConfigId": "codex", "status": "pending" }))
     );
     assert!(state.preparing_chat_keys.is_empty());
+}
+
+#[test]
+fn live_switch_links_die_with_either_endpoint_unless_an_open_tab_keeps_them() {
+    let mut state = State::default();
+    let session = |id: &str| {
+        serde_json::from_value(json!({
+            "id": id, "agentId": "agent-1", "status": "active", "title": null,
+            "activeTurn": false, "openTurnId": null
+        }))
+        .expect("a session")
+    };
+    for id in ["s1", "s2", "s3", "s9"] {
+        state.sessions.insert(id.into(), session(id));
+        state.messages.insert(id.into(), Vec::new());
+    }
+    let links = [("s2", "s1"), ("s3", "s9")];
+    for (target, source) in links {
+        let link = (source.to_owned(), json!({ "newSessionId": target }));
+        state.book.switch.live_sources.insert(target.into(), link);
+    }
+    state.book.open_chat_tabs.insert("s2".into());
+    let mut env = Env {
+        now: 1_000.0,
+        ids: &mut NoIds,
+        server_history: false,
+    };
+    let linked = |state: &State| -> Vec<(String, String)> {
+        let links = &state.book.switch.live_sources;
+        links
+            .iter()
+            .map(|(t, (s, _))| (t.clone(), s.clone()))
+            .collect()
+    };
+
+    let closed = json!({ "sessionId": "s2", "agentId": "agent-1" });
+    let closed = Event::SessionClosed(serde_json::from_value(closed).expect("an event"));
+    step(&mut state, closed, &mut env);
+    assert_eq!(
+        linked(&state),
+        [("s2".into(), "s1".into()), ("s3".into(), "s9".into())]
+    );
+
+    step(
+        &mut state,
+        Event::DropSessionTranscript("s1".into()),
+        &mut env,
+    );
+    assert_eq!(linked(&state), [("s3".into(), "s9".into())]);
+
+    step(
+        &mut state,
+        Event::DropSessionTranscript("s3".into()),
+        &mut env,
+    );
+    assert_eq!(linked(&state), []);
 }

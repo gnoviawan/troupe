@@ -244481,6 +244481,1382 @@
  },
  {
   "store": "acp",
+  "name": "switch_agent_survives_its_source_chat_closing_mid_switch",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "s2",
+     "models": null
+    },
+    {
+     "hold": true,
+     "release": null
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "m1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "Fix the login bug"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 1
+     },
+     {
+      "id": "m2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "Looking at auth.ts now."
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 3
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "t1",
+      "title": "Read file",
+      "kind": "read",
+      "status": "completed",
+      "rawInput": {
+       "path": "/work/src/auth.ts",
+       "offset": 10,
+       "limit": 30
+      },
+      "seq": 2
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "agentConfigId": "claude",
+     "projectId": "p1",
+     "title": "Old chat",
+     "createdAt": 1
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 60300,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "switchAgent",
+     "args": [
+      "s1",
+      "codex",
+      {
+       "pendingText": "go"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.start",
+      "message": "Switching session s1 from config claude to config codex"
+     },
+     {
+      "kind": "deletePersisted",
+      "key": "chat-draft/p1/s1"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "codex",
+       "name": "Codex",
+       "command": "codex-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-9",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "recordAgentSwitch",
+      "sessionId": "s1",
+      "marker": {
+       "fromConfigId": "claude",
+       "toConfigId": "codex",
+       "newSessionId": "s2",
+       "summaryText": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now."
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending"
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "m1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "Fix the login bug"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "Looking at auth.ts now."
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ],
+      "s2": []
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "t1",
+        "title": "Read file",
+        "kind": "read",
+        "status": "completed",
+        "rawInput": {
+         "path": "/work/src/auth.ts",
+         "offset": 10,
+         "limit": 30
+        },
+        "seq": 2
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "title": "Old chat",
+       "createdAt": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1",
+      "codex\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "closeSession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeAgentSession",
+      "agentId": "agent-1",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": null,
+       "replaying": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "title": "Old chat",
+       "createdAt": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1",
+      "codex\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60300,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.splice",
+      "message": "Spliced pre-switch transcript of session s1 into s2: 0 message(s), 0 tool call(s), fabricated switch marker"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-9",
+      "sessionId": "s2",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now."
+       },
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s2 answered with a accepted receipt; awaiting its prompt_complete"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.success",
+      "message": "Switched session s1 (config claude) to config codex, new session s2"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s2"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": null,
+       "replaying": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000003000,
+        "seq": 60301,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {
+      "s2": []
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "title": "Old chat",
+       "createdAt": 1,
+       "lastActivityAt": 1700000003000,
+       "agents": [
+        "claude",
+        "codex"
+       ]
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "codex\u0000/work\u0000project\u0000p1": "agent-9",
+      "claude\u0000/work\u0000project\u0000p1\u0000agent-1": "agent-1"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {
+      "s2": [
+       {
+        "fromConfigId": "claude",
+        "toConfigId": "codex",
+        "newSessionId": "s2",
+        "summaryText": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now.",
+        "timestamp": 1700000003000,
+        "id": "switch-splice:s1:switch:fabricated:1",
+        "seq": -1
+       }
+      ]
+     },
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60301,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
+  "name": "switch_agent_survives_its_source_chat_deleted_mid_switch",
+  "context": {
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ],
+   "agentReplies": [
+    {
+     "agentId": "agent-9",
+     "capabilities": {},
+     "authMethods": []
+    },
+    {
+     "sessionId": "s2",
+     "models": null
+    },
+    {
+     "hold": true,
+     "release": null
+    },
+    null
+   ]
+  },
+  "initial": {
+   "sessions": {
+    "s1": {
+     "id": "s1",
+     "agentId": "agent-1",
+     "cwd": "/work",
+     "projectId": "p1",
+     "status": "active",
+     "title": null,
+     "activeTurn": false,
+     "openTurnId": null,
+     "modes": null,
+     "models": null,
+     "configOptions": [],
+     "lastError": null,
+     "createdAt": 1,
+     "switching": {
+      "toConfigId": "codex",
+      "status": "pending"
+     }
+    }
+   },
+   "messages": {
+    "s1": [
+     {
+      "id": "m1",
+      "role": "user",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "Fix the login bug"
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 1
+     },
+     {
+      "id": "m2",
+      "role": "agent",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "Looking at auth.ts now."
+       }
+      ],
+      "streaming": false,
+      "timestamp": 1,
+      "seq": 3
+     }
+    ]
+   },
+   "toolCalls": {
+    "s1": [
+     {
+      "toolCallId": "t1",
+      "title": "Read file",
+      "kind": "read",
+      "status": "completed",
+      "rawInput": {
+       "path": "/work/src/auth.ts",
+       "offset": 10,
+       "limit": 30
+      },
+      "seq": 2
+     }
+    ]
+   },
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "agentConfigId": "claude",
+     "projectId": "p1",
+     "title": "Old chat",
+     "createdAt": 1
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {},
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    },
+    {
+     "id": "codex",
+     "name": "Codex",
+     "command": "codex-acp"
+    }
+   ],
+   "book": {
+    "seq": 60400,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "switchAgent",
+     "args": [
+      "s1",
+      "codex",
+      {
+       "pendingText": "go"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.start",
+      "message": "Switching session s1 from config claude to config codex"
+     },
+     {
+      "kind": "deletePersisted",
+      "key": "chat-draft/p1/s1"
+     },
+     {
+      "kind": "spawnAgent",
+      "config": {
+       "configId": "codex",
+       "name": "Codex",
+       "command": "codex-acp",
+       "env": {}
+      },
+      "projectId": "p1"
+     },
+     {
+      "kind": "newSession",
+      "agentId": "agent-9",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "recordAgentSwitch",
+      "sessionId": "s1",
+      "marker": {
+       "fromConfigId": "claude",
+       "toConfigId": "codex",
+       "newSessionId": "s2",
+       "summaryText": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now."
+      }
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending"
+       }
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "m1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "Fix the login bug"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "Looking at auth.ts now."
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 3
+       }
+      ],
+      "s2": []
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "t1",
+        "title": "Read file",
+        "kind": "read",
+        "status": "completed",
+        "rawInput": {
+         "path": "/work/src/auth.ts",
+         "offset": 10,
+         "limit": 30
+        },
+        "seq": 2
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s1",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "title": "Old chat",
+       "createdAt": 1
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1",
+      "codex\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "deleteHistorySession",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "closeChatTab",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "deleteSessionTempFiles",
+      "sessionId": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": {
+        "toConfigId": "codex",
+        "status": "pending"
+       },
+       "replaying": null,
+       "launchFirstTurnBlocks": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": false,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "createdAt": 1700000001000,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s2": []
+     },
+     "toolCalls": {},
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "claude\u0000/work\u0000project\u0000p1": "agent-1",
+      "codex\u0000/work\u0000project\u0000p1": "agent-9"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {},
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60400,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": []
+    },
+    "ids": [
+     "id-1",
+     "id-2"
+    ],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.splice",
+      "message": "Spliced pre-switch transcript of session s1 into s2: 0 message(s), 0 tool call(s), fabricated switch marker"
+     },
+     {
+      "kind": "persistSession",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "dispatchPrompt",
+      "agentId": "agent-9",
+      "sessionId": "s2",
+      "turnId": "id-1",
+      "blocks": [
+       {
+        "type": "text",
+        "text": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now."
+       },
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ],
+      "displayBlocks": [
+       {
+        "type": "text",
+        "text": "go"
+       }
+      ]
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp-store.promptReceipt",
+      "message": "Prompt turn id-1 on session s2 answered with a accepted receipt; awaiting its prompt_complete"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.switchAgent.success",
+      "message": "Switched session s1 (config claude) to config codex, new session s2"
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s2"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": null,
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "createdAt": 1,
+       "switching": null,
+       "replaying": null,
+       "launchFirstTurnBlocks": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-9",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": null,
+       "activeTurn": true,
+       "agentWorking": false,
+       "mcpServerCount": 0,
+       "openTurnId": "turn-id-2",
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "creationOptionDefaults": {
+        "configValues": {}
+       },
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 1700000001000,
+       "replaying": null,
+       "latestPromptTurnId": "id-1"
+      }
+     },
+     "messages": {
+      "s2": [
+       {
+        "id": "turn:id-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "go"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1700000003000,
+        "seq": 60401,
+        "sentHere": true
+       }
+      ]
+     },
+     "toolCalls": {
+      "s2": []
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected",
+      "agent-9": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "codex\u0000/work\u0000project\u0000p1": "agent-9",
+      "claude\u0000/work\u0000project\u0000p1\u0000agent-1": "agent-1"
+     },
+     "activeSessionId": "s2",
+     "preparedSessions": {},
+     "agentSwitches": {
+      "s2": [
+       {
+        "fromConfigId": "claude",
+        "toConfigId": "codex",
+        "newSessionId": "s2",
+        "summaryText": "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: Fix the login bug\n- Read auth.ts L10-40\nAgent: Looking at auth.ts now.",
+        "timestamp": 1700000003000,
+        "id": "switch-splice:s1:switch:fabricated:1",
+        "seq": -1
+       }
+      ]
+     },
+     "agents": {
+      "agent-9": {
+       "id": "agent-9",
+       "capabilities": {},
+       "authMethods": [],
+       "hostAuthReady": false
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      },
+      {
+       "id": "codex",
+       "name": "Codex",
+       "command": "codex-acp"
+      }
+     ],
+     "book": {
+      "seq": 60401,
+      "historyWatermarks": {},
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "acp",
   "name": "switch_agent_dispatch_failure_banners_the_new_session",
   "context": {
    "projects": [
@@ -244624,7 +246000,7 @@
     }
    ],
    "book": {
-    "seq": 60300,
+    "seq": 60500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -244848,7 +246224,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 60301,
+        "seq": 60501,
         "sentHere": true
        }
       ]
@@ -244957,7 +246333,7 @@
       }
      ],
      "book": {
-      "seq": 60301,
+      "seq": 60501,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -245110,7 +246486,7 @@
     }
    ],
    "book": {
-    "seq": 60400,
+    "seq": 60600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -245453,7 +246829,7 @@
       }
      ],
      "book": {
-      "seq": 60401,
+      "seq": 60601,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -245606,7 +246982,7 @@
     }
    ],
    "book": {
-    "seq": 60500,
+    "seq": 60700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -245927,7 +247303,7 @@
       }
      ],
      "book": {
-      "seq": 60501,
+      "seq": 60701,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -246054,7 +247430,7 @@
     }
    ],
    "book": {
-    "seq": 60600,
+    "seq": 60800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -246204,7 +247580,7 @@
       }
      ],
      "book": {
-      "seq": 60600,
+      "seq": 60800,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -246331,7 +247707,7 @@
     }
    ],
    "book": {
-    "seq": 60700,
+    "seq": 60900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -246481,7 +247857,7 @@
       }
      ],
      "book": {
-      "seq": 60700,
+      "seq": 60900,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -246608,7 +247984,7 @@
     }
    ],
    "book": {
-    "seq": 60800,
+    "seq": 61000,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -246752,7 +248128,7 @@
       }
      ],
      "book": {
-      "seq": 60800,
+      "seq": 61000,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -246895,7 +248271,7 @@
     }
    ],
    "book": {
-    "seq": 60900,
+    "seq": 61100,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -247109,7 +248485,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 60901,
+        "seq": 61101,
         "sentHere": true
        }
       ]
@@ -247204,7 +248580,7 @@
       }
      ],
      "book": {
-      "seq": 60901,
+      "seq": 61101,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -247331,7 +248707,7 @@
     }
    ],
    "book": {
-    "seq": 61000,
+    "seq": 61200,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -247471,7 +248847,7 @@
       }
      ],
      "book": {
-      "seq": 61000,
+      "seq": 61200,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -247622,7 +248998,7 @@
     }
    ],
    "book": {
-    "seq": 61100,
+    "seq": 61300,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -247779,7 +249155,7 @@
       }
      ],
      "book": {
-      "seq": 61100,
+      "seq": 61300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -247920,7 +249296,7 @@
       }
      ],
      "book": {
-      "seq": 61100,
+      "seq": 61300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -248062,7 +249438,7 @@
       }
      ],
      "book": {
-      "seq": 61100,
+      "seq": 61300,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -248260,7 +249636,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000004000,
-        "seq": 61101,
+        "seq": 61301,
         "sentHere": true
        }
       ]
@@ -248369,7 +249745,7 @@
       }
      ],
      "book": {
-      "seq": 61101,
+      "seq": 61301,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -248553,7 +249929,7 @@
     }
    ],
    "book": {
-    "seq": 61200,
+    "seq": 61400,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -248845,7 +250221,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 61201,
+        "seq": 61401,
         "sentHere": true
        }
       ]
@@ -248989,7 +250365,7 @@
       }
      ],
      "book": {
-      "seq": 61201,
+      "seq": 61401,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -249137,7 +250513,7 @@
     }
    ],
    "book": {
-    "seq": 61300,
+    "seq": 61500,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -249354,7 +250730,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 61301,
+        "seq": 61501,
         "sentHere": true
        }
       ]
@@ -249463,7 +250839,7 @@
       }
      ],
      "book": {
-      "seq": 61301,
+      "seq": 61501,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -249611,7 +250987,7 @@
     }
    ],
    "book": {
-    "seq": 61400,
+    "seq": 61600,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -249841,7 +251217,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 61401,
+        "seq": 61601,
         "sentHere": true
        }
       ]
@@ -249950,7 +251326,7 @@
       }
      ],
      "book": {
-      "seq": 61401,
+      "seq": 61601,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -250117,7 +251493,7 @@
     }
    ],
    "book": {
-    "seq": 61500,
+    "seq": 61700,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -250346,7 +251722,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 61501,
+        "seq": 61701,
         "sentHere": true
        }
       ]
@@ -250476,7 +251852,7 @@
       }
      ],
      "book": {
-      "seq": 61501,
+      "seq": 61701,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -250624,7 +252000,7 @@
     }
    ],
    "book": {
-    "seq": 61600,
+    "seq": 61800,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -250746,13 +252122,13 @@
      "agentSwitches": {
       "s1": [
        {
-        "id": "switch:seq-61601",
+        "id": "switch:seq-61801",
         "fromConfigId": "claude",
         "toConfigId": "codex",
         "newSessionId": "s2",
         "summaryText": "Early",
         "timestamp": 1700000001000,
-        "seq": 61601
+        "seq": 61801
        }
       ]
      },
@@ -250774,7 +252150,7 @@
       }
      ],
      "book": {
-      "seq": 61601,
+      "seq": 61801,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -250972,7 +252348,7 @@
         ],
         "streaming": false,
         "timestamp": 1,
-        "seq": -61601
+        "seq": -61801
        },
        {
         "id": "switch-splice:s1:m2",
@@ -250985,7 +252361,7 @@
         ],
         "streaming": false,
         "timestamp": 1,
-        "seq": -61599
+        "seq": -61799
        },
        {
         "id": "turn:id-1",
@@ -250998,7 +252374,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000002000,
-        "seq": 61602,
+        "seq": 61802,
         "sentHere": true
        }
       ]
@@ -251029,7 +252405,7 @@
          "offset": 10,
          "limit": 30
         },
-        "seq": -61600
+        "seq": -61800
        }
       ]
      },
@@ -251072,18 +252448,18 @@
      "agentSwitches": {
       "s1": [
        {
-        "id": "switch:seq-61601",
+        "id": "switch:seq-61801",
         "fromConfigId": "claude",
         "toConfigId": "codex",
         "newSessionId": "s2",
         "summaryText": "Early",
         "timestamp": 1700000001000,
-        "seq": 61601
+        "seq": 61801
        }
       ],
       "s2": [
        {
-        "id": "switch-splice:s1:switch:seq-61601",
+        "id": "switch-splice:s1:switch:seq-61801",
         "fromConfigId": "claude",
         "toConfigId": "codex",
         "newSessionId": "s2",
@@ -251118,7 +252494,7 @@
       }
      ],
      "book": {
-      "seq": 61602,
+      "seq": 61802,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }
@@ -251768,7 +253144,7 @@
     }
    ],
    "book": {
-    "seq": 61700,
+    "seq": 61900,
     "historyWatermarks": {},
     "mcpSharedSync": true
    }
@@ -252826,7 +254202,7 @@
         ],
         "streaming": false,
         "timestamp": 1700000001000,
-        "seq": 61701,
+        "seq": 61901,
         "sentHere": true
        }
       ]
@@ -253106,7 +254482,7 @@
       }
      ],
      "book": {
-      "seq": 61701,
+      "seq": 61901,
       "historyWatermarks": {},
       "mcpSharedSync": true
      }

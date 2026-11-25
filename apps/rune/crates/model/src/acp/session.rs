@@ -415,7 +415,7 @@ impl State {
             .is_some_and(|session| session.status != SessionStatus::Error)
             && self.book.open_chat_tabs.contains(&id);
         if keep_transcript {
-            self.drop_session_bookkeeping(&id);
+            self.drop_session_bookkeeping(&id, true);
         } else if self.sessions.contains_key(&id) {
             fx.push(Effect::DropSessionTranscript { session_id: id });
         } else {
@@ -435,7 +435,7 @@ impl State {
 
     /// `dropSessionBookkeeping`: what the model keeps per session beside its
     /// transcript.
-    pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str) {
+    pub(crate) fn drop_session_bookkeeping(&mut self, session_id: &str, keep_switch_links: bool) {
         self.book.history_watermarks.remove(session_id);
         self.forget_prompt_turn(session_id);
         self.book.backfill_counts.remove(session_id);
@@ -443,12 +443,20 @@ impl State {
         self.book.durability_probes.remove(session_id);
         self.book.untrimmable.remove(session_id);
         self.forget_composer_session(session_id);
+        // A transcript kept for an open tab keeps its links: a later history
+        // reopen splices the pre-switch conversation again through them.
+        if keep_switch_links {
+            return;
+        }
+        let links = &mut self.book.switch.live_sources;
+        links.remove(session_id);
+        links.retain(|_, (source, _)| source != session_id);
     }
 
     /// `dropSessionTranscriptState`: free the transcript maps of a session
     /// whose last tab closed, and forget its clamp logs.
     pub(crate) fn drop_session_transcript(&mut self, session_id: &str) {
-        self.drop_session_bookkeeping(session_id);
+        self.drop_session_bookkeeping(session_id, false);
         for call in self.tool_calls.get(session_id).into_iter().flatten() {
             let key = clamp::log_key(&js::string_of(call.get("toolCallId")));
             self.book.clamp_logged.retain(|logged| *logged != key);
