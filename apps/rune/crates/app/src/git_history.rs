@@ -219,6 +219,15 @@ impl State {
         for tab in model::workspace::leaves(&root).into_iter().flat_map(|l| l.tabs.iter()) {
             match tab {
                 Tab::GitHistory { cwd, .. } if !self.history.log.contains_key(cwd) => self.refresh_log(cwd),
+                Tab::GitHistory { cwd, .. } if !self.history.selected.contains_key(cwd) => {
+                    // `GitHistoryView` selects the newest commit once the log loads.
+                    if let Some(Read::Ready(commits)) = self.history.log.get(cwd)
+                        && let Some(first) = commits.first().map(|c| c.hash.clone())
+                    {
+                        let cwd = cwd.clone();
+                        self.select_commit(&cwd, &first);
+                    }
+                }
                 Tab::CommitDiff { id, cwd, commit, path, old_path } if !self.history.diffs.contains_key(id) => {
                     self.history.diffs.insert(id.clone(), Read::Loading);
                     let mut body = json!({ "cwd": cwd, "hash": commit, "path": path });

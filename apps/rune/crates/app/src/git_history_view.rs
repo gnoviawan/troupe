@@ -253,20 +253,26 @@ fn commit_row(t: &Tokens, cwd: &str, commit: &Commit, selected: bool, head: bool
 fn toolbar(s: &State, t: &'static Tokens, cwd: &str, count: String, layer: &mut Vec<El>) -> El {
     let c = &t.colors;
     let scope = s.history.scope.get(cwd).copied().unwrap_or_default();
+    // The pill shows its value as plain text, so the page's text reads it; a transparent
+    // button over it carries the trigger's name, as React's `aria-label` does.
     let trigger = |key: &str, label: String, aria: String| {
         row()
-            .key(key.to_owned())
-            .role("button")
-            .label(aria)
             .h(28.0)
             .px(8.0)
             .gap(6.0)
             .items_center()
             .radius(6.0)
             .border(1.0, c.border.alpha(0.6))
-            .hover(c.foreground.alpha(0.03))
             .child(text(label).font(sans(12.0, 400.0, 16.0)).color(c.foreground).single_line())
             .child(icon(glyph("ChevronDown"), 11.0).color(c.muted_foreground))
+            .child(
+                el().key(key.to_owned())
+                    .role("button")
+                    .label(aria)
+                    .radius(6.0)
+                    .hover(c.foreground.alpha(0.03))
+                    .pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0)),
+            )
     };
     let scope_trigger = trigger("git-history-scope", scope.label().to_owned(), format!("Scope: {}", scope.label()))
         .on_press(|s: &mut State| s.overlays.open(SCOPE_MENU));
@@ -290,7 +296,8 @@ fn toolbar(s: &State, t: &'static Tokens, cwd: &str, count: String, layer: &mut 
     authors.sort();
     authors.dedup();
     let current = s.history.author.clone();
-    let author_trigger = trigger("git-history-author", current.clone().unwrap_or_else(|| "Any author".to_owned()), "Filter by author".to_owned())
+    let author_aria = current.as_ref().map_or_else(|| "Filter by author".to_owned(), |a| format!("Author: {a}"));
+    let author_trigger = trigger("git-history-author", current.clone().unwrap_or_else(|| "Any author".to_owned()), author_aria)
         .on_press(|s: &mut State| s.overlays.open(AUTHOR_MENU));
     let mut author_menu = Menu::new(AUTHOR_MENU)
         .width(208.0)
