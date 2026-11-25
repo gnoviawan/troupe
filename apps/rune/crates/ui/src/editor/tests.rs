@@ -120,3 +120,32 @@ fn find_as_you_type_selects_the_first_match_after_the_caret() {
     let sel = e.docs.docs[PATH].editor.selection();
     assert_eq!((sel.anchor, sel.head), (7, 12));
 }
+
+#[test]
+fn row_byte_offsets_come_from_one_pass_over_the_line() {
+    assert_eq!(super::view::row_bytes("abcdef", &[0, 2, 4]), [0, 2, 4, 6]);
+    assert_eq!(super::view::row_bytes("añbç", &[0, 2]), [0, 3, 6]);
+    assert_eq!(super::view::row_bytes("", &[0]), [0, 0]);
+}
+
+#[test]
+fn a_two_megabyte_line_wraps_in_linear_time() {
+    let line = "x".repeat(2_000_000);
+    let started = std::time::Instant::now();
+    let starts = troupe_editor::wrap::rows(line.chars(), 80);
+    let bytes = super::view::row_bytes(&line, &starts);
+    assert_eq!((starts.len(), bytes.len()), (25_000, 25_001));
+    assert!(started.elapsed().as_secs_f64() < 2.0, "took {:?}", started.elapsed());
+}
+
+#[test]
+fn a_renamed_file_keeps_its_unsaved_edits_and_focus() {
+    let mut e = loaded("fn a() {}\n", None, 1.0);
+    e.focused = Some(PATH.into());
+    e.key(PATH, &key(Key::Text("x".into()), Mods::default()));
+    e.rename(PATH, "/p/lib.rs");
+    let doc = &e.docs.docs["/p/lib.rs"];
+    assert_eq!((doc.editor.text().as_str(), doc.is_dirty()), ("xfn a() {}\n", true));
+    assert!(e.panes.contains_key("/p/lib.rs") && !e.panes.contains_key(PATH));
+    assert_eq!(e.focused.as_deref(), Some("/p/lib.rs"));
+}

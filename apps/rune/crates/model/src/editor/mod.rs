@@ -118,6 +118,9 @@ pub struct Doc {
     pub load: Load,
     /// A write is in flight with this content.
     pub saving: Option<String>,
+    /// A save asked for while a write was in flight or the read was loading: it runs once
+    /// that lands, against the buffer as it is then (`savesInFlight`).
+    pub queued: bool,
     /// A kept draft that differs from a newer file on disk; the buffer is read-only until the
     /// user keeps one.
     pub draft_conflict: Option<Draft>,
@@ -137,6 +140,7 @@ impl Doc {
             modified_at: 0.0,
             load: Load::Loading,
             saving: None,
+            queued: false,
             draft_conflict: None,
             external_conflict: false,
             pending_draft: draft,
@@ -192,6 +196,9 @@ pub enum Event {
     Reload { path: String },
     /// "Overwrite" after a refused save: write without a precondition.
     Overwrite { path: String },
+    /// The file read back after a write whose reply was lost: its text, or `None` when the
+    /// read failed too.
+    ReadBack { path: String, content: String, disk: Option<String> },
     Close { path: String },
     /// The tab was renamed through the explorer.
     Rename { from: String, to: String },
@@ -203,8 +210,13 @@ pub enum Effect {
     Read { path: String },
     /// `POST /fs/write`; `expected` is the sha256 precondition.
     Write { path: String, content: String, expected: Option<String> },
-    /// The file is on disk: close the tab that asked (`SaveAndClose`).
-    Saved { path: String },
+    /// A save landed (or there was nothing to write). `clean`: the buffer still equals what
+    /// is on disk, so a tab waiting to close may close.
+    Saved { path: String, clean: bool },
+    /// A save failed; the buffer stays dirty.
+    SaveFailed { path: String, message: String },
+    /// The write's reply was lost: read the file to learn whether it landed.
+    ReadBack { path: String, content: String },
     /// "File changed externally" with Reload and Overwrite.
     ExternalChange { path: String },
     Log { level: Level, message: String },
@@ -246,37 +258,47 @@ pub fn step(docs: &mut Docs, event: Event, now: f64) -> Vec<Effect> {
                 }
             }
         }
-        Event::Save { path } => save(docs, &path, false),
-        Event::Overwrite { path } => {
-            if let Some(doc) = docs.docs.get_mut(&path) {
+        Event::Save { path } => docs.docs.get_mut(&path).map(|doc| save(doc, false)).unwrap_or_default(),
+        Event::Overwrite { path } => docs
+            .docs
+            .get_mut(&path)
+            .map(|doc| {
                 doc.external_conflict = false;
-            }
-            save(docs, &path, true)
-        }
+                save(doc, true)
+            })
+            .unwrap_or_default(),
         Event::Written { path, content, result } => {
             let Some(doc) = docs.docs.get_mut(&path) else {
                 return Vec::new();
             };
-            doc.saving = None;
             match result {
-                Ok(()) => {
-                    doc.hash = Some(sha256_hex(&content));
-                    doc.saved = Rope::from_str(&content);
-                    doc.modified_at = now;
-                    doc.external_conflict = false;
-                    vec![
-                        log(Level::Info, format!("editor save succeeded {} {} bytes", name(&path), content.len())),
-                        Effect::Saved { path },
-                    ]
+                Ok(()) => written(doc, &content, now),
+                // The host may or may not have applied it (`UNCERTAIN_WRITE_CODES`): a checked
+                // write reads the file back; an unchecked one asks the user again.
+                Err((code, _)) if UNCERTAIN.contains(&code.as_str()) && doc.hash.is_some() => {
+                    vec![Effect::ReadBack { path, content }]
                 }
                 Err((code, message)) => {
-                    let mut fx = vec![log(Level::Error, format!("editor save failed {}: {code} {message}", name(&path)))];
-                    if code == "PRECONDITION_FAILED" {
+                    let unchecked_unknown = UNCERTAIN.contains(&code.as_str());
+                    let mut fx = failed(doc, &format!("{code}: {message}"));
+                    if code == "PRECONDITION_FAILED" || unchecked_unknown {
                         doc.external_conflict = true;
+                    }
+                    if code == "PRECONDITION_FAILED" {
                         fx.push(Effect::ExternalChange { path });
                     }
                     fx
                 }
+            }
+        }
+        Event::ReadBack { path, content, disk } => {
+            let Some(doc) = docs.docs.get_mut(&path) else {
+                return Vec::new();
+            };
+            if disk.as_deref() == Some(content.as_str()) {
+                written(doc, &content, now)
+            } else {
+                failed(doc, "the write's reply was lost and the file does not hold it")
             }
         }
         Event::ResolveDraft { path, keep_draft } => {
@@ -326,11 +348,9 @@ fn load(doc: &mut Doc, read: Read) -> Vec<Effect> {
     doc.modified_at = read.modified_at;
     doc.load = Load::Ready;
     let mut fx = vec![log(Level::Info, format!("editor opened {} {} bytes", name(&doc.path), read.content.len()))];
-    if let Some(draft) = doc.pending_draft.take() {
-        let disk = doc.editor.text();
-        if draft.content == disk {
-            return fx;
-        }
+    if let Some(draft) = doc.pending_draft.take()
+        && draft.content != doc.editor.text()
+    {
         if read.modified_at <= draft.saved_at {
             doc.editor = Editor::new(&draft.content);
         } else {
@@ -338,26 +358,61 @@ fn load(doc: &mut Doc, read: Read) -> Vec<Effect> {
             fx.push(log(Level::Info, format!("editor draft conflict {}", name(&doc.path))));
         }
     }
+    // A save asked for while the file loaded (the unsaved-changes dialog on a tab that had
+    // not mounted) runs on the reconciled buffer.
+    if std::mem::take(&mut doc.queued) {
+        fx.extend(save(doc, false));
+    }
     fx
 }
 
-fn save(docs: &mut Docs, path: &str, overwrite: bool) -> Vec<Effect> {
-    let Some(doc) = docs.docs.get_mut(path) else {
-        return Vec::new();
-    };
-    if doc.draft_conflict.is_some() {
-        return vec![log(Level::Info, format!("save skipped for {}: unresolved draft conflict", name(path)))];
+/// Write failures that say nothing about whether the host applied the write.
+const UNCERTAIN: [&str; 3] = ["NETWORK_ERROR", "OUTCOME_UNKNOWN", "COMMAND_IN_PROGRESS"];
+
+/// The host holds `content`: it is the new disk text, and a queued save runs now.
+fn written(doc: &mut Doc, content: &str, now: f64) -> Vec<Effect> {
+    doc.saving = None;
+    doc.hash = Some(sha256_hex(content));
+    doc.saved = Rope::from_str(content);
+    doc.modified_at = now;
+    doc.external_conflict = false;
+    let mut fx = vec![log(Level::Info, format!("editor save succeeded {} {} bytes", name(&doc.path), content.len()))];
+    if std::mem::take(&mut doc.queued) {
+        fx.extend(save(doc, false));
+    } else {
+        fx.push(Effect::Saved { path: doc.path.clone(), clean: !doc.is_dirty() });
     }
-    if doc.saving.is_some() || doc.load != Load::Ready {
+    fx
+}
+
+fn failed(doc: &mut Doc, message: &str) -> Vec<Effect> {
+    doc.saving = None;
+    doc.queued = false;
+    vec![
+        log(Level::Error, format!("editor save failed {}: {message}", name(&doc.path))),
+        Effect::SaveFailed { path: doc.path.clone(), message: message.to_owned() },
+    ]
+}
+
+fn save(doc: &mut Doc, overwrite: bool) -> Vec<Effect> {
+    let path = doc.path.clone();
+    if doc.draft_conflict.is_some() {
+        return vec![log(Level::Info, format!("save skipped for {}: unresolved draft conflict", name(&path)))];
+    }
+    if doc.saving.is_some() || doc.load == Load::Loading {
+        doc.queued = true;
+        return Vec::new();
+    }
+    if doc.load != Load::Ready {
         return Vec::new();
     }
     if !doc.is_dirty() {
-        return vec![Effect::Saved { path: path.to_owned() }];
+        return vec![Effect::Saved { path, clean: true }];
     }
     let content = doc.editor.text();
     doc.saving = Some(content.clone());
     let expected = if overwrite { None } else { doc.hash.clone() };
-    vec![Effect::Write { path: path.to_owned(), content, expected }]
+    vec![Effect::Write { path, content, expected }]
 }
 
 #[cfg(test)]

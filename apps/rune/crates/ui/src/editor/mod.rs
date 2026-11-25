@@ -148,6 +148,20 @@ impl Editors {
         self.step(Event::Close { path: path.to_owned() });
     }
 
+    /// The file moved on disk (an explorer rename, or its folder's): the buffer, its unsaved
+    /// edits and the keyboard follow it to `to` (`renameOpenFile`).
+    pub fn rename(&mut self, from: &str, to: &str) {
+        if from == to || !self.docs.docs.contains_key(from) {
+            return;
+        }
+        self.panes.remove(from);
+        self.panes.insert(to.to_owned(), Pane::new(to));
+        if self.focused.as_deref() == Some(from) {
+            self.focused = Some(to.to_owned());
+        }
+        self.step(Event::Rename { from: from.to_owned(), to: to.to_owned() });
+    }
+
     pub fn save(&mut self, path: &str) {
         self.step(Event::Save { path: path.to_owned() });
     }

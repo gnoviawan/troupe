@@ -21,6 +21,8 @@ pub enum Fetch {
     FileRead(String),
     /// `/fs/write` of an editor's buffer.
     FileWrite { path: String, content: String },
+    /// `/fs/read` after a write whose reply was lost: does the file hold `content`?
+    FileReadBack { path: String, content: String },
     /// `/fs/ls` of a folder the explorer opened.
     ExplorerList(String),
     /// An explorer change (`/fs/write`, `/fs/mkdir`, `/fs/rename`, `/fs/delete`).
