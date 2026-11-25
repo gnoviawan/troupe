@@ -5,7 +5,7 @@ use crate::text::Point;
 
 fn matches(t: &Term, query: Query) -> Vec<(usize, usize, usize, usize)> {
     let re = compile(&query).expect("the query compiles");
-    find_all(t.lines(), &re).into_iter().map(|m| (m.start.line, m.start.col, m.end.line, m.end.col)).collect()
+    find_all(t.lines(), &re, usize::MAX).into_iter().map(|m| (m.start.line, m.start.col, m.end.line, m.end.col)).collect()
 }
 
 fn plain(text: &str) -> Query {
@@ -65,4 +65,15 @@ fn a_link_is_found_under_the_pointer_without_trailing_punctuation() {
     assert_eq!((link.at.start, link.at.end), (Point::new(row, 4), Point::new(row + 1, 9)));
     assert!(link_at(t.lines(), Point::new(row, 1)).is_none());
     assert!(link_at(t.lines(), Point::new(row + 1, 9)).is_none(), "the full stop is not part of it");
+}
+
+#[test]
+fn find_all_stops_at_its_limit() {
+    let mut t = crate::Term::with_scrollback(40, 5, 2000);
+    for _ in 0..1500 {
+        t.advance(b"ab\r\n");
+    }
+    let re = crate::search::compile(&crate::search::Query { text: "ab".into(), ..crate::search::Query::default() }).unwrap();
+    assert_eq!(crate::search::find_all(t.lines(), &re, 1000).len(), 1000);
+    assert_eq!(crate::search::find_all(t.lines(), &re, usize::MAX).len(), 1500);
 }

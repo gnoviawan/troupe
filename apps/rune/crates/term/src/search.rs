@@ -34,15 +34,18 @@ pub fn compile(query: &Query) -> Result<Regex, String> {
 }
 
 /// Every match of `re` in `lines`, in order. Empty matches are skipped.
-pub fn find_all(lines: &VecDeque<Line>, re: &Regex) -> Vec<Match> {
+pub fn find_all(lines: &VecDeque<Line>, re: &Regex, limit: usize) -> Vec<Match> {
     let mut out = Vec::new();
     let mut i = 0;
-    while i < lines.len() {
+    while i < lines.len() && out.len() < limit {
         let (first, last) = logical_bounds(lines, i);
         let logical = Logical::read(lines, first, last);
         for m in re.find_iter(&logical.text) {
             if m.start() == m.end() {
                 continue;
+            }
+            if out.len() == limit {
+                break;
             }
             out.push(Match { start: logical.cell_at(m.start()), end: logical.cell_at(m.end()) });
         }

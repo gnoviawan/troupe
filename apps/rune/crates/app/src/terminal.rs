@@ -111,7 +111,7 @@ impl State {
         if self.terms.metrics.is_none() && self.terms.host.is_some() {
             self.terms.metrics = Some(Metrics::new(ui::terminal::FONT_SIZE, ui::terminal::LINE_HEIGHT));
         }
-        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[]) };
+        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[], now) };
         let events = host.drain(now);
         let mut changed = false;
         let mut redrawn = Vec::new();
@@ -122,7 +122,7 @@ impl State {
                 TermEvent::Link(output) => self.terminal_output(output),
             }
         }
-        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn)
+        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn, now)
     }
 
     fn terminal_output(&mut self, output: Output) {
