@@ -314,6 +314,13 @@ fn toggle_view(s: &mut State, tab: Tab) {
     }
 }
 
+/// The Changes button's count of changed files (`ToolStrip`'s git badge).
+fn changes_badge(s: &State, tab: Tab) -> Option<u64> {
+    let cwd = s.git_cwd().filter(|_| tab == Tab::Changes)?;
+    let count = model::git::changed_file_count(&s.git.cache, &cwd) as u64;
+    (count > 0).then_some(count)
+}
+
 fn tool_strip(s: &State, t: &'static Tokens) -> El {
     let project = s.active_project();
     let has_path = project.is_some_and(|p| p.path.is_some());
@@ -331,7 +338,7 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
             tab.label(),
             visible && selected == Some(tab),
             !has_path,
-            None,
+            changes_badge(s, tab),
         )
         .key(format!("tool-strip-{}", tab.label().to_lowercase()))
         .on_press(move |s: &mut State| toggle_view(s, tab))

@@ -140,16 +140,23 @@ fn commit_box(s: &State, t: &'static Tokens, cwd: &str, touch: bool) -> El {
         .key("git-summary")
         .w_full()
         .h(field_h)
+        .py((field_h - 16.0) / 2.0)
         .on_edit(|s: &mut State| &mut s.git.summary)
         .on_submit(|s: &mut State, _tx: &mut Tx| s.git_commit(false));
-    let description = ui::Textarea::new(&g.description)
-        .placeholder("Description (optional)")
-        .label("Commit description")
-        .coarse(touch)
-        .build(t)
+    let font = if touch { sans(16.0, 400.0, 24.0) } else { sans(MICRO, 400.0, 16.0) };
+    let description = rune::text_input(&g.description, font)
+        .label("Commit description".to_owned())
+        .placeholder("Description (optional)".to_owned(), c.muted_foreground)
+        .color(c.foreground)
         .key("git-description")
         .w_full()
         .h(56.0)
+        .px(10.0)
+        .py(6.0)
+        .radius(8.0)
+        .fill(c.card)
+        .border(1.0, c.border.alpha(0.6))
+        .focus_ring(2.0, -1.0, c.focus_ring)
         .on_edit(|s: &mut State| &mut s.git.description);
     let amend_ink = if has_head { c.secondary_foreground } else { c.muted_foreground };
     let amend = row()
@@ -248,7 +255,8 @@ fn branch_button(s: &State, t: &'static Tokens, cwd: &str, layer: &mut Vec<El>) 
         .gap(6.0)
         .items_center()
         .radius(6.0)
-        .hover(c.foreground.alpha(0.03))
+        .fill(c.secondary)
+        .hover(c.secondary.alpha(0.8))
         .child(icon(glyph("GitBranch"), 13.0).color(c.muted_foreground))
         .child(
             text(current.clone().unwrap_or_else(|| "Detached HEAD".to_owned()))
@@ -303,12 +311,12 @@ fn stash_menu(s: &State, t: &'static Tokens, cwd: &str, layer: &mut Vec<El>) -> 
         .width(256.0)
         .open(s.overlays.is_open(STASH_MENU))
         .on_close(|s: &mut State| s.close(STASH_MENU))
-        .item(MenuItem::new("Stash changes...").icon(glyph("Archive")).disabled(!can_stash).on_select(|s: &mut State| {
+        .item(MenuItem::new("Stash changes").icon(glyph("Archive")).disabled(!can_stash).on_select(|s: &mut State| {
             s.close(STASH_MENU);
             s.overlays.open(STASH_DIALOG);
         }));
     if !stashes.is_empty() {
-        menu = menu.separator();
+        menu = menu.separator().label("Stashes");
     }
     for stash in stashes {
         let index = stash.index;
