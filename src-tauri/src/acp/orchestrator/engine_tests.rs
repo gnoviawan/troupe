@@ -1067,6 +1067,39 @@ async fn a_bare_block_holds_while_the_registry_cannot_be_read() {
     );
 }
 
+/// A schema 3 file could name an installed agent's config id in `models`
+/// with its block saved under the bare id; the block holds after the move.
+#[tokio::test]
+async fn a_bare_block_holds_for_a_config_id_named_only_by_its_model() {
+    let data = tempfile::tempdir().expect("data dir");
+    std::fs::write(
+        data.path().join(crate::acp::orchestrator::settings::FILE_NAME),
+        json!({
+            "schema_version": 3,
+            "enabled": true,
+            "maxRunning": 4,
+            "maxDepth": 2,
+            "agents": {"opencode": false},
+            "models": {"acp-registry:opencode": "m"},
+        })
+        .to_string(),
+    )
+    .expect("settings");
+    std::fs::write(
+        data.path().join(crate::automation::agents::FILE_NAME),
+        json!({"schema_version": 1, "agents": {}}).to_string(),
+    )
+    .expect("registry");
+    let (engine, _data) = engine_in(data, &["opencode"]).await;
+    assert_eq!(
+        engine.list_agents(),
+        vec![crate::acp::orchestrator::AgentListing {
+            default_model: Some("m".to_string()),
+            ..listing("acp-registry:opencode", "opencode", false)
+        }]
+    );
+}
+
 /// An agent the registry knows had its own row next to the bare duplicate,
 /// so a block saved on the duplicate never applied to it and is dropped.
 #[tokio::test]

@@ -192,6 +192,49 @@ fn a_version_3_file_with_a_blocked_agent_keeps_the_block() {
         .expect("a migrated default profile validates");
 }
 
+/// A config id without its own switch kept its bare id's block, which the
+/// move of bare switches then drops as a duplicate.
+#[test]
+fn a_version_3_config_id_without_a_switch_keeps_its_bare_ids_block() {
+    let (settings, _dir) = load(
+        br#"{"schema_version":3,"enabled":true,"maxRunning":4,"maxDepth":2,
+            "agents":{"x":false},"models":{"acp-registry:x":"m"}}"#,
+    );
+    assert_eq!(
+        settings.profiles,
+        vec![
+            SubagentProfile {
+                enabled: false,
+                model: Some("m".to_string()),
+                ..SubagentProfile::default_for("acp-registry:x")
+            },
+            SubagentProfile {
+                enabled: false,
+                ..SubagentProfile::default_for("x")
+            },
+        ]
+    );
+}
+
+#[test]
+fn a_version_3_key_differing_only_by_case_is_skipped() {
+    let (settings, _dir) = load(
+        br#"{"schema_version":3,"enabled":true,"maxRunning":4,"maxDepth":2,
+            "agents":{"Foo":false,"foo":true},"models":{"foo":"m"}}"#,
+    );
+    assert_eq!(
+        settings.profiles,
+        vec![SubagentProfile {
+            enabled: false,
+            ..SubagentProfile::default_for("Foo")
+        }],
+        "the first key in key order is kept"
+    );
+    SettingsStore::in_memory()
+        .set(settings)
+        .expect("the migrated profiles validate");
+}
+
 #[test]
 fn a_corrupt_file_is_backed_up_and_the_defaults_load() {
     let dir = dir();

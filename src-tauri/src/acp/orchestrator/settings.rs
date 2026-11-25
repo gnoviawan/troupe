@@ -9,6 +9,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::acp::atomic_file;
+use crate::acp::orchestrator::agents::REGISTRY_PREFIX;
 use crate::acp::orchestrator::profiles::SubagentProfile;
 
 pub const FILE_NAME: &str = "subagent-settings.json";
@@ -93,7 +94,10 @@ struct LegacySettings {
 
 impl From<LegacySettings> for OrchestratorSettings {
     /// One default profile per key any map names, so every switch, model
-    /// and note keeps applying to the agent it was saved for.
+    /// and note keeps applying to the agent it was saved for. A config id
+    /// with no switch of its own takes its bare id's, as the move of bare
+    /// switches gave it before profiles. Of keys that differ only by case,
+    /// which profile ids may not, the first in key order is kept.
     fn from(mut legacy: LegacySettings) -> Self {
         let keys: BTreeSet<String> = legacy
             .agents
@@ -102,15 +106,32 @@ impl From<LegacySettings> for OrchestratorSettings {
             .chain(legacy.descriptions.keys())
             .cloned()
             .collect();
-        let profiles = keys
-            .into_iter()
-            .map(|key| SubagentProfile {
-                enabled: legacy.agents.get(&key).copied().unwrap_or(true),
+        let mut seen = HashSet::new();
+        let mut profiles = Vec::new();
+        for key in keys {
+            if !seen.insert(key.to_lowercase()) {
+                log::warn!(
+                    "[orchestrator] sub-agent settings key {key} differs from another only by \
+                     case; its switch, model and note were not migrated"
+                );
+                continue;
+            }
+            let enabled = legacy
+                .agents
+                .get(&key)
+                .or_else(|| {
+                    key.strip_prefix(REGISTRY_PREFIX)
+                        .and_then(|bare| legacy.agents.get(bare))
+                })
+                .copied()
+                .unwrap_or(true);
+            profiles.push(SubagentProfile {
+                enabled,
                 model: legacy.models.remove(&key),
                 description: legacy.descriptions.remove(&key),
                 ..SubagentProfile::default_for(&key)
-            })
-            .collect();
+            });
+        }
         Self {
             enabled: legacy.enabled,
             max_running: legacy.max_running,
