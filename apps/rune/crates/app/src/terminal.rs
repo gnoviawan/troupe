@@ -27,6 +27,16 @@ pub struct TermView {
     pub scrolled: usize,
     /// The part of a line the wheel moved that has not scrolled a whole line yet.
     pub wheel: f32,
+    pub selection: Option<crate::term_select::Held>,
+    pub find: Option<crate::term_select::Find>,
+    /// The link under the pointer, underlined.
+    pub hover: Option<troupe_term::links::Link>,
+}
+
+impl TermView {
+    pub(crate) fn new(cells: Cells) -> TermView {
+        TermView { cells, cache: RefCell::default(), scrolled: 0, wheel: 0.0, selection: None, find: None, hover: None }
+    }
 }
 
 #[derive(Default)]
@@ -43,6 +53,10 @@ pub struct TerminalUi {
     /// project switch.
     shown: Option<(String, BTreeSet<String>)>,
     metrics: Option<Metrics>,
+    /// The terminal that took the last key or press: the Terminal Search shortcut's target.
+    pub focused: Option<String>,
+    /// What a find field edits when its terminal is gone mid-frame.
+    pub spare_edit: rune::TextEdit,
 }
 
 impl TerminalUi {
@@ -100,14 +114,15 @@ impl State {
         let Some(host) = &mut self.terms.host else { return false };
         let events = host.drain(now);
         let mut changed = false;
+        let mut redrawn = Vec::new();
         for event in events {
             changed = true;
             match event {
-                TermEvent::Changed(_) => {}
+                TermEvent::Changed(id) => redrawn.push(id),
                 TermEvent::Link(output) => self.terminal_output(output),
             }
         }
-        changed | self.reap_closed_tabs()
+        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn)
     }
 
     fn terminal_output(&mut self, output: Output) {
@@ -167,7 +182,7 @@ impl State {
     fn terminal_attach(&mut self, id: &str, claim: &str, cols: u16, rows: u16) {
         let Some(host) = &mut self.terms.host else { return };
         let cells = host.open(id, cols, rows);
-        self.terms.views.insert(id.to_owned(), TermView { cells, cache: RefCell::default(), scrolled: 0, wheel: 0.0 });
+        self.terms.views.insert(id.to_owned(), TermView::new(cells));
         self.terms.opened += 1;
         self.terms.names.insert(id.to_owned(), format!("Terminal {}", self.terms.opened));
         self.terms.send(Command::Attach { terminal_id: id.to_owned(), claim: claim.to_owned(), log_epoch: None, last_seq: 0 });
@@ -235,8 +250,21 @@ impl State {
         !closed.is_empty()
     }
 
-    /// A key while terminal `id` has focus: true when it went to the PTY.
-    pub(crate) fn terminal_key(&mut self, id: &str, key: &KeyEvent) -> bool {
+    /// A key while terminal `id` has focus: true when the terminal took it.
+    pub(crate) fn terminal_key(&mut self, id: &str, key: &KeyEvent, tx: &mut Tx) -> bool {
+        self.terms.focused = Some(id.to_owned());
+        // The platform modifier (⌘, or Ctrl elsewhere) with C copies a selection and with A
+        // selects everything, as React's clipboard keys do; ^C without a selection interrupts.
+        if key.mods.cmd && !key.mods.alt && !key.mods.shift && let rune::Key::Text(t) = &key.key {
+            match t.to_ascii_lowercase().as_str() {
+                "c" if self.terminal_copy(id, tx) => return true,
+                "a" => {
+                    self.terminal_select_all(id);
+                    return true;
+                }
+                _ => {}
+            }
+        }
         if let Some(chord) = crate::keys::chord(key, self.shortcuts.platform)
             && model::shortcuts::find_match(&self.shortcuts, &chord).is_some()
         {
@@ -256,6 +284,7 @@ impl State {
         }
         let Some(bytes) = ui::terminal::keys::encode(key, app_cursor) else { return false };
         view.scrolled = 0;
+        view.selection = None;
         self.terminal_write(id, &String::from_utf8_lossy(&bytes));
         true
     }

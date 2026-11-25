@@ -38,6 +38,7 @@ mod rail_menus;
 mod rail_view;
 mod sync;
 mod term_host;
+mod term_select;
 mod terminal;
 mod terminal_view;
 mod theme_picker;

@@ -205,6 +205,11 @@ impl State {
                 self.layout_step(Layout::SetSidePanelVisible(json!(!visible)));
             }
             "colorThemePicker" => self.open_theme_picker(),
+            "terminalSearch" => {
+                if !self.open_terminal_find(tx) {
+                    self.toast_later(&label);
+                }
+            }
             "newProject" => self.overlays.open(crate::rail::NEW_PROJECT),
             "zoomIn" => self.set_zoom(self.zoom.zoom_in()),
             "zoomOut" => self.set_zoom(self.zoom.zoom_out()),

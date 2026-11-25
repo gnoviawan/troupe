@@ -16,7 +16,7 @@ struct S {
 fn view(s: &S, _: &mut Cx<S>) -> El {
     let t = theme::tokens("termul", true);
     let m = Metrics::new(super::FONT_SIZE, super::LINE_HEIGHT);
-    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true };
+    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[] };
     screen("term", &shown, &Palette::new(t), &m, &s.cache)
 }
 
@@ -38,7 +38,7 @@ fn rows_read_as_text_with_wide_cells_in_place() {
 }
 
 fn live(term: &Term) -> Screen<'_> {
-    Screen { term, scrolled: 0, focused: true, blink_on: true }
+    Screen { term, scrolled: 0, focused: true, blink_on: true, marks: &[] }
 }
 
 #[test]
