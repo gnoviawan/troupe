@@ -490,12 +490,14 @@ impl Cx<'_> {
                 match result.and_then(parse_reply::<String>) {
                     Ok(diff) => {
                         self.state.diffs.insert(key.clone(), diff);
+                        self.state.book.diff_revision += 1;
                         self.state.diff_errors.remove(&key);
                     }
                     Err(failure) => {
                         self.state.diff_errors.insert(key.clone(), failure.message.clone());
                         if notify {
                             self.state.diffs.insert(key, String::new());
+                            self.state.book.diff_revision += 1;
                             self.effects.push(Effect::Toast { message: format!("Failed to load diff: {}", failure.shown()) });
                         } else {
                             self.log("diff fetch", &normalize_path(&cwd), &failure);

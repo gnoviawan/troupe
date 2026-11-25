@@ -151,6 +151,8 @@ struct Book {
     trailing: HashSet<String>,
     tasks: BTreeMap<TaskId, Task>,
     next_task: TaskId,
+    /// Bumped whenever `diffs` changes, so a reader rebuilds only then.
+    diff_revision: u64,
 }
 
 pub type TaskId = u64;
@@ -549,6 +551,12 @@ impl State {
         self.diff_errors.get(&diff_key(cwd, path, staged)).map(String::as_str)
     }
 
+    /// Changes whenever a cached diff is added, replaced or dropped.
+    #[must_use]
+    pub fn diff_revision(&self) -> u64 {
+        self.book.diff_revision
+    }
+
     /// Whether a task is still waiting on the host.
     #[must_use]
     pub fn running(&self, task: TaskId) -> bool {
@@ -567,7 +575,9 @@ impl State {
         for staged in [true, false] {
             let key = diff_key(cwd, path, staged);
             *self.book.diff_versions.entry(key.clone()).or_default() += 1;
-            self.diffs.remove(&key);
+            if self.diffs.remove(&key).is_some() {
+                self.book.diff_revision += 1;
+            }
             self.diff_errors.remove(&key);
         }
     }
