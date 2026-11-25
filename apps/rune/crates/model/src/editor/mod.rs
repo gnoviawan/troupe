@@ -14,6 +14,8 @@ use troupe_editor::{Editor, Rope};
 
 use crate::Level;
 
+pub mod markdown;
+
 /// A draft the record kept for a file.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Draft {
@@ -126,6 +128,12 @@ pub struct Doc {
     pub draft_conflict: Option<Draft>,
     /// The host refused the last save because the file changed on disk.
     pub external_conflict: bool,
+    /// The disk file broke every line with `\r\n`. The buffer holds `\n` (as CodeMirror
+    /// reads it); a write puts the `\r\n` back, so an edit changes only the lines it touched.
+    pub crlf: bool,
+    /// The disk file starts with a byte order mark, which the buffer leaves out and a write
+    /// puts back.
+    pub bom: bool,
     /// A draft to reconcile once the read lands.
     pending_draft: Option<Draft>,
 }
@@ -143,6 +151,8 @@ impl Doc {
             queued: false,
             draft_conflict: None,
             external_conflict: false,
+            crlf: false,
+            bom: false,
             pending_draft: draft,
         }
     }
@@ -162,6 +172,14 @@ impl Doc {
     #[must_use]
     pub fn read_only(&self) -> bool {
         self.draft_conflict.is_some() || self.load != Load::Ready
+    }
+
+    /// The buffer as the disk holds it: with the file's own line breaks.
+    #[must_use]
+    pub fn disk_text(&self) -> String {
+        let text = self.editor.text();
+        let text = if self.crlf { text.replace('\n', "\r\n") } else { text };
+        if self.bom { format!("{BOM}{text}") } else { text }
     }
 
     /// The draft the record keeps: the conflicted draft, else the dirty buffer.
@@ -339,7 +357,9 @@ pub fn step(docs: &mut Docs, event: Event, now: f64) -> Vec<Effect> {
 fn load(doc: &mut Doc, read: Read) -> Vec<Effect> {
     let reloading = doc.load == Load::Loading && doc.editor.rope().len_chars() > 0;
     let caret = doc.editor.selection();
-    doc.editor = Editor::new(&read.content);
+    doc.bom = read.content.starts_with(BOM);
+    doc.editor = Editor::new(read.content.strip_prefix(BOM).unwrap_or(&read.content));
+    doc.crlf = only_crlf(&read.content);
     if reloading {
         doc.editor.apply(troupe_editor::Command::Select(caret), 0.0);
     }
@@ -366,6 +386,14 @@ fn load(doc: &mut Doc, read: Read) -> Vec<Effect> {
     fx
 }
 
+const BOM: char = '\u{feff}';
+
+/// Every line break in `text` is `\r\n`, and there is at least one.
+fn only_crlf(text: &str) -> bool {
+    let crlf = text.matches("\r\n").count();
+    crlf > 0 && crlf == text.matches('\n').count() && crlf == text.matches('\r').count()
+}
+
 /// Write failures that say nothing about whether the host applied the write.
 const UNCERTAIN: [&str; 3] = ["NETWORK_ERROR", "OUTCOME_UNKNOWN", "COMMAND_IN_PROGRESS"];
 
@@ -373,7 +401,7 @@ const UNCERTAIN: [&str; 3] = ["NETWORK_ERROR", "OUTCOME_UNKNOWN", "COMMAND_IN_PR
 fn written(doc: &mut Doc, content: &str, now: f64) -> Vec<Effect> {
     doc.saving = None;
     doc.hash = Some(sha256_hex(content));
-    doc.saved = Rope::from_str(content);
+    doc.saved = Editor::new(content.strip_prefix(BOM).unwrap_or(content)).rope().clone();
     doc.modified_at = now;
     doc.external_conflict = false;
     let mut fx = vec![log(Level::Info, format!("editor save succeeded {} {} bytes", name(&doc.path), content.len()))];
@@ -409,7 +437,7 @@ fn save(doc: &mut Doc, overwrite: bool) -> Vec<Effect> {
     if !doc.is_dirty() {
         return vec![Effect::Saved { path, clean: true }];
     }
-    let content = doc.editor.text();
+    let content = doc.disk_text();
     doc.saving = Some(content.clone());
     let expected = if overwrite { None } else { doc.hash.clone() };
     vec![Effect::Write { path, content, expected }]

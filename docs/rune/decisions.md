@@ -305,3 +305,35 @@ same listings and runs the same operations.
 
 **Source.** R8a (`reports/R8a.md`). Lanes: `tools/parity/lanes/explorer.ts`
 (desktop and `--phone`), `tools/parity/lanes/editor-desktop.ts`.
+
+## Markdown editor
+
+**Answer.** The Markdown editor is the code editor's buffer drawn as a
+document. `model::editor::markdown` splits the text into top-level blocks
+(front matter, ATX headings, fenced code, and runs of other lines). Each
+block is drawn rendered by rune-kit's `Markdown`, so a `mermaid` fence draws
+as a diagram. The block under the caret is drawn as its source lines in the
+code editor's rows, and it takes the code editor's keys. The toolbar's
+Preview and Source switch shows the same buffer in the code view. The view
+mode is kept in the workspace record (`OpenFile.viewMode`).
+
+**Why.** The buffer is the file's text, so an unedited file saves byte for
+byte and an edit changes only what was typed. The buffer keeps a file's
+`\r\n` line breaks and its byte order mark aside and puts them back on write.
+BlockNote, the web client's editor, parses the file into blocks and writes
+them out again, which rewrites lists, spacing and line breaks.
+
+**Candidates weighed (one sequential pass).**
+
+- A rich-text model (blocks with styled runs) serialised back to Markdown
+  (rejected). It is BlockNote's design, and every Markdown construct it does
+  not model is lost or rewritten on save.
+- A styled source view (rejected). Headings in a larger face break the code
+  view's fixed row height, which its 32-line virtual rows and Up and Down
+  need, and a mermaid fence would stay source.
+
+**Limits.** A block draws alone, so a reference-style link whose definition
+is in another block shows as text. A loose list splits at its blank lines.
+
+**Source.** R8b (`reports/R8b.md`). Tests:
+`apps/rune/crates/ui/src/editor/markdown_tests.rs` (20 fixture files).

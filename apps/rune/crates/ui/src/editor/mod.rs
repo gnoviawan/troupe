@@ -7,12 +7,14 @@
 //! needs the server (reads and writes), which the app drains. [`view`] draws one file.
 
 mod keys;
+mod markdown;
 mod view;
 mod view_find;
 
 #[cfg(test)]
 mod tests;
-
+#[cfg(test)]
+mod markdown_tests;
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -25,6 +27,7 @@ use troupe_editor::highlight::Highlights;
 use troupe_editor::{Command, Selection};
 
 pub use keys::Outcome;
+pub use markdown::is_markdown;
 pub use view::{LINE, surface_key, view};
 
 /// The find widget over the editor's top right (`FindPanel` in `codemirror-find.tsx`).
@@ -83,6 +86,9 @@ impl FindBar {
     }
 }
 
+/// Markdown blocks keyed by the buffer revision and length they were split at.
+type BlockCache = RefCell<Option<((u64, usize), Vec<model::editor::markdown::Block>)>>;
+
 /// One editor tab's view state.
 pub struct Pane {
     pub highlights: RefCell<Highlights>,
@@ -97,6 +103,13 @@ pub struct Pane {
     pub page: usize,
     /// The caret's chunk to scroll into view after the next frame.
     pub reveal: bool,
+    /// A Markdown file: it has the toolbar's Preview / Source switch.
+    pub markdown: bool,
+    /// Drawn as a document (`markdown`), not as source.
+    pub preview: bool,
+    /// The Markdown blocks, and the buffer revision and length they were split at (a reload
+    /// starts the revision again).
+    blocks: BlockCache,
 }
 
 impl Pane {
@@ -109,7 +122,24 @@ impl Pane {
             columns: 0,
             page: 20,
             reveal: false,
+            markdown: is_markdown(path),
+            preview: is_markdown(path),
+            blocks: RefCell::new(None),
         }
+    }
+
+    /// `doc`'s Markdown blocks, split again only when the text changed.
+    pub fn blocks(&self, doc: &store::Doc) -> Vec<model::editor::markdown::Block> {
+        let revision = (doc.editor.revision(), doc.editor.rope().len_chars());
+        let mut cache = self.blocks.borrow_mut();
+        if let Some((r, blocks)) = cache.as_ref()
+            && *r == revision
+        {
+            return blocks.clone();
+        }
+        let blocks = model::editor::markdown::blocks(doc.editor.rope());
+        *cache = Some((revision, blocks.clone()));
+        blocks
     }
 }
 

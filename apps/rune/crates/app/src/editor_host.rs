@@ -65,13 +65,15 @@ impl State {
                     file_path: path.clone(),
                     cursor_position: Cursor { line: 1, col: 1 },
                     scroll_top: 0.0,
-                    view_mode: ViewMode::Code,
+                    view_mode: if ui::editor::is_markdown(path) { ViewMode::Preview } else { ViewMode::Code },
                     is_dirty: false,
                     draft_content: None,
                     last_modified: 0.0,
                 });
             }
             self.editors.open(path, draft);
+            let preview = self.workspace.files.get(path).is_some_and(|f| f.view_mode != ViewMode::Code);
+            self.editors.set_preview(path, preview);
         }
         self.editors.follow_find();
         let gone: Vec<String> = self.editors.docs.docs.keys().filter(|p| !shown.contains(*p)).cloned().collect();
@@ -231,6 +233,11 @@ impl State {
             let Some(file) = self.workspace.files.open.iter_mut().find(|f| &f.file_path == path) else {
                 continue;
             };
+            let preview = self.editors.previewing(path);
+            if ui::editor::is_markdown(path) && (file.view_mode != ViewMode::Code) != preview {
+                file.view_mode = if preview { ViewMode::Preview } else { ViewMode::Code };
+                changed = true;
+            }
             let attention = doc.needs_attention();
             let (line, col) = doc.editor.line_col();
             let cursor = Cursor { line: line as u32, col: col as u32 };
