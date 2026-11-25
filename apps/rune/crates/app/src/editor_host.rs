@@ -112,6 +112,8 @@ impl State {
                     if self.editor_host.closing.remove(&path) {
                         self.workspace.saved(&path);
                     }
+                    let name = path.rsplit(['/', '\\']).next().unwrap_or(&path);
+                    self.toasts.push(self.now, ToastKind::Success, format!("{name} saved"), None);
                 }
                 Effect::ExternalChange { path } => {
                     let name = path.rsplit(['/', '\\']).next().unwrap_or(&path).to_owned();
