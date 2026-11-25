@@ -1,4 +1,5 @@
 import { act, render, waitFor } from '@testing-library/react'
+import { useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DropdownMenu,
@@ -45,13 +46,16 @@ vi.mock('@/lib/browser-api', () => ({
 }))
 
 let resizeCallback: ResizeObserverCallback | null = null
+let observedElements: Element[] = []
 
 class ResizeObserverMock {
   constructor(callback: ResizeObserverCallback) {
     resizeCallback = callback
   }
 
-  observe(): void {}
+  observe(el: Element): void {
+    observedElements.push(el)
+  }
   disconnect(): void {}
   unobserve(): void {}
 }
@@ -78,6 +82,7 @@ describe('useBrowserWebview bounds updates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resizeCallback = null
+    observedElements = []
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(LOGICAL_RECT)
     vi.mocked(browserTabCreate).mockResolvedValue({
@@ -475,6 +480,156 @@ describe('useBrowserWebview refused agent tab', () => {
       expect(useBrowserSessionStore.getState().getTab('browser-1')).toBeUndefined()
     )
     expect(JSON.stringify(useWorkspaceStore.getState().root)).not.toContain('browser-browser-1')
+    view.unmount()
+  })
+})
+
+function StageHarness({ layoutKey = 'mobile-portrait-preset' }: { layoutKey?: string }) {
+  const stageRef = useRef<HTMLDivElement>(null)
+  const { containerRef } = useBrowserWebview('browser-1', true, 'https://example.com', {
+    layoutKey,
+    stageRef
+  })
+  return (
+    <div data-testid="panel-root">
+      <div ref={stageRef} data-testid="stage-root">
+        <div ref={containerRef} data-testid="container-root" />
+      </div>
+    </div>
+  )
+}
+
+describe('useBrowserWebview responsive stage bounds resync', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resizeCallback = null
+    observedElements = []
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+    vi.mocked(browserTabCreate).mockResolvedValue({
+      success: true,
+      data: { id: 'browser-1', url: 'https://example.com', title: '', agentControlled: false }
+    })
+    vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
+    useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
+  })
+
+  afterEach(async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
+    useBrowserSessionStore.getState().removeTab('browser-1')
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('observes stageRef and parent panel, and resyncs on window resize and accordion transitionend even when container size is fixed', async () => {
+    let rect = {
+      x: 400,
+      y: 80,
+      width: 390,
+      height: 844,
+      top: 80,
+      right: 790,
+      bottom: 924,
+      left: 400,
+      toJSON: () => ({})
+    }
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => rect)
+
+    const view = render(<StageHarness />)
+    await waitFor(() => expect(browserTabCreate).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+
+    // Both containerRef and stageRef (plus panel wrapper) are observed
+    expect(observedElements).toContain(view.getByTestId('container-root'))
+    expect(observedElements).toContain(view.getByTestId('stage-root'))
+    expect(observedElements).toContain(view.getByTestId('panel-root'))
+
+    vi.mocked(browserTabResize).mockClear()
+
+    // Simulate sidebar toggle shifting x from 400 -> 260 while width/height stay 390x844
+    rect = { ...rect, x: 260, left: 260, right: 650 }
+    act(() => {
+      resizeCallback?.([], {} as ResizeObserver)
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 260,
+        y: 80,
+        width: 390,
+        height: 844
+      })
+    )
+
+    // Simulate window resize shifting x from 260 -> 310
+    rect = { ...rect, x: 310, left: 310, right: 700 }
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 310,
+        y: 80,
+        width: 390,
+        height: 844
+      })
+    )
+
+    // Simulate ResponsiveViewportBar accordion transitionend shifting y from 80 -> 118
+    rect = { ...rect, y: 118, top: 118, bottom: 962 }
+    act(() => {
+      const ev = new Event('transitionend', { bubbles: true }) as TransitionEvent
+      Object.defineProperty(ev, 'propertyName', { value: 'grid-template-rows' })
+      view.getByTestId('panel-root').dispatchEvent(ev)
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 310,
+        y: 118,
+        width: 390,
+        height: 844
+      })
+    )
+
+    view.unmount()
+  })
+
+  it('resyncs logical bounds when whole-UI zoom changes even without ResizeObserver firing', async () => {
+    ;(window as unknown as { __TAURI_INTERNALS__?: Record<string, unknown> }).__TAURI_INTERNALS__ =
+      {}
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 200,
+      y: 100,
+      width: 390,
+      height: 844,
+      top: 100,
+      right: 590,
+      bottom: 944,
+      left: 200,
+      toJSON: () => ({})
+    })
+
+    const view = render(<StageHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+    vi.mocked(browserTabResize).mockClear()
+
+    await act(async () => {
+      await applyUiZoom(1.25)
+    })
+
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 250,
+        y: 125,
+        width: 487.5,
+        height: 1055
+      })
+    )
+
+    await act(async () => {
+      await applyUiZoom(1)
+    })
     view.unmount()
   })
 })

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useRef } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { AgentationActionPayload, AgentationCreatedPayload } from '@/lib/browser-api'
@@ -13,7 +14,7 @@ const { annotationListeners, actionListeners, mockOpenTerminalAtCwd } = vi.hoist
 }))
 
 vi.mock('@/hooks/use-browser-webview', () => ({
-  useBrowserWebview: () => ({ containerRef: { current: null } })
+  useBrowserWebview: () => ({ containerRef: useRef<HTMLDivElement>(null) })
 }))
 
 vi.mock('@/lib/terminal-spawn', () => ({
@@ -123,6 +124,34 @@ describe('BrowserPanel', () => {
     expect(screen.getByTestId('responsive-viewport-bar').getAttribute('data-open')).toBe('true')
     expect(screen.getByLabelText(/left handle/i)).toBeTruthy()
     expect(screen.getByLabelText(/right handle/i)).toBeTruthy()
+  })
+
+  it('displays clamped dimensions in ResponsiveViewportBar when the pane is smaller than the Tablet preset', () => {
+    const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 40,
+      y: 80,
+      width: 620,
+      height: 680,
+      top: 80,
+      right: 660,
+      bottom: 760,
+      left: 40,
+      toJSON: () => ({})
+    })
+    try {
+      useBrowserSessionStore.getState().createTab('tab-1', 'http://localhost:5173')
+      useBrowserSessionStore.getState().setViewportPreset('tab-1', 'tablet')
+      render(
+        <TooltipProvider>
+          <BrowserPanel browserTabId="tab-1" isVisible />
+        </TooltipProvider>
+      )
+      const dims = screen.getByTestId('responsive-viewport-dimensions')
+      expect(dims.textContent).toBe('620 × 680')
+      expect(dims.getAttribute('title')).toContain('Clamped to 620 × 680 (target 768 × 1024)')
+    } finally {
+      rectSpy.mockRestore()
+    }
   })
 
   it('receives overlay annotations into pending batch queue with auto-crop attached', async () => {

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useNativeWebviewOccluded } from '@/hooks/use-native-webview-occlusion'
-import { getAppliedUiZoom } from '@/hooks/use-ui-zoom'
+import { getAppliedUiZoom, useAppliedUiZoom } from '@/hooks/use-ui-zoom'
 import {
   browserCheckLocalPort,
   browserTabCreate,
@@ -58,11 +58,13 @@ export function useBrowserWebview(
     layoutKey?: string
     reloadNonce?: number
     stopGeneration?: number
+    stageRef?: RefObject<HTMLDivElement | null>
   }
 ) {
   // An occluded webview (a shell popover is open), blank Start Page, or offline
   // error view hides the native child webview so React UI renders unobstructed.
   const occluded = useNativeWebviewOccluded()
+  const appliedUiZoom = useAppliedUiZoom()
   const hasUrl = url.trim().length > 0
   const hasDocument = hasUrl && !opts?.hasError
   const isVisible = paneVisible && !occluded && hasDocument
@@ -70,6 +72,7 @@ export function useBrowserWebview(
   const layoutKey = opts?.layoutKey ?? 'desktop'
   const reloadNonce = opts?.reloadNonce ?? 0
   const stopGeneration = opts?.stopGeneration ?? 0
+  const stageRef = opts?.stageRef
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
   const [createdTick, setCreatedTick] = useState(0)
@@ -378,30 +381,101 @@ export function useBrowserWebview(
     navigateNow()
   }, [url, browserTabId, reloadNonce])
 
-  // Resize observer — re-attaches when containerRef mounts after Start Page or Offline view
+  // Observe container, stage wrapper (catches x/y centering shifts when container
+  // keeps fixed Tablet/Phone dimensions), window resize, and sibling accordion
+  // transitions (ResponsiveViewportBar 250ms expand/collapse & consent strip).
   useEffect(() => {
     if (!hasDocument) return
     const el = containerRef.current
     if (!el) return
 
     const ro = new ResizeObserver(() => {
-      updateBounds()
+      void updateBounds()
     })
     ro.observe(el)
+    const stageEl = stageRef?.current
+    if (stageEl && stageEl !== el) {
+      ro.observe(stageEl)
+    }
+    const panelEl = stageEl?.parentElement
+    if (panelEl && panelEl !== stageEl && panelEl !== el) {
+      ro.observe(panelEl)
+    }
+
+    const onWindowResize = () => {
+      void updateBounds()
+    }
+    window.addEventListener('resize', onWindowResize)
+
+    const onTransitionEnd = (ev: TransitionEvent) => {
+      if (
+        ev.propertyName === 'grid-template-rows' ||
+        ev.propertyName === 'height' ||
+        ev.propertyName === 'width' ||
+        ev.propertyName === 'transform'
+      ) {
+        void updateBounds()
+      }
+    }
+    panelEl?.addEventListener('transitionend', onTransitionEnd)
 
     return () => {
       ro.disconnect()
+      window.removeEventListener('resize', onWindowResize)
+      panelEl?.removeEventListener('transitionend', onTransitionEnd)
     }
-  }, [updateBounds, hasDocument])
+  }, [updateBounds, hasDocument, stageRef])
 
-  // Resync webview bounds when responsive preset / orientation / width changes
+  // Resync webview bounds when responsive preset / orientation / width changes,
+  // settling across the 250ms ResponsiveViewportBar accordion transition.
   useEffect(() => {
     if (!createdRef.current || !layoutKey) return
-    const raf = requestAnimationFrame(() => {
-      void updateBounds()
-    })
-    return () => cancelAnimationFrame(raf)
+    let cancelled = false
+    let rafId = 0
+    let frames = 0
+    let stableFrames = 0
+    let prev: BrowserBounds | null = null
+    const MAX_SETTLE_FRAMES = 24 // ~400ms at 60fps; covers 250ms accordion transition
+
+    const tick = () => {
+      if (cancelled) return
+      const el = containerRef.current
+      if (!el || !createdRef.current) return
+      const next = measureLogicalBounds(el)
+      const changed =
+        prev === null ||
+        prev.x !== next.x ||
+        prev.y !== next.y ||
+        prev.width !== next.width ||
+        prev.height !== next.height
+      if (changed) {
+        void updateBounds()
+        stableFrames = 0
+      } else {
+        stableFrames += 1
+      }
+      prev = next
+      frames += 1
+      if (frames < MAX_SETTLE_FRAMES && stableFrames < 3) {
+        rafId = requestAnimationFrame(tick)
+      }
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafId)
+    }
   }, [layoutKey, updateBounds])
+
+  // Resync webview bounds when whole-UI app zoom changes, even if fixed-size
+  // Tablet/Phone containerRef kept the same CSS pixel dimensions.
+  const prevUiZoomRef = useRef(appliedUiZoom)
+  useEffect(() => {
+    if (prevUiZoomRef.current === appliedUiZoom) return
+    prevUiZoomRef.current = appliedUiZoom
+    if (!createdRef.current) return
+    void updateBounds()
+  }, [appliedUiZoom, updateBounds])
 
   // Apply native per-tab zoom factor when changed or right after webview creation
   useEffect(() => {

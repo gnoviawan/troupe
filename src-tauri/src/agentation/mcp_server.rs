@@ -137,6 +137,9 @@ impl AgentationMcpServer {
                 val["measurement"] = serde_json::to_value(m).unwrap();
             }
         }
+        if let Some(bb) = &a.bounding_box {
+            val["boundingBox"] = serde_json::to_value(bb).unwrap();
+        }
         if let Some(path) = &a.screenshot_crop_path {
             val["screenshotCropPath"] = serde_json::Value::String(path.clone());
         }

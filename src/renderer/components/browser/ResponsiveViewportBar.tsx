@@ -9,6 +9,7 @@ import {
 
 interface ResponsiveViewportBarProps {
   browserTabId: string
+  measuredWidth?: number
   measuredHeight?: number
 }
 
@@ -20,6 +21,7 @@ const PRESETS: ReadonlyArray<{ id: ViewportPreset; label: string }> = [
 
 export function ResponsiveViewportBar({
   browserTabId,
+  measuredWidth,
   measuredHeight
 }: ResponsiveViewportBarProps): React.JSX.Element {
   const viewportPreset = useBrowserSessionStore(
@@ -37,6 +39,7 @@ export function ResponsiveViewportBar({
 
   const open = viewportPreset !== 'desktop'
   const panelRef = useRef<HTMLDivElement>(null)
+  const tablistRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
@@ -76,16 +79,36 @@ export function ResponsiveViewportBar({
   useEffect(() => {
     const onResize = () => syncPill(false)
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    const tablist = tablistRef.current
+    const ro =
+      typeof ResizeObserver !== 'undefined' && tablist ? new ResizeObserver(onResize) : null
+    if (ro && tablist) ro.observe(tablist)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      ro?.disconnect()
+    }
   })
 
   const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
-  const displayWidth =
+  const targetWidth =
     customWidth ??
     (presetSpec ? (orientation === 'portrait' ? presetSpec.width : presetSpec.height) : 0)
+  const targetHeight = presetSpec
+    ? orientation === 'portrait'
+      ? presetSpec.height
+      : presetSpec.width
+    : 0
+  const displayWidth = measuredWidth && measuredWidth > 0 ? Math.round(measuredWidth) : targetWidth
   const displayHeight =
-    measuredHeight ??
-    (presetSpec ? (orientation === 'portrait' ? presetSpec.height : presetSpec.width) : 0)
+    measuredHeight && measuredHeight > 0 ? Math.round(measuredHeight) : targetHeight
+  const isClamped =
+    Boolean(presetSpec) &&
+    ((measuredWidth !== undefined &&
+      measuredWidth > 0 &&
+      Math.round(measuredWidth) < targetWidth) ||
+      (measuredHeight !== undefined &&
+        measuredHeight > 0 &&
+        Math.round(measuredHeight) < targetHeight))
   const percent = Math.round(zoomFactor * 100)
 
   return (
@@ -97,11 +120,12 @@ export function ResponsiveViewportBar({
       data-testid="responsive-viewport-bar"
     >
       <div className="t-acc-panel-inner">
-        <div className="flex h-[38px] items-center justify-between border-b border-border/80 bg-card px-3">
+        <div className="@container flex h-[38px] min-w-0 items-center justify-between gap-2 border-b border-border/80 bg-card px-2.5">
           <div
+            ref={tablistRef}
             role="tablist"
             aria-label="Viewport preset"
-            className="t-tabs h-[30px] gap-0.5 rounded-full bg-background p-0.5"
+            className="t-tabs h-[30px] shrink-0 gap-0.5 rounded-full bg-background p-0.5"
           >
             <span
               ref={pillRef}
@@ -119,9 +143,11 @@ export function ResponsiveViewportBar({
                   type="button"
                   role="tab"
                   aria-selected={selected}
+                  aria-label={preset.label}
+                  title={preset.label}
                   onClick={() => setViewportPreset(browserTabId, preset.id)}
                   className={cn(
-                    't-tab inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-xs font-medium',
+                    't-tab inline-flex h-[26px] items-center gap-1.5 rounded-full px-2 @[460px]:px-2.5 text-xs font-medium',
                     selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -132,14 +158,22 @@ export function ResponsiveViewportBar({
                   ) : (
                     <Smartphone size={13} aria-hidden="true" />
                   )}
-                  <span>{preset.label}</span>
+                  <span className="hidden @[460px]:inline">{preset.label}</span>
                 </button>
               )
             })}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-medium tabular-nums text-secondary-foreground">
+          <div className="flex min-w-0 items-center gap-1.5 @[460px]:gap-2">
+            <span
+              data-testid="responsive-viewport-dimensions"
+              title={
+                isClamped
+                  ? `Clamped to ${displayWidth} × ${displayHeight} (target ${targetWidth} × ${targetHeight})`
+                  : `${displayWidth} × ${displayHeight}`
+              }
+              className="truncate font-mono text-xs font-medium tabular-nums text-secondary-foreground"
+            >
               {displayWidth} × {displayHeight}
             </span>
             <button
@@ -147,13 +181,13 @@ export function ResponsiveViewportBar({
               aria-label="Rotate viewport orientation"
               title="Rotate portrait / landscape"
               onClick={() => toggleOrientation(browserTabId)}
-              className="tactile-control flex size-6 items-center justify-center rounded-md bg-muted text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.95]"
+              className="tactile-control flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.95]"
             >
               <RotateCw size={12} />
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1 @[460px]:gap-1.5">
             <button
               type="button"
               aria-label="Zoom out"
@@ -168,7 +202,7 @@ export function ResponsiveViewportBar({
               aria-label="Reset zoom"
               title="Reset zoom to 100%"
               onClick={() => resetZoom(browserTabId)}
-              className="min-w-10 text-center font-mono text-xs font-medium tabular-nums text-foreground hover:underline"
+              className="min-w-8 @[460px]:min-w-10 text-center font-mono text-xs font-medium tabular-nums text-foreground hover:underline"
             >
               {percent}%
             </button>

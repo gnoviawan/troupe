@@ -164,6 +164,12 @@ async fn test_get_ruler_guides_filters_measurements_and_guides() {
                     gap_px: None,
                     delta_px: Some(8.0),
                 }),
+                bounding_box: Some(BoundingBox {
+                    x: 32.0,
+                    y: 180.0,
+                    width: 240.0,
+                    height: 96.0,
+                }),
                 screenshot_crop_path: Some("/tmp/crop-2.png".to_string()),
                 ..Default::default()
             },
@@ -226,8 +232,13 @@ async fn test_get_ruler_guides_filters_measurements_and_guides() {
     assert_eq!(parsed["guides"][0]["measurement"]["positionPx"], 32.0);
     assert_eq!(parsed["guides"][0]["measurement"]["deltaPx"], 8.0);
     assert_eq!(parsed["guides"][0]["screenshotCropPath"], "/tmp/crop-2.png");
+    assert_eq!(parsed["guides"][0]["boundingBox"]["x"], 32.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["y"], 180.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["width"], 240.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["height"], 96.0);
     assert_eq!(parsed["guides"][1]["kind"], "measurement");
     assert_eq!(parsed["guides"][1]["measurement"]["gapPx"], 12.0);
+    assert!(parsed["guides"][1].get("boundingBox").is_none());
 
     // Unscoped lookup returns active session items only (excludes closed session)
     let unscoped_raw = server

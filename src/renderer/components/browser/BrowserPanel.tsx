@@ -65,6 +65,10 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
 
   const stageRef = useRef<HTMLDivElement>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
+  const [measuredViewport, setMeasuredViewport] = useState<{
+    width: number
+    height: number
+  } | null>(null)
   const offlineErrorKeyRef = useRef('')
   const stopGeneration = tab?.stopGeneration ?? 0
   const layoutKey = `${viewportPreset}-${orientation}-${customWidth ?? 'preset'}`
@@ -74,7 +78,8 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     zoomFactor,
     layoutKey,
     reloadNonce,
-    stopGeneration
+    stopGeneration,
+    stageRef
   })
 
   // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue
@@ -262,6 +267,31 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
 
   const isConstrained = viewportPreset !== 'desktop' && Boolean(url) && !loadError
 
+  // Track actual rendered dimensions of the constrained viewport slot so
+  // ResponsiveViewportBar displays clamped dimensions on smaller panes.
+  useEffect(() => {
+    if (!isConstrained) {
+      setMeasuredViewport(null)
+      return
+    }
+    const el = containerRef.current
+    if (!el) return
+    const syncSize = () => {
+      const rect = el.getBoundingClientRect()
+      const w = Math.round(rect.width)
+      const h = Math.round(rect.height)
+      if (w <= 0 || h <= 0) return
+      setMeasuredViewport((prev) =>
+        prev && prev.width === w && prev.height === h ? prev : { width: w, height: h }
+      )
+    }
+    syncSize()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(syncSize)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [containerRef, isConstrained])
+
   return (
     <div
       className={cn(
@@ -270,7 +300,13 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       )}
     >
       {isVisible && <BrowserControls browserTabId={browserTabId} isVisible={isVisible} />}
-      {isVisible && <ResponsiveViewportBar browserTabId={browserTabId} />}
+      {isVisible && (
+        <ResponsiveViewportBar
+          browserTabId={browserTabId}
+          measuredWidth={measuredViewport?.width}
+          measuredHeight={measuredViewport?.height}
+        />
+      )}
       {isVisible && <BrowserConsentStrip browserTabId={browserTabId} />}
 
       <div

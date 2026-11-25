@@ -255,7 +255,9 @@ class TroupeAnnotationOverlay {
       case 'clear':
         if (cmd.ids && cmd.ids.length > 0) {
           const drop = new Set(cmd.ids)
-          this.pins = this.pins.filter((p) => !drop.has(p.id))
+          this.pins = this.pins
+            .filter((p) => !drop.has(p.id))
+            .map((p, idx) => ({ ...p, num: idx + 1 }))
         } else {
           this.pins = []
           this.guides = []
