@@ -23,8 +23,9 @@ pub type CreateId = u64;
 
 const LOOKUP_SOURCE: &str = "acp.createSession.lookup";
 
-/// The project a quick chat belongs to (`QUICK_CHAT_PROJECT_ID`).
-const QUICK_CHAT_PROJECT: &str = "__unassigned__";
+/// The project a quick chat belongs to (`QUICK_CHAT_PROJECT_ID`), the
+/// host's sentinel for a chat in no project.
+pub(super) const QUICK_CHAT_PROJECT: &str = "__unassigned__";
 
 /// `createSession`'s options.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]

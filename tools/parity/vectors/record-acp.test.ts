@@ -176,9 +176,17 @@ vi.mock(`${renderer}/stores/browser-control-store`, () => ({
     getState: () => ({
       trackAgentTab: (tabId: string, sessionId: string) =>
         emit({ kind: 'trackAgentTab', tabId, sessionId }),
-      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId })
+      untrackAgentTab: (tabId: string) => emit({ kind: 'untrackAgentTab', tabId }),
+      setStopped: (sessionId: string, stopped: boolean) =>
+        emit({ kind: 'setBrowserStopped', sessionId, stopped })
     })
   }
+}))
+// A consent answer is an agent command; its reply is the answer's result.
+vi.mock(`${renderer}/lib/browser-consent-api`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  answerBrowserConsent: (ticket: { requestId: string }, optionId: string, agentId: string) =>
+    agentCommand({ kind: 'answerBrowserConsent', requestId: ticket.requestId, optionId, agentId })
 }))
 // The roster watch hands policy and automation hints to their own modules.
 vi.mock(`${renderer}/lib/browser-policy-api`, async (importOriginal) => ({

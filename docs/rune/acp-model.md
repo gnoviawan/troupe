@@ -579,6 +579,21 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       answer. The recorder never reaches a timer, so `oneshot_tests.rs`
       checks them. `State::selected_agent_config_id` stands in for the
       config slice's selection.
+    - 10d, small leftovers (R6a-7). `setSelectedAgentConfigId` sets that
+      selection. `retargetWarmPool` cancels the warm sessions of other
+      configs in the same folder (the folder compared normalized) and seeds
+      the target's pool silently. `_onBrowserStopChanged` is
+      `setBrowserStopped`, true only for a literal `true`.
+      `respondBrowserConsent` takes the ticket out of the queue and sends
+      `answerBrowserConsent`, answered like an agent command with the
+      result. `ok` and `stale` end it; `too_early`, `refused` or a failed
+      call put the ticket back and toast, and a refusal is logged. A drain
+      and a seed in one step are separate vectors: their TypeScript
+      promises interleave by microtask depth, which the replay's in-order
+      answers do not reproduce. The views' one-line predicates
+      (`isBackgroundWorkBlock`, `sessionProjectId` and the rest the audit
+      below lists) are in `acp/queries.rs`; they read state and emit
+      nothing, so `queries_tests.rs` checks them instead of vectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -668,6 +683,71 @@ so the replay drops `retryQueueAfter` before it compares.
 On a closed session the model does not yet run the reload hand-off
 (`reloadInFlight`, PR 9) or the drop of an empty warm-pool session
 (`ephemeralSessionIds`, PR 8).
+
+## Unported exports (audit, R6a-7)
+
+Checked on 2026-11-24 against `src/renderer/stores/acp-store/` at
+`fc90e4627` plus the R6a-7 stack. Two lists: the store's actions with no
+`acp::Event`, and the runtime exports (not types) that code outside the store
+imports. An export not listed is either ported or private to the store. Each
+row is **deferred** (a slice still to port), **React-only** (glue the Rune app
+does its own way), or **missing** (a gap with no slice planned yet).
+
+### Store actions without an `acp::Event`
+
+| Action | Status | Why |
+|---|---|---|
+| `startChat`, `startQuickChat`, `finalizeChatLaunch` | deferred | The launch flow (PR 8, rest). It needs the placeholder (8a), `ensureLiveAgent`, `createSession`, the warm-pool claim and `applyPendingLauncherOptions`, all ported now. It is the largest slice left. |
+| `retryFailedLaunch` | deferred | Re-runs `finalizeChatLaunch`, so it follows that slice. |
+| `retryCrashedSession` | missing | Reopens on a fresh agent (`forceNewAgent`, ported) and resends the last own prompt (`queries::last_own_user_prompt_blocks`, ported). Small once the reload hand-off (`reloadInFlight`) is ported. |
+| `openDiscoveredSession` | missing | Continues a `session/list` result through load or resume. Discovery (10b) is ported, but this open is not. |
+| `loadAgentConfigs`, `saveAgentConfig`, `deleteAgentConfig` | deferred | The config slice (`slices/config.ts`). Until then the app sets `agentConfigs` through `agentConfigsChanged`. |
+| `applyAgentUpdate`, `detachAgentForNewCredentials` | deferred | The agent-update orchestration (`lib/agent-update`) that these delegate to, with the config slice. |
+| `testConnection` | deferred | Spawns and kills a throwaway agent for the settings form; config slice. |
+| `loadSessionIndex` | ported as effects | `refreshSessionIndex` asks the app, and `applySessionIndexSnapshot` (6b) answers. |
+| `flushLiveSessionSaves` | React-only | The `beforeunload` flush of queued payload writes. Rune's app owns its own shutdown flush. |
+| `prioritizeResync` | React-only | Forwards to the web transport's resubscribe order. The Rune client crate owns its reconnect. |
+| `_onBrowserConsentTicket` | ported | Runs inside `_onPermissionRequest`, where the store calls it. |
+| `setSelectedAgentConfigId`, `retargetWarmPool`, `_onBrowserStopChanged`, `respondBrowserConsent` | ported (R6a-7) | 10d, in the PR that adds this audit. |
+
+Two store functions that are not exports also wait: the reopen's switch
+redirect (`redirectSwitchedReopen`) and the re-splice after a reinstall
+(`respliceLiveSwitchTarget`). Both are **deferred** to their own slice. They
+walk the marker chain through payload reads (a host re-read, then the
+cache), up to 8 hops, and the redirect waits on a nested
+`openHistorySession` of the final session before it splices, moves the
+queue and remaps the tab. The splice they share (`acp/splice.rs`) is ported
+with `switchAgent`.
+
+The first table comes from comparing the action names of `AcpState` in
+`types.ts` with the `rename` names of `acp::Event`; `complete` and `reject`
+in that diff are fields of a nested type, not actions.
+
+### Runtime exports used outside the store
+
+| Module | Export | Status | Why |
+|---|---|---|---|
+| `index` | `useAcpStore`, `useAcpMessages`, `useAcpSession`, `useAgentIcon`, `useAgentIdentity`, `useAgentTemplateId`, `useConfigWarmState`, `usePromptQueue`, `useSessionIndexTitle`, `useSessionUsage` | React-only | Zustand selectors. Rune views read `acp::State`. |
+| `index` | `initAcpEventListeners` | React-only | Event wiring. The app crate feeds `acp::step`. |
+| `index` | `switchBlockedReason`, `BACKGROUND_COMMANDS_BLOCK_REASON`, `BACKGROUND_SUBAGENTS_BLOCK_REASON`, `sessionTurnBusy`, `configIdForAgentId`, `agentReuseKey`, `prepareChatKey`, `runsCurrentLaunch`, `renewAgentCredentials`, `historyOpenInFlight`, `plainLastError`, `persistComposerOptions` | ported | `State::switch_blocked_reason`, `Session::turn_busy`, `State::config_id_for_agent`, `reuse_key.rs`, `warm::prepare_chat_key`, `State::runs_current_launch`, `Event::RenewAgentCredentials`, `HistoryBook::opening`, the `lastError` writes, `Effect::PersistComposerOptions`. |
+| `index` | `isBackgroundWorkBlock`, `hasModelRelevantOptionsCache`, `isEphemeralAcpSession`, `mcpServerDeletionCount`, `sessionProjectId`, `configIdFromReuseKey`, `lastOwnUserPromptBlocks` | ported (R6a-7) | `acp/queries.rs`: free functions for the pure predicates, `State` methods for the reads of the book, and `State::mcp_deletions`. Checked by `queries_tests.rs`. |
+| `index` | `ChatLaunchCancelledError` | deferred | The launch flow. |
+| `helpers` | `SWITCH_SPLICE_ID_PREFIX`, `prepareChatKey` | ported | `splice::SPLICE_PREFIX`, `warm::prepare_chat_key`. |
+| `helpers` | `isResumeFailureError`, `sessionProjectId` | ported (R6a-7) | `queries::is_resume_failure_error`, `State::session_project_id`. |
+| `composer-options` | `readComposerOptions`, `savedModelValues`, `savedAgentWideValues`, `modelValuesPatch`, `agentWideValues` | ported | `Effect::ReadComposerOptions`, `restore.rs`, `switch.rs`. |
+| `composer-options` | `isScopedOption`, `liveOptionValues`, `unscopedValues`, `latestArmedPick`, `nextPickSeq` | deferred | The model selector's helpers, for the composer unit. |
+| `chat-reuse-scope` | `readOwnChatAccount`, `readOwnCodexChatAccount`, `readOwnAntigravityChatAccount` | deferred | The per-chat Claude, Codex and Antigravity account scope. It is not ported in history open either (6d). |
+| `live-turn` | `isLaunchPlaceholderSessionId`, `isLiveLaunchSession`, `noteDroppedLaunchPlaceholders`, `partitionRestoredAgentChatIds` | deferred | The launch placeholders the workspace restore reads; with the launch flow. |
+| `reload-guard` | `reloadInFlight`, `liveSiblingCount` | missing | The reload hand-off on a closed session. |
+| `shared-state` | `liveSwitchSources` | ported | `SwitchBook::live_sources`. |
+| `shared-state` | `recordCurrentLaunch` | deferred | The launch signature the account switcher records; with the launch flow. |
+| `registry-mcp-fingerprints` | `recordRegistryMcpServers`, `registryMcpServersMatch` | ported | `Book::registry_mcp` and the warm-pool claim's check. |
+| `ephemeral-ids` | `ephemeralSessionIds` | ported | `Book::ephemeral_sessions`. |
+| `subagent-lifecycle` | `cancelRunningSubagents` | ported | `acp/subagent.rs`. |
+| `session-agent-config` | `sessionAgentConfigId` | ported | The Antigravity plan-limit attribution in `acp/agents.rs`. |
+| `slices/agent` | `isAnyAgentAuthInFlight` | ported (R6a-7) | `State::is_any_agent_auth_in_flight`. |
+| `model-catalog` | `readModelCatalog` | React-only | The selector reads the saved catalog from persistence. Rune reads it the same way the app reads other records. |
+| `rate-limit` | `withRateLimit` | ported | The rejected rate limit on `agent_error` (7a) and the usage writes. |
 
 ## CI
 

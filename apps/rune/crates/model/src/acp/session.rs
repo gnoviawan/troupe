@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 use super::types::{Object, Session, SessionStatus};
 use super::{Effect, Env, State, clamp, js};
 
-const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
+pub(super) const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
 const CODEX_CLI_SIGNED_OUT_MESSAGE: &str = "Codex signed out. Sign in again to continue this chat.";
 /// The transport tags a host sign-in refusal carries before its sentence.
 const SIGNED_OUT_TAGS: [&str; 2] = [

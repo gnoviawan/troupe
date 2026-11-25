@@ -139,6 +139,19 @@ pub enum Effect {
         #[serde(skip)]
         switch: super::switch_run::SwitchId,
     },
+    /// Answer a browser consent ticket (`answerBrowserConsent`), then send
+    /// `Event::AgentCommandDone` with the result (`ok`, `stale`,
+    /// `too_early` or `refused`), or `AgentCommandFailed`.
+    AnswerBrowserConsent {
+        request_id: String,
+        option_id: String,
+        agent_id: String,
+        /// The ticket, put back when the answer is refused.
+        #[serde(skip)]
+        ticket: Value,
+    },
+    /// Show the session's agent browser as stopped, or running again.
+    SetBrowserStopped { session_id: String, stopped: bool },
     /// Delete this key from the app's persisted records.
     DeletePersisted { key: String },
     /// Point the chat tab of `from` at `to`, in the pane that shows it.

@@ -54,6 +54,9 @@ mod oneshot_tests;
 mod picks;
 mod plan;
 pub mod prompt;
+pub mod queries;
+#[cfg(test)]
+mod queries_tests;
 mod reconcile;
 #[cfg(test)]
 mod reconcile_tests;
@@ -552,6 +555,11 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.apply_pending_launcher_options(session_id, picks, by, &mut fx);
         }
         Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
+        Event::SetSelectedAgentConfigId(config_id) => state.selected_agent_config_id = config_id,
+        Event::RetargetWarmPool(config_id, cwd, project_id) => {
+            state.retarget_warm_pool(&config_id, &cwd, project_id, &mut fx);
+        }
+        Event::BrowserStopChanged(event) => approvals::on_browser_stop_changed(&event, &mut fx),
         Event::SetSwitchPendingOption(session_id, patch) => {
             state.set_switch_pending_option(&session_id, patch, &mut fx);
         }
@@ -594,6 +602,16 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         }
         Event::AgentCommandFailed(Effect::RecordAgentSwitch { switch, .. }, message, _) => {
             state.on_switch_marker(switch, Some(message), env, &mut fx);
+        }
+        Event::RespondBrowserConsent(request_id, option_id) => {
+            state.respond_browser_consent(request_id, option_id, &mut fx);
+        }
+        Event::AgentCommandDone(command @ Effect::AnswerBrowserConsent { .. }, reply) => {
+            let result = reply.as_str().unwrap_or_default().to_owned();
+            state.on_browser_consent_answered(command, Ok(result), &mut fx);
+        }
+        Event::AgentCommandFailed(command @ Effect::AnswerBrowserConsent { .. }, ..) => {
+            state.on_browser_consent_answered(command, Err(()), &mut fx);
         }
         Event::SwitchAgent(request) => {
             state.switch_agent(request, true, &mut fx);

@@ -17,9 +17,10 @@ const ARM_SOURCE: &str = "acp.switchAgent.start";
 const PICK_SOURCE: &str = "acp.setSwitchPendingOption";
 
 /// `BACKGROUND_SUBAGENTS_BLOCK_REASON`.
-const SUBAGENTS_BLOCK: &str = "background subagents are still running — switching would stop them";
+pub(super) const SUBAGENTS_BLOCK: &str =
+    "background subagents are still running — switching would stop them";
 /// `BACKGROUND_COMMANDS_BLOCK_REASON`.
-const COMMANDS_BLOCK: &str =
+pub(super) const COMMANDS_BLOCK: &str =
     "commands are still running in the background — switching would stop them";
 
 /// `MAX_LIVE_TOOL_CALLS`: the markers a chat keeps live.

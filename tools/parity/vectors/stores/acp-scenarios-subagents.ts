@@ -90,6 +90,13 @@ const browserTicket = (requestId: string, browser: Record<string, unknown>, opti
     _meta: { termul: { origin_kind: 'browser', browser } }
   })
 
+const PAY = {
+  origin: 'https://example.com',
+  targetUrl: 'https://example.com/pay',
+  action: 'payment_submit',
+  profile: 'ephemeral'
+}
+
 const recordScenarios: Scenario[] = [
   {
     name: 'subagent_record_is_lifted_onto_its_dispatch_call',
@@ -358,6 +365,55 @@ const promptScenarios: Scenario[] = [
       ev('_onBrowserTicketClosed', { requestId: 'host:1' }),
       ev('_onBrowserTicketClosed', { requestId: 7 })
     ]
+  },
+  {
+    name: 'respond_browser_consent_sends_the_answer',
+    context: { agentReplies: ['ok'] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', PAY), ev('respondBrowserConsent', 'host:4', 'allow_session')]
+  },
+  {
+    name: 'respond_browser_consent_lost_to_another_surface_stays_gone',
+    context: { agentReplies: ['stale'] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', PAY), ev('respondBrowserConsent', 'host:4', 'allow_session')]
+  },
+  {
+    name: 'respond_browser_consent_too_early_puts_the_ticket_back',
+    context: { agentReplies: ['too_early'] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', PAY), ev('respondBrowserConsent', 'host:4', 'allow_session')]
+  },
+  {
+    name: 'respond_browser_consent_refused_puts_the_ticket_back',
+    context: { agentReplies: ['refused'] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', PAY), ev('respondBrowserConsent', 'host:4', 'allow_session')]
+  },
+  {
+    name: 'respond_browser_consent_failure_puts_the_ticket_back',
+    context: { agentReplies: [{ reject: 'socket closed' }] },
+    initial: seeded(),
+    steps: [browserTicket('host:4', PAY), ev('respondBrowserConsent', 'host:4', 'allow_session')]
+  },
+  {
+    name: 'respond_browser_consent_to_an_unknown_ticket_does_nothing',
+    initial: seeded(),
+    steps: [ev('respondBrowserConsent', 'host:9', 'allow_once')]
+  },
+  {
+    name: 'browser_stop_changed_marks_the_session_browser',
+    initial: seeded(),
+    steps: [
+      ev('_onBrowserStopChanged', { sessionId: S, stopped: true }),
+      ev('_onBrowserStopChanged', { sessionId: S, stopped: 'yes' }),
+      ev('_onBrowserStopChanged', { sessionId: '', stopped: true })
+    ]
+  },
+  {
+    name: 'set_selected_agent_config_id_picks_the_one_shot_config',
+    initial: seeded(),
+    steps: [ev('setSelectedAgentConfigId', 'codex'), ev('setSelectedAgentConfigId', null)]
   },
   {
     name: 'browser_consent_ticket_brings_its_open_chat_tab_forward',

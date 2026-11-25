@@ -188,6 +188,7 @@ fn replay(vector: &Value) -> Result<usize, String> {
                         | Effect::DisconnectMcpOAuth { .. }
                         | Effect::AnswerMcpInstall { .. }
                         | Effect::RecordAgentSwitch { .. }
+                        | Effect::AnswerBrowserConsent { .. }
                 )
             }) {
                 let command = effects[acknowledged + offset].clone();
