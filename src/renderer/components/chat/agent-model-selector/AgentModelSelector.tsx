@@ -88,7 +88,7 @@ interface AgentModelSelectorProps {
   phone?: PhoneSelectorControls
   /** Sub-agent profiles: an icon after the model name, inside the pill. */
   marker?: ReactNode
-  /** Sub-agent profiles: told when the picker opens, to load the agent's models. */
+  /** Sub-agent profiles: told on every open and close, to load the agent's models. */
   onOpenChange?: (open: boolean) => void
   /**
    * Design canvas only: always show the v2 panel, with these v2-only props
@@ -242,7 +242,7 @@ export function AgentModelSelector({
     },
     [onOpenChange]
   )
-  const close = useCallback(() => setOpen(false), [])
+  const close = useCallback(() => handleOpenChange(false), [handleOpenChange])
   // The mobile sheet is an overlay like any other: system back closes it (and
   // its own X / scrim / Esc close consumes the history sentinel). The desktop
   // popover is inert here.
