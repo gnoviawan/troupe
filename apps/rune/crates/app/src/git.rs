@@ -35,6 +35,9 @@ pub const GIT_SHEET: &str = "git-sheet";
 enum Then {
     /// A success toast (none for `None`) or `"{fail}: {error}"`.
     Toast { ok: Option<String>, fail: &'static str },
+    /// A stash apply, pop or drop: on failure the stash list is read again, since a lost
+    /// reply may hide a drop that landed and shifted every index.
+    Stash { cwd: String, ok: String, fail: &'static str },
     Commit { amend: bool },
     Push,
     Discard { paths: Vec<String> },
@@ -51,7 +54,16 @@ pub struct GitUi {
     pub cache: git::State,
     then: HashMap<TaskId, Then>,
     /// Calls made with no server link (a headless run or a test), oldest first.
-    pub(crate) unsent: Vec<(TaskId, git::Route)>,
+    pub(crate) unsent: Vec<(TaskId, HttpRequest)>,
+    /// The command journal (`command-engine.ts`): per ledgered intent (kind and entity key),
+    /// the id whose outcome is unknown, which the next non-fresh call of that intent reuses.
+    journal: HashMap<(&'static str, String), String>,
+    /// Ledgered calls in flight, by task.
+    sent: HashMap<TaskId, Sent>,
+    /// The working copy the commit box, the selection and the dialogs belong to.
+    draft_cwd: Option<String>,
+    /// The diff revision the open diff views were last checked at.
+    diffs_seen: Option<u64>,
     /// Trailing diff-stat reads, by working copy, due at (ms).
     due: Vec<(String, f64)>,
     /// The diff keys being read.
@@ -107,33 +119,37 @@ fn failure(error: HttpError) -> Failure {
     }
 }
 
-/// The routes the host runs through its command ledger (`LEDGERED_ROUTES` in
-/// `lib/ipc/http.ts`): each send carries a fresh `X-Command-Id`.
-const LEDGERED: [&str; 9] = [
-    "/git/stage-hunk",
-    "/git/unstage-hunk",
-    "/git/discard",
-    "/git/commit",
-    "/git/create-branch",
-    "/git/stash-save",
-    "/git/stash-apply",
-    "/git/stash-pop",
-    "/git/stash-drop",
-];
+/// A ledgered call in flight: its journal key, the id it carries, and whether it is fresh.
+#[derive(Clone, Debug)]
+struct Sent {
+    key: (&'static str, String),
+    id: String,
+    fresh: bool,
+}
 
-fn request(route: git::Route) -> HttpRequest {
-    let command_id = LEDGERED.contains(&route.path.as_str()).then(crate::ids::uuid);
+/// Whether a failure leaves the command's outcome unknown, so the id stays unresolved and
+/// a later call of the same intent resends it (`runIpcCommand`'s lost-reply rule).
+fn unresolved(error: &HttpError) -> bool {
+    matches!(error, HttpError::Network(_) | HttpError::InProgress)
+}
+
+#[cfg(test)]
+pub(crate) fn tests_request(path: &str) -> HttpRequest {
+    let call = match path {
+        "/git/commit" => git::Call::Commit { cwd: "/p".into(), summary: "s".into(), description: String::new(), amend: false, expected_head: "h".into() },
+        _ => git::Call::Status { cwd: "/p".into() },
+    };
+    let command_id = call.ledger().map(|_| crate::ids::uuid());
+    to_http(call.route(), command_id)
+}
+
+fn to_http(route: git::Route, command_id: Option<String>) -> HttpRequest {
     HttpRequest {
         method: if route.post { Method::Post } else { Method::Get },
         path: route.path,
         body: route.body,
         command_id,
     }
-}
-
-#[cfg(test)]
-pub(crate) fn tests_request(path: &str) -> HttpRequest {
-    request(git::Route { post: true, path: path.to_owned(), body: None })
 }
 
 impl State {
@@ -162,10 +178,17 @@ impl State {
         for effect in effects {
             match effect {
                 Effect::Call { task, call } => {
-                    let route = call.route();
+                    let command_id = call.ledger().map(|ledger| {
+                        let key = (ledger.kind, ledger.entity);
+                        let reused = (!ledger.fresh).then(|| self.git.journal.get(&key).cloned()).flatten();
+                        let id = reused.unwrap_or_else(crate::ids::uuid);
+                        self.git.sent.insert(task, Sent { key, id: id.clone(), fresh: ledger.fresh });
+                        id
+                    });
+                    let request = to_http(call.route(), command_id);
                     match &mut self.host {
-                        Some(host) => host.request(request(route), crate::host::Fetch::Git(task)),
-                        None => self.git.unsent.push((task, route)),
+                        Some(host) => host.request(request, crate::host::Fetch::Git(task)),
+                        None => self.git.unsent.push((task, request)),
                     }
                 }
                 Effect::Log { message, .. } => log::warn!("{message}"),
@@ -183,6 +206,19 @@ impl State {
     pub(crate) fn git_replied(&mut self, task: TaskId, result: Result<serde_json::Value, HttpError>) {
         if let Err(e) = &result {
             log::warn!("[git] call failed: task={task} {e}");
+        }
+        if let Some(sent) = self.git.sent.remove(&task) {
+            match &result {
+                Err(e) if unresolved(e) && !sent.fresh => {
+                    log::info!("[git] {} outcome unknown; a retry resends its id", sent.key.0);
+                    self.git.journal.insert(sent.key, sent.id);
+                }
+                _ => {
+                    if self.git.journal.get(&sent.key) == Some(&sent.id) {
+                        self.git.journal.remove(&sent.key);
+                    }
+                }
+            }
         }
         self.git_step(Event::Reply(task, result.map_err(failure)));
     }
@@ -202,6 +238,16 @@ impl State {
                             self.git_toast(ToastKind::Success, &ok);
                         }
                     }
+                }
+            }
+            Then::Stash { cwd, ok, fail } => {
+                self.git.mutating = false;
+                match failed {
+                    Some(error) => {
+                        self.toast_error(&format!("{fail}: {error}"), "");
+                        self.git_step(Event::FetchStashes(cwd));
+                    }
+                    None => self.git_toast(ToastKind::Success, &ok),
                 }
             }
             Then::Commit { amend } => {
@@ -289,7 +335,7 @@ impl State {
             let first = self.git.read.as_ref().is_none_or(|(read, _)| *read != cwd);
             self.git.read = Some((cwd.clone(), self.now));
             if first {
-                self.git.filter = TextEdit::default();
+                self.git_reset_drafts(&cwd);
                 self.git_step(Event::WatchDiffStat(cwd.clone()));
                 self.git_step(Event::FetchStashes(cwd.clone()));
                 self.git_step(Event::FetchBranches(cwd.clone()));
@@ -301,6 +347,31 @@ impl State {
         let next = self.git.read.as_ref().map(|(_, at)| at + POLL_SECS);
         let trailing = self.git.due.iter().map(|(_, at)| at / 1000.0).reduce(f64::min);
         [next, trailing].into_iter().flatten().reduce(f64::min)
+    }
+
+    /// `use-git-actions`' reset when the repo changes: the commit box, amend and its confirm,
+    /// the selection, the filter, and the dialogs that name this working copy's files or
+    /// branches, so nothing typed or picked in one project acts on another.
+    pub(crate) fn git_reset_drafts(&mut self, cwd: &str) {
+        if self.git.draft_cwd.as_deref() == Some(cwd) {
+            return;
+        }
+        self.git.draft_cwd = Some(cwd.to_owned());
+        self.git.summary = TextEdit::default();
+        self.git.description = TextEdit::default();
+        self.git.amend = false;
+        self.git.filter = TextEdit::default();
+        self.git.discard.clear();
+        self.git.pending_branch = None;
+        self.git.new_branch = TextEdit::default();
+        self.git.stash_message = TextEdit::default();
+        self.git.selected_staged = false;
+        for key in [AMEND_CONFIRM, DISCARD_CONFIRM, SWITCH_BRANCH, CREATE_BRANCH, STASH_DIALOG, BRANCH_MENU, STASH_MENU] {
+            self.overlays.close(key);
+        }
+        if self.git.cache.selected_file.is_some() {
+            self.git_step(Event::SetSelectedFile(None));
+        }
     }
 
     /// `useProjectGitBranch`: the active project takes its working copy's branch.
@@ -328,6 +399,9 @@ impl State {
     /// The diff tabs of the visible project: read each one's diff once, and rebuild a view
     /// whose text changed.
     fn read_open_diffs(&mut self) {
+        let revision = self.git.cache.diff_revision();
+        let rebuild = self.git.diffs_seen != Some(revision);
+        self.git.diffs_seen = Some(revision);
         let Some(root) = self.workspace.record().map(|_| self.workspace.root().clone()) else {
             return;
         };
@@ -341,14 +415,17 @@ impl State {
             .chain(self.sheet_diff())
             .collect();
         for (id, cwd, path, staged) in tabs {
-            match self.git.cache.diff(&cwd, &path, staged).map(str::to_owned) {
-                Some(text) => {
-                    let current = self.git.diff_views.get(&id).is_some_and(|(built, _)| *built == text);
+            match self.git.cache.diff(&cwd, &path, staged) {
+                // Compared only after the cache changed, or for a view not built yet.
+                Some(text) if rebuild || !self.git.diff_views.contains_key(&id) => {
+                    let current = self.git.diff_views.get(&id).is_some_and(|(built, _)| built == text);
                     if !current {
+                        let text = text.to_owned();
                         let files = rune_kit::diff::parse(&text);
                         self.git.diff_views.insert(id, (text, DiffState::new(files)));
                     }
                 }
+                Some(_) => {}
                 None if self.git.cache.diff_error(&cwd, &path, staged).is_none() => self.read_diff(cwd, path, staged),
                 None => {}
             }
@@ -402,6 +479,10 @@ impl State {
 
     pub(crate) fn git_confirm_discard(&mut self) {
         let Some(cwd) = self.git_cwd() else { return };
+        if self.git.draft_cwd.as_deref() != Some(cwd.as_str()) {
+            self.git_reset_drafts(&cwd);
+            return;
+        }
         let paths = self.git.discard.clone();
         if paths.is_empty() || self.git.mutating {
             return;
@@ -441,6 +522,11 @@ impl State {
     /// `handleCommit`: amending a commit already pushed asks first.
     pub(crate) fn git_commit(&mut self, confirmed: bool) {
         let Some(cwd) = self.git_cwd() else { return };
+        if self.git.draft_cwd.as_deref() != Some(cwd.as_str()) {
+            // The draft was typed for another working copy.
+            self.git_reset_drafts(&cwd);
+            return;
+        }
         if !self.git_can_commit() {
             return;
         }
@@ -524,11 +610,11 @@ impl State {
         self.overlays.close(STASH_MENU);
         self.git.mutating = true;
         let (event, done, fail) = match op {
-            StashOp::Apply => (Event::StashApply(cwd, index), "applied", "Failed to apply stash"),
-            StashOp::Pop => (Event::StashPop(cwd, index), "popped", "Failed to pop stash"),
-            StashOp::Drop => (Event::StashDrop(cwd, index), "dropped", "Failed to drop stash"),
+            StashOp::Apply => (Event::StashApply(cwd.clone(), index), "applied", "Failed to apply stash"),
+            StashOp::Pop => (Event::StashPop(cwd.clone(), index), "popped", "Failed to pop stash"),
+            StashOp::Drop => (Event::StashDrop(cwd.clone(), index), "dropped", "Failed to drop stash"),
         };
-        self.git_action(event, Then::Toast { ok: Some(format!("Stash@{{{index}}} {done}")), fail });
+        self.git_action(event, Then::Stash { cwd, ok: format!("Stash@{{{index}}} {done}"), fail });
     }
 
     /// A file row's plain click: select it and open its diff tab. In the phone sheet the

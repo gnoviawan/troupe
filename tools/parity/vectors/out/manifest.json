@@ -160,6 +160,17 @@
         "refresh_working_copy_never_rejects",
         "two_spellings_of_a_windows_path_share_one_entry"
       ]
+    },
+    "git-routes": {
+      "sources": {
+        "src/renderer/lib/git-api.ts": "a359c581abb4405f9bb9e71035999d72670afe6a",
+        "src/renderer/lib/web-server-api.ts": "874e76312b340b32040ab25f8ba54409d760511b",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "reads",
+        "writes"
+      ]
     }
   }
 }
