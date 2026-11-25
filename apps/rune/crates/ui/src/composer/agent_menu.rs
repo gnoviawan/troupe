@@ -27,6 +27,8 @@ pub enum SwitchAct {
     Wait,
     /// Stop the running turn, then arm the pick.
     CancelTurnAndSwitch,
+    /// The phone's chip opens the model sheet instead of the menu.
+    OpenSheet,
 }
 
 /// A chat's agent switch, as its menu shows it.
@@ -61,14 +63,22 @@ fn chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<
     if !armed {
         chip = chip.child(icon(&i::CHEVRON_DOWN, 12.0).color(c.muted_foreground));
     }
+    if phone_sheet(spec) {
+        let switch = hooks.switch.clone();
+        return chip.on_press_tx(move |s: &mut S, tx: &mut Tx| switch(s, SwitchAct::OpenSheet, tx));
+    }
     chip.on_press(move |s: &mut S| agent(s, true))
 }
 
+/// A phone chat's chip opens the model sheet (`MobileModelSheet`), not a menu.
+fn phone_sheet(spec: &Spec) -> bool {
+    spec.place == Place::Phone && spec.switch.is_some()
+}
 
 /// The chip, its menu, and the cancel button of an armed switch.
 pub(super) fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<S>, layer: &mut Vec<El>) -> El {
     let trigger = chip(t, spec, label, hooks);
-    let menu = if spec.agents.is_empty() && spec.switch.is_none() {
+    let menu = if (spec.agents.is_empty() && spec.switch.is_none()) || phone_sheet(spec) {
         trigger
     } else {
         menu(spec, hooks).build(t, layer, trigger)

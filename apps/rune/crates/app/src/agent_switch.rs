@@ -88,6 +88,7 @@ impl State {
                 self.acp_step(Event::CancelAgentSwitch(session));
             }
             SwitchAct::Wait => self.close_agent_menu(host, tx),
+            SwitchAct::OpenSheet => self.open_model_sheet(host),
             SwitchAct::CancelTurnAndSwitch => {
                 let Some(config) = self.draft_mut(host).switch_confirm.take() else { return };
                 self.close_agent_menu(host, tx);

@@ -35,6 +35,9 @@ mod host;
 mod ids;
 mod keys;
 mod launch;
+mod model_sheet;
+#[cfg(test)]
+mod model_sheet_tests;
 mod phone;
 mod rail;
 mod rail_forms;
