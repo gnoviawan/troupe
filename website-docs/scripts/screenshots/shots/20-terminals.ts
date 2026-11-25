@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Page } from 'playwright'
+import type { Locator, Page } from 'playwright'
 import { DEMO_BASE_URL, DEMO_TOKEN, DEMO_WORKSPACE_ROOT } from '../demo-server'
 import type { Shot } from '../shot'
 import { openApp } from '../ui'
@@ -60,12 +60,16 @@ async function openPalette(page: Page, query: string): Promise<void> {
   await page.waitForTimeout(500)
 }
 
-async function openSettings(page: Page, category: string): Promise<void> {
+async function openSettings(page: Page, category: string): Promise<Locator> {
   await page.getByRole('button', { name: 'Settings', exact: true }).first().click()
-  const dialog = page.getByRole('dialog').first()
+  const dialog = page.getByRole('dialog', { name: 'Preferences' })
   await dialog.waitFor()
-  await dialog.getByRole('button', { name: category, exact: true }).first().click()
+  await dialog
+    .getByRole('navigation', { name: 'Settings pages' })
+    .getByRole('button', { name: category, exact: true })
+    .click()
   await page.waitForTimeout(800)
+  return dialog
 }
 
 /** Drag-select the first rows of a terminal, then open its right-click menu. */
@@ -193,15 +197,19 @@ export const shots: Shot[] = [
     id: 'terminals-default-shell',
     run: async (page) => {
       await openTerminalsApp(page)
-      await openSettings(page, 'Default Shell')
-      return page.getByRole('dialog').first()
+      await openSettings(page, 'Terminal')
+      const group = page
+        .getByRole('heading', { name: 'New terminals', exact: true })
+        .locator('xpath=ancestor::section[1]')
+      await group.scrollIntoViewIfNeeded()
+      return group
     }
   },
   {
     id: 'terminals-profile-dialog',
     run: async (page) => {
       await openTerminalsApp(page)
-      await openSettings(page, 'Terminal Profiles')
+      await openSettings(page, 'Profiles')
       await page.getByRole('button', { name: 'Add profile' }).click()
       const dialog = page.getByRole('dialog', { name: 'New terminal profile' })
       await dialog.getByPlaceholder('e.g. Node dev').fill('Node dev')
@@ -271,16 +279,19 @@ export const shots: Shot[] = [
     id: 'terminals-appearance-settings',
     run: async (page) => {
       await openTerminalsApp(page)
-      await openSettings(page, 'Terminal Appearance')
-      return page.getByRole('dialog').first()
+      const dialog = await openSettings(page, 'Terminal')
+      await dialog.getByRole('button', { name: /^Advanced/ }).click()
+      await page.waitForTimeout(400)
+      return dialog
     }
   },
   {
     id: 'terminals-behavior-settings',
     run: async (page) => {
       await openTerminalsApp(page)
-      await openSettings(page, 'Behavior')
-      return page.getByRole('dialog').first()
+      // Links live on Preferences in the desktop app only, so the web
+      // capture cannot show the group this shot was for.
+      return await openSettings(page, 'Preferences')
     }
   },
   {

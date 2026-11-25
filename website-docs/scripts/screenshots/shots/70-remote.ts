@@ -134,8 +134,10 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       await page.keyboard.press('Alt+Comma')
-      await page.getByRole('button', { name: 'Behavior', exact: true }).click()
-      const section = page.getByText('Notifications', { exact: true }).locator('..')
+      await page.getByRole('dialog', { name: 'Preferences' }).waitFor()
+      const section = page
+        .getByRole('heading', { name: 'Notifications', exact: true })
+        .locator('xpath=ancestor::section[1]')
       await section.waitFor()
       return section
     }
