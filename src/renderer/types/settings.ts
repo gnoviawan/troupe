@@ -320,109 +320,109 @@ export type KeyboardShortcutsConfig = Record<string, KeyboardShortcut>
 export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcutsConfig = {
   commandPalette: {
     id: 'commandPalette',
-    label: 'Command Palette',
+    label: 'Command palette',
     description: 'Open the command palette for quick actions',
     defaultKey: 'ctrl+k'
   },
   commandPaletteAlt: {
     id: 'commandPaletteAlt',
-    label: 'Command Palette (Alt)',
+    label: 'Command palette (VS Code keys)',
     description: 'Open command palette (VS Code style)',
     defaultKey: 'ctrl+shift+p'
   },
   terminalSearch: {
     id: 'terminalSearch',
-    label: 'Terminal Search',
+    label: 'Search in terminal',
     description: 'Search within terminal output',
     defaultKey: 'ctrl+f'
   },
   commandHistory: {
     id: 'commandHistory',
-    label: 'Command History',
+    label: 'Command history',
     description: 'Search command history',
     defaultKey: 'ctrl+r'
   },
   newProject: {
     id: 'newProject',
-    label: 'New Project',
+    label: 'New project',
     description: 'Create a new project',
     defaultKey: 'ctrl+n'
   },
   newTerminal: {
     id: 'newTerminal',
-    label: 'Agent Launcher',
+    label: 'Agent launcher',
     description: 'Show the agent launcher prompt in the active pane',
     defaultKey: 'ctrl+t'
   },
   newBrowserTab: {
     id: 'newBrowserTab',
-    label: 'New Browser Tab',
+    label: 'New browser tab',
     description: 'Create a new browser tab',
     defaultKey: 'ctrl+shift+n'
   },
   nextTerminal: {
     id: 'nextTerminal',
-    label: 'Next Tab',
+    label: 'Next tab',
     description: 'Switch to next tab (terminal or editor) using the Tauri-safe fallback',
     defaultKey: 'ctrl+pagedown'
   },
   prevTerminal: {
     id: 'prevTerminal',
-    label: 'Previous Tab',
+    label: 'Previous tab',
     description: 'Switch to previous tab (terminal or editor) using the Tauri-safe fallback',
     defaultKey: 'ctrl+pageup'
   },
   zoomIn: {
     id: 'zoomIn',
-    label: 'Zoom In',
+    label: 'Zoom in',
     description: 'Zoom in the entire UI',
     defaultKey: 'ctrl+='
   },
   zoomOut: {
     id: 'zoomOut',
-    label: 'Zoom Out',
+    label: 'Zoom out',
     description: 'Zoom out the entire UI',
     defaultKey: 'ctrl+-'
   },
   zoomReset: {
     id: 'zoomReset',
-    label: 'Reset Zoom',
+    label: 'Reset zoom',
     description: 'Reset the whole-UI zoom to 100%',
     defaultKey: 'ctrl+0'
   },
   sidebarToggle: {
     id: 'sidebarToggle',
-    label: 'Toggle Projects',
+    label: 'Show or hide projects',
     description: 'Expand or collapse the projects sidebar',
     defaultKey: 'ctrl+b'
   },
   closeTab: {
     id: 'closeTab',
-    label: 'Close Tab',
+    label: 'Close tab',
     description: 'Close the active tab (terminal, editor, or browser)',
     defaultKey: 'ctrl+w'
   },
   saveFile: {
     id: 'saveFile',
-    label: 'Save File',
+    label: 'Save file',
     description: 'Save the current editor file',
     defaultKey: 'ctrl+s'
   },
   toggleFileExplorer: {
     id: 'toggleFileExplorer',
-    label: 'Toggle Side Panel',
+    label: 'Show or hide side panel',
     description: 'Show or hide the side panel at the right edge',
     defaultKey: 'ctrl+alt+b'
   },
   fileExplorerRename: {
     id: 'fileExplorerRename',
-    label: 'Rename File',
+    label: 'Rename file',
     description: 'Rename selected file',
     defaultKey: 'f2'
   },
   fileExplorerDelete: {
     id: 'fileExplorerDelete',
-    label: 'Delete Files',
+    label: 'Delete files',
     description: 'Delete selected files',
     defaultKey: 'delete'
   },
@@ -430,37 +430,37 @@ export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcutsConfig = {
   // Worktree shortcuts
   worktreeCreate: {
     id: 'worktreeCreate',
-    label: 'Create Worktree',
+    label: 'Create worktree',
     description: 'Open the new worktree creation modal',
     defaultKey: 'ctrl+shift+alt+n'
   },
   worktreeSwitchNext: {
     id: 'worktreeSwitchNext',
-    label: 'Switch to Next Worktree',
+    label: 'Next worktree',
     description: 'Cycle to the next worktree in the sidebar',
     defaultKey: 'ctrl+shift+arrowdown'
   },
   worktreeSwitchPrev: {
     id: 'worktreeSwitchPrev',
-    label: 'Switch to Previous Worktree',
+    label: 'Previous worktree',
     description: 'Cycle to the previous worktree in the sidebar',
     defaultKey: 'ctrl+shift+arrowup'
   },
   worktreeOpenTerminal: {
     id: 'worktreeOpenTerminal',
-    label: 'Open Terminal in Worktree',
+    label: 'Open terminal in worktree',
     description: 'Spawn a new terminal in the active worktree',
     defaultKey: 'ctrl+shift+alt+t'
   },
   worktreeSwitchRoot: {
     id: 'worktreeSwitchRoot',
-    label: 'Switch to Project Root',
+    label: 'Switch to project root',
     description: 'Switch active context to the project root directory',
     defaultKey: 'ctrl+shift+home'
   },
   colorThemePicker: {
     id: 'colorThemePicker',
-    label: 'Change Color Theme',
+    label: 'Change color theme',
     description: 'Open the color theme picker with live preview',
     defaultKey: 'ctrl+alt+t'
   },
