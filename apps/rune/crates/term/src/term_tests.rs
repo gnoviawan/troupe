@@ -51,3 +51,22 @@ fn answers_cursor_reports() {
     t.advance(b"ab\x1b[6n\x1b[c");
     assert_eq!(t.take_replies(), b"\x1b[1;3R\x1b[?1;2c");
 }
+
+#[test]
+fn a_reset_keeps_the_answers_owed_before_it() {
+    let mut t = Term::new(10, 3);
+    t.advance(b"ab\x1b[6n\x1bc");
+    assert_eq!(t.take_replies(), b"\x1b[1;3R");
+    assert_eq!(text(&t, 0), "");
+}
+
+#[test]
+fn reverse_wrap_backspace_changes_the_unwrapped_line() {
+    let mut t = Term::new(4, 3);
+    t.advance(b"abcdef\x1b[?45h");
+    let before = t.screen_line(1).map(|l| l.rev);
+    t.advance(b"\r\x08");
+    let line = t.screen_line(1).expect("row 1");
+    assert!(!line.wrapped);
+    assert_ne!(Some(line.rev), before, "a line whose wrap flag cleared has a new revision");
+}

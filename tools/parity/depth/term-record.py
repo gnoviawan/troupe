@@ -99,7 +99,12 @@ def record(session, cwd):
         os.chdir(cwd)
         env = dict(os.environ, TERM="xterm-256color", LANG="C.UTF-8", LC_ALL="C.UTF-8", HOME="/tmp")
         env.pop("PROMPT_COMMAND", None)
-        os.execvpe(session["argv"][0], session["argv"], env)
+        try:
+            os.execvpe(session["argv"][0], session["argv"], env)
+        except OSError as error:
+            # The child must not unwind into main, whose cleanup is the parent's.
+            print(f"cannot run {session['argv'][0]}: {error}", file=sys.stderr)
+            os._exit(127)
     out = bytearray()
     checkpoints = []
 
@@ -128,11 +133,12 @@ def record(session, cwd):
         drain(QUIET * 2, session.get("settle", 0.0))
         if checkpoint:
             checkpoints.append(len(out))
-    try:
+    ended, status = os.waitpid(pid, os.WNOHANG)
+    if ended == 0:
         os.kill(pid, 9)
-    except ProcessLookupError:
-        pass
-    os.waitpid(pid, 0)
+        os.waitpid(pid, 0)
+    elif os.waitstatus_to_exitcode(status) != 0:
+        sys.exit(f"{session['argv'][0]} exited with {os.waitstatus_to_exitcode(status)}; no fixture written")
     return bytes(out), checkpoints
 
 
