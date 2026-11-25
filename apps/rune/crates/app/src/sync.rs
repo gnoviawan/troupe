@@ -271,6 +271,7 @@ impl State {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
+                tag @ (crate::host::Fetch::ExplorerList(_) | crate::host::Fetch::ExplorerOp(_)) => self.explorer_fetched(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }

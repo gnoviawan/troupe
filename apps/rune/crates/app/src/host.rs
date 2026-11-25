@@ -21,9 +21,10 @@ pub enum Fetch {
     FileRead(String),
     /// `/fs/write` of an editor's buffer.
     FileWrite { path: String, content: String },
-    /// An explorer change (`/fs/write`, `/fs/mkdir`, `/fs/rename`, `/fs/delete`) and the folder to list
-    /// again after it.
-    FileOp { what: String, refresh: Vec<String> },
+    /// `/fs/ls` of a folder the explorer opened.
+    ExplorerList(String),
+    /// An explorer change (`/fs/write`, `/fs/mkdir`, `/fs/rename`, `/fs/delete`).
+    ExplorerOp(model::explorer::Op),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

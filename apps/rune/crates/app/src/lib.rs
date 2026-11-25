@@ -31,6 +31,7 @@ mod composer_sheet;
 mod composer_view;
 mod controls;
 mod editor_host;
+mod explorer_host;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;
@@ -140,6 +141,8 @@ pub struct State {
     /// The open text files and their editor tabs.
     pub editors: ui::editor::Editors,
     pub(crate) editor_host: editor_host::EditorHost,
+    pub explorer: ui::explorer::Explorer,
+    pub(crate) explorer_host: explorer_host::ExplorerHost,
     pub(crate) sync: sync::Sync,
 }
 
@@ -189,6 +192,8 @@ impl Default for State {
             terms: terminal::TerminalUi::default(),
             editors: ui::editor::Editors::default(),
             editor_host: editor_host::EditorHost::default(),
+            explorer: ui::explorer::Explorer::default(),
+            explorer_host: explorer_host::ExplorerHost::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -281,6 +286,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     changed |= retried | waited | gave_up;
     state.editors.now = editor_host::epoch_ms();
     state.sync_editors();
+    state.sync_explorer();
     state.sync_drafts(now);
     let waits = [
         state.toasts.next_expiry(),
