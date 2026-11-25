@@ -4,8 +4,8 @@
 //! `SessionMetadata` / `SessionIndexEntry`. The model is captured at creation
 //! (registration), refreshed on `session/load` / `session/resume`
 //! ([`SessionPersistence::record_session_model`]) and derived from every
-//! durable `config_options_update` record by `append_record`
-//! ([`snapshot_from_record`]). Host-internal: no command, no route.
+//! durable `config_options_update` and `models_update` record by
+//! `append_record` ([`snapshot_from_record`]). Host-internal: no command, no route.
 
 use agent_client_protocol::schema::v1::SessionConfigOption;
 
@@ -28,10 +28,16 @@ pub(crate) fn snapshot_from_model_state(state: &SessionModelState) -> SessionMod
     }
 }
 
-/// Derive the model from a durable `config_options_update` record. `None`
-/// for any other record type, unparseable options, or no Model option — the
-/// caller then keeps the previous value.
+/// Derive the model from a durable `config_options_update` or
+/// `models_update` record. `None` for any other record type, unparseable
+/// options or models, or no Model option — the caller then keeps the previous
+/// value.
 pub(crate) fn snapshot_from_record(record: &PersistedEventRecord) -> Option<SessionModelSnapshot> {
+    if record.type_ == "models_update" {
+        let models = record.payload.get("models")?.clone();
+        let state: SessionModelState = serde_json::from_value(models).ok()?;
+        return Some(snapshot_from_model_state(&state));
+    }
     if record.type_ != "config_options_update" {
         return None;
     }

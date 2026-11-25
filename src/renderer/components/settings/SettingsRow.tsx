@@ -74,7 +74,7 @@ export const SettingsRow = forwardRef<HTMLDivElement, SettingsRowProps>(function
           <Label
             htmlFor={htmlFor}
             className={cn(
-              'text-sm font-medium',
+              'text-xs font-medium leading-4',
               disabled ? 'text-muted-foreground' : 'text-foreground'
             )}
           >
@@ -83,7 +83,7 @@ export const SettingsRow = forwardRef<HTMLDivElement, SettingsRowProps>(function
         ) : (
           <div
             className={cn(
-              'text-sm font-medium',
+              'text-xs font-medium leading-4',
               disabled ? 'text-muted-foreground' : 'text-foreground'
             )}
           >
@@ -91,7 +91,7 @@ export const SettingsRow = forwardRef<HTMLDivElement, SettingsRowProps>(function
           </div>
         )}
         {description && (
-          <p id={descriptionId} className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+          <p id={descriptionId} className="mt-0.5 text-xs leading-4 text-muted-foreground">
             {description}
           </p>
         )}

@@ -7,6 +7,7 @@ import { beginShortcutCapture, endShortcutCapture } from '@/lib/shortcut-capture
 import {
   findConflictingShortcut,
   formatKeyForDisplay,
+  formatKeyParts,
   normalizeKeyEvent
 } from '@/stores/keyboard-shortcuts-store'
 import type { KeyboardShortcut, KeyboardShortcutsConfig } from '@/types/settings'
@@ -139,57 +140,63 @@ export function ShortcutRecorder({
   }, [isRecording, handleKeyDown])
 
   if (variant === 'row') {
-    const keys = (isRecording && !pendingKey ? '' : displayKey).split('+').filter(Boolean)
+    const keys = formatKeyParts(isRecording && !pendingKey ? '' : displayKey)
     return (
-      <div data-settings-row="" className="flex flex-col gap-2 px-4 py-3">
-        <div className="flex items-center gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground">{shortcut.label}</div>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {shortcut.description}
-              {isCustomized && ` Default: ${formatKeyForDisplay(shortcut.defaultKey)}`}
-            </p>
+      <div
+        data-settings-row=""
+        className="flex flex-col gap-2 py-2 pl-4 pr-3"
+        title={shortcut.description}
+      >
+        <div className="flex min-h-6 items-center gap-3">
+          <div className="min-w-0 flex-1 truncate text-xs leading-4 text-foreground">
+            {shortcut.label}
           </div>
           {isCustomized && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className={`flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${FOCUS_RING_CLASS}`}
-              title="Reset to default"
-              aria-label={`Reset ${shortcut.label} shortcut to default`}
-            >
-              <RotateCcw size={13} />
-            </button>
+            <>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                Default {formatKeyForDisplay(shortcut.defaultKey)}
+              </span>
+              <button
+                type="button"
+                onClick={handleReset}
+                className={`flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${FOCUS_RING_CLASS}`}
+                title="Reset to default"
+                aria-label={`Reset ${shortcut.label} shortcut to default`}
+              >
+                <RotateCcw size={13} />
+              </button>
+            </>
           )}
           <div
             ref={inputRef}
             tabIndex={0}
             role="button"
             data-shortcut-recorder="true"
+            data-recording={isRecording ? 'true' : undefined}
             aria-label={`Record ${shortcut.label} shortcut`}
             onClick={handleClick}
             onBlur={handleBlur}
             onKeyDown={handleKeyboardActivate}
-            className={`flex min-h-7 shrink-0 cursor-pointer items-center gap-1 rounded-md border px-1 py-0.5 transition-colors duration-150 ease-out ${FOCUS_RING_CLASS} ${
+            className={`flex min-h-6 shrink-0 cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 transition-colors duration-150 ease-out ${FOCUS_RING_CLASS} ${
               isRecording
-                ? 'border-ring bg-background px-2'
-                : conflict
-                  ? 'border-destructive'
-                  : 'border-transparent hover:bg-foreground/[0.03]'
+                ? `bg-background px-2 ${conflict ? 'shadow-[0_0_0_1px_oklch(var(--destructive))]' : 'shadow-[0_0_0_1px_oklch(var(--ring))]'}`
+                : 'hover:bg-foreground/[0.04]'
             }`}
           >
             {keys.length === 0 ? (
-              <span className="text-xs text-muted-foreground">Press keys…</span>
+              <span className="text-xs text-muted-foreground">
+                {isRecording ? 'Press keys…' : 'Not set'}
+              </span>
             ) : (
               keys.map((part, index) => (
                 <kbd
                   // A part can repeat only in theory; the index keeps keys unique.
                   key={`${part}-${index}`}
                   className={`keycap inline-flex h-5 min-w-5 items-center justify-center rounded px-1.5 font-sans text-xs font-medium ${
-                    isCustomized ? 'text-foreground' : 'text-secondary-foreground'
+                    isCustomized || pendingKey ? 'text-foreground' : 'text-secondary-foreground'
                   }`}
                 >
-                  {formatKeyForDisplay(part)}
+                  {part}
                 </kbd>
               ))
             )}
@@ -202,7 +209,7 @@ export function ShortcutRecorder({
               <Button
                 type="button"
                 size="xs"
-                variant="outline"
+                variant="secondary"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={handleConfirmWithConflict}
               >
@@ -245,6 +252,7 @@ export function ShortcutRecorder({
             tabIndex={0}
             role="button"
             data-shortcut-recorder="true"
+            data-recording={isRecording ? 'true' : undefined}
             aria-label={`Record ${shortcut.label} shortcut`}
             onClick={handleClick}
             onBlur={handleBlur}
@@ -309,6 +317,7 @@ export function ShortcutRecorder({
           tabIndex={0}
           role="button"
           data-shortcut-recorder="true"
+          data-recording={isRecording ? 'true' : undefined}
           aria-label={`Record ${shortcut.label} shortcut`}
           onClick={handleClick}
           onBlur={handleBlur}

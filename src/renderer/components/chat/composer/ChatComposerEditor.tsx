@@ -5,6 +5,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useRef } from 'react'
 import {
+  CANVAS_PILL_NODE,
   CMD_PILL_NODE,
   CONTEXT_PILL_NODE,
   CONVERSATION_PILL_NODE,
@@ -17,6 +18,7 @@ import {
 import { draftFromTokens } from '@/lib/composer/draft-from-tokens'
 import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
+import { CanvasPill } from './CanvasPillNode'
 import { CommandPill } from './CommandPillNode'
 import { ConversationPill } from './ConversationPillNode'
 import { FilePill } from './FilePillNode'
@@ -94,7 +96,8 @@ const ATOM_PILL_NODES = new Set([
   FILE_PILL_NODE,
   CONTEXT_PILL_NODE,
   CONVERSATION_PILL_NODE,
-  TOOL_PILL_NODE
+  TOOL_PILL_NODE,
+  CANVAS_PILL_NODE
 ])
 
 /**
@@ -296,6 +299,7 @@ export function ChatComposerEditor({
         SelectionContextPill,
         ConversationPill,
         ToolPill,
+        CanvasPill,
         createComposerKeymap(beforeKeyDownRef),
         Placeholder.configure({
           placeholder: () => placeholderRef.current,

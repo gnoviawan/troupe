@@ -39,6 +39,7 @@ import type {
   McpServer,
   McpToolInfo,
   MessageChunkEvent,
+  ModelsUpdateEvent,
   ModeUpdateEvent,
   PermissionOption,
   PermissionRequestEvent,
@@ -1150,6 +1151,7 @@ export interface AcpState {
   _onPlanUpdate: (e: PlanUpdateEvent) => void
   _onCommandsUpdate: (e: CommandsUpdateEvent, point?: LogPoint) => void
   _onModeUpdate: (e: ModeUpdateEvent) => void
+  _onModelsUpdate: (e: ModelsUpdateEvent) => void
   _onConfigOptionsUpdate: (e: ConfigOptionsUpdateEvent) => void
   _onSessionInfoUpdate: (e: SessionInfoUpdateEvent) => void
   _onUsageUpdate: (e: UsageUpdateEvent) => void

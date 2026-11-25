@@ -66,7 +66,7 @@ describe('getDefaultKeyboardShortcuts (#858 web-safe defaults)', () => {
     expect(defaults.toggleFileExplorer.defaultKey).toBe('ctrl+alt+b')
     expect(defaults.colorThemePicker.defaultKey).toBe('ctrl+alt+t')
     expect(defaults.newTerminal.id).toBe('newTerminal')
-    expect(defaults.newTerminal.label).toBe('Agent Launcher')
+    expect(defaults.newTerminal.label).toBe('Agent launcher')
     expect(defaults.newTerminal.customKey).toBeUndefined()
   })
 

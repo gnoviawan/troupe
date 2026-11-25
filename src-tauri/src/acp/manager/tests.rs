@@ -1,6 +1,6 @@
 use super::*;
-use tokio_util::sync::CancellationToken;
 use crate::acp::PersistedEventRecord;
+use tokio_util::sync::CancellationToken;
 
 #[test]
 fn fallback_namespace_uses_safe_identity_and_excludes_secrets() {
@@ -86,16 +86,32 @@ fn summarized_thinking_meta_asks_for_a_visible_summary() {
 #[test]
 fn headless_options_limit_claude_tools_and_deny_protected_paths() {
     use agent_client_protocol::schema::v1::ToolKind;
-    let allowlist =
-        crate::acp::session::ToolAllowlist::new([ToolKind::Search, ToolKind::Read, ToolKind::Other]);
-    let meta = Value::Object(with_headless_options(summarized_thinking_meta(), &allowlist));
+    let allowlist = crate::acp::session::ToolAllowlist::new([
+        ToolKind::Search,
+        ToolKind::Read,
+        ToolKind::Other,
+    ]);
+    let meta = Value::Object(with_headless_options(
+        summarized_thinking_meta(),
+        &allowlist,
+    ));
     let options = &meta["claudeCode"]["options"];
     assert_eq!(options["thinking"]["display"], "summarized");
     assert_eq!(options["settingSources"], serde_json::json!([]));
     assert_eq!(options["allowDangerouslySkipPermissions"], false);
-    assert_eq!(options["tools"], serde_json::json!(["Read", "Grep", "Glob"]));
-    let deny = options["settings"]["permissions"]["deny"].as_array().unwrap();
-    for rule in ["Read(**/.env*)", "Edit(**/.claude/**)", "Edit(**/.git/**)", "Read(**/.mcp.json)"] {
+    assert_eq!(
+        options["tools"],
+        serde_json::json!(["Read", "Grep", "Glob"])
+    );
+    let deny = options["settings"]["permissions"]["deny"]
+        .as_array()
+        .unwrap();
+    for rule in [
+        "Read(**/.env*)",
+        "Edit(**/.claude/**)",
+        "Edit(**/.git/**)",
+        "Read(**/.mcp.json)",
+    ] {
         assert!(deny.contains(&serde_json::json!(rule)), "{rule}");
     }
 
@@ -103,7 +119,10 @@ fn headless_options_limit_claude_tools_and_deny_protected_paths() {
         Meta::new(),
         &crate::acp::session::ToolAllowlist::default(),
     ));
-    assert_eq!(none["claudeCode"]["options"]["tools"], serde_json::json!([]));
+    assert_eq!(
+        none["claudeCode"]["options"]["tools"],
+        serde_json::json!([])
+    );
 }
 
 #[tokio::test]
@@ -425,9 +444,8 @@ fn acp_err_wire_string_drops_the_error_data() {
     assert!(!wire.contains("sk-test"), "{wire}");
     let untagged = agent_client_protocol::Error::internal_error().data(data.clone());
     assert_eq!(acp_err_wire_string(untagged), "Internal error");
-    let provider = agent_client_protocol::Error::new(-32603, "rate limited").data(
-        serde_json::json!({"status": 429, "headers": {"authorization": "Bearer sk-test"}}),
-    );
+    let provider = agent_client_protocol::Error::new(-32603, "rate limited")
+        .data(serde_json::json!({"status": 429, "headers": {"authorization": "Bearer sk-test"}}));
     let wire = acp_err_wire_string(provider);
     assert!(wire.ends_with(": rate limited"), "{wire}");
     assert!(!wire.contains("sk-test"), "{wire}");
@@ -518,9 +536,9 @@ fn legacy_model_state() -> SessionModelState {
 }
 
 /// Issue #822: a reopen whose result carries only the legacy `models` field
-/// surfaces that list in the outcome and marks the session read-only.
+/// surfaces that list in the outcome and marks the session legacy-only.
 #[tokio::test]
-async fn session_reopen_uses_legacy_models_and_marks_session_read_only() {
+async fn session_reopen_uses_legacy_models_and_marks_the_session_legacy() {
     use crate::acp::legacy_models::WithLegacyModels;
     let state = Mutex::new(DriverState::new());
     let outcome = run_session_reopen("session/load", "sess-legacy", "/work", &state, async {
@@ -534,6 +552,16 @@ async fn session_reopen_uses_legacy_models_and_marks_session_read_only() {
 
     assert_eq!(outcome.models, Some(legacy_model_state()));
     assert!(state.lock().is_legacy_models("sess-legacy"));
+    // A switch the agent accepted moves the kept list's current model.
+    let switched = state
+        .lock()
+        .switch_legacy_model("sess-legacy", "legacy-1")
+        .expect("legacy list kept");
+    assert_eq!(switched, legacy_model_state());
+    assert_eq!(
+        state.lock().switch_legacy_model("sess-other", "legacy-1"),
+        None
+    );
     // Closing the session forgets the marker.
     state.lock().remove_session_root("sess-legacy");
     assert!(!state.lock().is_legacy_models("sess-legacy"));
@@ -548,7 +576,9 @@ async fn session_reopen_config_model_option_wins_over_legacy_models() {
         SessionConfigOptionCategory, SessionConfigSelectOption,
     };
     let state = Mutex::new(DriverState::new());
-    state.lock().mark_legacy_models("sess-cfg".to_string());
+    state
+        .lock()
+        .mark_legacy_models("sess-cfg".to_string(), legacy_model_state());
     let model_option = SessionConfigOption::select(
         "model",
         "Model",
@@ -2068,14 +2098,21 @@ async fn record_agent_switch_shares_one_seq_with_the_live_event() {
         Arc::clone(&persistence),
     ));
     let sinks: Vec<Arc<dyn EventSink>> = vec![relay.clone()];
-    let (_client, mut rx, _replay, _head) = relay.subscribe("sess-coll", None, None, &CancellationToken::new()).await;
+    let (_client, mut rx, _replay, _head) = relay
+        .subscribe("sess-coll", None, None, &CancellationToken::new())
+        .await;
     let chunk = |text: &str| TestPayload {
         agent_id: "a".to_string(),
         session_id: "sess-coll".to_string(),
         text: text.to_string(),
     };
 
-    events::fan_out(&sinks, Some("sess-coll"), "acp:message_chunk", &chunk("first"));
+    events::fan_out(
+        &sinks,
+        Some("sess-coll"),
+        "acp:message_chunk",
+        &chunk("first"),
+    );
     record_agent_switch(
         &persistence,
         &sinks,
@@ -2091,7 +2128,12 @@ async fn record_agent_switch_shares_one_seq_with_the_live_event() {
     )
     .await
     .unwrap();
-    events::fan_out(&sinks, Some("sess-coll"), "acp:message_chunk", &chunk("late"));
+    events::fan_out(
+        &sinks,
+        Some("sess-coll"),
+        "acp:message_chunk",
+        &chunk("late"),
+    );
     persistence.flush_session("sess-coll").await.unwrap();
 
     let mut live = Vec::new();
@@ -2112,7 +2154,10 @@ async fn record_agent_switch_shares_one_seq_with_the_live_event() {
         .into_iter()
         .map(|record| (record.seq, record.type_))
         .collect();
-    assert_eq!(durable, live, "durable log and live stream agree on every seq");
+    assert_eq!(
+        durable, live,
+        "durable log and live stream agree on every seq"
+    );
 
     persistence.shutdown().await.unwrap();
     let _ = std::fs::remove_dir_all(root);
@@ -2143,7 +2188,9 @@ async fn record_agent_switch_reaches_other_sinks_once_and_stays_one_durable_reco
     ));
     let capture = Arc::new(CapturingSink::default());
     let sinks: Vec<Arc<dyn EventSink>> = vec![capture.clone(), relay.clone()];
-    let (_client, mut rx, _replay, _head) = relay.subscribe("sess-fan", None, None, &CancellationToken::new()).await;
+    let (_client, mut rx, _replay, _head) = relay
+        .subscribe("sess-fan", None, None, &CancellationToken::new())
+        .await;
 
     record_agent_switch(
         &persistence,
@@ -2721,7 +2768,13 @@ fn failed_turn_emits_agent_error_then_one_terminator() {
     let deadline = events::AcpErrorDetail::from(timeouts::TurnTimeout {
         message: "turn idle timeout: no agent activity for 5s".to_string(),
     });
-    emit_turn_outcome(&sinks, &agent, &session, Some("t1".to_string()), &Err(deadline));
+    emit_turn_outcome(
+        &sinks,
+        &agent,
+        &session,
+        Some("t1".to_string()),
+        &Err(deadline),
+    );
     emit_turn_outcome(
         &sinks,
         &agent,
@@ -2866,9 +2919,15 @@ async fn transport_closed_outcome_is_left_to_the_interrupted_marker_on_shutdown(
     let rpc: Result<StopReason, _> = Err(events::AcpErrorDetail::from("rpc failed".to_string()));
     let ok: Result<StopReason, events::AcpErrorDetail> = Ok(StopReason::EndTurn);
 
-    assert!(!outcome_owned_by_process_shutdown(Some(&persistence), &closed));
+    assert!(!outcome_owned_by_process_shutdown(
+        Some(&persistence),
+        &closed
+    ));
     persistence.begin_process_shutdown();
-    assert!(outcome_owned_by_process_shutdown(Some(&persistence), &closed));
+    assert!(outcome_owned_by_process_shutdown(
+        Some(&persistence),
+        &closed
+    ));
     assert!(!outcome_owned_by_process_shutdown(Some(&persistence), &rpc));
     assert!(!outcome_owned_by_process_shutdown(Some(&persistence), &ok));
     assert!(!outcome_owned_by_process_shutdown(None, &closed));
@@ -3487,9 +3546,10 @@ async fn delete_of_a_reopened_quick_chat_stops_the_live_agent() {
     let _guard = crate::acp::quick_chat::set_quick_chat_root_for_test(root.path());
     let (chat_id, folder) = crate::acp::quick_chat::prepare_new_chat_dir().expect("chat folder");
     let store = tempfile::tempdir().expect("session store");
-    let persistence = crate::acp::session_persistence::SessionPersistence::open(store.path().to_path_buf())
-        .await
-        .expect("persistence");
+    let persistence =
+        crate::acp::session_persistence::SessionPersistence::open(store.path().to_path_buf())
+            .await
+            .expect("persistence");
     let session_id = "sess-reopen";
     persistence
         .register_quick_session(

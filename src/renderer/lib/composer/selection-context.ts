@@ -70,7 +70,7 @@ const LANGUAGE_STRIP_RE = /[^\w+#.-]/g
 const FENCE_LINE_RE = /^(`{3,})([\w+#.-]*)$/
 const MARKER_RE = /(\\*)\[Context (\d+)\]/g
 const ANY_TOKEN_RE =
-  /[\uE000\uE002\uE004\uE006\uE008\uE00A][^\uE001\uE003\uE005\uE007\uE009\uE00B]*[\uE001\uE003\uE005\uE007\uE009\uE00B]/g
+  /[\uE000\uE002\uE004\uE006\uE008\uE00A\uE00C\uE00E][^\uE001\uE003\uE005\uE007\uE009\uE00B\uE00D\uE00F]*[\uE001\uE003\uE005\uE007\uE009\uE00B\uE00D\uE00F]/g
 
 export function selectionContextLabel(index: number): string {
   return `Context ${index}`

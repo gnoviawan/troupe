@@ -8,15 +8,13 @@ import type {
   SessionConfigOption,
   SessionModeState
 } from '@/lib/acp-api'
+import { hasCanvasTokens } from '@/lib/composer/canvas-tokens'
 import { docOffsetToDisplayOffset, SKILL_PAD_DEFAULT } from '@/lib/composer/doc-to-prompt'
-import { fileMentionBlocks } from '@/lib/composer/retry-wire'
+import { fileMentionBlocks, resolveMentionContexts } from '@/lib/composer/retry-wire'
 import { hasSelectionContexts } from '@/lib/composer/selection-context'
 import { hasToolTokens } from '@/lib/composer/tool-tokens'
 import { composerWireText } from '@/lib/composer/wire-text'
-import {
-  type ConversationContexts,
-  resolveConversationContexts
-} from '@/lib/conversation-transcript'
+import type { ConversationContexts } from '@/lib/conversation-transcript'
 import { logFrontendError } from '@/lib/log-api'
 import {
   extractCommandNames,
@@ -112,6 +110,8 @@ export interface UseChatComposerArgs {
    * `mentions.update` after programmatic splices (the editor's live
    * `onCaretChange` feeds it on natural typing). */
   mentions: ComposerMentions
+  /** The chat's project: canvas pills are read from its canvas at send time. */
+  projectId: string | null | undefined
   /**
    * Schedule a caret restore (display-string offset → doc pos) after a
    * programmatic value splice, with rAF cleanup. Provided by the host's
@@ -152,6 +152,8 @@ export interface ChatPromptParts {
    */
   fileBlocks: ContentBlock[]
   hasConversations: boolean
+  /** True when the value carries canvas-layer pills (their summaries ride in `contextBlocks`). */
+  hasCanvas: boolean
   /** True when the value carries Troupe tool pills (display keeps the tokens). */
   hasTools: boolean
   contextBlocks: ContentBlock[]
@@ -228,6 +230,7 @@ export function useChatComposer(args: UseChatComposerArgs): UseChatComposerResul
     onSetConfig,
     onSetMode,
     mentions,
+    projectId,
     scheduleRestoreCaret
   } = args
 
@@ -369,10 +372,10 @@ export function useChatComposer(args: UseChatComposerArgs): UseChatComposerResul
     [slashOpen, slashSections.length, slashMenuRef, mentions, disabled, setValue, editorRef]
   )
 
-  const conversationContexts = useCallback((): Promise<ConversationContexts> | null => {
-    const refs = extractConversationRefs(value)
-    return refs.length > 0 ? resolveConversationContexts(refs) : null
-  }, [value])
+  const conversationContexts = useCallback(
+    (): Promise<ConversationContexts> | null => resolveMentionContexts(value, projectId),
+    [value, projectId]
+  )
 
   const buildPromptParts = useCallback(
     (contexts?: ConversationContexts): ChatPromptParts => {
@@ -417,6 +420,7 @@ export function useChatComposer(args: UseChatComposerArgs): UseChatComposerResul
         displayTrimmed: displayWithCommand.trim(),
         fileBlocks,
         hasConversations: conversationRefs.length > 0,
+        hasCanvas: hasCanvasTokens(value),
         hasTools: hasToolTokens(value),
         contextBlocks: contexts?.blocks ?? []
       }

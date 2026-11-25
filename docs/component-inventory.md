@@ -70,7 +70,7 @@ Supporting these are shared layout, navigation, modal, and design-system compone
 - `chat/ChatHistoryTab.tsx` — desktop sidebar chat history (recency groups, lazy window, row delete); exports `ChatDeleteConfirmDialog`, the delete confirm it shares with the mobile Recents list
 - `chat/use-chat-history-entries.ts` — the chat history derivation both lists share: ADR 0002 scoping, query filter on the displayed title, settled-count announcement, lazy window, recency groups, open and delete (the caller names the delete log source)
 - `chat/chat-agent-prose.tsx` — markdown renderer for agent replies (`AgentProse`) with the Streamdown plugin set, external-link confirm modal, inline `termul-image` and `termul-file-path` renderers; split out of `ChatMessage.tsx` to keep it under the file-size limit
-- `chat/ChatInputBar.tsx` — composer with slash commands, `@`-file mentions, config/mode chips, and staged-attachment badges
+- `chat/ChatInputBar.tsx` — composer with slash commands, `@` mentions (files, folders, conversations, canvas layers), config/mode chips, and staged-attachment badges
 - `chat/new-chat/open-new-chat.ts` — `openNewChat`: the one way to start a chat. For a project it opens the composer (the agent launcher) in the pane, and the agent starts on Send; with no project it opens an empty quick chat (`openNewQuickChat`) on the last picked agent and its saved options
 - `chat/new-chat/send-from-chat-start.ts` — applies an empty chat's context-row pick (another folder or a new worktree) on its first send through `launchChat`
 - `chat/ChatStartContextRow.tsx` — the empty chat's context row: the launcher's interactive workspace and base-branch row in a git project (`use-chat-start-pick.ts`), else read-only
