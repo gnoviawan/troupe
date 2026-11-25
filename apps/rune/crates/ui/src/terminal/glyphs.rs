@@ -145,24 +145,37 @@ pub fn draw(shape: Shape, c: char, x: f32, w: f32, h: f32, color: Color) -> Shap
     let (right, bottom) = (x + w, h);
     if let Some(a) = arms(c) {
         let mut s = shape;
-        // Up, right, down, left: the arm from the centre to the edge, as a filled band.
+        // Up, right, down, left: each arm is one band (light, heavy) or two (double) from the
+        // edge to the centre. How far past the centre a band reaches (in points, negative
+        // short of it) depends on the arms across it, so corners and junctions join as
+        // xterm.js draws them: a double line stops at the crossing arm's near line when that
+        // arm is double, and runs to its far line otherwise.
         for (i, &weight) in a.iter().enumerate() {
             if weight == N {
                 continue;
             }
-            let bands: &[(f32, f32)] = match weight {
-                L => &[(0.0, 1.0)],
-                H => &[(-0.5, 1.5)],
-                _ => &[(-1.0, 0.0), (1.0, 2.0)],
+            let through = a[(i + 2) % 4] != N;
+            // The perpendicular arms on the side of the band nearer 0 (up or left), then the other.
+            let (first, second) = if i % 2 == 1 { (a[0], a[2]) } else { (a[3], a[1]) };
+            let double = |near: u8, far: u8| if near == D { -1.0 } else if through || far == D { 1.0 } else { 0.0 };
+            let single = if (first == D || second == D) && !through {
+                -1.0
+            } else if first == H || second == H {
+                1.0
+            } else {
+                0.0
             };
-            // A double arm stops at the far line of the crossing arm so corners join.
-            let reach = if weight == D { 2.0 } else { 1.0 };
-            for &(lo, hi) in bands {
+            let bands: [(f32, f32, f32); 2] = match weight {
+                L => [(0.0, 1.0, single), (0.0, 0.0, 0.0)],
+                H => [(-1.0, 2.0, single), (0.0, 0.0, 0.0)],
+                _ => [(-1.0, 0.0, double(first, second)), (1.0, 2.0, double(second, first))],
+            };
+            for (lo, hi, t) in bands.into_iter().filter(|b| b.1 > b.0) {
                 s = match i {
-                    0 => rect(s, cx + lo, 0.0, cx + hi, cy + reach, color),
-                    1 => rect(s, cx - reach + 1.0, cy + lo, right, cy + hi, color),
-                    2 => rect(s, cx + lo, cy - reach + 1.0, cx + hi, bottom, color),
-                    _ => rect(s, x, cy + lo, cx + reach, cy + hi, color),
+                    0 => rect(s, cx + lo, 0.0, cx + hi, cy + t + 1.0, color),
+                    1 => rect(s, cx - t, cy + lo, right, cy + hi, color),
+                    2 => rect(s, cx + lo, cy - t, cx + hi, bottom, color),
+                    _ => rect(s, x, cy + lo, cx + t + 1.0, cy + hi, color),
                 };
             }
         }
