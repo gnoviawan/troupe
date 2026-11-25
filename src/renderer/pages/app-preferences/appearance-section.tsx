@@ -53,7 +53,7 @@ export function AppearanceSection({
   handleTerminalUrlOpenModeChange
 }: AppearanceSectionProps): React.JSX.Element {
   return (
-    <SettingsSection id="appearance">
+    <SettingsSection id="terminal">
       <SettingsGroup title="Text">
         <SettingsCard>
           <SettingsRow

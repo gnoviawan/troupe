@@ -20,7 +20,7 @@ export function NotificationsSection({
   handleNotifyOnAgentChatNeedsYouToggle
 }: NotificationsSectionProps): React.JSX.Element {
   return (
-    <SettingsSection id="notifications">
+    <SettingsSection id="preferences">
       <SettingsGroup title="Terminal">
         <SettingsCard>
           <SettingsSwitchRow

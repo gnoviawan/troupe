@@ -96,7 +96,7 @@ export function UpdatesSection({
   ].join(' · ')
 
   return (
-    <SettingsSection id="updates">
+    <SettingsSection id="about">
       <SettingsGroup title="Version">
         {updateAvailable && version && (
           <SettingsNotice

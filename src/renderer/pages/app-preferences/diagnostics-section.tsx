@@ -42,7 +42,7 @@ export function DiagnosticsSection(): React.JSX.Element {
   const isDesktop = isTauriContext()
 
   return (
-    <SettingsSection id="diagnostics">
+    <SettingsSection id="about">
       <SettingsGroup title="Application log">
         <SettingsCard>
           <ActionRow

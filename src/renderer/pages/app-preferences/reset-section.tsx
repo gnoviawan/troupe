@@ -11,7 +11,7 @@ interface ResetSectionProps {
 
 export function ResetSection({ setIsResetDialogOpen }: ResetSectionProps): React.JSX.Element {
   return (
-    <SettingsSection id="reset">
+    <SettingsSection id="about">
       <SettingsGroup
         title={<span className="text-destructive">Danger zone</span>}
         footnote="To reset only keyboard shortcuts, use Keyboard shortcuts → Reset all shortcuts."

@@ -24,7 +24,7 @@ export function ShellSection({
   const value = shellSelectValue(defaultShell, availableShells)
   const options = shellSelectOptions(value, availableShells, 'System default')
   return (
-    <SettingsSection id="shell">
+    <SettingsSection id="terminal">
       <SettingsGroup title="Default shell">
         <SettingsCard>
           <SettingsRow

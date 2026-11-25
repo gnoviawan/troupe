@@ -234,7 +234,7 @@ describe('AppPreferences editor auto-save controls (GH-539)', () => {
 
   it('toggling the auto-save switch writes editorAutoSave (with correct negation)', async () => {
     renderPage()
-    goTo('Editor')
+    goTo('Preferences')
 
     const toggle = await screen.findByRole('switch', { name: 'Auto save' })
     expect(toggle).toHaveAttribute('aria-checked', 'false')
@@ -253,7 +253,7 @@ describe('AppPreferences editor auto-save controls (GH-539)', () => {
 
   it('changing the delay select writes editorAutoSaveDelayMs and is disabled while off', async () => {
     renderPage()
-    goTo('Editor')
+    goTo('Preferences')
 
     const select = await screen.findByLabelText('Auto save delay')
     expect(select).toBeDisabled()
@@ -280,7 +280,7 @@ describe('AppPreferences idle chat window', () => {
 
   it('saves Keep idle chats and pushes the window to the host', async () => {
     renderPage()
-    goTo('Agent chats')
+    goTo('Agents')
     fireEvent.change(await screen.findByLabelText('Close idle chats after'), {
       target: { value: '7200' }
     })
@@ -305,7 +305,7 @@ describe('AppPreferences Sub-agents page', () => {
   it.each([
     ['desktop', true],
     ['web', false]
-  ])('lists Sub-agents right after Agent chats on %s', (_runtime, isTauri) => {
+  ])('lists Sub-agents right after Agents on %s', (_runtime, isTauri) => {
     tauriRef.current = isTauri
     renderPage()
 
@@ -313,8 +313,8 @@ describe('AppPreferences Sub-agents page', () => {
     const pages = within(nav)
       .getAllByRole('button')
       .map((button) => button.textContent)
-    expect(pages.slice(pages.indexOf('Agent chats'), pages.indexOf('Agent chats') + 2)).toEqual([
-      'Agent chats',
+    expect(pages.slice(pages.indexOf('Agents'), pages.indexOf('Agents') + 2)).toEqual([
+      'Agents',
       'Sub-agents'
     ])
   })
@@ -334,7 +334,7 @@ describe('AppPreferences Sub-agents page', () => {
   it('no longer shows the sub-agent settings on Agent chats', async () => {
     tauriRef.current = true
     renderPage()
-    goTo('Agent chats')
+    goTo('Agents')
 
     expect(
       await screen.findByRole('combobox', { name: 'Close idle chats after' })
@@ -371,7 +371,7 @@ describe('AppPreferences notification switches (issue #865)', () => {
 
   it('renders the three notification switches and writes each setting', async () => {
     renderPage()
-    goTo('Notifications')
+    goTo('Preferences')
     const terminal = await screen.findByRole('switch', {
       name: 'Notify when a terminal agent finishes'
     })
@@ -420,7 +420,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     expect(screen.queryByText(/Check for updates/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Release channel')).not.toBeInTheDocument()
 
-    goTo('Logs')
+    goTo('About')
     expect(await screen.findByRole('heading', { name: 'Server version' })).toBeInTheDocument()
     expect(
       screen.getByText(/web client is served by the termul-server and updates together with it/i)
@@ -429,7 +429,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('hides the log folder and file exports on web', async () => {
     renderWeb()
-    goTo('Logs')
+    goTo('About')
 
     await screen.findByRole('button', { name: 'Copy log contents' })
     expect(screen.queryByRole('button', { name: 'Show log folder' })).not.toBeInTheDocument()
@@ -441,7 +441,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('keeps Close idle chats after editable on web and leaves the other timeouts read-only', async () => {
     renderWeb()
-    goTo('Agent chats')
+    goTo('Agents')
     expect(await screen.findByText('Set on the server.')).toBeInTheDocument()
     const keep = screen.getByLabelText('Close idle chats after')
     expect(keep).toBeEnabled()
@@ -467,7 +467,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('keeps Copy log enabled on web (works in the browser)', async () => {
     renderWeb()
-    goTo('Logs')
+    goTo('About')
 
     const copy = await screen.findByRole('button', { name: 'Copy log contents' })
     expect(copy).toBeEnabled()
@@ -475,13 +475,13 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('offers the update controls ungated on desktop', async () => {
     renderPage()
-    goTo('Updates')
+    goTo('About')
 
     const check = await screen.findByRole('button', { name: /Check for updates/ })
     expect(check).toBeEnabled()
     expect(check).not.toHaveAttribute('title')
 
-    goTo('Logs')
+    goTo('About')
     const reveal = screen.getByRole('button', { name: 'Show log folder' })
     expect(reveal).toBeEnabled()
     expect(reveal).not.toHaveAttribute('title')
@@ -502,7 +502,7 @@ describe.each([
   })
 
   async function findSwitch(): Promise<HTMLElement> {
-    goTo('Appearance')
+    goTo('Terminal')
     return screen.findByRole('switch', { name: 'Screen reader mode' })
   }
 
@@ -610,7 +610,7 @@ describe.each([
     const toggle = await findSwitch()
     expect(toggle).toHaveAttribute('aria-checked', 'true')
 
-    goTo('Reset')
+    goTo('About')
     fireEvent.click(screen.getByRole('button', { name: 'Reset settings…' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Reset settings' }))
 

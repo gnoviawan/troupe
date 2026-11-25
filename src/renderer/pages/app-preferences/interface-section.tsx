@@ -30,7 +30,7 @@ export function InterfaceSection({
   // Web (#858): Ctrl+=/-/0 are the browser zoom keys; the web defaults use Alt.
   const zoomKeys = isTauriContext() ? 'Ctrl+=, Ctrl+- and Ctrl+0' : 'Alt+=, Alt+- and Alt+0'
   return (
-    <SettingsSection id="interface">
+    <SettingsSection id="preferences">
       <SettingsGroup title="Display">
         <SettingsCard>
           <SettingsRow

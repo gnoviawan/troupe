@@ -78,7 +78,7 @@ function ServerSectionInner(): React.JSX.Element {
   }, [attempt])
 
   return (
-    <SettingsSection id="server">
+    <SettingsSection id="about">
       <SettingsGroup>
         <SettingsNotice tone="warning">
           Saving these settings restarts the server. You're taken to the new address automatically —

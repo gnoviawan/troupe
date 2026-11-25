@@ -30,7 +30,7 @@ export function EditorSection({
     ? editorAutoSaveDelayMs
     : DEFAULT_APP_SETTINGS.editorAutoSaveDelayMs
   return (
-    <SettingsSection id="editor">
+    <SettingsSection id="preferences">
       <SettingsGroup
         title="Saving"
         footnote="Files that already have changes save when you turn auto save on."
