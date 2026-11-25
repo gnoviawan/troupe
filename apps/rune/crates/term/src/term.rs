@@ -308,7 +308,9 @@ impl Emu {
         } else {
             let base = b.base(rows);
             if b.y > b.top && b.y <= b.bottom && b.lines[base + b.y].wrapped {
-                b.lines[base + b.y].wrapped = false;
+                let line = &mut b.lines[base + b.y];
+                line.wrapped = false;
+                line.touch();
                 b.y -= 1;
                 b.x = cols - 1;
                 let cell = &b.lines[base + b.y].cells[b.x];
@@ -448,8 +450,10 @@ impl Emu {
 
     pub fn full_reset(&mut self) {
         let title = std::mem::take(&mut self.title);
+        let replies = std::mem::take(&mut self.replies);
         *self = Emu::new(self.cols, self.rows, self.scrollback);
         self.title = title;
+        self.replies = replies;
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
