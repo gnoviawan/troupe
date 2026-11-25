@@ -187,3 +187,27 @@ pub fn replay_routes(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// The palette's lists, and cmdk's score as a read.
+pub fn replay_palette(vector: &Value) -> Result<usize, String> {
+    use model::settings::palette::{Commands, command_score};
+    let mut state = Commands::default();
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        if step.get("query").is_some() {
+            let args = &event["args"];
+            let got = command_score(args[0].as_str().unwrap_or_default(), args[1].as_str().unwrap_or_default(), &[]);
+            let want = step["result"].as_f64().ok_or("no score")?;
+            if (got - want).abs() > 1e-12 {
+                return Err(format!("step {index}: score of {:?} for {:?}: want {want}, got {got}", args[0], args[1]));
+            }
+            continue;
+        }
+        state.step(crate::common::call(event)?);
+        if let Some(problem) = diff(&format!("step {index} state"), &step["state"], &to_value(&state)) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}

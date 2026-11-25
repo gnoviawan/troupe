@@ -201,6 +201,18 @@
       "vectors": [
         "idle_window"
       ]
+    },
+    "palette": {
+      "sources": {
+        "src/renderer/stores/recent-commands-store.ts": "8cb3a560de957bd4eab9ed77aa764fdbefc3c49f",
+        "src/renderer/stores/pinned-commands-store.ts": "ee65cf14413418dd352e14a4f39a6fc8baf4f763",
+        "src/renderer/components/CommandPalette.tsx": "b4d3c0e00c3be7cfd0405552be480cb9ef2bddff"
+      },
+      "vectors": [
+        "recent_keeps_five_newest_first",
+        "pins_toggle_in_order",
+        "command_scores"
+      ]
     }
   }
 }

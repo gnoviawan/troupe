@@ -221,6 +221,7 @@ const { gitMock } = await import('./stores/git-mock')
 const { gitRoutesRecorder, gitRoutesScenarios } = await import('./stores/git-routes')
 const { appSettingsRecorder, appSettingsScenarios } = await import('./stores/app-settings')
 const { settingsRoutesRecorder, settingsRoutesScenarios } = await import('./stores/settings-routes')
+const { paletteRecorder, paletteScenarios } = await import('./stores/palette')
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -235,7 +236,8 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [gitStatusRecorder, gitStatusScenarios],
   [gitRoutesRecorder(realGitApi), gitRoutesScenarios],
   [appSettingsRecorder, appSettingsScenarios],
-  [settingsRoutesRecorder(), settingsRoutesScenarios]
+  [settingsRoutesRecorder(), settingsRoutesScenarios],
+  [paletteRecorder, paletteScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

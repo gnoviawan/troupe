@@ -325,6 +325,7 @@ fn replays_every_vector() {
                 "git-routes" => git::replay_routes(vector),
                 "app-settings" => settings::replay(vector),
                 "settings-routes" => settings::replay_routes(vector),
+                "palette" => settings::replay_palette(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {
