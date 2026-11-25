@@ -2,12 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { CustomAcpAgentDialog, exportAgentConfig } from '@/components/agents/CustomAcpAgentDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { Clipboard, Plus, RefreshCw, Search } from '@/components/icons'
-import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
+import { Clipboard, Plus, RefreshCw } from '@/components/icons'
+import { SettingsFilter } from '@/components/settings/SettingsFilter'
+import {
+  SETTINGS_CARD_CLASS,
+  SettingsCard,
+  SettingsGroup
+} from '@/components/settings/SettingsGroup'
 import { type StatusTone, StatusWord } from '@/components/settings/StatusWord'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PANEL_FIELD_CLASS, PANEL_FIELD_ICON_CLASS } from '@/components/ui/panel-styles'
 import { Spinner } from '@/components/ui/spinner'
 import { useAcpRegistryCatalog } from '@/hooks/use-acp-registry-catalog'
 import { useResolvedSupportedAcpAgents } from '@/hooks/use-resolved-supported-acp-agents'
@@ -473,54 +477,50 @@ export function AcpAgentsSettings(): React.JSX.Element {
       id="settings-available-agents"
       className="scroll-mt-4"
       title="Available agents"
+      meta={
+        lastCheckedAt
+          ? `${
+              remoteAvailable && (advisorySummary?.updatedCount ?? 0) > 0
+                ? `${advisorySummary?.updatedCount} agent update${(advisorySummary?.updatedCount ?? 0) === 1 ? '' : 's'} available`
+                : 'All agents up to date'
+            } · Checked ${lastCheckedAt}`
+          : undefined
+      }
       actions={
         <>
-          {lastCheckedAt && (
-            <span className="text-xs text-muted-foreground">
-              {remoteAvailable && (advisorySummary?.updatedCount ?? 0) > 0
-                ? `${advisorySummary?.updatedCount} agent update${(advisorySummary?.updatedCount ?? 0) === 1 ? '' : 's'} available`
-                : 'All agents up to date'}{' '}
-              · Checked {lastCheckedAt}
-            </span>
-          )}
           <Button
             type="button"
             size="xs"
-            variant="outline"
+            variant="secondary"
             disabled={checking}
             onClick={handleCheckUpdates}
           >
-            {checking ? <Spinner size={13} decorative /> : <RefreshCw size={13} />}
+            {checking ? <Spinner size={12} decorative /> : <RefreshCw size={12} />}
             Check for updates
           </Button>
           <Button
             type="button"
             size="xs"
-            variant="outline"
+            variant="secondary"
             onClick={() => setCustomDialogOpen(true)}
           >
-            <Plus size={13} />
+            <Plus size={12} />
             Add custom agent
           </Button>
         </>
       }
     >
-      <div className="relative">
-        <Search size={13} aria-hidden className={PANEL_FIELD_ICON_CLASS} />
-        <input
-          type="text"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter agents"
-          aria-label="Filter agents"
-          className={cn(PANEL_FIELD_CLASS, 'h-8 w-full bg-background pl-7 pr-3')}
-        />
-      </div>
+      <SettingsFilter label="Filter agents" value={filter} onValueChange={setFilter} />
 
       {visible.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-5 text-center">
+        <div
+          className={cn(
+            'flex flex-col items-center gap-3 px-4 py-8 text-center',
+            SETTINGS_CARD_CLASS
+          )}
+        >
           <p className="text-xs text-muted-foreground">No agents match "{filter.trim()}".</p>
-          <Button type="button" size="xs" variant="outline" onClick={() => setFilter('')}>
+          <Button type="button" size="xs" variant="secondary" onClick={() => setFilter('')}>
             Clear filter
           </Button>
         </div>
