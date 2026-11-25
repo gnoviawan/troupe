@@ -71,6 +71,11 @@ pub struct TerminalUi {
     pub(crate) sent: Vec<Command>,
     /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
     pub blink_shown: Option<bool>,
+    /// The last pointer report, by terminal: a move to the same cell is not sent again.
+    pub last_mouse: Option<(String, troupe_term::mouse::MouseEvent)>,
+    /// Every command sent, for the tests (a test state has no terminal link).
+    #[cfg(test)]
+    pub(crate) sent: Vec<Command>,
 }
 
 impl TerminalUi {
@@ -134,7 +139,7 @@ impl State {
         if self.terms.metrics.is_none() && self.terms.host.is_some() {
             self.terms.metrics = Some(Metrics::new(ui::terminal::FONT_SIZE, ui::terminal::LINE_HEIGHT));
         }
-        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[]) };
+        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[], now) };
         let events = host.drain(now);
         let mut changed = false;
         let mut redrawn = Vec::new();
@@ -150,7 +155,7 @@ impl State {
                 TermEvent::Link(output) => self.terminal_output(output),
             }
         }
-        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn)
+        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn, now)
     }
 
     pub(crate) fn terminal_output(&mut self, output: Output) {
@@ -337,7 +342,7 @@ impl State {
         view.wheel += e.dy / cell_h;
         let lines = view.wheel.trunc();
         view.wheel -= lines;
-        if self.terminal_wheel_input(id, lines as i32, e.x, e.y) {
+        if self.terminal_wheel_input(id, lines as i32, e) {
             return true;
         }
         let Some(view) = self.terms.views.get_mut(id) else { return false };

@@ -15,6 +15,11 @@ use ui::terminal::{Mark, Metrics, Palette};
 use crate::State;
 use crate::terminal::TermView;
 
+/// The search addon's wait after output before it reads the matches again (seconds).
+const FIND_DEBOUNCE: f64 = 0.2;
+/// `DEFAULT_HIGHLIGHT_LIMIT`: the most matches a find bar marks and counts.
+pub const HIGHLIGHT_LIMIT: usize = 1000;
+
 /// A selection and where the buffer stood when it was made, so dropped scrollback and a switch
 /// to the other screen move or clear it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,6 +53,9 @@ pub struct Find {
     /// The query the matches are for, and the output they were read from.
     searched: Option<String>,
     stale: bool,
+    /// When output last changed under an open bar: the matches are read again
+    /// `FIND_DEBOUNCE` after the last change, as the search addon's `_updateMatches` waits.
+    output_at: Option<f64>,
 }
 
 impl Find {
@@ -211,21 +219,23 @@ impl State {
     }
 
     /// Re-reads the matches of every open find bar whose query or output changed.
-    pub(crate) fn refresh_terminal_finds(&mut self, changed: &[String]) -> bool {
+    pub(crate) fn refresh_terminal_finds(&mut self, changed: &[String], now: f64) -> bool {
         let mut redraw = false;
         for (id, view) in &mut self.terms.views {
             let scrolled = view.scrolled;
             let Some(find) = &mut view.find else { continue };
             if changed.contains(id) {
-                find.stale = true;
+                find.output_at = Some(now);
             }
             let query = find.edit.text.clone();
-            if !find.stale && find.searched.as_deref() == Some(query.as_str()) {
+            let settled = find.output_at.is_some_and(|at| now >= at + FIND_DEBOUNCE);
+            if !find.stale && !settled && find.searched.as_deref() == Some(query.as_str()) {
                 continue;
             }
             let Ok(term) = view.cells.lock() else { continue };
             let new_query = find.searched.as_deref() != Some(query.as_str());
             find.stale = false;
+            find.output_at = None;
             find.searched = Some(query.clone());
             redraw = true;
             if query.is_empty() {
@@ -234,7 +244,7 @@ impl State {
             }
             match compile(&Query { text: query, ..Query::default() }) {
                 Ok(re) => {
-                    find.matches = find_all(term.lines(), &re);
+                    find.matches = find_all(term.lines(), &re, HIGHLIGHT_LIMIT);
                     find.error = None;
                     // A new query lands on the first match from the top of the view, as
                     // `findNext` starts from the viewport.
@@ -247,6 +257,11 @@ impl State {
             }
         }
         redraw
+    }
+
+    /// When an open find bar next reads its matches again after output, if one waits.
+    pub(crate) fn next_find_refresh(&self) -> Option<f64> {
+        self.terms.views.values().filter_map(|v| v.find.as_ref()?.output_at).map(|at| at + FIND_DEBOUNCE).reduce(f64::min)
     }
 }
 
