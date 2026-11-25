@@ -1,7 +1,7 @@
 //! A session's model, mode and config option controls as the agent reports
 //! them, with the guard that keeps a stale echo of a creation default from
 //! undoing a pick, and the per-agent options cache the launcher paints from.
-//! Port of `_onModeUpdate` and `_onConfigOptionsUpdate` in
+//! Port of `_onModeUpdate`, `_onModelsUpdate` and `_onConfigOptionsUpdate` in
 //! `slices/transcript.ts`, of `mergeAgentConfigOptions`,
 //! `cacheOptionsFromSession` and `writeAgentOptionsCache` in `helpers.ts`, of
 //! the model helpers in `components/chat/chat-input-bar-config.ts`, and of
@@ -24,6 +24,13 @@ pub struct ModeUpdateEvent {
     pub current_mode_id: Value,
     #[serde(default)]
     pub available_modes: Option<Vec<Value>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelsUpdateEvent {
+    pub session_id: String,
+    pub models: Value,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -148,7 +155,22 @@ pub(super) fn merge_config_options(
 /// `sessionModelSnapshot`: the model the composer shows, and its name. A
 /// `model` config option wins over the native `models` state.
 pub(super) fn model_snapshot(session: &Session) -> Option<(String, String)> {
-    let config_model = config_options(session).iter().find(|option| {
+    model_snapshot_of(
+        config_options(session),
+        session
+            .rest
+            .get("models")
+            .filter(|models| !models.is_null()),
+    )
+}
+
+/// [`model_snapshot`] of any record with `configOptions` and `models`: a
+/// session, or a config's options cache entry.
+pub(super) fn model_snapshot_of(
+    options: &[Value],
+    models: Option<&Value>,
+) -> Option<(String, String)> {
+    let config_model = options.iter().find(|option| {
         category(option) == Some(MODEL_CATEGORY)
             && option
                 .get("currentValue")
@@ -160,10 +182,7 @@ pub(super) fn model_snapshot(session: &Session) -> Option<(String, String)> {
     let option = match config_model {
         Some(option) => option,
         None => {
-            let models = session
-                .rest
-                .get("models")
-                .filter(|models| !models.is_null())?;
+            let models = models?;
             let available = models.get("availableModels").and_then(Value::as_array)?;
             if available.is_empty() {
                 return None;
@@ -329,6 +348,34 @@ impl State {
         self.cache_options_from_session(session_id, env, fx);
     }
 
+    /// `_onModelsUpdate`: a legacy-only session's model switch carries the
+    /// whole list, which replaces the session's copy. The agent accepted the
+    /// switch, so only the options cache is refreshed (the heal would switch
+    /// the chat back to an older saved model), and the accepted model is
+    /// saved, so a later heal reads it instead of the older pick.
+    pub(crate) fn on_models_update(
+        &mut self,
+        event: ModelsUpdateEvent,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) {
+        let session_id = event.session_id.as_str();
+        let model_id = event.models.get("currentModelId").cloned();
+        if let Some(session) = self.sessions.get_mut(session_id) {
+            session.rest.insert("models".into(), event.models);
+            align_model_projection(session);
+            self.set_index_model(session_id);
+        }
+        if let (Some(config_id), Some(model_id)) =
+            (self.cache_session_options(session_id, env, fx), model_id)
+        {
+            fx.push(Effect::PersistComposerOptions {
+                config_id,
+                patch: json!({ "modelId": model_id }),
+            });
+        }
+    }
+
     pub(crate) fn on_config_options_update(
         &mut self,
         event: ConfigOptionsUpdateEvent,
@@ -412,12 +459,22 @@ impl State {
         env: &mut Env<'_>,
         fx: &mut Vec<Effect>,
     ) {
-        let Some(session) = self.sessions.get(session_id) else {
-            return;
-        };
-        let Some(config_id) = self.config_id_for_agent(&session.agent_id) else {
-            return;
-        };
+        if let Some(config_id) = self.cache_session_options(session_id, env, fx) {
+            self.heal_composer_options(session_id, config_id, fx);
+        }
+    }
+
+    /// `writeOptionsCacheFromSession`: remember the session's options for its
+    /// agent's config and save the model list, without the heal. Returns the
+    /// config id.
+    pub(crate) fn cache_session_options(
+        &mut self,
+        session_id: &str,
+        env: &mut Env<'_>,
+        fx: &mut Vec<Effect>,
+    ) -> Option<String> {
+        let session = self.sessions.get(session_id)?;
+        let config_id = self.config_id_for_agent(&session.agent_id)?;
         let present = |key: &str| {
             session
                 .rest
@@ -453,7 +510,7 @@ impl State {
         } else {
             self.agent_options_cache.remove(&config_id);
         }
-        self.heal_composer_options(session_id, config_id, fx);
+        Some(config_id)
     }
 }
 

@@ -23,8 +23,9 @@ pub type CreateId = u64;
 
 const LOOKUP_SOURCE: &str = "acp.createSession.lookup";
 
-/// The project a quick chat belongs to (`QUICK_CHAT_PROJECT_ID`).
-const QUICK_CHAT_PROJECT: &str = "__unassigned__";
+/// The project a quick chat belongs to (`QUICK_CHAT_PROJECT_ID`), the
+/// host's sentinel for a chat in no project.
+pub(super) const QUICK_CHAT_PROJECT: &str = "__unassigned__";
 
 /// `createSession`'s options.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -69,6 +70,7 @@ pub(crate) enum CreateCaller {
     Action(RequestId),
     OneShot(super::oneshot::OneShotId),
     Prepare(super::warm::PrepareId),
+    Switch(super::switch_run::SwitchId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -455,6 +457,7 @@ impl State {
             }),
             Some(CreateCaller::OneShot(id)) => self.on_oneshot_session(id, session_id, env, fx),
             Some(CreateCaller::Prepare(id)) => self.on_prepare_session(id, session_id, env, fx),
+            Some(CreateCaller::Switch(id)) => self.on_switch_session(id, Ok(session_id), fx),
             None => {}
         }
     }
@@ -515,6 +518,7 @@ impl State {
                 self.on_oneshot_session_failed(id, message, fx);
             }
             Some(CreateCaller::Prepare(id)) => self.on_prepare_session_failed(id, error, fx),
+            Some(CreateCaller::Switch(id)) => self.on_switch_session(id, Err(error.clone()), fx),
             None => {}
         }
     }

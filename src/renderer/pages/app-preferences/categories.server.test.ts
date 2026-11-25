@@ -1,8 +1,7 @@
 /**
- * Platform filtering for the web-only "Server" preferences page (gh-1105) —
- * the mirror of the Updates page's web filter (issue #843): the desktop app
- * has no `termul-server` to configure, so the category and its search
- * entries only exist on the web runtime.
+ * Runtime filtering on the About page: the updater rows are desktop-only
+ * (issue #843) and the server rows are web-only (gh-1105). Both live on About,
+ * so the page exists on every runtime and only its search entries change.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -10,38 +9,46 @@ import { describe, expect, it, vi } from 'vitest'
 const tauriRef = vi.hoisted(() => ({ current: false }))
 vi.mock('@/lib/tauri-runtime', () => ({ isTauriContext: () => tauriRef.current }))
 
+import { rowId } from '@/components/settings/row-id'
 import { appPrefCategories, appPrefSearchIndex } from './categories'
 
-describe('appPrefCategories Server page', () => {
-  it('includes the Server page and hides Updates on the web runtime', () => {
-    tauriRef.current = false
-    const ids = appPrefCategories().map((category) => category.id)
+const anchorsOn = (tauri: boolean): Array<string | undefined> => {
+  tauriRef.current = tauri
+  return appPrefSearchIndex().map((entry) => entry.anchorId)
+}
 
-    expect(ids).toContain('server')
-    expect(ids).not.toContain('updates')
+describe('appPrefCategories About page', () => {
+  it('has About on the web runtime, with a server description', () => {
+    tauriRef.current = false
+    const about = appPrefCategories().find((category) => category.id === 'about')
+
+    expect(about?.description).toContain('server')
   })
 
-  it('includes Updates and hides the Server page on the desktop runtime', () => {
+  it('has About on the desktop runtime, with an update description', () => {
     tauriRef.current = true
-    const ids = appPrefCategories().map((category) => category.id)
+    const about = appPrefCategories().find((category) => category.id === 'about')
 
-    expect(ids).toContain('updates')
-    expect(ids).not.toContain('server')
+    expect(about?.description).toContain('updates')
   })
 })
 
-describe('appPrefSearchIndex Server entries', () => {
-  it('searches into the Server page on the web runtime', () => {
-    tauriRef.current = false
-    const entries = appPrefSearchIndex().filter((entry) => entry.categoryId === 'server')
+describe('appPrefSearchIndex runtime rows', () => {
+  it('searches the server rows and not the updater rows on the web runtime', () => {
+    const anchors = anchorsOn(false)
 
-    expect(entries).toHaveLength(1)
-    expect(entries[0]?.label).toBe('Server')
+    expect(anchors).toContain(rowId('server-config'))
+    expect(anchors).toContain(rowId('server-version'))
+    expect(anchors).not.toContain(rowId('check-updates'))
+    expect(anchors).not.toContain(rowId('release-channel'))
   })
 
-  it('has no Server entries on the desktop runtime', () => {
-    tauriRef.current = true
+  it('searches the updater rows and not the server rows on the desktop runtime', () => {
+    const anchors = anchorsOn(true)
 
-    expect(appPrefSearchIndex().some((entry) => entry.categoryId === 'server')).toBe(false)
+    expect(anchors).toContain(rowId('check-updates'))
+    expect(anchors).toContain(rowId('auto-update'))
+    expect(anchors).not.toContain(rowId('server-config'))
+    expect(anchors).not.toContain(rowId('server-version'))
   })
 })

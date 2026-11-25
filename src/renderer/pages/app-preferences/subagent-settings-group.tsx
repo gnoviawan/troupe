@@ -1,228 +1,80 @@
-import { Fragment, useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import { useAgentModels } from '@/components/automations/canvas/inspector/sources'
+import { useCallback, useMemo, useState } from 'react'
+import { Plus } from '@/components/icons'
+import { rowId } from '@/components/settings/row-id'
 import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
 import { SettingsNotice } from '@/components/settings/SettingsNotice'
-import { SettingsRow, settingsDescriptionId } from '@/components/settings/SettingsRow'
-import { SettingsSelect } from '@/components/settings/SettingsSelect'
+import { SettingsRow } from '@/components/settings/SettingsRow'
 import { SettingsStepper } from '@/components/settings/SettingsStepper'
 import { SettingsSwitchRow } from '@/components/settings/SettingsSwitchRow'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
-import type { SubagentSettingsAgentView, SubagentSettingsView } from '@/lib/acp-api'
-import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
-import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
-import { acpApi } from '@/lib/api'
-import { logFrontendError } from '@/lib/log-api'
-import { useAgentIcon, useAgentTemplateId } from '@/stores/acp-store'
+import { Button } from '@/components/ui/button'
+import type { SubagentProfile } from '@/lib/acp-api'
+import { ProfileRow, type SaveProfile } from './subagent-profiles/ProfileRow'
+import {
+  agentShortName,
+  profileUpserts,
+  storedProfile,
+  uniqueProfileId
+} from './subagent-profiles/profile-model'
+import { useSubagentSettings } from './subagent-profiles/use-subagent-settings'
 
 const MIN_RUNNING = 1
 const MAX_RUNNING = 8
 const MIN_DEPTH = 1
 const MAX_DEPTH = 4
-/** Radix Select needs a non-empty value; this one means "no model saved". */
-const DEFAULT_MODEL = '\u0000default'
-/** The host's `MAX_DESCRIPTION_CHARS`. */
-const MAX_DESCRIPTION_CHARS = 1000
 
-/**
- * The launchable agent's glyph: its persisted config's custom icon, else the
- * bundled icon of the config's templateId, else its initial. Same resolution
- * path the chat surfaces use (config -> templateId -> catalog).
- */
-function AgentRowIcon({ agentId, name }: { agentId: string; name: string }): React.JSX.Element {
-  const templateId = useAgentTemplateId(null, agentId)
-  const customIcon = useAgentIcon(null, agentId)
-  const catalog = useAgentIconCatalog()
-  const svg = customIcon ?? (templateId ? catalog.byKey(`acp:${templateId}`)?.svg : null)
-  const sanitized = svg ? sanitizeInlineAgentSvg(svg) : null
-  if (sanitized) {
-    return (
-      <span
-        aria-hidden="true"
-        className="inline-flex size-3.5 shrink-0 text-foreground/80 [&_svg]:h-full [&_svg]:w-full"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: icon SVG is sanitized via sanitizeInlineAgentSvg (DOMPurify)
-        dangerouslySetInnerHTML={{ __html: sanitized }}
-      />
-    )
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className="flex size-3.5 shrink-0 items-center justify-center text-3xs font-semibold uppercase text-muted-foreground"
-    >
-      {name.charAt(0)}
+const noop = (): void => {}
+
+/** "a, b and c" */
+function listIds(ids: readonly string[]): React.ReactNode {
+  return ids.map((id, index) => (
+    <span key={id}>
+      {index === 0 ? '' : index === ids.length - 1 ? ' and ' : ', '}
+      <code className="font-mono">{id}</code>
     </span>
-  )
+  ))
 }
 
 /**
- * The model a sub-agent of `agent` starts with: the models its chats last
- * reported, plus a saved id the agent no longer lists, so it stays visible.
- */
-function DefaultModelRow({
-  agent,
-  onChange
-}: {
-  agent: SubagentSettingsAgentView
-  onChange: (model: string | null) => void
-}): React.JSX.Element {
-  const models = useAgentModels(agent.agentId)
-  const options = [
-    { value: DEFAULT_MODEL, label: 'Default' },
-    ...models.map((model) => ({ value: model.modelId, label: model.name }))
-  ]
-  if (agent.model !== null && !models.some((model) => model.modelId === agent.model)) {
-    options.push({ value: agent.model, label: agent.model })
-  }
-  const id = `subagent-model-${agent.agentId}`
-  return (
-    <SettingsRow
-      id={`${id}-row`}
-      htmlFor={id}
-      label="Default model"
-      description={
-        models.length === 0
-          ? 'Run this agent once in a chat to list its models.'
-          : 'Used when the calling agent does not pick one.'
-      }
-      indent
-    >
-      <SettingsSelect
-        id={id}
-        aria-describedby={settingsDescriptionId(id)}
-        options={options}
-        value={agent.model ?? DEFAULT_MODEL}
-        onValueChange={(next) => onChange(next === DEFAULT_MODEL ? null : next)}
-      />
-    </SettingsRow>
-  )
-}
-
-/**
- * The user's note on what `agent` is good at, which `subagent_list_agents`
- * hands to the calling agent. Saved on blur; a blank note clears it.
- */
-function DescriptionRow({
-  agent,
-  onSave
-}: {
-  agent: SubagentSettingsAgentView
-  onSave: (description: string | null) => void
-}): React.JSX.Element {
-  const saved = agent.description ?? ''
-  const [draft, setDraft] = useState(saved)
-  const [syncedTo, setSyncedTo] = useState(saved)
-  if (syncedTo !== saved) {
-    setSyncedTo(saved)
-    // Text typed after the save went out is newer than the reply.
-    if (draft === syncedTo || draft.trim() === saved) setDraft(saved)
-  }
-  const id = `subagent-description-${agent.agentId}`
-  return (
-    <SettingsRow
-      id={`${id}-row`}
-      htmlFor={id}
-      label="When to use"
-      description="Tells the calling agent what this agent is good at."
-      layout="stacked"
-      indent
-    >
-      <Textarea
-        id={id}
-        aria-describedby={settingsDescriptionId(id)}
-        rows={3}
-        maxLength={MAX_DESCRIPTION_CHARS}
-        placeholder="e.g. Fast at UI tweaks and CSS; weak at Rust."
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => {
-          const trimmed = draft.trim()
-          if (trimmed !== saved) onSave(trimmed || null)
-        }}
-      />
-    </SettingsRow>
-  )
-}
-
-function AllowedAgentRow({
-  agent,
-  onToggle
-}: {
-  agent: SubagentSettingsAgentView
-  onToggle: (allowed: boolean) => void
-}): React.JSX.Element {
-  return (
-    <SettingsRow
-      id={`subagent-agent-${agent.agentId}`}
-      htmlFor={`subagent-agent-switch-${agent.agentId}`}
-      label={
-        <span className="flex min-w-0 items-center gap-2">
-          <AgentRowIcon agentId={agent.agentId} name={agent.name} />
-          <span className="truncate">{agent.name}</span>
-        </span>
-      }
-      description="Installed on this machine."
-      layout="inline"
-    >
-      <Switch
-        id={`subagent-agent-switch-${agent.agentId}`}
-        aria-describedby={settingsDescriptionId(`subagent-agent-switch-${agent.agentId}`)}
-        checked={agent.allowed}
-        onCheckedChange={onToggle}
-      />
-    </SettingsRow>
-  )
-}
-
-/**
- * The "Sub-agents" and "Agents they can use" groups of the Agent chats
- * preferences: the orchestrator's enable switch, its caps, and the per-agent
- * allow list with each allowed agent's default model and description, all
- * through the host's one settings view. A write applies the view the host
- * answers with, so the host stays the single source of truth.
+ * The Sub-agents preferences: the orchestrator's enable switch and caps, and
+ * the profiles the calling agent can start, each with its agent, model,
+ * thinking, mode, approvals and note. Edits show at once and reach the host
+ * in order; its answers stay the source of truth.
  */
 export function SubagentSettingsGroup(): React.JSX.Element {
-  const [view, setView] = useState<SubagentSettingsView | null>(null)
-  const [failed, setFailed] = useState(false)
+  const { view, failed, change } = useSubagentSettings()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    void acpApi
-      .getSubagentSettings()
-      .then((next) => {
-        if (cancelled) return
-        setView(next)
-        setFailed(false)
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return
-        setView(null)
-        setFailed(true)
-        void logFrontendError({
-          level: 'warn',
-          source: 'SubagentSettingsGroup',
-          message: `Failed to read the sub-agent settings: ${error instanceof Error ? error.message : String(error)}`
-        })
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const save = useCallback<SaveProfile>(
+    (id, edit) =>
+      change((latest) => {
+        const current = latest.profiles.find((profile) => profile.id === id)
+        if (!current) return null
+        const next = edit(storedProfile(current))
+        const previousId = next.id === id ? undefined : id
+        return { upsertProfiles: profileUpserts(latest.profiles, next, previousId) }
+      }),
+    [change]
+  )
+  const rename = useCallback(
+    (from: string, to: string) => {
+      setExpandedId((open) => (open === from ? to : open))
+      void save(from, (profile) => ({ ...profile, id: to })).catch(() =>
+        setExpandedId((open) => (open === to ? from : open))
+      )
+    },
+    [save]
+  )
 
-  const write = useCallback((input: Parameters<typeof acpApi.setSubagentSettings>[0]) => {
-    void acpApi
-      .setSubagentSettings(input)
-      .then(setView)
-      .catch((error: unknown) => {
-        toast.error('Could not save the sub-agent setting. Try again.')
-        void logFrontendError({
-          level: 'warn',
-          source: 'SubagentSettingsGroup',
-          message: `Failed to set subagent settings: ${error instanceof Error ? error.message : String(error)}`
-        })
-      })
-  }, [])
+  const profiles = view?.profiles
+  const launchableAgentIds = useMemo(
+    () =>
+      new Set(
+        (profiles ?? [])
+          .filter((profile) => profile.agentName !== null)
+          .map((profile) => profile.agentId)
+      ),
+    [profiles]
+  )
 
   if (failed) {
     return (
@@ -233,7 +85,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
       </SettingsGroup>
     )
   }
-  if (!view) {
+  if (!view || !profiles) {
     return (
       <SettingsGroup title="Sub-agents">
         <SettingsNotice>Loading sub-agent settings…</SettingsNotice>
@@ -241,19 +93,44 @@ export function SubagentSettingsGroup(): React.JSX.Element {
     )
   }
 
+  /** Adds a profile of `agentId` (a copy of `base` when given) named after `stem`, and opens it. */
+  const addProfile = (agentId: string, stem: string, base: SubagentProfile | null): void => {
+    const id = uniqueProfileId(stem, profiles)
+    const profile: SubagentProfile = base
+      ? { ...base, id }
+      : {
+          id,
+          agentId,
+          enabled: true,
+          model: null,
+          mode: null,
+          configOptions: {},
+          approvals: 'ask',
+          description: null
+        }
+    setExpandedId(id)
+    void change((latest) => ({ upsertProfiles: profileUpserts(latest.profiles, profile) })).catch(
+      () => setExpandedId((open) => (open === id ? null : open))
+    )
+  }
+  const firstAgent = profiles.find((profile) => profile.agentName !== null)?.agentId ?? null
+  const enabledIds = profiles
+    .filter((profile) => profile.enabled && profile.agentName !== null)
+    .map((profile) => profile.id)
+
   return (
     <>
-      <SettingsGroup title="Sub-agents">
+      <SettingsGroup title="General">
         <SettingsCard>
           <SettingsSwitchRow
             id="subagent-enabled"
             label="Let agents start other agents"
-            description="An agent chat can hand parts of a task to your other installed agents. Their approvals come to this chat."
+            description="An agent chat can hand parts of a task to the profiles below. Their approvals come to that chat."
             checked={view.enabled}
-            onToggle={(enabled) => write({ enabled })}
+            onToggle={(enabled) => void change(() => ({ enabled })).catch(noop)}
           />
           <SettingsRow
-            id="subagent-max-running"
+            id={rowId('subagent-max-running')}
             describes="subagent-max-running"
             label="Max running sub-agents"
             description="Per chat. Extra starts are refused until one finishes."
@@ -264,11 +141,11 @@ export function SubagentSettingsGroup(): React.JSX.Element {
               max={MAX_RUNNING}
               decrementLabel="Fewer running sub-agents"
               incrementLabel="More running sub-agents"
-              onValueChange={(maxRunning) => write({ maxRunning })}
+              onValueChange={(maxRunning) => void change(() => ({ maxRunning })).catch(noop)}
             />
           </SettingsRow>
           <SettingsRow
-            id="subagent-max-depth"
+            id={rowId('subagent-max-depth')}
             describes="subagent-max-depth"
             label="Max depth"
             description="How many levels of sub-agents can start their own sub-agents. 1 means sub-agents cannot start more."
@@ -279,43 +156,63 @@ export function SubagentSettingsGroup(): React.JSX.Element {
               max={MAX_DEPTH}
               decrementLabel="Less depth"
               incrementLabel="More depth"
-              onValueChange={(maxDepth) => write({ maxDepth })}
+              onValueChange={(maxDepth) => void change(() => ({ maxDepth })).catch(noop)}
             />
           </SettingsRow>
         </SettingsCard>
       </SettingsGroup>
       <SettingsGroup
-        title="Agents they can use"
-        footnote="Only agents installed on this machine are listed."
+        id={rowId('subagent-profiles')}
+        title={`Profiles · ${profiles.length} · ${enabledIds.length} on`}
+        actions={
+          <Button
+            size="sm"
+            disabled={firstAgent === null}
+            onClick={() => firstAgent && addProfile(firstAgent, agentShortName(firstAgent), null)}
+          >
+            <Plus size={14} aria-hidden="true" />
+            Add profile
+          </Button>
+        }
+        footnote={
+          enabledIds.length > 0 ? (
+            <>
+              The calling agent sees {listIds(enabledIds)} with their notes. Off profiles are hidden
+              from it.
+            </>
+          ) : (
+            'Every profile is off, so the calling agent sees none.'
+          )
+        }
       >
         <SettingsCard>
-          {view.agents.length === 0 ? (
+          {profiles.length === 0 ? (
             <SettingsRow
               label="No agents yet"
-              description="Install an agent and it appears here."
+              description="Install an agent and its default profile appears here."
             />
           ) : (
-            view.agents.map((agent) => (
-              <Fragment key={agent.agentId}>
-                <AllowedAgentRow
-                  agent={agent}
-                  onToggle={(allowed) => write({ agents: [{ agentId: agent.agentId, allowed }] })}
-                />
-                {agent.allowed && (
-                  <>
-                    <DefaultModelRow
-                      agent={agent}
-                      onChange={(model) => write({ models: [{ agentId: agent.agentId, model }] })}
-                    />
-                    <DescriptionRow
-                      agent={agent}
-                      onSave={(description) =>
-                        write({ descriptions: [{ agentId: agent.agentId, description }] })
-                      }
-                    />
-                  </>
-                )}
-              </Fragment>
+            profiles.map((profile) => (
+              <ProfileRow
+                key={profile.id}
+                profile={profile}
+                profiles={profiles}
+                launchableAgentIds={launchableAgentIds}
+                expanded={expandedId === profile.id}
+                onToggle={() => setExpandedId((open) => (open === profile.id ? null : profile.id))}
+                save={save}
+                rename={rename}
+                onDuplicate={() =>
+                  addProfile(
+                    profile.agentId,
+                    profile.implicit ? agentShortName(profile.agentId) : profile.id,
+                    storedProfile(profile)
+                  )
+                }
+                onDelete={() => {
+                  void change(() => ({ deleteProfiles: [profile.id] })).catch(noop)
+                }}
+              />
             ))
           )}
         </SettingsCard>

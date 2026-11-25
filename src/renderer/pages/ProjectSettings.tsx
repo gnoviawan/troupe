@@ -8,7 +8,7 @@ import { toastAccountChoiceError } from '@/components/settings/provider/account-
 import { CodexProjectAccountSettings } from '@/components/settings/provider/CodexProjectAccountSettings'
 import { ProjectProviderSettings } from '@/components/settings/provider/ProjectProviderSettings'
 import { SettingsLayout, SettingsSection } from '@/components/settings/SettingsLayout'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import { Button } from '@/components/ui/button'
 import { useProjectAntigravityAccountDraft } from '@/hooks/use-project-antigravity-account-draft'
 import { useProjectClaudeAccountDraft } from '@/hooks/use-project-claude-account-draft'
@@ -415,36 +415,7 @@ export function ProjectSettingsModal() {
 
   return (
     <>
-      <SettingsModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        title="Project settings"
-        footer={
-          hasChanges ? (
-            <div className="flex items-center justify-end gap-2 px-4 py-3">
-              <p
-                role="status"
-                className="mr-auto flex items-center gap-2 text-xs text-muted-foreground"
-              >
-                <Info size={14} aria-hidden="true" className="text-warning" />
-                Unsaved changes
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8"
-                onClick={handleDiscard}
-              >
-                Discard
-              </Button>
-              <Button type="button" size="sm" className="h-8" onClick={handleSave}>
-                Save changes
-              </Button>
-            </div>
-          ) : undefined
-        }
-      >
+      <SettingsWindow isOpen={isOpen} onClose={handleClose} title="Project settings">
         <SettingsLayout
           title="Project settings"
           subtitle={settingsProject?.name}
@@ -453,6 +424,31 @@ export function ProjectSettingsModal() {
           onClose={handleClose}
           page={projectPage ?? PROJECT_SETTINGS_CATEGORIES[0]?.id}
           onPageChange={setProjectPage}
+          footer={
+            hasChanges ? (
+              <div className="flex items-center justify-end gap-2">
+                <p
+                  role="status"
+                  className="mr-auto flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <Info size={14} aria-hidden="true" className="text-warning" />
+                  Unsaved changes
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={handleDiscard}
+                >
+                  Discard
+                </Button>
+                <Button type="button" size="sm" className="h-8" onClick={handleSave}>
+                  Save changes
+                </Button>
+              </div>
+            ) : undefined
+          }
         >
           <GeneralSection
             name={projectName}
@@ -536,11 +532,11 @@ export function ProjectSettingsModal() {
 
           <ProjectBrowserSection projectId={settingsProject?.id} />
         </SettingsLayout>
-      </SettingsModal>
+      </SettingsWindow>
 
       <ConfirmDialog
         isOpen={isCloseConfirmOpen}
-        title="Unsaved Changes"
+        title="Unsaved changes"
         message={`You have unsaved changes in ${settingsProject?.name ?? 'this project'}. Leaving will discard them.`}
         confirmLabel="Leave"
         cancelLabel="Cancel"

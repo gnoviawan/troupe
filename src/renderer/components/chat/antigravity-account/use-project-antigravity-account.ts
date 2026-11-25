@@ -24,7 +24,7 @@ export interface ProjectAntigravityAccount {
   defaultAccount: AntigravityAccountView | null
   /** `true` when the Project chose an Account (not "Follow default"). */
   explicit: boolean
-  /** Signed-in Accounts with room left, least used first. */
+  /** Other signed-in Accounts, in list order. */
   alternatives: AntigravityAccountChoice[]
 }
 
@@ -64,21 +64,19 @@ export const antigravityAccountFor = (
   (sessionId ? ownChatAccountId(snapshot, sessionId) : null) ??
   projectAntigravityAccountId(snapshot, projectId)
 
-/** Signed-in Accounts other than `currentId` with room left, least used first. */
+/**
+ * Signed-in Accounts other than `currentId`, in list order like the host's
+ * pick. `usage` only fills each choice for display: a usage check never
+ * reorders or drops an Account.
+ */
 export function rankAntigravityAlternatives(
   snapshot: AntigravityAccountsSnapshot,
   usage: Record<string, AntigravityAccountUsage>,
   currentId: string
 ): AntigravityAccountChoice[] {
   return snapshot.accounts
-    .filter(
-      (account) =>
-        account.id !== currentId &&
-        antigravityAccountReadiness(account, usage[account.id]) === 'ready'
-    )
+    .filter((account) => account.id !== currentId && antigravityChoiceReady(account))
     .map((account) => choice(account, usage))
-    .filter((option) => (option.window?.percent ?? 0) < 100)
-    .sort((left, right) => (left.window?.percent ?? 0) - (right.window?.percent ?? 0))
 }
 
 /**

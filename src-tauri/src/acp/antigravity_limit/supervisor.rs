@@ -10,7 +10,6 @@ use super::{
     resume_notice, switch_notice, window_name, AccountRef, AntigravityLimitAction,
     AntigravityLimitActionEvent, Input, LimitedAccounts, TurnClock, ANTIGRAVITY_CONFIG_ID,
 };
-use crate::acp::antigravity_accounts::usage::{AntigravityAccountUsage, AntigravityUsageStatus};
 use crate::acp::antigravity_accounts::AntigravityAccountsSnapshot;
 use crate::acp::antigravity_agent::AntigravityLaunchAuth;
 use crate::acp::claude_limit::schedule::{Schedule, ScheduledResume};
@@ -183,19 +182,9 @@ impl Supervisor {
         let chat_account = snapshot
             .account_for(Some(&project_id), Some(&session_id.0))
             .to_string();
-        let usage = if snapshot.auto_switch && agent_account == chat_account {
-            antigravity.accounts_usage().unwrap_or_else(|error| {
-                log::warn!("[antigravity-limit] usage read failed: {error}");
-                Vec::new()
-            })
-        } else {
-            Vec::new()
-        };
-        // The reset the agent named in its limit message wins; else the last
-        // good usage read of the account.
-        let resets_at = reported_reset
-            .map(|ms| ms.div_euclid(1000))
-            .or_else(|| blocking_reset(usage.iter().find(|u| u.account_id == agent_account)));
+        // Only the reset the agent named in its limit message counts. A usage
+        // check the user ran is display only.
+        let resets_at = reported_reset.map(|ms| ms.div_euclid(1000));
         if resets_at.is_none() {
             log::info!("[antigravity-limit] chat {chat}: no reset time is known for this limit");
         }
@@ -225,7 +214,7 @@ impl Supervisor {
             return;
         }
         let candidates =
-            decide::rank_alternatives(&decide::candidates(&snapshot, &usage, Some(&agent_account)));
+            decide::rank_alternatives(&decide::candidates(&snapshot, Some(&agent_account)));
         let decision = decide::decide(&LimitContext {
             agent_account: &agent_account,
             chat_account: &chat_account,
@@ -538,20 +527,6 @@ fn account_ref(snapshot: &AntigravityAccountsSnapshot, id: &str) -> AccountRef {
         id: id.to_string(),
         name,
     }
-}
-
-fn blocking_reset(usage: Option<&AntigravityAccountUsage>) -> Option<i64> {
-    let usage = usage.filter(|read| read.status == AntigravityUsageStatus::Ok)?;
-    // Several model buckets can be used up at once. The wait lasts until the
-    // latest exhausted bucket clears.
-    usage
-        .windows
-        .iter()
-        .filter(|window| window.percent >= 100.0)
-        .filter_map(|window| window.resets_at.as_deref())
-        .filter_map(|reset| chrono::DateTime::parse_from_rfc3339(reset).ok())
-        .map(|at| at.timestamp())
-        .max()
 }
 
 fn epoch(secs: i64) -> SystemTime {

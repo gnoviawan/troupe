@@ -4,7 +4,7 @@ use theme::icons;
 
 #[test]
 fn app_icons_by_export_name() {
-    assert_eq!(icons::names().count(), 178);
+    assert_eq!(icons::names().count(), 179);
     let branch = icons::named("GitBranch").expect("GitBranch");
     assert_eq!((branch.name, branch.view), ("GitBranch", 24.0));
     assert!(branch.body.contains("stroke=\"currentColor\""));

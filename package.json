@@ -227,6 +227,7 @@
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "@webgpu/types": "^0.1.74",
+    "@xterm/headless": "6.1.0-beta.287",
     "agentation": "3.0.2",
     "autoprefixer": "^10.4.21",
     "bats": "^1.13.0",

@@ -192,7 +192,9 @@ const RESOLVES = new Set([
   'generateCommitMessage',
   'assistTerminal',
   'draftBugReport',
-  'armAgentSwitch'
+  'armAgentSwitch',
+  'applyPendingLauncherOptions',
+  'switchAgent'
 ])
 
 export const acpRecorder: StoreRecorder = {
@@ -404,17 +406,20 @@ import { historyScenarios } from './acp-scenarios-history'
 import { importScenarios } from './acp-scenarios-import'
 import { indexScenarios } from './acp-scenarios-index'
 import { launchScenarios } from './acp-scenarios-launch'
+import { launcherOptionScenarios } from './acp-scenarios-launcher'
 import { mcpScenarios } from './acp-scenarios-mcp'
 import { olderScenarios } from './acp-scenarios-older'
 import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { reconcileScenarios } from './acp-scenarios-reconcile'
+import { reopenSwitchScenarios } from './acp-scenarios-reopen-switch'
 import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
 import { subagentScenarios } from './acp-scenarios-subagents'
-import { armScenarios, switchScenarios } from './acp-scenarios-switch'
+import { armScenarios, pendingPickScenarios, switchScenarios } from './acp-scenarios-switch'
+import { switchRunScenarios } from './acp-scenarios-switch-run'
 import { turnScenarios } from './acp-scenarios-turn'
 import { warmScenarios } from './acp-scenarios-warm'
 import { windowScenarios } from './acp-scenarios-window'
@@ -447,5 +452,9 @@ export const acpScenarios = [
   ...warmScenarios,
   ...reconcileScenarios,
   ...olderScenarios,
-  ...armScenarios
+  ...armScenarios,
+  ...pendingPickScenarios,
+  ...launcherOptionScenarios,
+  ...switchRunScenarios,
+  ...reopenSwitchScenarios
 ]

@@ -135,6 +135,24 @@
       "mountSeq": 1
     }
   },
+  "check_antigravity_usage": {
+    "id": "req-ag-102",
+    "type": "check_antigravity_usage",
+    "payload": {
+      "accountId": "missing-account",
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      }
+    },
+    "command_id": "fixture-antigravity-check"
+  },
   "close_session": {
     "id": "req-106",
     "type": "close_session",

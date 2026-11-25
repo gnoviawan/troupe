@@ -109,6 +109,8 @@ mod agent_tools_loop_tests;
 #[cfg(test)]
 mod background_commands_tests;
 #[cfg(test)]
+mod legacy_model_switch_tests;
+#[cfg(test)]
 mod native_subagents_loop_tests;
 #[cfg(test)]
 mod native_subagents_tests;
@@ -169,6 +171,8 @@ pub struct NewSessionOutcome {
     /// Canonical quick-chat folder. Absent for a project chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cwd: Option<String>,
+    #[serde(skip)]
+    pub antigravity_tier: Option<String>,
 }
 
 /// Trusted server-side context attached to durable session registration.
@@ -227,6 +231,10 @@ pub struct ChildOrigin {
     pub dispatch_id: String,
     /// 1 = the chat's agent spawned the run directly.
     pub depth: u8,
+    /// The user's profile for this run allows every tool: the host answers
+    /// the child's own permission requests with their allow-once option
+    /// instead of asking in the chat. Never set from an agent's input.
+    pub auto_approve: bool,
 }
 
 /// Commands sent from Tauri command handlers to an agent's driver thread.
@@ -1533,6 +1541,10 @@ impl AcpManager {
                     self.host_plan_server
                         .bind_session(&token, &outcome.session_id.0);
                 }
+                self.antigravity_agent.record_session_tier(
+                    self.agent_launch(agent_id).map(|launch| launch.antigravity),
+                    outcome.antigravity_tier.clone(),
+                );
                 self.record_launch_recipe(
                     agent_id,
                     &outcome.session_id.0,
@@ -2820,6 +2832,7 @@ impl AcpManager {
                             models: None,
                             config_options: None,
                             cwd: None,
+                            antigravity_tier: None,
                         }));
                     }
                     AcpCommand::OwnsSession { session_id, reply } => {

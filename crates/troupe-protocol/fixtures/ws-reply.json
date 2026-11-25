@@ -131,6 +131,14 @@
       "unmounted": false
     }
   },
+  "check_antigravity_usage": {
+    "id": "req-ag-102",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "Usage checks run only on the Antigravity agent"
+    }
+  },
   "close_session": {
     "id": "req-106",
     "ok": false,
@@ -1351,13 +1359,19 @@
       "enabled": true,
       "maxRunning": 4,
       "maxDepth": 2,
-      "agents": [
+      "agents": [],
+      "profiles": [
         {
+          "id": "fake-longrun",
           "agentId": "fake-longrun",
-          "name": "Fake Longrun",
-          "allowed": true,
+          "enabled": true,
           "model": null,
-          "description": null
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null,
+          "agentName": "Fake Longrun",
+          "implicit": true
         }
       ]
     }
@@ -1369,13 +1383,19 @@
       "enabled": true,
       "maxRunning": 2,
       "maxDepth": 2,
-      "agents": [
+      "agents": [],
+      "profiles": [
         {
+          "id": "fake-longrun",
           "agentId": "fake-longrun",
-          "name": "Fake Longrun",
-          "allowed": true,
+          "enabled": true,
           "model": null,
-          "description": null
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null,
+          "agentName": "Fake Longrun",
+          "implicit": true
         }
       ]
     }

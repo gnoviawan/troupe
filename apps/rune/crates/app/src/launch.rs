@@ -127,7 +127,7 @@ impl State {
             return log::warn!("[launch] the session reply names no session");
         };
         log::info!("[launch] chat {session_id} on agent {agent_id}");
-        self.install_new_chat(&session_id, &agent_id);
+        self.install_launched_chat(&session_id, &agent_id, &launch);
         // The modes, models and options the agent advertised with the session.
         let created = json!({
             "agentId": agent_id,

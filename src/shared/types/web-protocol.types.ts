@@ -133,6 +133,7 @@ export const WS_EVENT_TYPES = [
   'tool_call',
   'mode_update',
   'config_options_update',
+  'models_update',
   'session_info_update',
   'usage_update',
   // Permission (reliable)
@@ -254,6 +255,7 @@ export const WS_COMMAND_CLASSES: Readonly<
   start_codex_account_login: ['command', 'payload'],
   list_antigravity_accounts: ['read', null],
   list_antigravity_usage: ['read', null],
+  check_antigravity_usage: ['command', 'payload'],
   set_default_antigravity_account: ['idempotent', null],
   set_project_antigravity_account: ['idempotent', null],
   set_chat_antigravity_account: ['idempotent', null],
@@ -465,6 +467,7 @@ export const WS_EVENT_TIERS: Readonly<Record<WsEventType, ReliabilityTier>> = {
   agent_error: WS_RELAY_TIERS.RELIABLE,
   tool_call: WS_RELAY_TIERS.RELIABLE,
   mode_update: WS_RELAY_TIERS.RELIABLE,
+  models_update: WS_RELAY_TIERS.RELIABLE,
   config_options_update: WS_RELAY_TIERS.RELIABLE,
   session_info_update: WS_RELAY_TIERS.RELIABLE,
   usage_update: WS_RELAY_TIERS.RELIABLE,

@@ -205,46 +205,69 @@ export interface AgentIdleWindowStatus {
   source: 'default' | 'setting' | 'env' | 'operator'
 }
 
-/** One launchable agent in the sub-agent orchestrator's settings view. */
-export interface SubagentSettingsAgentView {
+/**
+ * How the host treats a sub-agent's tool permission requests: `ask` waits
+ * for the user in the chat, `allowAll` picks the request's allow-once
+ * option (never allow-always).
+ */
+export type SubagentApprovals = 'ask' | 'allowAll'
+
+/**
+ * One sub-agent profile as stored: what `subagent_start`'s `agent` names.
+ * `id` is 1 to 64 characters of `[A-Za-z0-9._:-]`, unique ignoring case;
+ * an agent's default profile keeps the agent's key as its id. `agentId`
+ * is the listing key of the agent it launches. `mode` and `configOptions`
+ * (ACP session config option id to value) apply after the model at start.
+ */
+export interface SubagentProfile {
+  id: string
   agentId: string
-  name: string
-  allowed: boolean
-  /** The model a sub-agent of this agent starts with; `null` is the agent's own default. */
+  enabled: boolean
   model: string | null
-  /**
-   * The user's note on what this agent is good at, which
-   * `subagent_list_agents` hands to the calling agent; `null` is no note.
-   */
+  mode: string | null
+  configOptions: Record<string, string>
+  approvals: SubagentApprovals
+  /** Up to 1000 characters; `null` is no note. */
   description: string | null
 }
 
 /**
+ * A profile in the settings view. `agentName` is `null` when its agent is
+ * not installed. `implicit` marks an agent's synthesized default profile,
+ * which is stored only once upserted.
+ */
+export interface SubagentProfileView extends SubagentProfile {
+  agentName: string | null
+  implicit: boolean
+}
+
+/**
  * The orchestrator's settings view (`subagent_settings_get` reply):
- * `{ enabled, maxRunning, maxDepth, agents }`. `agents` lists the launchable
- * agents with their `allowed` switch.
+ * `{ enabled, maxRunning, maxDepth, profiles }`. `profiles` lists the
+ * stored profiles in the user's order, then each untouched agent's
+ * implicit default.
  */
 export interface SubagentSettingsView {
   enabled: boolean
   maxRunning: number
   maxDepth: number
-  agents: SubagentSettingsAgentView[]
+  profiles: SubagentProfileView[]
+  /** @deprecated Always empty, kept for 0.5.x clients; the host drops it in 0.7.0. */
+  agents?: readonly never[]
 }
 
 /**
  * A `subagent_settings_set` call: every field optional, an omitted field
- * keeps its value. `agents` carries allow toggles, `models` default models
- * (`null` clears) and `descriptions` notes of up to 1000 characters (`null`
- * or blank clears), all keyed by `agentId`; an omitted agent keeps its
- * setting. The reply is the new full view.
+ * keeps its value. Applied in order: `deleteProfiles` (idempotent), then
+ * `upsertProfiles` (`previousId` renames a stored or implicit profile and
+ * must exist). The reply is the new full view.
  */
 export interface SubagentSettingsInput {
   enabled?: boolean
   maxRunning?: number
   maxDepth?: number
-  agents?: Array<{ agentId: string; allowed: boolean }>
-  models?: Array<{ agentId: string; model: string | null }>
-  descriptions?: Array<{ agentId: string; description: string | null }>
+  upsertProfiles?: Array<{ previousId?: string; profile: SubagentProfile }>
+  deleteProfiles?: string[]
 }
 
 export interface AcpTransport {
@@ -444,11 +467,13 @@ export interface AcpTransport {
   ): Promise<SpawnAgentResult>
   /** Antigravity Accounts of the host; secret-free. Google logins only. */
   listAntigravityAccounts(): Promise<AntigravityAccountsSnapshot>
-  /**
-   * One usage record per Antigravity Account, in list order. Troupe does not
-   * read Antigravity quotas, so each record is `unavailable` with no windows.
-   */
+  /** The last usage check of each Antigravity Account, in list order. Never starts a check. */
   listAntigravityUsage(force?: boolean): Promise<AntigravityAccountUsage[]>
+  checkAntigravityUsage(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<AntigravityAccountUsage>
   setDefaultAntigravityAccount(accountId: string): Promise<void>
   /**
    * `null` returns the Project to the Default Account. With

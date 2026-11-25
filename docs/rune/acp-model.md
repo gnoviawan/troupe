@@ -283,7 +283,7 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      prompt queued meanwhile goes out when the open ends. Not here: the
      tail-first fetch (`loadSessionPayloadTail`; the full payload is read),
      the web client's adoption of a host-owned agent and
-     `ACP_SESSION_OWNED_BY_OTHER`, the switch redirect and re-splice, the
+     `ACP_SESSION_OWNED_BY_OTHER` (the switch redirect and re-splice are 9e), the
      config reload, the Claude, Codex and Antigravity account reuse scope,
      the reopened chat's own model restore (`restoreReopenedChatSelection`,
      it needs `applyPendingLauncherOptions`), the 3 s capability wait (an
@@ -447,10 +447,83 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      agent that already owns the chat, and an unknown config each stamp
      `Could not switch agent: …` on the chat. An armed chat gets
      `switching: { toConfigId, status: 'pending' }` and its target warms
-     through `prepareChat` (silent). Not here: `setSwitchPendingOption`,
-     `switchAgent` (the handoff summary, the transcript splice, the new
-     session and the first prompt) and the reopen's switch redirect and
-     re-splice.
+     through `prepareChat` (silent). A chat with no `cwd` arms and then
+     fails with `actionRejected`, where the TypeScript throws the engine's
+     `TypeError` from `cwd.trim()` (a unit test, since the text differs per
+     engine).
+   - 9c, armed picks (R6a-7). `setSwitchPendingOption` merges a composer
+     pick into `switching.pendingOptions` (a model pick keeps only the
+     mode-category values, read from the target's warm session or else its
+     options cache) and saves it under the target config, with the scoped
+     values under the armed model (`modelValuesPatch`). Nothing goes to the
+     chat's current agent. A pick with no switch armed is logged and dropped.
+     Once `switchAgent` runs, a pick is logged and dropped: the switch
+     already read the picks for its new session.
+   - 8d, launcher picks (R6a-7, `acp/launcher_options.rs`).
+     `applyPendingLauncherOptions` sets a launcher's or an armed switch's
+     picks on the new session, one set command at a time on a `Book::runs`
+     id: the mode unless current, the model (native `setModel`, falling back
+     to the model config option; a model the session lacks toasts and skips
+     its scoped values), then each value the session advertises and does not
+     already show. Each failure is logged and the next pick still goes. After
+     a native model switch with values still to set it waits for the
+     re-advertise (`waitForReadvertisedOptions`); the recorder cannot reach
+     that wait, whose loop only ends on the mocked clock. Not here: the
+     `restore` form the reopened chat's model restore uses.
+   - 9d, the switch (R6a-7, `acp/switch_run.rs`, `acp/handoff.rs`,
+     `acp/splice.rs`). `switchAgent`, and a `sendPrompt` or
+     `sendPromptBlocks` on an armed chat, which runs it with the draft and
+     gets no answer. The busy gate, an unknown config and the owning agent
+     refuse as arming does; a stopped chat may continue on its own config.
+     A second switch of the same chat while one runs answers null. The
+     handoff summary (`buildHandoffSummary`: the last 12 turns, the first
+     user line kept as the intent, an omission note, a 4000-character body
+     with the newest lines kept, tool one-liners from `describeToolCall`,
+     plan fences stripped) goes before the draft; the composer's own blocks
+     follow it swept of token sentinels. The draft record is deleted
+     (`deletePersisted`). Then `ensureLiveAgent` (`Caller::Switch`),
+     `createSession` (`CreateCaller::Switch`, with the chat's worktree), the
+     armed picks (8d), and the marker (`recordAgentSwitch`, answered like an
+     agent command; a failure toasts and the switch goes on). The old
+     transcript is spliced in front of the new session's (`switch-splice:`
+     ids, a negative seq band, one separator, fabricated when the host's
+     marker has not arrived; streaming bubbles settle and running tool
+     cards fail), the plan follows, and the live window trims. An open tab
+     is remapped (`remapChatTab`). The handoff prompt takes over no bubble
+     of its own: a draft shows as one, a summary-only prompt shows none and
+     its echo is dropped (`handoffOnlyTurnIds`). Its answer, a busy host or
+     a lost reply finish the switch; a definite failure banners the new
+     session (`Could not deliver the handoff prompt: …`). Finishing detaches
+     the old agent's reuse keys, appends the target to the old row's
+     `agents`, stamps the continuation and clears `switching`. A failure
+     before the new session exists rolls back: the old chat shows
+     `Could not switch agent: …`, and an agent spawned for the switch alone
+     is killed. Not here: the composer's token rendering in the summary
+     (`sanitizeDisplayText`, `serializeSelectionContexts`, composer unit).
+   - 9e, the switched reopen (R6f, `acp/reopen_switch.rs`). After a
+     history open installs its payload, `redirectSwitchedReopen` follows
+     the last marker that names a new session and its config. Each hop is a
+     fresh read (`loadFreshSourcePayload`: `reloadSessionPayload`, then
+     `readSessionPayload` when the host has none or its re-read fails, which
+     logs a warning). The walk follows at most 8 markers and stops at a hop
+     with no payload or one whose marker points at a session already
+     opening. When the last session's own chain cannot be read and that
+     session is opening, the redirect gives up and warns. Otherwise the
+     last session opens through `openHistorySession` (an active one needs
+     no open), every hop's transcript is spliced under it oldest first
+     after its live splice is dropped, the hops' watermarks count, the
+     queue moves to it, an open tab is remapped, and the original open
+     answers once the moved queue flushed. A failed open of the last
+     session warns and reopens the chat as it is. A chat that is not
+     redirected runs `respliceLiveSwitchTarget`: it walks back through the
+     live switch link, else the payload's `continuedFrom`, reading each
+     source fresh, and splices each source's band with its marker (the
+     live one, the source's own, or one made from the index's configs and
+     the target's `createdAt` or the source's `lastActivityAt`) in front of
+     the chat. A source with no payload stops the walk with an info log.
+     The splice applies only while the open is current. 19 vectors
+     (`acp-scenarios-reopen-switch.ts`); a mutation check is in the R6f
+     report.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
       effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
@@ -529,6 +602,21 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
       answer. The recorder never reaches a timer, so `oneshot_tests.rs`
       checks them. `State::selected_agent_config_id` stands in for the
       config slice's selection.
+    - 10d, small leftovers (R6a-7). `setSelectedAgentConfigId` sets that
+      selection. `retargetWarmPool` cancels the warm sessions of other
+      configs in the same folder (the folder compared normalized) and seeds
+      the target's pool silently. `_onBrowserStopChanged` is
+      `setBrowserStopped`, true only for a literal `true`.
+      `respondBrowserConsent` takes the ticket out of the queue and sends
+      `answerBrowserConsent`, answered like an agent command with the
+      result. `ok` and `stale` end it; `too_early`, `refused` or a failed
+      call put the ticket back and toast, and a refusal is logged. A drain
+      and a seed in one step are separate vectors: their TypeScript
+      promises interleave by microtask depth, which the replay's in-order
+      answers do not reproduce. The views' one-line predicates
+      (`isBackgroundWorkBlock`, `sessionProjectId` and the rest the audit
+      below lists) are in `acp/queries.rs`; they read state and emit
+      nothing, so `queries_tests.rs` checks them instead of vectors.
 11. The user's own control picks (`setMode`, `setModel`, `setConfigOption`,
     `pickModel`), the saved-pick heal, and the prompt reconcile mapped onto
     the client crate's command ledger. Split in two:
@@ -607,18 +695,77 @@ so the replay drops `retryQueueAfter` before it compares.
   wire framing (skill paths, file tokens, conversation envelopes) and belongs
   to the composer unit, which ports `lib/composer/`. The model keeps the
   echo's blocks as sent; the vectors use prompts without framing.
-- `handoffOnlyTurnIds` on the echo. PR 9.
 - On `prompt_complete`: the update of the in-memory payload cache (PR 6).
 - In sending: the warm-pool promotion
   wait and the launch's `skipUserAppend` and `leadsQueue` (PR 8), the
   history-open wait (`openingHistoryIds`, PR 6), the read-only guard from the
   chat's GitHub link (the model reads it from the transcript only), the
-  re-auth after an expired token, the armed agent switch (PR 9), and
+  re-auth after an expired token, and
   send-now's 5 s wait timeout.
 
 On a closed session the model does not yet run the reload hand-off
 (`reloadInFlight`, PR 9) or the drop of an empty warm-pool session
 (`ephemeralSessionIds`, PR 8).
+
+## Unported exports (audit, R6a-7)
+
+Checked on 2026-11-24 against `src/renderer/stores/acp-store/` at
+`fc90e4627` plus the R6a-7 stack. Two lists: the store's actions with no
+`acp::Event`, and the runtime exports (not types) that code outside the store
+imports. An export not listed is either ported or private to the store. Each
+row is **deferred** (a slice still to port), **React-only** (glue the Rune app
+does its own way), or **missing** (a gap with no slice planned yet).
+
+### Store actions without an `acp::Event`
+
+| Action | Status | Why |
+|---|---|---|
+| `startChat`, `startQuickChat`, `finalizeChatLaunch` | deferred | The launch flow (PR 8, rest). It needs the placeholder (8a), `ensureLiveAgent`, `createSession`, the warm-pool claim and `applyPendingLauncherOptions`, all ported now. It is the largest slice left. |
+| `retryFailedLaunch` | deferred | Re-runs `finalizeChatLaunch`, so it follows that slice. |
+| `retryCrashedSession` | missing | Reopens on a fresh agent (`forceNewAgent`, ported) and resends the last own prompt (`queries::last_own_user_prompt_blocks`, ported). Small once the reload hand-off (`reloadInFlight`) is ported. |
+| `openDiscoveredSession` | missing | Continues a `session/list` result through load or resume. Discovery (10b) is ported, but this open is not. |
+| `loadAgentConfigs`, `saveAgentConfig`, `deleteAgentConfig` | deferred | The config slice (`slices/config.ts`). Until then the app sets `agentConfigs` through `agentConfigsChanged`. |
+| `applyAgentUpdate`, `detachAgentForNewCredentials` | deferred | The agent-update orchestration (`lib/agent-update`) that these delegate to, with the config slice. |
+| `testConnection` | deferred | Spawns and kills a throwaway agent for the settings form; config slice. |
+| `loadSessionIndex` | ported as effects | `refreshSessionIndex` asks the app, and `applySessionIndexSnapshot` (6b) answers. |
+| `flushLiveSessionSaves` | React-only | The `beforeunload` flush of queued payload writes. Rune's app owns its own shutdown flush. |
+| `prioritizeResync` | React-only | Forwards to the web transport's resubscribe order. The Rune client crate owns its reconnect. |
+| `_onBrowserConsentTicket` | ported | Runs inside `_onPermissionRequest`, where the store calls it. |
+| `setSelectedAgentConfigId`, `retargetWarmPool`, `_onBrowserStopChanged`, `respondBrowserConsent` | ported (R6a-7) | 10d, in the PR that adds this audit. |
+
+Two store functions that are not exports are ported too (R6f, 9e): the
+reopen's switch redirect (`redirectSwitchedReopen`) and the re-splice after
+a reinstall (`respliceLiveSwitchTarget`), in `acp/reopen_switch.rs`.
+
+The first table comes from comparing the action names of `AcpState` in
+`types.ts` with the `rename` names of `acp::Event`; `complete` and `reject`
+in that diff are fields of a nested type, not actions.
+
+### Runtime exports used outside the store
+
+| Module | Export | Status | Why |
+|---|---|---|---|
+| `index` | `useAcpStore`, `useAcpMessages`, `useAcpSession`, `useAgentIcon`, `useAgentIdentity`, `useAgentTemplateId`, `useConfigWarmState`, `usePromptQueue`, `useSessionIndexTitle`, `useSessionUsage` | React-only | Zustand selectors. Rune views read `acp::State`. |
+| `index` | `initAcpEventListeners` | React-only | Event wiring. The app crate feeds `acp::step`. |
+| `index` | `switchBlockedReason`, `BACKGROUND_COMMANDS_BLOCK_REASON`, `BACKGROUND_SUBAGENTS_BLOCK_REASON`, `sessionTurnBusy`, `configIdForAgentId`, `agentReuseKey`, `prepareChatKey`, `runsCurrentLaunch`, `renewAgentCredentials`, `historyOpenInFlight`, `plainLastError`, `persistComposerOptions` | ported | `State::switch_blocked_reason`, `Session::turn_busy`, `State::config_id_for_agent`, `reuse_key.rs`, `warm::prepare_chat_key`, `State::runs_current_launch`, `Event::RenewAgentCredentials`, `HistoryBook::opening`, the `lastError` writes, `Effect::PersistComposerOptions`. |
+| `index` | `isBackgroundWorkBlock`, `hasModelRelevantOptionsCache`, `isEphemeralAcpSession`, `mcpServerDeletionCount`, `sessionProjectId`, `configIdFromReuseKey`, `lastOwnUserPromptBlocks` | ported (R6a-7) | `acp/queries.rs`: free functions for the pure predicates, `State` methods for the reads of the book, and `State::mcp_deletions`. Checked by `queries_tests.rs`. |
+| `index` | `ChatLaunchCancelledError` | deferred | The launch flow. |
+| `helpers` | `SWITCH_SPLICE_ID_PREFIX`, `prepareChatKey` | ported | `splice::SPLICE_PREFIX`, `warm::prepare_chat_key`. |
+| `helpers` | `isResumeFailureError`, `sessionProjectId` | ported (R6a-7) | `queries::is_resume_failure_error`, `State::session_project_id`. |
+| `composer-options` | `readComposerOptions`, `savedModelValues`, `savedAgentWideValues`, `modelValuesPatch`, `agentWideValues` | ported | `Effect::ReadComposerOptions`, `restore.rs`, `switch.rs`. |
+| `composer-options` | `isScopedOption`, `liveOptionValues`, `unscopedValues`, `latestArmedPick`, `nextPickSeq` | deferred | The model selector's helpers, for the composer unit. |
+| `chat-reuse-scope` | `readOwnChatAccount`, `readOwnCodexChatAccount`, `readOwnAntigravityChatAccount` | deferred | The per-chat Claude, Codex and Antigravity account scope. It is not ported in history open either (6d). |
+| `live-turn` | `isLaunchPlaceholderSessionId`, `isLiveLaunchSession`, `noteDroppedLaunchPlaceholders`, `partitionRestoredAgentChatIds` | deferred | The launch placeholders the workspace restore reads; with the launch flow. |
+| `reload-guard` | `reloadInFlight`, `liveSiblingCount` | missing | The reload hand-off on a closed session. |
+| `shared-state` | `liveSwitchSources` | ported | `SwitchBook::live_sources`. |
+| `shared-state` | `recordCurrentLaunch` | deferred | The launch signature the account switcher records; with the launch flow. |
+| `registry-mcp-fingerprints` | `recordRegistryMcpServers`, `registryMcpServersMatch` | ported | `Book::registry_mcp` and the warm-pool claim's check. |
+| `ephemeral-ids` | `ephemeralSessionIds` | ported | `Book::ephemeral_sessions`. |
+| `subagent-lifecycle` | `cancelRunningSubagents` | ported | `acp/subagent.rs`. |
+| `session-agent-config` | `sessionAgentConfigId` | ported | The Antigravity plan-limit attribution in `acp/agents.rs`. |
+| `slices/agent` | `isAnyAgentAuthInFlight` | ported (R6a-7) | `State::is_any_agent_auth_in_flight`. |
+| `model-catalog` | `readModelCatalog` | React-only | The selector reads the saved catalog from persistence. Rune reads it the same way the app reads other records. |
+| `rate-limit` | `withRateLimit` | ported | The rejected rate limit on `agent_error` (7a) and the usage writes. |
 
 ## CI
 
@@ -669,6 +816,11 @@ its pinned sources match a path glob of both workflows.
   `releaseHeld` step, which answers the oldest held command with `reply`;
   that is how a vector interleaves a close with a delete, or a durability
   probe with a close.
+- `context.openChatTabs` also decides which tabs a pane shows: a consent
+  ticket brings an open chat's tab forward (`revealChatTab`, logged), and a
+  switch remaps an open tab (`remapChatTab`). The model cannot see which
+  tab is active, so the app skips an active one.
+- A persisted record's delete is `deletePersisted`.
 - `context.projects` is the project store's list; a `setProjects` step
   replaces it, `agentConfigsChanged` replaces `agentConfigs`, and
   `renewAgentCredentials` calls the module function. The spawn bookkeeping

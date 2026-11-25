@@ -26,6 +26,7 @@ mod discovery;
 mod effect;
 mod ensure;
 mod event;
+mod handoff;
 mod history;
 mod history_install;
 mod host_error;
@@ -37,6 +38,7 @@ pub mod js;
 #[cfg(test)]
 mod js_tests;
 mod launch;
+mod launcher_options;
 pub mod mcp;
 mod mcp_install;
 mod mcp_oauth;
@@ -52,9 +54,13 @@ mod oneshot_tests;
 mod picks;
 mod plan;
 pub mod prompt;
+pub mod queries;
+#[cfg(test)]
+mod queries_tests;
 mod reconcile;
 #[cfg(test)]
 mod reconcile_tests;
+mod reopen_switch;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
@@ -67,8 +73,10 @@ mod setup_error;
 #[cfg(test)]
 mod setup_error_tests;
 mod spawn_env;
+mod splice;
 pub mod subagent;
 mod switch;
+mod switch_run;
 #[cfg(test)]
 mod switch_tests;
 mod tool_call;
@@ -283,6 +291,15 @@ pub struct Book {
     /// Per session, the newest model pick still running (`latestModelPick`).
     #[serde(skip)]
     pub(crate) latest_model_pick: BTreeMap<String, RunId>,
+    /// The agent switches in flight.
+    #[serde(skip)]
+    pub(crate) switch: switch_run::SwitchBook,
+    /// Summary-only handoff turns whose echo shows no user bubble.
+    #[serde(skip)]
+    pub(crate) handoff_only_turns: BTreeSet<String>,
+    /// The launcher picks being applied to a new session.
+    #[serde(skip)]
+    pub(crate) launchers: BTreeMap<RunId, launcher_options::LauncherRun>,
     /// Sessions whose heal was asked for again while one ran.
     #[serde(skip)]
     pub(crate) heal_rerun: BTreeSet<String>,
@@ -465,6 +482,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::ElicitationRequest(event, seq) => state.on_elicitation_request(event, seq),
         Event::BrowserTicketClosed(event) => state.on_browser_ticket_closed(event),
         Event::ModeUpdate(event) => state.on_mode_update(event, env, &mut fx),
+        Event::ModelsUpdate(event) => state.on_models_update(event, env, &mut fx),
         Event::ConfigOptionsUpdate(event) => state.on_config_options_update(event, env, &mut fx),
         Event::PromptComplete(event, seq) => state.on_prompt_complete(event, seq, env, &mut fx),
         Event::AgentWorking(event) => state.on_agent_working(event, env, &mut fx),
@@ -488,7 +506,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.apply_session_index(entries, &mut fx);
             state.on_import_reloaded(&reload, None, &mut fx);
         }
-        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, &mut fx),
+        Event::SetMode(session_id, mode_id) => state.set_mode(session_id, mode_id, None, &mut fx),
         Event::SetModel(session_id, model_id, options) => {
             state.set_model(session_id, model_id, options, None, &mut fx);
         }
@@ -534,7 +552,19 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.claim_prepared_chat(&key, &project_id, request, &mut fx);
         }
         Event::AgentSwitch(event, seq) => state.on_agent_switch(event, seq, env),
+        Event::ApplyPendingLauncherOptions(session_id, picks, request) => {
+            let by = launcher_options::LauncherCaller::Action(request);
+            state.apply_pending_launcher_options(session_id, picks, by, &mut fx);
+        }
         Event::CancelAgentSwitch(session_id) => state.cancel_agent_switch(&session_id),
+        Event::SetSelectedAgentConfigId(config_id) => state.selected_agent_config_id = config_id,
+        Event::RetargetWarmPool(config_id, cwd, project_id) => {
+            state.retarget_warm_pool(&config_id, &cwd, project_id, &mut fx);
+        }
+        Event::BrowserStopChanged(event) => approvals::on_browser_stop_changed(&event, &mut fx),
+        Event::SetSwitchPendingOption(session_id, patch) => {
+            state.set_switch_pending_option(&session_id, patch, &mut fx);
+        }
         Event::ArmAgentSwitch(session_id, to_config_id, request) => {
             state.arm_agent_switch(&session_id, &to_config_id, request, &mut fx);
         }
@@ -569,6 +599,16 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
             state.respond_agent_sign_in(agent_id, action, &mut fx);
         }
         Event::CompleteBrowserAuth(agent_id) => state.complete_browser_auth(&agent_id, &mut fx),
+        Event::AgentCommandDone(Effect::RecordAgentSwitch { switch, .. }, _) => {
+            state.on_switch_marker(switch, None, env, &mut fx);
+        }
+        Event::AgentCommandFailed(Effect::RecordAgentSwitch { switch, .. }, message, _) => {
+            state.on_switch_marker(switch, Some(message), env, &mut fx);
+        }
+        Event::RespondBrowserConsent(id, option) => {
+            state.respond_browser_consent(id, option, &mut fx)
+        }
+        Event::SwitchAgent(request) => state.switch_agent(request, true, &mut fx),
         Event::AgentCommandDone(command, reply) => {
             state.on_agent_command_done(command, reply, env, &mut fx);
         }
@@ -586,16 +626,27 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::TurnEnd(end) => state.on_turn_end(end, env, &mut fx),
         Event::SendPrompt(session_id, text) => {
             let blocks = vec![serde_json::json!({ "type": "text", "text": text })];
-            state.send_prompt(&session_id, blocks, SendOptions::default(), env, &mut fx);
+            let pending = switch_run::SwitchPending {
+                pending_text: Some(text),
+                wire_blocks: Some(blocks.clone()),
+                display_blocks: Some(blocks.clone()),
+                account_chat_id: None,
+            };
+            if !state.send_into_armed_switch(&session_id, pending, &mut fx) {
+                state.send_prompt(&session_id, blocks, SendOptions::default(), env, &mut fx);
+            }
         }
         Event::SendPromptBlocks(session_id, blocks, options) => {
-            state.send_prompt(
-                &session_id,
-                blocks,
-                options.unwrap_or_default(),
-                env,
-                &mut fx,
-            );
+            let options = options.unwrap_or_default();
+            let pending = switch_run::SwitchPending {
+                pending_text: None,
+                wire_blocks: Some(blocks.clone()),
+                display_blocks: Some(options.display_blocks.clone().unwrap_or(blocks.clone())),
+                account_chat_id: None,
+            };
+            if !state.send_into_armed_switch(&session_id, pending, &mut fx) {
+                state.send_prompt(&session_id, blocks, options, env, &mut fx);
+            }
         }
         Event::CancelPrompt(session_id) => state.cancel_prompt(&session_id, &mut fx),
         Event::RemoveQueuedPrompt(session_id, id) => state.remove_queued_prompt(&session_id, &id),
@@ -732,15 +783,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     // A one-shot whose collector settled moves on after the handler, as the
     // TypeScript promise chain does.
     state.advance_settled_oneshots(&mut fx);
-    // A create the host answered from its records answers once its session
-    // opened.
-    for (create, session_id) in std::mem::take(&mut state.book.history.created) {
-        state.resolve_create(create, session_id, env, &mut fx);
-    }
-    // A prompt typed while a history open ran goes out once it ends.
-    for session_id in std::mem::take(&mut state.book.history.flush) {
-        state.flush_next_queued_prompt(&session_id, env, &mut fx);
-    }
+    state.after_history_step(env, &mut fx);
     // A run waiting for re-advertised options moves on once an event changed
     // them, as the TypeScript poll would see.
     state.poll_readvertise(None, &mut fx);

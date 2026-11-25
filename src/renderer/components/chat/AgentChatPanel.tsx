@@ -693,7 +693,7 @@ export function AgentChatPanel({
     }
     retryInFlightRef.current = true
     const userBlocks = lastUserBlocks
-    void retryWireBlocks(userBlocks, skills)
+    void retryWireBlocks(userBlocks, skills, sessionProjectId)
       .then((wireBlocks) => sendPromptBlocks(sessionId, wireBlocks, { displayBlocks: userBlocks }))
       .catch((err) => {
         if (isAgentDeadError(err)) return
@@ -716,7 +716,8 @@ export function AgentChatPanel({
     sessionId,
     session?.status,
     session?.launchConfigId,
-    session?.lastError
+    session?.lastError,
+    sessionProjectId
   ])
 
   // Desktop + web parity: the open-in-editor chain is transport-agnostic —

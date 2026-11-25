@@ -103,6 +103,9 @@ fn header_title(s: &State) -> String {
         model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::AgentChat { .. })) => {
             crate::chat_view::tab_title(s, &tab).unwrap_or_else(|| "Agent Chat".to_owned())
         }
+        model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::Terminal { .. })) => {
+            crate::terminal_view::tab_title(s, &tab).unwrap_or_else(|| "Terminal".to_owned())
+        }
         _ => "Troupe".to_owned(),
     }
 }
@@ -294,7 +297,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
         .border_sides([1.0, 0.0, 0.0, 0.0], c.border)
         .child(foot("Settings", "Settings", "Settings"))
         .child(foot("Camera", "Screenshot", "Screenshots"))
-        .child(foot("History", "Command history", "Command history"))
+        .child(foot("History", "Git history", "Git history"))
         .child(foot("CalendarClock", "Automations", "Automations"))
         .child(new_chat);
     col()
@@ -385,6 +388,7 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             PROJECTS => projects_sheet(s, t, window, layer),
             RECENTS => recents_sheet(s, t, window, layer),
             crate::composer_sheet::ADD_SHEET => crate::composer_sheet::add_sheet(s, t, window, layer),
+            crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
             _ => {}
         }
     }
@@ -419,7 +423,10 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
                 row_of("GitBranch", "Git changes"),
                 row_of("FolderOpen", "Files"),
                 row_of("Search", "Command palette"),
-                row_of("TerminalSquare", "New terminal"),
+                mobile::sheet_row(t, glyph("TerminalSquare"), "New terminal", false).on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.new_terminal(None);
+                }),
                 row_of("Settings", "Project settings"),
                 row_of("Bug", "Report a bug"),
             ],

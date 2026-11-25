@@ -7,11 +7,11 @@ A chat's agent can hand part of a task to another agent you installed, for examp
 
 Every agent in Troupe has the tools for this. Ask for it in your prompt, for example "Ask Codex to review the cart changes and tell me what it finds". The agent can also decide to use it itself.
 
-Troupe tells each chat's agent when to do that. For a long task, work that can run in parallel, or work a cheaper agent can do, the agent starts one of your allowed agents through Troupe, so you can follow and stop it in the chat. For a short lookup, the agent uses its own built-in subagent, if it has one, such as Claude Code's Task tool. It also falls back to its built-in subagent when this feature is off, none of your agents is allowed, or Troupe refuses the start.
+Troupe tells each chat's agent when to do that. For a long task, work that can run in parallel, or work a cheaper agent can do, the agent starts one of your sub-agent profiles through Troupe, so you can follow and stop it in the chat. For a short lookup, the agent uses its own built-in subagent, if it has one, such as Claude Code's Task tool. It also falls back to its built-in subagent when this feature is off, every profile is off, or Troupe refuses the start.
 
 ## How it works
 
-1. The agent picks one of your agents and writes its task. The task has to stand on its own, because the other agent does not get this chat's conversation. A task can be up to 8,000 characters.
+1. The agent picks one of your [profiles](#profiles) and writes its task. The task has to stand on its own, because the other agent does not get this chat's conversation. A task can be up to 8,000 characters.
 2. Troupe starts the other agent in the background. It shows up as a subagent row in the chat, with its own icon. See [Follow subagents](/docs/agents/follow-the-work#follow-subagents).
 3. When the subagent wants to run a step that needs your OK, the request appears in this chat. See [Approvals from subagents](/docs/agents/approvals#approvals-from-subagents).
 4. When the subagent ends, its result shows on its row and in its panel. The agent reads the result and carries on with your task.
@@ -49,11 +49,28 @@ Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **Sub-agents**. The pag
 | **Max running sub-agents** | How many subagents one chat can run at the same time, from 1 to 8. When a chat already runs that many, the agent can start another one after one ends. | 4 |
 | **Max depth** | How many levels of subagents can start their own subagents, from 1 to 4. With 1, subagents can't start more. | 2 |
 
-Below it, **Agents they can use** lists the agents installed on this computer, each with a switch. Turn an agent off to keep chats from starting it as a subagent. Agents are allowed until you turn them off. When no agent is installed, the list says **No agents yet**.
+### Profiles
 
-Each allowed agent has a **Default model** row below its switch. Pick the model a subagent of that agent starts with when the agent that starts it does not ask for one. **Default** leaves the choice to the agent. The list shows the models the agent reported the last time it ran in a chat, so an agent that never ran in a chat has no models to pick yet; the row then says "Run this agent once in a chat to list its models."
+Below the general settings, **Profiles** lists what the agent can start. A profile is one installed agent with its own model, thinking level, mode, approvals and note. You can have several profiles of the same agent, for example `pi-fast` with a small model for quick edits and `pi-research` with a large one for long reads. Every installed agent has a profile from the start, named after the agent, so a new agent is ready at once.
 
-Each allowed agent also has a **When to use** box. Write what that agent is good at, for example "Fast at UI tweaks and CSS; weak at Rust." Troupe saves the note when you leave the box, up to 1,000 characters, and gives it to the agent that picks a subagent, so it can choose the agent that fits the task. Clear the box to remove the note.
+Each row shows the profile's name, its note, a model chip, a switch and a **⋯** menu:
+
+- **Model chip.** Click it to open the same model picker as the message box. Pick a model, a thinking level, and the agent's other options. Click another agent's icon in the picker to move the profile to that agent. The first time you open it, Troupe starts the agent in the open project to read its models, so open a project first. A shield on the chip means the profile runs without asking: its mode is a bypass mode, or its approvals are **Allow everything**. An agent's only profile, and a profile named after its agent, stay on that agent, and the open row says why. To use another agent, duplicate the profile and move the copy.
+- **Switch.** Turn a profile off to hide it from the agent. It can't start while it is off.
+- **⋯ menu.** **Duplicate** copies the profile under a new name, such as `pi-fast-2`. **Delete** removes it. An agent's only profile can't be deleted; turn it off instead.
+
+Click a row to edit the rest of the profile:
+
+| Field | What it does |
+| --- | --- |
+| **Name** | The name the agent passes to start the profile. Up to 64 letters, digits, `.`, `_`, `:` and `-`. Two profiles can't share a name, whatever the case. |
+| **Mode** | The agent's mode for the run, such as Claude's **Plan** or **Bypass permissions**. It shows only for an agent that has modes. |
+| **Approvals** | **Ask in chat** sends the subagent's requests to the chat. **Allow everything** has Troupe answer them with Allow, except a mode switch, which still comes to the chat. The run still stays in its own worktree. |
+| **When to use** | What the profile is good at, for example "Fast at UI tweaks and CSS; weak at Rust." Troupe saves the note when you leave the box, up to 1,000 characters, and gives it to the agent so it can pick the profile that fits the task. Clear the box to remove the note. |
+
+**Add profile** adds a profile of the first installed agent and opens it. Change its agent in the model chip.
+
+The line under the list names the profiles the agent sees. Profiles that are off are hidden from it. The mode and approvals stay yours: the agent can't see or change them.
 
 The settings are kept on the computer that runs Troupe. In the browser version, the page shows and changes the server's settings.
 
@@ -63,12 +80,12 @@ Troupe gives every agent these tools. You don't call them yourself, but you may 
 
 | Tool | What it does |
 | --- | --- |
-| `subagent_list_agents` | Lists the agents the chat may start with each one's default model and **When to use** note, and the limits from Settings. |
-| `subagent_start` | Starts an agent on a task, in a worktree or in the chat's folder. It can give the subagent a title and ask for a model, when the agent offers a choice. Without a model, the subagent starts with the agent's **Default model** from Settings. |
+| `subagent_list_agents` | Lists the profiles the chat may start, each with its agent, model and **When to use** note, and the limits from Settings. |
+| `subagent_start` | Starts a profile on a task, in a worktree or in the chat's folder. It can give the subagent a title and ask for another model, when the agent offers a choice. Without one, the subagent starts with the profile's model. The profile's thinking level, mode and approvals always apply. |
 | `subagent_wait` | Waits up to 4 minutes for a subagent to end, then returns its result. If it is still working, the agent can wait again. |
 | `subagent_status` | Reports the chat's subagents without waiting. |
 | `subagent_stop` | Stops a subagent. |
 
-A subagent can't start when the feature is off, the agent is turned off or not installed, the chat already runs the most subagents it may, or it would go deeper than **Max depth**. The agent then gets the reason and can tell you.
+A subagent can't start when the feature is off, the profile is off or its agent is not installed, the chat already runs the most subagents it may, or it would go deeper than **Max depth**. The agent then gets the reason and can tell you.
 
 To hand work to a separate chat that you can open and talk to instead, see [Let an agent start worker chats](/docs/agents/chat-history#let-an-agent-start-worker-chats).

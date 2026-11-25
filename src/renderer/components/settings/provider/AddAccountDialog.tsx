@@ -14,6 +14,7 @@ interface AddAccountDialogProps {
   /** Names already in use, so suggestions skip them. */
   existingNames: string[]
   defaultAccountName: string | null
+  hasSignedInAccount: boolean
   /** Latest usage reads, to summarise the new Account when it is ready. */
   usage: Record<string, ClaudeAccountUsage>
   /** Called after the Account list changed (created, signed in, default). */
@@ -30,7 +31,7 @@ interface AddAccountDialogProps {
 export function AddAccountDialog({ usage, ...props }: AddAccountDialogProps): React.JSX.Element {
   const flow = claudeAccountsApi.signInFlow()
   const provider: AddAccountProvider<ClaudeAccount> = {
-    name: 'Claude',
+    id: 'claude',
     create: (name) => claudeAccountsApi.add(name),
     setDefault: (id) => claudeAccountsApi.setDefault(id),
     summary: (account) => {

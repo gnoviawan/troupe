@@ -80,6 +80,20 @@ function normalizeStoredSettings(data: AppSettings): { settings: AppSettings; ch
   }
   let changed = false
 
+  // "Open links in" was terminal-only (`terminalUrlOpenMode`, 'termul' for the
+  // Troupe browser) and is now app-wide (`linkOpenMode`). Keep the user's
+  // choice, then drop the old key.
+  const legacyLinkMode = (data as unknown as Record<string, unknown>).terminalUrlOpenMode
+  if (legacyLinkMode !== undefined) {
+    const current: Record<string, unknown> = { ...settings }
+    delete current.terminalUrlOpenMode
+    settings = current as unknown as AppSettings
+    if ((data as Partial<AppSettings>).linkOpenMode === undefined) {
+      settings = { ...settings, linkOpenMode: legacyLinkMode === 'termul' ? 'troupe' : 'system' }
+    }
+    changed = true
+  }
+
   // The per-project terminal limit moved to the host, and a live PTY no
   // longer expires by inactivity. Drop the retired keys an older version
   // persisted so they are not carried forward.

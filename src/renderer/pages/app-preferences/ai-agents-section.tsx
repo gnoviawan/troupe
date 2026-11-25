@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AcpAgentsSettings } from '@/components/settings/AcpAgentsSettings'
 import { rowId } from '@/components/settings/row-id'
+import { SettingsDisclosure } from '@/components/settings/SettingsDisclosure'
 import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
 import { SettingsSection } from '@/components/settings/SettingsLayout'
 import { SettingsNotice } from '@/components/settings/SettingsNotice'
@@ -125,8 +126,13 @@ export function AiAgentsSection({
   const envLocksWindow = liveWindow?.source === 'env'
   const operatorLocksWindow = liveWindow?.source === 'operator'
 
+  const timeLimitsSummary = isDesktop
+    ? `Quiet answer ${formatLimit(acpTurnIdleTimeoutSecs, 'no limit')} · longest answer ${formatLimit(acpTurnTimeoutSecs, 'no limit')} · new chat ${formatLimit(acpSessionNewTimeoutSecs, '1 minute')} · saved chat ${formatLimit(acpSessionReopenTimeoutSecs, '1 minute')}`
+    : 'Set on the server.'
+
   return (
     <SettingsSection id="ai-agents">
+      <AcpAgentsSettings />
       <SettingsGroup title="Chats">
         <SettingsCard>
           <TimeoutRow
@@ -151,9 +157,9 @@ export function AiAgentsSection({
           </SettingsNotice>
         ) : null}
       </SettingsGroup>
-      <SettingsGroup title="Time limits">
+      <SettingsDisclosure title="Advanced: time limits" summary={timeLimitsSummary}>
         {isDesktop ? (
-          <SettingsCard>
+          <>
             <TimeoutRow
               id="acp-turn-idle-timeout"
               label="If an answer goes quiet"
@@ -186,9 +192,9 @@ export function AiAgentsSection({
               onChange={handleAcpSessionReopenTimeoutChange}
               help="How long to wait. A long chat can need more time."
             />
-          </SettingsCard>
+          </>
         ) : (
-          <SettingsCard>
+          <>
             <SettingsRow
               label="While an answer is running"
               description={`Goes quiet: ${formatLimit(acpTurnIdleTimeoutSecs, 'No limit')} · Still writing: ${formatLimit(acpTurnTimeoutSecs, 'No limit')}`}
@@ -197,11 +203,9 @@ export function AiAgentsSection({
               label="Starting a chat"
               description={`New chat: ${formatLimit(acpSessionNewTimeoutSecs, '1 minute')} · Saved chat: ${formatLimit(acpSessionReopenTimeoutSecs, '1 minute')}`}
             />
-          </SettingsCard>
+          </>
         )}
-        {!isDesktop && <p className="px-1 text-xs text-muted-foreground">Set on the server.</p>}
-      </SettingsGroup>
-      <AcpAgentsSettings />
+      </SettingsDisclosure>
     </SettingsSection>
   )
 }

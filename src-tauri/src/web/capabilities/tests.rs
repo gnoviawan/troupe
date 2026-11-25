@@ -157,6 +157,7 @@ fn view_only_may_read_but_not_mutate() {
         "rename_antigravity_account",
         "remove_antigravity_account",
         "start_antigravity_account_login",
+        "check_antigravity_usage",
         "switch_project",
         "set_catalog_opt_in",
         "plan_mcp_install",

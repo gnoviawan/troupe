@@ -13,6 +13,7 @@ import { READ_ONLY_SERVER_REASON } from '@/lib/write-gate'
 import { applyRemovedClaudeAccount } from '@/stores/claude-account-switch'
 import { useProjectStore } from '@/stores/project-store'
 import type { ProjectColor } from '@/types/project'
+import { SETTINGS_CARD_CLASS } from '../SettingsGroup'
 import { AccountGroupFooter } from './AccountGroupFooter'
 import { AccountNameDialog } from './AccountNameDialog'
 import { AddAccountDialog } from './AddAccountDialog'
@@ -157,7 +158,7 @@ export function ProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-3">
       <ProviderGroupHeader
         iconKey="acp:claude-acp"
         name="Claude Code"
@@ -200,7 +201,7 @@ export function ProviderSettings(): React.JSX.Element {
       )}
 
       {!loading && !failed && snapshot && (
-        <div>
+        <div className={cn(SETTINGS_CARD_CLASS, 'px-4')}>
           {accounts.map((account) => (
             <ClaudeAccountRow
               key={account.id}
@@ -237,7 +238,7 @@ export function ProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="claude"
+          provider="claude"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}
@@ -268,6 +269,7 @@ export function ProviderSettings(): React.JSX.Element {
             onOpenChange={setAddOpen}
             existingNames={accounts.map((a) => a.name)}
             defaultAccountName={defaultAccount?.name ?? null}
+            hasSignedInAccount={accounts.some((a) => accountReadiness(a, usage[a.id]) === 'ready')}
             usage={usage}
             onChanged={reload}
             onSignedIn={() => refreshUsage(true)}

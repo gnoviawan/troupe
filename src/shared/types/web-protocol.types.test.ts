@@ -32,8 +32,8 @@ import {
 import { WEB_TERMINAL_ERROR_CODES } from './web-terminal-protocol.types'
 
 describe('web-protocol.types — event/request type registries (AC2)', () => {
-  it('exports exactly 24 event types including durable user prompts, host records, switch markers, the live agent_working and background_commands states + delivery frames', () => {
-    expect(WS_EVENT_TYPES).toHaveLength(24)
+  it('exports exactly 25 event types including durable user prompts, host records, switch markers, legacy model switches, the live agent_working and background_commands states + delivery frames', () => {
+    expect(WS_EVENT_TYPES).toHaveLength(25)
     // The 16 from events.rs (prefix-dropped) + auth_required.
     const expected16FromEvents = [
       'agent_spawned',
@@ -58,6 +58,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     }
     expect(WS_EVENT_TYPES).toContain('auth_required')
     expect(WS_EVENT_TYPES).toContain('user_prompt')
+    // A legacy-only session's model switch (`session/set_model`).
+    expect(WS_EVENT_TYPES).toContain('models_update')
     // The nudges retired by the watch hub must not come back as seq-0 events.
     expect(WS_EVENT_TYPES).not.toContain('projects_changed')
     expect(WS_EVENT_TYPES).not.toContain('chat_history_changed')
@@ -93,8 +95,8 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
     expect(WS_REQUEST_TYPES).toContain('get_session_payload')
   })
 
-  it('exports exactly 102 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, and the agent overlay', () => {
-    expect(WS_REQUEST_TYPES).toHaveLength(102)
+  it('exports exactly 103 request types including chat MCP install approval, per-chat Codex and Antigravity account and resume, the Antigravity usage check, and the agent overlay', () => {
+    expect(WS_REQUEST_TYPES).toHaveLength(103)
     const expected = [
       'send_prompt',
       'cancel_prompt',
@@ -203,6 +205,7 @@ describe('web-protocol.types — event/request type registries (AC2)', () => {
       'start_codex_account_login',
       'list_antigravity_accounts',
       'list_antigravity_usage',
+      'check_antigravity_usage',
       'set_default_antigravity_account',
       'set_project_antigravity_account',
       'set_chat_antigravity_account',
@@ -364,6 +367,7 @@ describe('web-protocol.types — reliability tier registry (AC5)', () => {
       'agent_error',
       'tool_call',
       'mode_update',
+      'models_update',
       'config_options_update',
       'session_info_update',
       'usage_update',

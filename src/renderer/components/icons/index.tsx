@@ -10,6 +10,7 @@ import {
   ArrowRight02Icon,
   ArrowUp02Icon,
   BellIcon,
+  Bookmark02Icon,
   BotIcon,
   BracesIcon,
   BrainIcon,
@@ -224,6 +225,7 @@ export const Grid3X3 = hugeIcon('Grid3X3', Grid3X3Icon)
 export const MessageSquare = hugeIcon('MessageSquare', MessageSquareIcon)
 export const Info = hugeIcon('Info', InformationCircleIcon)
 export const Sliders = hugeIcon('Sliders', SlidersHorizontalIcon)
+export const Bookmark = hugeIcon('Bookmark', Bookmark02Icon)
 export const Trash2 = hugeIcon('Trash2', Delete01Icon)
 export const Save = hugeIcon('Save', SaveIcon)
 export const VideoIcon = hugeIcon('VideoIcon', Video01Icon)

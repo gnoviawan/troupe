@@ -4264,6 +4264,72 @@ describe('composer option fidelity', () => {
       })
     })
 
+    it('_onModelsUpdate replaces a legacy model list on every client', () => {
+      seedOptionsSession('s1', 'agent-1', {
+        models: {
+          currentModelId: 'openrouter:anthropic/claude-sonnet-4',
+          availableModels: [
+            makeModel('openrouter:anthropic/claude-sonnet-4'),
+            makeModel('openrouter:openai/gpt-5')
+          ]
+        }
+      })
+
+      useAcpStore.getState()._onModelsUpdate({
+        agentId: 'agent-1',
+        sessionId: 's1',
+        models: {
+          currentModelId: 'openrouter:openai/gpt-5',
+          availableModels: [
+            makeModel('openrouter:anthropic/claude-sonnet-4'),
+            makeModel('openrouter:openai/gpt-5')
+          ]
+        }
+      })
+
+      expect(useAcpStore.getState().sessions['s1'].models?.currentModelId).toBe(
+        'openrouter:openai/gpt-5'
+      )
+      // An event for a session this client does not hold changes nothing.
+      useAcpStore.getState()._onModelsUpdate({
+        agentId: 'agent-1',
+        sessionId: 'unknown',
+        models: { currentModelId: 'x', availableModels: [] }
+      })
+      expect(useAcpStore.getState().sessions['unknown']).toBeUndefined()
+    })
+
+    it('a reconnect snapshot applies the newest legacy model switch', async () => {
+      const availableModels = [
+        makeModel('openrouter:anthropic/claude-sonnet-4'),
+        makeModel('openrouter:openai/gpt-5')
+      ]
+      seedOptionsSession('s1', 'agent-1', {
+        models: { currentModelId: 'openrouter:anthropic/claude-sonnet-4', availableModels }
+      })
+
+      await _installTransportRecoveryForTesting({
+        sessionId: 's1',
+        watermark: 2,
+        events: [
+          {
+            sid: 's1',
+            seq: 2,
+            type: 'models_update',
+            payload: {
+              agentId: 'agent-1',
+              sessionId: 's1',
+              models: { currentModelId: 'openrouter:openai/gpt-5', availableModels }
+            }
+          }
+        ]
+      } as never)
+
+      expect(useAcpStore.getState().sessions.s1.models?.currentModelId).toBe(
+        'openrouter:openai/gpt-5'
+      )
+    })
+
     it('_onModeUpdate preserves a moved-off mode against a creation-default echo', () => {
       seedOptionsSession('s1', 'agent-1', {
         modes: { currentModeId: 'bypass', availableModes: [makeMode('agent'), makeMode('bypass')] },

@@ -182,6 +182,32 @@ describe('ProviderSettings', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('Team')
   })
 
+  it('Add account advises against many accounts when one is signed in already', async () => {
+    render(<ProviderSettings />)
+    await screen.findByTestId('claude-account-default')
+    fireEvent.click(screen.getByRole('button', { name: /add account/i }))
+    const notice = await screen.findByTestId('second-account-notice')
+    expect(notice).toHaveTextContent(
+      "Troupe does not recommend using many Claude accounts. A separate work account is fine. Using several accounts to get past usage limits can break Anthropic's terms and get your accounts suspended. More info"
+    )
+    expect(within(notice).getByRole('link', { name: 'More info' })).toHaveAttribute(
+      'href',
+      'https://usetroupe.dev/docs/agent-setup/claude-accounts#risks-of-switching-accounts'
+    )
+  })
+
+  it('Add account shows no advice when no account is signed in', async () => {
+    api.list.mockResolvedValue({
+      ...SNAPSHOT,
+      accounts: [{ ...SNAPSHOT.accounts[0], signedIn: false }, SNAPSHOT.accounts[1]]
+    })
+    render(<ProviderSettings />)
+    await screen.findByTestId('claude-account-default')
+    fireEvent.click(screen.getByRole('button', { name: /add account/i }))
+    expect(await screen.findByLabelText('Name')).toBeInTheDocument()
+    expect(screen.queryByTestId('second-account-notice')).not.toBeInTheDocument()
+  })
+
   it('shows a failed sign-in with Try again', async () => {
     api.login.mockRejectedValueOnce(new Error('Claude sign-in timed out'))
     render(<ProviderSettings />)
@@ -299,12 +325,27 @@ describe('ProviderSettings', () => {
     const toggle = await screen.findByRole('switch', { name: 'Switch accounts automatically' })
     expect(toggle).toHaveAttribute('aria-checked', 'true')
     expect(toggle).toHaveAccessibleDescription(
-      "When a chat reaches its account's limit, continue it on the signed-in account with the most room."
+      "When a chat reaches its account's limit, move it to another signed-in account. Off by default, because Anthropic's terms may not allow it."
     )
     api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: false })
     fireEvent.click(toggle)
     expect(api.setAutoSwitch).toHaveBeenCalledWith(false)
     await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'))
+  })
+
+  it('turns automatic switching on on the host only after the risk warning', async () => {
+    api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: false })
+    render(<ProviderSettings />)
+    const toggle = await screen.findByRole('switch', { name: 'Switch accounts automatically' })
+    fireEvent.click(toggle)
+    expect(await screen.findByRole('alertdialog')).toHaveAccessibleName(
+      'Switch Claude accounts automatically?'
+    )
+    expect(api.setAutoSwitch).not.toHaveBeenCalled()
+    api.list.mockResolvedValue({ ...SNAPSHOT, autoSwitch: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Turn on anyway' }))
+    expect(api.setAutoSwitch).toHaveBeenCalledWith(true)
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
   })
 
   it('says why automatic switching did not change and shows the host state', async () => {
