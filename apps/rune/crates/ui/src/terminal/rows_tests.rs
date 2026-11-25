@@ -102,3 +102,16 @@ fn box_drawing_and_blocks_are_shapes_and_text_is_not() {
         assert!(!custom(c), "{c} is the font's");
     }
 }
+
+#[test]
+fn a_double_corner_meets_at_its_outer_and_inner_lines() {
+    use rune::{Color, Shape};
+    let w = Color::WHITE;
+    let r = |s: Shape, x0: f32, y0: f32, x1: f32, y1: f32| s.fill(vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], w);
+    // An 8 x 19 cell: the centre is (4, 9); double lines sit one point either side of it.
+    let mut want = r(Shape::new(), 3.0, 8.0, 8.0, 9.0);
+    want = r(want, 5.0, 10.0, 8.0, 11.0);
+    want = r(want, 3.0, 8.0, 4.0, 19.0);
+    want = r(want, 5.0, 10.0, 6.0, 19.0);
+    assert_eq!(super::glyphs::draw(Shape::new(), '╔', 0.0, 8.0, 19.0, w), want);
+}
