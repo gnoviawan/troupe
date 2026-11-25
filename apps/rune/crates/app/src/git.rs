@@ -107,13 +107,33 @@ fn failure(error: HttpError) -> Failure {
     }
 }
 
+/// The routes the host runs through its command ledger (`LEDGERED_ROUTES` in
+/// `lib/ipc/http.ts`): each send carries a fresh `X-Command-Id`.
+const LEDGERED: [&str; 9] = [
+    "/git/stage-hunk",
+    "/git/unstage-hunk",
+    "/git/discard",
+    "/git/commit",
+    "/git/create-branch",
+    "/git/stash-save",
+    "/git/stash-apply",
+    "/git/stash-pop",
+    "/git/stash-drop",
+];
+
 fn request(route: git::Route) -> HttpRequest {
+    let command_id = LEDGERED.contains(&route.path.as_str()).then(crate::ids::uuid);
     HttpRequest {
         method: if route.post { Method::Post } else { Method::Get },
         path: route.path,
         body: route.body,
-        command_id: None,
+        command_id,
     }
+}
+
+#[cfg(test)]
+pub(crate) fn tests_request(path: &str) -> HttpRequest {
+    request(git::Route { post: true, path: path.to_owned(), body: None })
 }
 
 impl State {
