@@ -41,16 +41,23 @@ pub struct Metrics {
     pub style: TextStyle,
 }
 
+/// Paper Mono's ascent and descent per em (its `hhea` table: 955 and 245 of 1000 units).
+const ASCENT: f32 = 0.955;
+const DESCENT: f32 = 0.245;
+
 impl Metrics {
-    /// xterm.js's cell: the font's advance and its line box times the line height, each floored
-    /// to a whole pixel.
+    /// xterm.js's cell at device scale 1: the font's advance floored to a whole pixel, and
+    /// Chromium's font box (ascent and descent each rounded) times the line height, floored.
+    /// The text is tracked by the floored part of the advance so the shaped line keeps to the
+    /// cells, as xterm.js draws each glyph at its cell.
     pub fn new(font_size: f32, line_height: f32) -> Metrics {
         let probe = TextStyle::new(font_size, 400.0).mono();
         let sample = "W".repeat(64);
-        let cell_w = (rune::text::advance(&sample, probe) / 64.0).floor().max(1.0);
-        let (_, natural) = rune::text::measure("W", &[], probe, None);
-        let cell_h = (natural.ceil() * line_height).floor().max(1.0);
-        Metrics { cell_w, cell_h, style: probe.lh(cell_h) }
+        let advance = rune::text::advance(&sample, probe) / 64.0;
+        let cell_w = advance.floor().max(1.0);
+        let char_h = (ASCENT * font_size).round() + (DESCENT * font_size).round();
+        let cell_h = (char_h * line_height).floor().max(1.0);
+        Metrics { cell_w, cell_h, style: probe.lh(cell_h).tracking(cell_w - advance) }
     }
 
     /// The columns and rows that fit `width` x `height` points of content.

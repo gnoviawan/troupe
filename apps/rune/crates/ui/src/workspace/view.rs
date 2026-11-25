@@ -343,7 +343,7 @@ fn identity<S>(ctx: &Ctx<'_, S>, tab: &Tab) -> (&'static Icon, String) {
             let name = file_name(file_path);
             (i::file(name, ctx.dark), name.to_owned())
         }
-        Tab::Terminal { terminal_id, .. } => (&i::TERMINAL, terminal_id.clone()),
+        Tab::Terminal { terminal_id, .. } => (&i::TERMINAL, (ctx.title)(tab).unwrap_or_else(|| terminal_id.clone())),
         Tab::Browser { .. } => (&i::GLOBE, "New Tab".to_owned()),
         Tab::Git { .. } => (&i::GIT_BRANCH, "Git Changes".to_owned()),
         Tab::GitHistory { .. } => (&i::HISTORY, "Git History".to_owned()),

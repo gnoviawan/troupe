@@ -56,7 +56,7 @@ fn in_line(c: char) -> bool {
 }
 
 fn style_of(m: &Metrics, ink: &Ink) -> TextStyle {
-    let mut style = if ink.bold { TextStyle::new(m.style.size, 700.0).mono().lh(m.cell_h) } else { m.style };
+    let mut style = if ink.bold { TextStyle { weight: 700.0, ..m.style } } else { m.style };
     if ink.italic {
         style = style.italic();
     }
