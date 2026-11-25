@@ -25,6 +25,8 @@ export interface PendingAnnotationItem {
   deltaPx?: number
   cropDataUrl?: string
   cropBase64?: string
+  /** Absolute file path where the cropped PNG was persisted on disk (also stored in SQLite/MCP). */
+  cropPath?: string
 }
 
 export interface RecentBrowserUrl {
@@ -56,6 +58,8 @@ export interface BrowserTab {
   loadError: BrowserLoadError | null
   previousUrl?: string
   stopGeneration?: number
+  /** Latest host navigation epoch (bumped on each committed document). */
+  epoch?: number
 }
 
 export const MIN_BROWSER_ZOOM = 0.5
@@ -68,6 +72,26 @@ export const VIEWPORT_PRESET_SIZES: Record<
 > = {
   tablet: { width: 768, height: 1024, label: 'Tablet' },
   mobile: { width: 390, height: 844, label: 'Mobile' }
+}
+
+/** Resolve the effective target viewport width/height for a tab's preset + orientation + custom width. */
+export function resolveViewportDimensions(
+  viewportPreset: ViewportPreset,
+  orientation: ViewportOrientation,
+  customWidth?: number
+): {
+  presetSpec: { width: number; height: number; label: string } | null
+  targetWidth: number | undefined
+  targetHeight: number | undefined
+} {
+  const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
+  if (!presetSpec) {
+    return { presetSpec: null, targetWidth: undefined, targetHeight: undefined }
+  }
+  const targetWidth =
+    customWidth ?? (orientation === 'portrait' ? presetSpec.width : presetSpec.height)
+  const targetHeight = orientation === 'portrait' ? presetSpec.height : presetSpec.width
+  return { presetSpec, targetWidth, targetHeight }
 }
 
 const VIEWPORT_CYCLE: ViewportPreset[] = ['desktop', 'tablet', 'mobile']
@@ -233,6 +257,7 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
         title: view.title,
         loading: view.loading,
         agentControlled: view.agentControlled,
+        epoch: view.epoch,
         loadError: view.loading ? null : t.loadError
       })
       return {

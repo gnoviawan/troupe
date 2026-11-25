@@ -3,14 +3,18 @@ import { toast } from 'sonner'
 import { useBrowserWebview } from '@/hooks/use-browser-webview'
 import {
   browserCheckLocalPort,
+  browserSaveAnnotationCrop,
+  browserTabAnnotationCmd,
+  browserTabInjectAgentation,
   browserTabScreenshot,
   onAgentationActionRequested,
   onAgentationAnnotationCreated
 } from '@/lib/browser-api'
 import { cropBase64Png } from '@/lib/browser-screenshot'
+import { displayHost } from '@/lib/browser-url'
 import { openTerminalAtCwd } from '@/lib/terminal-spawn'
 import { cn } from '@/lib/utils'
-import { useBrowserSessionStore, VIEWPORT_PRESET_SIZES } from '@/stores/browser-session-store'
+import { resolveViewportDimensions, useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useProjectStore } from '@/stores/project-store'
 import { BrowserConsentStrip } from './BrowserConsentStrip'
 import { BrowserControls } from './BrowserControls'
@@ -21,14 +25,6 @@ import { ResponsiveViewportBar } from './ResponsiveViewportBar'
 interface BrowserPanelProps {
   browserTabId: string
   isVisible: boolean
-}
-
-function displayHost(rawUrl: string): string {
-  try {
-    return new URL(rawUrl).host
-  } catch {
-    return rawUrl
-  }
 }
 
 function sameOriginAndPath(a: string | undefined, b: string): boolean {
@@ -52,6 +48,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   const orientation = tab?.viewportOrientation ?? 'portrait'
   const customWidth = tab?.customViewportWidth
   const annotateMode = tab?.annotateMode ?? false
+  const epoch = tab?.epoch ?? 0
 
   const updateUrl = useBrowserSessionStore((s) => s.updateUrl)
   const setLoadError = useBrowserSessionStore((s) => s.setLoadError)
@@ -64,6 +61,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   )
 
   const stageRef = useRef<HTMLDivElement>(null)
+  const gripCleanupRef = useRef<(() => void) | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
   const [measuredViewport, setMeasuredViewport] = useState<{
     width: number
@@ -82,12 +80,47 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     stageRef
   })
 
-  // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue
-  // and attach an auto-cropped PNG from the native webview screenshot.
+  // Clean up any active grip drag listeners on unmount
+  useEffect(() => {
+    return () => {
+      gripCleanupRef.current?.()
+      gripCleanupRef.current = null
+    }
+  }, [])
+
+  // Re-sync overlay state after a navigation/reload completes while annotateMode is active
+  const prevEpochRef = useRef(epoch)
+  useEffect(() => {
+    if (epoch === prevEpochRef.current) return
+    prevEpochRef.current = epoch
+    if (!annotateMode || loading || !url) return
+    const current = useBrowserSessionStore.getState().getTab(browserTabId)
+    if (!current?.annotateMode) return
+    void browserTabInjectAgentation(browserTabId).then((res) => {
+      if (!res.success && res.code !== 'NOT_TAURI') return
+      const latest = useBrowserSessionStore.getState().getTab(browserTabId)
+      if (!latest?.annotateMode) return
+      void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
+      void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: latest.annotateTool })
+      if (latest.animationsPaused) {
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_pause', paused: true })
+      }
+      if (latest.pinsHidden) {
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_pins_hidden', hidden: true })
+      }
+    })
+  }, [annotateMode, browserTabId, epoch, loading, url])
+
+  // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue,
+  // auto-crop via native screenshot, and persist the crop PNG to disk + SQLite/MCP.
   useEffect(() => {
     if (!isVisible || !annotateMode) return
     const subCreated = onAgentationAnnotationCreated((payload) => {
-      if (!sameOriginAndPath(payload.url, url)) return
+      if (payload.tabId) {
+        if (payload.tabId !== browserTabId) return
+      } else if (!sameOriginAndPath(payload.url, url)) {
+        return
+      }
       const kind =
         payload.kind === 'rectangle' || payload.kind === 'guide' || payload.kind === 'measurement'
           ? payload.kind
@@ -95,6 +128,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       void (async () => {
         let cropDataUrl: string | undefined
         let cropBase64: string | undefined
+        let cropPath: string | undefined
         const shot = await browserTabScreenshot(browserTabId)
         if (shot.success) {
           if (
@@ -105,6 +139,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
             const cropped = await cropBase64Png(shot.data.base64, {
               ...payload.boundingBox,
+              viewportWidth: payload.viewportWidth,
               dpr: (window.devicePixelRatio || 1) * tabZoom
             })
             if (cropped) {
@@ -114,6 +149,12 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
           } else {
             cropBase64 = shot.data.base64
             cropDataUrl = `data:${shot.data.mimeType};base64,${shot.data.base64}`
+          }
+          if (cropBase64) {
+            const saved = await browserSaveAnnotationCrop(payload.id, cropBase64)
+            if (saved.success) {
+              cropPath = saved.data
+            }
           }
         }
         addPendingAnnotation(browserTabId, {
@@ -129,19 +170,24 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             ? `${payload.boundingBox.width}×${payload.boundingBox.height}px`
             : undefined,
           cropDataUrl,
-          cropBase64
+          cropBase64,
+          cropPath
         })
       })()
     })
 
     const subAction = onAgentationActionRequested((payload) => {
       if (!payload.output) return
+      if (payload.tabId && payload.tabId !== browserTabId) return
       try {
         const parsed = JSON.parse(payload.output) as {
           kind?: string
+          tabId?: string
           rect?: { x: number; y: number; width: number; height: number }
           dpr?: number
+          viewportWidth?: number
         }
+        if (parsed.tabId && parsed.tabId !== browserTabId) return
         if (parsed.kind !== 'screenshot_area' || !parsed.rect) return
         const rect = parsed.rect
         void (async () => {
@@ -153,23 +199,28 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
           const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
           const cropped = await cropBase64Png(shot.data.base64, {
             ...rect,
+            viewportWidth: parsed.viewportWidth,
             dpr: parsed.dpr ?? (window.devicePixelRatio || 1) * tabZoom
           })
           if (!cropped) {
             toast.error('Could not crop selected area.')
             return
           }
+          const id = `shot-${Date.now()}`
+          const saved = await browserSaveAnnotationCrop(id, cropped.base64)
           addPendingAnnotation(browserTabId, {
-            id: `shot-${Date.now()}`,
+            id,
             kind: 'rectangle',
             element: 'Area screenshot',
             elementPath: `${rect.width}×${rect.height}px area`,
             comment: `Captured ${rect.width}×${rect.height}px area screenshot.`,
             meta: `${rect.width}×${rect.height}px`,
             cropBase64: cropped.base64,
-            cropDataUrl: cropped.dataUrl
+            cropDataUrl: cropped.dataUrl,
+            cropPath: saved.success ? saved.data : undefined
           })
           setAnnotateTool(browserTabId, 'comment')
+          void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
           toast.success('Captured area screenshot into batch.')
         })()
       } catch {
@@ -213,20 +264,17 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     return () => window.clearInterval(timer)
   }, [attemptOfflineRecovery, errorKey, isVisible, loadError?.port])
 
-  const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
-  const targetWidth =
-    customWidth ??
-    (presetSpec ? (orientation === 'portrait' ? presetSpec.width : presetSpec.height) : undefined)
-  const targetHeight = presetSpec
-    ? orientation === 'portrait'
-      ? presetSpec.height
-      : presetSpec.width
-    : undefined
+  const { targetWidth, targetHeight } = resolveViewportDimensions(
+    viewportPreset,
+    orientation,
+    customWidth
+  )
 
   const startGripDrag = useCallback(
     (side: 'left' | 'right', e: React.PointerEvent<HTMLButtonElement>) => {
       if (!targetWidth) return
       e.preventDefault()
+      gripCleanupRef.current?.()
       const startX = e.clientX
       const initialWidth = targetWidth
       const onMove = (ev: PointerEvent) => {
@@ -234,12 +282,18 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
         const next = Math.max(320, Math.min(1280, Math.round(initialWidth + delta)))
         setCustomViewportWidth(browserTabId, next)
       }
-      const onUp = () => {
+      const cleanup = () => {
         window.removeEventListener('pointermove', onMove)
-        window.removeEventListener('pointerup', onUp)
+        window.removeEventListener('pointerup', cleanup)
+        window.removeEventListener('pointercancel', cleanup)
+        if (gripCleanupRef.current === cleanup) {
+          gripCleanupRef.current = null
+        }
       }
+      gripCleanupRef.current = cleanup
       window.addEventListener('pointermove', onMove)
-      window.addEventListener('pointerup', onUp)
+      window.addEventListener('pointerup', cleanup)
+      window.addEventListener('pointercancel', cleanup)
     },
     [browserTabId, setCustomViewportWidth, targetWidth]
   )
@@ -331,7 +385,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
                 type="button"
                 aria-label="Resize responsive viewport width (left handle)"
                 onPointerDown={(e) => startGripDrag('left', e)}
-                className="h-12 w-1 shrink-0 cursor-ew-resize rounded-full bg-border transition-colors duration-150 hover:bg-muted-foreground"
+                className="h-12 w-1 shrink-0 cursor-ew-resize rounded-full bg-border transition-colors duration-150 ease-out hover:bg-muted-foreground"
               />
             )}
 
@@ -350,14 +404,14 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
               className={cn(
                 'relative bg-background',
                 isConstrained
-                  ? 'tactile-modal overflow-hidden rounded-[10px] ring-1 ring-border'
+                  ? 'overflow-hidden rounded-[10px] shadow-md ring-1 ring-border'
                   : 'h-full flex-1'
               )}
             >
               {loading && (
                 <div
                   data-testid="browser-loading-pill"
-                  className="tactile-control pointer-events-none absolute bottom-3 left-3 z-10 inline-flex h-[26px] items-center gap-2 rounded-full bg-popover px-2.5 font-mono text-xs text-muted-foreground"
+                  className="pointer-events-none absolute bottom-3 left-3 z-10 inline-flex h-[26px] items-center gap-2 rounded-full bg-popover px-2.5 font-mono text-xs text-muted-foreground shadow-control"
                 >
                   <span className="size-1.5 rounded-full bg-primary" />
                   <span>Waiting for {displayHost(url)}…</span>
@@ -370,7 +424,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
                 type="button"
                 aria-label="Resize responsive viewport width (right handle)"
                 onPointerDown={(e) => startGripDrag('right', e)}
-                className="h-12 w-1 shrink-0 cursor-ew-resize rounded-full bg-border transition-colors duration-150 hover:bg-muted-foreground"
+                className="h-12 w-1 shrink-0 cursor-ew-resize rounded-full bg-border transition-colors duration-150 ease-out hover:bg-muted-foreground"
               />
             )}
           </>

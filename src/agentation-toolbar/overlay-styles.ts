@@ -6,6 +6,26 @@ export const OVERLAY_CSS = `
   z-index: 2147483647 !important;
   pointer-events: none !important;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  --ov-bg: #1b1c1f;
+  --ov-fg: #ededef;
+  --ov-muted: #9ca3af;
+  --ov-input-bg: #141518;
+  --ov-border: #34363b;
+  --ov-btn-sec: #2a2c31;
+  --ov-btn-sec-border: #3f424a;
+  --ov-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 6px 8px -4px rgba(0,0,0,0.5);
+}
+@media (prefers-color-scheme: light) {
+  :host {
+    --ov-bg: #ffffff;
+    --ov-fg: #18181b;
+    --ov-muted: #52525b;
+    --ov-input-bg: #f4f4f5;
+    --ov-border: #d4d4d8;
+    --ov-btn-sec: #f4f4f5;
+    --ov-btn-sec-border: #d4d4d8;
+    --ov-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 6px 12px -4px rgba(0,0,0,0.12);
+  }
 }
 * { box-sizing: border-box; }
 .layer { position: fixed; inset: 0; pointer-events: none; }
@@ -87,6 +107,7 @@ export const OVERLAY_CSS = `
   line-height: 20px;
   pointer-events: none;
   display: none;
+  white-space: nowrap;
 }
 .spacing-line {
   position: fixed;
@@ -100,9 +121,9 @@ export const OVERLAY_CSS = `
   width: min(332px, calc(100vw - 24px));
   padding: 14px;
   border-radius: 8px;
-  background: #1b1c1f;
-  color: #ededef;
-  box-shadow: 0 0 0 0.5px #34363b, 0 1px 2px rgba(0,0,0,0.5), 0 6px 8px -4px rgba(0,0,0,0.5);
+  background: var(--ov-bg);
+  color: var(--ov-fg);
+  box-shadow: 0 0 0 0.5px var(--ov-border), var(--ov-shadow);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -112,7 +133,7 @@ export const OVERLAY_CSS = `
 .pop-title {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  color: #ededef;
+  color: var(--ov-fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -123,7 +144,7 @@ export const OVERLAY_CSS = `
   padding: 2px 7px;
   border-radius: 9999px;
   background: rgba(34, 197, 94, 0.14);
-  color: #4ade80;
+  color: #22c55e;
   box-shadow: 0 0 0 0.5px rgba(34, 197, 94, 0.34);
   flex-shrink: 0;
 }
@@ -133,8 +154,8 @@ export const OVERLAY_CSS = `
   padding: 8px 10px;
   border-radius: 6px;
   border: 0;
-  background: #141518;
-  color: #ededef;
+  background: var(--ov-input-bg);
+  color: var(--ov-fg);
   font-size: 13px;
   line-height: 20px;
   font-family: inherit;
@@ -143,17 +164,19 @@ export const OVERLAY_CSS = `
   box-shadow: 0 0 0 2px #6b7280;
 }
 .pop-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.pop-links { display: flex; align-items: center; gap: 10px; }
 .pop-error { font-size: 12px; color: #f87171; }
-.pop-hint { font-size: 12px; color: #9ca3af; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.pop-hint { font-size: 12px; color: var(--ov-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .pop-link {
   background: none; border: 0; padding: 0; color: #f87171;
   font-size: 12px; text-decoration: underline; cursor: pointer;
 }
+.pop-link.measure { color: #ec4899; }
 .pop-actions { display: flex; gap: 8px; }
 .btn {
   height: 28px; padding: 0 11px; border-radius: 6px; border: 0;
   font-size: 12px; font-weight: 500; cursor: pointer;
 }
-.btn-sec { background: #2a2c31; color: #ededef; box-shadow: 0 0 0 0.5px #3f424a, 0 1px 2px rgba(0,0,0,0.5); }
-.btn-pri { background: #0e72cc; color: #ffffff; box-shadow: 0 0 0 0.5px #0e72cc, 0 1px 2px rgba(0,0,0,0.5); }
+.btn-sec { background: var(--ov-btn-sec); color: var(--ov-fg); box-shadow: 0 0 0 0.5px var(--ov-btn-sec-border); }
+.btn-pri { background: #0e72cc; color: #ffffff; box-shadow: 0 0 0 0.5px #0e72cc; }
 `

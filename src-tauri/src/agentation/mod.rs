@@ -75,6 +75,46 @@ impl AgentationService {
     }
 }
 
+/// Forward overlay annotations and action requests from the agentation
+/// event bus to the main desktop window so the host AnnotationToolbar stays
+/// in sync live. Keeps running across `RecvError::Lagged` and exits on `Closed`.
+pub fn spawn_event_forwarder(service: &AgentationService, app_handle: tauri::AppHandle) {
+    use tauri::Emitter;
+    use tokio::sync::broadcast::error::RecvError;
+    use types::AFSEventType;
+
+    let mut rx = service.store.event_bus().subscribe();
+    tauri::async_runtime::spawn(async move {
+        loop {
+            match rx.recv().await {
+                Ok(ev) => match ev.event_type {
+                    AFSEventType::AnnotationCreated => {
+                        let _ = app_handle.emit_to(
+                            "main",
+                            "agentation:annotation_created",
+                            &ev.payload,
+                        );
+                    }
+                    AFSEventType::ActionRequested => {
+                        let _ = app_handle.emit_to(
+                            "main",
+                            "agentation:action_requested",
+                            &ev.payload,
+                        );
+                    }
+                    _ => {}
+                },
+                Err(RecvError::Lagged(skipped)) => {
+                    log::warn!(
+                        "[agentation] event forwarder lagged by {skipped} event(s); continuing"
+                    );
+                }
+                Err(RecvError::Closed) => break,
+            }
+        }
+    });
+}
+
 /// Determine the SQLite database path.
 /// Uses `app_data_dir/annotations.db` (Tauri's per-app data directory).
 pub fn db_path(app_data_dir: &std::path::Path) -> std::path::PathBuf {

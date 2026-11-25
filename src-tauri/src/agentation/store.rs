@@ -94,6 +94,33 @@ impl SqliteStore {
         &self.bus
     }
 
+    /// Persist a saved screenshot crop path onto an existing annotation's `extra` JSON.
+    pub fn set_annotation_crop_path(&self, id: &str, crop_path: &str) -> bool {
+        let db = self.db.lock().unwrap_or_else(|e| e.into_inner());
+        let existing_extra: Option<String> = db
+            .query_row("SELECT extra FROM annotations WHERE id=?", params![id], |r| {
+                r.get(0)
+            })
+            .ok()
+            .flatten();
+        let mut map = existing_extra
+            .and_then(|s| serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&s).ok())
+            .unwrap_or_default();
+        map.insert(
+            "screenshotCropPath".to_string(),
+            serde_json::Value::String(crop_path.to_string()),
+        );
+        let Ok(next_extra) = serde_json::to_string(&serde_json::Value::Object(map)) else {
+            return false;
+        };
+        db.execute(
+            "UPDATE annotations SET extra=? WHERE id=?",
+            params![next_extra, id],
+        )
+        .map(|n| n == 1)
+        .unwrap_or(false)
+    }
+
     fn init(db: &Connection) -> Result<(), String> {
         db.execute_batch(
             r#"CREATE TABLE IF NOT EXISTS sessions (
@@ -172,21 +199,24 @@ impl SqliteStore {
         let bbox: Option<String> = r.get("bounding_box").unwrap_or(None);
         let thread: Option<String> = r.get("thread").unwrap_or(None);
         let extra: Option<String> = r.get("extra").unwrap_or(None);
-        let (placement, rearrange, measurement, screenshot_crop_path) = extra
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-            .map(|v| {
-                (
-                    v.get("placement")
-                        .and_then(|p| serde_json::from_value(p.clone()).ok()),
-                    v.get("rearrange")
-                        .and_then(|p| serde_json::from_value(p.clone()).ok()),
-                    v.get("measurement")
-                        .and_then(|m| serde_json::from_value(m.clone()).ok()),
-                    v.get("screenshotCropPath")
-                        .and_then(|p| p.as_str().map(String::from)),
-                )
-            })
-            .unwrap_or((None, None, None, None));
+        let (placement, rearrange, measurement, screenshot_crop_path, tab_id, viewport_width) =
+            extra
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                .map(|v| {
+                    (
+                        v.get("placement")
+                            .and_then(|p| serde_json::from_value(p.clone()).ok()),
+                        v.get("rearrange")
+                            .and_then(|p| serde_json::from_value(p.clone()).ok()),
+                        v.get("measurement")
+                            .and_then(|m| serde_json::from_value(m.clone()).ok()),
+                        v.get("screenshotCropPath")
+                            .and_then(|p| p.as_str().map(String::from)),
+                        v.get("tabId").and_then(|p| p.as_str().map(String::from)),
+                        v.get("viewportWidth").and_then(|p| p.as_f64()),
+                    )
+                })
+                .unwrap_or((None, None, None, None, None, None));
 
         let status_str: String = r.get("status").unwrap_or_else(|_| "pending".into());
         let kind_str: String = r.get("kind").unwrap_or_else(|_| "feedback".into());
@@ -216,6 +246,8 @@ impl SqliteStore {
             rearrange,
             measurement,
             screenshot_crop_path,
+            tab_id,
+            viewport_width,
             url: r.get("url").unwrap_or(None),
             intent: r
                 .get::<_, Option<String>>("intent")
@@ -449,6 +481,17 @@ impl AnnotationStore for SqliteStore {
                 serde_json::Value::String(path.clone()),
             );
         }
+        if let Some(tid) = &data.tab_id {
+            extra_map.insert(
+                "tabId".to_string(),
+                serde_json::Value::String(tid.clone()),
+            );
+        }
+        if let Some(vw) = data.viewport_width {
+            if let Some(n) = serde_json::Number::from_f64(vw) {
+                extra_map.insert("viewportWidth".to_string(), serde_json::Value::Number(n));
+            }
+        }
         let extra = if extra_map.is_empty() {
             None
         } else {
@@ -489,6 +532,8 @@ impl AnnotationStore for SqliteStore {
             rearrange: data.rearrange.clone(),
             measurement: data.measurement.clone(),
             screenshot_crop_path: data.screenshot_crop_path.clone(),
+            tab_id: data.tab_id.clone(),
+            viewport_width: data.viewport_width,
             url: data.url.clone(),
             intent: data.intent.clone(),
             severity: data.severity.clone(),

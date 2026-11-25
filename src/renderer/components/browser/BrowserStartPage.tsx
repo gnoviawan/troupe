@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Globe, Lock } from '@/components/icons'
-import { INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
+import { FOCUS_RING_CLASS, INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
 import { browserListLocalServers, type LocalDevServer } from '@/lib/browser-api'
+import { normalizeBrowserInputUrl } from '@/lib/browser-url'
 import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
@@ -16,19 +17,6 @@ function formatRelativeAge(timestamp: number): string {
   const diffHr = Math.round(diffMin / 60)
   if (diffHr < 24) return `${diffHr}h ago`
   return `${Math.round(diffHr / 24)}d ago`
-}
-
-export function normalizeBrowserInputUrl(raw: string): string | null {
-  const trimmed = raw.trim()
-  if (!trimmed) return null
-  if (/^https?:\/\//i.test(trimmed) || /^about:/i.test(trimmed)) return trimmed
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i.test(trimmed)) {
-    return `http://${trimmed}`
-  }
-  if (/^:\d+(\/.*)?$/.test(trimmed)) {
-    return `http://localhost${trimmed}`
-  }
-  return `https://${trimmed}`
 }
 
 export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.JSX.Element {
@@ -75,9 +63,8 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Enter a URL or localhost port…"
                 aria-label="Open URL or localhost port"
-                autoFocus
                 className={cn(
-                  'min-w-0 flex-1 bg-transparent text-[13px] pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
+                  'min-w-0 flex-1 bg-transparent text-sm pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
                   INNER_FIELD_FOCUS_CLASS
                 )}
               />
@@ -89,34 +76,33 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
           <section className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-[13px] font-medium text-foreground">Detected local servers</h2>
+                <h2 className="text-sm font-medium text-foreground">Detected local servers</h2>
                 <span className="inline-flex h-5 items-center gap-1.5 rounded-full bg-success/15 px-2 text-xs font-medium text-success">
                   <span className="size-1.5 rounded-full bg-success" />
                   {servers.length} running
                 </span>
               </div>
-              <span className="text-xs font-medium text-muted-foreground">
-                From active terminals
-              </span>
+              <span className="text-xs font-medium text-muted-foreground">Local dev servers</span>
             </div>
 
-            <div className="tactile-card overflow-hidden rounded-lg bg-card divide-y divide-border/70">
+            <div className="divide-y divide-border/70 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
               {servers.map((server) => (
                 <button
                   key={server.port}
                   type="button"
                   onClick={() => onNavigate(server.url)}
-                  className="flex h-[42px] w-full items-center justify-between px-3.5 text-left transition-colors duration-150 hover:bg-muted"
+                  className={cn(
+                    'flex h-[42px] w-full items-center justify-between px-3.5 text-left transition-colors duration-150 ease-out hover:bg-foreground/[0.04]',
+                    FOCUS_RING_CLASS
+                  )}
                 >
                   <span className="flex items-center gap-2.5">
                     <span className="size-[7px] shrink-0 rounded-full bg-success" />
-                    <span className="font-mono text-[13px] font-medium text-foreground">
+                    <span className="font-mono text-xs font-medium text-foreground">
                       {server.host}
                     </span>
                   </span>
-                  <span className="text-[13px] font-medium text-muted-foreground">
-                    {server.label}
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{server.label}</span>
                 </button>
               ))}
             </div>
@@ -126,11 +112,14 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
         {recentUrls.length > 0 && (
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between px-2">
-              <h2 className="text-[13px] font-medium text-foreground">Recent pages</h2>
+              <h2 className="text-sm font-medium text-foreground">Recent pages</h2>
               <button
                 type="button"
                 onClick={clearRecentUrls}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                className={cn(
+                  'rounded text-xs font-medium text-muted-foreground hover:text-foreground',
+                  FOCUS_RING_CLASS
+                )}
               >
                 Clear
               </button>
@@ -144,7 +133,10 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
                     key={entry.url}
                     type="button"
                     onClick={() => onNavigate(entry.url)}
-                    className="flex h-9 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition-colors duration-150 hover:bg-muted/70"
+                    className={cn(
+                      'flex h-9 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition-colors duration-150 ease-out hover:bg-foreground/[0.04]',
+                      FOCUS_RING_CLASS
+                    )}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       {isHttps ? (
@@ -160,11 +152,11 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
                           aria-hidden="true"
                         />
                       )}
-                      <span className="truncate text-[13px] font-medium text-foreground">
+                      <span className="truncate text-xs font-medium text-foreground">
                         {entry.host}
                       </span>
                       {entry.path && (
-                        <span className="truncate text-[13px] font-medium text-muted-foreground">
+                        <span className="truncate text-xs font-medium text-muted-foreground">
                           {entry.path}
                         </span>
                       )}
@@ -182,7 +174,7 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
 
       <div className="flex items-center gap-4 pt-6 font-mono text-xs text-muted-foreground">
         <span>{isMac ? '⌘L' : 'Ctrl+L'} Focus URL</span>
-        <span>{isMac ? '⌘R' : 'Ctrl+R'} Reload</span>
+        <span>{isMac ? '⇧⌘R' : 'Ctrl+Shift+R'} Reload</span>
         <span>{isMac ? '⌘W' : 'Ctrl+W'} Close tab</span>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   browserTabShow,
   onBrowserTabUpdated
 } from '@/lib/browser-api'
+import { parseLocalhostPort } from '@/lib/browser-url'
 import { logFrontendError } from '@/lib/log-api'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useWorkspaceStore, browserTabId as workspaceBrowserTabId } from '@/stores/workspace-store'
@@ -35,18 +36,6 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
 }
 
 const ZOOM_EPSILON = 0.001
-
-function parseLocalhostPort(rawUrl: string): { host: string; port: number } | null {
-  try {
-    const parsed = new URL(rawUrl)
-    if (parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') return null
-    const port = parsed.port ? Number(parsed.port) : parsed.protocol === 'https:' ? 443 : 80
-    if (!Number.isInteger(port) || port <= 0) return null
-    return { host: parsed.host, port }
-  } catch {
-    return null
-  }
-}
 
 export function useBrowserWebview(
   browserTabId: string,
@@ -121,134 +110,167 @@ export function useBrowserWebview(
     useBrowserSessionStore.getState().setLoading(browserTabId, true)
 
     const bounds = measureLogicalBounds(el)
-    browserTabCreate(browserTabId, urlRef.current, bounds)
-      .then((result) => {
-        if (!mountedRef.current || mountToken !== mountTokenRef.current) {
-          // Only destroy if this create actually succeeded and the hook unmounted
-          // (not superseded by a newer mount token sharing the same tabId).
-          if (result.success && !mountedRef.current) {
-            browserTabDestroy(browserTabId).catch((e) => {
-              void logFrontendError({
-                message: `browserTabDestroy after unmount for tab ${browserTabId}: ${
-                  e instanceof Error ? e.message : String(e)
-                }`,
-                source: 'useBrowserWebview'
+    const targetUrl = urlRef.current
+    const localTarget = parseLocalhostPort(targetUrl)
+
+    const createWebview = () => {
+      if (!mountedRef.current || mountToken !== mountTokenRef.current) return
+      browserTabCreate(browserTabId, targetUrl, bounds)
+        .then((result) => {
+          if (!mountedRef.current || mountToken !== mountTokenRef.current) {
+            if (result.success) {
+              browserTabDestroy(browserTabId).catch((e) => {
+                void logFrontendError({
+                  message: `browserTabDestroy after stale mount for tab ${browserTabId}: ${
+                    e instanceof Error ? e.message : String(e)
+                  }`,
+                  source: 'useBrowserWebview'
+                })
               })
+            }
+            return
+          }
+          if (result.success) {
+            createdRef.current = true
+            zoomAppliedRef.current = 1
+            setCreatedTick((n) => n + 1)
+            useBrowserSessionStore
+              .getState()
+              .setAgentControlled(browserTabId, result.data.agentControlled)
+            // Resync bounds after creation. The container was measured once at
+            // call time (before browserTabCreate above), but the pane layout can
+            // still be mid-transition — pane wrappers use `transition-all
+            // duration-150` (PaneContent) — or otherwise unsettled when the
+            // async create resolves. Without a re-measure the native webview
+            // keeps stale creation bounds and overflows into the adjacent pane
+            // (issue #644). Poll across frames until the rect stops changing
+            // (or a frame budget elapses) so we adopt *settled*, not transient,
+            // bounds — then reveal. Mirrors ConnectedTerminal's
+            // waitForStableLayout approach for the same class of race.
+            const MAX_RESYNC_WAIT_FRAMES = 30 // ~0.5s at 60fps; covers the 150ms transition
+            let prev: BrowserBounds | null = null
+            let frames = 0
+            const resyncAndShow = async (): Promise<void> => {
+              if (!mountedRef.current || mountToken !== mountTokenRef.current) return
+              const elNow = containerRef.current
+              if (!elNow) return
+              const next = measureLogicalBounds(elNow)
+              // Wait until the full rect (position + size) is stable across two
+              // consecutive frames: a same-size container can still MOVE during a
+              // layout transition (sidebar toggle, gutter drag), so x/y must
+              // settle too, not just width/height.
+              const stable =
+                prev !== null &&
+                prev.x === next.x &&
+                prev.y === next.y &&
+                prev.width === next.width &&
+                prev.height === next.height
+              prev = next
+              frames += 1
+              if (!stable && frames < MAX_RESYNC_WAIT_FRAMES) {
+                requestAnimationFrame(() => {
+                  void resyncAndShow()
+                })
+                return
+              }
+              // Settled (or budget exhausted): resync via the shared helper so the
+              // result.success branch is inspected (no silent failure), then
+              // reveal. Await the resize before showing so the webview is never
+              // revealed at stale creation bounds.
+              await updateBounds()
+              if (visibilityRef.current) {
+                browserTabShow(browserTabId)
+                  .then((r) => {
+                    if (!r.success) {
+                      void logFrontendError({
+                        message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
+                        source: 'useBrowserWebview'
+                      })
+                    }
+                  })
+                  .catch((err) => {
+                    void logFrontendError({
+                      message: `browserTabShow rejected for tab ${browserTabId}: ${
+                        err instanceof Error ? err.message : String(err)
+                      }`,
+                      source: 'useBrowserWebview'
+                    })
+                  })
+              } else {
+                browserTabHide(browserTabId)
+                  .then((r) => {
+                    if (!r.success) {
+                      void logFrontendError({
+                        message: `browserTabHide failed for tab ${browserTabId}: ${r.error}`,
+                        source: 'useBrowserWebview'
+                      })
+                    }
+                  })
+                  .catch((err) => {
+                    void logFrontendError({
+                      message: `browserTabHide rejected for tab ${browserTabId}: ${
+                        err instanceof Error ? err.message : String(err)
+                      }`,
+                      source: 'useBrowserWebview'
+                    })
+                  })
+              }
+            }
+            requestAnimationFrame(() => {
+              void resyncAndShow()
             })
+          } else if (result.code === 'BROWSER_TAB_UNKNOWN_AGENT_TAB') {
+            // A replayed agent-tab open the host no longer waits on: the
+            // agent never gets this tab, so the pane drops it.
+            useWorkspaceStore.getState().removeTab(workspaceBrowserTabId(browserTabId))
+            useBrowserSessionStore.getState().removeTab(browserTabId)
+          } else {
+            void logFrontendError({
+              message: `browserTabCreate failed for tab ${browserTabId}: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
+              source: 'useBrowserWebview'
+            })
+            useBrowserSessionStore.getState().setLoading(browserTabId, false)
           }
-          return
-        }
-        if (result.success) {
-          createdRef.current = true
-          zoomAppliedRef.current = 1
-          setCreatedTick((n) => n + 1)
-          useBrowserSessionStore
-            .getState()
-            .setAgentControlled(browserTabId, result.data.agentControlled)
-          // Resync bounds after creation. The container was measured once at
-          // call time (before browserTabCreate above), but the pane layout can
-          // still be mid-transition — pane wrappers use `transition-all
-          // duration-150` (PaneContent) — or otherwise unsettled when the
-          // async create resolves. Without a re-measure the native webview
-          // keeps stale creation bounds and overflows into the adjacent pane
-          // (issue #644). Poll across frames until the rect stops changing
-          // (or a frame budget elapses) so we adopt *settled*, not transient,
-          // bounds — then reveal. Mirrors ConnectedTerminal's
-          // waitForStableLayout approach for the same class of race.
-          const MAX_RESYNC_WAIT_FRAMES = 30 // ~0.5s at 60fps; covers the 150ms transition
-          let prev: BrowserBounds | null = null
-          let frames = 0
-          const resyncAndShow = async (): Promise<void> => {
-            if (!mountedRef.current || mountToken !== mountTokenRef.current) return
-            const elNow = containerRef.current
-            if (!elNow) return
-            const next = measureLogicalBounds(elNow)
-            // Wait until the full rect (position + size) is stable across two
-            // consecutive frames: a same-size container can still MOVE during a
-            // layout transition (sidebar toggle, gutter drag), so x/y must
-            // settle too, not just width/height.
-            const stable =
-              prev !== null &&
-              prev.x === next.x &&
-              prev.y === next.y &&
-              prev.width === next.width &&
-              prev.height === next.height
-            prev = next
-            frames += 1
-            if (!stable && frames < MAX_RESYNC_WAIT_FRAMES) {
-              requestAnimationFrame(() => {
-                void resyncAndShow()
-              })
-              return
-            }
-            // Settled (or budget exhausted): resync via the shared helper so the
-            // result.success branch is inspected (no silent failure), then
-            // reveal. Await the resize before showing so the webview is never
-            // revealed at stale creation bounds.
-            await updateBounds()
-            if (visibilityRef.current) {
-              browserTabShow(browserTabId)
-                .then((r) => {
-                  if (!r.success) {
-                    void logFrontendError({
-                      message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
-                      source: 'useBrowserWebview'
-                    })
-                  }
-                })
-                .catch((err) => {
-                  void logFrontendError({
-                    message: `browserTabShow rejected for tab ${browserTabId}: ${
-                      err instanceof Error ? err.message : String(err)
-                    }`,
-                    source: 'useBrowserWebview'
-                  })
-                })
-            } else {
-              browserTabHide(browserTabId)
-                .then((r) => {
-                  if (!r.success) {
-                    void logFrontendError({
-                      message: `browserTabHide failed for tab ${browserTabId}: ${r.error}`,
-                      source: 'useBrowserWebview'
-                    })
-                  }
-                })
-                .catch((err) => {
-                  void logFrontendError({
-                    message: `browserTabHide rejected for tab ${browserTabId}: ${
-                      err instanceof Error ? err.message : String(err)
-                    }`,
-                    source: 'useBrowserWebview'
-                  })
-                })
-            }
-          }
-          requestAnimationFrame(() => {
-            void resyncAndShow()
-          })
-        } else if (result.code === 'BROWSER_TAB_UNKNOWN_AGENT_TAB') {
-          // A replayed agent-tab open the host no longer waits on: the
-          // agent never gets this tab, so the pane drops it.
-          useWorkspaceStore.getState().removeTab(workspaceBrowserTabId(browserTabId))
-          useBrowserSessionStore.getState().removeTab(browserTabId)
-        } else {
+        })
+        .catch((err) => {
           void logFrontendError({
-            message: `browserTabCreate failed for tab ${browserTabId}: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
+            message: `browserTabCreate rejected for tab ${browserTabId}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
             source: 'useBrowserWebview'
           })
           useBrowserSessionStore.getState().setLoading(browserTabId, false)
-        }
-      })
-      .catch((err) => {
-        void logFrontendError({
-          message: `browserTabCreate rejected for tab ${browserTabId}: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
-          source: 'useBrowserWebview'
         })
-        useBrowserSessionStore.getState().setLoading(browserTabId, false)
-      })
+    }
+
+    if (localTarget) {
+      void browserCheckLocalPort(localTarget.port)
+        .then((probe) => {
+          if (!mountedRef.current || mountToken !== mountTokenRef.current) return
+          if (probe.success && !probe.data) {
+            useBrowserSessionStore.getState().setLoadError(browserTabId, {
+              code: 'ERR_CONNECTION_REFUSED',
+              host: localTarget.host,
+              port: localTarget.port,
+              message: `No local server is listening on port ${localTarget.port}. Start your dev server or check the port number.`
+            })
+            return
+          }
+          createWebview()
+        })
+        .catch((err) => {
+          void logFrontendError({
+            level: 'warn',
+            message: `browserCheckLocalPort failed before create for tab ${browserTabId}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            source: 'useBrowserWebview'
+          })
+          createWebview()
+        })
+    } else {
+      createWebview()
+    }
 
     return () => {
       mountedRef.current = false
@@ -278,25 +300,28 @@ export function useBrowserWebview(
   useEffect(() => {
     visibilityRef.current = isVisible
     if (!createdRef.current) return
+    let cancelled = false
     if (isVisible) {
-      updateBounds()
-      browserTabShow(browserTabId)
-        .then((r) => {
-          if (!r.success) {
+      void updateBounds().then(() => {
+        if (cancelled || !visibilityRef.current || !createdRef.current) return
+        browserTabShow(browserTabId)
+          .then((r) => {
+            if (!r.success) {
+              void logFrontendError({
+                message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
+                source: 'useBrowserWebview'
+              })
+            }
+          })
+          .catch((err) => {
             void logFrontendError({
-              message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
+              message: `browserTabShow rejected for tab ${browserTabId}: ${
+                err instanceof Error ? err.message : String(err)
+              }`,
               source: 'useBrowserWebview'
             })
-          }
-        })
-        .catch((err) => {
-          void logFrontendError({
-            message: `browserTabShow rejected for tab ${browserTabId}: ${
-              err instanceof Error ? err.message : String(err)
-            }`,
-            source: 'useBrowserWebview'
           })
-        })
+      })
     } else {
       browserTabHide(browserTabId)
         .then((r) => {
@@ -315,6 +340,9 @@ export function useBrowserWebview(
             source: 'useBrowserWebview'
           })
         })
+    }
+    return () => {
+      cancelled = true
     }
   }, [isVisible, browserTabId, updateBounds])
 
@@ -362,19 +390,31 @@ export function useBrowserWebview(
     }
 
     if (localTarget) {
-      void browserCheckLocalPort(localTarget.port).then((probe) => {
-        if (probeToken !== probeTokenRef.current) return
-        if (probe.success && !probe.data) {
-          useBrowserSessionStore.getState().setLoadError(browserTabId, {
-            code: 'ERR_CONNECTION_REFUSED',
-            host: localTarget.host,
-            port: localTarget.port,
-            message: `No local server is listening on port ${localTarget.port}. Start your dev server or check the port number.`
+      void browserCheckLocalPort(localTarget.port)
+        .then((probe) => {
+          if (probeToken !== probeTokenRef.current) return
+          if (probe.success && !probe.data) {
+            useBrowserSessionStore.getState().setLoadError(browserTabId, {
+              code: 'ERR_CONNECTION_REFUSED',
+              host: localTarget.host,
+              port: localTarget.port,
+              message: `No local server is listening on port ${localTarget.port}. Start your dev server or check the port number.`
+            })
+            return
+          }
+          navigateNow()
+        })
+        .catch((err) => {
+          if (probeToken !== probeTokenRef.current) return
+          void logFrontendError({
+            level: 'warn',
+            message: `browserCheckLocalPort failed for tab ${browserTabId}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            source: 'useBrowserWebview'
           })
-          return
-        }
-        navigateNow()
-      })
+          navigateNow()
+        })
       return
     }
 

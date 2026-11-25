@@ -1,11 +1,13 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Minus, Monitor, Plus, RotateCw, Smartphone, Tablet } from '@/components/icons'
+import { useEffect, useRef } from 'react'
+import { Monitor, RotateCw, Smartphone, Tablet } from '@/components/icons'
+import { FOCUS_RING_CLASS, SEGMENTED_TRACK_CLASS, segmentClass } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
 import {
+  resolveViewportDimensions,
   useBrowserSessionStore,
-  VIEWPORT_PRESET_SIZES,
   type ViewportPreset
 } from '@/stores/browser-session-store'
+import { BrowserZoomStepper } from './BrowserZoomStepper'
 
 interface ResponsiveViewportBarProps {
   browserTabId: string
@@ -31,85 +33,37 @@ export function ResponsiveViewportBar({
     (s) => s.tabs.get(browserTabId)?.viewportOrientation ?? 'portrait'
   )
   const customWidth = useBrowserSessionStore((s) => s.tabs.get(browserTabId)?.customViewportWidth)
-  const zoomFactor = useBrowserSessionStore((s) => s.tabs.get(browserTabId)?.zoomFactor ?? 1)
   const setViewportPreset = useBrowserSessionStore((s) => s.setViewportPreset)
   const toggleOrientation = useBrowserSessionStore((s) => s.toggleViewportOrientation)
-  const stepZoom = useBrowserSessionStore((s) => s.stepZoom)
-  const resetZoom = useBrowserSessionStore((s) => s.resetZoom)
 
   const open = viewportPreset !== 'desktop'
   const panelRef = useRef<HTMLDivElement>(null)
-  const tablistRef = useRef<HTMLDivElement>(null)
-  const pillRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (panelRef.current) {
       panelRef.current.inert = !open
     }
   }, [open])
-  const tabRefs = useRef<Record<ViewportPreset, HTMLButtonElement | null>>({
-    desktop: null,
-    tablet: null,
-    mobile: null
-  })
-  const mountedRef = useRef(false)
 
-  const syncPill = (animate: boolean): void => {
-    const pill = pillRef.current
-    const activeEl = tabRefs.current[viewportPreset]
-    if (!pill || !activeEl) return
-    if (!animate) {
-      const prev = pill.style.transition
-      pill.style.transition = 'none'
-      pill.style.transform = `translateX(${activeEl.offsetLeft}px)`
-      pill.style.width = `${activeEl.offsetWidth}px`
-      void pill.offsetWidth
-      pill.style.transition = prev
-    } else {
-      pill.style.transform = `translateX(${activeEl.offsetLeft}px)`
-      pill.style.width = `${activeEl.offsetWidth}px`
-    }
-  }
-
-  useLayoutEffect(() => {
-    syncPill(mountedRef.current)
-    mountedRef.current = true
-  })
-
-  useEffect(() => {
-    const onResize = () => syncPill(false)
-    window.addEventListener('resize', onResize)
-    const tablist = tablistRef.current
-    const ro =
-      typeof ResizeObserver !== 'undefined' && tablist ? new ResizeObserver(onResize) : null
-    if (ro && tablist) ro.observe(tablist)
-    return () => {
-      window.removeEventListener('resize', onResize)
-      ro?.disconnect()
-    }
-  })
-
-  const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
-  const targetWidth =
-    customWidth ??
-    (presetSpec ? (orientation === 'portrait' ? presetSpec.width : presetSpec.height) : 0)
-  const targetHeight = presetSpec
-    ? orientation === 'portrait'
-      ? presetSpec.height
-      : presetSpec.width
-    : 0
-  const displayWidth = measuredWidth && measuredWidth > 0 ? Math.round(measuredWidth) : targetWidth
+  const { presetSpec, targetWidth, targetHeight } = resolveViewportDimensions(
+    viewportPreset,
+    orientation,
+    customWidth
+  )
+  const resolvedTargetWidth = targetWidth ?? 0
+  const resolvedTargetHeight = targetHeight ?? 0
+  const displayWidth =
+    measuredWidth && measuredWidth > 0 ? Math.round(measuredWidth) : resolvedTargetWidth
   const displayHeight =
-    measuredHeight && measuredHeight > 0 ? Math.round(measuredHeight) : targetHeight
+    measuredHeight && measuredHeight > 0 ? Math.round(measuredHeight) : resolvedTargetHeight
   const isClamped =
     Boolean(presetSpec) &&
     ((measuredWidth !== undefined &&
       measuredWidth > 0 &&
-      Math.round(measuredWidth) < targetWidth) ||
+      Math.round(measuredWidth) < resolvedTargetWidth) ||
       (measuredHeight !== undefined &&
         measuredHeight > 0 &&
-        Math.round(measuredHeight) < targetHeight))
-  const percent = Math.round(zoomFactor * 100)
+        Math.round(measuredHeight) < resolvedTargetHeight))
 
   return (
     <div
@@ -122,34 +76,22 @@ export function ResponsiveViewportBar({
       <div className="t-acc-panel-inner">
         <div className="@container flex h-[38px] min-w-0 items-center justify-between gap-2 border-b border-border/80 bg-card px-2.5">
           <div
-            ref={tablistRef}
             role="tablist"
             aria-label="Viewport preset"
-            className="t-tabs h-[30px] shrink-0 gap-0.5 rounded-full bg-background p-0.5"
+            className={cn(SEGMENTED_TRACK_CLASS, 'h-[30px] shrink-0 bg-background')}
           >
-            <span
-              ref={pillRef}
-              aria-hidden="true"
-              className="t-tabs-pill tactile-control top-0.5 h-[26px] rounded-full bg-muted"
-            />
             {PRESETS.map((preset) => {
               const selected = viewportPreset === preset.id
               return (
                 <button
                   key={preset.id}
-                  ref={(el) => {
-                    tabRefs.current[preset.id] = el
-                  }}
                   type="button"
                   role="tab"
                   aria-selected={selected}
                   aria-label={preset.label}
                   title={preset.label}
                   onClick={() => setViewportPreset(browserTabId, preset.id)}
-                  className={cn(
-                    't-tab inline-flex h-[26px] items-center gap-1.5 rounded-full px-2 @[460px]:px-2.5 text-xs font-medium',
-                    selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                  )}
+                  className={cn(segmentClass(selected), 'h-[24px] gap-1.5 px-2 @[460px]:px-2.5')}
                 >
                   {preset.id === 'desktop' ? (
                     <Monitor size={13} aria-hidden="true" />
@@ -169,7 +111,7 @@ export function ResponsiveViewportBar({
               data-testid="responsive-viewport-dimensions"
               title={
                 isClamped
-                  ? `Clamped to ${displayWidth} × ${displayHeight} (target ${targetWidth} × ${targetHeight})`
+                  ? `Clamped to ${displayWidth} × ${displayHeight} (target ${resolvedTargetWidth} × ${resolvedTargetHeight})`
                   : `${displayWidth} × ${displayHeight}`
               }
               className="truncate font-mono text-xs font-medium tabular-nums text-secondary-foreground"
@@ -181,41 +123,16 @@ export function ResponsiveViewportBar({
               aria-label="Rotate viewport orientation"
               title="Rotate portrait / landscape"
               onClick={() => toggleOrientation(browserTabId)}
-              className="tactile-control flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.95]"
+              className={cn(
+                'flex size-6 shrink-0 items-center justify-center rounded-md bg-control-fill text-foreground shadow-control transition-colors duration-150 ease-out hover:bg-control-fill-hover',
+                FOCUS_RING_CLASS
+              )}
             >
               <RotateCw size={12} />
             </button>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1 @[460px]:gap-1.5">
-            <button
-              type="button"
-              aria-label="Zoom out"
-              disabled={zoomFactor <= 0.5}
-              onClick={() => stepZoom(browserTabId, 'out')}
-              className="tactile-control flex size-6 items-center justify-center rounded-md bg-muted text-foreground transition-colors duration-150 hover:bg-secondary disabled:opacity-40"
-            >
-              <Minus size={12} />
-            </button>
-            <button
-              type="button"
-              aria-label="Reset zoom"
-              title="Reset zoom to 100%"
-              onClick={() => resetZoom(browserTabId)}
-              className="min-w-8 @[460px]:min-w-10 text-center font-mono text-xs font-medium tabular-nums text-foreground hover:underline"
-            >
-              {percent}%
-            </button>
-            <button
-              type="button"
-              aria-label="Zoom in"
-              disabled={zoomFactor >= 2}
-              onClick={() => stepZoom(browserTabId, 'in')}
-              className="tactile-control flex size-6 items-center justify-center rounded-md bg-muted text-foreground transition-colors duration-150 hover:bg-secondary disabled:opacity-40"
-            >
-              <Plus size={12} />
-            </button>
-          </div>
+          <BrowserZoomStepper browserTabId={browserTabId} compact />
         </div>
       </div>
     </div>

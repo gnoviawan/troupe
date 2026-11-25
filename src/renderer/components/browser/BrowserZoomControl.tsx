@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Minus, Plus, ZoomIn, ZoomOut } from '@/components/icons'
+import { useState } from 'react'
+import { ZoomIn, ZoomOut } from '@/components/icons'
+import { MENU_MOTION_CLASS, OVERLAY_PANEL_SURFACE_CLASS } from '@/components/ui/menu-styles'
+import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
+import { BrowserZoomStepper } from './BrowserZoomStepper'
 
 const ZOOM_PRESETS = [0.75, 1, 1.25, 1.5] as const
 
@@ -17,25 +20,10 @@ export function BrowserZoomControl({
   const viewportPreset = useBrowserSessionStore(
     (s) => s.tabs.get(browserTabId)?.viewportPreset ?? 'desktop'
   )
-  const stepZoom = useBrowserSessionStore((s) => s.stepZoom)
   const setZoomFactor = useBrowserSessionStore((s) => s.setZoomFactor)
   const resetZoom = useBrowserSessionStore((s) => s.resetZoom)
 
   const [open, setOpen] = useState(false)
-  const prevZoomRef = useRef(zoomFactor)
-  const dir = zoomFactor >= prevZoomRef.current ? 1 : -1
-
-  useEffect(() => {
-    prevZoomRef.current = zoomFactor
-  }, [zoomFactor])
-
-  const handleZoomOut = useCallback(() => {
-    stepZoom(browserTabId, 'out')
-  }, [browserTabId, stepZoom])
-
-  const handleZoomIn = useCallback(() => {
-    stepZoom(browserTabId, 'in')
-  }, [browserTabId, stepZoom])
 
   // Hide pill at default 100% or while ResponsiveViewportBar already shows inline zoom.
   if (Math.abs(zoomFactor - 1) < 0.001 || viewportPreset !== 'desktop') {
@@ -51,61 +39,41 @@ export function BrowserZoomControl({
           type="button"
           aria-label={`Page zoom ${percent}%`}
           title="Adjust page zoom"
-          className="tactile-control inline-flex h-[22px] shrink-0 items-center gap-1 rounded-full bg-muted px-2 font-mono text-xs font-medium text-foreground transition-colors duration-150 hover:bg-secondary active:scale-[0.97]"
+          className={cn(
+            'inline-flex h-[22px] shrink-0 items-center gap-1 rounded-full bg-control-fill px-2 font-mono text-xs font-medium tabular-nums text-foreground shadow-control transition-colors duration-150 ease-out hover:bg-control-fill-hover',
+            FOCUS_RING_CLASS
+          )}
         >
           {zoomFactor > 1 ? (
             <ZoomIn size={11} className="text-secondary-foreground" aria-hidden="true" />
           ) : (
             <ZoomOut size={11} className="text-secondary-foreground" aria-hidden="true" />
           )}
-          <span
-            key={percent}
-            className="t-subtle-number t-subtle-digit"
-            style={{ '--subtle-dir': dir } as React.CSSProperties}
-          >
-            {percent}%
-          </span>
+          <span>{percent}%</span>
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
         sideOffset={6}
-        className="t-dropdown tactile-menu w-64 rounded-lg border-0 bg-popover p-3"
+        className={cn(OVERLAY_PANEL_SURFACE_CLASS, MENU_MOTION_CLASS, 'w-64 border-0 p-3')}
       >
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-medium text-foreground">Page zoom</span>
+            <span className="text-xs font-medium text-foreground">Page zoom</span>
             <button
               type="button"
               onClick={() => resetZoom(browserTabId)}
-              className="text-xs font-medium text-secondary-foreground underline underline-offset-2 hover:text-foreground"
+              className={cn(
+                'rounded text-xs font-medium text-secondary-foreground underline underline-offset-2 hover:text-foreground',
+                FOCUS_RING_CLASS
+              )}
             >
               Reset
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              aria-label="Zoom out"
-              disabled={zoomFactor <= 0.5}
-              className="tactile-control flex size-8 items-center justify-center rounded-md bg-muted text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.95] disabled:opacity-40"
-            >
-              <Minus size={14} />
-            </button>
-            <div className="flex h-8 flex-1 items-center justify-center rounded-md bg-card font-mono text-[13px] font-medium tabular-nums text-foreground">
-              {percent}%
-            </div>
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              aria-label="Zoom in"
-              disabled={zoomFactor >= 2}
-              className="tactile-control flex size-8 items-center justify-center rounded-md bg-muted text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.95] disabled:opacity-40"
-            >
-              <Plus size={14} />
-            </button>
+          <div className="flex items-center justify-center">
+            <BrowserZoomStepper browserTabId={browserTabId} />
           </div>
 
           <div className="flex items-center gap-1">
@@ -117,10 +85,11 @@ export function BrowserZoomControl({
                   type="button"
                   onClick={() => setZoomFactor(browserTabId, preset)}
                   className={cn(
-                    'flex h-[26px] flex-1 items-center justify-center rounded-md font-mono text-xs font-medium transition-colors duration-150',
+                    'flex h-[26px] flex-1 items-center justify-center rounded-md font-mono text-xs font-medium transition-colors duration-150 ease-out',
+                    FOCUS_RING_CLASS,
                     active
-                      ? 'tactile-control bg-muted text-foreground'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                      ? 'bg-foreground/[0.1] text-foreground'
+                      : 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground'
                   )}
                 >
                   {Math.round(preset * 100)}%

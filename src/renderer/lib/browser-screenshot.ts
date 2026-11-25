@@ -6,6 +6,39 @@ export interface CropRect {
   width: number
   height: number
   dpr?: number
+  /** Page CSS viewport width (`window.innerWidth`) from the injected overlay for zoom-accurate scaling. */
+  viewportWidth?: number
+}
+
+/**
+ * Compute pixel-aligned source crop rectangle for a given image size and rect.
+ * Derives scale from `imgWidth / rect.viewportWidth` when `viewportWidth` is provided
+ * so native WebView zoom and OS DPR are both accounted for accurately.
+ */
+export function computeCropSourceRect(
+  imgWidth: number,
+  imgHeight: number,
+  rect: CropRect
+): { sx: number; sy: number; sw: number; sh: number } {
+  const scale =
+    rect.viewportWidth && rect.viewportWidth > 0
+      ? imgWidth / rect.viewportWidth
+      : rect.dpr && rect.dpr > 0
+        ? rect.dpr
+        : 1
+  const rawX = Math.round(rect.x * scale)
+  const rawY = Math.round(rect.y * scale)
+  const sx = Math.max(0, Math.min(imgWidth - 1, rawX))
+  const sy = Math.max(0, Math.min(imgHeight - 1, rawY))
+  const sw = Math.max(
+    1,
+    Math.min(imgWidth - sx, Math.round(rect.width * scale) + Math.min(0, rawX))
+  )
+  const sh = Math.max(
+    1,
+    Math.min(imgHeight - sy, Math.round(rect.height * scale) + Math.min(0, rawY))
+  )
+  return { sx, sy, sw, sh }
 }
 
 /**
@@ -24,19 +57,7 @@ export async function cropBase64Png(
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => {
-      const dpr = rect.dpr && rect.dpr > 0 ? rect.dpr : 1
-      const rawX = Math.round(rect.x * dpr)
-      const rawY = Math.round(rect.y * dpr)
-      const sx = Math.max(0, rawX)
-      const sy = Math.max(0, rawY)
-      const sw = Math.max(
-        1,
-        Math.min(img.width - sx, Math.round(rect.width * dpr) + Math.min(0, rawX))
-      )
-      const sh = Math.max(
-        1,
-        Math.min(img.height - sy, Math.round(rect.height * dpr) + Math.min(0, rawY))
-      )
+      const { sx, sy, sw, sh } = computeCropSourceRect(img.width, img.height, rect)
       const canvas = document.createElement('canvas')
       canvas.width = sw
       canvas.height = sh
@@ -63,8 +84,8 @@ export async function cropBase64Png(
 }
 
 /**
- * Format pending batch annotations (including ruler guides & measurements) into
- * concise, structured markdown ready for an AI coding agent in chat.
+ * Format pending batch annotations (including ruler guides, measurements, and
+ * persisted crop image paths) into concise, structured markdown ready for chat.
  */
 export function formatBatchAnnotationsForChat(url: string, items: PendingAnnotationItem[]): string {
   const lines: string[] = [
@@ -84,7 +105,10 @@ export function formatBatchAnnotationsForChat(url: string, items: PendingAnnotat
       typeof item.deltaPx === 'number' && item.deltaPx !== 0
         ? ` (${item.deltaPx > 0 ? `+${item.deltaPx}` : item.deltaPx}px off)`
         : ''
-    lines.push(`${item.num}. ${kindTag} \`${item.elementPath || item.element}\`${deltaNote}`)
+    const cropNote = item.cropPath ? ` (crop: \`${item.cropPath}\`)` : ''
+    lines.push(
+      `${item.num}. ${kindTag} \`${item.elementPath || item.element}\`${deltaNote}${cropNote}`
+    )
     lines.push(`   ${item.comment}`)
   }
   return lines.join('\n')

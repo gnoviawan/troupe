@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Camera,
   Check,
@@ -15,19 +14,33 @@ import {
   Trash2,
   X
 } from '@/components/icons'
+import { Button } from '@/components/ui/button'
+import {
+  MENU_MOTION_CLASS,
+  MENU_SHORTCUT_CLASS,
+  OVERLAY_PANEL_SURFACE_CLASS
+} from '@/components/ui/menu-styles'
+import {
+  FOCUS_RING_CLASS,
+  PANEL_ICON_BUTTON_CLASS,
+  SEGMENTED_TRACK_CLASS,
+  segmentClass
+} from '@/components/ui/panel-styles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { browserTabAnnotationCmd, browserTabScreenshot } from '@/lib/browser-api'
+import { browserAnnotationsSync, browserTabAnnotationCmd } from '@/lib/browser-api'
 import { formatBatchAnnotationsForChat } from '@/lib/browser-screenshot'
 import { logFrontendError } from '@/lib/log-api'
+import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { type AnnotateTool, useBrowserSessionStore } from '@/stores/browser-session-store'
 
 interface AnnotationToolbarProps {
   browserTabId: string
   onExit: () => void
+  onCaptureVisible: () => Promise<void>
   onSendToChat: (
     markdown: string,
-    crops: Array<{ name: string; base64: string; dataUrl: string }>
+    crops: Array<{ name: string; base64: string; dataUrl: string; path?: string }>
   ) => Promise<boolean> | boolean
 }
 
@@ -44,6 +57,7 @@ const CORE_TOOLS: ReadonlyArray<{
 export function AnnotationToolbar({
   browserTabId,
   onExit,
+  onCaptureVisible,
   onSendToChat
 }: AnnotationToolbarProps): React.JSX.Element {
   const tab = useBrowserSessionStore((s) => s.tabs.get(browserTabId))
@@ -56,9 +70,15 @@ export function AnnotationToolbar({
 
   const [copied, setCopied] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
-  const pillRef = useRef<HTMLSpanElement>(null)
-  const toolRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const mountedRef = useRef(false)
+  const copyTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current)
+      }
+    }
+  }, [])
 
   const activeTool = tab?.annotateTool ?? 'comment'
   const paused = tab?.animationsPaused ?? false
@@ -66,44 +86,13 @@ export function AnnotationToolbar({
   const pending = tab?.pendingAnnotations ?? []
   const count = pending.length
 
-  const syncPill = useCallback(
-    (animate: boolean) => {
-      const pill = pillRef.current
-      const el = toolRefs.current[activeTool]
-      if (!pill || !el) return
-      if (!animate) {
-        const prev = pill.style.transition
-        pill.style.transition = 'none'
-        pill.style.transform = `translateX(${el.offsetLeft}px)`
-        pill.style.width = `${el.offsetWidth}px`
-        void pill.offsetWidth
-        pill.style.transition = prev
-      } else {
-        pill.style.transform = `translateX(${el.offsetLeft}px)`
-        pill.style.width = `${el.offsetWidth}px`
-      }
-    },
-    [activeTool]
-  )
-
-  useLayoutEffect(() => {
-    syncPill(mountedRef.current)
-    mountedRef.current = true
-  }, [syncPill])
-
-  useEffect(() => {
-    const onResize = () => syncPill(false)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [syncPill])
-
   const sendCmd = useCallback(
     (cmd: Parameters<typeof browserTabAnnotationCmd>[1]) => {
       void browserTabAnnotationCmd(browserTabId, cmd).then((res) => {
         if (!res.success && res.code !== 'NOT_TAURI') {
           void logFrontendError({
             level: 'warn',
-            message: `browserTabAnnotationCmd failed: ${res.error}`,
+            message: `browserTabAnnotationCmd(${cmd.type}) failed: ${res.error}`,
             source: 'AnnotationToolbar'
           })
         }
@@ -127,31 +116,38 @@ export function AnnotationToolbar({
     sendCmd({ type: 'set_pins_hidden', hidden: next })
   }
 
-  const handleClearAll = () => {
-    clearPendingAnnotations(browserTabId)
-    sendCmd({ type: 'clear' })
-    setQueueOpen(false)
+  const handleRemoveSingle = (annotationId: string) => {
+    removePendingAnnotation(browserTabId, annotationId)
+    sendCmd({ type: 'clear', ids: [annotationId] })
+    void browserAnnotationsSync('delete', [annotationId])
   }
 
-  const handleVisibleScreenshot = async () => {
-    const res = await browserTabScreenshot(browserTabId)
-    if (!res.success) {
-      toast.error(res.error || 'Could not capture screenshot.')
-      return
+  const handleClearAll = () => {
+    const ids = pending.map((item) => item.id)
+    clearPendingAnnotations(browserTabId)
+    sendCmd({ type: 'clear' })
+    if (ids.length > 0) {
+      void browserAnnotationsSync('delete', ids)
     }
-    const dataUrl = `data:${res.data.mimeType};base64,${res.data.base64}`
-    onSendToChat(`Viewport screenshot of ${tab?.url || 'current page'}`, [
-      { name: 'browser-visible.png', base64: res.data.base64, dataUrl }
-    ])
+    setQueueOpen(false)
   }
 
   const handleCopyBatch = () => {
     if (count === 0) return
     const text = formatBatchAnnotationsForChat(tab?.url ?? '', pending)
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current)
+    }
     setCopied(true)
-    const timer = window.setTimeout(() => setCopied(false), 1200)
+    copyTimerRef.current = window.setTimeout(() => {
+      setCopied(false)
+      copyTimerRef.current = null
+    }, 1200)
     void navigator.clipboard?.writeText(text).catch(() => {
-      window.clearTimeout(timer)
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current)
+        copyTimerRef.current = null
+      }
       setCopied(false)
     })
   }
@@ -166,16 +162,21 @@ export function AnnotationToolbar({
       .map((item) => ({
         name: `annotation-${item.num}.png`,
         base64: item.cropBase64 as string,
-        dataUrl: item.cropDataUrl as string
+        dataUrl: item.cropDataUrl as string,
+        path: item.cropPath
       }))
     const delivered = await onSendToChat(markdown, crops)
     if (!delivered) return
     removePendingAnnotations(browserTabId, submittedIds)
+    void browserAnnotationsSync('resolve', submittedIds)
     const remaining =
       useBrowserSessionStore.getState().getTab(browserTabId)?.pendingAnnotations ?? []
     sendCmd(remaining.length === 0 ? { type: 'clear' } : { type: 'clear', ids: submittedIds })
     if (remaining.length === 0) setQueueOpen(false)
   }
+
+  const areaHint = isMac ? '⇧⌘A' : 'Ctrl+Shift+A'
+  const visibleHint = isMac ? '⇧⌘S' : 'Ctrl+Shift+S'
 
   return (
     <div
@@ -187,7 +188,10 @@ export function AnnotationToolbar({
           type="button"
           onClick={onExit}
           aria-label="Exit annotate mode"
-          className="tactile-control inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-muted px-2 text-xs font-medium text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.97]"
+          className={cn(
+            'inline-flex h-7 shrink-0 items-center gap-1 rounded-md bg-control-fill px-2 text-xs font-medium text-foreground shadow-control transition-colors duration-150 ease-out hover:bg-control-fill-hover',
+            FOCUS_RING_CLASS
+          )}
         >
           <X size={12} aria-hidden="true" />
           <span className="hidden sm:inline">Done</span>
@@ -198,37 +202,26 @@ export function AnnotationToolbar({
         <div
           role="tablist"
           aria-label="Annotation tools"
-          className="t-tabs h-8 gap-0.5 rounded-[7px] bg-card p-0.5"
+          className={cn(SEGMENTED_TRACK_CLASS, 'h-7 shrink-0 bg-card')}
         >
-          <span
-            ref={pillRef}
-            aria-hidden="true"
-            className="t-tabs-pill tactile-control top-0.5 h-7 rounded-md bg-muted"
-          />
           {CORE_TOOLS.map((tool) => {
             const selected = activeTool === tool.id
             return (
               <button
                 key={tool.id}
-                ref={(el) => {
-                  toolRefs.current[tool.id] = el
-                }}
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                title={`${tool.label} (${tool.shortcut})`}
                 onClick={() => selectTool(tool.id)}
-                className={cn(
-                  't-tab inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium',
-                  selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                )}
+                title={`${tool.label} (${tool.shortcut})`}
+                className={cn(segmentClass(selected), 'h-[22px] gap-1 px-2')}
               >
                 {tool.id === 'comment' ? (
-                  <MessageSquare size={13} aria-hidden="true" />
+                  <MessageSquare size={12} aria-hidden="true" />
                 ) : tool.id === 'rectangle' ? (
-                  <Square size={13} aria-hidden="true" />
+                  <Square size={12} aria-hidden="true" />
                 ) : (
-                  <Ruler size={13} aria-hidden="true" />
+                  <Ruler size={12} aria-hidden="true" />
                 )}
                 <span className="hidden md:inline">{tool.label}</span>
               </button>
@@ -236,44 +229,53 @@ export function AnnotationToolbar({
           })}
         </div>
 
-        <div className="h-[18px] w-[0.5px] shrink-0 bg-border" />
+        <div className="hidden h-[18px] w-[0.5px] shrink-0 bg-border lg:block" />
 
-        <div className="flex items-center gap-0.5">
+        <div className="hidden items-center gap-1 lg:flex">
           <button
             type="button"
-            title="Screenshot area (⇧⌘A)"
-            aria-label="Screenshot area"
             onClick={() => selectTool('screenshot-area')}
+            aria-label="Screenshot area"
+            title={`Screenshot area (${areaHint})`}
             className={cn(
-              'inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors duration-150',
+              'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors duration-150 ease-out',
+              FOCUS_RING_CLASS,
               activeTool === 'screenshot-area'
-                ? 'tactile-control bg-muted text-foreground'
-                : 'text-secondary-foreground hover:bg-muted/60 hover:text-foreground'
+                ? 'bg-control-fill text-foreground shadow-control'
+                : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
             )}
           >
-            <Crop size={13} aria-hidden="true" />
-            <span className="hidden lg:inline">Area</span>
+            <Crop size={12} aria-hidden="true" />
+            <span>Area</span>
+            <span className={MENU_SHORTCUT_CLASS}>{areaHint}</span>
           </button>
           <button
             type="button"
-            title="Screenshot visible viewport (⇧⌘S)"
-            aria-label="Screenshot visible"
-            onClick={() => void handleVisibleScreenshot()}
-            className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-secondary-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground active:scale-[0.97]"
+            onClick={() => void onCaptureVisible()}
+            aria-label="Screenshot visible viewport"
+            title={`Screenshot visible (${visibleHint})`}
+            className={cn(
+              'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-foreground/[0.04] hover:text-foreground',
+              FOCUS_RING_CLASS
+            )}
           >
-            <Camera size={13} aria-hidden="true" />
-            <span className="hidden lg:inline">Visible</span>
+            <Camera size={12} aria-hidden="true" />
+            <span>Visible</span>
           </button>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1">
         {paused ? (
           <button
             type="button"
             onClick={handleTogglePause}
             aria-label="Resume page animations"
-            className="inline-flex h-6 items-center gap-1.5 rounded-full bg-warning/15 px-2.5 text-xs font-medium text-warning transition-colors duration-150 hover:bg-warning/20"
+            title="Resume animations (P)"
+            className={cn(
+              'inline-flex h-7 items-center gap-1.5 rounded-full bg-warning/15 px-2.5 text-xs font-medium text-warning transition-colors duration-150 ease-out hover:bg-warning/20',
+              FOCUS_RING_CLASS
+            )}
           >
             <span className="size-1.5 rounded-full bg-warning" />
             <span>Paused</span>
@@ -284,7 +286,7 @@ export function AnnotationToolbar({
             onClick={handleTogglePause}
             aria-label="Pause page animations"
             title="Pause animations (P)"
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground"
+            className={PANEL_ICON_BUTTON_CLASS}
           >
             <Pause size={13} />
           </button>
@@ -295,7 +297,7 @@ export function AnnotationToolbar({
           onClick={handleTogglePins}
           aria-label={pinsHidden ? 'Show annotation pins' : 'Hide annotation pins'}
           title={pinsHidden ? 'Show pins (H)' : 'Hide pins (H)'}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground"
+          className={PANEL_ICON_BUTTON_CLASS}
         >
           <span className="t-icon-swap" data-state={pinsHidden ? 'b' : 'a'}>
             <span className="t-icon" data-icon="a">
@@ -313,7 +315,10 @@ export function AnnotationToolbar({
           onClick={handleCopyBatch}
           aria-label="Copy batch annotations"
           title="Copy feedback"
-          className="flex size-7 items-center justify-center rounded-md text-secondary-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground disabled:opacity-40"
+          className={cn(
+            PANEL_ICON_BUTTON_CLASS,
+            'disabled:pointer-events-none disabled:opacity-40'
+          )}
         >
           <span className="t-icon-swap" data-state={copied ? 'b' : 'a'}>
             <span className="t-icon" data-icon="a">
@@ -331,7 +336,10 @@ export function AnnotationToolbar({
               <button
                 type="button"
                 aria-label={`View ${count} pending comments`}
-                className="tactile-control inline-flex h-7 items-center gap-1 rounded-md bg-muted px-2 font-mono text-xs font-medium text-foreground transition-colors duration-150 hover:bg-secondary"
+                className={cn(
+                  'inline-flex h-7 items-center gap-1 rounded-md bg-control-fill px-2 font-mono text-xs font-medium text-foreground shadow-control transition-colors duration-150 ease-out hover:bg-control-fill-hover',
+                  FOCUS_RING_CLASS
+                )}
               >
                 <span>{count}</span>
                 <ChevronDown size={11} className="text-muted-foreground" />
@@ -340,11 +348,15 @@ export function AnnotationToolbar({
             <PopoverContent
               align="end"
               sideOffset={6}
-              className="t-dropdown tactile-menu w-96 overflow-hidden rounded-lg border-0 bg-popover p-0"
+              className={cn(
+                OVERLAY_PANEL_SURFACE_CLASS,
+                MENU_MOTION_CLASS,
+                'w-96 overflow-hidden border-0 p-0'
+              )}
             >
               <div className="flex items-center justify-between border-b border-border/80 px-3.5 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-medium text-foreground">Batch comments</span>
+                  <span className="text-sm font-medium text-foreground">Batch comments</span>
                   <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-xs font-medium text-primary">
                     {count} pending
                   </span>
@@ -352,12 +364,15 @@ export function AnnotationToolbar({
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                  className={cn(
+                    'rounded text-xs font-medium text-muted-foreground hover:text-foreground',
+                    FOCUS_RING_CLASS
+                  )}
                 >
                   Clear all
                 </button>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-border/70">
+              <div className="max-h-72 divide-y divide-border/70 overflow-y-auto">
                 {pending.map((item) => (
                   <div key={item.id} className="flex items-start gap-2.5 px-3.5 py-2.5">
                     <span
@@ -369,7 +384,7 @@ export function AnnotationToolbar({
                       {item.num}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium leading-5 text-foreground">
+                      <p className="text-xs font-medium leading-5 text-foreground">
                         {item.comment}
                       </p>
                       <p className="truncate font-mono text-xs text-muted-foreground">
@@ -387,8 +402,11 @@ export function AnnotationToolbar({
                     <button
                       type="button"
                       aria-label={`Remove comment ${item.num}`}
-                      onClick={() => removePendingAnnotation(browserTabId, item.id)}
-                      className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-destructive"
+                      onClick={() => handleRemoveSingle(item.id)}
+                      className={cn(
+                        'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors duration-150 ease-out hover:bg-foreground/[0.06] hover:text-destructive',
+                        FOCUS_RING_CLASS
+                      )}
                     >
                       <Trash2 size={12} />
                     </button>
@@ -397,47 +415,41 @@ export function AnnotationToolbar({
               </div>
               <div className="flex items-center justify-between border-t border-border/80 bg-card px-3.5 py-2.5">
                 <span className="text-xs text-muted-foreground">
-                  Includes DOM selectors + auto-crops
+                  Includes DOM selectors + saved crops
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyBatch}
-                    className="tactile-control h-7 rounded-md bg-muted px-2.5 text-xs font-medium text-foreground hover:bg-secondary"
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={handleCopyBatch}>
                     Copy
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    onClick={handleSendBatch}
-                    className="h-7 rounded-md bg-primary-fill px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary-fill-hover"
+                    variant="default"
+                    size="sm"
+                    onClick={() => void handleSendBatch()}
                   >
                     Send to chat ({count})
-                  </button>
+                  </Button>
                 </div>
               </div>
             </PopoverContent>
           </Popover>
         )}
 
-        <button
+        <Button
           type="button"
+          variant={count > 0 && !queueOpen ? 'default' : 'outline'}
+          size="sm"
           disabled={count === 0}
-          onClick={handleSendBatch}
-          className={cn(
-            'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium tracking-[-0.01em] transition-[transform,background-color] duration-150',
-            count > 0
-              ? 'tactile-primary bg-primary-fill text-primary-foreground hover:bg-primary-fill-hover active:scale-[0.97]'
-              : 'bg-muted text-disabled-foreground'
-          )}
+          onClick={() => void handleSendBatch()}
+          className="h-7 gap-1.5 px-2.5 text-xs"
         >
           <span>Send to chat</span>
           {count > 0 && (
-            <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-primary-foreground/20 px-1 font-mono text-xs tabular-nums">
+            <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-current/15 px-1 font-mono text-xs tabular-nums">
               {count}
             </span>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )

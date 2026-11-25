@@ -1,4 +1,5 @@
-import { Plug, RotateCcw, Terminal } from '@/components/icons'
+import { Plug, RefreshCw, Terminal } from '@/components/icons'
+import { Button } from '@/components/ui/button'
 import type { BrowserLoadError } from '@/stores/browser-session-store'
 
 interface BrowserOfflineViewProps {
@@ -26,7 +27,7 @@ export function BrowserOfflineView({
             <h2 className="text-base font-medium leading-6 text-foreground">
               Cannot connect to {error.host}
             </h2>
-            <p className="text-[13px] font-medium leading-5 text-muted-foreground">
+            <p className="text-sm leading-5 text-muted-foreground">
               {error.message ||
                 (error.port
                   ? `No local server is listening on port ${error.port}. Start your dev server or check the port number.`
@@ -41,23 +42,15 @@ export function BrowserOfflineView({
 
         <div className="flex items-center gap-2">
           {onOpenTerminal && isLocal && (
-            <button
-              type="button"
-              onClick={onOpenTerminal}
-              className="tactile-control inline-flex h-8 items-center gap-1.5 rounded-md bg-muted px-3 text-[13px] font-medium tracking-[-0.01em] text-foreground transition-[transform,background-color] duration-150 hover:bg-secondary active:scale-[0.97]"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={onOpenTerminal}>
               <Terminal size={14} className="text-secondary-foreground" aria-hidden="true" />
               <span>Open terminal</span>
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={onRetry}
-            className="tactile-primary inline-flex h-8 items-center gap-1.5 rounded-md bg-primary-fill px-3 text-[13px] font-medium tracking-[-0.01em] text-primary-foreground transition-[transform,background-color] duration-150 hover:bg-primary-fill-hover active:scale-[0.97]"
-          >
-            <RotateCcw size={14} aria-hidden="true" />
+          <Button type="button" variant="default" size="sm" onClick={onRetry}>
+            <RefreshCw size={14} aria-hidden="true" />
             <span>Retry</span>
-          </button>
+          </Button>
         </div>
 
         {isLocal && error.port && (

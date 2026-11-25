@@ -82,7 +82,7 @@ export function BrowserConsentCard({ consent }: BrowserConsentCardProps): React.
     <section
       aria-labelledby={titleId}
       aria-live="polite"
-      className="tactile-modal rounded-lg bg-card px-3.5 py-3 sm:px-4"
+      className="rounded-lg border border-border bg-card px-3.5 py-3 shadow-md sm:px-4"
       data-testid="browser-consent-card"
     >
       <div className="flex items-start gap-2.5">

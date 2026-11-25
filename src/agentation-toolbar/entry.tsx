@@ -131,6 +131,10 @@ class TroupeAnnotationOverlay {
       .__TERMUL_AGENTATION_ENDPOINT__
   }
 
+  private getTabId(): string | undefined {
+    return (window as unknown as { __TERMUL_TAB_ID__?: string }).__TERMUL_TAB_ID__
+  }
+
   private async ensureSession(): Promise<string | null> {
     if (this.sessionId) return this.sessionId
     const preset = (window as unknown as { __TERMUL_AGENTATION_SESSION_ID__?: string })
@@ -180,6 +184,8 @@ class TroupeAnnotationOverlay {
         body: JSON.stringify({
           url: window.location.href,
           timestamp: Date.now(),
+          tabId: this.getTabId(),
+          viewportWidth: window.innerWidth,
           ...payload
         })
       })
@@ -202,8 +208,13 @@ class TroupeAnnotationOverlay {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: sid,
+          tabId: this.getTabId(),
           annotations: [],
-          output: JSON.stringify(payload),
+          output: JSON.stringify({
+            ...payload,
+            tabId: this.getTabId(),
+            viewportWidth: window.innerWidth
+          }),
           timestamp: new Date().toISOString()
         })
       })
@@ -341,8 +352,8 @@ class TroupeAnnotationOverlay {
         this.spacingLeftLine.style.width = `${leftGap}px`
 
         this.spacingPill.style.display = 'block'
-        this.spacingPill.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}px · ↑${topGap} ←${leftGap}`
-        this.spacingPill.style.left = `${Math.min(window.innerWidth - 200, Math.max(8, rect.left))}px`
+        this.spacingPill.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}px · ↑${topGap} ←${leftGap} · Alt+click measure`
+        this.spacingPill.style.left = `${Math.min(window.innerWidth - 280, Math.max(8, rect.left))}px`
         this.spacingPill.style.top = `${Math.max(8, rect.top - 24)}px`
       } else {
         this.spacingPill.style.display = 'none'
@@ -359,34 +370,43 @@ class TroupeAnnotationOverlay {
         return
       }
       if (this.tool === 'ruler') {
-        if (e.altKey) {
-          const el = this.elementUnderPoint(e.clientX, e.clientY)
-          if (el) {
-            const rect = el.getBoundingClientRect()
-            const summary = inspectElement(el)
-            const topGap = Math.max(0, Math.round(rect.top))
-            const leftGap = Math.max(0, Math.round(rect.left))
-            const axis: GuideAxis = e.shiftKey ? 'vertical' : 'horizontal'
-            const gapPx = axis === 'horizontal' ? topGap : leftGap
-            this.openCommentPopover({
-              title: `Spacing · ${gapPx}px (${summary.element})`,
-              x: e.clientX,
-              y: e.clientY,
-              kind: 'measurement',
-              summary,
-              measurement: {
+        const el = this.elementUnderPoint(e.clientX, e.clientY)
+        const spacingCandidate = el
+          ? (() => {
+              const rect = el.getBoundingClientRect()
+              const summary = inspectElement(el)
+              const topGap = Math.max(0, Math.round(rect.top))
+              const leftGap = Math.max(0, Math.round(rect.left))
+              // topGap measures vertical distance (y); leftGap measures horizontal distance (x).
+              const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
+              const gapPx = axis === 'vertical' ? topGap : leftGap
+              return {
+                summary,
                 axis,
-                positionPx: axis === 'horizontal' ? Math.round(rect.top) : Math.round(rect.left),
+                positionPx: axis === 'vertical' ? Math.round(rect.top) : Math.round(rect.left),
                 gapPx
               }
-            })
-            return
-          }
+            })()
+          : undefined
+        if (e.altKey && spacingCandidate) {
+          this.openCommentPopover({
+            title: `Spacing · ${spacingCandidate.gapPx}px (${spacingCandidate.summary.element})`,
+            x: e.clientX,
+            y: e.clientY,
+            kind: 'measurement',
+            summary: spacingCandidate.summary,
+            measurement: {
+              axis: spacingCandidate.axis,
+              positionPx: spacingCandidate.positionPx,
+              gapPx: spacingCandidate.gapPx
+            }
+          })
+          return
         }
         const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
         const pos = axis === 'vertical' ? Math.round(e.clientX) : Math.round(e.clientY)
         const guide = this.addGuide(axis, pos)
-        this.openGuidePopover(guide, e.clientX, e.clientY)
+        this.openGuidePopover(guide, e.clientX, e.clientY, spacingCandidate)
         return
       }
       if (this.tool === 'comment') {
@@ -535,7 +555,17 @@ class TroupeAnnotationOverlay {
     }
   }
 
-  private openGuidePopover(guide: PlacedGuide, clickX: number, clickY: number): void {
+  private openGuidePopover(
+    guide: PlacedGuide,
+    clickX: number,
+    clickY: number,
+    spacingCandidate?: {
+      summary: ElementSummary
+      axis: GuideAxis
+      positionPx: number
+      gapPx: number
+    }
+  ): void {
     const label = `${guide.axis === 'vertical' ? 'Vertical' : 'Horizontal'} guide · ${
       guide.axis === 'vertical' ? 'x' : 'y'
     } = ${guide.pos}px`
@@ -544,7 +574,8 @@ class TroupeAnnotationOverlay {
       x: guide.axis === 'vertical' ? guide.pos : clickX,
       y: guide.axis === 'horizontal' ? guide.pos : clickY,
       kind: 'guide',
-      guide
+      guide,
+      spacingCandidate
     })
   }
 
@@ -557,6 +588,12 @@ class TroupeAnnotationOverlay {
     rect?: { x: number; y: number; width: number; height: number }
     guide?: PlacedGuide
     measurement?: { axis: GuideAxis; positionPx: number; gapPx: number }
+    spacingCandidate?: {
+      summary: ElementSummary
+      axis: GuideAxis
+      positionPx: number
+      gapPx: number
+    }
   }): void {
     this.closePopover()
     this.hideHoverVisuals()
@@ -588,6 +625,8 @@ class TroupeAnnotationOverlay {
     const foot = document.createElement('div')
     foot.className = 'pop-foot'
     if (opts.guide) {
+      const links = document.createElement('div')
+      links.className = 'pop-links'
       const removeBtn = document.createElement('button')
       removeBtn.type = 'button'
       removeBtn.className = 'pop-link'
@@ -597,7 +636,29 @@ class TroupeAnnotationOverlay {
         this.closePopover()
         this.renderPinsAndGuides()
       })
-      foot.appendChild(removeBtn)
+      links.appendChild(removeBtn)
+
+      if (opts.spacingCandidate) {
+        const sc = opts.spacingCandidate
+        const measureBtn = document.createElement('button')
+        measureBtn.type = 'button'
+        measureBtn.className = 'pop-link measure'
+        measureBtn.textContent = `Save spacing (${sc.gapPx}px)`
+        measureBtn.addEventListener('click', () => {
+          this.guides = this.guides.filter((g) => g.id !== opts.guide?.id)
+          this.renderPinsAndGuides()
+          this.openCommentPopover({
+            title: `Spacing · ${sc.gapPx}px (${sc.summary.element})`,
+            x: opts.x,
+            y: opts.y,
+            kind: 'measurement',
+            summary: sc.summary,
+            measurement: { axis: sc.axis, positionPx: sc.positionPx, gapPx: sc.gapPx }
+          })
+        })
+        links.appendChild(measureBtn)
+      }
+      foot.appendChild(links)
     } else {
       const hint = document.createElement('span')
       hint.className = 'pop-hint'
@@ -665,9 +726,13 @@ class TroupeAnnotationOverlay {
         }
       }
 
+      // Hide the popover before posting so the host's auto-crop screenshot
+      // captures the clean page without this "Saving…" dialog covering it.
+      pop.style.display = 'none'
       const saved = await this.postAnnotation(payload)
       submitting = false
       if (!saved.ok) {
+        pop.style.display = 'flex'
         addBtn.disabled = false
         addBtn.textContent = 'Retry'
         errorEl.textContent = 'Could not save annotation. Try again.'

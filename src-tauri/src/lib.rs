@@ -1537,42 +1537,7 @@ pub fn run() {
                             bt_manager.set_agentation_endpoint(service.endpoint().to_string());
                         }
 
-                        // Forward overlay annotations and area-screenshot actions to the main
-                        // window so the host AnnotationToolbar batch queue stays in sync live.
-                        let mut rx = service.store.event_bus().subscribe();
-                        let event_handle = handle.clone();
-                        tauri::async_runtime::spawn(async move {
-                            use agentation::types::AFSEventType;
-                            use tokio::sync::broadcast::error::RecvError;
-                            loop {
-                                match rx.recv().await {
-                                    Ok(ev) => match ev.event_type {
-                                        AFSEventType::AnnotationCreated => {
-                                            let _ = event_handle.emit_to(
-                                                "main",
-                                                "agentation:annotation_created",
-                                                &ev.payload,
-                                            );
-                                        }
-                                        AFSEventType::ActionRequested => {
-                                            let _ = event_handle.emit_to(
-                                                "main",
-                                                "agentation:action_requested",
-                                                &ev.payload,
-                                            );
-                                        }
-                                        _ => {}
-                                    },
-                                    Err(RecvError::Lagged(skipped)) => {
-                                        log::warn!(
-                                            "[agentation] event forwarder lagged by {skipped} event(s); continuing"
-                                        );
-                                        continue;
-                                    }
-                                    Err(RecvError::Closed) => break,
-                                }
-                            }
-                        });
+                        agentation::spawn_event_forwarder(&service, handle.clone());
 
                         app.manage(service);
                         log::info!("[agentation] service started");
@@ -2271,6 +2236,8 @@ pub fn run() {
             commands::browser_tab_set_zoom,
             commands::browser_tab_screenshot,
             commands::browser_tab_annotation_cmd,
+            commands::browser_annotations_sync,
+            commands::browser_save_annotation_crop,
             commands::browser_list_local_servers,
             commands::browser_check_local_port,
             commands::browser_tab_open_devtools,

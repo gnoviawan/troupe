@@ -19,11 +19,24 @@ import {
   Tablet,
   X
 } from '@/components/icons'
-import { INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
+import { Button } from '@/components/ui/button'
+import {
+  MENU_CONTENT_CLASS,
+  MENU_ITEM_CLASS,
+  MENU_MOTION_CLASS,
+  MENU_SHORTCUT_CLASS
+} from '@/components/ui/menu-styles'
+import {
+  FOCUS_RING_CLASS,
+  INNER_FIELD_FOCUS_CLASS,
+  PANEL_ICON_BUTTON_CLASS
+} from '@/components/ui/panel-styles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Spinner } from '@/components/ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useInterfaceOverlayOpen } from '@/hooks/use-native-webview-occlusion'
 import {
+  browserSaveAnnotationCrop,
   browserTabAnnotationCmd,
   browserTabGoBack,
   browserTabGoForward,
@@ -34,19 +47,21 @@ import {
   browserTabStop
 } from '@/lib/browser-api'
 import { stopBrowserAgent } from '@/lib/browser-consent-api'
+import { normalizeBrowserInputUrl, splitDisplayUrl } from '@/lib/browser-url'
 import { logFrontendError } from '@/lib/log-api'
 import { isMac } from '@/lib/platform'
+import { openerApi } from '@/lib/tauri-opener-api'
 import { cn } from '@/lib/utils'
 import { useAgentTabSession, useSessionBrowserStopped } from '@/stores/browser-control-store'
-import { useBrowserSessionStore } from '@/stores/browser-session-store'
+import { type AnnotateTool, useBrowserSessionStore } from '@/stores/browser-session-store'
 import {
   findPaneById,
+  getAllLeafPanes,
   useWorkspaceStore,
   browserTabId as workspaceBrowserTabId
 } from '@/stores/workspace-store'
 import { AnnotationToolbar } from './AnnotationToolbar'
 import { BrowserMoreMenu } from './BrowserMoreMenu'
-import { normalizeBrowserInputUrl } from './BrowserStartPage'
 import { BrowserZoomControl } from './BrowserZoomControl'
 
 interface BrowserControlsProps {
@@ -54,27 +69,16 @@ interface BrowserControlsProps {
   isVisible?: boolean
   onSendAnnotationsToChat?: (
     markdown: string,
-    crops: Array<{ name: string; base64: string; dataUrl: string }>
+    crops: Array<{ name: string; base64: string; dataUrl: string; path?: string }>
   ) => Promise<boolean> | boolean
 }
 
-function splitDisplayUrl(
-  raw: string
-): { scheme: string; host: string; path: string; isHttps: boolean } | null {
-  if (!raw) return null
-  try {
-    const parsed = new URL(raw)
-    const scheme = `${parsed.protocol}//`
-    const path = `${parsed.pathname}${parsed.search}${parsed.hash}`
-    return {
-      scheme,
-      host: parsed.host,
-      path: path === '/' ? '' : path,
-      isHttps: parsed.protocol === 'https:'
-    }
-  } catch {
-    return null
-  }
+function logControlError(action: string, error: unknown): void {
+  void logFrontendError({
+    level: 'warn',
+    message: `${action} failed: ${error instanceof Error ? error.message : String(error)}`,
+    source: 'BrowserControls'
+  })
 }
 
 export function BrowserControls({
@@ -85,21 +89,18 @@ export function BrowserControls({
   const tab = useBrowserSessionStore((state) => state.tabs.get(browserTabId))
   const tabUrl = tab?.url ?? ''
   const tabLoading = tab?.loading ?? false
-  const canGoBack = tab?.canGoBack ?? false
-  const canGoForward = tab?.canGoForward ?? false
-  const agentControlled = tab?.agentControlled ?? false
+  const agentControlled = tab?.agentControlled === true
   const viewportPreset = tab?.viewportPreset ?? 'desktop'
   const annotateMode = tab?.annotateMode ?? false
   const pendingCount = tab?.pendingAnnotations.length ?? 0
 
   const agentSessionId = useAgentTabSession(browserTabId)
-  const agentStopped = useSessionBrowserStopped(agentSessionId ?? '')
+  const agentStopped = useSessionBrowserStopped(agentSessionId)
+  const overlayOpen = useInterfaceOverlayOpen()
 
   const cycleViewportPreset = useBrowserSessionStore((s) => s.cycleViewportPreset)
   const setAnnotateMode = useBrowserSessionStore((s) => s.setAnnotateMode)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
-  const stepZoom = useBrowserSessionStore((s) => s.stepZoom)
-  const resetZoom = useBrowserSessionStore((s) => s.resetZoom)
 
   const [inputUrl, setInputUrl] = useState(tabUrl)
   const [urlFocused, setUrlFocused] = useState(false)
@@ -108,6 +109,7 @@ export function BrowserControls({
   const [stopPending, setStopPending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const annotateReqIdRef = useRef(0)
+  const copyTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!urlFocused) {
@@ -115,15 +117,21 @@ export function BrowserControls({
     }
   }, [tabUrl, urlFocused])
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current)
+      }
+    }
+  }, [])
+
   const handleNavigate = useCallback(() => {
     const normalized = normalizeBrowserInputUrl(inputUrl)
-    if (!normalized) {
-      setInputUrl(tabUrl)
-      return
-    }
+    if (!normalized) return
     useBrowserSessionStore.getState().updateUrl(browserTabId, normalized)
+    setUrlFocused(false)
     inputRef.current?.blur()
-  }, [browserTabId, inputUrl, tabUrl])
+  }, [browserTabId, inputUrl])
 
   const handleUrlKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -141,55 +149,73 @@ export function BrowserControls({
 
   const handleUrlBlur = useCallback(() => {
     setUrlFocused(false)
-    // Revert unsubmitted edits on blur instead of triggering surprise navigation.
     setInputUrl(tabUrl)
   }, [tabUrl])
 
   const handleCopyAddress = useCallback(() => {
     if (!tabUrl) return
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current)
+    }
     setCopiedUrl(true)
-    const timer = window.setTimeout(() => setCopiedUrl(false), 1100)
+    copyTimerRef.current = window.setTimeout(() => {
+      setCopiedUrl(false)
+      copyTimerRef.current = null
+    }, 1100)
     void navigator.clipboard?.writeText(tabUrl).catch(() => {
-      window.clearTimeout(timer)
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current)
+        copyTimerRef.current = null
+      }
       setCopiedUrl(false)
     })
   }, [tabUrl])
 
   const handleOpenExternal = useCallback(() => {
     if (!tabUrl) return
-    window.open(tabUrl, '_blank', 'noopener,noreferrer')
+    void openerApi.openUrlWithSystemBrowser(tabUrl).then((res) => {
+      if (!res.success) {
+        toast.error(res.error || 'Could not open URL in default browser.')
+        logControlError('openUrlWithSystemBrowser', res.error)
+      }
+    })
   }, [tabUrl])
 
-  const handleEnterAnnotate = useCallback(() => {
-    const reqId = ++annotateReqIdRef.current
-    setAnnotateMode(browserTabId, true)
-    void browserTabInjectAgentation(browserTabId)
-      .then((result) => {
-        if (reqId !== annotateReqIdRef.current) return
-        if (!result.success && result.code !== 'NOT_TAURI') {
-          setAnnotateMode(browserTabId, false)
-          toast.error(result.error || 'Could not start annotation mode.')
-          void logFrontendError({
-            level: 'warn',
-            message: `Toolbar injection failed: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
-            source: 'BrowserControls'
-          })
-          return
-        }
-        void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
-        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
-      })
-      .catch((e) => {
-        if (reqId !== annotateReqIdRef.current) return
-        setAnnotateMode(browserTabId, false)
-        toast.error('Could not start annotation mode.')
-        void logFrontendError({
-          level: 'warn',
-          message: `Toolbar injection error: ${e instanceof Error ? e.message : String(e)}`,
-          source: 'BrowserControls'
+  const activateOverlay = useCallback(
+    (tool: AnnotateTool, failureMessage: string) => {
+      const reqId = ++annotateReqIdRef.current
+      setAnnotateMode(browserTabId, true)
+      setAnnotateTool(browserTabId, tool)
+      void browserTabInjectAgentation(browserTabId)
+        .then((result) => {
+          if (reqId !== annotateReqIdRef.current) return
+          if (!result.success && result.code !== 'NOT_TAURI') {
+            setAnnotateMode(browserTabId, false)
+            toast.error(result.error || failureMessage)
+            logControlError(`injectAgentation(${tool})`, result.error ?? result.code)
+            return
+          }
+          void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
+          void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool })
         })
-      })
-  }, [browserTabId, setAnnotateMode])
+        .catch((e) => {
+          if (reqId !== annotateReqIdRef.current) return
+          setAnnotateMode(browserTabId, false)
+          toast.error(failureMessage)
+          logControlError(`injectAgentation(${tool})`, e)
+        })
+    },
+    [browserTabId, setAnnotateMode, setAnnotateTool]
+  )
+
+  const handleEnterAnnotate = useCallback(() => {
+    activateOverlay('comment', 'Could not start annotation mode.')
+  }, [activateOverlay])
+
+  const handleQuickScreenshotArea = useCallback(() => {
+    setScreenshotOpen(false)
+    activateOverlay('screenshot-area', 'Could not start area capture.')
+  }, [activateOverlay])
 
   const handleExitAnnotate = useCallback(() => {
     annotateReqIdRef.current += 1
@@ -200,7 +226,7 @@ export function BrowserControls({
   const handleDefaultSendToChat = useCallback(
     async (
       markdown: string,
-      crops: Array<{ name: string; base64: string; dataUrl: string }>
+      crops: Array<{ name: string; base64: string; dataUrl: string; path?: string }>
     ): Promise<boolean> => {
       if (onSendAnnotationsToChat) {
         return await onSendAnnotationsToChat(markdown, crops)
@@ -211,13 +237,15 @@ export function BrowserControls({
       }
       try {
         await navigator.clipboard.writeText(markdown)
+        const savedCount = crops.filter((c) => Boolean(c.path)).length
         toast.success(
-          crops.length > 0
-            ? `Copied annotations to clipboard (${crops.length} image ${crops.length === 1 ? 'crop' : 'crops'} available in batch).`
+          savedCount > 0
+            ? `Copied annotations and ${savedCount} saved crop ${savedCount === 1 ? 'path' : 'paths'} to clipboard for chat.`
             : 'Copied annotations to clipboard for chat.'
         )
         return true
-      } catch {
+      } catch (e) {
+        logControlError('clipboard.writeText', e)
         toast.error('Could not write annotations to clipboard.')
         return false
       }
@@ -225,60 +253,31 @@ export function BrowserControls({
     [onSendAnnotationsToChat]
   )
 
-  const handleQuickScreenshotVisible = useCallback(async () => {
+  const handleCaptureVisible = useCallback(async () => {
     setScreenshotOpen(false)
     const res = await browserTabScreenshot(browserTabId)
     if (!res.success) {
       toast.error(res.error || 'Could not capture screenshot.')
       return
     }
+    const id = `visible-${Date.now()}`
     const dataUrl = `data:${res.data.mimeType};base64,${res.data.base64}`
+    const saved = await browserSaveAnnotationCrop(id, res.data.base64)
+    const cropPath = saved.success ? saved.data : undefined
     useBrowserSessionStore.getState().addPendingAnnotation(browserTabId, {
-      id: `visible-${Date.now()}`,
+      id,
       kind: 'rectangle',
       element: 'Visible viewport',
       elementPath: tabUrl || 'current page',
       comment: `Viewport screenshot of ${tabUrl || 'current page'}`,
       cropBase64: res.data.base64,
-      cropDataUrl: dataUrl
+      cropDataUrl: dataUrl,
+      cropPath
     })
-    void handleDefaultSendToChat(`Viewport screenshot of ${tabUrl || 'current page'}`, [
-      { name: 'browser-visible.png', base64: res.data.base64, dataUrl }
-    ])
-  }, [browserTabId, handleDefaultSendToChat, tabUrl])
-
-  const handleQuickScreenshotArea = useCallback(() => {
-    setScreenshotOpen(false)
-    const reqId = ++annotateReqIdRef.current
-    setAnnotateMode(browserTabId, true)
-    setAnnotateTool(browserTabId, 'screenshot-area')
-    void browserTabInjectAgentation(browserTabId)
-      .then((result) => {
-        if (reqId !== annotateReqIdRef.current) return
-        if (!result.success && result.code !== 'NOT_TAURI') {
-          setAnnotateMode(browserTabId, false)
-          toast.error(result.error || 'Could not start area capture.')
-          void logFrontendError({
-            level: 'warn',
-            message: `Area capture injection failed: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
-            source: 'BrowserControls'
-          })
-          return
-        }
-        void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
-        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'screenshot-area' })
-      })
-      .catch((e) => {
-        if (reqId !== annotateReqIdRef.current) return
-        setAnnotateMode(browserTabId, false)
-        toast.error('Could not start area capture.')
-        void logFrontendError({
-          level: 'warn',
-          message: `Area capture injection error: ${e instanceof Error ? e.message : String(e)}`,
-          source: 'BrowserControls'
-        })
-      })
-  }, [browserTabId, setAnnotateMode, setAnnotateTool])
+    toast.success(
+      cropPath ? 'Saved viewport screenshot into batch.' : 'Added viewport screenshot to batch.'
+    )
+  }, [browserTabId, tabUrl])
 
   const handleStopAgent = useCallback(() => {
     if (!agentSessionId || stopPending) return
@@ -292,14 +291,18 @@ export function BrowserControls({
       .finally(() => setStopPending(false))
   }, [agentSessionId, stopPending])
 
-  // Panel-level keyboard shortcuts routed only to the focused browser pane
+  // Browser-scoped keyboard shortcuts (zoom is handled centrally in use-workspace-keyboard.ts)
   useEffect(() => {
-    if (!isVisible) return
+    if (!isVisible || overlayOpen) return
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
       const ws = useWorkspaceStore.getState()
-      const activePane = findPaneById(ws.root, ws.activePaneId)
-      const activeTabId = activePane?.type === 'leaf' ? activePane.activeTabId : null
-      if (activeTabId && activeTabId !== workspaceBrowserTabId(browserTabId)) return
+      const hasWorkspaceTabs = getAllLeafPanes(ws.root).some((leaf) => leaf.tabs.length > 0)
+      if (hasWorkspaceTabs) {
+        const activePane = findPaneById(ws.root, ws.activePaneId)
+        const activeTabId = activePane?.type === 'leaf' ? activePane.activeTabId : null
+        if (activeTabId !== workspaceBrowserTabId(browserTabId)) return
+      }
 
       const target = e.target as HTMLElement | null
       const inEditable =
@@ -309,28 +312,22 @@ export function BrowserControls({
       const mod = e.metaKey || e.ctrlKey
       if (mod) {
         const key = e.key.toLowerCase()
-        if (key === 'l') {
+        if (key === 'l' && !e.shiftKey && !e.altKey) {
           e.preventDefault()
           setUrlFocused(true)
           requestAnimationFrame(() => {
             inputRef.current?.focus()
             inputRef.current?.select()
           })
-        } else if (e.key === '=' || e.key === '+') {
+          return
+        }
+        if (inEditable) return
+        if (e.shiftKey && key === 'r' && tabUrl) {
           e.preventDefault()
-          stepZoom(browserTabId, 'in')
-        } else if (e.key === '-') {
-          e.preventDefault()
-          stepZoom(browserTabId, 'out')
-        } else if (e.key === '0') {
-          e.preventDefault()
-          resetZoom(browserTabId)
-        } else if (e.shiftKey && key === 'r' && tabUrl) {
-          e.preventDefault()
-          browserTabReload(browserTabId).catch(console.error)
+          browserTabReload(browserTabId).catch((err) => logControlError('browserTabReload', err))
         } else if (e.shiftKey && key === 's' && tabUrl) {
           e.preventDefault()
-          void handleQuickScreenshotVisible()
+          void handleCaptureVisible()
         } else if (e.shiftKey && key === 'a' && tabUrl) {
           e.preventDefault()
           handleQuickScreenshotArea()
@@ -361,12 +358,11 @@ export function BrowserControls({
   }, [
     annotateMode,
     browserTabId,
+    handleCaptureVisible,
     handleQuickScreenshotArea,
-    handleQuickScreenshotVisible,
     isVisible,
-    resetZoom,
+    overlayOpen,
     setAnnotateTool,
-    stepZoom,
     tabUrl
   ])
 
@@ -397,7 +393,7 @@ export function BrowserControls({
 
                 <div className="flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md bg-card px-2.5">
                   <Globe size={13} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <div className="flex min-w-0 flex-1 items-center truncate text-[13px] font-medium">
+                  <div className="flex min-w-0 flex-1 items-center truncate text-xs font-medium">
                     {parts ? (
                       <>
                         <span className="text-muted-foreground">{parts.scheme}</span>
@@ -415,16 +411,18 @@ export function BrowserControls({
                 </span>
 
                 {agentSessionId && (
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="sm"
                     disabled={stopPending}
                     onClick={handleStopAgent}
                     aria-label="Stop agent browsing"
-                    className="tactile-destructive inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/15 px-2.5 text-xs font-medium tracking-[-0.01em] text-destructive transition-[transform,background-color] duration-150 hover:bg-destructive/20 active:scale-[0.97] disabled:opacity-50"
+                    className="h-7 shrink-0 gap-1.5 px-2.5 text-xs"
                   >
                     <Square size={9} aria-hidden="true" />
                     <span>Stop</span>
-                  </button>
+                  </Button>
                 )}
               </motion.div>
             ) : modeKey === 'annotate' ? (
@@ -438,6 +436,7 @@ export function BrowserControls({
                 <AnnotationToolbar
                   browserTabId={browserTabId}
                   onExit={handleExitAnnotate}
+                  onCaptureVisible={handleCaptureVisible}
                   onSendToChat={handleDefaultSendToChat}
                 />
               </motion.div>
@@ -453,15 +452,20 @@ export function BrowserControls({
                 <div className="flex shrink-0 items-center gap-0.5">
                   <button
                     type="button"
-                    disabled={!hasUrl || (!canGoBack && !(tab?.loadError && tab?.previousUrl))}
+                    disabled={!hasUrl}
                     onClick={() => {
                       if (tab?.loadError && tab.previousUrl) {
                         useBrowserSessionStore.getState().updateUrl(browserTabId, tab.previousUrl)
                         return
                       }
-                      browserTabGoBack(browserTabId).catch(console.error)
+                      browserTabGoBack(browserTabId).catch((err) =>
+                        logControlError('browserTabGoBack', err)
+                      )
                     }}
-                    className="flex size-7 items-center justify-center rounded-md text-secondary-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40"
+                    className={cn(
+                      PANEL_ICON_BUTTON_CLASS,
+                      'disabled:pointer-events-none disabled:opacity-40'
+                    )}
                     aria-label="Back"
                     title="Back"
                   >
@@ -469,9 +473,16 @@ export function BrowserControls({
                   </button>
                   <button
                     type="button"
-                    disabled={!hasUrl || !canGoForward}
-                    onClick={() => browserTabGoForward(browserTabId).catch(console.error)}
-                    className="flex size-7 items-center justify-center rounded-md text-secondary-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40"
+                    disabled={!hasUrl}
+                    onClick={() =>
+                      browserTabGoForward(browserTabId).catch((err) =>
+                        logControlError('browserTabGoForward', err)
+                      )
+                    }
+                    className={cn(
+                      PANEL_ICON_BUTTON_CLASS,
+                      'disabled:pointer-events-none disabled:opacity-40'
+                    )}
                     aria-label="Forward"
                     title="Forward"
                   >
@@ -485,14 +496,15 @@ export function BrowserControls({
                         useBrowserSessionStore.getState().bumpStopGeneration(browserTabId)
                         void browserTabStop(browserTabId)
                       } else {
-                        browserTabReload(browserTabId).catch(console.error)
+                        browserTabReload(browserTabId).catch((err) =>
+                          logControlError('browserTabReload', err)
+                        )
                       }
                     }}
                     className={cn(
-                      'flex size-7 items-center justify-center rounded-md transition-colors duration-150 active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40',
-                      tabLoading
-                        ? 'tactile-control bg-muted text-foreground'
-                        : 'text-secondary-foreground hover:bg-muted/60 hover:text-foreground'
+                      PANEL_ICON_BUTTON_CLASS,
+                      'disabled:pointer-events-none disabled:opacity-40',
+                      tabLoading && 'bg-control-fill text-foreground shadow-control'
                     )}
                     aria-label={tabLoading ? 'Stop loading' : 'Reload'}
                     title={tabLoading ? 'Stop' : 'Reload'}
@@ -511,7 +523,7 @@ export function BrowserControls({
                 {/* Borderless sunk URL well — neutral 2px focus ring, never blue */}
                 <div
                   className={cn(
-                    'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 transition-[background-color,box-shadow] duration-150',
+                    'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md px-2.5 transition-[background-color,box-shadow] duration-150 ease-out',
                     urlFocused ? 'bg-muted ring-2 ring-focus-ring' : 'bg-card'
                   )}
                 >
@@ -538,7 +550,7 @@ export function BrowserControls({
                             inputRef.current?.select()
                           })
                         }}
-                        className="flex w-full min-w-0 items-center truncate text-left text-[13px] font-medium"
+                        className="flex w-full min-w-0 items-center truncate text-left text-xs font-medium"
                       >
                         <span className="text-muted-foreground">{parts.scheme}</span>
                         <span className="text-foreground">{parts.host}</span>
@@ -556,7 +568,7 @@ export function BrowserControls({
                       placeholder={hasUrl ? 'Enter URL…' : ''}
                       aria-label="Address bar"
                       className={cn(
-                        'min-w-0 flex-1 bg-transparent text-[13px] pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
+                        'min-w-0 flex-1 bg-transparent text-xs pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
                         INNER_FIELD_FOCUS_CLASS,
                         !urlFocused && parts && 'sr-only'
                       )}
@@ -575,7 +587,10 @@ export function BrowserControls({
                       onClick={handleCopyAddress}
                       aria-label="Copy address"
                       title="Copy address"
-                      className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                      className={cn(
+                        'flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground',
+                        FOCUS_RING_CLASS
+                      )}
                     >
                       <span className="t-icon-swap" data-state={copiedUrl ? 'b' : 'a'}>
                         <span className="t-icon" data-icon="a">
@@ -602,10 +617,11 @@ export function BrowserControls({
                         aria-label={`Switch responsive viewport (${viewportPreset})`}
                         data-testid="browser-device-toggle"
                         className={cn(
-                          'inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md transition-[transform,background-color,color] duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40',
+                          'inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-40',
+                          FOCUS_RING_CLASS,
                           viewportPreset === 'desktop'
-                            ? 'w-7 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                            : 'tactile-control bg-muted px-2 text-xs font-medium text-foreground hover:bg-secondary'
+                            ? 'w-7 text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground'
+                            : 'bg-control-fill px-2 text-xs font-medium text-foreground shadow-control hover:bg-control-fill-hover'
                         )}
                       >
                         {viewportPreset === 'desktop' ? (
@@ -634,10 +650,11 @@ export function BrowserControls({
                         aria-label="Screenshot options"
                         title="Screenshot"
                         className={cn(
-                          'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-md px-1.5 transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40',
+                          'inline-flex h-7 shrink-0 items-center justify-center gap-0.5 rounded-md px-1.5 transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-40',
+                          FOCUS_RING_CLASS,
                           screenshotOpen
-                            ? 'tactile-control bg-muted text-foreground'
-                            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                            ? 'bg-control-fill text-foreground shadow-control'
+                            : 'text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground'
                         )}
                       >
                         <Camera size={14} />
@@ -647,31 +664,37 @@ export function BrowserControls({
                     <PopoverContent
                       align="end"
                       sideOffset={6}
-                      className="t-dropdown tactile-menu w-56 rounded-lg border-0 bg-popover p-1"
+                      className={cn(MENU_CONTENT_CLASS, MENU_MOTION_CLASS, 'w-56')}
                     >
                       <button
                         type="button"
                         onClick={handleQuickScreenshotArea}
-                        className="flex h-8 w-full items-center justify-between rounded-md px-2 text-[13px] font-medium text-foreground transition-colors duration-150 hover:bg-muted"
+                        className={cn(
+                          MENU_ITEM_CLASS,
+                          'w-full justify-between text-foreground hover:bg-foreground/[0.06]'
+                        )}
                       >
                         <span className="inline-flex items-center gap-2">
                           <Crop size={14} aria-hidden="true" />
                           Screenshot area
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className={MENU_SHORTCUT_CLASS}>
                           {isMac ? '⇧⌘A' : 'Ctrl+Shift+A'}
                         </span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => void handleQuickScreenshotVisible()}
-                        className="flex h-8 w-full items-center justify-between rounded-md px-2 text-[13px] font-medium text-secondary-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                        onClick={() => void handleCaptureVisible()}
+                        className={cn(
+                          MENU_ITEM_CLASS,
+                          'w-full justify-between text-foreground hover:bg-foreground/[0.06]'
+                        )}
                       >
                         <span className="inline-flex items-center gap-2">
                           <Monitor size={14} aria-hidden="true" />
                           Screenshot visible
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">
+                        <span className={MENU_SHORTCUT_CLASS}>
                           {isMac ? '⇧⌘S' : 'Ctrl+Shift+S'}
                         </span>
                       </button>
@@ -687,21 +710,22 @@ export function BrowserControls({
                         aria-label="Annotate page"
                         title="Annotate page"
                         className={cn(
-                          'inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md transition-colors duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40',
+                          'inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-40',
+                          FOCUS_RING_CLASS,
                           pendingCount > 0
-                            ? 'tactile-control bg-card px-2 text-xs font-medium text-foreground hover:bg-muted'
-                            : 'w-7 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                            ? 'bg-control-fill px-2 text-xs font-medium text-foreground shadow-control hover:bg-control-fill-hover'
+                            : 'w-7 text-muted-foreground hover:bg-foreground/[0.03] hover:text-foreground'
                         )}
                       >
                         <PenTool size={13} />
                         {pendingCount > 0 && (
-                          <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-primary/15 px-1 font-mono text-xs font-medium text-primary">
-                            {pendingCount}
-                          </span>
+                          <span className="font-mono text-xs tabular-nums">{pendingCount}</span>
                         )}
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">Annotate page</TooltipContent>
+                    <TooltipContent side="bottom">
+                      Annotate page (pins, boxes & ruler)
+                    </TooltipContent>
                   </Tooltip>
 
                   <BrowserMoreMenu
@@ -709,11 +733,18 @@ export function BrowserControls({
                     hasUrl={hasUrl}
                     onCopyAddress={handleCopyAddress}
                     onOpenExternal={handleOpenExternal}
-                    onHardReload={() => browserTabReload(browserTabId).catch(console.error)}
+                    onHardReload={() =>
+                      browserTabReload(browserTabId).catch((err) =>
+                        logControlError('browserTabReload', err)
+                      )
+                    }
                     onOpenDevtools={
-                      !import.meta.env.PROD
-                        ? () => browserTabOpenDevtools(browserTabId).catch(console.error)
-                        : undefined
+                      import.meta.env.PROD
+                        ? undefined
+                        : () =>
+                            browserTabOpenDevtools(browserTabId).catch((err) =>
+                              logControlError('browserTabOpenDevtools', err)
+                            )
                     }
                   />
                 </div>
@@ -722,14 +753,13 @@ export function BrowserControls({
           </AnimatePresence>
         </div>
 
-        {/* Non-blocking 2px loading progress hairline along bottom edge */}
-        {tabLoading && hasUrl && (
+        {/* Non-blocking 2px top progress bar during navigation */}
+        {tabLoading && (
           <div
-            aria-hidden="true"
             data-testid="browser-loading-bar"
-            className="pointer-events-none absolute right-0 bottom-0 left-0 h-[2px] overflow-hidden bg-border/60"
+            className="pointer-events-none absolute right-0 bottom-0 left-0 h-[2px] overflow-hidden bg-transparent"
           >
-            <div className="h-full w-2/3 origin-left animate-pulse bg-primary transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+            <div className="h-full w-2/3 animate-pulse bg-primary" />
           </div>
         )}
       </div>

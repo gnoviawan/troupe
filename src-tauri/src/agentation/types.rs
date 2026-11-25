@@ -188,6 +188,10 @@ pub struct Annotation {
     pub measurement: Option<RulerMeasurement>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub screenshot_crop_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tab_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub viewport_width: Option<f64>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -288,6 +292,8 @@ pub struct ActionRequest {
     pub annotations: Vec<Annotation>,
     pub output: String,
     pub timestamp: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tab_id: Option<String>,
 }
 
 // -----------------------------------------------------------------------------
@@ -385,6 +391,10 @@ pub struct AnnotationInput {
     pub measurement: Option<RulerMeasurement>,
     #[serde(default)]
     pub screenshot_crop_path: Option<String>,
+    #[serde(default)]
+    pub tab_id: Option<String>,
+    #[serde(default)]
+    pub viewport_width: Option<f64>,
 
     #[serde(default)]
     pub url: Option<String>,

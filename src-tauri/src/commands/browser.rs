@@ -291,21 +291,189 @@ pub async fn browser_tab_screenshot(
     }
 }
 
-/// Dispatch an annotation control command to a user browser tab overlay.
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AnnotationOverlayTool {
+    Comment,
+    Rectangle,
+    Ruler,
+    ScreenshotArea,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AnnotationGuideAxis {
+    Horizontal,
+    Vertical,
+}
+
+/// Typed command sent from the host toolbar to the injected Shadow DOM overlay.
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BrowserAnnotationCommand {
+    SetActive { active: bool },
+    SetTool { tool: AnnotationOverlayTool },
+    SetPause { paused: bool },
+    SetPinsHidden { hidden: bool },
+    PlaceGuide { axis: AnnotationGuideAxis },
+    Clear {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ids: Option<Vec<String>>,
+    },
+}
+
+/// Dispatch a typed annotation control command to a user browser tab overlay.
 #[tauri::command]
 pub async fn browser_tab_annotation_cmd(
     tab_id: String,
-    command: serde_json::Value,
+    command: BrowserAnnotationCommand,
     webview: Webview,
     browser_manager: State<'_, Arc<BrowserTabManager>>,
 ) -> Result<IpcResult<()>, String> {
     require_main_webview(&webview, "browser_tab_annotation_cmd")?;
+    if !browser_manager.is_agentation_enabled() {
+        return Ok(IpcResult::error(
+            "Annotation overlay is disabled in preferences",
+            "AGENTATION_DISABLED",
+        ));
+    }
     let json = serde_json::to_string(&command)
         .map_err(|e| format!("Failed to serialize annotation command: {e}"))?;
     match browser_manager.send_annotation_command(&tab_id, &json) {
         Ok(()) => Ok(IpcResult::success(())),
         Err(e) => Ok(IpcResult::error(e, "BROWSER_TAB_ANNOTATION_CMD_FAILED")),
     }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AnnotationSyncAction {
+    Delete,
+    Resolve,
+}
+
+/// Sync host-side annotation deletes/clears/sends back into the Rust SQLite store
+/// so MCP tools never serve deleted or already-sent annotations.
+#[tauri::command]
+pub async fn browser_annotations_sync(
+    action: AnnotationSyncAction,
+    ids: Vec<String>,
+    webview: Webview,
+) -> Result<IpcResult<usize>, String> {
+    use crate::agentation::types::{AnnotationStatus, AnnotationStore};
+    use tauri::Manager;
+
+    require_main_webview(&webview, "browser_annotations_sync")?;
+    let Some(service) = webview
+        .app_handle()
+        .try_state::<crate::agentation::AgentationService>()
+    else {
+        return Ok(IpcResult::success(0));
+    };
+
+    let mut updated = 0usize;
+    for id in ids {
+        let ok = match action {
+            AnnotationSyncAction::Delete => service.store.delete_annotation(&id).is_some(),
+            AnnotationSyncAction::Resolve => service
+                .store
+                .update_annotation_status(&id, AnnotationStatus::Resolved, Some("user"))
+                .is_some(),
+        };
+        if ok {
+            updated += 1;
+        }
+    }
+    log::info!("[BrowserTab] Synced {updated} annotation(s) via {action:?}");
+    Ok(IpcResult::success(updated))
+}
+
+const MAX_CROP_PNG_BYTES: usize = 10 * 1024 * 1024;
+
+/// Persist a cropped annotation PNG under `<app_data_dir>/annotation-crops/`
+/// and attach `screenshotCropPath` to the annotation row in SQLite when `annotation_id` is given.
+#[tauri::command]
+pub async fn browser_save_annotation_crop(
+    annotation_id: Option<String>,
+    base64_png: String,
+    webview: Webview,
+) -> Result<IpcResult<String>, String> {
+    use base64::Engine;
+    use tauri::Manager;
+
+    require_main_webview(&webview, "browser_save_annotation_crop")?;
+    let bytes = match base64::engine::general_purpose::STANDARD.decode(&base64_png) {
+        Ok(b) => b,
+        Err(e) => {
+            return Ok(IpcResult::error(
+                format!("Invalid base64 PNG: {e}"),
+                "INVALID_CROP_PNG",
+            ))
+        }
+    };
+    if bytes.is_empty() || bytes.len() > MAX_CROP_PNG_BYTES {
+        return Ok(IpcResult::error(
+            "Crop PNG payload is empty or exceeds size limit",
+            "INVALID_CROP_SIZE",
+        ));
+    }
+
+    let app_data = match webview.app_handle().path().app_data_dir() {
+        Ok(p) => p,
+        Err(e) => {
+            return Ok(IpcResult::error(
+                format!("Could not resolve app_data_dir: {e}"),
+                "CROP_DIR_FAILED",
+            ))
+        }
+    };
+    let crop_dir = app_data.join("annotation-crops");
+    if let Err(e) = std::fs::create_dir_all(&crop_dir) {
+        return Ok(IpcResult::error(
+            format!("Could not create crop directory: {e}"),
+            "CROP_DIR_FAILED",
+        ));
+    }
+
+    let safe_stem: String = annotation_id
+        .as_deref()
+        .unwrap_or("crop")
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .take(48)
+        .collect();
+    let stem = if safe_stem.is_empty() {
+        "crop".to_string()
+    } else {
+        safe_stem
+    };
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let file_path = crop_dir.join(format!("{stem}-{nonce}.png"));
+    if let Err(e) = std::fs::write(&file_path, &bytes) {
+        return Ok(IpcResult::error(
+            format!("Could not write crop PNG: {e}"),
+            "CROP_WRITE_FAILED",
+        ));
+    }
+
+    let path_str = file_path.to_string_lossy().to_string();
+    if let (Some(ann_id), Some(service)) = (
+        annotation_id.as_deref(),
+        webview
+            .app_handle()
+            .try_state::<crate::agentation::AgentationService>(),
+    ) {
+        let _ = service.store.set_annotation_crop_path(ann_id, &path_str);
+    }
+    log::info!(
+        "[BrowserTab] Saved annotation crop bytes={} path={}",
+        bytes.len(),
+        path_str
+    );
+    Ok(IpcResult::success(path_str))
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -329,29 +497,36 @@ const LOCAL_DEV_PORTS: &[(u16, &str)] = &[
     (8787, "Workers dev server"),
 ];
 
-/// Probe whether a localhost TCP port is accepting connections on IPv4 or IPv6.
+/// Probe whether a localhost TCP port is accepting connections on IPv4 or IPv6 concurrently.
 async fn is_local_port_listening(port: u16) -> bool {
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
     use std::time::Duration;
 
-    let v4 = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
-    if tokio::time::timeout(
-        Duration::from_millis(120),
-        tokio::net::TcpStream::connect(v4),
-    )
-    .await
-    .is_ok_and(|res| res.is_ok())
-    {
-        return true;
+    if port == 0 {
+        return false;
     }
 
+    let v4 = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
     let v6 = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), port);
-    tokio::time::timeout(
-        Duration::from_millis(120),
-        tokio::net::TcpStream::connect(v6),
-    )
-    .await
-    .is_ok_and(|res| res.is_ok())
+    let timeout = Duration::from_millis(120);
+
+    let f4 = async {
+        tokio::time::timeout(timeout, tokio::net::TcpStream::connect(v4))
+            .await
+            .is_ok_and(|res| res.is_ok())
+    };
+    let f6 = async {
+        tokio::time::timeout(timeout, tokio::net::TcpStream::connect(v6))
+            .await
+            .is_ok_and(|res| res.is_ok())
+    };
+
+    tokio::pin!(f4);
+    tokio::pin!(f6);
+    tokio::select! {
+        ok4 = &mut f4 => if ok4 { true } else { f6.await },
+        ok6 = &mut f6 => if ok6 { true } else { f4.await },
+    }
 }
 
 /// Probe common local dev server ports in parallel with a short timeout.

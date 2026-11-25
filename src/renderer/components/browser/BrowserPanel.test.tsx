@@ -38,6 +38,10 @@ vi.mock('@/lib/browser-api', () => ({
     .fn()
     .mockResolvedValue({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } }),
   browserTabAnnotationCmd: vi.fn().mockResolvedValue({ success: true }),
+  browserAnnotationsSync: vi.fn().mockResolvedValue({ success: true, data: 1 }),
+  browserSaveAnnotationCrop: vi
+    .fn()
+    .mockResolvedValue({ success: true, data: '/tmp/annotation-crops/ann-1.png' }),
   browserTabOpenDevtools: vi.fn().mockResolvedValue({ success: true }),
   browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true }),
   onAgentationAnnotationCreated: (cb: (p: AgentationCreatedPayload) => void) => {
@@ -164,8 +168,19 @@ describe('BrowserPanel', () => {
     )
 
     act(() => {
+      // Event for another split pane on the exact same URL must be ignored
+      annotationListeners[0]?.({
+        id: 'ann-other',
+        tabId: 'tab-2',
+        url: 'http://localhost:5173/signup',
+        kind: 'feedback',
+        element: 'button',
+        elementPath: 'button.other',
+        comment: 'Other pane comment'
+      })
       annotationListeners[0]?.({
         id: 'ann-1',
+        tabId: 'tab-1',
         url: 'http://localhost:5173/signup',
         kind: 'guide',
         element: 'Vertical guide · x = 32px',
@@ -178,10 +193,22 @@ describe('BrowserPanel', () => {
     await waitFor(() => {
       const pending = useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations ?? []
       expect(pending.length).toBe(1)
+      expect(pending[0].id).toBe('ann-1')
       expect(pending[0].kind).toBe('guide')
       expect(pending[0].axis).toBe('vertical')
       expect(pending[0].positionPx).toBe(32)
       expect(pending[0].cropBase64).toBe('AA==')
+      expect(pending[0].cropPath).toBe('/tmp/annotation-crops/ann-1.png')
     })
+
+    // Deleting a single pending item syncs both overlay clear and Rust SQLite delete
+    const { browserTabAnnotationCmd, browserAnnotationsSync } = await import('@/lib/browser-api')
+    fireEvent.click(screen.getByLabelText('View 1 pending comments'))
+    fireEvent.click(screen.getByLabelText('Remove comment 1'))
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'clear',
+      ids: ['ann-1']
+    })
+    expect(browserAnnotationsSync).toHaveBeenCalledWith('delete', ['ann-1'])
   })
 })

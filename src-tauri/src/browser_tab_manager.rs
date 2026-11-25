@@ -171,9 +171,11 @@ impl BrowserTabManager {
         };
         if enabled && crate::host_perimeter::agentation_allowed(&tab_id) {
             if let Some(endpoint_url) = &endpoint {
+                let encoded_tab = serde_json::to_string(&tab_id).unwrap_or_else(|_| "\"\"".into());
                 let init_script = format!(
                     r#"
                     window.__TERMUL_AGENTATION_ENDPOINT__ = "{endpoint_url}";
+                    window.__TERMUL_TAB_ID__ = {encoded_tab};
                     window.__TERMUL_ANNOTATION_MODE__ = true;
                     "#
                 );
@@ -234,7 +236,7 @@ impl BrowserTabManager {
             .map_err(|e| format!("Failed to create webview: {}", e))?;
 
         #[cfg(target_os = "linux")]
-        {
+        let mounted_gtk_key: usize = {
             // Confirm the main webview still exists before changing the GTK hierarchy.
             if window.get_webview("main").is_none() {
                 let _ = _webview.close();
@@ -244,7 +246,7 @@ impl BrowserTabManager {
             let (reparent_tx, reparent_rx) = tokio::sync::oneshot::channel();
             let reparent_bounds = bounds.clone();
             let dispatch_result = _webview.with_webview(move |child_platform| {
-                let result = (|| -> Result<(), String> {
+                let result = (|| -> Result<usize, String> {
                     use gtk::prelude::*;
 
                     let child_widget = child_platform.inner();
@@ -310,7 +312,7 @@ impl BrowserTabManager {
                     child_widget.show();
                     overlay.show();
                     overlay.queue_resize();
-                    Ok(())
+                    Ok(key)
                 })();
 
                 let _ = reparent_tx.send(result);
@@ -322,8 +324,9 @@ impl BrowserTabManager {
             }
 
             match reparent_rx.await {
-                Ok(Ok(())) => {
+                Ok(Ok(key)) => {
                     log::info!("[BrowserTab] Linux GTK reparent succeeded");
+                    key
                 }
                 Ok(Err(error)) => {
                     let _ = _webview.close();
@@ -334,9 +337,25 @@ impl BrowserTabManager {
                     return Err(format!("Linux GTK reparent callback canceled: {error}"));
                 }
             }
-        }
+        };
 
         if let Err(error) = hooks::attach(&_webview, events).await {
+            #[cfg(target_os = "linux")]
+            {
+                let key = mounted_gtk_key;
+                let _ = _webview.with_webview(move |child_platform| {
+                    use gtk::prelude::*;
+                    GTK_TAB_BOUNDS.with(|map| {
+                        map.borrow_mut().remove(&key);
+                    });
+                    let child_widget = child_platform.inner();
+                    if let Some(parent) = child_widget.parent() {
+                        if let Ok(overlay) = parent.dynamic_cast::<gtk::Overlay>() {
+                            overlay.remove(&child_widget);
+                        }
+                    }
+                });
+            }
             let _ = _webview.close();
             log::warn!("[BrowserTab] tab {tab_id} refused: engine did not confirm the webview ({error})");
             return Err(format!("the browser engine did not create the tab: {error}"));
@@ -461,6 +480,9 @@ impl BrowserTabManager {
         }
         let webview = self.get_webview(tab_id)?;
 
+        let encoded_tab = serde_json::to_string(tab_id).unwrap_or_else(|_| "\"\"".into());
+        let _ = webview.eval(format!("window.__TERMUL_TAB_ID__ = {encoded_tab};"));
+
         // Inject the agentation toolbar bundle (bundled IIFE).
         // The bundle self-checks __TERMUL_AGENTATION_HOST__ to avoid double-mount.
         let toolbar_script = include_str!("../resources/agentation-toolbar.js");
@@ -540,11 +562,23 @@ impl BrowserTabManager {
     }
 
     /// Stop an in-flight document load in this browser tab.
+    /// WRY does not expose a cross-platform native `stop_loading` API, so this
+    /// invokes `window.stop()` and publishes `TabEvent::LoadFinished` to keep
+    /// the host registry's `TabView.loading` state consistent.
     pub fn stop_loading(&self, tab_id: &str) -> Result<(), String> {
         let webview = self.get_webview(tab_id)?;
         webview
             .eval("window.stop()")
             .map_err(|e| format!("Stop loading failed: {}", e))?;
+        if let Some(events) = self
+            .tabs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(tab_id)
+            .cloned()
+        {
+            events.publish(crate::browser_automation::engine::events::TabEvent::LoadFinished);
+        }
         log::info!("[BrowserTab] Stopped loading tab={tab_id}");
         Ok(())
     }
@@ -602,7 +636,8 @@ impl BrowserTabManager {
         {
             for id in &ids {
                 if let Ok(webview) = self.get_webview(id) {
-                    let _ = webview.with_webview(move |child_platform| {
+                    let (done_tx, done_rx) = std::sync::mpsc::sync_channel::<()>(1);
+                    let dispatched = webview.with_webview(move |child_platform| {
                         use gtk::prelude::*;
                         let child_widget = child_platform.inner();
                         let key = gtk_widget_key(&child_widget);
@@ -614,7 +649,11 @@ impl BrowserTabManager {
                                 overlay.remove(&child_widget);
                             }
                         }
+                        let _ = done_tx.send(());
                     });
+                    if dispatched.is_ok() {
+                        let _ = done_rx.recv_timeout(std::time::Duration::from_millis(100));
+                    }
                 }
             }
         }

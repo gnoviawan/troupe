@@ -99,6 +99,11 @@ impl AgentationMcpServer {
         Self { store }
     }
 
+    fn to_json_string(value: &serde_json::Value) -> String {
+        serde_json::to_string_pretty(value)
+            .unwrap_or_else(|e| format!("{{\"error\":\"serialization failed: {e}\"}}"))
+    }
+
     fn map_annotation_for_mcp(a: &Annotation) -> serde_json::Value {
         let mut val = serde_json::json!({
             "id": a.id,
@@ -124,21 +129,29 @@ impl AgentationMcpServer {
         // Add kind-specific structured payloads only when applicable
         if matches!(a.kind, AnnotationKind::Placement) {
             if let Some(p) = &a.placement {
-                val["placement"] = serde_json::to_value(p).unwrap();
+                if let Ok(v) = serde_json::to_value(p) {
+                    val["placement"] = v;
+                }
             }
         }
         if matches!(a.kind, AnnotationKind::Rearrange) {
             if let Some(r) = &a.rearrange {
-                val["rearrange"] = serde_json::to_value(r).unwrap();
+                if let Ok(v) = serde_json::to_value(r) {
+                    val["rearrange"] = v;
+                }
             }
         }
         if matches!(a.kind, AnnotationKind::Measurement | AnnotationKind::Guide) {
             if let Some(m) = &a.measurement {
-                val["measurement"] = serde_json::to_value(m).unwrap();
+                if let Ok(v) = serde_json::to_value(m) {
+                    val["measurement"] = v;
+                }
             }
         }
         if let Some(bb) = &a.bounding_box {
-            val["boundingBox"] = serde_json::to_value(bb).unwrap();
+            if let Ok(v) = serde_json::to_value(bb) {
+                val["boundingBox"] = v;
+            }
         }
         if let Some(path) = &a.screenshot_crop_path {
             val["screenshotCropPath"] = serde_json::Value::String(path.clone());
@@ -166,7 +179,7 @@ impl AgentationMcpServer {
                 })
             })
             .collect();
-        serde_json::to_string_pretty(&serde_json::json!({"sessions": mapped})).unwrap()
+        Self::to_json_string(&serde_json::json!({"sessions": mapped}))
     }
 
     #[tool(
@@ -175,7 +188,8 @@ impl AgentationMcpServer {
     )]
     async fn get_session(&self, Parameters(input): Parameters<GetSessionInput>) -> String {
         match self.store.get_session_with_annotations(&input.session_id) {
-            Some(s) => serde_json::to_string_pretty(&s).unwrap_or_else(|_| "error".into()),
+            Some(s) => serde_json::to_string_pretty(&s)
+                .unwrap_or_else(|e| format!("{{\"error\":\"serialization failed: {e}\"}}")),
             None => format!("Session not found: {}", input.session_id),
         }
     }
@@ -190,11 +204,10 @@ impl AgentationMcpServer {
             .iter()
             .map(Self::map_annotation_for_mcp)
             .collect();
-        serde_json::to_string_pretty(&serde_json::json!({
+        Self::to_json_string(&serde_json::json!({
             "count": mapped.len(),
             "annotations": mapped,
         }))
-        .unwrap()
     }
 
     #[tool(
@@ -209,11 +222,10 @@ impl AgentationMcpServer {
                 all.push(Self::map_annotation_for_mcp(&a));
             }
         }
-        serde_json::to_string_pretty(&serde_json::json!({
+        Self::to_json_string(&serde_json::json!({
             "count": all.len(),
             "annotations": all,
         }))
-        .unwrap()
     }
 
     #[tool(
@@ -242,11 +254,10 @@ impl AgentationMcpServer {
                 }
             }
         }
-        serde_json::to_string_pretty(&serde_json::json!({
+        Self::to_json_string(&serde_json::json!({
             "count": guides.len(),
             "guides": guides,
         }))
-        .unwrap()
     }
 
     #[tool(
@@ -259,10 +270,9 @@ impl AgentationMcpServer {
             AnnotationStatus::Acknowledged,
             Some("agent"),
         ) {
-            Some(_) => serde_json::to_string_pretty(
+            Some(_) => Self::to_json_string(
                 &serde_json::json!({"acknowledged": true, "annotationId": input.annotation_id}),
-            )
-            .unwrap(),
+            ),
             None => format!("Annotation not found: {}", input.annotation_id),
         }
     }
@@ -285,7 +295,9 @@ impl AgentationMcpServer {
                         &format!("Resolved: {summary}"),
                     );
                 }
-                serde_json::to_string_pretty(&serde_json::json!({"resolved": true, "annotationId": input.annotation_id, "summary": input.summary})).unwrap()
+                Self::to_json_string(
+                    &serde_json::json!({"resolved": true, "annotationId": input.annotation_id, "summary": input.summary}),
+                )
             }
             None => format!("Annotation not found: {}", input.annotation_id),
         }
@@ -307,7 +319,9 @@ impl AgentationMcpServer {
                     ThreadRole::Agent,
                     &format!("Dismissed: {}", input.reason),
                 );
-                serde_json::to_string_pretty(&serde_json::json!({"dismissed": true, "annotationId": input.annotation_id, "reason": input.reason})).unwrap()
+                Self::to_json_string(
+                    &serde_json::json!({"dismissed": true, "annotationId": input.annotation_id, "reason": input.reason}),
+                )
             }
             None => format!("Annotation not found: {}", input.annotation_id),
         }
@@ -319,7 +333,9 @@ impl AgentationMcpServer {
     )]
     async fn reply(&self, Parameters(input): Parameters<ReplyInput>) -> String {
         match self.store.add_thread_message(&input.annotation_id, ThreadRole::Agent, &input.message) {
-            Some(_) => serde_json::to_string_pretty(&serde_json::json!({"replied": true, "annotationId": input.annotation_id, "message": input.message})).unwrap(),
+            Some(_) => Self::to_json_string(
+                &serde_json::json!({"replied": true, "annotationId": input.annotation_id, "message": input.message}),
+            ),
             None => format!("Annotation not found: {}", input.annotation_id),
         }
     }
@@ -352,13 +368,12 @@ impl AgentationMcpServer {
             let sessions: std::collections::HashSet<_> =
                 pending.iter().map(|a| a.session_id.clone()).collect();
             let mapped: Vec<_> = pending.iter().map(Self::map_annotation_for_mcp).collect();
-            return serde_json::to_string_pretty(&serde_json::json!({
+            return Self::to_json_string(&serde_json::json!({
                 "timeout": false,
                 "count": mapped.len(),
                 "sessions": sessions,
                 "annotations": mapped,
-            }))
-            .unwrap();
+            }));
         }
 
         // Block on broadcast channel for new annotation.created events
@@ -428,20 +443,18 @@ impl AgentationMcpServer {
                 .filter_map(|e| serde_json::from_value::<Annotation>(e.payload.clone()).ok())
                 .map(|a| Self::map_annotation_for_mcp(&a))
                 .collect();
-            serde_json::to_string_pretty(&serde_json::json!({
+            Self::to_json_string(&serde_json::json!({
                 "timeout": false,
                 "count": mapped.len(),
                 "sessions": sessions,
                 "annotations": mapped,
             }))
-            .unwrap()
         } else {
             let _ = timeout_result; // consume to avoid unused warning
-            serde_json::to_string_pretty(&serde_json::json!({
+            Self::to_json_string(&serde_json::json!({
                 "timeout": true,
                 "message": format!("No new annotations within {timeout_secs} seconds"),
             }))
-            .unwrap()
         }
     }
 }

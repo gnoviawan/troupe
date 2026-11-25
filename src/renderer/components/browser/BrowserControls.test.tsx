@@ -4,6 +4,16 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { BrowserControls } from './BrowserControls'
 
+const { mockOpenUrlWithSystemBrowser } = vi.hoisted(() => ({
+  mockOpenUrlWithSystemBrowser: vi.fn().mockResolvedValue({ success: true, data: undefined })
+}))
+
+vi.mock('@/lib/tauri-opener-api', () => ({
+  openerApi: {
+    openUrlWithSystemBrowser: (...args: unknown[]) => mockOpenUrlWithSystemBrowser(...args)
+  }
+}))
+
 vi.mock('@/lib/browser-api', () => ({
   browserTabGoBack: vi.fn().mockResolvedValue({ success: true }),
   browserTabGoForward: vi.fn().mockResolvedValue({ success: true }),
@@ -14,6 +24,8 @@ vi.mock('@/lib/browser-api', () => ({
     .fn()
     .mockResolvedValue({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } }),
   browserTabAnnotationCmd: vi.fn().mockResolvedValue({ success: true }),
+  browserAnnotationsSync: vi.fn().mockResolvedValue({ success: true, data: 1 }),
+  browserSaveAnnotationCrop: vi.fn().mockResolvedValue({ success: true, data: '/tmp/crop.png' }),
   browserTabOpenDevtools: vi.fn().mockResolvedValue({ success: true }),
   browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true })
 }))
@@ -48,12 +60,26 @@ describe('BrowserControls', () => {
     expect(screen.getByLabelText('Annotate page')).toHaveProperty('disabled', true)
   })
 
-  it('respects canGoBack and canGoForward disabled states', () => {
+  it('enables Back and Forward once a URL is loaded and invokes native history commands', async () => {
+    const { browserTabGoBack, browserTabGoForward } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
-    useBrowserSessionStore.getState().setNavCapabilities('tab-1', true, false)
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
-    expect(screen.getByLabelText('Back')).toHaveProperty('disabled', false)
-    expect(screen.getByLabelText('Forward')).toHaveProperty('disabled', true)
+    const back = screen.getByLabelText('Back')
+    const forward = screen.getByLabelText('Forward')
+    expect(back).toHaveProperty('disabled', false)
+    expect(forward).toHaveProperty('disabled', false)
+    fireEvent.click(back)
+    fireEvent.click(forward)
+    expect(browserTabGoBack).toHaveBeenCalledWith('tab-1')
+    expect(browserTabGoForward).toHaveBeenCalledWith('tab-1')
+  })
+
+  it('opens external URL through canonical openerApi.openUrlWithSystemBrowser', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com/docs')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    fireEvent.click(screen.getByLabelText('More browser actions'))
+    fireEvent.click(screen.getByText('Open in default browser'))
+    expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('https://example.com/docs')
   })
 
   it('reverts unsubmitted URL input on blur instead of navigating', () => {
@@ -146,15 +172,13 @@ describe('BrowserControls', () => {
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
   })
 
-  it('handles window-level keyboard shortcuts when browser tab is visible', async () => {
+  it('handles browser shortcuts without hijacking workspace zoom shortcuts', async () => {
     const { browserTabReload, browserTabAnnotationCmd } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
 
+    // Cmd+= is owned by use-workspace-keyboard (avoids double-zoom collision)
     fireEvent.keyDown(window, { key: '=', metaKey: true })
-    expect(useBrowserSessionStore.getState().getTab('tab-1')?.zoomFactor).toBe(1.1)
-
-    fireEvent.keyDown(window, { key: '0', metaKey: true })
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.zoomFactor).toBe(1)
 
     fireEvent.keyDown(window, { key: 'r', metaKey: true, shiftKey: true })
