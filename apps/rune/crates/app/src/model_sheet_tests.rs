@@ -71,6 +71,8 @@ fn the_phone_chip_opens_the_model_sheet_with_provider_mode_and_models() {
     for key in ["model-sheet-provider", "model-sheet-mode", "model-sheet-model-matrix-large", "model-sheet-model-matrix-fast"] {
         assert!(present(&rt, key), "the sheet shows {key}");
     }
+    let mode = rt.elements().iter().find(|e| e.key.as_deref() == Some("model-sheet-mode")).and_then(|e| e.label.clone());
+    assert_eq!(mode.as_deref(), Some("Mode, Ask first"), "the default mode reads as the chip does");
     tap(&mut rt, "model-sheet-model-matrix-fast");
     rt.update_if(|s, _| {
         let call = s.sync.last_call();
