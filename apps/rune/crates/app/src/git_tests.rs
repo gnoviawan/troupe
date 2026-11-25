@@ -176,3 +176,10 @@ fn the_git_tab_shows_the_changed_file_count_and_the_panel_lists_the_files() {
         .any(|t| matches!(t, model::workspace::Tab::Diff { path, staged: false, .. } if path == "src/a.rs"));
     assert!(opened, "a row click opens its diff tab");
 }
+
+#[test]
+fn ledgered_routes_carry_a_command_id() {
+    let commit = super::git::tests_request("/git/commit");
+    assert!(commit.command_id.is_some_and(|id| !id.is_empty()));
+    assert!(super::git::tests_request("/git/status").command_id.is_none());
+}
