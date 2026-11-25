@@ -98,7 +98,7 @@ pub(super) fn separator<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, record: &Val
                 .border(1.0, c.border.alpha(0.5))
                 .fill(c.muted.alpha(0.4))
                 .scroll(rune::ScrollSpec { stick_bottom: false })
-                .child(col().w_full().px(12.0).py(8.0).child(text(summary).font(small).color(c.muted_foreground))),
+                .child(col().w_full().px(12.0).py(8.0).child(text(summary).font(small).color(c.muted_foreground).wrap().min_w(0.0))),
         );
     }
     frame
