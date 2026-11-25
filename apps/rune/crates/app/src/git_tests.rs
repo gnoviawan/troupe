@@ -183,3 +183,60 @@ fn ledgered_routes_carry_a_command_id() {
     assert!(commit.command_id.is_some_and(|id| !id.is_empty()));
     assert!(super::git::tests_request("/git/status").command_id.is_none());
 }
+
+#[test]
+fn switching_projects_clears_the_commit_box_amend_and_selection() {
+    let mut s = on_alpha();
+    answer_all(&mut s, host);
+    s.git_toggle_amend();
+    assert!(s.git.amend);
+    assert_eq!(s.git.summary.text, "last", "amend fills the last subject");
+    s.git_open_diff("src/a.rs".into(), false);
+    s.overlays.open(AMEND_CONFIRM);
+    s.select_project("p-b");
+    s.git_tick();
+    assert!(!s.git.amend);
+    assert!(s.git.summary.text.is_empty() && s.git.description.text.is_empty());
+    assert!(!s.overlays.is_open(AMEND_CONFIRM));
+    assert_eq!(s.git.cache.selected_file, None);
+    s.git.unsent.clear();
+    s.git_commit(true);
+    assert!(!s.git.unsent.iter().any(|(_, r)| r.path == "/git/commit"), "nothing to commit in beta");
+}
+
+#[test]
+fn a_lost_stash_drop_rereads_the_list_and_its_retry_resends_the_same_id() {
+    let mut s = on_alpha();
+    answer_all(&mut s, host);
+    s.git_stash(StashOp::Drop, 0);
+    let (task, first) = s.git.unsent.remove(0);
+    assert_eq!(first.path, "/git/stash-drop");
+    let id = first.command_id.clone().expect("a ledgered drop");
+    s.git_replied(task, Err(client::http::HttpError::Network("connection reset".into())));
+    assert!(s.git.unsent.iter().any(|(_, r)| r.path.starts_with("/git/stash-list")), "the list is read again");
+    s.git.unsent.clear();
+    s.git_stash(StashOp::Drop, 0);
+    let (task, retry) = s.git.unsent.remove(0);
+    assert_eq!(retry.command_id.as_deref(), Some(id.as_str()), "the host answers the retry from its ledger");
+    s.git_replied(task, Ok(Value::Null));
+    s.git.unsent.clear();
+    s.git_stash(StashOp::Drop, 0);
+    let (_, next) = s.git.unsent.remove(0);
+    assert_ne!(next.command_id.as_deref(), Some(id.as_str()), "a settled id is not reused");
+}
+
+#[test]
+fn a_fresh_route_never_reuses_an_unresolved_id() {
+    let mut s = on_alpha();
+    answer_all(&mut s, host);
+    s.git.summary = rune::TextEdit::new("fix");
+    s.git_commit(false);
+    let (task, first) = s.git.unsent.remove(0);
+    s.git_replied(task, Err(client::http::HttpError::Network("lost".into())));
+    answer_all(&mut s, host);
+    s.git.summary = rune::TextEdit::new("fix");
+    s.git_commit(false);
+    let retry = s.git.unsent.iter().find(|(_, r)| r.path == "/git/commit").map(|(_, r)| r.command_id.clone());
+    assert!(retry.is_some());
+    assert_ne!(retry.unwrap(), first.command_id, "a commit carries content its key cannot name");
+}
