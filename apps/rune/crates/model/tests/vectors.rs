@@ -321,6 +321,7 @@ fn replays_every_vector() {
                 "shell-layout" => replay::<ShellLayout>(vector),
                 "pane-tree" => replay::<PaneTree>(vector),
                 "git-status" => git::replay(vector),
+                "git-routes" => git::replay_routes(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

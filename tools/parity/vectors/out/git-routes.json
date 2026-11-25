@@ -1,0 +1,524 @@
+[
+ {
+  "store": "git-routes",
+  "name": "reads",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "getStatus",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/status",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getDiffStat",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/diff-stat",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getDiff",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "src/a.ts",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/diff",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "src/a.ts",
+      "staged": true
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getCommitContext",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/commit-context",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getLog",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      1
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/log",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "limit": 1
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashList",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/git/stash-list?cwd=C%3A%5CUsers%5Ca%20b%5Crepo",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "branchList",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/git/branch-list?cwd=C%3A%5CUsers%5Ca%20b%5Crepo",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "git-routes",
+  "name": "writes",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "stage",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stage",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "a.ts"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "unstage",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "a.ts"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/unstage",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "a.ts"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "discard",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "a.ts"
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/discard",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "a.ts"
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stageHunk",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "a.ts",
+      "@@ -1 +1 @@\n-a\n+b\n"
+     ]
+    },
+    "ids": [
+     "id-2"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stage-hunk",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "a.ts",
+      "hunkPatch": "@@ -1 +1 @@\n-a\n+b\n"
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "unstageHunk",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "a.ts",
+      "@@ -1 +1 @@\n-a\n+b\n"
+     ]
+    },
+    "ids": [
+     "id-3"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/unstage-hunk",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "path": "a.ts",
+      "hunkPatch": "@@ -1 +1 @@\n-a\n+b\n"
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "fix: x",
+      "body",
+      false,
+      "abc123"
+     ]
+    },
+    "ids": [
+     "id-4"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/commit",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "summary": "fix: x",
+      "description": "body",
+      "amend": false,
+      "expectedHead": "abc123"
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "commit",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "first",
+      "",
+      true,
+      ""
+     ]
+    },
+    "ids": [
+     "id-5"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/commit",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "summary": "first",
+      "description": "",
+      "amend": true,
+      "expectedHead": ""
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "push",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/push",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashSave",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "wip",
+      true
+     ]
+    },
+    "ids": [
+     "id-6"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stash-save",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "message": "wip",
+      "includeUntracked": true
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashSave",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [
+     "id-7"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stash-save",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashApply",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      0
+     ]
+    },
+    "ids": [
+     "id-8"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stash-apply",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "index": 0
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashPop",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      1
+     ]
+    },
+    "ids": [
+     "id-9"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stash-pop",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "index": 1
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stashDrop",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      2
+     ]
+    },
+    "ids": [
+     "id-10"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/stash-drop",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "index": 2
+     },
+     "commandId": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "branchSwitch",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "feature/x"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/branch-switch",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "name": "feature/x"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "createBranch",
+     "args": [
+      "C:\\Users\\a b\\repo",
+      "feature/y"
+     ]
+    },
+    "ids": [
+     "id-11"
+    ],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/git/create-branch",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "branch": "feature/y"
+     },
+     "commandId": true
+    },
+    "state": null
+   }
+  ]
+ }
+]
