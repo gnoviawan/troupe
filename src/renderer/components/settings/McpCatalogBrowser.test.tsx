@@ -158,7 +158,7 @@ async function findRow(name: string): Promise<HTMLElement> {
 }
 
 function rowOf(name: string): HTMLElement {
-  const element = screen.getByText(name).closest<HTMLElement>('[data-index]')
+  const element = screen.getByText(name).closest<HTMLElement>('[data-card-index]')
   if (!element) throw new Error(`no row for ${name}`)
   return element
 }

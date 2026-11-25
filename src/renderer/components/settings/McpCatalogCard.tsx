@@ -164,7 +164,9 @@ function useColumns(ref: React.RefObject<HTMLElement>): number {
 
 /**
  * The catalog as a virtualised grid of cards (two columns, one on a narrow
- * page). It asks for the next page when the last cards come into view.
+ * page). It virtualises rows, not cards, so the cards in a row share one
+ * height and the rows line up. It asks for the next page when the last cards
+ * come into view.
  */
 export function CatalogGrid({
   rows,
@@ -179,22 +181,24 @@ export function CatalogGrid({
   const scrollRef = useRef<HTMLDivElement>(null)
   const columns = useColumns(scrollRef)
   const virtualizer = useVirtualizer({
-    count: rows.length,
-    lanes: columns,
+    count: Math.ceil(rows.length / columns),
     gap: CARD_GAP,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ESTIMATED_CARD_HEIGHT,
-    overscan: 6,
-    getItemKey: (index) => rows[index]?.name ?? index
+    overscan: 3,
+    getItemKey: (index) => rows[index * columns]?.name ?? index
   })
   const items = virtualizer.getVirtualItems()
-  const lastRendered = items.at(-1)?.index
+  const lastRenderedRow = items.at(-1)?.index
+  const lastRenderedCard =
+    lastRenderedRow === undefined ? undefined : (lastRenderedRow + 1) * columns - 1
 
   useEffect(() => {
-    if (lastRendered !== undefined && lastRendered >= rows.length - LOAD_AHEAD_CARDS) onNearEnd?.()
-  }, [lastRendered, rows.length, onNearEnd])
+    if (lastRenderedCard !== undefined && lastRenderedCard >= rows.length - LOAD_AHEAD_CARDS)
+      onNearEnd?.()
+  }, [lastRenderedCard, rows.length, onNearEnd])
 
-  const width = columns === 2 ? `calc(50% - ${CARD_GAP / 2}px)` : '100%'
+  const cardWidth = columns === 2 ? `calc(50% - ${CARD_GAP / 2}px)` : '100%'
   return (
     <div
       ref={scrollRef}
@@ -203,21 +207,27 @@ export function CatalogGrid({
     >
       <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
         {items.map((item) => {
-          const row = rows[item.index]
-          if (!row) return null
+          const first = item.index * columns
+          const cards = rows.slice(first, first + columns)
+          if (cards.length === 0) return null
           return (
             <div
               key={item.key}
               data-index={item.index}
               ref={virtualizer.measureElement}
-              className="absolute top-0"
-              style={{
-                width,
-                left: item.lane === 0 ? 0 : `calc(50% + ${CARD_GAP / 2}px)`,
-                transform: `translateY(${item.start}px)`
-              }}
+              className="absolute left-0 top-0 flex w-full items-stretch"
+              style={{ gap: CARD_GAP, transform: `translateY(${item.start}px)` }}
             >
-              <CatalogCard row={row} install={install} />
+              {cards.map((row, offset) => (
+                <div
+                  key={row.name}
+                  data-card-index={first + offset}
+                  className="min-w-0 shrink-0"
+                  style={{ width: cardWidth }}
+                >
+                  <CatalogCard row={row} install={install} />
+                </div>
+              ))}
             </div>
           )
         })}

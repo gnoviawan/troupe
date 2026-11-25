@@ -483,7 +483,7 @@ export function AcpAgentsSettings(): React.JSX.Element {
               remoteAvailable && (advisorySummary?.updatedCount ?? 0) > 0
                 ? `${advisorySummary?.updatedCount} agent update${(advisorySummary?.updatedCount ?? 0) === 1 ? '' : 's'} available`
                 : 'All agents up to date'
-            } · Checked ${lastCheckedAt}`
+            } · Checked ${formatCheckedAt(lastCheckedAt)}`
           : undefined
       }
       actions={
