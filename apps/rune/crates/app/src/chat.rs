@@ -54,6 +54,8 @@ pub struct ChatUi {
     /// Per agent config, the saved composer picks as last written, or the patches waiting
     /// for the first read (`persistComposerOptions`' per-key queue).
     pub(crate) saved_picks: std::collections::BTreeMap<String, crate::controls::SavedPicks>,
+    /// A cancel-then-switch waiting for the cancelled turn to end: (session, config).
+    pub(crate) pending_arm: Option<(String, String)>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
@@ -142,6 +144,8 @@ impl State {
                 _ => None,
             })
             .collect();
+        // The model remaps a switched chat's tab only when it knows the tab is open.
+        self.chat.acp.book.open_chat_tabs = tabs.iter().cloned().collect();
         for session in tabs {
             if self.host.is_some() && self.chat.requested.insert(session.clone()) {
                 self.call(
@@ -201,8 +205,12 @@ impl State {
             last_error_code: None,
             last_error_data: None,
             background_commands: None,
-            rest: Default::default(),
+            rest: ["cwd", "projectId"]
+                .into_iter()
+                .filter_map(|k| Some((k.to_owned(), meta.get(k).filter(|v| !v.is_null())?.clone())))
+                .collect(),
         };
+        self.index_chat(&session_id, &meta);
         let acp = &mut self.chat.acp;
         acp.sessions.insert(session_id.clone(), session);
         acp.messages.insert(session_id.clone(), messages);
@@ -222,10 +230,58 @@ impl State {
         self.send(Command::Subscribe { session_id, cursor });
     }
 
-    /// A chat the launcher just created: an empty transcript on `agent_id`, followed live.
-    pub(crate) fn install_new_chat(&mut self, session_id: &str, agent_id: &str) {
+    /// A session the model created holds its transcript already: follow its log from the
+    /// start instead of reading its history.
+    pub(crate) fn follow_session(&mut self, session_id: &str) {
         self.chat.requested.insert(session_id.to_owned());
-        let payload = json!({ "messages": [], "toolCalls": [], "metadata": { "agentId": agent_id, "turnActive": false } });
+        if self.chat.loaded.insert(session_id.to_owned()) {
+            log::info!("[chat] following {session_id}");
+            self.send(Command::Subscribe { session_id: session_id.to_owned(), cursor: Cursor::default() });
+        }
+    }
+
+    /// The index row the model reads a chat's agent config from (`useCurrentAgentConfigId`'s
+    /// index fallback), for a chat the app installed itself.
+    fn index_chat(&mut self, session_id: &str, meta: &Value) {
+        let index = &mut self.chat.acp.session_index;
+        if index.iter().any(|e| e.get("id").and_then(Value::as_str) == Some(session_id)) {
+            return;
+        }
+        let mut entry = serde_json::Map::new();
+        entry.insert("id".into(), json!(session_id));
+        let config = meta.get("agentConfigId").cloned().or_else(|| {
+            let ns = meta.get("stableAgentNamespace").and_then(Value::as_str)?;
+            ns.strip_prefix("config:").map(|id| json!(id))
+        });
+        for (key, value) in [("agentConfigId", config), ("projectId", meta.get("projectId").cloned()), ("cwd", meta.get("cwd").cloned())] {
+            if let Some(value) = value.filter(|v| !v.is_null()) {
+                entry.insert(key.into(), value);
+            }
+        }
+        index.push(entry);
+    }
+
+    /// A chat the launcher just created: an empty transcript on `agent_id`, followed live.
+    #[cfg(test)]
+    pub(crate) fn install_new_chat(&mut self, session_id: &str, agent_id: &str) {
+        self.install_chat(session_id, json!({ "agentId": agent_id, "turnActive": false }));
+    }
+
+    /// A launched chat: its folder, project and agent config come from the launch.
+    pub(crate) fn install_launched_chat(&mut self, session_id: &str, agent_id: &str, launch: &crate::launch::Launch) {
+        let meta = json!({
+            "agentId": agent_id,
+            "turnActive": false,
+            "cwd": launch.cwd,
+            "projectId": launch.project_id,
+            "agentConfigId": launch.config_id,
+        });
+        self.install_chat(session_id, meta);
+    }
+
+    fn install_chat(&mut self, session_id: &str, meta: Value) {
+        self.chat.requested.insert(session_id.to_owned());
+        let payload = json!({ "messages": [], "toolCalls": [], "metadata": meta });
         self.chat_payload(session_id.to_owned(), Ok(Some(payload)));
     }
 
@@ -275,12 +331,13 @@ impl State {
                     log::info!("[chat] model list of {config_id} not saved: the Rune client has no catalog store yet");
                 }
                 other => {
-                    if let Some(other) = self.run_control(other) {
+                    if let Some(other) = self.run_control(other).and_then(|other| self.run_agent_command(other)) {
                         log::info!("[chat] effect not wired in the Rune client yet: {other:?}");
                     }
                 }
             }
         }
+        self.arm_when_turn_cleared();
     }
 
     /// The prompt command's reply: the receipt, a busy host, or a refusal.

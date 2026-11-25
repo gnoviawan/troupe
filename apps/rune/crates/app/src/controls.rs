@@ -196,38 +196,7 @@ impl ChatModels {
 impl State {
     /// The models a chat's agent offers, when it offers a choice.
     pub(crate) fn chat_models(&self, session_id: &str) -> Option<ChatModels> {
-        let rest = &self.chat.acp.sessions.get(session_id)?.rest;
-        let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
-        let option = rest
-            .get("configOptions")
-            .and_then(Value::as_array)
-            .and_then(|options| options.iter().find(|o| text(o, "category").as_deref() == Some("model")));
-        let models = match option {
-            Some(option) => ChatModels {
-                current: text(option, "currentValue"),
-                choices: option
-                    .get("options")
-                    .and_then(Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(|o| Some((text(o, "value")?, text(o, "name").unwrap_or_default())))
-                    .collect(),
-            },
-            None => {
-                let models = rest.get("models").filter(|m| !m.is_null())?;
-                ChatModels {
-                    current: text(models, "currentModelId"),
-                    choices: models
-                        .get("availableModels")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .filter_map(|m| Some((text(m, "modelId")?, text(m, "name").unwrap_or_default())))
-                        .collect(),
-                }
-            }
-        };
-        (!models.choices.is_empty()).then_some(models)
+        models_of(&self.chat.acp.sessions.get(session_id)?.rest)
     }
 
     /// A chat's modes for the mode chip.
@@ -277,4 +246,39 @@ impl State {
             }
         }
     }
+}
+
+/// The models a session's options offer, when they offer a choice.
+pub(crate) fn models_of(rest: &model::acp::types::Object) -> Option<ChatModels> {
+    let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
+    let option = rest
+        .get("configOptions")
+        .and_then(Value::as_array)
+        .and_then(|options| options.iter().find(|o| text(o, "category").as_deref() == Some("model")));
+    let models = match option {
+        Some(option) => ChatModels {
+            current: text(option, "currentValue"),
+            choices: option
+                .get("options")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|o| Some((text(o, "value")?, text(o, "name").unwrap_or_default())))
+                .collect(),
+        },
+        None => {
+            let models = rest.get("models").filter(|m| !m.is_null())?;
+            ChatModels {
+                current: text(models, "currentModelId"),
+                choices: models
+                    .get("availableModels")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|m| Some((text(m, "modelId")?, text(m, "name").unwrap_or_default())))
+                    .collect(),
+            }
+        }
+    };
+    (!models.choices.is_empty()).then_some(models)
 }

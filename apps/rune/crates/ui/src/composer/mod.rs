@@ -3,6 +3,7 @@
 //! prompt equal the web client's byte for byte; `serialize_tests` replays the vectors
 //! recorded from `lib/composer/` (`tools/parity/vectors/composer.ts`).
 
+pub mod agent_menu;
 pub mod controls;
 mod doc;
 pub mod field;

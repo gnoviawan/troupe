@@ -90,3 +90,38 @@ impl State {
         (project_id != QUICK_CHAT_PROJECT).then_some(project_id)
     }
 }
+
+/// The switch gate as the composer's agent menu shows it (`useSwitchGate`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SwitchGate {
+    /// The busy gate refuses a switch now.
+    pub blocked: bool,
+    /// A turn runs (`sessionTurnBusy`).
+    pub turn_running: bool,
+    /// The running turn is all that blocks, so cancel-then-switch can clear it.
+    pub turn_busy: bool,
+}
+
+impl State {
+    /// `useSwitchGate`.
+    pub fn switch_gate(&self, session_id: &str) -> SwitchGate {
+        let turn_running = self.sessions.get(session_id).is_some_and(|s| s.turn_busy());
+        let besides = self.switch_blocked_besides_turn(session_id).is_some();
+        SwitchGate {
+            blocked: turn_running || besides,
+            turn_running,
+            turn_busy: turn_running && !besides,
+        }
+    }
+
+    /// The warm session an armed switch prepared for its target
+    /// (`preparedSessions[prepareChatKey(toConfigId, cwd)]`), whose models
+    /// the composer shows until the switch runs.
+    pub fn switch_target_session(&self, session_id: &str) -> Option<&super::types::Session> {
+        let session = self.sessions.get(session_id)?;
+        let target = session.rest.get("switching")?.get("toConfigId")?.as_str()?;
+        let cwd = session.rest.get("cwd").and_then(Value::as_str).unwrap_or_default();
+        let key = super::warm::prepare_chat_key(target, cwd, None);
+        self.sessions.get(self.prepared_sessions.get(&key)?)
+    }
+}

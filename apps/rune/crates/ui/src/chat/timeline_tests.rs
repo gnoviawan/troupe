@@ -29,7 +29,7 @@ fn a_finished_turn_folds_its_work_and_keeps_the_last_reply_outside() {
         message("a2", "agent", "## Answer", 7.0, 13_000.0),
     ];
     let tools = [tool("read", 4.0, 3_000.0, "completed"), tool("grep", 6.0, 9_000.0, "completed")];
-    let out = rows(&messages, &tools, false);
+    let out = rows(&messages, &tools, &[], false);
     assert_eq!(keys(&out), ["u1", "activity:u1", "a2"]);
     assert_eq!(out[0].kind, RowKind::User(0));
     assert_eq!(
@@ -49,7 +49,7 @@ fn a_finished_turn_folds_its_work_and_keeps_the_last_reply_outside() {
 fn a_running_turn_keeps_every_reply_inside_its_activity() {
     let messages = [message("u1", "user", "Go", 1.0, 1_000.0), message("a1", "agent", "Working on it", 3.0, 2_000.0)];
     let tools = [tool("edit", 2.0, 1_500.0, "in_progress")];
-    let out = rows(&messages, &tools, true);
+    let out = rows(&messages, &tools, &[], true);
     assert_eq!(keys(&out), ["u1", "activity:u1"]);
     let RowKind::Activity(a) = &out[1].kind else { panic!("{:?}", out[1]) };
     assert_eq!((a.active, a.duration_ms, a.has_final), (true, None, false));
@@ -64,13 +64,39 @@ fn seqless_history_sorts_before_live_items_and_plan_tools_draw_no_row() {
     let messages = [message("a1", "agent", "Live reply", 2.0, 100.0), old];
     let mut plan = tool("todo", 1.0, 50.0, "completed");
     plan.insert("planTool".into(), json!(true));
-    let out = rows(&messages, &[plan], false);
+    let out = rows(&messages, &[plan], &[], false);
     assert_eq!(keys(&out), ["u0", "a1"]);
     assert_eq!(out[1].kind, RowKind::Reply { index: 0, tail: true });
 }
 
 #[test]
 fn an_empty_session_with_a_running_turn_shows_one_working_row() {
-    let out = rows(&[], &[], true);
+    let out = rows(&[], &[], &[], true);
     assert_eq!(keys(&out), ["activity:0"]);
+}
+
+#[test]
+fn a_switch_marker_is_a_row_of_its_own_between_turns() {
+    let messages = [
+        message("switch-splice:s1:u1", "user", "Fix it", -6.0, 1_000.0),
+        message("switch-splice:s1:a1", "agent", "Done.", -5.0, 2_000.0),
+        message("u2", "user", "carry on", 1.0, 5_000.0),
+        message("a2", "agent", "On it.", 2.0, 6_000.0),
+    ];
+    let switches = [json!({ "id": "switch-splice:s1:switch:seq-4", "seq": -4.0, "timestamp": 3_000.0, "fromConfigId": "claude", "toConfigId": "gemini" })];
+    let out = rows(&messages, &[], &switches, false);
+    assert_eq!(
+        keys(&out),
+        ["switch-splice:s1:u1", "switch-splice:s1:a1", "switch-splice:s1:switch:seq-4", "u2", "a2"],
+        "the old turn ends at the separator and the new one starts after it"
+    );
+    assert_eq!(out[2].kind, RowKind::Switch(0));
+}
+
+#[test]
+fn the_handoff_card_drops_the_wire_headline_and_preamble() {
+    let wire = "# Conversation handoff\n\nYou are taking over a conversation previously handled by Claude. Summary of the prior conversation:\n\nUser: fix it";
+    assert_eq!(super::strip_handoff_header(wire), "User: fix it");
+    assert_eq!(super::strip_handoff_header("# Conversation handoff\n\nUser: fix it"), "User: fix it");
+    assert_eq!(super::strip_handoff_header("plain"), "plain");
 }

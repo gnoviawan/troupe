@@ -15,6 +15,8 @@ pub mod notice;
 pub mod plan;
 mod rows;
 pub mod subagents;
+mod switch;
+pub use switch::strip_handoff_header;
 pub mod timeline;
 pub mod tool_call;
 
@@ -226,6 +228,10 @@ impl<S> Ctx<S> {
     pub fn tools<'s>(&self, s: &'s S) -> &'s [acp::types::Object] {
         (self.lenses.acp)(s).tool_calls.get(&self.session).map_or(&[], Vec::as_slice)
     }
+
+    pub fn switches<'s>(&self, s: &'s S) -> &'s [serde_json::Value] {
+        (self.lenses.acp)(s).agent_switches.get(&self.session).map_or(&[], Vec::as_slice)
+    }
 }
 
 /// Whether the session has a turn open (`activeTurn`).
@@ -244,8 +250,9 @@ pub fn transcript<S: 'static>(
     let acp_state = (lenses.acp)(state);
     let messages = acp_state.messages.get(session_id).map_or(&[][..], Vec::as_slice);
     let tools = acp_state.tool_calls.get(session_id).map_or(&[][..], Vec::as_slice);
+    let switches = acp_state.agent_switches.get(session_id).map_or(&[][..], Vec::as_slice);
     let active = turn_active(acp_state, session_id);
-    let rows = rows(messages, tools, active);
+    let rows = rows(messages, tools, switches, active);
     if rows.is_empty() {
         return empty(t, session_id);
     }
