@@ -60,3 +60,13 @@ fn a_restored_tab_whose_pty_is_gone_holds_no_session() {
     assert!(t.get("pty-gone").is_none() && t.get("pty-x").is_none());
     assert!(!t.should_restore("pty-gone"), "not asked again");
 }
+
+#[test]
+fn a_restored_tab_closed_before_the_reply_attaches_nothing_later() {
+    let mut t = Terminals::default();
+    t.restore(5, "alpha", "pty-r");
+    assert!(t.close("pty-r").is_none(), "this client held no session to kill");
+    assert!(t.restoring.is_empty(), "the pending ask is dropped");
+    assert!(t.restored(5, Some(spawned("pty-r"))).is_none(), "the late reply adopts nothing");
+    assert!(t.get("pty-r").is_none());
+}

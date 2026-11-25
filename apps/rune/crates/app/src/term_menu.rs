@@ -240,10 +240,22 @@ impl State {
             log::warn!("[term] restart asked for {id}, which no pane shows");
             return;
         };
+        if self.terms.restarts.values().any(|old| old == id) {
+            log::info!("[term] restart of {id} already waits for its shell");
+            return;
+        }
         log::info!("[term] restarting {id}");
         if let Some(call) = self.spawn_terminal(Some(pane)) {
             self.terms.restarts.insert(call, id.to_owned());
         }
+    }
+
+    /// Whether a tab of the visible workspace shows terminal `id`.
+    pub(crate) fn shows_terminal(&self, id: &str) -> bool {
+        model::workspace::leaves(self.workspace.root())
+            .into_iter()
+            .flat_map(|leaf| leaf.tabs.iter())
+            .any(|tab| matches!(tab, Tab::Terminal { terminal_id, .. } if terminal_id == id))
     }
 
     /// The new PTY of a restart arrived: the tab moves to it.

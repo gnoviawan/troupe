@@ -15,7 +15,9 @@ fn the_default_encoding_adds_32_and_reports_every_release_as_button_3() {
     assert_eq!(report(&m, &ev(Button::Left, Action::Down, 0, 0)), Some(b"\x1b[M !!".to_vec()));
     assert_eq!(report(&m, &ev(Button::Right, Action::Up, 9, 4)), Some(b"\x1b[M#*%".to_vec()));
     assert_eq!(report(&m, &ev(Button::Left, Action::Move, 1, 1)), None, "1000 reports no motion");
-    assert_eq!(report(&m, &ev(Button::Left, Action::Down, 300, 0)), None, "past column 223");
+    assert_eq!(report(&m, &ev(Button::Left, Action::Down, 94, 0)), Some(b"\x1b[M \x7f!".to_vec()), "the last one-byte column");
+    assert_eq!(report(&m, &ev(Button::Left, Action::Down, 95, 0)), None, "column 96 needs byte 0x80");
+    assert_eq!(report(&m, &ev(Button::Left, Action::Down, 0, 120)), None, "so does row 121");
 }
 
 #[test]

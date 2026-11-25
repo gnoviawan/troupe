@@ -68,11 +68,13 @@ pub struct TerminalUi {
     pub history: crate::command_history::HistoryUi,
     /// The phone key bar shows only its toggle and Paste.
     pub keys_hidden: bool,
+    /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
+    pub blink_shown: Option<bool>,
+    /// The last pointer report, by terminal: a move to the same cell is not sent again.
+    pub last_mouse: Option<(String, troupe_term::mouse::MouseEvent)>,
     /// Every command sent, for the tests (a test state has no terminal link).
     #[cfg(test)]
     pub(crate) sent: Vec<Command>,
-    /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
-    pub blink_shown: Option<bool>,
 }
 
 impl TerminalUi {
@@ -136,7 +138,7 @@ impl State {
         if self.terms.metrics.is_none() && self.terms.host.is_some() {
             self.terms.metrics = Some(Metrics::new(ui::terminal::FONT_SIZE, ui::terminal::LINE_HEIGHT));
         }
-        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[]) };
+        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[], now) };
         let events = host.drain(now);
         let mut changed = false;
         let mut redrawn = Vec::new();
@@ -152,7 +154,7 @@ impl State {
                 TermEvent::Link(output) => self.terminal_output(output),
             }
         }
-        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn)
+        changed | self.reap_closed_tabs() | self.refresh_terminal_finds(&redrawn, now)
     }
 
     pub(crate) fn terminal_output(&mut self, output: Output) {
@@ -198,10 +200,11 @@ impl State {
         let Some((session, pane)) = self.terms.sessions.spawned(call, spawned) else { return };
         let (project, cols, rows) = (session.project_id.clone(), session.cols, session.rows);
         log::info!("[term] spawned {} (pid {}) for {project}", s.id, session.pid);
-        if self.workspace.project() != Some(project.as_str()) {
-            // The project closed or switched before the PTY started: release it, as React does
-            // when the pane it was asked for is gone.
-            log::info!("[term] released {}: project {project} is no longer shown", s.id);
+        let orphaned = restarted.as_deref().is_some_and(|old| !self.shows_terminal(old));
+        if self.workspace.project() != Some(project.as_str()) || orphaned {
+            // The project closed or switched, or the restarted tab closed, before the PTY
+            // started: release it, as React does when the pane it was asked for is gone.
+            log::info!("[term] released {}: nothing shows it", s.id);
             self.terms.sessions.close(&s.id);
             self.terms.request(WebTerminalRequestType::Kill, json!({ "terminalId": s.id }), true);
             return;
@@ -339,7 +342,7 @@ impl State {
         view.wheel += e.dy / cell_h;
         let lines = view.wheel.trunc();
         view.wheel -= lines;
-        if self.terminal_wheel_input(id, lines as i32, e.x, e.y) {
+        if self.terminal_wheel_input(id, lines as i32, e) {
             return true;
         }
         let Some(view) = self.terms.views.get_mut(id) else { return false };

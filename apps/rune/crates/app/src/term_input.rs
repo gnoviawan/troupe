@@ -3,7 +3,7 @@
 //! (bracketed when the program turned that on), and the cursor's blink, as xterm.js has them.
 
 use rune::{Drag, Phase, Tx};
-use troupe_term::mouse::{Action, Button, MouseEvent, paste, report};
+use troupe_term::mouse::{Action, Button, MouseEvent, paste, report, wants_wheel};
 use troupe_term::{MouseProtocol, Term};
 
 use crate::State;
@@ -22,16 +22,23 @@ fn cell(term: &Term, cell_w: f32, cell_h: f32, x: f32, y: f32) -> (usize, usize)
 
 impl State {
     /// The bytes a pointer event on terminal `id` reports, when its program asked for them.
-    fn mouse_report(&self, id: &str, button: Button, action: Action, x: f32, y: f32) -> Option<String> {
+    /// A move to the cell the last report named is not reported again, as xterm.js drops
+    /// equal events.
+    fn mouse_report(&mut self, id: &str, button: Button, action: Action, at: (f32, f32), mods: rune::Mods) -> Option<String> {
         let m = self.terms.metrics();
         let view = self.terms.views.get(id)?;
         let term = view.cells.lock().ok()?;
         if term.modes().mouse == MouseProtocol::None {
             return None;
         }
-        let (col, row) = cell(&term, m.cell_w, m.cell_h, x, y);
-        let event = MouseEvent { button, action, col, row, shift: false, alt: false, ctrl: false };
-        report(term.modes(), &event).map(|b| String::from_utf8_lossy(&b).into_owned())
+        let (col, row) = cell(&term, m.cell_w, m.cell_h, at.0, at.1);
+        let event = MouseEvent { button, action, col, row, shift: mods.shift, alt: mods.alt, ctrl: mods.ctrl };
+        let last = &mut self.terms.last_mouse;
+        if action == Action::Move && last.as_ref().is_some_and(|(lid, e)| lid == id && *e == event) {
+            return None;
+        }
+        *last = Some((id.to_owned(), event));
+        report(term.modes(), &event).and_then(|b| String::from_utf8(b).ok())
     }
 
     /// Whether terminal `id`'s program takes pointer events: then a drag reports instead of
@@ -41,14 +48,15 @@ impl State {
         view.cells.lock().is_ok_and(|t| t.modes().mouse != MouseProtocol::None)
     }
 
-    /// A drag on a terminal whose program reports the pointer.
+    /// A drag on a terminal whose program reports the pointer. A drag carries no modifiers
+    /// at the pin.
     pub(crate) fn terminal_mouse_drag(&mut self, id: &str, d: &Drag) {
         let action = match d.phase {
             Phase::Down => Action::Down,
             Phase::Move => Action::Move,
             Phase::Up => Action::Up,
         };
-        if let Some(bytes) = self.mouse_report(id, Button::Left, action, d.x, d.y) {
+        if let Some(bytes) = self.mouse_report(id, Button::Left, action, (d.x, d.y), rune::Mods::default()) {
             self.terminal_write(id, &bytes);
         }
     }
@@ -57,41 +65,42 @@ impl State {
     pub(crate) fn terminal_mouse_motion(&mut self, id: &str, x: f32, y: f32) {
         let any = self.terms.views.get(id).and_then(|v| v.cells.lock().ok().map(|t| t.modes().mouse == MouseProtocol::Any));
         if any == Some(true)
-            && let Some(bytes) = self.mouse_report(id, Button::None, Action::Move, x, y)
+            && let Some(bytes) = self.mouse_report(id, Button::None, Action::Move, (x, y), rune::Mods::default())
         {
             self.terminal_write(id, &bytes);
         }
     }
 
-    /// The wheel over terminal `id` moved `lines` (positive: content down, toward older
-    /// lines). Returns true when the program took it, as xterm.js sends it: a wheel report in
-    /// mouse mode, else arrow keys on the alternate screen.
-    pub(crate) fn terminal_wheel_input(&mut self, id: &str, lines: i32, x: f32, y: f32) -> bool {
-        if lines == 0 {
+    /// A wheel event over terminal `id` that moved `lines` (positive: content down, toward
+    /// older lines). True when the program took it, as xterm.js sends it: one wheel report
+    /// per event while the program takes the wheel (none when it cannot be encoded), else one
+    /// arrow key per event on the alternate screen. False leaves the scrollback to scroll.
+    pub(crate) fn terminal_wheel_input(&mut self, id: &str, lines: i32, e: &rune::WheelEvent) -> bool {
+        let Some(view) = self.terms.views.get(id) else { return false };
+        let Ok(term) = view.cells.lock() else { return false };
+        let (wheel, alt, app) = (wants_wheel(term.modes()), term.alt_screen(), term.modes().application_cursor_keys);
+        drop(term);
+        if !wheel && !alt {
             return false;
         }
+        if lines == 0 {
+            return true;
+        }
         let up = lines > 0;
-        let button = if up { Button::WheelUp } else { Button::WheelDown };
-        if let Some(bytes) = self.mouse_report(id, button, Action::Down, x, y) {
-            for _ in 0..lines.unsigned_abs() {
+        if wheel {
+            let button = if up { Button::WheelUp } else { Button::WheelDown };
+            if let Some(bytes) = self.mouse_report(id, button, Action::Down, (e.x, e.y), e.mods) {
                 self.terminal_write(id, &bytes);
             }
             return true;
         }
-        let Some(view) = self.terms.views.get(id) else { return false };
-        let Ok(term) = view.cells.lock() else { return false };
-        if !term.alt_screen() {
-            return false;
-        }
-        let app = term.modes().application_cursor_keys;
-        drop(term);
         let arrow = match (up, app) {
             (true, true) => "\x1bOA",
             (true, false) => "\x1b[A",
             (false, true) => "\x1bOB",
             (false, false) => "\x1b[B",
         };
-        self.terminal_write(id, &arrow.repeat(lines.unsigned_abs() as usize));
+        self.terminal_write(id, arrow);
         true
     }
 

@@ -133,3 +133,38 @@ fn restart_puts_a_new_shell_in_the_tab_and_kills_the_old_one() {
     s.reap_closed_tabs();
     assert!(kinds(&s).contains(&(WebTerminalRequestType::Kill, "pty-1".into())), "{:?}", kinds(&s));
 }
+
+#[test]
+fn a_second_restart_waits_and_a_tab_closed_before_its_shell_starts_frees_the_shell() {
+    let mut s = showing();
+    live(&mut s, "pty-1", 41);
+    s.reap_closed_tabs();
+    s.terms.sent.clear();
+    s.restart_terminal("pty-1");
+    s.restart_terminal("pty-1");
+    let spawns: Vec<u64> = s
+        .terms
+        .sent
+        .iter()
+        .filter_map(|c| match c {
+            Command::Call { call, kind: WebTerminalRequestType::Spawn, .. } => Some(*call),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(spawns.len(), 1, "one restart at a time");
+    let pane = s.workspace.tree().active_pane_id.clone();
+    let tab_id = model::workspace::leaves(s.workspace.root())
+        .into_iter()
+        .find(|l| l.id == pane)
+        .and_then(|l| l.tabs.first().map(|t| t.id().to_owned()))
+        .expect("the terminal tab");
+    s.workspace.step(model::workspace::Event::CloseTab(pane, tab_id));
+    s.reap_closed_tabs();
+    s.terminal_output(Output::Reply {
+        call: spawns[0],
+        result: Ok(json!({ "id": "pty-2", "shell": "bash", "cwd": "/a", "pid": 11, "cols": 80, "rows": 24, "claim": "d" })),
+    });
+    assert!(terminal_tabs(&s).is_empty(), "no tab comes back");
+    assert!(s.terms.sessions.get("pty-2").is_none(), "the new shell is not held");
+    assert!(kinds(&s).contains(&(WebTerminalRequestType::Kill, "pty-2".into())), "{:?}", kinds(&s));
+}
