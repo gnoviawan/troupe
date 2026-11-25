@@ -91,6 +91,8 @@ pub(crate) struct Buffer {
     pub bottom: usize,
     pub tabs: Vec<bool>,
     pub saved: Saved,
+    /// Lines dropped from the top of the scrollback so far.
+    pub dropped: usize,
 }
 
 impl Buffer {
@@ -104,6 +106,7 @@ impl Buffer {
             bottom: rows - 1,
             tabs: Vec::new(),
             saved: Saved { wraparound: true, ..Saved::default() },
+            dropped: 0,
         };
         b.fill_rows(cols, rows, Style::default());
         b.reset_tabs(cols);
@@ -154,6 +157,7 @@ impl Buffer {
             // A full buffer recycles its oldest line instead of allocating one.
             let line = if self.lines.len() >= self.cap && bottom + 1 == self.lines.len() {
                 let mut old = self.lines.pop_front().expect("a full buffer has lines");
+                self.dropped += 1;
                 old.cells.clear();
                 old.cells.resize(cols, Cell::blank(fill));
                 old.wrapped = wrapped;
@@ -168,6 +172,7 @@ impl Buffer {
             self.lines.insert(bottom + 1, line);
             if self.lines.len() > self.cap {
                 self.lines.pop_front();
+                self.dropped += 1;
             }
         } else {
             let mut line = Line::new(cols, fill);
@@ -216,6 +221,7 @@ impl Buffer {
         if self.lines.len() > cap {
             let trim = self.lines.len() - cap;
             self.lines.drain(..trim);
+            self.dropped += trim;
             self.saved.y = self.saved.y.saturating_sub(trim);
         }
         self.cap = cap;

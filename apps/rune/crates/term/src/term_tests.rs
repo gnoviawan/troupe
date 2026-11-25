@@ -115,3 +115,11 @@ fn a_million_marks_parse_in_linear_time() {
     // Linear time reads about 10x; the quadratic append read over 1000x.
     assert!(big < small * 40.0, "100k marks {small:.3}s, 1M marks {big:.3}s");
 }
+
+#[test]
+fn dropped_counts_lines_the_scrollback_lets_go() {
+    let mut t = Term::with_scrollback(4, 2, 3);
+    t.advance(b"1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7");
+    assert_eq!(t.lines().len(), 5);
+    assert_eq!(t.dropped(), 2);
+}

@@ -10,8 +10,12 @@
 
 mod buffer;
 mod cell;
+pub mod links;
 mod perform;
+pub mod search;
+pub mod selection;
 mod term;
+pub mod text;
 mod width;
 mod width_table;
 
@@ -79,6 +83,12 @@ impl Term {
     /// The screen row `row` (0 at the top).
     pub fn screen_line(&self, row: usize) -> Option<&Line> {
         self.lines().get(self.screen_start() + row)
+    }
+
+    /// Lines the active buffer has dropped from the top of its scrollback so far. A position in
+    /// [`Term::lines`] taken earlier moves up by the difference.
+    pub fn dropped(&self) -> usize {
+        self.emu.buf().dropped
     }
 
     pub fn alt_screen(&self) -> bool {

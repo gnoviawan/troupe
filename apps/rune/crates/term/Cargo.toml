@@ -6,6 +6,7 @@ license.workspace = true
 description = "Troupe's terminal cell model for the Rune client: a VT parser feeding xterm.js-compatible cells, scrollback and modes. No UI and no I/O."
 
 [dependencies]
+regex-lite = "0.1"
 vte = { version = "0.15", default-features = false, features = ["std"] }
 
 [dev-dependencies]
