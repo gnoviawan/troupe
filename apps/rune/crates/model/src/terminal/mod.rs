@@ -157,8 +157,11 @@ impl Terminals {
         }
     }
 
-    /// Forgets a closed terminal; the caller kills its PTY.
+    /// Forgets a closed terminal; the caller kills its PTY when this returns the session. A
+    /// `list_preserved` still in flight for its tab is dropped, so its late reply attaches
+    /// nothing.
     pub fn close(&mut self, id: &str) -> Option<Session> {
+        self.restoring.retain(|_, r| r.terminal_id != id);
         self.sessions.remove(id)
     }
 
