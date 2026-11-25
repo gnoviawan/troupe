@@ -85,10 +85,12 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 
 ### 🌐 Browser & Annotation
 
-| Feature                   | Description                                                                                        |
-| ------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Embedded Browser Tabs** | Browse the web inside your workspace in child webview tabs, with no app switching                  |
-| **Page Annotations**      | The Agentation toolbar loads into each browser tab. Click elements, text, or areas to attach notes |
+| Feature                      | Description                                                                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Embedded Browser Tabs**    | Browse the web inside your workspace in child webview tabs, with no app switching                                                  |
+| **Start Page**               | New browser tabs list running local dev servers and recent pages                                                                   |
+| **Page Zoom & Device Sizes** | Zoom each browser tab from 50% to 200%, and preview pages at tablet and phone sizes                                                |
+| **Page Annotations**         | Click **Annotate page** in a browser tab to comment on elements, mark areas, place ruler guides, and take screenshots for an agent |
 
 ### ⚡ Power User Tools
 
