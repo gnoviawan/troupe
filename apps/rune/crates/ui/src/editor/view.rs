@@ -76,9 +76,7 @@ pub fn view<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, p
         model::editor::Load::Loading => {
             return Some(body.child(col().grow(1.0).w_full().center().child(text("Loading...").font(sans(14.0, 400.0, 20.0)).color(c.muted_foreground))));
         }
-        model::editor::Load::Failed(why) => {
-            return Some(body.child(col().grow(1.0).w_full().center().child(text(format!("Could not open this file: {why}")).font(sans(14.0, 400.0, 20.0)).color(c.muted_foreground))));
-        }
+        model::editor::Load::Unavailable(why) => return Some(body.child(unavailable::<S>(t, path, why))),
         model::editor::Load::Ready => {}
     }
     let lines = doc.editor.len_lines();
@@ -155,6 +153,10 @@ fn on_key<S: 'static>(s: &mut S, lens: Lens<S>, path: &str, key: &rune::KeyEvent
     match outcome {
         Outcome::Ignored => false,
         Outcome::Handled => true,
+        Outcome::Focus(which) => {
+            tx.focus(field_key(path, which), false);
+            true
+        }
         Outcome::Copy(text) => {
             tx.copy(text);
             true
@@ -167,6 +169,12 @@ fn on_key<S: 'static>(s: &mut S, lens: Lens<S>, path: &str, key: &rune::KeyEvent
             true
         }
     }
+}
+
+/// The key of `path`'s find, replace or go-to-line field.
+#[must_use]
+pub fn field_key(path: &str, which: Field) -> String {
+    format!("editor-field-{which:?}-{path}")
 }
 
 fn caret_key(path: &str, line: usize) -> String {
@@ -243,7 +251,7 @@ fn chunk<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, path
         // Match washes, then the selection, then the text, then the caret.
         let char_range = line_start..line_start + len;
         let mut washes: Vec<(Range<usize>, Color)> = Vec::new();
-        for m in matches.iter().filter(|m| m.start < char_range.end + 1 && m.end > char_range.start) {
+        for m in &matches {
             let selected = m.start == sel.range().start && m.end == sel.range().end;
             washes.push((m.clone(), if selected { c.warning.alpha(0.4) } else { c.warning.alpha(0.15) }));
         }
@@ -251,6 +259,9 @@ fn chunk<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, path
             washes.push((sel.range(), c.foreground.alpha(0.14)));
         }
         for (range, colour) in washes {
+            if range.end < char_range.start || range.start > char_range.end {
+                continue;
+            }
             let from = range.start.max(char_range.start) - line_start;
             let to = range.end.min(char_range.end) - line_start;
             let past_end = range.end > char_range.end && range.start <= char_range.end;
@@ -352,6 +363,39 @@ fn row_starts(editors: &Editors, path: &str, line: usize) -> Vec<usize> {
     if pane.columns == 0 { vec![0] } else { wrap::rows(content.chars(), pane.columns) }
 }
 
+/// `UnsupportedFileView`: the file's name, why it shows no text, and Copy Path.
+fn unavailable<S: 'static>(t: &'static Tokens, path: &str, why: &model::editor::Unavailable) -> El {
+    let c = &t.colors;
+    let name = path.rsplit(['/', '\\']).next().unwrap_or(path).to_owned();
+    let mut lines = col()
+        .items_center()
+        .gap(4.0)
+        .child(text(name).font(sans(14.0, 500.0, 20.0)).color(c.foreground))
+        .child(text(why.headline()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground));
+    if let Some(detail) = why.detail() {
+        lines = lines.child(text(detail).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground));
+    }
+    let copied = path.to_owned();
+    col()
+        .key(format!("editor-unavailable-{path}"))
+        .grow(1.0)
+        .w_full()
+        .center()
+        .gap(12.0)
+        .px(24.0).py(24.0)
+        .child(rune::icon(theme::icons::named("FileQuestion").unwrap_or(&theme::icons::FILE_DIFF), 32.0).color(c.muted_foreground))
+        .child(lines)
+        .child(
+            crate::Button::new("Copy Path")
+                .variant(crate::ButtonVariant::Ghost)
+                .size(crate::ButtonSize::Sm)
+                .icon(&theme::icons::COPY)
+                .build(t)
+                .key("editor-copy-path")
+                .on_press_tx(move |_s: &mut S, tx| tx.copy(copied.clone())),
+        )
+}
+
 /// `EditorDraftConflictBanner`.
 fn conflict_bar<S: 'static>(t: &'static Tokens, lens: Lens<S>, path: &str) -> El {
     let c = &t.colors;
@@ -388,8 +432,16 @@ fn conflict_bar<S: 'static>(t: &'static Tokens, lens: Lens<S>, path: &str) -> El
 }
 
 /// Whether a key in a find field is the field's own (Enter, Escape).
-pub(super) fn field_key<S: 'static>(s: &mut S, lens: Lens<S>, path: &str, which: Field, key: &rune::KeyEvent, tx: &mut Tx) -> bool {
+pub(super) fn on_field_key<S: 'static>(s: &mut S, lens: Lens<S>, path: &str, which: Field, key: &rune::KeyEvent, tx: &mut Tx) -> bool {
     let editors = lens(s);
+    match editors.field_chord(path, key) {
+        Outcome::Focus(next) => {
+            tx.focus(field_key(path, next), false);
+            return true;
+        }
+        Outcome::Ignored => {}
+        _ => return true,
+    }
     match (&key.key, which) {
         (Key::Escape, _) => {
             editors.close_find(path);
@@ -427,7 +479,7 @@ pub(super) fn field<S: 'static>(t: &'static Tokens, lens: Lens<S>, path: &str, e
     let c = &t.colors;
     let (edited, keyed) = (path.to_owned(), path.to_owned());
     text_input(edit, sans(12.0, 400.0, 16.0))
-        .key(format!("editor-field-{which:?}-{path}"))
+        .key(field_key(path, which))
         .single_line()
         .label(label.to_owned())
         .placeholder(label.to_owned(), c.muted_foreground)
@@ -436,5 +488,5 @@ pub(super) fn field<S: 'static>(t: &'static Tokens, lens: Lens<S>, path: &str, e
         .px(8.0)
         .py(4.0)
         .on_edit(move |s: &mut S| lens(s).field(&edited, which))
-        .on_key(move |s: &mut S, key, tx| field_key(s, lens, &keyed, which, key, tx))
+        .on_input_key(move |s: &mut S, key, tx| on_field_key(s, lens, &keyed, which, key, tx))
 }

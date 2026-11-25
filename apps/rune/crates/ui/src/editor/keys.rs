@@ -17,6 +17,8 @@ pub enum Outcome {
     Copy(String),
     /// Mod-v: read the clipboard and insert it.
     Paste,
+    /// Find or go to line opened: focus this field.
+    Focus(super::Field),
 }
 
 impl Editors {
@@ -65,6 +67,15 @@ impl Editors {
         Outcome::Handled
     }
 
+    /// A key in `path`'s find, replace or go-to-line field: the find and save chords still reach
+    /// the editor (`editorFindKeymap` binds them on the panel too); other keys are the field's.
+    pub fn field_chord(&mut self, path: &str, key: &KeyEvent) -> Outcome {
+        match command_char(key) {
+            Some(c @ ('f' | 'h' | 'g' | 's')) => self.chord(path, c, key.mods.shift),
+            _ => Outcome::Ignored,
+        }
+    }
+
     fn chord(&mut self, path: &str, c: char, shift: bool) -> Outcome {
         match (c, shift) {
             ('a', _) => {
@@ -77,10 +88,20 @@ impl Editors {
                 self.apply(path, Command::Redo);
             }
             ('s', _) => self.save(path),
-            ('f', _) => self.open_find(path, false),
-            ('h', _) => self.open_find(path, true),
+            ('f', _) => {
+                self.open_find(path, false);
+                return Outcome::Focus(super::Field::Query);
+            }
+            ('h', _) => {
+                self.open_find(path, true);
+                let replace = self.docs.docs.get(path).is_some_and(|d| !d.read_only());
+                return Outcome::Focus(if replace { super::Field::Replace } else { super::Field::Query });
+            }
             ('g', false) if cfg!(target_os = "macos") => self.find_step(path, true),
-            ('g', _) => self.open_goto(path),
+            ('g', _) => {
+                self.open_goto(path);
+                return Outcome::Focus(super::Field::GoTo);
+            }
             ('c' | 'x', _) => {
                 let Some(doc) = self.docs.docs.get(path) else { return Outcome::Ignored };
                 let range = doc.editor.selection().range();

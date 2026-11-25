@@ -76,6 +76,17 @@ async function run(client: Client, file: string, large: string | null): Promise<
     keyMs: [],
     notes
   }
+  page.on('request', (req) => {
+    const url = new URL(req.url())
+    if (url.pathname.startsWith('/fs/'))
+      notes.push(`${req.method()} ${url.pathname} ${(req.postData() ?? '').slice(0, 160)}`)
+  })
+  page.on('response', (res) => {
+    const url = new URL(res.url())
+    if (url.pathname.startsWith('/fs/') && res.request().method() === 'POST')
+      void res.text().then((body) => notes.push(`-> ${res.status()} ${body.slice(0, 200)}`))
+  })
+
   if (!(await client.sees('totals_match', 30_000))) notes.push('the file never showed')
   await shot(client, options.root, '1-open')
   await client.click('totals_match', false)
@@ -95,6 +106,7 @@ async function run(client: Client, file: string, large: string | null): Promise<
   await page.keyboard.press('Control+h')
   await page.waitForTimeout(300)
   await page.keyboard.type('sum_all', { delay: 20 })
+  await shot(client, options.root, '3b-replace')
   await client.click('Replace all', true).catch((e) => notes.push(`replace all: ${e}`))
   await page.keyboard.press('Escape')
   await page.keyboard.press('Control+s')
@@ -109,7 +121,10 @@ async function run(client: Client, file: string, large: string | null): Promise<
 
 async function typeLarge(client: Client): Promise<number[]> {
   const page = client.page
-  if (!(await client.sees('large_marker_0', 60_000))) throw new Error('the 1 MB file never showed')
+  if (!(await client.sees('large_marker_0', 60_000))) {
+    await shot(client, options.root, '5-large-missing')
+    throw new Error('the 1 MB file never showed')
+  }
   await client.click('large_marker_0', false)
   await page.keyboard.press('End')
   const out: number[] = []
@@ -132,7 +147,7 @@ const file = path.join(world.dirs.alpha, 'src', 'editor_lane.rs')
 const largeFile = path.join(world.dirs.alpha, 'src', 'large.rs')
 mkdirSync(path.dirname(file), { recursive: true })
 const largeLines: string[] = []
-for (let i = 0; largeLines.join('\n').length < 1_048_576; i++) {
+for (let i = 0; largeLines.join('\n').length < 1_000_000; i++) {
   largeLines.push(
     `fn large_marker_${i}(value: u64) -> u64 { value.wrapping_mul(${i}) + 1 } // line ${i}`
   )
@@ -152,8 +167,21 @@ try {
         : await inRune(browser, world, options, steps)
     if (!values['skip-large']) {
       writeFileSync(largeFile, `${largeLines.join('\n')}\n`)
-      await seedEditorTab(world, device, largeFile)
       const large = (client: Client) => typeLarge(client)
+      const tooLarge = path.join(world.dirs.alpha, 'src', 'too_large.rs')
+      writeFileSync(tooLarge, 'x'.repeat(1_100_000))
+      await seedEditorTab(world, device, tooLarge)
+      const showsLimit = async (client: Client) => {
+        const ok = await client.sees('This file is too large to preview', 30_000)
+        await shot(client, options.root, '6-too-large')
+        return ok
+      }
+      const limit =
+        which === 'react'
+          ? await inReact(browser, world, options, showsLimit)
+          : await inRune(browser, world, options, showsLimit)
+      result.notes.push(`too large view: ${limit}`)
+      await seedEditorTab(world, device, largeFile)
       result.keyMs =
         which === 'react'
           ? await inReact(browser, world, options, large)

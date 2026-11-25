@@ -73,6 +73,7 @@ impl State {
             }
             self.editors.open(path, draft);
         }
+        self.editors.follow_find();
         let gone: Vec<String> = self.editors.docs.docs.keys().filter(|p| !shown.contains(*p)).cloned().collect();
         for path in gone {
             self.editors.close(&path);
@@ -88,7 +89,7 @@ impl State {
                     let url = format!("/fs/read?path={}", ui::composer::encode_query(&path));
                     match &mut self.host {
                         Some(host) => host.fetch(url, Fetch::FileRead(path)),
-                        None => self.editors.step(Event::Loaded { path, result: Err("No server".into()) }),
+                        None => self.editors.step(Event::Loaded { path, result: Err(("NO_SERVER".into(), "No server".into())) }),
                     }
                 }
                 Effect::Write { path, content, expected } => {
@@ -96,7 +97,8 @@ impl State {
                     if let Some(hash) = expected {
                         body["expected"] = json!({ "sha256": hash });
                     }
-                    let request = HttpRequest { method: Method::Post, path: "/fs/write".into(), body: Some(body), command_id: None };
+                    let command_id = Some(self.workspace.ids().next_id());
+                    let request = HttpRequest { method: Method::Post, path: "/fs/write".into(), body: Some(body), command_id };
                     if let Some(host) = &mut self.host {
                         host.request(request, Fetch::FileWrite { path, content });
                     }
@@ -129,8 +131,11 @@ impl State {
     pub(crate) fn editor_fetched(&mut self, tag: Fetch, result: Result<Value, HttpError>) {
         match tag {
             Fetch::FileRead(path) => {
-                let result = result.map_err(|e| e.to_string()).and_then(|v| {
-                    let content = v.get("content").and_then(Value::as_str).ok_or("the read had no text content")?;
+                let result = result.map_err(refusal).and_then(|v| {
+                    let content = v
+                        .get("content")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| ("UNREADABLE".to_owned(), "the read had no text content".to_owned()))?;
                     Ok(Read {
                         content: content.to_owned(),
                         modified_at: v.get("modifiedAt").and_then(Value::as_f64).unwrap_or(0.0),
@@ -140,11 +145,7 @@ impl State {
                 self.editors.step(Event::Loaded { path, result });
             }
             Fetch::FileWrite { path, content } => {
-                let result = result.map(|_| ()).map_err(|e| match e {
-                    HttpError::Refused { code, message, .. } => (code, message),
-                    HttpError::Network(m) => ("NETWORK_ERROR".to_owned(), m),
-                    HttpError::InProgress => ("COMMAND_IN_PROGRESS".to_owned(), String::new()),
-                });
+                let result = result.map(|_| ()).map_err(refusal);
                 if let Err((code, message)) = &result {
                     self.toast_error("Save failed", &format!("{code}: {message}"));
                     self.editor_host.closing.remove(&path);
@@ -218,6 +219,15 @@ impl State {
             .filter(|(_, _, copied)| !copied)
             .map(|(_, at, _)| at + DRAFT_DEBOUNCE)
             .reduce(f64::min)
+    }
+}
+
+/// An HTTP failure as the host's code and message.
+fn refusal(e: HttpError) -> (String, String) {
+    match e {
+        HttpError::Refused { code, message, .. } => (code, message),
+        HttpError::Network(m) => ("NETWORK_ERROR".to_owned(), m),
+        HttpError::InProgress => ("COMMAND_IN_PROGRESS".to_owned(), String::new()),
     }
 }
 

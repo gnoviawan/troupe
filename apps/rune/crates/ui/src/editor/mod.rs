@@ -10,6 +10,9 @@ mod keys;
 mod view;
 mod view_find;
 
+#[cfg(test)]
+mod tests;
+
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -33,6 +36,8 @@ pub struct FindBar {
     pub regex: bool,
     /// The replace row shows (Ctrl+H).
     pub replacing: bool,
+    /// The query the selection last followed (find as you type).
+    followed: Query,
     /// The matches and the buffer revision and query they were read for.
     matches: RefCell<Option<(u64, Query, Matches)>>,
 }
@@ -46,6 +51,7 @@ impl FindBar {
             whole_word: false,
             regex: false,
             replacing,
+            followed: Query::default(),
             matches: RefCell::new(None),
         }
     }
@@ -246,6 +252,31 @@ impl Editors {
         }
         let n = find::replace_all(&mut doc.editor, &bar.query(), &bar.replace.text.clone(), now);
         self.effects.push(Effect::Log { level: Level::Info, message: format!("editor replace all: {n} matches") });
+    }
+
+    /// Find as you type (`FindPanel.commit`): when the query's pattern changed, the match under
+    /// the caret stays selected while it still matches, else the next one is selected. The app
+    /// calls this each frame.
+    pub fn follow_find(&mut self) {
+        let mut moves = Vec::new();
+        for (path, pane) in &mut self.panes {
+            let (Some(bar), Some(doc)) = (pane.find.as_mut(), self.docs.docs.get(path)) else { continue };
+            let query = bar.query();
+            if query == bar.followed {
+                continue;
+            }
+            bar.followed = query.clone();
+            if !query.is_valid() {
+                continue;
+            }
+            let from = doc.editor.selection().range().start;
+            if let Some(m) = find::next_match(&bar.matches(doc).ranges, from, false) {
+                moves.push((path.clone(), m));
+            }
+        }
+        for (path, m) in moves {
+            self.apply(&path, Command::Select(Selection { anchor: m.start, head: m.end }));
+        }
     }
 
     /// Ctrl+G.

@@ -1,4 +1,4 @@
-use super::{Docs, Draft, Effect, Event, Load, Read, sha256_hex, step};
+use super::{Docs, Draft, Effect, Event, Load, Read, Unavailable, sha256_hex, step};
 use troupe_editor::Command;
 
 const PATH: &str = "/p/src/main.rs";
@@ -104,8 +104,17 @@ fn a_draft_equal_to_the_disk_text_is_nothing() {
 fn a_failed_read_shows_on_the_tab() {
     let mut docs = Docs::default();
     step(&mut docs, Event::Open { path: PATH.into(), draft: None }, 0.0);
-    step(&mut docs, Event::Loaded { path: PATH.into(), result: Err("NOT_FOUND".into()) }, 0.0);
-    assert_eq!(docs.docs[PATH].load, Load::Failed("NOT_FOUND".into()));
+    step(&mut docs, Event::Loaded { path: PATH.into(), result: Err(("NOT_FOUND".into(), "gone".into())) }, 0.0);
+    assert_eq!(docs.docs[PATH].load, Load::Unavailable(Unavailable::Missing));
+}
+
+#[test]
+fn a_file_over_the_read_limit_reads_as_too_large() {
+    let u = Unavailable::from_refusal("FILE_TOO_LARGE", "file too large (1088890 bytes, max 1048576)");
+    assert_eq!(u, Unavailable::TooLarge { size: Some(1_088_890), limit: Some(1_048_576) });
+    assert_eq!(u.headline(), "This file is too large to preview");
+    assert_eq!(u.detail().as_deref(), Some("1.0 MB, the preview limit is 1.0 MB"));
+    assert_eq!(super::format_size(2048), "2.0 KB");
 }
 
 #[test]

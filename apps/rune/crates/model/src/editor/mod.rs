@@ -35,8 +35,73 @@ pub struct Read {
 pub enum Load {
     Loading,
     Ready,
-    /// The read failed; the tab shows why.
-    Failed(String),
+    /// The file opens as `UnsupportedFileView`: too large, binary, gone or unreadable.
+    Unavailable(Unavailable),
+}
+
+/// Why a file has no text to edit (`PreviewUnavailable`).
+#[derive(Clone, Debug, PartialEq)]
+pub enum Unavailable {
+    Binary,
+    TooLarge { size: Option<u64>, limit: Option<u64> },
+    Missing,
+    Unreadable(String),
+}
+
+impl Unavailable {
+    /// The host's refusal of a read: its code and message.
+    #[must_use]
+    pub fn from_refusal(code: &str, message: &str) -> Self {
+        match code {
+            "BINARY_FILE" => Self::Binary,
+            "FILE_TOO_LARGE" => {
+                let numbers: Vec<u64> = message
+                    .split_once('(')
+                    .map(|(_, rest)| rest.split(|c: char| !c.is_ascii_digit()).filter_map(|n| n.parse().ok()).collect())
+                    .unwrap_or_default();
+                Self::TooLarge { size: numbers.first().copied(), limit: numbers.get(1).copied() }
+            }
+            "NOT_FOUND" => Self::Missing,
+            _ => Self::Unreadable(message.to_owned()),
+        }
+    }
+
+    #[must_use]
+    pub fn headline(&self) -> &'static str {
+        match self {
+            Self::Binary => "This file can't be previewed",
+            Self::TooLarge { .. } => "This file is too large to preview",
+            Self::Missing => "This file no longer exists",
+            Self::Unreadable(_) => "This file couldn't be read",
+        }
+    }
+
+    #[must_use]
+    pub fn detail(&self) -> Option<String> {
+        match self {
+            Self::TooLarge { size: Some(size), limit: Some(limit) } => {
+                Some(format!("{}, the preview limit is {}", format_size(*size), format_size(*limit)))
+            }
+            Self::TooLarge { size: Some(size), .. } => Some(format_size(*size)),
+            Self::Unreadable(message) => Some(message.clone()),
+            _ => None,
+        }
+    }
+}
+
+/// `formatSize` (`lib/sftp-format.ts`).
+#[must_use]
+pub fn format_size(bytes: u64) -> String {
+    let b = bytes as f64;
+    if bytes < 1024 {
+        format!("{bytes} B")
+    } else if bytes < 1_048_576 {
+        format!("{:.1} KB", b / 1024.0)
+    } else if bytes < 1_073_741_824 {
+        format!("{:.1} MB", b / 1_048_576.0)
+    } else {
+        format!("{:.1} GB", b / 1_073_741_824.0)
+    }
 }
 
 /// One open text file.
@@ -115,7 +180,8 @@ pub struct Docs {
 pub enum Event {
     /// Open `path`, with the draft the record kept for it.
     Open { path: String, draft: Option<Draft> },
-    Loaded { path: String, result: Result<Read, String> },
+    /// The read answered: the file, or the host's code and message.
+    Loaded { path: String, result: Result<Read, (String, String)> },
     /// Ctrl+S, or the unsaved-changes dialog's Save.
     Save { path: String },
     /// The write of `content` answered: Ok, or the host's code and message.
@@ -174,9 +240,9 @@ pub fn step(docs: &mut Docs, event: Event, now: f64) -> Vec<Effect> {
             };
             match result {
                 Ok(read) => load(doc, read),
-                Err(message) => {
-                    doc.load = Load::Failed(message.clone());
-                    vec![log(Level::Warn, format!("editor open failed {}: {message}", name(&path)))]
+                Err((code, message)) => {
+                    doc.load = Load::Unavailable(Unavailable::from_refusal(&code, &message));
+                    vec![log(Level::Info, format!("editor opened {} as unsupported ({code})", name(&path)))]
                 }
             }
         }
