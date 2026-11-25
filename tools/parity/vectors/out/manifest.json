@@ -125,6 +125,41 @@
         "reconcile_terminals_by_id_then_name",
         "reconcile_keeps_saved_terminals_when_none_live"
       ]
+    },
+    "git-status": {
+      "sources": {
+        "src/renderer/stores/git-status-store.ts": "bef0766c3cc0ec8de0add3846d74efce8c1dc0fd"
+      },
+      "vectors": [
+        "fetch_commit_context_stores_it_with_its_head",
+        "fetch_commit_context_failure_drops_the_stale_context",
+        "a_stale_commit_context_is_ignored",
+        "a_superseded_context_records_no_head",
+        "a_stale_status_is_ignored",
+        "a_status_failure_keeps_the_previous_status_and_clears_on_success",
+        "commit_sends_the_head_last_shown_and_refreshes",
+        "commit_on_an_unborn_branch_expects_the_empty_head",
+        "a_commit_before_any_context_reads_the_head_first",
+        "a_commit_refused_because_head_moved_refreshes_and_rejects",
+        "a_head_that_cannot_be_read_refuses_the_commit",
+        "a_failed_context_forgets_the_head_and_the_commit_refetches_it",
+        "commit_errors_reject_without_a_refresh",
+        "a_commit_resolves_when_its_refresh_fails",
+        "push_refreshes_and_a_failed_push_rejects",
+        "stage_files_stages_each_then_refreshes_once",
+        "a_mid_batch_stage_failure_still_refreshes_and_rejects",
+        "single_file_writes_and_an_empty_batch",
+        "hunk_writes_invalidate_the_file_and_refresh",
+        "stash_and_branch_lists_and_writes",
+        "branch_switch_and_create_clear_the_selection_and_refresh",
+        "a_failed_diff_notifies_by_default_and_clears_on_success",
+        "a_quiet_diff_failure_keeps_the_cache_empty_and_logs",
+        "a_diff_invalidated_in_flight_is_discarded",
+        "a_watched_diff_stat_reads_and_an_unwatched_one_does_not",
+        "a_diff_stat_failure_is_stored_and_logged",
+        "refresh_working_copy_never_rejects",
+        "two_spellings_of_a_windows_path_share_one_entry"
+      ]
     }
   }
 }

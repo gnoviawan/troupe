@@ -118,12 +118,59 @@ vi.mock('../../../src/renderer/stores/quick-chat-store', async (importOriginal) 
   closeQuickChatView: () => null
 }))
 
+// The git store's host calls answer the vector's `context.git` queue.
+vi.mock(`${lib}/git-api`, async () => {
+  const { gitCall } = await import('./stores/git-mock')
+  const ops = [
+    'getStatus',
+    'getDiff',
+    'getDiffStat',
+    'stage',
+    'unstage',
+    'discard',
+    'stageHunk',
+    'unstageHunk',
+    'getLog',
+    'commit',
+    'push',
+    'getCommitContext',
+    'stashSave',
+    'stashList',
+    'stashApply',
+    'stashPop',
+    'stashDrop',
+    'branchList',
+    'branchSwitch',
+    'createBranch'
+  ]
+  return { gitApi: Object.fromEntries(ops.map((op) => [op, gitCall(op)])) }
+})
+vi.mock(`${lib}/worktree-reconciler`, async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  reconcileWorktreeOwnerOf: (cwd: string) => {
+    emit({ kind: 'reconcileWorktree', cwd })
+    return null
+  }
+}))
+// Only the git store's toasts are recorded; the other stores keep sonner's own.
+vi.mock('sonner', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('sonner')>()
+  const { gitMock } = await import('./stores/git-mock')
+  const error = (message: unknown) =>
+    gitMock.active
+      ? emit({ kind: 'toast', level: 'error', message })
+      : actual.toast.error(String(message))
+  return { ...actual, toast: Object.assign(actual.toast, { error }) }
+})
+
 const { workspaceRecorder, workspaceScenarios } = await import('./stores/workspace')
 const { shortcutsRecorder, shortcutScenarios } = await import('./stores/shortcuts')
 const { overlayRecorder, overlayScenarios } = await import('./stores/overlay')
 const { projectsRecorder, projectScenarios } = await import('./stores/projects')
 const { shellLayoutRecorder, shellLayoutScenarios } = await import('./stores/shell-layout')
 const { paneTreeRecorder, paneTreeScenarios } = await import('./stores/pane-tree')
+const { gitStatusRecorder, gitStatusScenarios } = await import('./stores/git-status')
+const { gitMock } = await import('./stores/git-mock')
 
 const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [workspaceRecorder, workspaceScenarios],
@@ -131,7 +178,8 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [overlayRecorder, overlayScenarios],
   [projectsRecorder, projectScenarios],
   [shellLayoutRecorder, shellLayoutScenarios],
-  [paneTreeRecorder, paneTreeScenarios]
+  [paneTreeRecorder, paneTreeScenarios],
+  [gitStatusRecorder, gitStatusScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'
@@ -144,6 +192,7 @@ describe('test vectors', () => {
     for (const [recorder, scenarios] of STORES) {
       const recorded: Vector[] = []
       for (const scenario of scenarios) recorded.push(await recordVector(recorder, scenario))
+      gitMock.active = false
       for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
         expect(sourcesOutsideWorkflow(recorder.sources, file), `${file} paths`).toEqual([])
       }

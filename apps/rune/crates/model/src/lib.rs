@@ -9,6 +9,7 @@
 
 pub mod acp;
 pub mod chats;
+pub mod git;
 pub mod overlay;
 pub mod persistence;
 pub mod prefs;
