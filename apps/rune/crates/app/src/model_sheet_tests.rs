@@ -141,3 +141,40 @@ fn the_phone_chip_and_the_switch_cancel_take_a_44_point_tap() {
     assert_eq!(size("composer-chat-chat-1-agent").1, 44.0, "the chip's tap height");
     assert_eq!(size("composer-chat-chat-1-agent-switch-cancel"), (44.0, 44.0), "the cancel's tap area");
 }
+
+#[test]
+fn an_armed_switch_lists_its_targets_modes_at_the_pick() {
+    let mut rt = phone_chat();
+    tap(&mut rt, "composer-chat-chat-1-agent");
+    tap(&mut rt, "model-sheet-provider");
+    tap(&mut rt, "model-sheet-agent-gemini");
+    let reply = |rt: &mut Runtime<State>, kind: WsRequestType, value: Value| {
+        rt.update_if(|s, _| {
+            let call = s
+                .sync
+                .sent
+                .iter()
+                .rev()
+                .find_map(|c| match c {
+                    Command::Call { call, kind: k, .. } if *k == kind => Some(*call),
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("no {kind:?} sent"));
+            s.apply(Output::Reply { call, result: Ok(Some(value.clone())) });
+            true
+        });
+        rt.frame(0.2);
+    };
+    reply(&mut rt, WsRequestType::SpawnAgent, json!({ "agentId": "agent-2", "capabilities": {}, "authMethods": [] }));
+    reply(
+        &mut rt,
+        WsRequestType::CreateSession,
+        json!({ "sessionId": "warm-1", "modes": { "currentModeId": "auto", "availableModes": [
+            { "id": "auto", "name": "Auto" }, { "id": "yolo", "name": "Yolo" } ] } }),
+    );
+    let modes = |rt: &Runtime<State>| rt.state.mode_view(&crate::composer::Host::Chat("chat-1".into())).map(|m| (m.current, m.modes.len()));
+    assert_eq!(modes(&rt), Some(("auto".to_owned(), 2)), "the target's modes, not the chat's");
+    tap(&mut rt, "model-sheet-mode");
+    tap(&mut rt, "model-sheet-mode-yolo");
+    assert_eq!(modes(&rt), Some(("yolo".to_owned(), 2)), "the pick the switch holds is current");
+}
