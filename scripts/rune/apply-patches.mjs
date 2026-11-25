@@ -41,7 +41,8 @@ export function build({ source, rev, patchDir, patches, out }) {
   git(out, ['checkout', '--quiet', '-b', `troupe/${rev}`, 'FETCH_HEAD'])
   for (const name of patches) {
     try {
-      git(out, ['am', '--quiet', join(resolve(patchDir), name)])
+      // Rune keeps some sources in CRLF; a patch to one carries the CRs, so keep them.
+      git(out, ['am', '--quiet', '--keep-cr', join(resolve(patchDir), name)])
     } catch (error) {
       console.error(`apply-patches: ${name} does not apply to ${rev}\n${error.stderr ?? ''}`)
       git(out, ['am', '--abort'])

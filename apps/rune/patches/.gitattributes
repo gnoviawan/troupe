@@ -1,0 +1,2 @@
+# A patch to a CRLF source carries its CRs; keep the bytes as format-patch wrote them.
+*.patch -text

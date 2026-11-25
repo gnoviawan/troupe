@@ -16,3 +16,18 @@ fn a_preserved_entry_needs_this_tab_id_and_a_claim() {
     assert!(preserved_entry(&reply, "pty-2").is_none(), "no claim, nothing to attach with");
     assert!(preserved_entry(&reply, "pty-3").is_none(), "not preserved");
 }
+
+#[test]
+fn the_screens_rows_reach_the_accessibility_tree_as_text_runs() {
+    let mut rt = crate::term_select::tests::shown(b"hello rows\r\nsecond line");
+    rt.frame(0.1);
+    let tree = rt.accessibility_tree();
+    let runs: Vec<String> = tree
+        .nodes
+        .iter()
+        .filter(|(_, node)| format!("{:?}", node.role()) == "TextRun")
+        .filter_map(|(_, node)| node.value().map(str::to_owned))
+        .collect();
+    assert_eq!(runs.get(..3), Some(&["hello rows\n".to_owned(), "second line\n".to_owned(), "\n".to_owned()][..]), "{runs:?}");
+    assert_eq!(runs.len(), 24, "one run per screen row");
+}
