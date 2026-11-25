@@ -13,13 +13,15 @@
 //!
 //! Precedence (see [`resolve_models`]): a Model-category `select` config option
 //! is authoritative whenever it is advertised — even with an empty option list.
-//! Only when none is advertised is the legacy list used, and such a session is
-//! read-only for `set_model` because the schema exposes no way to switch it.
+//! Only when none is advertised is the legacy list used. Such a session
+//! switches models with the pre-1.3 `session/set_model` request, sent as raw
+//! JSON-RPC ([`send_legacy_set_model`]) because the pinned schema dropped it
+//! (Hermes Agent, for one, advertises and switches models only this way).
 
 use agent_client_protocol::schema::v1::{
     SessionConfigKind, SessionConfigOption, SessionConfigOptionCategory,
 };
-use agent_client_protocol::{Agent, ConnectionTo, JsonRpcRequest, JsonRpcResponse};
+use agent_client_protocol::{Agent, ConnectionTo, JsonRpcRequest, JsonRpcResponse, UntypedMessage};
 use serde_json::Value;
 
 use crate::acp::events::{models_from_config_options, SessionModel, SessionModelState};
@@ -35,8 +37,8 @@ pub(crate) struct WithLegacyModels<T> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ResolvedModels {
     pub models: Option<SessionModelState>,
-    /// `true` when `models` came from the legacy field: the list is
-    /// read-only because `set_model` has no protocol path for it.
+    /// `true` when `models` came from the legacy field: `set_model` must use
+    /// the legacy `session/set_model` request, not a config option.
     pub legacy_only: bool,
 }
 
@@ -138,7 +140,7 @@ pub(crate) fn resolve_models(
     }
     if let Some(legacy) = legacy {
         log::debug!(
-            "[acp] no model config option; using legacy `models` field ({} models, read-only)",
+            "[acp] no model config option; using legacy `models` field ({} models)",
             legacy.available_models.len()
         );
         return ResolvedModels {
@@ -171,11 +173,35 @@ where
     Ok(WithLegacyModels { response, legacy })
 }
 
-/// Error returned by `set_model` for a session whose models came only from the
-/// legacy field (the schema exposes no way to switch them).
-pub(crate) const LEGACY_MODEL_SWITCH_UNSUPPORTED: &str =
-    "model switching unsupported: this agent advertises its models only through the legacy \
-     `models` field, which Troupe can display but not change";
+/// JSON-RPC method of the pre-1.3 model switch, which the pinned schema no
+/// longer defines.
+pub(crate) const LEGACY_SET_MODEL_METHOD: &str = "session/set_model";
+
+/// Params of a legacy `session/set_model` request.
+pub(crate) fn legacy_set_model_params(session_id: &str, model_id: &str) -> Value {
+    serde_json::json!({ "sessionId": session_id, "modelId": model_id })
+}
+
+/// Switch the model of a session whose models came only from the legacy
+/// `models` field, with a raw `session/set_model` request. The result carries
+/// nothing the picker needs, so it is ignored; an agent that does not
+/// implement the method answers with its own error, which is returned.
+pub(crate) async fn send_legacy_set_model(
+    cx: &ConnectionTo<Agent>,
+    session_id: &str,
+    model_id: &str,
+) -> Result<(), String> {
+    let message = UntypedMessage::new(
+        LEGACY_SET_MODEL_METHOD,
+        legacy_set_model_params(session_id, model_id),
+    )
+    .map_err(|e| e.to_string())?;
+    cx.send_request(message)
+        .block_task()
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
 
 #[cfg(test)]
 mod tests;

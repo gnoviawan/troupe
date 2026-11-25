@@ -11,8 +11,9 @@ const DOT: Record<StatusTone, string> = {
   muted: 'bg-muted-foreground/60'
 }
 
+// Only problems colour their word; a good state is a green dot and muted text.
 const TEXT: Record<StatusTone, string> = {
-  success: 'text-success',
+  success: 'text-muted-foreground',
   warning: 'text-warning',
   danger: 'text-destructive',
   muted: 'text-muted-foreground'

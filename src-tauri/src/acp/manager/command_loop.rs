@@ -5,8 +5,7 @@ use std::collections::BTreeMap;
 use super::import_steps::finish_history_import;
 
 use crate::acp::legacy_models::{
-    advertises_model_config_option, resolve_models, send_with_legacy_models,
-    LEGACY_MODEL_SWITCH_UNSUPPORTED,
+    advertises_model_config_option, resolve_models, send_legacy_set_model, send_with_legacy_models,
 };
 use agent_client_protocol::schema::v1::PromptResponse;
 
@@ -298,8 +297,12 @@ pub(super) async fn run_command_loop(
                                     .lock()
                                     .set_model_config_id(session_id.0.clone(), id);
                             }
-                            if resolved.legacy_only {
-                                req_state.lock().mark_legacy_models(session_id.0.clone());
+                            if let (true, Some(models)) =
+                                (resolved.legacy_only, resolved.models.clone())
+                            {
+                                req_state
+                                    .lock()
+                                    .mark_legacy_models(session_id.0.clone(), models);
                             }
 
                             let event = SessionCreatedEvent {
@@ -1393,10 +1396,11 @@ pub(super) async fn run_command_loop(
                     // the option value id the renderer picked.
                     //
                     // Issue #822: a session whose models came only from the legacy
-                    // `models` field is read-only. The pinned schema defines no
-                    // `session/set_model`, and a config-option call with the
-                    // guessed id `"model"` would only yield an agent error, so
-                    // fail fast without sending anything.
+                    // `models` field has no Model config option to set; it switches
+                    // with the legacy `session/set_model` request instead (Hermes
+                    // Agent). On success the updated list is fanned out as
+                    // `models_update`, so every client and the durable log (the
+                    // reload controls and the session index model) see it.
                     let (config_id, legacy_only) = {
                         let state = req_state.lock();
                         (
@@ -1405,11 +1409,36 @@ pub(super) async fn run_command_loop(
                         )
                     };
                     if legacy_only {
-                        log::info!(
-                            "[acp] session {} set_model rejected: models are legacy-only (read-only)",
-                            crate::logging::redact_session_id(&session_id.0)
-                        );
-                        send_reply(&task_slot, Err(LEGACY_MODEL_SWITCH_UNSUPPORTED.to_string()));
+                        let result = send_legacy_set_model(&req_cx, &session_id.0, &model_id).await;
+                        match &result {
+                            Ok(()) => {
+                                log::info!(
+                                    "[acp] session {} switched model via legacy session/set_model",
+                                    crate::logging::redact_session_id(&session_id.0)
+                                );
+                                let models = req_state
+                                    .lock()
+                                    .switch_legacy_model(&session_id.0, &model_id);
+                                if let Some(models) = models {
+                                    let event = events::ModelsUpdateEvent {
+                                        agent_id: req_agent_id,
+                                        session_id: session_id.clone(),
+                                        models,
+                                    };
+                                    events::fan_out(
+                                        &req_sinks,
+                                        Some(event.session_id.0.as_str()),
+                                        events::EVENT_MODELS_UPDATE,
+                                        &event,
+                                    );
+                                }
+                            }
+                            Err(_) => log::warn!(
+                                "[acp] session {} legacy session/set_model failed",
+                                crate::logging::redact_session_id(&session_id.0)
+                            ),
+                        }
+                        send_reply(&task_slot, result);
                         return;
                     }
                     let config_id = config_id.unwrap_or_else(|| "model".to_string());

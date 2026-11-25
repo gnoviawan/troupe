@@ -4,7 +4,11 @@ import {
   guessMimeType
 } from '@/components/chat/chat-attachments'
 import type { ContentBlock } from '@/lib/acp-api'
-import { resolveConversationContexts } from '@/lib/conversation-transcript'
+import { resolveCanvasContexts } from '@/lib/canvas-mention'
+import {
+  type ConversationContexts,
+  resolveConversationContexts
+} from '@/lib/conversation-transcript'
 import {
   extractConversationRefs,
   isFolderTokenPath,
@@ -12,6 +16,7 @@ import {
   replaceCommandTokensInline
 } from '@/lib/skill-tokens'
 import type { FramedSkill } from '@/lib/skills-prompt'
+import { extractCanvasRefs } from './canvas-tokens'
 import { serializeSelectionContexts } from './selection-context'
 import { composerWireText } from './wire-text'
 
@@ -44,21 +49,46 @@ export function fileMentionBlocks(value: string): ContentBlock[] {
 }
 
 /**
+ * Resolve what a composer value's pills point at: each mentioned
+ * conversation's transcript and each mentioned canvas layer's summary, read
+ * now from `projectId`'s canvas. `null` when the value mentions neither.
+ */
+export function resolveMentionContexts(
+  tokenText: string,
+  projectId: string | null | undefined
+): Promise<ConversationContexts> | null {
+  const conversationRefs = extractConversationRefs(tokenText)
+  const canvasRefs = extractCanvasRefs(tokenText)
+  if (conversationRefs.length === 0 && canvasRefs.length === 0) return null
+  return Promise.all([
+    conversationRefs.length > 0
+      ? resolveConversationContexts(conversationRefs)
+      : { blocks: [], gaps: new Map() },
+    canvasRefs.length > 0 ? resolveCanvasContexts(projectId, canvasRefs) : null
+  ]).then(([conversations, canvas]) => ({
+    blocks: [...conversations.blocks, ...(canvas?.blocks ?? [])],
+    gaps: conversations.gaps,
+    ...(canvas ? { canvasGaps: canvas.gaps } : {})
+  }))
+}
+
+/**
  * The wire blocks for re-sending a user message from its display (token)
  * blocks, built like a fresh composer send: the wire text, the original
  * non-text blocks, a `resource_link` per mentioned file, and the transcript of
- * each mentioned conversation (re-read now; the display holds only the pill).
+ * each mentioned conversation and canvas layer (re-read now; the display holds
+ * only the pill). Canvas pills are read from `projectId`'s canvas.
  */
 export async function retryWireBlocks(
   displayBlocks: readonly ContentBlock[],
-  skills: FramedSkill[]
+  skills: FramedSkill[],
+  projectId?: string | null
 ): Promise<ContentBlock[]> {
   const tokenText = displayBlocks
     .filter((b) => b.type === 'text')
     .map((b) => b.text ?? '')
     .join('')
-  const refs = extractConversationRefs(tokenText)
-  const contexts = refs.length > 0 ? await resolveConversationContexts(refs) : undefined
+  const contexts = (await resolveMentionContexts(tokenText, projectId)) ?? undefined
   const wireText = composerWireText(tokenText, skills, contexts)
   const blocks: ContentBlock[] = wireText.trim() ? [{ type: 'text', text: wireText }] : []
   for (const b of displayBlocks) {

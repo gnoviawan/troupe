@@ -12,11 +12,21 @@ Use primitives in `src/renderer/components/ui`. Wire `Label htmlFor` to the cont
 
 There is no `Checkbox`, `RadioGroup` or `Form` in `ui/`. Nothing else exists: a boolean is a `Switch` (`size="sm"` beside 12px text, as in `NewProjectModal`'s "Initialize Git repository"), a pick-one is a `Select`. One exception: a pick-one list whose options carry live data to compare (Project settings → Accounts, where each account shows its status) is a `role="listbox"` of `role="option"` cards on the page; the chosen card takes `bg-foreground/[0.03] ring-1 ring-foreground/[0.12]` and a `Check`, with arrow-key focus and Enter/Space to choose. Do not add `react-hook-form`.
 
-Preferences and Project settings are one page per category (`SettingsLayout`). A setting is a `SettingsRow` (label and description left, control right) inside a `SettingsGroup` + `SettingsCard`. Lists use `SettingsSelect` (a sized `Select`), booleans use `Switch`, numbers with limits use `SettingsStepper`, status uses `StatusWord` (a dot and a word, never the dot alone). Give the control an `id`, pass it as the row's `htmlFor`, and point `aria-describedby` at `settingsDescriptionId(id)`.
+Preferences and Project settings are one page per category (`SettingsLayout`: a rail with Back to app, search and the pages, and a 640px column). A setting is a `SettingsRow` inside a `SettingsGroup` + `SettingsCard`. Lists use `SettingsSelect` (a sized `Select`), booleans use `Switch`, numbers with limits use `SettingsStepper`, status uses `StatusWord` (a dot and a word, never the dot alone). Give the control an `id`, pass it as the row's `htmlFor`, and point `aria-describedby` at `settingsDescriptionId(id)`.
+
+Settings parts:
+
+| Part | Rule |
+|---|---|
+| Row | Label 12/16 medium, description 12/16 muted, both left; the control right. `layout="inline"` keeps a switch on the label line. |
+| Group | Title 14/20 medium, optional `meta` (a count, muted) and `actions` (secondary `xs` buttons) on the same line. Card is `SETTINGS_CARD_CLASS` (`rounded-lg bg-card shadow-control`) with 0.5px dividers. |
+| `SettingsSegmented` | Pick one of 2–4 short options that change what the page shows (All / Global / Project, Stable / Nightly). A `radiogroup`; put counts in the labels. A setting with more or longer options is a `SettingsSelect`. |
+| `SettingsFilter` | A 32px filter field over a long list (Skills, Shortcuts, Agents). Its clear button is "Clear text". |
+| `SettingsDisclosure` | "Advanced" settings most people never change. Closed by default, with a one-line summary of the current values. The settings search opens it before it scrolls to a row inside. |
 
 Text fields and select triggers draw their edge with `border-field-border` (3:1 against card, background and popover). `border` and `input` stay for dividers and the Switch track.
 
-AppPreferences persists on each control change — do not add a footer Save. ProjectSettings uses the `SettingsModal` footer Save (`variant` default). One filled `Button` in that footer.
+AppPreferences persists on each control change — do not add a footer Save. ProjectSettings passes its Save bar to `SettingsLayout` as the `footer` (`variant` default). One filled `Button` in that footer.
 
 Every text field is 16px on a coarse pointer so iOS Safari does not zoom when it takes focus: `Input` is `text-base md:text-sm pointer-coarse:text-base`, and a raw `<input>`, `<textarea>` or `<select>` adds `pointer-coarse:text-base` next to its size. Never `text-[16px]`. See [typography.md](typography.md).
 

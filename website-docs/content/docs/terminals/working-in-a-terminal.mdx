@@ -83,9 +83,9 @@ These keys don't reach your shell:
 | `Ctrl+W` | Closes the tab. |
 | `Ctrl+=`, `Ctrl+-`, `Ctrl+0` | Zooms the whole window. |
 | `Ctrl+,` | Opens Settings. |
-| `Delete`, `F2` | Nothing. These keys are the shortcuts for **Delete Files** and **Rename File** in the Explorer. To delete the character under the cursor, press `Ctrl+D` instead. |
+| `Delete`, `F2` | Nothing. These keys are the shortcuts for **Delete files** and **Rename file** in the Explorer. To delete the character under the cursor, press `Ctrl+D` instead. |
 
-Troupe also uses some `Ctrl+Shift` and `Ctrl+Alt` keys, such as `Ctrl+Shift+P` for the command palette and `Ctrl+Alt+T` for the theme picker. **Settings** > **Keyboard Shortcuts** lists them all.
+Troupe also uses some `Ctrl+Shift` and `Ctrl+Alt` keys, such as `Ctrl+Shift+P` for the command palette and `Ctrl+Alt+T` for the theme picker. **Settings** > **Keyboard shortcuts** lists them all.
 
 ### macOS
 
@@ -93,7 +93,7 @@ Troupe's shortcuts use `Cmd`, so your shell gets the `Ctrl` keys. A few keys sti
 
 ### In a browser
 
-The browser version moves some shortcuts to `Alt`, because browsers keep keys such as `Ctrl+W` and `Ctrl+T` for themselves. For example, **Close Tab** is `Alt+W` and the agent launcher is `Alt+T`.
+The browser version moves some shortcuts to `Alt`, because browsers keep keys such as `Ctrl+W` and `Ctrl+T` for themselves. For example, **Close tab** is `Alt+W` and the agent launcher is `Alt+T`.
 
 In a browser, these keys don't reach your shell:
 
@@ -106,7 +106,7 @@ Troupe doesn't bind `Ctrl+R` or `Ctrl+U` in a browser, so your shell gets them. 
 
 ### Give a key back to your shell
 
-To free a key that Troupe uses as a shortcut, open **Settings**, select **Keyboard Shortcuts**, and record a different key combination for that shortcut. For example, record another key for **Delete Files** to get `Delete` back. You can't remove a shortcut. `Ctrl+A`, `Ctrl+C`, `Ctrl+V`, and `Ctrl+U` aren't in the list, so you can't give them back.
+To free a key that Troupe uses as a shortcut, open **Settings**, select **Keyboard shortcuts**, and record a different key combination for that shortcut. For example, record another key for **Delete files** to get `Delete` back. You can't remove a shortcut. `Ctrl+A`, `Ctrl+C`, `Ctrl+V`, and `Ctrl+U` aren't in the list, so you can't give them back.
 
 ### Shift+Enter
 
@@ -129,29 +129,36 @@ A file path needs at least one `/` or `\`. A bare name such as `cart.ts:12` is n
 
 To choose where web links open:
 
-1. Open **Settings** and select **Behavior**.
-2. In **Open Terminal Links In**, choose **System Default Browser** or **Troupe Browser**.
+1. Open **Settings** and select **Preferences**.
+2. Under **Links**, open **Open links in**.
+3. Choose **Default browser** or **Troupe browser**.
 
-**System Default Browser** is the default. **Troupe Browser** opens the link in a browser tab inside Troupe, which only the desktop app has. In a browser, keep **System Default Browser**. Troupe then opens the link in a new browser tab.
+**Default browser** is the default. **Troupe browser** opens the link in a browser tab inside Troupe. This setting also applies to links in chats, Markdown, and files.
 
-![The Behavior section of Application Preferences with Open Terminal Links In and the Notifications switches](/screenshots/terminals-behavior-settings.png)
+The **Links** group is in the desktop app only. In a browser, Troupe opens the link in a new browser tab.
+
+![The Links group on the Preferences page, with Open links in](/screenshots/terminals-behavior-settings.png)
 
 ## Change the look and the scrollback
 
-Open **Settings** and select **Terminal Appearance**.
+Open **Settings** and select **Terminal**.
 
-- **Font Size** sets the terminal text size, from 10 to 24 pixels. The default is 14, and open terminals change right away.
-- **Scrollback Buffer Size** sets how many lines each terminal keeps for scrolling back: 1,000, 5,000, 10,000, 25,000, or 50,000. The default is 10,000. More lines use more memory.
-- **Terminal Renderer** picks how terminals draw text. **Auto** is the default and uses your graphics card when it can. The other options are **WebGL** and **DOM**. Try **DOM** if text looks wrong.
-- **Screen reader mode** makes terminal output readable by screen readers. It is off by default.
+- **Font size** is under **Text**. It sets the terminal text size, from 10 to 24 pixels. The default is 14, and open terminals change immediately. The preview below it shows sample text at that size.
+- **Screen reader mode** is under **New terminals**. It makes terminal output readable by screen readers. It is off by default. In some setups it can repeat the characters you type.
 
-Scrollback and screen reader changes apply to terminals you open after the change.
+Click **Advanced** to see more options:
 
-![The Terminal Appearance section with UI Zoom Level, Font Size, Scrollback Buffer Size, Terminal Renderer, and Screen reader mode](/screenshots/terminals-appearance-settings.png)
+- **Renderer** picks how terminals draw text. **Auto** is the default and uses WebGL when it can. The other options are **WebGL** and **DOM**. Try **DOM** if text looks wrong.
+- **Scrollback** sets how many lines each terminal keeps for scrolling back: 1,000, 5,000, 10,000, 25,000, or 50,000. The default is 10,000. More lines use more memory.
+- **Automatic completion refresh** updates command suggestions while you type. When it is off, press `Tab` to ask for suggestions. This change applies immediately.
+
+Renderer, scrollback, and screen reader changes apply to terminals you open after the change.
+
+![The Terminal page of Settings, with the Text, New terminals, and Advanced groups](/screenshots/terminals-appearance-settings.png)
 
 ## Get notified when a long task finishes
 
-Troupe can tell you when a long-running terminal goes quiet, for example when a build or an AI agent finishes. The setting is **Notify when a terminal agent finishes**, under **Behavior** > **Notifications** in **Settings**. It is on by default.
+Troupe can tell you when a long-running terminal goes quiet, for example when a build or an AI agent finishes. The setting is **Notify when a terminal agent finishes**, under **Preferences** > **Notifications** in **Settings**. It is on by default.
 
 A terminal counts as finished when it printed output for at least 20 seconds and then stayed quiet for 8 seconds. Troupe doesn't notify you about the terminal you are looking at while the Troupe window has focus. The notification shows the project name and says that the terminal's agent finished.
 

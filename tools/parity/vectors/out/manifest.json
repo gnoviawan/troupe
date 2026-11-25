@@ -49,8 +49,8 @@
     },
     "shortcuts": {
       "sources": {
-        "src/renderer/stores/keyboard-shortcuts-store.ts": "790c7bc23bb124601af106ced7a365a147e65bfa",
-        "src/renderer/types/settings.ts": "1eb4d46e8097214368522f67941a5576a61978e9",
+        "src/renderer/stores/keyboard-shortcuts-store.ts": "5950ca70d442e27b357a98e274c283b936c51f02",
+        "src/renderer/types/settings.ts": "14f1da6819bae1619f530a723f4ea95704017ede",
         "src/renderer/lib/platform.ts": "17a189bf41b26507ad845fa1605e303018dd3d67"
       },
       "vectors": [
