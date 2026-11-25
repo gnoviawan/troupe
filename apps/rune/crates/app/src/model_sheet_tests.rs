@@ -178,3 +178,28 @@ fn an_armed_switch_lists_its_targets_modes_at_the_pick() {
     tap(&mut rt, "model-sheet-mode-yolo");
     assert_eq!(modes(&rt), Some(("yolo".to_owned(), 2)), "the pick the switch holds is current");
 }
+
+#[test]
+fn closing_the_sheet_drops_the_pick_a_busy_chat_held() {
+    let mut rt = phone_chat();
+    rt.update_if(|s, _| {
+        let prompt = json!({ "_onUserPrompt": [{ "agentId": "agent-1", "sessionId": "chat-1", "turnId": "t1", "blocks": [] }, 3] });
+        s.acp_step(serde_json::from_value(prompt).expect("event"));
+        s.flush_chat();
+        true
+    });
+    rt.frame(0.1);
+    tap(&mut rt, "composer-chat-chat-1-agent");
+    tap(&mut rt, "model-sheet-provider");
+    tap(&mut rt, "model-sheet-agent-gemini");
+    assert!(present(&rt, "model-sheet-wait"), "a busy chat holds the pick behind Wait");
+    rt.update_if(|s, _| {
+        s.close_model_sheet();
+        true
+    });
+    rt.frame(0.5);
+    assert!(!present(&rt, "model-sheet-provider"), "the sheet closed");
+    tap(&mut rt, "composer-chat-chat-1-agent");
+    assert!(present(&rt, "model-sheet-provider"), "the sheet reopened");
+    assert!(!present(&rt, "model-sheet-wait"), "a reopened sheet holds no pick");
+}

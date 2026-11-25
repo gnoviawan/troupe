@@ -8,9 +8,13 @@ use rune::Tx;
 use serde_json::{Value, json};
 use ui::composer::agent_menu::{SwitchAct, SwitchView};
 use ui::composer::view::AgentChoice;
+use ui::overlay::ToastKind;
 
 use crate::State;
 use crate::composer::Host;
+
+/// `TURN_CLEAR_TIMEOUT_MS`: how long cancel-then-switch waits for the turn to end.
+const TURN_CLEAR_TIMEOUT_S: f64 = 5.0;
 
 impl State {
     /// The config a chat's armed switch targets (`session.switching.toConfigId`).
@@ -69,6 +73,7 @@ impl State {
                     return self.close_agent_menu(host, tx);
                 }
                 if self.chat_config_id(&session).as_deref() == Some(config.as_str()) {
+                    self.drop_pending_arm(&session);
                     if armed.is_some() {
                         log::info!("[composer] chat {session} keeps its agent");
                         self.acp_step(Event::CancelAgentSwitch(session));
@@ -85,16 +90,20 @@ impl State {
             }
             SwitchAct::Cancel => {
                 log::info!("[composer] chat {session} cancels its agent switch");
+                self.drop_pending_arm(&session);
                 self.acp_step(Event::CancelAgentSwitch(session));
             }
-            SwitchAct::Wait => self.close_agent_menu(host, tx),
+            SwitchAct::Wait => {
+                self.drop_pending_arm(&session);
+                self.close_agent_menu(host, tx);
+            }
             SwitchAct::OpenSheet => self.open_model_sheet(host),
             SwitchAct::CancelTurnAndSwitch => {
                 let Some(config) = self.draft_mut(host).switch_confirm.take() else { return };
                 self.close_agent_menu(host, tx);
                 log::info!("[composer] chat {session} stops its turn to switch to {config}");
                 self.acp_step(Event::CancelPrompt(session.clone()));
-                self.chat.pending_arm.insert(session, config);
+                self.chat.pending_arm.insert(session, (config, self.now + TURN_CLEAR_TIMEOUT_S));
                 self.arm_when_turn_cleared();
             }
         }
@@ -116,10 +125,29 @@ impl State {
         let ready: Vec<String> =
             self.chat.pending_arm.keys().filter(|session| !self.chat.acp.switch_gate(session).turn_running).cloned().collect();
         for session in ready {
-            if let Some(config) = self.chat.pending_arm.remove(&session) {
+            if let Some((config, _)) = self.chat.pending_arm.remove(&session) {
                 self.arm_switch(&session, &config);
             }
         }
+    }
+
+    fn drop_pending_arm(&mut self, session: &str) {
+        if let Some((config, _)) = self.chat.pending_arm.remove(session) {
+            log::info!("[composer] chat {session} drops its held switch to {config}");
+        }
+    }
+
+    /// Gives up the cancel-then-switches whose turn did not end in time (`waitForTurnClear`
+    /// rejects); returns whether any did, and when the next one is due.
+    pub(crate) fn expire_pending_arms(&mut self, now: f64) -> (bool, Option<f64>) {
+        let expired: Vec<String> =
+            self.chat.pending_arm.iter().filter(|(_, (_, due))| *due <= now).map(|(session, _)| session.clone()).collect();
+        for session in &expired {
+            let Some((config, _)) = self.chat.pending_arm.remove(session) else { continue };
+            log::warn!("[composer] cancel-then-switch to {config} failed for {session}: the turn did not end in time");
+            self.toasts.push(now, ToastKind::Error, "Could not switch the agent: Error: timed out waiting for turn to clear", None);
+        }
+        (!expired.is_empty(), self.chat.pending_arm.values().map(|(_, due)| *due).reduce(f64::min))
     }
 
     /// A model picked while a switch is armed goes with the switch (`armModelPick`): the

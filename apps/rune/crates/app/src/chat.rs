@@ -51,8 +51,9 @@ pub struct ChatUi {
     /// Per agent config, the saved composer picks as last written, or the patches waiting
     /// for the first read (`persistComposerOptions`' per-key queue).
     pub(crate) saved_picks: std::collections::BTreeMap<String, crate::controls::SavedPicks>,
-    /// Cancel-then-switches waiting for their cancelled turns to end: session to config.
-    pub(crate) pending_arm: std::collections::BTreeMap<String, String>,
+    /// Cancel-then-switches waiting for their cancelled turns to end: session to (config,
+    /// when the wait gives up on the frame clock).
+    pub(crate) pending_arm: std::collections::BTreeMap<String, (String, f64)>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
@@ -143,6 +144,8 @@ impl State {
             .collect();
         // The model remaps a switched chat's tab only when it knows the tab is open.
         self.chat.acp.book.open_chat_tabs = tabs.iter().cloned().collect();
+        // A closed chat's cancel-then-switch has no composer left to arm.
+        self.chat.pending_arm.retain(|session, _| tabs.contains(session));
         for session in tabs {
             if self.host.is_some() && self.chat.requested.insert(session.clone()) {
                 self.reopen_chat(&session);

@@ -303,13 +303,72 @@ fn a_session_create_that_needs_sign_in_authenticates_the_target_agent() {
 fn an_armed_switch_checks_images_against_its_target() {
     let mut rt = claude_chat();
     rt.update_if(|s, _| {
-        s.chat.acp.agents.insert("agent-1".into(), json!({ "id": "agent-1", "capabilities": { "promptCapabilities": { "image": false } } }));
+        s.chat.acp.agents.insert("agent-1".into(), json!({ "id": "agent-1", "capabilities": { "promptCapabilities": { "image": true } } }));
         true
     });
-    assert_eq!(rt.state.image_capable(&host()), Some(false), "the chat's own agent takes no images");
+    assert_eq!(rt.state.image_capable(&host()), Some(true), "the chat's own agent takes images");
     act(&mut rt, SwitchAct::Agent("gemini".into()));
+    assert_eq!(rt.state.image_capable(&host()), Some(false), "a target not warmed yet takes none");
     let caps = json!({ "promptCapabilities": { "image": true } });
     answer(&mut rt, WsRequestType::SpawnAgent, json!({ "agentId": "agent-2", "capabilities": caps, "authMethods": [] }));
     answer(&mut rt, WsRequestType::CreateSession, json!({ "sessionId": "warm-1" }));
     assert_eq!(rt.state.image_capable(&host()), Some(true), "the armed target does");
+}
+
+/// A busy chat whose user chose Cancel turn and switch to Gemini.
+fn cancelling_to_gemini() -> Runtime<State> {
+    let mut rt = claude_chat();
+    event(&mut rt, json!({ "_onUserPrompt": [{ "agentId": "agent-1", "sessionId": CHAT, "turnId": "t1", "blocks": [] }, 3] }));
+    act(&mut rt, SwitchAct::Agent("gemini".into()));
+    act(&mut rt, SwitchAct::CancelTurnAndSwitch);
+    rt
+}
+
+fn turn_ends(rt: &mut Runtime<State>) {
+    event(rt, json!({ "_onPromptComplete": [{ "agentId": "agent-1", "sessionId": CHAT, "turnId": "t1", "stopReason": "cancelled" }, 4] }));
+}
+
+#[test]
+fn cancel_then_switch_gives_up_when_the_turn_outlasts_five_seconds() {
+    let mut rt = cancelling_to_gemini();
+    let start = rt.state.now;
+    let (gave_up, due) = rt.state.expire_pending_arms(start + 4.9);
+    assert!(!gave_up, "still waiting before 5 s");
+    assert_eq!(due, Some(start + 5.0), "the poll wakes at the deadline");
+    let (gave_up, due) = rt.state.expire_pending_arms(start + 5.0);
+    assert!(gave_up && due.is_none(), "the wait ends at 5 s");
+    let toasts: Vec<String> = rt.state.toasts.visible().iter().map(|t| t.title.clone()).collect();
+    assert_eq!(toasts, ["Could not switch the agent: Error: timed out waiting for turn to clear"]);
+    turn_ends(&mut rt);
+    assert!(calls(&rt.state, WsRequestType::SpawnAgent).is_empty(), "a late turn end arms nothing");
+    assert_eq!(rt.state.armed_config(CHAT), None);
+}
+
+#[test]
+fn cancel_wait_or_keeping_the_agent_drops_a_held_cancel_then_switch() {
+    let keep = SwitchAct::Agent("claude".into());
+    for drop in [SwitchAct::Cancel, SwitchAct::Wait, keep] {
+        let mut rt = cancelling_to_gemini();
+        act(&mut rt, drop.clone());
+        turn_ends(&mut rt);
+        assert!(calls(&rt.state, WsRequestType::SpawnAgent).is_empty(), "{drop:?} drops the held switch");
+        assert_eq!(rt.state.armed_config(CHAT), None);
+    }
+}
+
+#[test]
+fn closing_the_chat_drops_its_held_cancel_then_switch() {
+    let mut rt = cancelling_to_gemini();
+    rt.update_if(|s, _| {
+        let (pane, tab) = model::workspace::leaves(s.workspace.root())
+            .into_iter()
+            .flat_map(|leaf| leaf.tabs.iter().map(|tab| (leaf.id.clone(), tab.id().to_owned())))
+            .find(|(_, id)| id.contains(CHAT))
+            .expect("the chat's tab");
+        s.workspace.step(model::workspace::Event::CloseTab(pane, tab));
+        s.sync_chats();
+        true
+    });
+    turn_ends(&mut rt);
+    assert!(calls(&rt.state, WsRequestType::SpawnAgent).is_empty(), "a closed chat arms nothing");
 }
