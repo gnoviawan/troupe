@@ -166,8 +166,10 @@ fn main_area(
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
+        let menus = std::cell::RefCell::new(Vec::new());
         let tab = |tab: &model::workspace::Tab| {
             crate::terminal_view::tab_body(s, t, tab)
+                .or_else(|| crate::git_history_view::tab_body(s, t, tab, &mut menus.borrow_mut()))
                 .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
                 .or_else(|| crate::git_diff::tab_body(s, t, tab))
         };
@@ -182,7 +184,9 @@ fn main_area(
             },
             dark: true,
         };
-        return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));
+        let view = ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer);
+        layer.extend(menus.into_inner());
+        return main.child(view);
     }
     col()
         .key("shell-main")

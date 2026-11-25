@@ -19,6 +19,8 @@ pub enum Fetch {
     Listing { dir: String, root: String },
     /// A `gitApi` call of a `model::git` task.
     Git(model::git::TaskId),
+    /// A history read (`/git/log`, `/git/commit-detail`, `/git/commit-file-diff`).
+    History(crate::git_history::HistoryFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

@@ -34,6 +34,7 @@ pub fn changes_panel(s: &State, t: &'static Tokens, touch: bool) -> El {
         .grow(1.0)
         .min_h(0.0)
         .child(ui::base::scroll_area::scroll_area(t, "git-changes-scroll", body).grow(1.0).min_h(0.0))
+        .child(crate::git_history_view::history_section(s, t, &cwd))
 }
 
 /// The header's actions: the branch button and the stash menu.

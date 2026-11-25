@@ -32,6 +32,10 @@ mod composer_view;
 mod controls;
 mod git;
 mod git_diff;
+mod git_history;
+mod git_history_view;
+#[cfg(test)]
+mod git_history_tests;
 #[cfg(test)]
 mod git_tests;
 mod git_view;
@@ -143,6 +147,8 @@ pub struct State {
     pub terms: terminal::TerminalUi,
     /// The git cache and the Changes panel's own state.
     pub git: git::GitUi,
+    /// The git history reads and the History tab's own state.
+    pub history: git_history::HistoryUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -191,6 +197,7 @@ impl Default for State {
             composer: composer::ComposerUi::default(),
             terms: terminal::TerminalUi::default(),
             git: git::GitUi::default(),
+            history: git_history::HistoryUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -282,6 +289,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let (gave_up, next_arm) = state.expire_pending_arms(now);
     changed |= retried | waited | gave_up;
     let next_git = state.git_tick();
+    state.history_tick();
     let waits = [state.toasts.next_expiry(), next_retry, next_wait, next_arm, state.next_blink(), state.next_find_refresh(), next_git];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

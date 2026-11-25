@@ -11,6 +11,7 @@ log = "0.4"
 model = { path = "../model" }
 rune = { workspace = true, features = ["tooling"] }
 rune-kit = { workspace = true }
+serde = { version = "1", features = ["derive"] }
 serde_json = { workspace = true }
 theme = { path = "../theme" }
 troupe-protocol = { path = "../../../../crates/troupe-protocol" }
