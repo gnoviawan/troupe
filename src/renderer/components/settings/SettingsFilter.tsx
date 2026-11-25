@@ -50,7 +50,7 @@ export function SettingsFilter({
         <button
           type="button"
           onClick={() => onValueChange('')}
-          aria-label="Clear filter"
+          aria-label="Clear text"
           className={cn(
             QUIET_ICON_BUTTON_CLASS,
             'absolute right-1 top-1/2 flex size-6 -translate-y-1/2 pointer-coarse:right-0 pointer-coarse:size-11'

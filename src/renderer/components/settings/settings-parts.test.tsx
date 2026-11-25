@@ -64,7 +64,7 @@ describe('SettingsFilter', () => {
     const onValueChange = vi.fn()
     render(<SettingsFilter label="Filter shortcuts" value="zoom" onValueChange={onValueChange} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear text' }))
     expect(onValueChange).toHaveBeenCalledWith('')
   })
 })
