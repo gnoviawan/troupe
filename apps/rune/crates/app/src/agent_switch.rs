@@ -94,7 +94,7 @@ impl State {
                 self.close_agent_menu(host, tx);
                 log::info!("[composer] chat {session} stops its turn to switch to {config}");
                 self.acp_step(Event::CancelPrompt(session.clone()));
-                self.chat.pending_arm = Some((session, config));
+                self.chat.pending_arm.insert(session, config);
                 self.arm_when_turn_cleared();
             }
         }
@@ -113,12 +113,13 @@ impl State {
     /// Cancel-then-switch (`waitForTurnClear`, then arm): the arm goes once the cancelled turn
     /// is over; the model's own gate still refuses a chat something else keeps busy.
     pub(crate) fn arm_when_turn_cleared(&mut self) {
-        let Some((session, config)) = self.chat.pending_arm.clone() else { return };
-        if self.chat.acp.switch_gate(&session).turn_running {
-            return;
+        let ready: Vec<String> =
+            self.chat.pending_arm.keys().filter(|session| !self.chat.acp.switch_gate(session).turn_running).cloned().collect();
+        for session in ready {
+            if let Some(config) = self.chat.pending_arm.remove(&session) {
+                self.arm_switch(&session, &config);
+            }
         }
-        self.chat.pending_arm = None;
-        self.arm_switch(&session, &config);
     }
 
     /// A model picked while a switch is armed goes with the switch (`armModelPick`): the

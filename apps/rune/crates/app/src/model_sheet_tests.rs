@@ -109,3 +109,35 @@ fn the_providers_view_arms_a_switch_to_another_agent() {
     assert_eq!(sent(&rt.state, WsRequestType::SpawnAgent).len(), 1, "arming warms the target");
     assert!(present(&rt, "model-sheet-provider"), "back at the root, which names the armed agent");
 }
+
+#[test]
+fn a_mode_picked_while_a_switch_is_armed_goes_with_the_switch() {
+    let mut rt = phone_chat();
+    tap(&mut rt, "composer-chat-chat-1-agent");
+    tap(&mut rt, "model-sheet-provider");
+    tap(&mut rt, "model-sheet-agent-gemini");
+    tap(&mut rt, "model-sheet-mode");
+    tap(&mut rt, "model-sheet-mode-plan");
+    assert!(sent(&rt.state, WsRequestType::SetMode).is_empty(), "the chat's own agent keeps its mode");
+    let pending = &rt.state.chat.acp.sessions["chat-1"].rest["switching"]["pendingOptions"];
+    assert_eq!(pending["modeId"], "plan", "the switch carries the mode");
+}
+
+#[test]
+fn the_phone_chip_and_the_switch_cancel_take_a_44_point_tap() {
+    let mut rt = phone_chat();
+    tap(&mut rt, "composer-chat-chat-1-agent");
+    tap(&mut rt, "model-sheet-provider");
+    tap(&mut rt, "model-sheet-agent-gemini");
+    rt.update_if(|s, _| {
+        s.close_model_sheet();
+        true
+    });
+    rt.frame(0.5);
+    let size = |key: &str| {
+        let r = rt.elements().into_iter().find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap_or_else(|| panic!("no {key}")).rect;
+        (r[2].round(), r[3].round())
+    };
+    assert_eq!(size("composer-chat-chat-1-agent").1, 44.0, "the chip's tap height");
+    assert_eq!(size("composer-chat-chat-1-agent-switch-cancel"), (44.0, 44.0), "the cancel's tap area");
+}

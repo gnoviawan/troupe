@@ -393,5 +393,15 @@ export const reopenSwitchScenarios: Scenario[] = [
     },
     initial: live(),
     steps: [open('s2'), tick]
+  },
+  {
+    name: 'create_session_lookup_of_a_switched_chat_answers_once_the_continuation_opens',
+    context: {
+      payloads: { s1: S1, s2: payload('s2', 'claude') },
+      agentReplies: [{ sessionId: 's1', lookup: true }, {}],
+      projects: PROJECTS
+    },
+    initial: live(),
+    steps: [ev('createSession', AGENT, '/work', [], 'p1'), tick]
   }
 ]

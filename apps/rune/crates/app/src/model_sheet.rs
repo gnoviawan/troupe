@@ -27,7 +27,7 @@ impl State {
         self.overlays.open(MODEL_SHEET);
     }
 
-    fn close_model_sheet(&mut self) {
+    pub(crate) fn close_model_sheet(&mut self) {
         for key in [MODEL_MODES, MODEL_PROVIDERS, MODEL_SHEET] {
             self.close(key);
         }

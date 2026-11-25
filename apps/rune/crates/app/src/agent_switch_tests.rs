@@ -1,7 +1,7 @@
 use client::ws::{Command, Output};
 use rune::Runtime;
 use serde_json::{Value, json};
-use troupe_protocol::ws::WsRequestType;
+use troupe_protocol::ws::{WsError, WsRequestType};
 use ui::composer::agent_menu::SwitchAct;
 
 use crate::State;
@@ -129,6 +129,39 @@ fn a_busy_chat_holds_the_pick_until_the_turn_is_cancelled() {
 }
 
 #[test]
+fn two_chats_each_keep_their_own_cancel_then_switch() {
+    let mut rt = claude_chat();
+    rt.update_if(|s, _| {
+        let launch = crate::launch::Launch {
+            project_id: "p-a".into(),
+            config_id: "claude".into(),
+            cwd: "/work".into(),
+            send: ui::composer::Send::Text { text: String::new() },
+        };
+        s.install_launched_chat("chat-2", "agent-1", &launch);
+        true
+    });
+    let cancel_then_switch = |rt: &mut Runtime<State>, chat: &str| {
+        event(rt, json!({ "_onUserPrompt": [{ "agentId": "agent-1", "sessionId": chat, "turnId": format!("t-{chat}"), "blocks": [] }, 3] }));
+        rt.update_if(|s, tx| {
+            let host = Host::Chat(chat.into());
+            s.composer_switch(&host, SwitchAct::Agent("gemini".into()), tx);
+            s.composer_switch(&host, SwitchAct::CancelTurnAndSwitch, tx);
+            true
+        });
+        rt.frame(0.1);
+    };
+    cancel_then_switch(&mut rt, CHAT);
+    cancel_then_switch(&mut rt, "chat-2");
+    assert_eq!(calls(&rt.state, WsRequestType::CancelPrompt).len(), 2, "both turns are stopped");
+    for chat in [CHAT, "chat-2"] {
+        event(&mut rt, json!({ "_onPromptComplete": [{ "agentId": "agent-1", "sessionId": chat, "turnId": format!("t-{chat}"), "stopReason": "cancelled" }, 4] }));
+    }
+    assert_eq!(rt.state.armed_config(CHAT).as_deref(), Some("gemini"), "the first chat's switch still arms");
+    assert_eq!(rt.state.armed_config("chat-2").as_deref(), Some("gemini"));
+}
+
+#[test]
 fn wait_drops_the_held_pick() {
     let mut rt = claude_chat();
     event(&mut rt, json!({ "_onUserPrompt": [{ "agentId": "agent-1", "sessionId": CHAT, "turnId": "t1", "blocks": [] }, 3] }));
@@ -247,4 +280,21 @@ fn a_reopened_switched_chat_opens_its_continuation_with_the_whole_transcript() {
     let ids: Vec<&str> = rt.state.chat.acp.messages["new"].iter().map(|m| m.id.as_str()).collect();
     assert_eq!(ids, ["switch-splice:old:turn:old-1", "switch-splice:old:old-m2", "turn:new-1", "new-m2"]);
     assert!(rt.state.chat.loaded.contains("new"), "the continuation is followed live");
+}
+
+#[test]
+fn a_session_create_that_needs_sign_in_authenticates_the_target_agent() {
+    let mut rt = claude_chat();
+    act(&mut rt, SwitchAct::Agent("gemini".into()));
+    let methods = json!([{ "id": "oauth", "name": "Sign in", "type": "agent" }]);
+    answer(&mut rt, WsRequestType::SpawnAgent, json!({ "agentId": "agent-2", "capabilities": {}, "authMethods": methods }));
+    let (call, _) = calls(&rt.state, WsRequestType::CreateSession).pop().expect("the target's warm session");
+    rt.update_if(|s, _| {
+        let error = WsError { code: "agent_auth_required".into(), message: "Authentication required".into(), details: None };
+        s.apply(Output::Reply { call, result: Err(error) });
+        true
+    });
+    rt.frame(0.2);
+    let sent: Vec<Value> = calls(&rt.state, WsRequestType::AuthenticateAgent).into_iter().map(|(_, p)| p).collect();
+    assert_eq!(sent, [json!({ "agentId": "agent-2", "methodId": "oauth" })], "the model's sign-in goes to the host");
 }
