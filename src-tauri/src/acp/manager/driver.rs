@@ -729,7 +729,7 @@ pub(super) async fn drive_connection(
                 } = request;
                 let approved = perm_state
                     .lock()
-                    .auto_approval(session_id.0.as_ref(), &options);
+                    .auto_approval(session_id.0.as_ref(), &tool_call, &options);
                 if let Some(outcome) = approved {
                     log::info!(
                         "[acp] {perm_agent_id} sub-agent session {}: tool call {} allowed once by its profile",

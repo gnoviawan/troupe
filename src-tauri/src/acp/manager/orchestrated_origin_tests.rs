@@ -37,7 +37,7 @@ for line in sys.stdin:
         session = msg["params"]["sessionId"]
         send({"jsonrpc": "2.0", "id": perm_id, "method": "session/request_permission",
               "params": {"sessionId": session,
-                         "toolCall": {"toolCallId": "tc-1", "title": "run a tool"},
+                         "toolCall": {"toolCallId": "tc-1", "title": "run a tool", "kind": "execute"},
                          "options": [{"optionId": "allow", "name": "Allow",
                                       "kind": "allow_once"}]}})
         pending_prompt = rid

@@ -23,9 +23,12 @@
 //!
 //! An orchestrated child whose sub-agent profile allows every tool is
 //! answered here too: its requests get their allow-once option before they
-//! would reach the chat, and a request without one still goes to the chat.
+//! would reach the chat. A mode switch (Claude asks `ExitPlanMode` as a
+//! `switch_mode` request), a request whose kind the host never saw, and a
+//! request without an allow-once option still go to the chat, so the
+//! profile's mode holds.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 
 use agent_client_protocol::schema::v1::{
@@ -79,8 +82,9 @@ pub(crate) struct ToolDecision {
 pub(super) struct ToolPolicies {
     sessions: HashMap<String, SessionPolicy>,
     /// Orchestrated child sessions whose sub-agent profile allows every
-    /// tool, keyed by the child's own session id.
-    auto_approved: HashSet<String>,
+    /// tool, keyed by the child's own session id, with the kind each of
+    /// their tool calls reported.
+    auto_approved: HashMap<String, HashMap<String, ToolKind>>,
 }
 
 struct SessionPolicy {
@@ -111,18 +115,37 @@ impl ToolPolicies {
     }
 
     pub(super) fn auto_approve(&mut self, session_id: String) {
-        self.auto_approved.insert(session_id);
+        self.auto_approved.entry(session_id).or_default();
+    }
+
+    /// Record the kind an auto-approved session's tool call reported.
+    pub(super) fn note_auto_call(
+        &mut self,
+        session_id: &str,
+        tool_call_id: &str,
+        kind: Option<ToolKind>,
+    ) {
+        if let (Some(calls), Some(kind)) = (self.auto_approved.get_mut(session_id), kind) {
+            calls.insert(tool_call_id.to_string(), kind);
+        }
     }
 
     /// The allow-once answer to a permission request of an auto-approved
-    /// session. `None` when the session is not auto-approved or the request
-    /// offers no allow-once option, so it goes to the user as usual.
+    /// session. `None` when the session is not auto-approved, the request is
+    /// a mode switch or of a kind the host never saw, or it offers no
+    /// allow-once option: it then goes to the user as usual.
     pub(super) fn auto_approval(
         &self,
         session_id: &str,
+        tool_call: &ToolCallUpdate,
         options: &[PermissionOption],
     ) -> Option<RequestPermissionOutcome> {
-        if !self.auto_approved.contains(session_id) {
+        let calls = self.auto_approved.get(session_id)?;
+        let kind = tool_call
+            .fields
+            .kind
+            .or_else(|| calls.get(tool_call.tool_call_id.0.as_ref()).copied())?;
+        if kind == ToolKind::SwitchMode {
             return None;
         }
         let allow_once = options

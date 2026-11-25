@@ -31,7 +31,8 @@ pub enum SubagentApprovals {
     #[default]
     Ask,
     /// The host picks the request's allow-once option itself, never an
-    /// allow-always one. A request without one still goes to the chat.
+    /// allow-always one. A mode switch, a request of a kind the host never
+    /// saw, and a request without an allow-once option still go to the chat.
     AllowAll,
 }
 

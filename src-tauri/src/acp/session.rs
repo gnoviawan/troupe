@@ -567,9 +567,11 @@ impl DriverState {
     pub(crate) fn auto_approval(
         &self,
         session_id: &str,
+        tool_call: &agent_client_protocol::schema::v1::ToolCallUpdate,
         options: &[agent_client_protocol::schema::v1::PermissionOption],
     ) -> Option<agent_client_protocol::schema::v1::RequestPermissionOutcome> {
-        self.tool_policies.auto_approval(session_id, options)
+        self.tool_policies
+            .auto_approval(session_id, tool_call, options)
     }
 
     /// Remember a tool call's kind and paths for a later permission request
@@ -581,6 +583,8 @@ impl DriverState {
         kind: Option<agent_client_protocol::schema::v1::ToolKind>,
         paths: Option<Vec<PathBuf>>,
     ) {
+        self.tool_policies
+            .note_auto_call(session_id, tool_call_id, kind);
         let root = self.subagents.root_of(session_id).to_string();
         self.tool_policies
             .note_call(&root, tool_call_id, kind, paths);

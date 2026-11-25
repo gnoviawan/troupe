@@ -95,7 +95,7 @@ for line in sys.stdin:
             asking = rid
             send({"jsonrpc": "2.0", "id": 900, "method": "session/request_permission",
                   "params": {"sessionId": "child-1",
-                             "toolCall": {"toolCallId": "tc-1", "title": "edit a file"},
+                             "toolCall": {"toolCallId": "tc-1", "title": "edit a file", "kind": "edit"},
                              "options": [
                                  {"optionId": "always", "name": "Always", "kind": "allow_always"},
                                  {"optionId": "once", "name": "Once", "kind": "allow_once"},
