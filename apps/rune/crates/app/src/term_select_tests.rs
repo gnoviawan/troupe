@@ -6,6 +6,7 @@ use troupe_term::text::Point;
 
 use super::{Find, Held, marks};
 use crate::terminal::TermView;
+use crate::tests::present;
 
 fn palette() -> ui::terminal::Palette {
     ui::terminal::Palette::new(theme::tokens("troupe", true))
@@ -116,4 +117,36 @@ fn a_click_on_a_url_asks_before_opening_it() {
     rt.pointer_up(x, y);
     rt.frame(0.064);
     assert_eq!(rt.state.chat.link_confirm.as_deref(), Some("https://example.com/a"));
+}
+
+#[test]
+fn terminal_search_opens_a_find_bar_that_counts_and_escape_closes() {
+    let mut rt = shown(b"needle one\r\ntwo needle\r\nneedle three");
+    let (cx, cy) = rt.find("terminal-pty-1").expect("the terminal screen");
+    rt.pointer_down(cx, cy);
+    rt.pointer_up(cx, cy);
+    rt.frame(0.048);
+    rt.update_if(|s, tx| {
+        s.fire("terminalSearch", tx);
+        true
+    });
+    rt.frame(0.064);
+    assert!(present(&rt, "terminal-find-bar-pty-1"), "the find bar opened");
+    for c in "needle".chars() {
+        rt.key(rune::KeyEvent { key: rune::Key::Text(c.to_string()), mods: rune::Mods::default() });
+    }
+    rt.frame(0.08);
+    // The app's poll reads the matches; this runtime has no poll.
+    rt.update_if(|s, _| s.pump_terminals(0.1));
+    rt.frame(0.1);
+    let find = rt.state.terms.views["pty-1"].find.clone().expect("open");
+    assert_eq!((find.matches.len(), find.count()), (3, "1 of 3".to_owned()), "the first match in view is active");
+    // The field's first Escape blurs it; the app's key handler (not in this runtime) takes the
+    // next one.
+    let escape = rune::KeyEvent { key: rune::Key::Escape, mods: rune::Mods::default() };
+    rt.key(escape.clone());
+    rt.frame(0.12);
+    rt.update_if(move |s, tx| crate::keys::on_key(s, &escape, tx));
+    rt.frame(0.14);
+    assert!(rt.state.terms.views["pty-1"].find.is_none(), "Escape closed the find bar");
 }

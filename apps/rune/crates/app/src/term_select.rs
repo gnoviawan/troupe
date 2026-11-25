@@ -162,6 +162,17 @@ impl State {
         true
     }
 
+    /// Escape outside the terminal (in its find field): close the find bar of the terminal
+    /// that had focus last. A focused terminal sends its own Escape to the program.
+    pub(crate) fn close_focused_find(&mut self, tx: &mut Tx) -> bool {
+        let Some(id) = self.terms.focused.clone() else { return false };
+        if self.terms.views.get(&id).is_none_or(|v| v.find.is_none()) {
+            return false;
+        }
+        self.close_terminal_find(&id, tx);
+        true
+    }
+
     pub(crate) fn close_terminal_find(&mut self, id: &str, tx: &mut Tx) {
         if let Some(view) = self.terms.views.get_mut(id) {
             view.find = None;
@@ -195,6 +206,7 @@ impl State {
     pub(crate) fn refresh_terminal_finds(&mut self, changed: &[String]) -> bool {
         let mut redraw = false;
         for (id, view) in &mut self.terms.views {
+            let scrolled = view.scrolled;
             let Some(find) = &mut view.find else { continue };
             if changed.contains(id) {
                 find.stale = true;
@@ -216,9 +228,11 @@ impl State {
                 Ok(re) => {
                     find.matches = find_all(term.lines(), &re);
                     find.error = None;
+                    // A new query lands on the first match from the top of the view, as
+                    // `findNext` starts from the viewport.
                     if new_query || find.active.is_some_and(|i| i >= find.matches.len()) {
-                        let from = Point::new(term.screen_start() + term.cursor().row, 0);
-                        find.active = previous_before(&find.matches, from);
+                        let view_top = term.screen_start().saturating_sub(scrolled);
+                        find.active = next_after(&find.matches, Point::new(view_top, 0));
                     }
                 }
                 Err(e) => (find.matches, find.active, find.error) = (Vec::new(), None, Some(e)),

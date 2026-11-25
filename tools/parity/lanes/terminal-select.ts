@@ -71,7 +71,8 @@ async function run(client: Client): Promise<Result> {
   }
   console.log(`${client.name}: cells start at ${origin.x},${origin.y}`)
   await page.mouse.click(origin.x + 200, origin.y + 200)
-  await page.keyboard.type(`clear; bash ${SCREEN}`, { delay: 5 })
+  await page.waitForTimeout(1500)
+  await page.keyboard.type(`clear; bash ${SCREEN}`, { delay: 20 })
   await page.keyboard.press('Enter')
   await page.waitForTimeout(2500)
   await page.evaluate(() => navigator.clipboard.writeText('empty'))
@@ -86,10 +87,7 @@ async function run(client: Client): Promise<Result> {
   await page.waitForTimeout(500)
   const clipboard = await page.evaluate(() => navigator.clipboard.readText())
   ok =
-    check(
-      clipboard.startsWith('word word') && clipboard.endsWith('\nneedle'),
-      `copied ${JSON.stringify(clipboard)}`
-    ) && ok
+    check(/word word[^\n]*\nneedle$/.test(clipboard), `copied ${JSON.stringify(clipboard)}`) && ok
   await shot(client, options.root, '1-selection')
   await page.mouse.click(cell(20, 10).x, cell(20, 10).y)
   if (client.name === 'rune') {
@@ -143,6 +141,10 @@ try {
   if (values.only !== 'rune') results.push(['react', await inReact(browser, world, options, run)])
   if (values.only !== 'react') results.push(['rune', await inRune(browser, world, options, run)])
   for (const [name, r] of results) console.log(`${name}: ${r.ok ? 'PASS' : 'FAIL'}`)
+  if (results.length === 2)
+    console.log(
+      `clipboards ${results[0][1].clipboard === results[1][1].clipboard ? 'equal' : 'DIFFER'}`
+    )
   await Bun.write(
     path.join(options.root, `results-${values.only ?? 'both'}.json`),
     JSON.stringify(results, null, 2)

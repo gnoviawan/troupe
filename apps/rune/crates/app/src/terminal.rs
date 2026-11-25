@@ -111,7 +111,7 @@ impl State {
         if self.terms.metrics.is_none() && self.terms.host.is_some() {
             self.terms.metrics = Some(Metrics::new(ui::terminal::FONT_SIZE, ui::terminal::LINE_HEIGHT));
         }
-        let Some(host) = &mut self.terms.host else { return false };
+        let Some(host) = &mut self.terms.host else { return self.refresh_terminal_finds(&[]) };
         let events = host.drain(now);
         let mut changed = false;
         let mut redrawn = Vec::new();

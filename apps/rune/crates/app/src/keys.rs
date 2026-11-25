@@ -111,6 +111,9 @@ pub fn on_key(s: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
     if matches!(key.key, Key::Escape) && s.close_top() {
         return true;
     }
+    if matches!(key.key, Key::Escape) && s.close_focused_find(tx) {
+        return true;
+    }
     if s.question_key(key) {
         return true;
     }
