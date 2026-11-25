@@ -70,6 +70,10 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
     let answer = |option: Option<String>| {
         let request = p.request_id.clone();
         move |s: &mut S| {
+            // `respond(requestId, optionId)` never runs for an option without an id.
+            if option.as_deref() == Some("") {
+                return;
+            }
             (lenses.step)(s, Event::RespondPermission(request.clone(), option.clone()));
         }
     };
@@ -194,6 +198,8 @@ pub fn permission_prompt<S: 'static>(t: &'static Tokens, p: &PendingPermission, 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Picks {
     picked: std::collections::BTreeMap<String, Vec<String>>,
+    /// The typed answer of a question that allows one (`allowFreeText`).
+    other: std::collections::BTreeMap<String, rune::TextEdit>,
 }
 
 impl Picks {
@@ -215,6 +221,28 @@ impl Picks {
 
     pub fn forget(&mut self, question_id: &str) {
         self.picked.remove(question_id);
+        self.other.remove(question_id);
+    }
+
+    pub fn other_of(&self, question_id: &str) -> Option<&rune::TextEdit> {
+        self.other.get(question_id)
+    }
+
+    /// The question's typed answer.
+    pub fn other(&mut self, question_id: &str) -> &mut rune::TextEdit {
+        self.other.entry(question_id.to_owned()).or_default()
+    }
+
+    /// `sendAnswer`: the picks, then the typed answer; on a single-choice question typing
+    /// replaces the pick.
+    pub fn answer(&self, question_id: &str, multi: bool) -> Vec<String> {
+        let typed = self.other.get(question_id).map_or("", |e| e.text.trim());
+        let picked = self.of(question_id).to_vec();
+        match (typed.is_empty(), multi) {
+            (true, _) => picked,
+            (false, true) => picked.into_iter().chain([typed.to_owned()]).collect(),
+            (false, false) => vec![typed.to_owned()],
+        }
     }
 }
 
@@ -280,7 +308,7 @@ fn row_key(t: &Tokens, n: usize, active: bool) -> El {
 /// `AskUserQuestion`: the composer turned into the question. "Agent question" and `×` (cancel)
 /// on top, the question, a numbered row per option with its radio or check, and the footer
 /// with the key hints and Submit, which waits for a pick.
-pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked: &[String], phone: bool, lenses: Lenses<S>) -> El {
+pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked: &[String], other: Option<&rune::TextEdit>, phone: bool, lenses: Lenses<S>) -> El {
     let c = &t.colors;
     let options = question_options(q);
     let multi = question_is_multi(q);
@@ -382,7 +410,46 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
         r = if on { r.fill(c.primary.alpha(0.07)).border(1.0, c.primary.alpha(0.3)) } else { r.hover(c.foreground.alpha(0.03)) };
         r
     });
-    let body = if options.is_empty() {
+    let free = q.allow_free_text == Some(true);
+    let typed = if free { other.map_or("", |e| e.text.as_str()).trim().to_owned() } else { String::new() };
+    let rows: Vec<El> = rows.collect();
+    let rows = if free {
+        let (qid, sent) = (qid.clone(), qid.clone());
+        let empty = rune::TextEdit::new("");
+        let field = rune::text_input(other.unwrap_or(&empty), sans(14.0, 400.0, 20.0))
+            .key(format!("question-other-{qid}"))
+            .label("Your own answer")
+            .placeholder("Something else? Type your own answer", c.muted_foreground.alpha(0.7))
+            .color(c.foreground)
+            .single_line()
+            .grow(1.0)
+            .min_w(0.0)
+            .on_edit(move |s: &mut S| (lenses.reader_mut)(s).picks.other(&qid))
+            .on_submit(move |s: &mut S, _tx: &mut rune::Tx| {
+                let values = (lenses.reader_mut)(s).picks.answer(&sent, multi);
+                if values.is_empty() {
+                    return;
+                }
+                (lenses.reader_mut)(s).picks.forget(&sent);
+                (lenses.step)(s, Event::AnswerQuestion(sent.clone(), values));
+            });
+        let other_row = row()
+            .w_full()
+            .min_h(if phone { 44.0 } else { 36.0 })
+            .gap(12.0)
+            .py(8.0)
+            .pl(10.0)
+            .pr(12.0)
+            .items_center()
+            .radius(8.0)
+            .child(row_key(t, options.len() + 1, !typed.is_empty()))
+            .child(icon(&i::EDIT, 13.0).color(c.muted_foreground.alpha(if typed.is_empty() { 0.7 } else { 1.0 })))
+            .child(field);
+        rows.into_iter().chain([other_row]).collect()
+    } else {
+        rows
+    };
+    let body = if options.is_empty() && !free {
         col().w_full().child(
             text("The agent provided no options.").font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).px(20.0).pb(12.0),
         )
@@ -390,12 +457,28 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
         // `QUESTION_PANEL_MAX_H`: the rows scroll, the header and the footer stay.
         col().w_full().max_h(380.0).scroll(rune::ScrollSpec { stick_bottom: false }).child(col().w_full().gap(2.0).px(8.0).py(6.0).children(rows))
     };
-    let mut card = col().key(format!("question-{qid}")).role("dialog").label(heading).w_full().child(header).child(prompt).child(body);
-    if !options.is_empty() {
-        let can_submit = !picked.is_empty();
+    let escape = qid.clone();
+    let mut card = col()
+        .key(format!("question-{qid}"))
+        .role("dialog")
+        .label(heading)
+        .w_full()
+        // `QuestionStepper`'s Escape closes the question only while focus is inside it.
+        .on_key(move |s: &mut S, key: &rune::KeyEvent, _tx: &mut rune::Tx| {
+            if !matches!(key.key, rune::Key::Escape) {
+                return false;
+            }
+            (lenses.reader_mut)(s).picks.forget(&escape);
+            (lenses.step)(s, Event::AnswerQuestion(escape.clone(), Vec::new()));
+            true
+        })
+        .child(header)
+        .child(prompt)
+        .child(body);
+    if !options.is_empty() || free {
+        let can_submit = !picked.is_empty() || !typed.is_empty();
         let submit = {
             let qid = qid.clone();
-            let values = picked.to_vec();
             Button::new("Submit")
                 .size(ButtonSize::Sm)
                 .disabled(!can_submit)
@@ -417,11 +500,12 @@ pub fn question_card<S: 'static>(t: &'static Tokens, q: &PendingQuestion, picked
                         .a11y_hidden()
                 })
                 .on_press(move |s: &mut S| {
+                    let values = (lenses.reader_mut)(s).picks.answer(&qid, multi);
                     if values.is_empty() {
                         return;
                     }
                     (lenses.reader_mut)(s).picks.forget(&qid);
-                    (lenses.step)(s, Event::AnswerQuestion(qid.clone(), values.clone()));
+                    (lenses.step)(s, Event::AnswerQuestion(qid.clone(), values));
                 })
         };
         let count = options.len();

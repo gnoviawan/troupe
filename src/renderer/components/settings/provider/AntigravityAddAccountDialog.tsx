@@ -17,6 +17,7 @@ interface AntigravityAddAccountDialogProps {
   /** Names already in use, so suggestions skip them. */
   existingNames: string[]
   defaultAccountName: string | null
+  hasSignedInAccount: boolean
   /** Latest usage reads, to summarise the new Account when it is ready. */
   usage: Record<string, AntigravityAccountUsage>
   /** Called after the Account list changed (created, signed in, default). */
@@ -35,7 +36,7 @@ export function AntigravityAddAccountDialog({
   ...props
 }: AntigravityAddAccountDialogProps): React.JSX.Element {
   const provider: AddAccountProvider<AntigravityAccountView> = {
-    name: 'Antigravity',
+    id: 'antigravity',
     create: async (name) => {
       const created = await antigravityAccountsApi.add(name)
       return { id: created.id, name: created.name, builtin: false, signedIn: false }

@@ -15,6 +15,8 @@
 mod answers;
 #[cfg(test)]
 mod answers_tests;
+#[cfg(test)]
+mod cards_tests;
 mod chat;
 mod chat_images;
 mod chat_view;

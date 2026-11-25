@@ -7,6 +7,8 @@ use model::workspace::Tab;
 use rune::{El, col, row, text};
 use theme::Tokens;
 use ui::chat::{Lenses, Reader};
+use ui::overlay::dialog::{Dialog, DialogKind};
+use ui::{Button, ButtonSize, ButtonVariant};
 use ui::markdown::{Hooks, LinkTarget, TABLE_ZOOM};
 use ui::type_::sans;
 
@@ -19,6 +21,7 @@ pub(crate) fn lenses() -> Lenses<State> {
         reader_mut: |s: &mut State| -> &mut Reader { &mut s.chat.reader },
         step: |s: &mut State, e| s.acp_step(e),
         stop_subagent: |s: &mut State, session, id| s.stop_subagent(session, id),
+        open_file: |s: &mut State, path| s.open_file_link(&path),
     }
 }
 
@@ -55,12 +58,22 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, place: ui::composer::v
             text("Loading chat…").font(sans(13.0, 400.0, 20.0)).color(c.muted_foreground),
         )
     };
-    let composer = match pending_question(s, session_id) {
-        Some(q) => question_dock(s, t, q, place),
-        None => crate::composer_view::chat_dock(s, t, session_id, place),
+    let elicitation = s.chat.acp.pending_elicitations.values().find(|e| e.session_id == *session_id);
+    let composer = match (elicitation, pending_question(s, session_id)) {
+        (Some(e), _) => elicitation_dock(s, t, e, place),
+        (None, Some(q)) => question_dock(s, t, q, place),
+        (None, None) => crate::composer_view::chat_dock(s, t, session_id, place),
     };
-    let chat = col().w_full().grow(1.0).min_h(0.0).child(body).child(composer);
     let phone = place == ui::composer::view::Place::Phone;
+    let mut chat = col().w_full().grow(1.0).min_h(0.0);
+    if let Some(plan) = plan_panel(s, t, session_id, phone) {
+        chat = chat.child(plan);
+    }
+    chat = chat.child(body);
+    if let Some(consent) = consent_card(s, t, session_id, phone) {
+        chat = chat.child(consent);
+    }
+    let chat = chat.child(composer);
     let frame = row().key(format!("tab-body-{}", tab.id())).w_full().grow(1.0).min_h(0.0);
     Some(match subagent_panel(s, t, session_id) {
         Some(panel) if phone => frame.child(panel.w_full()),
@@ -82,7 +95,7 @@ fn subagent_panel(s: &State, t: &'static Tokens, session_id: &str) -> Option<El>
     let status = ui::chat::subagents::status(tool, turn_active);
     let stopping = status == ui::chat::subagents::Status::Running
         && ui::chat::subagents::subagent_id(tool).is_some_and(|id| s.chat.reader.is_stopping(&id));
-    let agent = s.agent_label(&crate::composer::Host::Chat(session_id.to_owned()));
+    let agent = s.shown_agent_name(&crate::composer::Host::Chat(session_id.to_owned()));
     let spec = ui::chat::subagents::PanelSpec {
         session: session_id,
         tool,
@@ -93,6 +106,74 @@ fn subagent_panel(s: &State, t: &'static Tokens, session_id: &str) -> Option<El>
         agent_name: agent.as_deref().unwrap_or("The agent"),
     };
     Some(ui::chat::subagents::panel(t, spec, lenses()))
+}
+
+/// `PlanPanel` over the transcript, when the agent shared a plan.
+fn plan_panel(s: &State, t: &'static Tokens, session_id: &str, phone: bool) -> Option<El> {
+    let entries = s.chat.acp.plans.get(session_id).filter(|e| !e.is_empty())?;
+    let reader = &s.chat.reader;
+    let collapsed = reader.plan_collapsed(session_id, ui::chat::plan::is_settled(entries), phone);
+    let opened = |n: usize| reader.is_plan_entry_open(session_id, n);
+    Some(ui::chat::plan::panel(t, session_id, entries, collapsed, &opened, phone, lenses()))
+}
+
+/// `ChatErrorNotice` for the chat's last error, unless the reader dismissed it.
+pub(crate) fn error_notice(s: &State, t: &'static Tokens, session_id: &str) -> Option<El> {
+    let session = s.chat.acp.sessions.get(session_id)?;
+    let raw = session.last_error.clone().flatten().filter(|e| !e.is_empty())?;
+    if s.chat.reader.dismissed_error.get(session_id) == Some(&raw) {
+        return None;
+    }
+    let closed = session.status == model::acp::types::SessionStatus::Closed;
+    let busy = session.turn_busy();
+    let retry = (!busy && !closed && session.status != model::acp::types::SessionStatus::Error && s.last_user_blocks(session_id).is_some()).then_some("Retry");
+    let (details, retried, dismissed) = (session_id.to_owned(), session_id.to_owned(), session_id.to_owned());
+    let error = raw.clone();
+    let spec = ui::chat::notice::Spec {
+        key: format!("chat-error-{session_id}"),
+        title: if closed { "This chat stopped." } else { "The last turn did not finish." },
+        message: ui::chat::notice::format_agent_error(&raw),
+        code: session.last_error_code.flatten(),
+        data: session.last_error_data.as_ref().and_then(Option::as_ref),
+        details_open: s.chat.reader.error_details.contains(session_id),
+        retry,
+    };
+    let actions = ui::chat::notice::Actions {
+        details: Box::new(move |s: &mut State| {
+            let open = &mut s.chat.reader.error_details;
+            if !open.remove(&details) {
+                open.insert(details.clone());
+            }
+        }),
+        retry: Box::new(move |s: &mut State| s.retry_last_turn(&retried)),
+        dismiss: Box::new(move |s: &mut State| {
+            s.chat.reader.dismissed_error.insert(dismissed.clone(), error.clone());
+        }),
+    };
+    Some(ui::chat::notice::error_notice(t, spec, actions))
+}
+
+impl State {
+    /// The last user message's blocks, when one has something to send again
+    /// (`canRetryLastUserTurn`) and no composer token (whose wire form the composer rebuilds).
+    fn last_user_blocks(&self, session_id: &str) -> Option<Vec<serde_json::Value>> {
+        let messages = self.chat.acp.messages.get(session_id)?;
+        let last = messages.iter().rev().find(|m| m.role == model::acp::types::Role::User)?;
+        let text = |b: &serde_json::Value| b.get("text").and_then(serde_json::Value::as_str).unwrap_or("").to_owned();
+        let sendable = last.blocks.iter().any(|b| b.get("type").and_then(serde_json::Value::as_str) != Some("text") || !text(b).trim().is_empty());
+        let tokens = last.blocks.iter().any(|b| text(b).contains(|c: char| ('\u{E000}'..='\u{E00F}').contains(&c)));
+        (sendable && !tokens).then(|| last.blocks.clone())
+    }
+
+    /// The notice's Retry for a live chat: send the last user turn again.
+    pub(crate) fn retry_last_turn(&mut self, session_id: &str) {
+        let Some(blocks) = self.last_user_blocks(session_id) else { return };
+        if let Some(error) = self.chat.acp.sessions.get(session_id).and_then(|s| s.last_error.clone().flatten()) {
+            self.chat.reader.dismissed_error.insert(session_id.to_owned(), error);
+        }
+        log::info!("[chat] retry the last turn of {session_id}");
+        self.acp_step(model::acp::Event::SendPromptBlocks(session_id.to_owned(), blocks.clone(), Some(model::acp::prompt::SendOptions { display_blocks: Some(blocks) })));
+    }
 }
 
 /// The oldest question waiting in the chat (`pendingQuestion`).
@@ -116,8 +197,47 @@ fn question_dock(s: &State, t: &'static Tokens, q: &model::acp::approvals::Pendi
             col()
                 .w_full()
                 .max_w(ui::chat::COLUMN_MAX_W)
-                .child(ui::chat::approvals::question_card(t, q, picked, phone, lenses())),
+                .child(ui::chat::approvals::question_card(t, q, picked, s.chat.reader.picks.other_of(&q.question_id), phone, lenses())),
         )
+}
+
+/// `BrowserConsentCard` over the composer while a host ticket for this chat waits (the web
+/// client has no browser pane, so the card always hosts it).
+fn consent_card(s: &State, t: &'static Tokens, session_id: &str, phone: bool) -> Option<El> {
+    let closed = s.chat.acp.sessions.get(session_id).is_none_or(|x| x.status == model::acp::types::SessionStatus::Closed);
+    let ticket = s.chat.acp.pending_browser_consents.values().find(|v| v.get("sessionId").and_then(serde_json::Value::as_str) == Some(session_id)).filter(|_| !closed)?;
+    let agent = s.shown_agent_name(&crate::composer::Host::Chat(session_id.to_owned()));
+    let card = ui::chat::consent::card(t, ticket, agent.as_deref().unwrap_or("The agent"), phone, |s: &mut State, request, option| s.respond_browser_consent(request, option));
+    Some(
+        col()
+            .key(format!("browser-consent-dock-{session_id}"))
+            .w_full()
+            .items_center()
+            .px(if phone { 16.0 } else { 20.0 })
+            .pt(12.0)
+            .pb(8.0)
+            .child(col().w_full().max_w(ui::chat::COLUMN_MAX_W).child(card)),
+    )
+}
+
+/// The chat's dock while an elicitation waits: the composer turned into the agent's form.
+fn elicitation_dock(s: &State, t: &'static Tokens, e: &model::acp::approvals::PendingElicitation, place: ui::composer::view::Place) -> El {
+    let phone = place == ui::composer::view::Place::Phone;
+    let empty = ui::chat::elicitation::Form::default();
+    let form = s.chat.reader.form_of(&e.request_id).unwrap_or(&empty);
+    let hooks = ui::chat::elicitation::Hooks {
+        toast: |s: &mut State, why: &str| s.toast_error(why, ""),
+        request_link: |s: &mut State, url: &str| s.request_link_open(url),
+        form: |s: &mut State, id: &str| s.chat.reader.form(id),
+    };
+    col()
+        .key(format!("elicitation-dock-{}", e.session_id))
+        .w_full()
+        .items_center()
+        .px(if phone { 16.0 } else { 20.0 })
+        .pt(12.0)
+        .pb(24.0)
+        .child(col().w_full().max_w(ui::chat::COLUMN_MAX_W).child(ui::chat::elicitation::prompt(t, e, form, phone, lenses(), hooks)))
 }
 
 /// A chat tab's label: the chat's title as the rail lists it.
@@ -128,8 +248,67 @@ pub fn tab_title(s: &State, tab: &Tab) -> Option<String> {
     s.chats.get(session_id).map(|chat| chat.label().to_owned())
 }
 
-/// The full-window table, when one is open.
+/// `ExternalLinkConfirm`: "Open external link?" with the full URL; only Open opens it, and
+/// Cancel, Escape and a press outside open nothing.
+fn link_confirm(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
+    let Some(url) = s.chat.link_confirm.clone() else { return };
+    let c = &t.colors;
+    let cancel = Button::new("Cancel")
+        .variant(ButtonVariant::Outline)
+        .size(ButtonSize::Sm)
+        .build(t)
+        .key("link-confirm-cancel")
+        .autofocus()
+        .on_press(|s: &mut State| s.settle_link(false, None));
+    let open = Button::new("Open")
+        .size(ButtonSize::Sm)
+        .build(t)
+        .key("link-confirm-open")
+        .on_press_tx(|s: &mut State, tx: &mut rune::Tx| s.settle_link(true, Some(tx)));
+    let address = col()
+        .key("link-confirm-url")
+        .w_full()
+        .max_h(160.0)
+        .scroll(rune::ScrollSpec { stick_bottom: false })
+        .child(text(url).font(ui::type_::mono(12.0, 400.0, 16.0)).color(c.muted_foreground).wrap_anywhere());
+    Dialog::new("link-confirm", "Open external link?")
+        .kind(DialogKind::Alert)
+        .child(address)
+        .footer(cancel)
+        .footer(open)
+        .open(true)
+        .on_close(|s: &mut State| s.settle_link(false, None))
+        .build(t, layer);
+}
+
+impl State {
+    /// `requestExternalLinkOpen`: ask before opening `url`; a second request while one waits,
+    /// or an empty link, asks nothing.
+    pub(crate) fn request_link_open(&mut self, url: &str) {
+        if url.is_empty() || self.chat.link_confirm.is_some() {
+            return;
+        }
+        log::info!("[chat] asking before opening an external link");
+        self.chat.link_confirm = Some(url.to_owned());
+    }
+
+    /// The user's answer: Open hands the link to the system browser once; anything else drops it.
+    fn settle_link(&mut self, open: bool, tx: Option<&mut rune::Tx>) {
+        let Some(url) = self.chat.link_confirm.take() else { return };
+        let (true, Some(tx)) = (open, tx) else {
+            log::info!("[chat] external link not opened");
+            return;
+        };
+        log::info!("[chat] opening an external link the user confirmed");
+        if let Err(e) = tx.open_url(&url) {
+            log::warn!("[chat] could not open the confirmed link: {e}");
+        }
+    }
+}
+
+/// The full-window table, when one is open, and the external link confirm.
 pub fn layer(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
+    link_confirm(s, t, layer);
     let open = s.overlays.is_open(TABLE_ZOOM);
     let Some(table) = s.chat.zoomed_table.as_deref().filter(|_| open) else {
         return;

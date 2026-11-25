@@ -237,8 +237,7 @@ wire_enum! {
         // Accounts with `AntigravityAccountsSnapshot` and `AntigravityAccountUsage`
         // (one `model` window per quota bucket). `list` → the snapshot.
         ListAntigravityAccounts = "list_antigravity_accounts",
-        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`. Cached 5 min on
-        // the host. A forced read still reuses one younger than 60 s.
+        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`.
         ListAntigravityUsage = "list_antigravity_usage",
         SetDefaultAntigravityAccount = "set_default_antigravity_account",
         SetProjectAntigravityAccount = "set_project_antigravity_account",

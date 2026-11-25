@@ -64,7 +64,8 @@ export function AccountNameStep({
   error,
   busy,
   onSubmit,
-  onCancel
+  onCancel,
+  children
 }: {
   /** "Claude", "Codex" or "Antigravity". */
   provider: string
@@ -76,6 +77,7 @@ export function AccountNameStep({
   busy: boolean
   onSubmit: () => void
   onCancel: () => void
+  children?: React.ReactNode
 }): React.JSX.Element {
   const inputId = useId()
   const suggestions = NAME_SUGGESTIONS.filter(
@@ -127,6 +129,7 @@ export function AccountNameStep({
         )}
         {error && <p className="text-xs text-destructive">{error}</p>}
       </form>
+      {children}
       <DialogFooter>
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>
           Cancel

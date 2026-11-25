@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicI64, Ordering};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -9,10 +8,7 @@ use serde_json::{json, Value};
 
 use super::supervisor::Supervisor;
 use super::{switch_notice, AntigravityLimitHandle, ANTIGRAVITY_CONFIG_ID};
-use crate::acp::antigravity_accounts::usage::ProbeVerdict;
-use crate::acp::antigravity_agent::{
-    AntigravityAgentService, AntigravitySignInCheck, AntigravityUsageProbe,
-};
+use crate::acp::antigravity_agent::{AntigravityAgentService, AntigravitySignInCheck};
 use crate::acp::config::{AgentConfig, AgentId, SessionId};
 use crate::acp::manager::real_loop_tests::{find_python, MOCK_AGENT, SKIP_ENV, TIMEOUT_TEST_LOCK};
 use crate::acp::manager::SessionCreationContext;
@@ -24,44 +20,7 @@ use crate::web::WsRelaySink;
 const PROJECT: &str = "proj-1";
 const WAIT: Duration = Duration::from_secs(45);
 const SCHEDULE_FILE: &str = "antigravity-limit-resumes.json";
-
-struct FixedUsage {
-    by_id: HashMap<String, f64>,
-    resets_at: Arc<AtomicI64>,
-}
-
-#[async_trait::async_trait]
-impl AntigravityUsageProbe for FixedUsage {
-    async fn probe(&self, antigravity_home: &Path, _builtin: bool) -> ProbeVerdict {
-        let key = antigravity_home
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("default");
-        let percent = self
-            .by_id
-            .get(key)
-            .or_else(|| self.by_id.get("default"))
-            .copied()
-            .unwrap_or(0.0);
-        let reset = chrono::DateTime::from_timestamp(self.resets_at.load(Ordering::Relaxed), 0)
-            .map(|at| at.to_rfc3339())
-            .unwrap_or_default();
-        ProbeVerdict::Models {
-            plan_type: None,
-            reply: json!({
-                "models": {
-                    "gemini-3-pro": {
-                        "displayName": "Gemini 3 Pro",
-                        "quotaInfo": {
-                            "remainingFraction": 1.0 - percent / 100.0,
-                            "resetTime": reset
-                        }
-                    }
-                }
-            }),
-        }
-    }
-}
+const SIGNED_OUT: &[&str] = &["default"];
 
 struct Host {
     dir: tempfile::TempDir,
@@ -69,39 +28,27 @@ struct Host {
     relay: Arc<WsRelaySink>,
     persistence: Arc<SessionPersistence>,
     accounts: HashMap<&'static str, String>,
-    resets_at: Arc<AtomicI64>,
     _serial: tokio::sync::MutexGuard<'static, ()>,
 }
 
 impl Host {
-    async fn start(
-        usage: &[(&'static str, f64)],
-        project_account: &str,
-        resets_at: i64,
-    ) -> Option<Self> {
-        Self::start_ready(usage, project_account, resets_at, None).await
+    async fn start(names: &[&'static str], project_account: &str) -> Option<Self> {
+        Self::start_ready(names, project_account, None).await
     }
 
     /// Load a resume that was already on disk, the way a host restart does.
     async fn start_with_saved_resume(
-        usage: &[(&'static str, f64)],
+        names: &[&'static str],
         project_account: &str,
         session_id: &str,
         in_secs: i64,
     ) -> Option<Self> {
-        Self::start_ready(
-            usage,
-            project_account,
-            now_secs() + 3600,
-            Some((session_id, in_secs)),
-        )
-        .await
+        Self::start_ready(names, project_account, Some((session_id, in_secs))).await
     }
 
     async fn start_ready(
-        usage: &[(&'static str, f64)],
+        names: &[&'static str],
         project_account: &str,
-        resets_at: i64,
         saved: Option<(&str, i64)>,
     ) -> Option<Self> {
         let Some(_python) = find_python() else {
@@ -113,23 +60,17 @@ impl Host {
         let serial = TIMEOUT_TEST_LOCK.lock().await;
         let dir = tempfile::tempdir().unwrap();
         let state = dir.path().join("state");
-        let mut antigravity = AntigravityAgentService::with_logins_for_test(&state, &[]);
+        let antigravity = AntigravityAgentService::with_logins_for_test(&state, SIGNED_OUT);
         let mut accounts = HashMap::new();
-        let mut percents = HashMap::new();
-        for (name, percent) in usage {
+        for name in names {
             let id = if *name == "default" {
                 "default".to_string()
             } else {
                 antigravity.insert_profile(name).unwrap().id
             };
-            percents.insert(id.clone(), *percent);
             accounts.insert(*name, id);
         }
-        let resets_at = Arc::new(AtomicI64::new(resets_at));
-        antigravity.set_usage_probe_for_test(Arc::new(FixedUsage {
-            by_id: percents,
-            resets_at: Arc::clone(&resets_at),
-        }));
+        antigravity.set_auto_switch(true).unwrap();
         antigravity
             .set_project_account(
                 PROJECT,
@@ -189,7 +130,6 @@ impl Host {
             relay,
             persistence,
             accounts,
-            resets_at,
             _serial: serial,
         })
     }
@@ -324,17 +264,11 @@ fn now_secs() -> i64 {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn a_chat_at_its_limit_continues_on_the_account_with_most_room_with_no_client() {
+async fn a_chat_at_its_limit_continues_on_the_next_signed_in_account_with_no_client() {
     let Some(python) = find_python() else {
         return;
     };
-    let Some(host) = Host::start(
-        &[("default", 90.0), ("Work", 100.0), ("Spare", 10.0)],
-        "Work",
-        now_secs() + 3600,
-    )
-    .await
-    else {
+    let Some(host) = Host::start(&["default", "Work", "Spare", "Side"], "Work").await else {
         return;
     };
     let (old_agent, session_id) = host.open_chat(python).await;
@@ -393,33 +327,26 @@ async fn with_no_room_the_chat_continues_at_the_reset_after_its_agent_was_reaped
     let Some(python) = find_python() else {
         return;
     };
-    let Some(host) = Host::start(
-        &[("default", 100.0), ("Work", 100.0)],
-        "Work",
-        now_secs() + 3600,
-    )
-    .await
-    else {
+    let Some(host) = Host::start(&["default", "Work"], "Work").await else {
         return;
     };
     let (old_agent, session_id) = host.open_chat(python).await;
-    // The reset is measured from the open chat, so host setup cannot make it due
-    // before the test has seen the scheduled resume.
-    let resets_at = now_secs() + 3;
-    host.resets_at.store(resets_at, Ordering::Relaxed);
-    host.prompt_and_leave(&old_agent, &session_id, "antigravitylimit");
+    let before = now_secs();
+    host.prompt_and_leave(&old_agent, &session_id, "antigravitylimit 3 seconds");
 
     let scheduled = host
         .log_until(&session_id, |records| !actions(records).is_empty())
         .await;
-    assert_eq!(
-        actions(&scheduled),
-        vec![json!({
-            "sessionId": session_id.0,
-            "projectId": PROJECT,
-            "action": "resume_scheduled",
-            "at": resets_at * 1000,
-        })]
+    let after = now_secs();
+    let scheduled = actions(&scheduled);
+    assert_eq!(scheduled.len(), 1);
+    assert_eq!(scheduled[0]["action"], "resume_scheduled");
+    assert_eq!(scheduled[0]["sessionId"], session_id.0);
+    assert_eq!(scheduled[0]["projectId"], PROJECT);
+    let at = scheduled[0]["at"].as_i64().unwrap();
+    assert!(
+        ((before + 3) * 1000..=(after + 3) * 1000).contains(&at),
+        "the resume is the reset the limit message named: {at}"
     );
     let file: Value =
         serde_json::from_slice(&std::fs::read(host.state().join(SCHEDULE_FILE)).unwrap()).unwrap();
@@ -440,10 +367,10 @@ async fn with_no_room_the_chat_continues_at_the_reset_after_its_agent_was_reaped
         .iter()
         .any(|text| text.starts_with("Troupe continued this chat")));
     assert!(
-        !texts(&records, "user_prompt").contains(&"antigravitylimit")
+        !texts(&records, "user_prompt").contains(&"antigravitylimit 3 seconds")
             || texts(&records, "user_prompt")
                 .iter()
-                .filter(|text| **text == "antigravitylimit")
+                .filter(|text| **text == "antigravitylimit 3 seconds")
                 .count()
                 == 1
     );
@@ -455,9 +382,7 @@ async fn a_resume_loaded_from_disk_survives_reopen_and_a_reap() {
     let Some(python) = find_python() else {
         return;
     };
-    let Some(host) =
-        Host::start_with_saved_resume(&[("default", 100.0), ("Work", 100.0)], "Work", "mock-1", 6)
-            .await
+    let Some(host) = Host::start_with_saved_resume(&["default", "Work"], "Work", "mock-1", 6).await
     else {
         return;
     };

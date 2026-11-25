@@ -52,14 +52,41 @@ impl State {
     /// `stop_subagent` for the record `subagent_id` of the chat `session_id`; the agent confirms
     /// by ending the record as cancelled.
     pub(crate) fn stop_subagent(&mut self, session_id: String, subagent_id: String) {
-        let Some(agent_id) = self.chat.acp.sessions.get(&session_id).map(|s| s.agent_id.clone()) else {
-            log::warn!("[chat] stop of a subagent in an unknown chat {session_id}");
+        let agent_id = self.chat.acp.sessions.get(&session_id).map(|s| s.agent_id.clone()).filter(|a| !a.is_empty());
+        let Some(agent_id) = agent_id.filter(|_| !subagent_id.is_empty()) else {
+            log::warn!("[chat] stop of a subagent without an agent or id in chat {session_id}");
             return;
         };
         log::info!("[chat] stopping subagent {} in chat {session_id}", subagent_id.chars().take(128).collect::<String>());
         self.chat.reader.set_stopping(&subagent_id, true);
         let payload = json!({ "agentId": agent_id, "rootSessionId": session_id, "subagentId": subagent_id });
         self.call(WsRequestType::StopSubagent, payload, Pending::StopSubagent(subagent_id));
+    }
+
+    /// `respondBrowserConsent`: send exactly the option the user pressed for the host's ticket.
+    /// The card leaves at once; a refusal other than a stale ticket brings it back.
+    pub(crate) fn respond_browser_consent(&mut self, request_id: String, option_id: String) {
+        let Some(ticket) = self.chat.acp.pending_browser_consents.remove(&request_id) else { return };
+        let session = ticket.get("sessionId").and_then(Value::as_str).unwrap_or_default();
+        let agent_id = self.chat.acp.sessions.get(session).map(|s| s.agent_id.clone()).unwrap_or_default();
+        log::info!("[chat] browser consent {option_id} for {request_id}");
+        let payload = json!({ "agentId": agent_id, "requestId": request_id, "optionId": option_id });
+        self.call(WsRequestType::RespondPermission, payload, Pending::BrowserConsent(Box::new(ticket)));
+    }
+
+    /// The host's reply to a consent answer (`classify`): a stale ticket stays gone, a too-early
+    /// or refused answer restores the card and says why.
+    pub(crate) fn browser_consent_settled(&mut self, ticket: Value, result: Result<Option<Value>, WsError>) {
+        let Err(e) = result else { return };
+        let request_id = ticket.get("requestId").and_then(Value::as_str).unwrap_or_default().to_owned();
+        log::warn!("[chat] browser consent answer refused: requestId={request_id} code={}", e.code);
+        let message = match e.code.as_str() {
+            "TICKET_NOT_FOUND" | "TICKET_ALREADY_RESOLVED" | "stale" | "already_resolved" => return,
+            "TICKET_TOO_EARLY" | "rate_limited" => "That was too quick. Check the request, then choose again.",
+            _ => "Could not send the browser consent answer. Try again.",
+        };
+        self.chat.acp.pending_browser_consents.entry(request_id).or_insert(ticket);
+        self.toast_error(message, "");
     }
 
     /// The host's answer to a stop: `already_ended` frees the button, a refusal says why.
@@ -79,7 +106,7 @@ impl State {
     }
 
     /// The question card's keys (`QuestionStepper`): a digit picks that option, Enter sends the
-    /// picks, Escape cancels. Only while the chat on screen shows a question.
+    /// picks. Only while the chat on screen shows a question; the card's own Escape cancels it.
     pub(crate) fn question_key(&mut self, key: &KeyEvent) -> bool {
         if key.mods != rune::Mods::default() {
             return false;
@@ -93,13 +120,9 @@ impl State {
         };
         let id = question.question_id.clone();
         match &key.key {
-            Key::Escape => {
-                log::info!("[chat] cancel question {id}");
-                self.chat.reader.picks.forget(&id);
-                self.acp_step(Event::AnswerQuestion(id, Vec::new()));
-            }
             Key::Enter => {
-                let values = self.chat.reader.picks.of(&id).to_vec();
+                let multi = ui::chat::approvals::question_is_multi(&question);
+                let values = self.chat.reader.picks.answer(&id, multi);
                 if values.is_empty() {
                     return true;
                 }

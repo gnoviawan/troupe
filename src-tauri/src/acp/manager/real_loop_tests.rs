@@ -147,8 +147,11 @@ for line in sys.stdin:
         elif text.startswith("antigravitylimit"):
             # Antigravity at its quota: the limit message as agent text, then
             # a normal end of turn.
-            chunk("Usage Limit Reached\n\nYou have reached your current quota for this period.",
-                  msg["params"]["sessionId"])
+            body = "Usage Limit Reached\n\nYou have reached your current quota for this period."
+            reset = text[len("antigravitylimit"):].strip()
+            if reset:
+                body += " Your limit will reset in " + reset + "."
+            chunk(body, msg["params"]["sessionId"])
             send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
         elif text.startswith("Troupe moved this chat from Antigravity") or (
             text.startswith("Troupe continued this chat because the") and "Antigravity account" in text):
