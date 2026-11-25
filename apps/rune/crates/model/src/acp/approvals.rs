@@ -447,12 +447,13 @@ impl State {
         });
     }
 
-    /// The answer is over. A refused one puts the ticket back so the user
-    /// can answer again; one that lost to another surface stays gone.
+    /// The answer is over, with the host's reply or `None` for a failed
+    /// call. A refused one puts the ticket back so the user can answer
+    /// again; one that lost to another surface stays gone.
     pub(crate) fn on_browser_consent_answered(
         &mut self,
         command: Effect,
-        result: Result<String, ()>,
+        reply: Option<&Value>,
         fx: &mut Vec<Effect>,
     ) {
         let Effect::AnswerBrowserConsent {
@@ -461,10 +462,11 @@ impl State {
         else {
             return;
         };
-        let message = match result.as_deref() {
-            Ok("ok" | "stale") => return,
-            Ok("too_early") => CONSENT_TOO_EARLY,
-            Ok(_) | Err(()) => CONSENT_FAILED,
+        let result = reply.map(|reply| reply.as_str().unwrap_or_default());
+        let message = match result {
+            Some("ok" | "stale") => return,
+            Some("too_early") => CONSENT_TOO_EARLY,
+            Some(_) | None => CONSENT_FAILED,
         };
         self.pending_browser_consents
             .entry(request_id.clone())
@@ -473,7 +475,7 @@ impl State {
             level: "error".into(),
             message: message.into(),
         });
-        if let Ok(result) = result {
+        if let Some(result) = result {
             fx.push(Effect::warn(
                 "acp-store:respondBrowserConsent",
                 format!("browser consent answer refused: requestId={request_id} result={result}"),

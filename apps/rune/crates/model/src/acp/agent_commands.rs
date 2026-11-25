@@ -312,6 +312,9 @@ impl State {
             Effect::Logout { agent_id } => {
                 self.book.authenticated_agents.remove(&agent_id);
             }
+            Effect::AnswerBrowserConsent { .. } => {
+                self.on_browser_consent_answered(command, Some(&reply), fx);
+            }
             _ => {}
         }
     }
@@ -328,6 +331,9 @@ impl State {
         let mut waiters = 0;
         let mut message = message;
         match command {
+            Effect::AnswerBrowserConsent { .. } => {
+                return self.on_browser_consent_answered(command, None, fx);
+            }
             Effect::ListSessions { .. }
             | Effect::ImportAgentSession { .. }
             | Effect::NewSession { .. }

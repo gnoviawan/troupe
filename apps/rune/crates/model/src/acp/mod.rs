@@ -603,19 +603,10 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
         Event::AgentCommandFailed(Effect::RecordAgentSwitch { switch, .. }, message, _) => {
             state.on_switch_marker(switch, Some(message), env, &mut fx);
         }
-        Event::RespondBrowserConsent(request_id, option_id) => {
-            state.respond_browser_consent(request_id, option_id, &mut fx);
+        Event::RespondBrowserConsent(id, option) => {
+            state.respond_browser_consent(id, option, &mut fx)
         }
-        Event::AgentCommandDone(command @ Effect::AnswerBrowserConsent { .. }, reply) => {
-            let result = reply.as_str().unwrap_or_default().to_owned();
-            state.on_browser_consent_answered(command, Ok(result), &mut fx);
-        }
-        Event::AgentCommandFailed(command @ Effect::AnswerBrowserConsent { .. }, ..) => {
-            state.on_browser_consent_answered(command, Err(()), &mut fx);
-        }
-        Event::SwitchAgent(request) => {
-            state.switch_agent(request, true, &mut fx);
-        }
+        Event::SwitchAgent(request) => state.switch_agent(request, true, &mut fx),
         Event::AgentCommandDone(command, reply) => {
             state.on_agent_command_done(command, reply, env, &mut fx);
         }
