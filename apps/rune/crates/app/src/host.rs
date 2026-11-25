@@ -17,6 +17,8 @@ pub enum Fetch {
     Skills(String),
     /// `/fs/ls` of a folder the mention menu's Explorer shows, under a project root.
     Listing { dir: String, root: String },
+    /// A `gitApi` call of a `model::git` task.
+    Git(model::git::TaskId),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);
@@ -85,9 +87,15 @@ mod imp {
 
         /// GETs `path` off the window's thread; the answer comes back through [`Host::fetched`].
         pub fn fetch(&mut self, path: String, tag: Fetch) {
+            self.request(HttpRequest::get(&path), tag);
+        }
+
+        /// Sends `request` off the window's thread; the answer comes back through
+        /// [`Host::fetched`].
+        pub fn request(&mut self, request: HttpRequest, tag: Fetch) {
             let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.0.clone());
             let spawned = thread::Builder::new().name("troupe-http".into()).spawn(move || {
-                let result = client::native::http_send(&config, &HttpRequest::get(&path));
+                let result = client::native::http_send(&config, &request);
                 if done.send((tag, result)).is_ok() {
                     wake();
                 }
@@ -153,9 +161,15 @@ mod imp {
 
         /// GETs `path` with the page's `fetch`; the answer comes back through [`Host::fetched`].
         pub fn fetch(&mut self, path: String, tag: Fetch) {
+            self.request(HttpRequest::get(&path), tag);
+        }
+
+        /// Sends `request` with the page's `fetch`; the answer comes back through
+        /// [`Host::fetched`].
+        pub fn request(&mut self, request: HttpRequest, tag: Fetch) {
             let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.fetched.clone());
             wasm_bindgen_futures::spawn_local(async move {
-                let result = client::web::http_send(&config, &HttpRequest::get(&path)).await;
+                let result = client::web::http_send(&config, &request).await;
                 done.borrow_mut().push((tag, result));
                 wake();
             });

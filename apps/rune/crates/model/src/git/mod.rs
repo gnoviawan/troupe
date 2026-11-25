@@ -176,7 +176,8 @@ impl Failure {
     }
 
     /// `String(error)`: the error's name, then its message.
-    fn shown(&self) -> String {
+    #[must_use]
+    pub fn shown(&self) -> String {
         let name = if self.code.is_some() { "AcpTransportError" } else { "Error" };
         format!("{name}: {}", self.message)
     }
