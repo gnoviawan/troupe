@@ -4,6 +4,7 @@
 //! them; a file dragged onto a pane opens there (`usePaneDnd`'s file drop).
 
 use std::cell::RefCell;
+use std::collections::BTreeSet;
 
 use client::http::{HttpError, HttpRequest, Method};
 use model::Level;
@@ -59,14 +60,7 @@ impl State {
                 }
                 Effect::Run(op) => self.run_op(op),
                 Effect::Open(path) => self.open_file(&path),
-                Effect::Renamed { from, to } => {
-                    for path in self.open_editor_paths() {
-                        if let Some(rest) = under(&path, &from) {
-                            let moved = format!("{to}{rest}");
-                            self.workspace.step(model::workspace::Event::RenameEditorTab(path, moved));
-                        }
-                    }
-                }
+                Effect::Renamed { from, to } => self.follow_rename(&from, &to),
                 Effect::Deleted { path: gone } => {
                     for path in self.open_editor_paths() {
                         if under(&path, &gone).is_some() {
@@ -86,6 +80,30 @@ impl State {
             }
         }
         self.run_editor_effects();
+    }
+
+    /// `renameOpenFile` for every open file at or under `from`: the buffer with its unsaved
+    /// edits, its record (draft and dirty flag) and its tab move to the new path, so the tab
+    /// keeps the edits instead of reading the renamed file from disk.
+    fn follow_rename(&mut self, from: &str, to: &str) {
+        let mut paths: BTreeSet<String> = self.open_editor_paths().into_iter().collect();
+        paths.extend(self.editors.docs.docs.keys().cloned());
+        paths.extend(self.workspace.files.open.iter().map(|f| f.file_path.clone()));
+        for path in paths {
+            let Some(rest) = under(&path, from) else { continue };
+            let moved = format!("{to}{rest}");
+            log::info!("[explorer] open file follows the rename: {path} -> {moved}");
+            self.editors.rename(&path, &moved);
+            self.workspace.files.open.retain(|f| f.file_path != moved);
+            if let Some(file) = self.workspace.files.open.iter_mut().find(|f| f.file_path == path) {
+                file.file_path.clone_from(&moved);
+            }
+            if self.editor_host.closing.remove(&path) {
+                self.editor_host.closing.insert(moved.clone());
+            }
+            self.workspace.step(model::workspace::Event::RenameEditorTab(path, moved));
+        }
+        self.workspace.revision += 1;
     }
 
     fn open_editor_paths(&self) -> Vec<String> {

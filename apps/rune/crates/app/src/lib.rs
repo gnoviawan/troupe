@@ -33,6 +33,10 @@ mod controls;
 mod editor_host;
 mod explorer_host;
 #[cfg(test)]
+mod explorer_host_tests;
+#[cfg(test)]
+mod editor_host_tests;
+#[cfg(test)]
 mod controls_tests;
 mod history_host;
 mod host;
@@ -285,9 +289,9 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let (gave_up, next_arm) = state.expire_pending_arms(now);
     changed |= retried | waited | gave_up;
     state.editors.now = editor_host::epoch_ms();
+    state.sync_drafts(now);
     state.sync_editors();
     state.sync_explorer();
-    state.sync_drafts(now);
     let waits = [
         state.toasts.next_expiry(),
         next_retry,

@@ -279,14 +279,20 @@ fn chunk<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, path
                 }
             }
         }
-        for (r, start) in starts.iter().enumerate() {
-            let end = starts.get(r + 1).copied().unwrap_or(len);
-            let byte_start = content.char_indices().nth(*start).map_or(content.len(), |(b, _)| b);
-            let byte_end = content.char_indices().nth(end).map_or(content.len(), |(b, _)| b);
+        // One pass over the line: each row's byte range, and the spans walked in order, so a
+        // long line costs its length, not its length times its rows.
+        let bytes = row_bytes(&content, &starts);
+        let mut first_span = 0;
+        for (r, pair) in bytes.windows(2).enumerate() {
+            let (byte_start, byte_end) = (pair[0], pair[1]);
             let piece = &content[byte_start..byte_end];
-            let row_spans: Vec<Span> = line_spans
+            while line_spans.get(first_span).is_some_and(|(range, _)| range.end <= byte_start) {
+                first_span += 1;
+            }
+            let row_spans: Vec<Span> = line_spans[first_span..]
                 .iter()
-                .filter(|(range, _)| range.end > byte_start && range.start < byte_end)
+                .take_while(|(range, _)| range.start < byte_end)
+                .filter(|(range, _)| range.end > byte_start)
                 .map(|(range, tag)| tag_span(t, *tag, range.start.max(byte_start) - byte_start..range.end.min(byte_end) - byte_start))
                 .collect();
             body = body.child(
@@ -318,6 +324,21 @@ fn chunk<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, path
         body = body.on_drag(move |s: &mut S, d: &mut Drag, _tx| press(s, lens, &pressed, line, &rows, d));
         out = out.child(row().w_full().h(height).child(gutter_cell).child(body));
     }
+    out
+}
+
+/// The byte offset of each row start in `content`, then its length: `starts` are char offsets
+/// in order, read in one pass.
+pub(super) fn row_bytes(content: &str, starts: &[usize]) -> Vec<usize> {
+    let mut out = Vec::with_capacity(starts.len() + 1);
+    let mut next = starts.iter().peekable();
+    for (char_index, (byte, _)) in content.char_indices().enumerate() {
+        while next.next_if(|s| **s <= char_index).is_some() {
+            out.push(byte);
+        }
+    }
+    out.extend(next.map(|_| content.len()));
+    out.push(content.len());
     out
 }
 

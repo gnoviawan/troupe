@@ -553,6 +553,9 @@ impl State {
         {
             return;
         }
+        // The leaving project's drafts reach its record before it is saved and parked; the
+        // debounce would let the buffers close first.
+        self.flush_drafts();
         self.persist_workspace();
         if self.workspace.has_tree(&project_id) {
             self.workspace.activate(&project_id, None);
@@ -598,6 +601,8 @@ impl State {
         if hydrated.unreadable {
             self.sync.unwritable.insert(project_id.to_owned());
         }
+        self.flush_drafts();
+        self.persist_workspace();
         self.workspace.activate(project_id, Some(hydrated));
         if self.active_project().map(|p| p.id.as_str()) != Some(project_id) {
             self.show_active_project();
@@ -612,7 +617,7 @@ impl State {
         for request in std::mem::take(&mut self.workspace.requests) {
             match request {
                 ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
-                ui::workspace::Request::SaveAndClose { path, content } => self.save_and_close(path, content),
+                ui::workspace::Request::SaveAndClose { path, .. } => self.save_and_close(path),
                 other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
             }
         }
