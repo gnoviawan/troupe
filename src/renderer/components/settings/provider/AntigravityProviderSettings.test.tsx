@@ -5,10 +5,10 @@ import type {
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ANTIGRAVITY_USAGE_POLL_MS } from '@/hooks/use-antigravity-accounts'
-import { formatAntigravityChecked } from '@/lib/antigravity-usage-format'
 import { useProjectStore } from '@/stores/project-store'
 import type { Project } from '@/types/project'
 import { AntigravityProviderSettings } from './AntigravityProviderSettings'
+import { formatAntigravityChecked } from './AntigravityUsageCheck'
 
 const {
   api,
@@ -346,6 +346,29 @@ describe('AntigravityProviderSettings', () => {
       await within(personal).findByText('Not applicable for current authentication method.')
     ).toBeInTheDocument()
     expect(within(personal).queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+
+  it('keeps a signed-in account ready with its button whatever its last check said', async () => {
+    api.usage.mockResolvedValue([
+      {
+        accountId: 'default',
+        status: 'signed_out',
+        planType: null,
+        windows: [],
+        checkedAt: Date.now(),
+        message: 'This account is not signed in. Sign in to it, then check again.'
+      }
+    ])
+    render(<AntigravityProviderSettings />)
+    const personal = await screen.findByTestId('antigravity-account-default')
+    await waitFor(() =>
+      expect(personal).toHaveTextContent(
+        'This account is not signed in. Sign in to it, then check again.'
+      )
+    )
+    expect(personal).toHaveTextContent('Signed in')
+    expect(personal).not.toHaveTextContent('Signed out')
+    expect(within(personal).getByRole('button', { name: 'Check usage of Personal' })).toBeEnabled()
   })
 
   it('hides writes on a view-only connection', async () => {

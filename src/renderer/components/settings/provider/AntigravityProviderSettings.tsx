@@ -182,7 +182,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
         <div>
           {accounts.map((account) => {
             const read = usage[account.id]
-            const readiness = antigravityAccountReadiness(account, read)
+            const readiness = antigravityAccountReadiness(account)
             const projectNames = (projectsByAccount[account.id] ?? []).map((p) => p.name)
             const windows = read?.status === 'ok' ? read.windows : []
             return (

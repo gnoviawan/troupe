@@ -1,7 +1,14 @@
 import type { AntigravityAccountUsage } from '@shared/types/antigravity-accounts.types'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { formatAntigravityChecked } from '@/lib/antigravity-usage-format'
+
+export function formatAntigravityChecked(checkedAt: number, now = Date.now()): string {
+  const at = new Date(checkedAt)
+  const time = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  if (at.toDateString() === new Date(now).toDateString()) return `Checked ${time}`
+  const day = at.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  return `Checked ${day}, ${time}`
+}
 
 interface AntigravityUsageCheckProps {
   accountName: string

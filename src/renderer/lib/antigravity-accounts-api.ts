@@ -49,6 +49,9 @@ export const antigravityAccountsApi = {
       const run = await runCommand({
         kind: 'check_antigravity_usage',
         entityKey: accountId,
+        // Each click asks for a new reading, so it never replays an earlier
+        // check's id and answer.
+        fresh: true,
         send: (call) => getAcpTransport().checkAntigravityUsage(accountId, config, call)
       })
       return run.result
@@ -99,7 +102,10 @@ export const antigravityAccountsApi = {
   setResume: (sessionId: string, at: number | null): Promise<void> =>
     logged('setResume', () => getAcpTransport().setAntigravityResume(sessionId, at)),
 
-  /** A chat at its limit continues on the signed-in Account with the most room. */
+  /**
+   * A chat at its limit continues on the next signed-in Account in list order
+   * that has not reached a limit.
+   */
   setAutoSwitch: (enabled: boolean): Promise<void> =>
     logged('setAutoSwitch', async () => {
       await getAcpTransport().setAntigravityAutoSwitch(enabled)
