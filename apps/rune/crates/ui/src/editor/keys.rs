@@ -28,7 +28,7 @@ impl Editors {
         let word = m.cmd || m.ctrl || m.alt;
         let page = self.panes.get(path).map_or(20, |p| p.page.max(1));
         if let Some(c) = command_char(key) {
-            return self.chord(path, c, m.shift);
+            return self.chord(path, c, m);
         }
         let command = match &key.key {
             Key::Text(t) if !(m.cmd || m.ctrl) => Command::Insert(t.clone()),
@@ -71,13 +71,13 @@ impl Editors {
     /// the editor (`editorFindKeymap` binds them on the panel too); other keys are the field's.
     pub fn field_chord(&mut self, path: &str, key: &KeyEvent) -> Outcome {
         match command_char(key) {
-            Some(c @ ('f' | 'h' | 'g' | 's')) => self.chord(path, c, key.mods.shift),
+            Some(c @ ('f' | 'h' | 'g' | 's')) => self.chord(path, c, key.mods),
             _ => Outcome::Ignored,
         }
     }
 
-    fn chord(&mut self, path: &str, c: char, shift: bool) -> Outcome {
-        match (c, shift) {
+    fn chord(&mut self, path: &str, c: char, m: rune::Mods) -> Outcome {
+        match (c, m.shift) {
             ('a', _) => {
                 self.apply(path, Command::SelectAll);
             }
@@ -97,7 +97,8 @@ impl Editors {
                 let replace = self.docs.docs.get(path).is_some_and(|d| !d.read_only());
                 return Outcome::Focus(if replace { super::Field::Replace } else { super::Field::Query });
             }
-            ('g', false) if cfg!(target_os = "macos") => self.find_step(path, true),
+            // Mod-g finds the next match on macOS (Cmd); Ctrl-g is go to line everywhere.
+            ('g', false) if cfg!(target_os = "macos") && m.cmd && !m.ctrl => self.find_step(path, true),
             ('g', _) => {
                 self.open_goto(path);
                 return Outcome::Focus(super::Field::GoTo);
