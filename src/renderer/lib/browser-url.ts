@@ -9,10 +9,10 @@ export function normalizeBrowserInputUrl(raw: string): string | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
   if (/^https?:\/\//i.test(trimmed) || /^about:/i.test(trimmed)) return trimmed
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i.test(trimmed)) {
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?([/?#].*)?$/i.test(trimmed)) {
     return `http://${trimmed}`
   }
-  if (/^:\d+(\/.*)?$/.test(trimmed)) {
+  if (/^:\d+([/?#].*)?$/.test(trimmed)) {
     return `http://localhost${trimmed}`
   }
   return `https://${trimmed}`

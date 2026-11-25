@@ -23,6 +23,7 @@ export interface PendingAnnotationItem {
   axis?: 'horizontal' | 'vertical'
   positionPx?: number
   deltaPx?: number
+  gapPx?: number
   cropDataUrl?: string
   cropBase64?: string
   /** Absolute file path where the cropped PNG was persisted on disk (also stored in SQLite/MCP). */

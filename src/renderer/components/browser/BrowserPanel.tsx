@@ -8,7 +8,8 @@ import {
   browserTabInjectAgentation,
   browserTabScreenshot,
   onAgentationActionRequested,
-  onAgentationAnnotationCreated
+  onAgentationAnnotationCreated,
+  onAgentationAnnotationUpdated
 } from '@/lib/browser-api'
 import { cropBase64Png } from '@/lib/browser-screenshot'
 import { displayHost } from '@/lib/browser-url'
@@ -54,6 +55,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   const setLoadError = useBrowserSessionStore((s) => s.setLoadError)
   const setCustomViewportWidth = useBrowserSessionStore((s) => s.setCustomViewportWidth)
   const addPendingAnnotation = useBrowserSessionStore((s) => s.addPendingAnnotation)
+  const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
 
   const activeProject = useProjectStore((s) =>
@@ -88,12 +90,14 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     }
   }, [])
 
-  // Re-sync overlay state after a navigation/reload completes while annotateMode is active
+  // Re-sync overlay state after a navigation/reload completes while annotateMode is active.
+  // Keep prevEpochRef unchanged while `loading` is true so the post-load rerun detects the new epoch.
   const prevEpochRef = useRef(epoch)
   useEffect(() => {
     if (epoch === prevEpochRef.current) return
+    if (loading || !url) return
     prevEpochRef.current = epoch
-    if (!annotateMode || loading || !url) return
+    if (!annotateMode) return
     const current = useBrowserSessionStore.getState().getTab(browserTabId)
     if (!current?.annotateMode) return
     void browserTabInjectAgentation(browserTabId).then((res) => {
@@ -110,6 +114,22 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       }
     })
   }, [annotateMode, browserTabId, epoch, loading, url])
+
+  // Drop resolved/dismissed annotations from this tab's pending queue when updated via MCP/HTTP
+  useEffect(() => {
+    const subUpdated = onAgentationAnnotationUpdated((payload) => {
+      if (payload.tabId && payload.tabId !== browserTabId) return
+      if (payload.status !== 'resolved' && payload.status !== 'dismissed') return
+      const hasItem = useBrowserSessionStore
+        .getState()
+        .getTab(browserTabId)
+        ?.pendingAnnotations.some((item) => item.id === payload.id)
+      if (!hasItem) return
+      removePendingAnnotation(browserTabId, payload.id)
+      void browserTabAnnotationCmd(browserTabId, { type: 'clear', ids: [payload.id] })
+    })
+    return () => subUpdated.unlisten()
+  }, [browserTabId, removePendingAnnotation])
 
   // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue,
   // auto-crop via native screenshot, and persist the crop PNG to disk + SQLite/MCP.
@@ -166,9 +186,12 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
           axis: payload.measurement?.axis,
           positionPx: payload.measurement?.positionPx,
           deltaPx: payload.measurement?.deltaPx,
+          gapPx: payload.measurement?.gapPx,
           meta: payload.boundingBox
             ? `${payload.boundingBox.width}×${payload.boundingBox.height}px`
-            : undefined,
+            : payload.measurement?.gapPx !== undefined
+              ? `${payload.measurement.gapPx}px spacing`
+              : undefined,
           cropDataUrl,
           cropBase64,
           cropPath

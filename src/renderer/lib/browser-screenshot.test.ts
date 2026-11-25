@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeCropSourceRect, formatBatchAnnotationsForChat } from './browser-screenshot'
+import { normalizeBrowserInputUrl } from './browser-url'
 
 describe('computeCropSourceRect', () => {
   it('derives pixel scale from imgWidth / viewportWidth across zoom and DPR', () => {
@@ -48,5 +49,31 @@ describe('formatBatchAnnotationsForChat', () => {
     expect(md).toContain('(+8px off)')
     expect(md).toContain('(crop: `/tmp/annotation-crops/ann-1.png`)')
     expect(md).toContain('Align left edge')
+  })
+
+  it('renders gapPx for ruler measurement annotations', () => {
+    const md = formatBatchAnnotationsForChat('http://localhost:3000', [
+      {
+        id: 'ann-2',
+        num: 1,
+        kind: 'measurement',
+        element: 'header',
+        elementPath: 'header',
+        comment: 'Keep 24px top spacing',
+        axis: 'vertical',
+        gapPx: 24
+      }
+    ])
+    expect(md).toContain('[Ruler vertical 24px]')
+  })
+})
+
+describe('normalizeBrowserInputUrl', () => {
+  it('keeps query-only and fragment-only localhost inputs on http while preserving host boundaries', () => {
+    expect(normalizeBrowserInputUrl('localhost?foo=1')).toBe('http://localhost?foo=1')
+    expect(normalizeBrowserInputUrl('localhost#top')).toBe('http://localhost#top')
+    expect(normalizeBrowserInputUrl('127.0.0.1:3000?a=1')).toBe('http://127.0.0.1:3000?a=1')
+    expect(normalizeBrowserInputUrl(':3000#section')).toBe('http://localhost:3000#section')
+    expect(normalizeBrowserInputUrl('localhost.example.com')).toBe('https://localhost.example.com')
   })
 })

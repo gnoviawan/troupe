@@ -632,4 +632,48 @@ describe('useBrowserWebview responsive stage bounds resync', () => {
     })
     view.unmount()
   })
+
+  it('navigates native webview to the latest requested URL if URL changed while create was pending', async () => {
+    let resolveCreate:
+      | ((val: {
+          success: true
+          data: { id: string; url: string; title: string; agentControlled: boolean }
+        }) => void)
+      | null = null
+    vi.mocked(browserTabCreate).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve
+        })
+    )
+    vi.mocked(browserTabNavigate).mockResolvedValue({ success: true, data: undefined })
+
+    function DynamicUrlHarness({ url }: { url: string }) {
+      const { containerRef } = useBrowserWebview('browser-1', true, url)
+      return <div ref={containerRef} />
+    }
+
+    const view = render(<DynamicUrlHarness url="https://first.example" />)
+    await waitFor(() => expect(browserTabCreate).toHaveBeenCalledTimes(1))
+
+    // User requests a newer URL while browserTabCreate is still in flight
+    view.rerender(<DynamicUrlHarness url="https://second.example" />)
+
+    await act(async () => {
+      resolveCreate?.({
+        success: true,
+        data: {
+          id: 'browser-1',
+          url: 'https://first.example',
+          title: '',
+          agentControlled: false
+        }
+      })
+    })
+
+    await waitFor(() =>
+      expect(browserTabNavigate).toHaveBeenCalledWith('browser-1', 'https://second.example')
+    )
+    view.unmount()
+  })
 })

@@ -237,6 +237,12 @@ export interface AgentationCreatedPayload {
   }
 }
 
+export interface AgentationUpdatedPayload {
+  id: string
+  tabId?: string
+  status?: 'pending' | 'acknowledged' | 'resolved' | 'dismissed'
+}
+
 export interface AgentationActionPayload {
   sessionId?: string
   tabId?: string
@@ -247,6 +253,12 @@ export function onAgentationAnnotationCreated(
   callback: (payload: AgentationCreatedPayload) => void
 ): BrowserEventSubscription {
   return createBrowserEventSubscription('agentation:annotation_created', callback)
+}
+
+export function onAgentationAnnotationUpdated(
+  callback: (payload: AgentationUpdatedPayload) => void
+): BrowserEventSubscription {
+  return createBrowserEventSubscription('agentation:annotation_updated', callback)
 }
 
 export function onAgentationActionRequested(

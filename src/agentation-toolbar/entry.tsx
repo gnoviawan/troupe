@@ -211,9 +211,9 @@ class TroupeAnnotationOverlay {
           tabId: this.getTabId(),
           annotations: [],
           output: JSON.stringify({
+            viewportWidth: window.innerWidth,
             ...payload,
-            tabId: this.getTabId(),
-            viewportWidth: window.innerWidth
+            tabId: this.getTabId()
           }),
           timestamp: new Date().toISOString()
         })
@@ -433,6 +433,7 @@ class TroupeAnnotationOverlay {
       this.dragBox.style.display = 'none'
       if (width < 8 || height < 8) return
 
+      const viewportWidth = window.innerWidth
       const rect = {
         x: Math.round(left),
         y: Math.round(top),
@@ -443,7 +444,8 @@ class TroupeAnnotationOverlay {
         void this.postAction({
           kind: 'screenshot_area',
           rect,
-          dpr: window.devicePixelRatio || 1
+          dpr: window.devicePixelRatio || 1,
+          viewportWidth
         })
         return
       }
@@ -452,7 +454,8 @@ class TroupeAnnotationOverlay {
         x: rect.x,
         y: rect.y,
         kind: 'rectangle',
-        rect
+        rect,
+        viewportWidth
       })
     })
 
@@ -586,6 +589,7 @@ class TroupeAnnotationOverlay {
     kind: 'feedback' | 'rectangle' | 'guide' | 'measurement'
     summary?: ElementSummary
     rect?: { x: number; y: number; width: number; height: number }
+    viewportWidth?: number
     guide?: PlacedGuide
     measurement?: { axis: GuideAxis; positionPx: number; gapPx: number }
     spacingCandidate?: {
@@ -708,6 +712,7 @@ class TroupeAnnotationOverlay {
         computedStyles: opts.summary?.computedStyles,
         reactComponents: opts.summary?.reactComponents,
         boundingBox: opts.rect ?? opts.summary?.boundingBox,
+        viewportWidth: opts.viewportWidth ?? window.innerWidth,
         kind: opts.kind
       }
       if (opts.guide) {

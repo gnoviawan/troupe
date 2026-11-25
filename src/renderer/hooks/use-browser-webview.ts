@@ -115,7 +115,10 @@ export function useBrowserWebview(
 
     const createWebview = () => {
       if (!mountedRef.current || mountToken !== mountTokenRef.current) return
-      browserTabCreate(browserTabId, targetUrl, bounds)
+      const createUrl = latestUrlRef.current
+      if (!createUrl) return
+      urlRef.current = createUrl
+      browserTabCreate(browserTabId, createUrl, bounds)
         .then((result) => {
           if (!mountedRef.current || mountToken !== mountTokenRef.current) {
             if (result.success) {
@@ -137,6 +140,23 @@ export function useBrowserWebview(
             useBrowserSessionStore
               .getState()
               .setAgentControlled(browserTabId, result.data.agentControlled)
+
+            // If the user requested a newer URL while browserTabCreate was in flight,
+            // navigate the newly created native webview to that latest URL immediately.
+            const latestNow = latestUrlRef.current
+            if (latestNow && latestNow !== createUrl) {
+              urlRef.current = latestNow
+              useBrowserSessionStore.getState().setLoading(browserTabId, true)
+              browserTabNavigate(browserTabId, latestNow).catch((err) => {
+                void logFrontendError({
+                  message: `browserTabNavigate after create for tab ${browserTabId}: ${
+                    err instanceof Error ? err.message : String(err)
+                  }`,
+                  source: 'useBrowserWebview'
+                })
+                useBrowserSessionStore.getState().setLoading(browserTabId, false)
+              })
+            }
             // Resync bounds after creation. The container was measured once at
             // call time (before browserTabCreate above), but the pane layout can
             // still be mid-transition — pane wrappers use `transition-all
@@ -247,6 +267,10 @@ export function useBrowserWebview(
       void browserCheckLocalPort(localTarget.port)
         .then((probe) => {
           if (!mountedRef.current || mountToken !== mountTokenRef.current) return
+          if (latestUrlRef.current !== targetUrl) {
+            createWebview()
+            return
+          }
           if (probe.success && !probe.data) {
             useBrowserSessionStore.getState().setLoadError(browserTabId, {
               code: 'ERR_CONNECTION_REFUSED',

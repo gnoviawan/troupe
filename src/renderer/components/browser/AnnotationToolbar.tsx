@@ -212,6 +212,7 @@ export function AnnotationToolbar({
                 type="button"
                 role="tab"
                 aria-selected={selected}
+                aria-label={tool.label}
                 onClick={() => selectTool(tool.id)}
                 title={`${tool.label} (${tool.shortcut})`}
                 className={cn(segmentClass(selected), 'h-[22px] gap-1 px-2')}

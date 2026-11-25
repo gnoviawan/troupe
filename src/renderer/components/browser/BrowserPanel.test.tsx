@@ -2,16 +2,22 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useRef } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import type { AgentationActionPayload, AgentationCreatedPayload } from '@/lib/browser-api'
+import type {
+  AgentationActionPayload,
+  AgentationCreatedPayload,
+  AgentationUpdatedPayload
+} from '@/lib/browser-api'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useProjectStore } from '@/stores/project-store'
 import { BrowserPanel } from './BrowserPanel'
 
-const { annotationListeners, actionListeners, mockOpenTerminalAtCwd } = vi.hoisted(() => ({
-  annotationListeners: [] as Array<(p: AgentationCreatedPayload) => void>,
-  actionListeners: [] as Array<(p: AgentationActionPayload) => void>,
-  mockOpenTerminalAtCwd: vi.fn().mockResolvedValue({ status: 'opened', terminalId: 'term-1' })
-}))
+const { annotationListeners, updatedListeners, actionListeners, mockOpenTerminalAtCwd } =
+  vi.hoisted(() => ({
+    annotationListeners: [] as Array<(p: AgentationCreatedPayload) => void>,
+    updatedListeners: [] as Array<(p: AgentationUpdatedPayload) => void>,
+    actionListeners: [] as Array<(p: AgentationActionPayload) => void>,
+    mockOpenTerminalAtCwd: vi.fn().mockResolvedValue({ status: 'opened', terminalId: 'term-1' })
+  }))
 
 vi.mock('@/hooks/use-browser-webview', () => ({
   useBrowserWebview: () => ({ containerRef: useRef<HTMLDivElement>(null) })
@@ -46,6 +52,10 @@ vi.mock('@/lib/browser-api', () => ({
   browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true }),
   onAgentationAnnotationCreated: (cb: (p: AgentationCreatedPayload) => void) => {
     annotationListeners.push(cb)
+    return { unlisten: () => {} }
+  },
+  onAgentationAnnotationUpdated: (cb: (p: AgentationUpdatedPayload) => void) => {
+    updatedListeners.push(cb)
     return { unlisten: () => {} }
   },
   onAgentationActionRequested: (cb: (p: AgentationActionPayload) => void) => {
@@ -210,5 +220,86 @@ describe('BrowserPanel', () => {
       ids: ['ann-1']
     })
     expect(browserAnnotationsSync).toHaveBeenCalledWith('delete', ['ann-1'])
+  })
+
+  it('preserves measurement gapPx, drops resolved items on AnnotationUpdated, and restores overlay after post-load epoch change', async () => {
+    const { browserTabInjectAgentation, browserTabAnnotationCmd } = await import(
+      '@/lib/browser-api'
+    )
+    vi.mocked(browserTabInjectAgentation).mockClear()
+    vi.mocked(browserTabAnnotationCmd).mockClear()
+    updatedListeners.length = 0
+    annotationListeners.length = 0
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'http://localhost:5173/signup')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    useBrowserSessionStore.getState().applyView({
+      tabId: 'tab-1',
+      url: 'http://localhost:5173/signup',
+      title: 'Signup',
+      loading: false,
+      agentControlled: false,
+      epoch: 1
+    })
+
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    // Ruler measurement preserves gapPx without mapping to deltaPx
+    act(() => {
+      annotationListeners[0]?.({
+        id: 'ann-gap',
+        tabId: 'tab-1',
+        url: 'http://localhost:5173/signup',
+        kind: 'measurement',
+        element: 'Spacing · 24px (header)',
+        elementPath: 'header',
+        comment: 'Keep 24px gap',
+        measurement: { axis: 'vertical', positionPx: 24, gapPx: 24 }
+      })
+    })
+    await waitFor(() => {
+      const item = useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations[0]
+      expect(item?.gapPx).toBe(24)
+      expect(item?.deltaPx).toBeUndefined()
+    })
+
+    // External MCP resolve removes pending item and clears its pin
+    act(() => {
+      updatedListeners[0]?.({ id: 'ann-gap', tabId: 'tab-1', status: 'resolved' })
+    })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'clear',
+      ids: ['ann-gap']
+    })
+
+    // Epoch increments while loading=true, then load finishes -> overlay must still restore
+    act(() => {
+      useBrowserSessionStore.getState().applyView({
+        tabId: 'tab-1',
+        url: 'http://localhost:5173/next',
+        title: 'Next',
+        loading: true,
+        agentControlled: false,
+        epoch: 2
+      })
+    })
+    expect(browserTabInjectAgentation).not.toHaveBeenCalled()
+
+    act(() => {
+      useBrowserSessionStore.getState().applyView({
+        tabId: 'tab-1',
+        url: 'http://localhost:5173/next',
+        title: 'Next',
+        loading: false,
+        agentControlled: false,
+        epoch: 2
+      })
+    })
+    await waitFor(() => expect(browserTabInjectAgentation).toHaveBeenCalledWith('tab-1'))
   })
 })

@@ -95,6 +95,13 @@ pub fn spawn_event_forwarder(service: &AgentationService, app_handle: tauri::App
                             &ev.payload,
                         );
                     }
+                    AFSEventType::AnnotationUpdated => {
+                        let _ = app_handle.emit_to(
+                            "main",
+                            "agentation:annotation_updated",
+                            &ev.payload,
+                        );
+                    }
                     AFSEventType::ActionRequested => {
                         let _ = app_handle.emit_to(
                             "main",

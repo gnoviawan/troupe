@@ -97,7 +97,9 @@ export function formatBatchAnnotationsForChat(url: string, items: PendingAnnotat
       item.kind === 'guide'
         ? `[Guide ${item.axis ?? ''} ${item.positionPx !== undefined ? `${item.positionPx}px` : ''}]`
         : item.kind === 'measurement'
-          ? '[Ruler]'
+          ? item.gapPx !== undefined
+            ? `[Ruler ${item.axis ? `${item.axis} ` : ''}${item.gapPx}px]`
+            : '[Ruler]'
           : item.kind === 'rectangle'
             ? '[Area]'
             : '[Element]'
