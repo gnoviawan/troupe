@@ -202,7 +202,17 @@ impl State {
     /// A chat's modes for the mode chip.
     pub(crate) fn mode_view(&self, host: &Host) -> Option<ModeView> {
         let Host::Chat(id) = host else { return None };
-        let modes = self.chat.acp.sessions.get(id)?.rest.get("modes").filter(|m| !m.is_null())?;
+        let own = self.chat.acp.sessions.get(id)?;
+        let not_null = |s: &model::acp::types::Session| s.rest.get("modes").filter(|m| !m.is_null()).cloned();
+        // An armed switch shows its target's modes, current at the pick it holds
+        // (`armedOptions ? armedOptions.modes : session.modes`).
+        let armed = self.chat.acp.switch_target_session(id).and_then(not_null).map(|mut modes| {
+            if let Some(pick) = own.rest.get("switching").and_then(|sw| sw.pointer("/pendingOptions/modeId")).filter(|m| m.is_string()) {
+                modes["currentModeId"] = pick.clone();
+            }
+            modes
+        });
+        let modes = &armed.or_else(|| not_null(own))?;
         let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
         let rows: Vec<ModeRow> = modes
             .get("availableModes")
