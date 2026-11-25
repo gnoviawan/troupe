@@ -736,7 +736,7 @@ test.describe('the viewport crosses to the desktop shell', () => {
   }) => {
     const logs = collectOverlayLogs(page)
     const { base } = await bootMobileShell(page)
-    const settings = page.getByRole('dialog', { name: 'Application Preferences' })
+    const settings = page.getByRole('dialog', { name: 'Preferences', exact: true })
 
     await openDrawer(page)
     await page.getByRole('button', { name: 'Settings', exact: true }).tap()
