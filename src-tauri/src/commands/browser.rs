@@ -329,31 +329,48 @@ const LOCAL_DEV_PORTS: &[(u16, &str)] = &[
     (8787, "Workers dev server"),
 ];
 
+/// Probe whether a localhost TCP port is accepting connections on IPv4 or IPv6.
+async fn is_local_port_listening(port: u16) -> bool {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+    use std::time::Duration;
+
+    let v4 = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
+    if tokio::time::timeout(
+        Duration::from_millis(120),
+        tokio::net::TcpStream::connect(v4),
+    )
+    .await
+    .is_ok_and(|res| res.is_ok())
+    {
+        return true;
+    }
+
+    let v6 = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), port);
+    tokio::time::timeout(
+        Duration::from_millis(120),
+        tokio::net::TcpStream::connect(v6),
+    )
+    .await
+    .is_ok_and(|res| res.is_ok())
+}
+
 /// Probe common local dev server ports in parallel with a short timeout.
 #[tauri::command]
 pub async fn browser_list_local_servers(
     webview: Webview,
 ) -> Result<IpcResult<Vec<LocalDevServer>>, String> {
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-    use std::time::Duration;
-
     require_main_webview(&webview, "browser_list_local_servers")?;
     let mut handles = Vec::with_capacity(LOCAL_DEV_PORTS.len());
     for &(port, label) in LOCAL_DEV_PORTS {
         handles.push(tokio::spawn(async move {
-            let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
-            let ok = tokio::time::timeout(
-                Duration::from_millis(75),
-                tokio::net::TcpStream::connect(addr),
-            )
-            .await
-            .is_ok_and(|res| res.is_ok());
-            ok.then(|| LocalDevServer {
-                host: format!("localhost:{port}"),
-                port,
-                url: format!("http://localhost:{port}"),
-                label: label.to_string(),
-            })
+            is_local_port_listening(port)
+                .await
+                .then(|| LocalDevServer {
+                    host: format!("localhost:{port}"),
+                    port,
+                    url: format!("http://localhost:{port}"),
+                    label: label.to_string(),
+                })
         }));
     }
     let mut found = Vec::new();
@@ -371,16 +388,6 @@ pub async fn browser_check_local_port(
     port: u16,
     webview: Webview,
 ) -> Result<IpcResult<bool>, String> {
-    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-    use std::time::Duration;
-
     require_main_webview(&webview, "browser_check_local_port")?;
-    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
-    let ok = tokio::time::timeout(
-        Duration::from_millis(75),
-        tokio::net::TcpStream::connect(addr),
-    )
-    .await
-    .is_ok_and(|res| res.is_ok());
-    Ok(IpcResult::success(ok))
+    Ok(IpcResult::success(is_local_port_listening(port).await))
 }

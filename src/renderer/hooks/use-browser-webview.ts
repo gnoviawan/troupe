@@ -52,7 +52,7 @@ export function useBrowserWebview(
   browserTabId: string,
   paneVisible: boolean,
   url: string,
-  opts?: { hasError?: boolean; zoomFactor?: number; layoutKey?: string }
+  opts?: { hasError?: boolean; zoomFactor?: number; layoutKey?: string; reloadNonce?: number }
 ) {
   // An occluded webview (a shell popover is open), blank Start Page, or offline
   // error view hides the native child webview so React UI renders unobstructed.
@@ -62,16 +62,20 @@ export function useBrowserWebview(
   const isVisible = paneVisible && !occluded && hasDocument
   const zoomFactor = opts?.zoomFactor ?? 1
   const layoutKey = opts?.layoutKey ?? 'desktop'
+  const reloadNonce = opts?.reloadNonce ?? 0
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
   const [createdTick, setCreatedTick] = useState(0)
   const mountedRef = useRef(true)
   const mountTokenRef = useRef(0)
+  const probeTokenRef = useRef(0)
+  const lastReloadNonceRef = useRef(reloadNonce)
   const urlRef = useRef(url)
   const latestUrlRef = useRef(url)
   latestUrlRef.current = url
   const zoomAppliedRef = useRef(1)
   const visibilityRef = useRef(isVisible)
+  visibilityRef.current = isVisible
 
   const updateBounds = useCallback((): Promise<void> => {
     const el = containerRef.current
@@ -101,7 +105,7 @@ export function useBrowserWebview(
     mountTokenRef.current += 1
     const mountToken = mountTokenRef.current
     const el = containerRef.current
-    if (!el || !hasUrl) return
+    if (!el || !hasDocument) return
     urlRef.current = latestUrlRef.current
 
     useBrowserSessionStore.getState().setLoading(browserTabId, true)
@@ -254,7 +258,7 @@ export function useBrowserWebview(
         })
       createdRef.current = false
     }
-  }, [browserTabId, hasUrl, updateBounds])
+  }, [browserTabId, hasDocument, updateBounds])
 
   // Show / hide on visibility change
   useEffect(() => {
@@ -300,11 +304,45 @@ export function useBrowserWebview(
     }
   }, [isVisible, browserTabId, updateBounds])
 
-  // Navigate when url prop changes externally (and probe localhost ports for offline view)
+  // Navigate when url prop changes externally or when reloadNonce bumps (e.g. offline retry)
   useEffect(() => {
+    const forceReload = reloadNonce !== lastReloadNonceRef.current
+    lastReloadNonceRef.current = reloadNonce
+    if (!url) return
+
+    const probeToken = ++probeTokenRef.current
     const localTarget = parseLocalhostPort(url)
+    const shouldNavigate = forceReload || url !== urlRef.current
+
+    const navigateNow = () => {
+      if (!shouldNavigate) return
+      urlRef.current = url
+      if (!createdRef.current) return
+      useBrowserSessionStore.getState().setLoading(browserTabId, true)
+      browserTabNavigate(browserTabId, url)
+        .then((result) => {
+          if (!result.success) {
+            void logFrontendError({
+              message: `browserTabNavigate failed for tab ${browserTabId}: ${result.error}`,
+              source: 'useBrowserWebview'
+            })
+            useBrowserSessionStore.getState().setLoading(browserTabId, false)
+          }
+        })
+        .catch((err) => {
+          void logFrontendError({
+            message: `browserTabNavigate rejected for tab ${browserTabId}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            source: 'useBrowserWebview'
+          })
+          useBrowserSessionStore.getState().setLoading(browserTabId, false)
+        })
+    }
+
     if (localTarget) {
       void browserCheckLocalPort(localTarget.port).then((probe) => {
+        if (probeToken !== probeTokenRef.current) return
         if (probe.success && !probe.data) {
           useBrowserSessionStore.getState().setLoadError(browserTabId, {
             code: 'ERR_CONNECTION_REFUSED',
@@ -312,33 +350,15 @@ export function useBrowserWebview(
             port: localTarget.port,
             message: `No local server is listening on port ${localTarget.port}. Start your dev server or check the port number.`
           })
+          return
         }
+        navigateNow()
       })
+      return
     }
-    if (url === urlRef.current) return
-    urlRef.current = url
-    if (!createdRef.current) return
-    useBrowserSessionStore.getState().setLoading(browserTabId, true)
-    browserTabNavigate(browserTabId, url)
-      .then((result) => {
-        if (!result.success) {
-          void logFrontendError({
-            message: `browserTabNavigate failed for tab ${browserTabId}: ${result.error}`,
-            source: 'useBrowserWebview'
-          })
-          useBrowserSessionStore.getState().setLoading(browserTabId, false)
-        }
-      })
-      .catch((err) => {
-        void logFrontendError({
-          message: `browserTabNavigate rejected for tab ${browserTabId}: ${
-            err instanceof Error ? err.message : String(err)
-          }`,
-          source: 'useBrowserWebview'
-        })
-        useBrowserSessionStore.getState().setLoading(browserTabId, false)
-      })
-  }, [url, browserTabId])
+
+    navigateNow()
+  }, [url, browserTabId, reloadNonce])
 
   // Resize observer — re-attaches when containerRef mounts after Start Page or Offline view
   useEffect(() => {

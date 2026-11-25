@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Bug, ExternalLink, Minus, MoreHorizontal, Plus, RotateCcw } from '@/components/icons'
+import { Bug, ExternalLink, Minus, MoreHorizontal, Plus, RefreshCw } from '@/components/icons'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 
@@ -126,10 +127,12 @@ export function BrowserMoreMenu({
             className="flex h-[30px] items-center justify-between rounded-md px-2 text-[13px] font-medium text-secondary-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:opacity-40"
           >
             <span className="inline-flex items-center gap-1.5">
-              <RotateCcw size={12} className="text-muted-foreground" aria-hidden="true" />
+              <RefreshCw size={12} className="text-muted-foreground" aria-hidden="true" />
               Hard reload
             </span>
-            <span className="font-mono text-xs text-muted-foreground">⇧⌘R</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {isMac ? '⇧⌘R' : 'Ctrl+Shift+R'}
+            </span>
           </button>
 
           {onOpenDevtools && (

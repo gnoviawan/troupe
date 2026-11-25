@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useBrowserWebview } from '@/hooks/use-browser-webview'
 import {
@@ -64,12 +64,14 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   )
 
   const stageRef = useRef<HTMLDivElement>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
   const layoutKey = `${viewportPreset}-${orientation}-${customWidth ?? 'preset'}`
 
   const { containerRef } = useBrowserWebview(browserTabId, isVisible, url, {
     hasError: Boolean(loadError),
     zoomFactor,
-    layoutKey
+    layoutKey,
+    reloadNonce
   })
 
   // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue
@@ -173,17 +175,22 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       void browserCheckLocalPort(port).then((probe) => {
         if (probe.success && probe.data) {
           setLoadError(browserTabId, null)
-          if (url) updateUrl(browserTabId, url)
+          setReloadNonce((n) => n + 1)
         }
       })
     }, 2000)
     return () => window.clearInterval(timer)
-  }, [browserTabId, isVisible, loadError?.port, setLoadError, updateUrl, url])
+  }, [browserTabId, isVisible, loadError?.port, setLoadError])
 
   const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
   const targetWidth =
     customWidth ??
     (presetSpec ? (orientation === 'portrait' ? presetSpec.width : presetSpec.height) : undefined)
+  const targetHeight = presetSpec
+    ? orientation === 'portrait'
+      ? presetSpec.height
+      : presetSpec.width
+    : undefined
 
   const startGripDrag = useCallback(
     (side: 'left' | 'right', e: React.PointerEvent<HTMLButtonElement>) => {
@@ -214,9 +221,20 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   )
 
   const handleRetryOffline = useCallback(() => {
+    if (loadError?.port) {
+      void browserCheckLocalPort(loadError.port).then((probe) => {
+        if (probe.success && !probe.data) {
+          toast.error(`Port ${loadError.port} is still not responding.`)
+          return
+        }
+        setLoadError(browserTabId, null)
+        setReloadNonce((n) => n + 1)
+      })
+      return
+    }
     setLoadError(browserTabId, null)
-    if (url) updateUrl(browserTabId, url)
-  }, [browserTabId, setLoadError, updateUrl, url])
+    setReloadNonce((n) => n + 1)
+  }, [browserTabId, loadError?.port, setLoadError])
 
   const handleOpenTerminal = useCallback(() => {
     if (!activeProject?.path) return
@@ -239,8 +257,8 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       <div
         ref={stageRef}
         className={cn(
-          'relative flex flex-1 overflow-hidden bg-background',
-          isConstrained && 'items-center justify-center gap-3 p-5'
+          'relative flex flex-1 overflow-hidden',
+          isConstrained ? 'items-center justify-center gap-3 bg-muted/30 p-5' : 'bg-background'
         )}
       >
         {!url ? (
@@ -266,12 +284,19 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
               ref={containerRef}
               style={
                 isConstrained && targetWidth
-                  ? { width: `${targetWidth}px`, maxWidth: '100%', height: '100%' }
+                  ? {
+                      width: `${targetWidth}px`,
+                      maxWidth: '100%',
+                      height: targetHeight ? `${targetHeight}px` : '100%',
+                      maxHeight: '100%'
+                    }
                   : undefined
               }
               className={cn(
                 'relative bg-background',
-                isConstrained ? 'tactile-modal overflow-hidden rounded-[10px]' : 'h-full flex-1'
+                isConstrained
+                  ? 'tactile-modal overflow-hidden rounded-[10px] ring-1 ring-border'
+                  : 'h-full flex-1'
               )}
             >
               {loading && (

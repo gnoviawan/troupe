@@ -13,7 +13,7 @@ import {
   Lock,
   Monitor,
   PenTool,
-  RotateCcw,
+  RefreshCw,
   Smartphone,
   Square,
   Tablet,
@@ -34,6 +34,7 @@ import {
 } from '@/lib/browser-api'
 import { stopBrowserAgent } from '@/lib/browser-consent-api'
 import { logFrontendError } from '@/lib/log-api'
+import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { useAgentTabSession, useSessionBrowserStopped } from '@/stores/browser-control-store'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
@@ -214,10 +215,30 @@ export function BrowserControls({
     setScreenshotOpen(false)
     setAnnotateMode(browserTabId, true)
     setAnnotateTool(browserTabId, 'screenshot-area')
-    void browserTabInjectAgentation(browserTabId).then(() => {
-      void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
-      void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'screenshot-area' })
-    })
+    void browserTabInjectAgentation(browserTabId)
+      .then((result) => {
+        if (!result.success && result.code !== 'NOT_TAURI') {
+          setAnnotateMode(browserTabId, false)
+          toast.error(result.error || 'Could not start area capture.')
+          void logFrontendError({
+            level: 'warn',
+            message: `Area capture injection failed: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
+            source: 'BrowserControls'
+          })
+          return
+        }
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'screenshot-area' })
+      })
+      .catch((e) => {
+        setAnnotateMode(browserTabId, false)
+        toast.error('Could not start area capture.')
+        void logFrontendError({
+          level: 'warn',
+          message: `Area capture injection error: ${e instanceof Error ? e.message : String(e)}`,
+          source: 'BrowserControls'
+        })
+      })
   }, [browserTabId, setAnnotateMode, setAnnotateTool])
 
   const handleStopAgent = useCallback(() => {
@@ -388,8 +409,14 @@ export function BrowserControls({
                 <div className="flex shrink-0 items-center gap-0.5">
                   <button
                     type="button"
-                    disabled={!hasUrl || !canGoBack}
-                    onClick={() => browserTabGoBack(browserTabId).catch(console.error)}
+                    disabled={!hasUrl || (!canGoBack && !(tab?.loadError && tab?.previousUrl))}
+                    onClick={() => {
+                      if (tab?.loadError && tab.previousUrl) {
+                        useBrowserSessionStore.getState().updateUrl(browserTabId, tab.previousUrl)
+                        return
+                      }
+                      browserTabGoBack(browserTabId).catch(console.error)
+                    }}
                     className="flex size-7 items-center justify-center rounded-md text-secondary-foreground transition-colors duration-150 hover:bg-muted/60 hover:text-foreground active:scale-[0.94] disabled:pointer-events-none disabled:opacity-40"
                     aria-label="Back"
                     title="Back"
@@ -428,7 +455,7 @@ export function BrowserControls({
                   >
                     <span className="t-icon-swap" data-state={tabLoading ? 'b' : 'a'}>
                       <span className="t-icon" data-icon="a">
-                        <RotateCcw size={13} />
+                        <RefreshCw size={13} />
                       </span>
                       <span className="t-icon" data-icon="b">
                         <X size={13} />
@@ -493,7 +520,7 @@ export function BrowserControls({
 
                   {!hasUrl && !urlFocused && (
                     <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
-                      ⌘L
+                      {isMac ? '⌘L' : 'Ctrl+L'}
                     </span>
                   )}
 
@@ -586,7 +613,9 @@ export function BrowserControls({
                           <Crop size={14} aria-hidden="true" />
                           Screenshot area
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">⇧⌘A</span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {isMac ? '⇧⌘A' : 'Ctrl+Shift+A'}
+                        </span>
                       </button>
                       <button
                         type="button"
@@ -597,7 +626,9 @@ export function BrowserControls({
                           <Monitor size={14} aria-hidden="true" />
                           Screenshot visible
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">⇧⌘S</span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {isMac ? '⇧⌘S' : 'Ctrl+Shift+S'}
+                        </span>
                       </button>
                     </PopoverContent>
                   </Popover>

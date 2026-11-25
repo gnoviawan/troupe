@@ -87,7 +87,8 @@ describe('BrowserPanel', () => {
     expect(screen.queryByText('Loading...')).toBeNull()
   })
 
-  it('renders offline view with Open terminal wired and clears error on Retry', () => {
+  it('renders offline view with Open terminal wired and clears error on Retry when port recovers', async () => {
+    const { browserCheckLocalPort } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'http://localhost:5173')
     useBrowserSessionStore.getState().setLoadError('tab-1', {
       code: 'ERR_CONNECTION_REFUSED',
@@ -104,8 +105,11 @@ describe('BrowserPanel', () => {
     fireEvent.click(screen.getByText('Open terminal'))
     expect(mockOpenTerminalAtCwd).toHaveBeenCalledWith('proj-1', '/repo')
 
+    vi.mocked(browserCheckLocalPort).mockResolvedValueOnce({ success: true, data: true })
     fireEvent.click(screen.getByText('Retry'))
-    expect(useBrowserSessionStore.getState().getTab('tab-1')?.loadError).toBeNull()
+    await waitFor(() => {
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.loadError).toBeNull()
+    })
   })
 
   it('shows responsive viewport sub-bar and resize grips in mobile mode', () => {

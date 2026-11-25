@@ -54,6 +54,7 @@ export interface BrowserTab {
   pinsHidden: boolean
   pendingAnnotations: PendingAnnotationItem[]
   loadError: BrowserLoadError | null
+  previousUrl?: string
 }
 
 export const MIN_BROWSER_ZOOM = 0.5
@@ -206,7 +207,11 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
       const existing = state.tabs.get(id)
       if (!existing) return state
       const next = new Map(state.tabs)
-      next.set(id, { ...existing, url, loadError: null, loading: Boolean(url) })
+      const previousUrl =
+        existing.url && existing.url !== url && !existing.loadError
+          ? existing.url
+          : existing.previousUrl
+      next.set(id, { ...existing, url, previousUrl, loadError: null, loading: Boolean(url) })
       return {
         tabs: next,
         recentUrls: url ? recordRecent(state.recentUrls, url) : state.recentUrls

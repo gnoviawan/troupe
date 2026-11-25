@@ -42,6 +42,17 @@ pub struct BrowserBounds {
     pub height: f64,
 }
 
+#[cfg(target_os = "linux")]
+thread_local! {
+    static GTK_TAB_BOUNDS: std::cell::RefCell<HashMap<usize, BrowserBounds>> =
+        std::cell::RefCell::new(HashMap::new());
+}
+
+#[cfg(target_os = "linux")]
+fn gtk_widget_key<W: gtk::glib::object::ObjectType>(widget: &W) -> usize {
+    widget.as_ptr() as usize
+}
+
 pub struct BrowserTabManager {
     app_handle: AppHandle,
     /// Event channel of every webview this manager built, by label.
@@ -263,6 +274,19 @@ impl BrowserTabManager {
                         let overlay = gtk::Overlay::new();
                         overlay.set_hexpand(true);
                         overlay.set_vexpand(true);
+                        overlay.connect_get_child_position(|_ov, widget| {
+                            let key = gtk_widget_key(widget);
+                            GTK_TAB_BOUNDS.with(|map| {
+                                map.borrow().get(&key).map(|b| {
+                                    gtk::Rectangle::new(
+                                        b.x.round() as i32,
+                                        b.y.round() as i32,
+                                        b.width.round().max(1.0) as i32,
+                                        b.height.round().max(1.0) as i32,
+                                    )
+                                })
+                            })
+                        });
                         main_widget.set_hexpand(true);
                         main_widget.set_vexpand(true);
                         vbox.remove(&main_widget);
@@ -273,17 +297,19 @@ impl BrowserTabManager {
                         overlay
                     };
 
-                    child_widget.set_halign(gtk::Align::Start);
-                    child_widget.set_valign(gtk::Align::Start);
-                    child_widget.set_margin_start(reparent_bounds.x.round() as i32);
-                    child_widget.set_margin_top(reparent_bounds.y.round() as i32);
-                    child_widget.set_size_request(
-                        reparent_bounds.width.round() as i32,
-                        reparent_bounds.height.round() as i32,
-                    );
+                    let key = gtk_widget_key(&child_widget);
+                    GTK_TAB_BOUNDS.with(|map| {
+                        map.borrow_mut().insert(key, reparent_bounds.clone());
+                    });
+                    child_widget.set_halign(gtk::Align::Fill);
+                    child_widget.set_valign(gtk::Align::Fill);
+                    child_widget.set_margin_start(0);
+                    child_widget.set_margin_top(0);
+                    child_widget.set_size_request(1, 1);
                     overlay.add_overlay(&child_widget);
                     child_widget.show();
                     overlay.show();
+                    overlay.queue_resize();
                     Ok(())
                 })();
 
@@ -337,12 +363,14 @@ impl BrowserTabManager {
                 .with_webview(move |child_platform| {
                     use gtk::prelude::*;
                     let child_widget = child_platform.inner();
-                    child_widget.set_margin_start(bounds.x.round() as i32);
-                    child_widget.set_margin_top(bounds.y.round() as i32);
-                    child_widget.set_size_request(
-                        bounds.width.round() as i32,
-                        bounds.height.round() as i32,
-                    );
+                    let key = gtk_widget_key(&child_widget);
+                    GTK_TAB_BOUNDS.with(|map| {
+                        map.borrow_mut().insert(key, bounds.clone());
+                    });
+                    child_widget.set_size_request(1, 1);
+                    if let Some(parent) = child_widget.parent() {
+                        parent.queue_resize();
+                    }
                     child_widget.queue_resize();
                 })
                 .map_err(|e| format!("Resize dispatch failed: {e}"))?;
@@ -475,6 +503,10 @@ impl BrowserTabManager {
                 let _ = webview.with_webview(move |child_platform| {
                     use gtk::prelude::*;
                     let child_widget = child_platform.inner();
+                    let key = gtk_widget_key(&child_widget);
+                    GTK_TAB_BOUNDS.with(|map| {
+                        map.borrow_mut().remove(&key);
+                    });
                     if let Some(parent) = child_widget.parent() {
                         if let Ok(overlay) = parent.dynamic_cast::<gtk::Overlay>() {
                             overlay.remove(&child_widget);
@@ -573,6 +605,10 @@ impl BrowserTabManager {
                     let _ = webview.with_webview(move |child_platform| {
                         use gtk::prelude::*;
                         let child_widget = child_platform.inner();
+                        let key = gtk_widget_key(&child_widget);
+                        GTK_TAB_BOUNDS.with(|map| {
+                            map.borrow_mut().remove(&key);
+                        });
                         if let Some(parent) = child_widget.parent() {
                             if let Ok(overlay) = parent.dynamic_cast::<gtk::Overlay>() {
                                 overlay.remove(&child_widget);

@@ -19,6 +19,7 @@ import {
   findMisalignedNearGuide,
   inspectElement
 } from './dom-inspect'
+import { OVERLAY_CSS } from './overlay-styles'
 
 type AnnotateTool = 'comment' | 'rectangle' | 'ruler' | 'screenshot-area'
 type GuideAxis = 'horizontal' | 'vertical'
@@ -54,158 +55,6 @@ interface PlacedGuide {
 const HOST_ID = 'termul-agentation-host'
 const PAUSE_STYLE_ID = 'troupe-annotate-pause-animations'
 
-const OVERLAY_CSS = `
-:host {
-  all: initial;
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 2147483647 !important;
-  pointer-events: none !important;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-* { box-sizing: border-box; }
-.layer { position: fixed; inset: 0; pointer-events: none; }
-.layer.capture { pointer-events: auto; cursor: crosshair; }
-.layer.comment-mode { pointer-events: auto; cursor: default; }
-.hover-box {
-  position: fixed;
-  border: 1.5px solid #3b82f6;
-  background: rgba(59, 130, 246, 0.08);
-  border-radius: 4px;
-  pointer-events: none;
-  display: none;
-}
-.drag-box {
-  position: fixed;
-  border: 1.5px dashed #3b82f6;
-  background: rgba(59, 130, 246, 0.10);
-  border-radius: 6px;
-  pointer-events: none;
-  display: none;
-}
-.pin {
-  position: fixed;
-  width: 22px;
-  height: 22px;
-  margin-left: -11px;
-  margin-top: -11px;
-  border-radius: 9999px;
-  background: #3b82f6;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0,0,0,0.35);
-  pointer-events: auto;
-  cursor: pointer;
-}
-.pin.guide-pin { background: #ef4444; }
-.saved-rect {
-  position: fixed;
-  border: 1.5px dashed #3b82f6;
-  background: rgba(59, 130, 246, 0.06);
-  border-radius: 6px;
-  pointer-events: none;
-}
-.guide {
-  position: fixed;
-  background: #ef4444;
-  pointer-events: auto;
-  cursor: pointer;
-}
-.guide.vertical { top: 0; bottom: 0; width: 1.5px; cursor: ew-resize; }
-.guide.horizontal { left: 0; right: 0; height: 1.5px; cursor: ns-resize; }
-.guide-badge {
-  position: fixed;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: #ef4444;
-  color: #ffffff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 20px;
-  pointer-events: auto;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.spacing-pill {
-  position: fixed;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: #ec4899;
-  color: #ffffff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 20px;
-  pointer-events: none;
-  display: none;
-}
-.popover {
-  position: fixed;
-  width: 332px;
-  padding: 14px;
-  border-radius: 8px;
-  background: #1b1c1f;
-  color: #ededef;
-  box-shadow: 0 0 0 0.5px #34363b, 0 1px 2px rgba(0,0,0,0.5), 0 6px 8px -4px rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: auto;
-}
-.pop-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pop-title {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  color: #ededef;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pop-pill {
-  font-size: 12px;
-  line-height: 16px;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  background: rgba(34, 197, 94, 0.14);
-  color: #4ade80;
-  box-shadow: 0 0 0 0.5px rgba(34, 197, 94, 0.34);
-  flex-shrink: 0;
-}
-.pop-input {
-  width: 100%;
-  min-height: 62px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 0;
-  background: #141518;
-  color: #ededef;
-  font-size: 13px;
-  line-height: 20px;
-  font-family: inherit;
-  resize: none;
-  outline: none;
-  box-shadow: 0 0 0 2px #6b7280;
-}
-.pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pop-hint { font-size: 12px; color: #9ca3af; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.pop-link {
-  background: none; border: 0; padding: 0; color: #f87171;
-  font-size: 12px; text-decoration: underline; cursor: pointer;
-}
-.pop-actions { display: flex; gap: 8px; }
-.btn {
-  height: 28px; padding: 0 11px; border-radius: 6px; border: 0;
-  font-size: 12px; font-weight: 500; cursor: pointer;
-}
-.btn-sec { background: #2a2c31; color: #ededef; box-shadow: 0 0 0 0.5px #3f424a, 0 1px 2px rgba(0,0,0,0.5); }
-.btn-pri { background: #0e72cc; color: #ffffff; box-shadow: 0 0 0 0.5px #0e72cc, 0 1px 2px rgba(0,0,0,0.5); }
-`
-
 class TroupeAnnotationOverlay {
   private host: HTMLDivElement
   private shadow: ShadowRoot
@@ -213,6 +62,8 @@ class TroupeAnnotationOverlay {
   private hoverBox: HTMLDivElement
   private dragBox: HTMLDivElement
   private spacingPill: HTMLDivElement
+  private spacingTopLine: HTMLDivElement
+  private spacingLeftLine: HTMLDivElement
   private pinsContainer: HTMLDivElement
   private guidesContainer: HTMLDivElement
   private popoverEl: HTMLDivElement | null = null
@@ -254,12 +105,21 @@ class TroupeAnnotationOverlay {
     this.spacingPill.className = 'spacing-pill'
     this.shadow.appendChild(this.spacingPill)
 
+    this.spacingTopLine = document.createElement('div')
+    this.spacingTopLine.className = 'spacing-line v'
+    this.shadow.appendChild(this.spacingTopLine)
+
+    this.spacingLeftLine = document.createElement('div')
+    this.spacingLeftLine.className = 'spacing-line h'
+    this.shadow.appendChild(this.spacingLeftLine)
+
     this.guidesContainer = document.createElement('div')
     this.shadow.appendChild(this.guidesContainer)
 
     this.pinsContainer = document.createElement('div')
     this.shadow.appendChild(this.pinsContainer)
 
+    this.host.style.display = 'none'
     this.bindEvents()
   }
 
@@ -337,22 +197,31 @@ class TroupeAnnotationOverlay {
     }
   }
 
+  private hideHoverVisuals(): void {
+    this.hoverBox.style.display = 'none'
+    this.spacingPill.style.display = 'none'
+    this.spacingTopLine.style.display = 'none'
+    this.spacingLeftLine.style.display = 'none'
+  }
+
   public dispatch(cmd: OverlayCommand): void {
     switch (cmd.type) {
       case 'set_active':
         this.active = Boolean(cmd.active)
         if (!this.active) {
           this.closePopover()
-          this.hoverBox.style.display = 'none'
-          this.spacingPill.style.display = 'none'
+          this.hideHoverVisuals()
+          this.host.style.display = 'none'
+        } else {
+          this.host.style.display = ''
+          this.renderPinsAndGuides()
         }
         this.syncLayerMode()
         break
       case 'set_tool':
         if (cmd.tool) this.tool = cmd.tool
         this.closePopover()
-        this.hoverBox.style.display = 'none'
-        this.spacingPill.style.display = 'none'
+        this.hideHoverVisuals()
         this.syncLayerMode()
         break
       case 'set_pause':
@@ -425,8 +294,7 @@ class TroupeAnnotationOverlay {
       }
       const el = this.elementUnderPoint(e.clientX, e.clientY)
       if (!el) {
-        this.hoverBox.style.display = 'none'
-        this.spacingPill.style.display = 'none'
+        this.hideHoverVisuals()
         return
       }
       const rect = el.getBoundingClientRect()
@@ -437,12 +305,27 @@ class TroupeAnnotationOverlay {
       this.hoverBox.style.height = `${rect.height}px`
 
       if (this.tool === 'ruler') {
+        const cx = Math.round(rect.left + rect.width / 2)
+        const cy = Math.round(rect.top + rect.height / 2)
+        const topGap = Math.max(0, Math.round(rect.top))
+        const leftGap = Math.max(0, Math.round(rect.left))
+        this.spacingTopLine.style.display = topGap > 0 ? 'block' : 'none'
+        this.spacingTopLine.style.left = `${cx}px`
+        this.spacingTopLine.style.top = '0px'
+        this.spacingTopLine.style.height = `${topGap}px`
+        this.spacingLeftLine.style.display = leftGap > 0 ? 'block' : 'none'
+        this.spacingLeftLine.style.left = '0px'
+        this.spacingLeftLine.style.top = `${cy}px`
+        this.spacingLeftLine.style.width = `${leftGap}px`
+
         this.spacingPill.style.display = 'block'
-        this.spacingPill.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}px · x ${Math.round(rect.left)} y ${Math.round(rect.top)}`
-        this.spacingPill.style.left = `${Math.min(window.innerWidth - 180, rect.left)}px`
+        this.spacingPill.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}px · ↑${topGap} ←${leftGap}`
+        this.spacingPill.style.left = `${Math.min(window.innerWidth - 200, Math.max(8, rect.left))}px`
         this.spacingPill.style.top = `${Math.max(8, rect.top - 24)}px`
       } else {
         this.spacingPill.style.display = 'none'
+        this.spacingTopLine.style.display = 'none'
+        this.spacingLeftLine.style.display = 'none'
       }
     })
 
@@ -628,6 +511,7 @@ class TroupeAnnotationOverlay {
     guide?: PlacedGuide
   }): void {
     this.closePopover()
+    this.hideHoverVisuals()
     const pop = document.createElement('div')
     pop.className = 'popover'
     const left = Math.max(12, Math.min(window.innerWidth - 348, opts.x + 14))
@@ -668,7 +552,8 @@ class TroupeAnnotationOverlay {
     } else {
       const hint = document.createElement('span')
       hint.className = 'pop-hint'
-      hint.textContent = '⌘Enter to add'
+      const isMacOs = /mac/i.test(navigator.platform || navigator.userAgent)
+      hint.textContent = isMacOs ? '⌘Enter to add' : 'Ctrl+Enter to add'
       foot.appendChild(hint)
     }
 
@@ -742,6 +627,7 @@ class TroupeAnnotationOverlay {
     this.shadow.appendChild(pop)
     this.popoverEl = pop
     textarea.focus()
+    requestAnimationFrame(() => textarea.focus())
   }
 
   public destroy(): void {

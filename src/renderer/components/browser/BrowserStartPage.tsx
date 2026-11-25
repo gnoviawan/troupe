@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Globe, Lock } from '@/components/icons'
 import { browserListLocalServers, type LocalDevServer } from '@/lib/browser-api'
+import { isMac } from '@/lib/platform'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 
 interface BrowserStartPageProps {
@@ -175,9 +176,9 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
       </div>
 
       <div className="flex items-center gap-4 pt-6 font-mono text-xs text-muted-foreground">
-        <span>⌘L Focus URL</span>
-        <span>⌘R Reload</span>
-        <span>⌘W Close tab</span>
+        <span>{isMac ? '⌘L' : 'Ctrl+L'} Focus URL</span>
+        <span>{isMac ? '⌘R' : 'Ctrl+R'} Reload</span>
+        <span>{isMac ? '⌘W' : 'Ctrl+W'} Close tab</span>
       </div>
     </div>
   )
