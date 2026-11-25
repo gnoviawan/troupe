@@ -3969,6 +3969,8 @@ dependencies = [
  "model",
  "regex-lite",
  "rune",
+ "rune-kit",
+ "serde",
  "serde_json",
  "theme",
  "troupe-protocol",

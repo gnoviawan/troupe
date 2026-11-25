@@ -271,6 +271,8 @@ impl State {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
+                crate::host::Fetch::Git(task) => self.git_replied(task, result),
+                crate::host::Fetch::History(tag) => self.history_replied(tag, result),
             }
         }
         changed
