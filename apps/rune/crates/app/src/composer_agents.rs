@@ -78,10 +78,15 @@ impl State {
     }
 
     /// `promptCapabilities.image` of the agent a composer sends to, when that agent is known:
-    /// a chat's running agent. The launcher's agent starts on Send, so it is checked then.
+    /// a chat's running agent, or an armed switch's warmed target (`promptAgentId`). The
+    /// launcher's agent starts on Send, so it is checked then.
     pub(crate) fn image_capable(&self, host: &Host) -> Option<bool> {
         let Host::Chat(id) = host else { return None };
-        let agent = &self.chat.acp.sessions.get(id)?.agent_id;
+        let session = match self.armed_config(id) {
+            Some(_) => self.chat.acp.switch_target_session(id)?,
+            None => self.chat.acp.sessions.get(id)?,
+        };
+        let agent = &session.agent_id;
         let capabilities = self.chat.acp.agents.get(agent)?.get("capabilities")?;
         Some(capabilities.pointer("/promptCapabilities/image").and_then(Value::as_bool) == Some(true))
     }

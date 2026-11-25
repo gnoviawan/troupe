@@ -298,3 +298,18 @@ fn a_session_create_that_needs_sign_in_authenticates_the_target_agent() {
     let sent: Vec<Value> = calls(&rt.state, WsRequestType::AuthenticateAgent).into_iter().map(|(_, p)| p).collect();
     assert_eq!(sent, [json!({ "agentId": "agent-2", "methodId": "oauth" })], "the model's sign-in goes to the host");
 }
+
+#[test]
+fn an_armed_switch_checks_images_against_its_target() {
+    let mut rt = claude_chat();
+    rt.update_if(|s, _| {
+        s.chat.acp.agents.insert("agent-1".into(), json!({ "id": "agent-1", "capabilities": { "promptCapabilities": { "image": false } } }));
+        true
+    });
+    assert_eq!(rt.state.image_capable(&host()), Some(false), "the chat's own agent takes no images");
+    act(&mut rt, SwitchAct::Agent("gemini".into()));
+    let caps = json!({ "promptCapabilities": { "image": true } });
+    answer(&mut rt, WsRequestType::SpawnAgent, json!({ "agentId": "agent-2", "capabilities": caps, "authMethods": [] }));
+    answer(&mut rt, WsRequestType::CreateSession, json!({ "sessionId": "warm-1" }));
+    assert_eq!(rt.state.image_capable(&host()), Some(true), "the armed target does");
+}
