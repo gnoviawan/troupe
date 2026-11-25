@@ -45,7 +45,7 @@
         "src/renderer/lib/mcp-install-request.ts": "39fbc1fb23e5bf1a8704eaa8450de163df2c9647",
         "src/renderer/stores/acp-store/slices/launch.ts": "1eef03ff68823194a8e5b8894318c5da905b07cd",
         "src/renderer/stores/acp-store/slices/config.ts": "abc49235453fb78131450383b35a7215fed97767",
-        "src/renderer/lib/env-parser.ts": "e06c0d320abcaeb134605a97dd1b0a4126e3a29c",
+        "src/renderer/lib/env-parser.ts": "22f02e7cd11210b5c1065f38d37a9cd1f5434d75",
         "src/renderer/lib/agents/agent-aliases.ts": "0a5430d9172f39f34622ca50ba2459661ee0fa7a",
         "src/shared/acp-agent-aliases.json": "06a6ef341f46af33e723b0da32c2a11ca938d77a",
         "src/renderer/lib/acp-transport/tauri-verdicts.ts": "2ea6b118cea8cdf7700c162cc74fef4a86f5f11c",

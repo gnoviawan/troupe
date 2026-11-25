@@ -33,6 +33,15 @@ mod controls;
 mod editor_host;
 #[cfg(test)]
 mod editor_host_tests;
+mod git;
+mod git_diff;
+mod git_history;
+mod git_history_view;
+#[cfg(test)]
+mod git_history_tests;
+#[cfg(test)]
+mod git_tests;
+mod git_view;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;
@@ -142,6 +151,10 @@ pub struct State {
     /// The open text files and their editor tabs.
     pub editors: ui::editor::Editors,
     pub(crate) editor_host: editor_host::EditorHost,
+    /// The git cache and the Changes panel's own state.
+    pub git: git::GitUi,
+    /// The git history reads and the History tab's own state.
+    pub history: git_history::HistoryUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -191,6 +204,8 @@ impl Default for State {
             terms: terminal::TerminalUi::default(),
             editors: ui::editor::Editors::default(),
             editor_host: editor_host::EditorHost::default(),
+            git: git::GitUi::default(),
+            history: git_history::HistoryUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -284,6 +299,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.editors.now = editor_host::epoch_ms();
     state.sync_drafts(now);
     state.sync_editors();
+    let next_git = state.git_tick();
+    state.history_tick();
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -292,6 +309,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_blink(),
         state.next_find_refresh(),
         state.next_draft_sync(),
+        next_git,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

@@ -160069,7 +160069,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -160674,7 +160674,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -160913,7 +160913,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -161103,7 +161103,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -161384,7 +161384,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -161601,7 +161601,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -161800,7 +161800,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -161976,7 +161976,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -162348,7 +162348,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -162866,7 +162866,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true
@@ -163167,7 +163167,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "slow",
-        "REFS": "ab-cd$X{e%NOT TAG%"
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%"
        }
       },
       "projectId": "p1"
@@ -163276,7 +163276,7 @@
        "env": {
         "API_TOKEN": "abc",
         "MODE": "fast",
-        "REFS": "ab-cd$X{e%NOT TAG%",
+        "REFS": "a${HOME}b$USER-c%PATH%d$X{e%NOT TAG%",
         "TOKEN": "abc"
        },
        "allowTerminal": true

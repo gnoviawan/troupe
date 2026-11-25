@@ -37,6 +37,7 @@ fn view(s: &S, cx: &mut Cx<S>) -> El {
             empty: &empty,
             tab: &|_| None,
             title: &|_| None,
+            badge: &|_| 0,
             dark: true,
         },
         &mut layer,

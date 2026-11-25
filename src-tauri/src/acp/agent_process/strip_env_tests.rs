@@ -91,3 +91,20 @@ fn without_the_antigravity_marker_google_credentials_stay() {
         "host-gemini|host-google||host-key"
     );
 }
+
+#[test]
+fn stdio_env_expands_references_against_host_env() {
+    let home = std::env::var("HOME").expect("HOME is set");
+    let mut command = std::process::Command::new("sh");
+    command.arg("-c").arg("printf '%s' \"$EXPAND_ME\"");
+    apply_stdio_env(
+        &mut command,
+        &[EnvVariable::new("EXPAND_ME", "$HOME/expanded")],
+    );
+    let output = command.output().expect("sh");
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        format!("{home}/expanded")
+    );
+}

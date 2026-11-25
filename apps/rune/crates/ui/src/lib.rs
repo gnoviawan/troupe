@@ -19,6 +19,7 @@ pub mod base;
 pub mod chat;
 pub mod composer;
 pub mod editor;
+pub mod git;
 pub mod mobile;
 pub mod overlay;
 pub mod markdown;

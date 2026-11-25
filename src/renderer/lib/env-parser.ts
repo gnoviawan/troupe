@@ -142,10 +142,11 @@ export interface ResolvedEnvResult {
  * - Windows: %VAR%
  *
  * @param projectEnvVars - Project's saved environment variables
- * @param inheritedEnv - Inherited system/process environment. IMPORTANT: In the renderer
- *   context, this should be fetched from the backend via a system API. Passing an empty
- *   object will cause $VAR references to resolve to empty strings. TODO: Add a system
- *   API to fetch process environment from Tauri backend.
+ * @param inheritedEnv - Inherited system/process environment. Only pass a
+ *   real inherited env here: passing an empty object resolves every $VAR
+ *   reference to an empty string. Spawn call sites must use
+ *   `passThroughProjectEnv` instead and let the backend expand references
+ *   against the process env at spawn.
  * @returns Resolved environment map and metadata
  */
 export function resolveEnvForSpawn(
@@ -171,6 +172,37 @@ export function resolveEnvForSpawn(
   return {
     env: resolved,
     hasProjectEnv: Object.keys(resolved).length > 0
+  }
+}
+
+/**
+ * Pass project environment variables through to spawn without expanding
+ * them. The backend expands `$VAR`/`${VAR}`/`%VAR%` references against the
+ * process env at spawn (`merge_environment` for PTY terminals,
+ * `apply_stdio_env` for ACP agents), which is the only place the real
+ * inherited env exists. Expanding here, in the renderer, would resolve
+ * every reference against nothing.
+ */
+export function passThroughProjectEnv(
+  projectEnvVars: EnvVariable[] | undefined
+): ResolvedEnvResult {
+  if (!projectEnvVars || projectEnvVars.length === 0) {
+    return { env: {}, hasProjectEnv: false }
+  }
+
+  const env: Record<string, string> = {}
+
+  for (const envVar of projectEnvVars) {
+    if (!envVar.key || envVar.key.trim() === '') {
+      continue
+    }
+
+    env[envVar.key] = envVar.value
+  }
+
+  return {
+    env,
+    hasProjectEnv: Object.keys(env).length > 0
   }
 }
 
@@ -271,12 +303,14 @@ export function projectForCwd<P extends ProjectPathFields>(
 /**
  * The env an agent process spawned for a project receives: the project's
  * env vars with the agent's own env layered on top (`$VAR` values resolved
- * against the project env). Empty when neither contributes anything.
+ * against the project env). Project values pass through raw; the backend
+ * expands any remaining `$VAR` against the process env at spawn. Empty when
+ * neither contributes anything.
  */
 export function resolveAgentSpawnEnv(
   projectEnvVars: EnvVariable[] | undefined,
   agentEnv: Record<string, string> | undefined
 ): Record<string, string> {
-  const { env: projectEnv } = resolveEnvForSpawn(projectEnvVars, {})
+  const { env: projectEnv } = passThroughProjectEnv(projectEnvVars)
   return { ...projectEnv, ...resolveAgentEnv(agentEnv, projectEnv) }
 }
