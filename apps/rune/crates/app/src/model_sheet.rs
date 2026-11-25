@@ -36,7 +36,7 @@ impl State {
 
 /// `SheetRow` with a value and an accessory: a check on the picked row, a chevron for a
 /// sub-view.
-fn choice_row(t: &Tokens, key: String, title: El, label: &str, value: Option<&str>, accessory: Option<&'static rune::Icon>) -> El {
+fn choice_row(t: &Tokens, key: String, title: El, label: &str, value: Option<El>, accessory: Option<&'static rune::Icon>) -> El {
     let c = &t.colors;
     let mut e = row()
         .key(key)
@@ -52,7 +52,7 @@ fn choice_row(t: &Tokens, key: String, title: El, label: &str, value: Option<&st
         .hover(c.foreground.alpha(0.04))
         .child(col().grow(1.0).min_w(0.0).child(title));
     if let Some(value) = value {
-        e = e.child(text(value.to_owned()).font(sans(15.0, 400.0, 20.0)).color(c.muted_foreground).single_line());
+        e = e.child(value);
     }
     if let Some(glyph) = accessory {
         e = e.child(icon(glyph, 16.0).color(if std::ptr::eq(glyph, &i::CHECK) { c.foreground } else { c.muted_foreground }));
@@ -112,8 +112,16 @@ fn root_view(s: &State, t: &'static Tokens, host: &Host) -> Vec<El> {
         out.push(group(t, vec![r]));
     }
     if let Some(mode) = s.mode_view(host).filter(|m| !m.modes.is_empty()) {
-        let current = mode.modes.iter().find(|m| m.id == mode.current).map_or(mode.current.clone(), |m| m.name.clone());
-        let r = choice_row(t, "model-sheet-mode".into(), title(t, "Mode"), &format!("Mode, {current}"), Some(&current), Some(&i::CHEVRON_RIGHT))
+        let name = mode.modes.iter().find(|m| m.id == mode.current).map_or(mode.current.as_str(), |m| m.name.as_str());
+        let current = ui::composer::controls::chip_label(&mode.current, name);
+        let (risk, glyph) = ui::composer::controls::mode_kind(&mode.current);
+        let tint = if risk == ui::composer::controls::Risk::Danger { c.warning } else { c.muted_foreground };
+        let value = row()
+            .gap(6.0)
+            .items_center()
+            .child(icon(glyph, 16.0).color(tint))
+            .child(text(current.clone()).font(sans(15.0, 400.0, 20.0)).color(tint).single_line());
+        let r = choice_row(t, "model-sheet-mode".into(), title(t, "Mode"), &format!("Mode, {current}"), Some(value), Some(&i::CHEVRON_RIGHT))
             .on_press(|s: &mut State| s.overlays.open(MODEL_MODES));
         out.push(group(t, vec![r]));
     }
