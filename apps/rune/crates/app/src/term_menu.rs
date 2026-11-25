@@ -84,7 +84,6 @@ pub fn build(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
         })
     };
     let menu = Menu::new(MENU)
-        .label("Terminal")
         .width(160.0)
         .at(Some(at))
         .item(item("Copy", |s, id, tx| {

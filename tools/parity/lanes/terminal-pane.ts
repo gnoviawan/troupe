@@ -39,8 +39,8 @@ const options: LaneOptions = {
 }
 const DEPTH = path.join(REPO_DIR, 'tools/parity/depth')
 const CELL = { w: 8, h: 19 }
-/** The SGR press a left click on column 10, row 5 (from 0) reports. */
-const CLICK = { col: 10, row: 5, want: "b'\\x1b[<0;11;6M'" }
+/** The SGR press and release a left click on column 10, row 5 (from 0) reports. */
+const CLICK = { col: 10, row: 5, want: "b'\\x1b[<0;11;6M\\x1b[<0;11;6m'" }
 const PASTED = "b'\\x1b[200~ls -1\\rpwd\\x1b[201~'"
 
 interface Result {
@@ -94,7 +94,7 @@ async function probe(client: Client, mode: 'mouse' | 'paste'): Promise<string> {
       await client.page.keyboard.press('Control+v')
     }
   }
-  await until(async () => Bun.file(out).exists(), 10_000)
+  await until(async () => (await Bun.file(out).exists()) && Bun.file(out).size > 0, 10_000)
   return (await Bun.file(out).exists()) ? readFileSync(out, 'utf8') : ''
 }
 

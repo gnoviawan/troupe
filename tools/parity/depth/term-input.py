@@ -9,7 +9,7 @@ import tty
 
 mode, out = sys.argv[1], sys.argv[2]
 on, off, end = {
-    "mouse": (b"\x1b[?1000h\x1b[?1006h", b"\x1b[?1000l\x1b[?1006l", (b"M", b"m")),
+    "mouse": (b"\x1b[?1000h\x1b[?1006h", b"\x1b[?1000l\x1b[?1006l", (b"m",)),
     "paste": (b"\x1b[?2004h", b"\x1b[?2004l", (b"\x1b[201~",)),
 }[mode]
 saved = termios.tcgetattr(0)

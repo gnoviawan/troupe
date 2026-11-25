@@ -327,7 +327,8 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mu
             }
             list = list.child(item);
         }
-        col().w_full().max_h(height * 0.5).child(list).scroll(rune::ScrollSpec { stick_bottom: false })
+        // React's list is a 50 dvh virtual list, as tall with one row as with many.
+        col().w_full().h(height * 0.5).child(list).scroll(rune::ScrollSpec { stick_bottom: false })
     };
     let can_clear = !h.all_projects && !h.clearing && s.active_project().and_then(|p| h.loaded.get(&p.id)).is_some_and(|l| !l.is_empty());
     let mut clear = row()
