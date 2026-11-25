@@ -283,7 +283,7 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      prompt queued meanwhile goes out when the open ends. Not here: the
      tail-first fetch (`loadSessionPayloadTail`; the full payload is read),
      the web client's adoption of a host-owned agent and
-     `ACP_SESSION_OWNED_BY_OTHER`, the switch redirect and re-splice, the
+     `ACP_SESSION_OWNED_BY_OTHER` (the switch redirect and re-splice are 9e), the
      config reload, the Claude, Codex and Antigravity account reuse scope,
      the reopened chat's own model restore (`restoreReopenedChatSelection`,
      it needs `applyPendingLauncherOptions`), the 3 s capability wait (an
@@ -499,8 +499,31 @@ Each PR stays under 50 files, adds its vectors, and is green on its own.
      before the new session exists rolls back: the old chat shows
      `Could not switch agent: …`, and an agent spawned for the switch alone
      is killed. Not here: the composer's token rendering in the summary
-     (`sanitizeDisplayText`, `serializeSelectionContexts`, composer unit),
-     and the reopen's switch redirect and re-splice.
+     (`sanitizeDisplayText`, `serializeSelectionContexts`, composer unit).
+   - 9e, the switched reopen (R6f, `acp/reopen_switch.rs`). After a
+     history open installs its payload, `redirectSwitchedReopen` follows
+     the last marker that names a new session and its config. Each hop is a
+     fresh read (`loadFreshSourcePayload`: `reloadSessionPayload`, then
+     `readSessionPayload` when the host has none or its re-read fails, which
+     logs a warning). The walk follows at most 8 markers and stops at a hop
+     with no payload or one whose marker points at a session already
+     opening. When the last session's own chain cannot be read and that
+     session is opening, the redirect gives up and warns. Otherwise the
+     last session opens through `openHistorySession` (an active one needs
+     no open), every hop's transcript is spliced under it oldest first
+     after its live splice is dropped, the hops' watermarks count, the
+     queue moves to it, an open tab is remapped, and the original open
+     answers once the moved queue flushed. A failed open of the last
+     session warns and reopens the chat as it is. A chat that is not
+     redirected runs `respliceLiveSwitchTarget`: it walks back through the
+     live switch link, else the payload's `continuedFrom`, reading each
+     source fresh, and splices each source's band with its marker (the
+     live one, the source's own, or one made from the index's configs and
+     the target's `createdAt` or the source's `lastActivityAt`) in front of
+     the chat. A source with no payload stops the walk with an info log.
+     The splice applies only while the open is current. 19 vectors
+     (`acp-scenarios-reopen-switch.ts`); a mutation check is in the R6f
+     report.
 10. MCP, import, discovery, one-shot collectors.
     - 10a (R6a-4). The MCP slice. Every disk, probe and OAuth call is an
       effect (`loadMcpServers`, `saveMcpServers`, `probeMcpServer`,
@@ -710,14 +733,9 @@ does its own way), or **missing** (a gap with no slice planned yet).
 | `_onBrowserConsentTicket` | ported | Runs inside `_onPermissionRequest`, where the store calls it. |
 | `setSelectedAgentConfigId`, `retargetWarmPool`, `_onBrowserStopChanged`, `respondBrowserConsent` | ported (R6a-7) | 10d, in the PR that adds this audit. |
 
-Two store functions that are not exports also wait: the reopen's switch
-redirect (`redirectSwitchedReopen`) and the re-splice after a reinstall
-(`respliceLiveSwitchTarget`). Both are **deferred** to their own slice. They
-walk the marker chain through payload reads (a host re-read, then the
-cache), up to 8 hops, and the redirect waits on a nested
-`openHistorySession` of the final session before it splices, moves the
-queue and remaps the tab. The splice they share (`acp/splice.rs`) is ported
-with `switchAgent`.
+Two store functions that are not exports are ported too (R6f, 9e): the
+reopen's switch redirect (`redirectSwitchedReopen`) and the re-splice after
+a reinstall (`respliceLiveSwitchTarget`), in `acp/reopen_switch.rs`.
 
 The first table comes from comparing the action names of `AcpState` in
 `types.ts` with the `rename` names of `acp::Event`; `complete` and `reject`
