@@ -30,6 +30,8 @@ pub const FONT_SIZE: f32 = 14.0;
 pub const LINE_HEIGHT: f32 = 1.2;
 /// The terminal surface's padding (`px-4 py-0.5 pb-1`): left/right, top, bottom.
 pub const PAD: [f32; 3] = [16.0, 2.0, 4.0];
+/// The width `FitAddon` keeps for xterm.js's scroll bar (`DEFAULT_SCROLL_BAR_WIDTH`).
+pub const SCROLLBAR: f32 = 14.0;
 /// The phone shell's horizontal padding (`px-1.5`).
 pub const PAD_PHONE: f32 = 6.0;
 
@@ -60,9 +62,10 @@ impl Metrics {
         Metrics { cell_w, cell_h, style: probe.lh(cell_h).tracking(cell_w - advance) }
     }
 
-    /// The columns and rows that fit `width` x `height` points of content.
+    /// The columns and rows that fit `width` x `height` points of content, less the
+    /// scroll bar's width as xterm.js's `FitAddon` reserves it.
     pub fn fit(&self, width: f32, height: f32) -> (u16, u16) {
-        let cols = (width / self.cell_w).floor().clamp(2.0, 1000.0) as u16;
+        let cols = ((width - SCROLLBAR) / self.cell_w).floor().clamp(2.0, 1000.0) as u16;
         let rows = (height / self.cell_h).floor().clamp(1.0, 1000.0) as u16;
         (cols, rows)
     }

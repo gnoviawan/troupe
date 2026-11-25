@@ -83,11 +83,13 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
     Some(body)
 }
 
+type FindAction = dyn Fn(&mut State, &mut rune::Tx);
+
 /// The find bar over the screen's top right: the query, "n of m", previous, next and close.
 /// Return goes to the next match, Shift+Return to the previous one, Escape closes it.
 fn find_bar(t: &'static Tokens, id: &str, find: &Find) -> El {
     let c = &t.colors;
-    let button = |glyph: &'static str, label: &str, key: &str, f: Box<dyn Fn(&mut State, &mut rune::Tx)>| {
+    let button = |glyph: &'static str, label: &str, key: &str, f: Box<FindAction>| {
         row()
             .key(format!("terminal-find-{key}-{id}"))
             .role("button")

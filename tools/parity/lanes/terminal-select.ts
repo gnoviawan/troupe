@@ -76,7 +76,7 @@ async function run(client: Client): Promise<Result> {
   await page.waitForTimeout(2500)
   await page.evaluate(() => navigator.clipboard.writeText('empty'))
   const from = cell(0, 1)
-  const to = cell(6, 4)
+  const to = cell(6, 3)
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()
   await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 })
@@ -104,7 +104,7 @@ async function run(client: Client): Promise<Result> {
   }
   await shot(client, options.root, '2-search')
   if (client.name === 'rune') await page.keyboard.press('Escape')
-  const url = cell(8, 7)
+  const url = cell(8, 6)
   await page.mouse.move(url.x, url.y)
   await page.waitForTimeout(400)
   let link = ''

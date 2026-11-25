@@ -255,14 +255,13 @@ impl State {
         self.terms.focused = Some(id.to_owned());
         // The platform modifier (⌘, or Ctrl elsewhere) with C copies a selection and with A
         // selects everything, as React's clipboard keys do; ^C without a selection interrupts.
-        if key.mods.cmd && !key.mods.alt && !key.mods.shift && let rune::Key::Text(t) = &key.key {
-            match t.to_ascii_lowercase().as_str() {
-                "c" if self.terminal_copy(id, tx) => return true,
-                "a" => {
-                    self.terminal_select_all(id);
-                    return true;
-                }
-                _ => {}
+        if !key.mods.alt && !key.mods.shift {
+            if key.is_command('c') && self.terminal_copy(id, tx) {
+                return true;
+            }
+            if key.is_command('a') {
+                self.terminal_select_all(id);
+                return true;
             }
         }
         if let Some(chord) = crate::keys::chord(key, self.shortcuts.platform)

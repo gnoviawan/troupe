@@ -59,3 +59,61 @@ fn the_find_count_reads_like_a_find_widget() {
     f.active = Some(1);
     assert_eq!(f.count(), "2 of 3");
 }
+
+/// A state showing one terminal tab whose cells already hold `output`.
+fn shown(output: &[u8]) -> rune::Runtime<crate::State> {
+    let mut s = crate::tests::showing_alpha();
+    s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
+    s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
+    let mut rt = rune::Runtime::new(s, crate::view, (1280.0, 800.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    let mut term = Term::new(80, 24);
+    term.advance(output);
+    rt.update_if(move |s, _| {
+        s.terms.views.insert("pty-1".into(), view(std::mem::replace(&mut term, Term::new(2, 1))));
+        s.workspace.step(model::workspace::Event::AddTerminalTab("pty-1".into(), None));
+        true
+    });
+    rt.frame(0.05);
+    rt
+}
+
+#[test]
+fn a_drag_on_the_screen_selects_and_the_modifier_c_copies() {
+    let mut rt = shown(b"hello world\r\nsecond line");
+    let (cx, cy) = rt.find("terminal-pty-1").expect("the terminal screen");
+    let m = rt.state.terms.metrics();
+    let rows = 24.0;
+    let (x0, y0) = (cx - 40.0 * m.cell_w, cy - rows / 2.0 * m.cell_h);
+    rt.pointer_down(x0 + 1.0, y0 + m.cell_h / 2.0);
+    rt.pointer_move(x0 + 3.0 * m.cell_w, y0 + m.cell_h * 1.2);
+    rt.pointer_move(x0 + 6.0 * m.cell_w + 1.0, y0 + m.cell_h * 1.5);
+    rt.pointer_up(x0 + 6.0 * m.cell_w + 1.0, y0 + m.cell_h * 1.5);
+    rt.frame(0.048);
+    let selected = |rt: &rune::Runtime<crate::State>| {
+        let view = &rt.state.terms.views["pty-1"];
+        let term = view.cells.lock().unwrap();
+        view.selection.and_then(|h| h.current(&term)).map(|s| s.text(term.lines()))
+    };
+    assert_eq!(selected(&rt).as_deref(), Some("hello world\nsecond"));
+    // Ctrl+C off macOS arrives as a command key with `cmd` set: it copies and keeps the selection.
+    let mods = rune::Mods { cmd: true, ctrl: true, ..rune::Mods::default() };
+    rt.key(rune::KeyEvent { key: rune::Key::Command('c'), mods });
+    rt.frame(0.064);
+    assert_eq!(selected(&rt).as_deref(), Some("hello world\nsecond"), "a copy is not input");
+}
+
+#[test]
+fn a_click_on_a_url_asks_before_opening_it() {
+    let mut rt = shown(b"see https://example.com/a ok");
+    let (cx, cy) = rt.find("terminal-pty-1").expect("the terminal screen");
+    let m = rt.state.terms.metrics();
+    let (x, y) = (cx - 40.0 * m.cell_w + 8.5 * m.cell_w, cy - 12.0 * m.cell_h + m.cell_h / 2.0);
+    rt.pointer_move(x, y);
+    rt.frame(0.048);
+    assert!(rt.state.terms.views["pty-1"].hover.is_some(), "the link under the pointer is underlined");
+    rt.pointer_down(x, y);
+    rt.pointer_up(x, y);
+    rt.frame(0.064);
+    assert_eq!(rt.state.chat.link_confirm.as_deref(), Some("https://example.com/a"));
+}
