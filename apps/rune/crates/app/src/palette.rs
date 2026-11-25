@@ -169,7 +169,8 @@ fn item(s: &State, t: &'static Tokens, heading: Heading, r: &Row, index: usize, 
     let pin_id = r.id.clone();
     let label = if pinned { format!("Unpin {}", r.label) } else { format!("Pin {}", r.label) };
     let pin_icon = theme::icons::named("Pin").expect("bundled icon");
-    let show_pin = pinned || lit;
+    // Touch has no hover: the pin shows on every row of the phone palette.
+    let show_pin = pinned || lit || s.palette.phone;
     right = right.child(
         row()
             .key("pin")
@@ -192,7 +193,6 @@ fn item(s: &State, t: &'static Tokens, heading: Heading, r: &Row, index: usize, 
     let mut e = row()
         .key(format!("cmd-{prefix}{}", r.id))
         .role("option")
-        .label(r.label.clone())
         .focus_selected(lit)
         .w_full()
         .px(10.0)
@@ -231,12 +231,15 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, window: (f32, f32), lay
     let shown = shown(s);
     let lit = s.palette.lit(shown.len());
     let search = theme::icons::named("Search").expect("bundled icon");
+    // React's desktop palette also searches the active project's chats and says so; this one
+    // does not search chats yet, so its placeholder leaves them out.
+    let placeholder = "Search commands, projects, settings…";
     let field = text_input(&s.palette.query, sans(14.0, 400.0, 20.0))
         .single_line()
         .key("palette-input")
         .role("combobox")
         .label("Search commands")
-        .placeholder("Search commands, projects, settings…".to_owned(), c.muted_foreground)
+        .placeholder(placeholder.to_owned(), c.muted_foreground)
         .color(c.foreground)
         .grow(1.0)
         .py(12.0)
