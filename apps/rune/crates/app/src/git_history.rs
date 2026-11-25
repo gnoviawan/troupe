@@ -91,6 +91,14 @@ impl Scope {
     }
 }
 
+/// One History tab's filter, author pick and whether its detail pane is closed.
+#[derive(Clone, Debug, Default)]
+pub struct Filters {
+    pub query: TextEdit,
+    pub author: Option<String>,
+    pub detail_hidden: bool,
+}
+
 /// What an HTTP read of this module is for.
 #[derive(Clone, Debug, PartialEq)]
 pub enum HistoryFetch {
@@ -111,10 +119,10 @@ pub struct HistoryUi {
     head_read: HashMap<String, String>,
     pub details: HashMap<(String, String), Read<CommitDetail>>,
     pub selected: HashMap<String, String>,
-    pub query: TextEdit,
-    pub author: Option<String>,
+    /// The History tab's filters and detail toggle, per working copy, as each tab's
+    /// `GitHistoryView` keeps its own.
+    pub filters: HashMap<String, Filters>,
     pub section_closed: bool,
-    pub detail_hidden: bool,
     tokens: HashMap<String, u64>,
     /// Per commit diff tab: the patch read and its view.
     pub diffs: HashMap<String, Read<(String, bool)>>,
@@ -192,7 +200,7 @@ impl State {
 
     pub(crate) fn select_commit(&mut self, cwd: &str, hash: &str) {
         self.history.selected.insert(cwd.to_owned(), hash.to_owned());
-        self.history.detail_hidden = false;
+        self.history.filters.entry(cwd.to_owned()).or_default().detail_hidden = false;
         self.load_commit_detail(cwd, hash);
     }
 
@@ -308,15 +316,22 @@ impl State {
         self.history.log.insert(cwd, Read::Failed(message));
     }
 
+    /// The working copy's History filters (none set when it has no entry).
+    pub fn history_filters(&self, cwd: &str) -> &Filters {
+        static NONE: std::sync::OnceLock<Filters> = std::sync::OnceLock::new();
+        self.history.filters.get(cwd).unwrap_or_else(|| NONE.get_or_init(Filters::default))
+    }
+
     /// `GitHistoryView`'s filter: the commits that match the query and the author.
     pub fn visible_commits<'a>(&'a self, cwd: &str) -> Vec<&'a Commit> {
         let Some(Read::Ready(commits)) = self.history.log.get(cwd) else {
             return Vec::new();
         };
-        let query = self.history.query.text.trim().to_lowercase();
+        let filters = self.history_filters(cwd);
+        let query = filters.query.text.trim().to_lowercase();
         commits
             .iter()
-            .filter(|c| self.history.author.as_ref().is_none_or(|a| &c.author == a))
+            .filter(|c| filters.author.as_ref().is_none_or(|a| &c.author == a))
             .filter(|c| {
                 query.is_empty()
                     || c.subject.to_lowercase().contains(&query)

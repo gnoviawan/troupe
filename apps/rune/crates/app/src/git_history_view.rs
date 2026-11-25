@@ -166,7 +166,8 @@ fn history_tab(s: &State, t: &'static Tokens, id: &str, cwd: &str, layer: &mut V
         _ => 0,
     };
     let visible = s.visible_commits(cwd);
-    let filtering = !s.history.query.text.trim().is_empty() || s.history.author.is_some();
+    let filters = s.history_filters(cwd);
+    let filtering = !filters.query.text.trim().is_empty() || filters.author.is_some();
     let count = if filtering { format!("{} of {all}", visible.len()) } else { format!("{all} {}", if all == 1 { "commit" } else { "commits" }) };
     let toolbar = toolbar(s, t, cwd, count, layer);
     let body = match s.history.log.get(cwd) {
@@ -201,7 +202,7 @@ fn history_tab(s: &State, t: &'static Tokens, id: &str, cwd: &str, layer: &mut V
                 .child(header)
                 .child(ui::base::scroll_area::scroll_area(t, &format!("git-history-scroll-{id}"), rows).grow(1.0).min_h(0.0));
             let mut split = row().w_full().grow(1.0).min_h(0.0).child(list);
-            if let Some(hash) = selected.filter(|_| !s.history.detail_hidden)
+            if let Some(hash) = selected.filter(|_| !filters.detail_hidden)
                 && let Some(commit) = visible.iter().find(|c| c.hash == hash)
             {
                 // React's narrow layout: the detail pane floats over the table's right edge,
@@ -286,18 +287,20 @@ fn toolbar(s: &State, t: &'static Tokens, cwd: &str, count: String, layer: &mut 
         .item(MenuItem::new("All branches").checked(scope == Scope::All).on_select(move |s: &mut State| s.set_history_scope(&all_cwd, Scope::All)))
         .item(MenuItem::new("Current branch").checked(scope == Scope::Head).on_select(move |s: &mut State| s.set_history_scope(&head_cwd, Scope::Head)))
         .build(t, layer, scope_trigger);
-    let filter = ui::base::panel_styles::panel_field(t, &s.history.query, "Filter by message, author or hash", false)
+    let edit_cwd = cwd.to_owned();
+    let filter = ui::base::panel_styles::panel_field(t, &s.history_filters(cwd).query, "Filter by message, author or hash", false)
         .key("git-history-filter")
         .w(260.0)
         .h(28.0)
-        .on_edit(|s: &mut State| &mut s.history.query);
+        .on_edit(move |s: &mut State| &mut s.history.filters.entry(edit_cwd.clone()).or_default().query);
     let mut authors: Vec<String> = match s.history.log.get(cwd) {
         Some(Read::Ready(commits)) => commits.iter().map(|c| c.author.clone()).collect(),
         _ => Vec::new(),
     };
     authors.sort();
     authors.dedup();
-    let current = s.history.author.clone();
+    let current = s.history_filters(cwd).author.clone();
+    let any_cwd = cwd.to_owned();
     let author_aria = current.as_ref().map_or_else(|| "Filter by author".to_owned(), |a| format!("Author: {a}"));
     let author_trigger = trigger("git-history-author", current.clone().unwrap_or_else(|| "Any author".to_owned()), author_aria)
         .on_press(|s: &mut State| s.overlays.open(AUTHOR_MENU));
@@ -305,15 +308,15 @@ fn toolbar(s: &State, t: &'static Tokens, cwd: &str, count: String, layer: &mut 
         .width(208.0)
         .open(s.overlays.is_open(AUTHOR_MENU))
         .on_close(|s: &mut State| s.close(AUTHOR_MENU))
-        .item(MenuItem::new("Any author").checked(current.is_none()).on_select(|s: &mut State| {
-            s.history.author = None;
+        .item(MenuItem::new("Any author").checked(current.is_none()).on_select(move |s: &mut State| {
+            s.history.filters.entry(any_cwd.clone()).or_default().author = None;
             s.close(AUTHOR_MENU);
         }))
         .separator();
     for author in authors {
-        let pick = author.clone();
+        let (pick, pick_cwd) = (author.clone(), cwd.to_owned());
         author_menu = author_menu.item(MenuItem::new(author.clone()).checked(current.as_deref() == Some(author.as_str())).on_select(move |s: &mut State| {
-            s.history.author = Some(pick.clone());
+            s.history.filters.entry(pick_cwd.clone()).or_default().author = Some(pick.clone());
             s.close(AUTHOR_MENU);
         }));
     }
@@ -360,7 +363,9 @@ fn detail_pane(s: &State, t: &'static Tokens, cwd: &str, commit: &Commit) -> El 
         Some(email) => format!("{} <{email}>", commit.author),
         None => commit.author.clone(),
     };
-    let close = ui::base::panel_styles::panel_icon_button(t, glyph("X"), "Close details").on_press(|s: &mut State| s.history.detail_hidden = true);
+    let close_cwd = cwd.to_owned();
+    let close = ui::base::panel_styles::panel_icon_button(t, glyph("X"), "Close details")
+        .on_press(move |s: &mut State| s.history.filters.entry(close_cwd.clone()).or_default().detail_hidden = true);
     let first_file = detail.and_then(|d| d.files.first().cloned());
     let (open_cwd, open_hash) = (cwd.to_owned(), commit.hash.clone());
     let open = Button::new("Open diff")

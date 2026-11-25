@@ -49,7 +49,9 @@ fn a_history_tab_reads_the_log_and_a_commit_opens_its_file_diff() {
     let log = json!([commit("aaaaaaa1", "Ada", "link the guide"), commit("bbbbbbb2", "Bo", "add utils")]);
     s.history_replied(tag, Ok(log));
     assert_eq!(s.visible_commits("/w/alpha").len(), 2);
-    s.history.author = Some("Bo".into());
+    s.history.filters.entry("/w/alpha".into()).or_default().author = Some("Bo".into());
+    assert_eq!(s.visible_commits("/w/beta").len(), 0, "another working copy keeps its own filters");
+    assert!(s.history_filters("/w/beta").author.is_none());
     assert_eq!(s.visible_commits("/w/alpha").iter().map(|c| c.subject.as_str()).collect::<Vec<_>>(), ["add utils"]);
     s.select_commit("/w/alpha", "bbbbbbb2");
     let (path, tag) = s.history.unsent.pop().expect("a detail read");
