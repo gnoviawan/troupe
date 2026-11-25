@@ -31,6 +31,8 @@ pub struct Slots<'a> {
     pub tab: &'a dyn Fn(&Tab) -> Option<El>,
     /// The label of a tab the app names itself (a chat's title), or None for the default.
     pub title: &'a dyn Fn(&Tab) -> Option<String>,
+    /// The count pill after a tab's label (the Git tab's changed files), when above zero.
+    pub badge: &'a dyn Fn(&Tab) -> usize,
     pub dark: bool,
 }
 
@@ -44,6 +46,7 @@ struct Ctx<'a, S> {
     dark: bool,
     tab: &'a dyn Fn(&Tab) -> Option<El>,
     title: &'a dyn Fn(&Tab) -> Option<String>,
+    badge: &'a dyn Fn(&Tab) -> usize,
 }
 
 fn content_key(pane: &str) -> String {
@@ -99,6 +102,7 @@ pub fn view<S: 'static>(
         dark: slots.dark,
         tab: slots.tab,
         title: slots.title,
+        badge: slots.badge,
     };
     let tree = &ws.store.tree;
     let fullscreen = tree
@@ -437,6 +441,19 @@ fn tab_bar<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, leading: Vec<El>, layer: &
 
 /// `TabChrome`: a 32 pt tab, the active one a raised keycap; the close slot shows the
 /// dirty dot until hovered, and the close button on hover or while active.
+/// `CountBadge` at `h-4 min-w-[14px] text-3xs`.
+fn tab_badge<S>(ctx: &Ctx<'_, S>, tab: &Tab) -> Option<El> {
+    let count = (ctx.badge)(tab);
+    (count > 0).then(|| {
+        crate::CountBadge::new(count as u64)
+            .text_size(crate::type_::MICRO)
+            .build(ctx.t)
+            .key(format!("tab-badge-{}", tab.id()))
+            .h(16.0)
+            .min_w(14.0)
+    })
+}
+
 fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
     let t = ctx.t;
     let c = &t.colors;
@@ -532,7 +549,8 @@ fn tab_chrome<S: 'static>(ctx: &Ctx<'_, S>, leaf: &Leaf, tab: &Tab) -> El {
                         .single_line()
                         .truncate()
                         .min_w(0.0),
-                ),
+                )
+                .children(tab_badge(ctx, tab)),
         )
         .child(close_slot);
     chrome = if active {

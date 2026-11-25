@@ -27,6 +27,8 @@ pub struct PhoneUi {
     pub query: TextEdit,
     /// The chat a recents sheet acts on.
     pub chat: Option<String>,
+    /// The file a Files row's ⋯ sheet acts on.
+    pub file: Option<String>,
 }
 
 fn glyph(name: &str) -> &'static rune::Icon {
@@ -96,7 +98,7 @@ pub fn frame(s: &State, t: &'static Tokens, main: El) -> El {
 }
 
 /// `MobileChatShell`'s `headerTitle`: a chat shows its own title ("Agent Chat" before it has
-/// one); everything else still reads "Troupe".
+/// one), a file its name; everything else still reads "Troupe".
 fn header_title(s: &State) -> String {
     let active = model::workspace::query(&s.workspace.store, model::workspace::Query::GetActiveTab);
     match active {
@@ -105,6 +107,9 @@ fn header_title(s: &State) -> String {
         }
         model::workspace::Reply::Tab(Some(tab @ model::workspace::Tab::Terminal { .. })) => {
             crate::terminal_view::tab_title(s, &tab).unwrap_or_else(|| "Terminal".to_owned())
+        }
+        model::workspace::Reply::Tab(Some(model::workspace::Tab::Editor { file_path, .. })) => {
+            file_path.rsplit(['/', '\\']).next().unwrap_or(&file_path).to_owned()
         }
         _ => "Troupe".to_owned(),
     }
@@ -187,7 +192,10 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
             tab("TerminalSquare", "Terminals", false)
                 .on_press(|s: &mut State| s.toast_later("Terminals")),
         )
-        .child(tab("FileCode", "Files", false).on_press(|s: &mut State| s.toast_later("Files")))
+        .child(tab("FileCode", "Files", false).on_press(|s: &mut State| {
+            s.close(DRAWER);
+            s.open_files();
+        }))
         .child(tab("Github", "GitHub", false).on_press(|s: &mut State| s.toast_later("GitHub")));
     let search = el()
         .key("drawer-search")
@@ -389,6 +397,13 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             RECENTS => recents_sheet(s, t, window, layer),
             crate::composer_sheet::ADD_SHEET => crate::composer_sheet::add_sheet(s, t, window, layer),
             crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
+            ui::explorer::FILES => crate::phone_files::files_sheet(s, t, window, layer),
+            crate::phone_files::FILE_ACTIONS => crate::phone_files::actions_sheet(s, t, window, layer),
+            crate::git::GIT_SHEET => {
+                sheet(crate::git::GIT_SHEET, "Git changes".to_owned(), s)
+                    .child(crate::git_view::phone_panel(s, t, window, layer))
+                    .build(t, window, layer);
+            }
             _ => {}
         }
     }
@@ -420,8 +435,14 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
         .child(stack(
             vec![
                 mobile::sheet_subtitle(t, &project_line(s)),
-                row_of("GitBranch", "Git changes"),
-                row_of("FolderOpen", "Files"),
+                mobile::sheet_row(t, glyph("GitBranch"), "Git changes", false).key("more-git").on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.overlays.open(crate::git::GIT_SHEET);
+                }),
+                mobile::sheet_row(t, glyph("FolderOpen"), "Files", false).on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.open_files();
+                }),
                 row_of("Search", "Command palette"),
                 mobile::sheet_row(t, glyph("TerminalSquare"), "New terminal", false).on_press(|s: &mut State| {
                     s.close(MORE);

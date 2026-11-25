@@ -133,7 +133,7 @@ async fn the_catalog_lists_oh_my_pi_from_the_bundled_overlay() {
     assert!(catalog
         .agents
         .iter()
-        .filter(|agent| agent.id != "oh-my-pi")
+        .filter(|agent| !["oh-my-pi", "hermes"].contains(&agent.id.as_str()))
         .all(|agent| agent.source == CatalogSource::Bundled));
 }
 
@@ -186,7 +186,10 @@ async fn a_remote_overlay_agent_waits_for_the_cdn_opt_in() {
     let catalog = service.list_catalog(false).await.unwrap();
     assert_eq!(
         listed(&catalog),
-        [("oh-my-pi", "Oh My Pi (remote)", CatalogSource::Troupe)]
+        [
+            ("hermes", "Hermes Agent", CatalogSource::Troupe),
+            ("oh-my-pi", "Oh My Pi (remote)", CatalogSource::Troupe),
+        ]
     );
 
     service.set_opt_in(true).unwrap();
@@ -194,6 +197,7 @@ async fn a_remote_overlay_agent_waits_for_the_cdn_opt_in() {
     assert_eq!(
         listed(&catalog),
         [
+            ("hermes", "Hermes Agent", CatalogSource::Troupe),
             ("oh-my-pi", "Oh My Pi (remote)", CatalogSource::Troupe),
             ("remote-only", "Remote Only", CatalogSource::Troupe),
         ]

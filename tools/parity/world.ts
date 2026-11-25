@@ -255,6 +255,37 @@ export async function prepareDevice(world: World, deviceId: string): Promise<voi
   }
 }
 
+/** Open `filePath` in one editor tab of alpha's only pane on `deviceId` (the workspace record). */
+export async function seedEditorTab(
+  world: World,
+  deviceId: string,
+  filePath: string
+): Promise<void> {
+  const tabId = `edit-${filePath}`
+  await writeDevice(world, deviceId, `workspace/${PROJECTS.alpha.id}`, {
+    openFiles: [
+      {
+        filePath,
+        cursorPosition: { line: 1, col: 1 },
+        scrollTop: 0,
+        viewMode: 'code',
+        isDirty: false,
+        lastModified: 0
+      }
+    ],
+    activeFilePath: filePath,
+    expandedDirs: [],
+    activeTabId: tabId,
+    paneLayout: {
+      type: 'leaf',
+      id: 'editor-lane-pane',
+      tabs: [{ type: 'editor', filePath }],
+      activeTabId: tabId
+    },
+    activePaneId: 'editor-lane-pane'
+  })
+}
+
 /** The workspace snapshot `seedSnapshot` saves for alpha. */
 export const SNAPSHOT_NAME = 'Before the route refactor'
 

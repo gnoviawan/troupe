@@ -11,6 +11,7 @@ use theme::icons as i;
 use ui::shell::{self, COLLAPSED_RAIL, PHONE_MAX_WIDTH, TOOL_STRIP};
 use ui::type_::{mono, sans};
 
+use crate::explorer_host;
 use crate::{Edge, Route, State};
 
 const ROOT: &str = "troupe-root";
@@ -41,6 +42,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::keys::build(s, t, window.1, &mut layer);
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
+    crate::git_view::dialogs(s, t, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
@@ -52,6 +54,22 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
 
 fn workspace(s: &mut State) -> &mut ui::workspace::Workspace {
     &mut s.workspace
+}
+
+fn editors(s: &State) -> &ui::editor::Editors {
+    &s.editors
+}
+
+fn editors_mut(s: &mut State) -> &mut ui::editor::Editors {
+    &mut s.editors
+}
+
+/// An editor tab's body: the code editor for its file.
+fn editor_body(s: &State, t: &'static Tokens, tab: &model::workspace::Tab) -> Option<El> {
+    let model::workspace::Tab::Editor { file_path, .. } = tab else {
+        return None;
+    };
+    ui::editor::view(s, editors, editors_mut, t, file_path)
 }
 
 fn desktop_frame(
@@ -69,9 +87,10 @@ fn desktop_frame(
         .min_w(0.0)
         .child(main_area(s, t, !expanded, cx, layer));
     if s.layout.record.side_panel_visible && s.active_project().is_some() {
-        shell_row = shell_row.child(side_panel(s, t));
+        shell_row = shell_row.child(side_panel(s, t, layer));
     }
     parts.push(shell_row.child(tool_strip(s, t)));
+    s.measure_panes(cx);
     parts
 }
 
@@ -165,17 +184,28 @@ fn main_area(
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
+        let menus = std::cell::RefCell::new(Vec::new());
         let tab = |tab: &model::workspace::Tab| {
-            crate::terminal_view::tab_body(s, t, tab).or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
+            crate::terminal_view::tab_body(s, t, tab)
+                .or_else(|| crate::git_history_view::tab_body(s, t, tab, &mut menus.borrow_mut()))
+                .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
+                .or_else(|| crate::git_diff::tab_body(s, t, tab))
+                .or_else(|| editor_body(s, t, tab))
         };
         let slots = ui::workspace::Slots {
             leading,
             empty: &empty,
             tab: &tab,
             title: &|tab: &model::workspace::Tab| crate::terminal_view::tab_title(s, tab).or_else(|| crate::chat_view::tab_title(s, tab)),
+            badge: &|tab: &model::workspace::Tab| match tab {
+                model::workspace::Tab::Git { cwd, .. } => model::git::changed_file_count(&s.git.cache, cwd),
+                _ => 0,
+            },
             dark: true,
         };
-        return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));
+        let view = ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer);
+        layer.extend(menus.into_inner());
+        return main.child(view);
     }
     col()
         .key("shell-main")
@@ -257,7 +287,7 @@ fn close_panel(s: &mut State) {
     s.layout_step(LayoutEvent::SetSidePanelVisible(json!(false)));
 }
 
-fn side_panel(s: &State, t: &'static Tokens) -> El {
+fn side_panel(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     let project = s
         .active_project()
         .map(|p| p.id.as_str())
@@ -266,6 +296,16 @@ fn side_panel(s: &State, t: &'static Tokens) -> El {
     let close = shell::rail_button(t, &i::X, "Close panel", 28.0, 13.0, false)
         .key("close-panel")
         .on_press(close_panel);
+    let (mut actions, body) = match tab {
+        Tab::Explorer => {
+            let actions = ui::explorer::header_actions(s, explorer_host::get, explorer_host::lens, t, layer);
+            ui::explorer::layer(s, explorer_host::get, explorer_host::lens, t, explorer_host::hooks(), layer);
+            (actions, ui::explorer::view(s, explorer_host::get, explorer_host::lens, t, explorer_host::hooks()))
+        }
+        Tab::Changes => (crate::git_view::header_actions(s, t, layer), crate::git_view::changes_panel(s, t, false)),
+        _ => (Vec::new(), shell::panel_skeleton(t).key(format!("side-panel-{}", tab.label().to_lowercase()))),
+    };
+    actions.push(close);
     col()
         .key("side-panel")
         .role("complementary")
@@ -273,8 +313,8 @@ fn side_panel(s: &State, t: &'static Tokens) -> El {
         .w(s.width(Edge::SidePanel) as f32)
         .h_full()
         .border_sides([0.0, 0.0, 0.0, 1.0], t.colors.border)
-        .child(shell::panel_header(t, tab.label(), vec![close]))
-        .child(shell::panel_skeleton(t).key(format!("side-panel-{}", tab.label().to_lowercase())))
+        .child(shell::panel_header(t, tab.label(), actions))
+        .child(body)
         .child(
             shell::resize_handle(t, "Resize side panel")
                 .key("side-panel-resize")
@@ -298,6 +338,13 @@ fn toggle_view(s: &mut State, tab: Tab) {
     }
 }
 
+/// The Changes button's count of changed files (`ToolStrip`'s git badge).
+fn changes_badge(s: &State, tab: Tab) -> Option<u64> {
+    let cwd = s.git_cwd().filter(|_| tab == Tab::Changes)?;
+    let count = model::git::changed_file_count(&s.git.cache, &cwd) as u64;
+    (count > 0).then_some(count)
+}
+
 fn tool_strip(s: &State, t: &'static Tokens) -> El {
     let project = s.active_project();
     let has_path = project.is_some_and(|p| p.path.is_some());
@@ -315,7 +362,7 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
             tab.label(),
             visible && selected == Some(tab),
             !has_path,
-            None,
+            changes_badge(s, tab),
         )
         .key(format!("tool-strip-{}", tab.label().to_lowercase()))
         .on_press(move |s: &mut State| toggle_view(s, tab))
@@ -371,6 +418,12 @@ fn workspace_main(s: &State, t: &'static Tokens) -> El {
             main = main.child(crate::term_keys::bar(s, t, terminal_id));
         }
         return main;
+    }
+    // A file the Files sheet opened.
+    if let Some(tab @ model::workspace::Tab::Editor { .. }) = active_phone_tab(s)
+        && let Some(body) = editor_body(s, t, tab)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }
     if let Some(tab) = active_chat_tab(s) {
         let body = crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Phone);

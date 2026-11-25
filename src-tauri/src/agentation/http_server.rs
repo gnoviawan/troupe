@@ -230,6 +230,7 @@ async fn request_action(
         annotations: pending,
         output,
         timestamp: chrono::Utc::now().to_rfc3339(),
+        tab_id: body.tab_id,
     };
     let _ev = state.store.event_bus().emit(
         AFSEventType::ActionRequested,
@@ -243,8 +244,11 @@ async fn request_action(
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ActionBody {
     pub output: Option<String>,
+    #[serde(default)]
+    pub tab_id: Option<String>,
 }
 
 /// POST /annotations/:id/thread — add thread message.

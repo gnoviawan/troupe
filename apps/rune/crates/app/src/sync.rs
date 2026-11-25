@@ -271,6 +271,10 @@ impl State {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
+                tag @ (crate::host::Fetch::ExplorerList(_) | crate::host::Fetch::ExplorerOp(_)) => self.explorer_fetched(tag, result),
+                crate::host::Fetch::Git(task) => self.git_replied(task, result),
+                crate::host::Fetch::History(tag) => self.history_replied(tag, result),
+                tag => self.editor_fetched(tag, result),
             }
         }
         changed
@@ -551,6 +555,9 @@ impl State {
         {
             return;
         }
+        // The leaving project's drafts reach its record before it is saved and parked; the
+        // debounce would let the buffers close first.
+        self.flush_drafts();
         self.persist_workspace();
         if self.workspace.has_tree(&project_id) {
             self.workspace.activate(&project_id, None);
@@ -596,6 +603,8 @@ impl State {
         if hydrated.unreadable {
             self.sync.unwritable.insert(project_id.to_owned());
         }
+        self.flush_drafts();
+        self.persist_workspace();
         self.workspace.activate(project_id, Some(hydrated));
         if self.active_project().map(|p| p.id.as_str()) != Some(project_id) {
             self.show_active_project();
@@ -610,6 +619,7 @@ impl State {
         for request in std::mem::take(&mut self.workspace.requests) {
             match request {
                 ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
+                ui::workspace::Request::SaveAndClose { path, .. } => self.save_and_close(path),
                 other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
             }
         }

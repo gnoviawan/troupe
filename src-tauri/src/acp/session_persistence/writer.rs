@@ -65,11 +65,21 @@ pub(super) fn writer_loop(
                 result
             }
             WriterCommand::Finalize(status, reply) => {
-                close_writer(&inner, &metadata, &mut tails, &unhealthy, Some(status), false, reply);
+                close_writer(
+                    &inner,
+                    &metadata,
+                    &mut tails,
+                    &unhealthy,
+                    Some(status),
+                    false,
+                    reply,
+                );
                 return;
             }
             WriterCommand::Shutdown(reply) => {
-                close_writer(&inner, &metadata, &mut tails, &unhealthy, None, false, reply);
+                close_writer(
+                    &inner, &metadata, &mut tails, &unhealthy, None, false, reply,
+                );
                 break;
             }
             // Process shutdown: marker (if the turn is open) then status
@@ -453,10 +463,12 @@ fn append_record_then(
     if let Some(snapshot) = super::model::snapshot_from_record(&record) {
         // CAP-3: every model change source (host set_model / set_config_option,
         // agent-initiated updates) reaches here as a durable
-        // `config_options_update`. Unparseable options keep the old value.
+        // `config_options_update`, or `models_update` for a legacy-only
+        // session. Unparseable options keep the old value.
         let changed = super::model::apply_snapshot(&mut current, snapshot);
         log::debug!(
-            "[acp-history] model derived from config_options_update changed={changed} session={}",
+            "[acp-history] model derived from {} changed={changed} session={}",
+            record.type_,
             crate::logging::redact_session_id(&record.session_id)
         );
     }
