@@ -44,6 +44,24 @@ fn a_settings_set_with_an_unknown_field_is_a_validation_error() {
     assert_eq!(error.code, "VALIDATION_ERROR");
 }
 
+#[test]
+fn a_settings_set_with_the_removed_per_agent_fields_is_a_validation_error() {
+    for (field, entry) in [
+        ("agents", json!({ "agentId": "acp-registry:codex-acp", "allowed": false })),
+        ("models", json!({ "agentId": "acp-registry:codex-acp", "model": "fast" })),
+        ("descriptions", json!({ "agentId": "acp-registry:codex-acp", "description": "Docs" })),
+    ] {
+        let reply = handle_subagent_settings_set("s1".to_string(), &json!({ field: [entry] }));
+        let error = reply.err.expect("refused");
+        assert_eq!(error.code, "VALIDATION_ERROR");
+        assert!(
+            error.message.contains(&format!("unknown field `{field}`")),
+            "{field}: {}",
+            error.message
+        );
+    }
+}
+
 /// An engine whose registry lists Codex, for the settings view.
 fn codex_engine(data: &std::path::Path) -> OrchestratorEngine {
     let codex = crate::acp::config::AgentConfig {
@@ -89,8 +107,19 @@ fn implicit_codex() -> Value {
     })
 }
 
+/// An upsert of Codex's default profile with `fields` over the required
+/// ones.
+fn codex_default(fields: Value) -> Value {
+    let mut profile = json!({ "id": CODEX, "agentId": CODEX, "enabled": true });
+    profile
+        .as_object_mut()
+        .unwrap()
+        .extend(fields.as_object().unwrap().clone());
+    json!({ "upsertProfiles": [{ "profile": profile }] })
+}
+
 #[tokio::test]
-async fn the_view_lists_the_implicit_default_and_its_legacy_row() {
+async fn the_view_lists_the_gates_and_the_implicit_default() {
     let data = tempfile::tempdir().unwrap();
     let engine = codex_engine(data.path());
     assert_eq!(
@@ -99,142 +128,103 @@ async fn the_view_lists_the_implicit_default_and_its_legacy_row() {
             "enabled": true,
             "maxRunning": 4,
             "maxDepth": 2,
-            "agents": [{
-                "agentId": CODEX,
-                "name": "Codex",
-                "allowed": true,
-                "model": null,
-                "description": null,
-            }],
             "profiles": [implicit_codex()],
         })
     );
 }
 
 #[tokio::test]
-async fn a_legacy_patch_keeps_every_omitted_field() {
+async fn a_patch_keeps_every_omitted_field() {
     let data = tempfile::tempdir().unwrap();
     let engine = codex_engine(data.path());
-    set(&engine, json!({ "agents": [{ "agentId": CODEX, "allowed": false }] })).unwrap();
+    set(&engine, codex_default(json!({ "enabled": false, "model": "fast" }))).unwrap();
     set(&engine, json!({ "maxDepth": 3 })).unwrap();
     let view = settings_view(&engine);
     assert_eq!(view["enabled"], json!(true));
     assert_eq!(view["maxRunning"], json!(4));
     assert_eq!(view["maxDepth"], json!(3));
-    assert_eq!(view["agents"][0]["allowed"], json!(false));
     assert_eq!(view["profiles"][0]["enabled"], json!(false));
+    assert_eq!(view["profiles"][0]["model"], json!("fast"));
     assert_eq!(view["profiles"][0]["implicit"], json!(false));
 
-    set(&engine, json!({ "enabled": false, "agents": [{ "agentId": CODEX, "allowed": true }] }))
-        .unwrap();
+    set(&engine, json!({ "enabled": false, "deleteProfiles": ["never-was"] })).unwrap();
     let view = settings_view(&engine);
     assert_eq!(view["enabled"], json!(false));
-    assert_eq!(view["agents"][0]["allowed"], json!(true));
+    assert_eq!(view["maxDepth"], json!(3));
+    assert_eq!(view["profiles"][0]["model"], json!("fast"));
 }
 
 #[tokio::test]
-async fn a_default_model_set_over_the_wire_reads_back_in_the_view() {
+async fn a_profile_model_reads_back_clears_and_refuses_a_blank() {
     let data = tempfile::tempdir().unwrap();
     let engine = codex_engine(data.path());
 
-    set(&engine, json!({ "models": [{ "agentId": CODEX, "model": "gpt-5.1-mini" }] })).unwrap();
-    assert_eq!(
-        settings_view(&engine)["agents"],
-        json!([{
-            "agentId": CODEX,
-            "name": "Codex",
-            "allowed": true,
-            "model": "gpt-5.1-mini",
-            "description": null,
-        }])
-    );
+    set(&engine, codex_default(json!({ "model": "gpt-5.1-mini" }))).unwrap();
     assert_eq!(
         settings_view(&engine)["profiles"][0]["model"],
         json!("gpt-5.1-mini")
     );
 
-    set(&engine, json!({ "models": [{ "agentId": CODEX, "model": null }] })).unwrap();
-    assert_eq!(settings_view(&engine)["agents"][0]["model"], Value::Null);
+    set(&engine, codex_default(json!({ "model": null }))).unwrap();
+    assert_eq!(settings_view(&engine)["profiles"][0]["model"], Value::Null);
 
-    let error = set(&engine, json!({ "models": [{ "agentId": CODEX, "model": " " }] }))
-        .unwrap_err();
+    set(&engine, codex_default(json!({ "model": "fast" }))).unwrap();
+    let error = set(&engine, codex_default(json!({ "model": " " }))).unwrap_err();
     assert_eq!(error, "a default model must be 1 to 512 characters");
+    assert_eq!(
+        settings_view(&engine)["profiles"][0]["model"],
+        json!("fast"),
+        "a refused patch changes nothing"
+    );
 }
 
 #[tokio::test]
-async fn a_padded_agent_key_updates_and_clears_the_saved_default_model() {
+async fn padded_ids_update_the_same_stored_profile() {
     let data = tempfile::tempdir().unwrap();
     let engine = codex_engine(data.path());
 
-    set(&engine, json!({ "models": [{ "agentId": CODEX, "model": "fast" }] })).unwrap();
-    set(&engine, json!({ "models": [{ "agentId": " acp-registry:codex-acp ", "model": "deep" }] }))
-        .unwrap();
-    assert_eq!(settings_view(&engine)["agents"][0]["model"], json!("deep"));
-    assert_eq!(
-        settings_view(&engine)["profiles"].as_array().unwrap().len(),
-        1
-    );
+    set(&engine, codex_default(json!({ "model": "fast" }))).unwrap();
+    set(&engine, json!({ "upsertProfiles": [{ "profile": {
+        "id": " acp-registry:codex-acp ",
+        "agentId": " acp-registry:codex-acp ",
+        "enabled": true,
+        "model": "deep",
+    } }] }))
+    .unwrap();
+    let view = settings_view(&engine);
+    assert_eq!(view["profiles"].as_array().unwrap().len(), 1);
+    assert_eq!(view["profiles"][0]["id"], json!(CODEX));
+    assert_eq!(view["profiles"][0]["agentId"], json!(CODEX));
+    assert_eq!(view["profiles"][0]["model"], json!("deep"));
 
-    set(&engine, json!({ "models": [{ "agentId": " acp-registry:codex-acp ", "model": null }] }))
-        .unwrap();
-    assert_eq!(settings_view(&engine)["agents"][0]["model"], Value::Null);
+    set(&engine, json!({ "deleteProfiles": [" acp-registry:codex-acp "] })).unwrap();
+    assert_eq!(settings_view(&engine)["profiles"], json!([implicit_codex()]));
 }
 
 #[tokio::test]
-async fn a_description_set_over_the_wire_reads_back_trimmed_and_clears() {
+async fn a_profile_description_reads_back_trimmed_and_refuses_a_blank_or_long_one() {
     let data = tempfile::tempdir().unwrap();
     let engine = codex_engine(data.path());
     let description =
-        |engine: &OrchestratorEngine| settings_view(engine)["agents"][0]["description"].clone();
+        |engine: &OrchestratorEngine| settings_view(engine)["profiles"][0]["description"].clone();
 
-    set(&engine, json!({ "descriptions": [{
-        "agentId": " acp-registry:codex-acp ",
-        "description": "  Fast at UI tweaks; weak at Rust.\n",
-    }] }))
+    set(
+        &engine,
+        codex_default(json!({ "description": "  Fast at UI tweaks; weak at Rust.\n" })),
+    )
     .unwrap();
     assert_eq!(
         description(&engine),
         json!("Fast at UI tweaks; weak at Rust.")
     );
 
-    set(&engine, json!({ "descriptions": [{ "agentId": CODEX, "description": "  " }] })).unwrap();
+    for refused in ["  ".to_string(), "d".repeat(1001)] {
+        let error = set(&engine, codex_default(json!({ "description": refused }))).unwrap_err();
+        assert_eq!(error, "a description must be 1 to 1000 characters");
+    }
+
+    set(&engine, codex_default(json!({ "description": null }))).unwrap();
     assert_eq!(description(&engine), Value::Null);
-
-    set(&engine, json!({ "descriptions": [{ "agentId": CODEX, "description": "Docs" }] })).unwrap();
-    set(&engine, json!({ "descriptions": [{ "agentId": CODEX, "description": null }] })).unwrap();
-    assert_eq!(description(&engine), Value::Null);
-
-    let error = set(&engine, json!({ "descriptions": [{
-        "agentId": CODEX,
-        "description": "d".repeat(1001),
-    }] }))
-    .unwrap_err();
-    assert_eq!(error, "a description must be 1 to 1000 characters");
-}
-
-#[tokio::test]
-async fn a_bare_installed_id_saves_under_the_listed_key() {
-    let (engine, _data) =
-        crate::acp::orchestrator::engine_with_installed(&[], &["opencode"]).await;
-    apply_settings_patch(
-        &engine,
-        settings_patch(json!({
-            "agents": [{ "agentId": "opencode", "allowed": false }],
-            "models": [{ "agentId": " opencode ", "model": "big" }],
-            "descriptions": [{ "agentId": "opencode", "description": "Good at long refactors." }],
-        })),
-    )
-    .unwrap();
-    assert_eq!(
-        settings_view(&engine)["agents"],
-        json!([{
-            "agentId": "acp-registry:opencode",
-            "name": "opencode",
-            "allowed": false,
-            "model": "big",
-            "description": "Good at long refactors.",
-        }])
-    );
 }
 
 #[tokio::test]
@@ -271,8 +261,6 @@ async fn an_upserted_profile_reads_back_whole_after_the_agents_default() {
         ]),
         "a stored profile of the agent replaces its implicit default"
     );
-    assert_eq!(view["agents"], json!([]), "no default profile, no legacy row");
-
     set(&engine, json!({ "upsertProfiles": [{ "profile": {
         "id": "codex-fast",
         "agentId": CODEX,
@@ -383,17 +371,6 @@ async fn an_upsert_refuses_a_taken_or_malformed_id() {
     );
 
     let error = set(&engine, json!({ "upsertProfiles": [{ "profile": {
-        "id": "ACP-REGISTRY:CODEX", "agentId": "acp-registry:codex", "enabled": true,
-    } }] }))
-    .unwrap_err();
-    assert_eq!(
-        error,
-        "the profile id ACP-REGISTRY:CODEX is the id of the agent codex"
-    );
-    set(&engine, json!({ "agents": [{ "agentId": "acp-registry:codex", "allowed": false }] }))
-        .expect("the legacy switch still saves the default profile");
-
-    let error = set(&engine, json!({ "upsertProfiles": [{ "profile": {
         "id": "pi fast", "agentId": "acp-registry:codex", "enabled": true,
     } }] }))
     .unwrap_err();
@@ -409,4 +386,34 @@ async fn an_upsert_refuses_a_taken_or_malformed_id() {
         serde_json::from_value::<SubagentSettingsPayload>(unknown_approvals).is_err(),
         "an unknown approvals value never parses"
     );
+}
+
+#[tokio::test]
+async fn a_case_variant_of_its_own_agents_key_is_a_profile_id() {
+    let (engine, _data) =
+        crate::acp::orchestrator::engine_with_installed(&[], &["codex", "opencode"]).await;
+    set(&engine, json!({ "upsertProfiles": [{ "profile": {
+        "id": "ACP-REGISTRY:CODEX", "agentId": " codex ", "enabled": true,
+    } }] }))
+    .unwrap();
+    let ids: Vec<(Value, Value)> = settings_view(&engine)["profiles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|profile| (profile["id"].clone(), profile["implicit"].clone()))
+        .collect();
+    assert_eq!(
+        ids,
+        [
+            (json!("ACP-REGISTRY:CODEX"), json!(false)),
+            (json!("acp-registry:opencode"), json!(true)),
+        ],
+        "it replaces its agent's implicit default and leaves the other agent's"
+    );
+
+    let error = set(&engine, json!({ "upsertProfiles": [{ "profile": {
+        "id": "acp-registry:codex", "agentId": "acp-registry:codex", "enabled": true,
+    } }] }))
+    .unwrap_err();
+    assert_eq!(error, "two sub-agent profiles are named acp-registry:codex");
 }

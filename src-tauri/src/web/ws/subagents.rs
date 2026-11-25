@@ -51,8 +51,8 @@ pub(super) async fn handle_stop_subagent(
     }
 }
 
-/// The orchestrator's settings view: the gates, every profile (stored and
-/// implicit) and the legacy per-agent rows.
+/// The orchestrator's settings view: the gates and every profile, stored
+/// then implicit.
 fn settings_view(engine: &OrchestratorEngine) -> Value {
     let launchable = engine.launchable();
     let settings = engine.settings_view();
@@ -61,7 +61,6 @@ fn settings_view(engine: &OrchestratorEngine) -> Value {
         "enabled": settings.enabled,
         "maxRunning": settings.max_running,
         "maxDepth": settings.max_depth,
-        "agents": legacy_agents(&launchable, &profiles),
         "profiles": profiles.iter().map(profile_view).collect::<Vec<_>>(),
     })
 }
@@ -74,32 +73,6 @@ fn profile_view(resolved: &ResolvedProfile) -> Value {
     view["agentName"] = json!(resolved.agent_name);
     view["implicit"] = json!(resolved.implicit);
     view
-}
-
-/// Legacy: one row per launchable agent, `{agentId, name, allowed, model,
-/// description}`, from the agent's default profile (the one whose id is
-/// the agent's key). An agent whose default profile was renamed or deleted
-/// has no row. The profiles UI replaces these rows; they go with it.
-fn legacy_agents(launchable: &Launchable, profiles: &[ResolvedProfile]) -> Vec<Value> {
-    launchable
-        .agents()
-        .iter()
-        .filter_map(|agent| {
-            let profile = &profiles
-                .iter()
-                .find(|resolved| {
-                    resolved.profile.id == agent.key && resolved.profile.agent_id == agent.key
-                })?
-                .profile;
-            Some(json!({
-                "agentId": agent.key,
-                "name": agent.name,
-                "allowed": profile.enabled,
-                "model": profile.model,
-                "description": profile.description,
-            }))
-        })
-        .collect()
 }
 
 fn no_engine(id: String) -> WsReply {
@@ -118,32 +91,6 @@ pub(super) fn handle_subagent_settings_get(id: String) -> WsReply {
     WsReply::ok(id, Some(settings_view(&engine)))
 }
 
-/// Legacy: one allow switch of a `subagent_settings_set` call.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentAllowPayload {
-    agent_id: String,
-    allowed: bool,
-}
-
-/// Legacy: one default model of a `subagent_settings_set` call; `null`
-/// clears it.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentModelPayload {
-    agent_id: String,
-    model: Option<String>,
-}
-
-/// Legacy: one description of a `subagent_settings_set` call; `null` or a
-/// blank string clears it.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentDescriptionPayload {
-    agent_id: String,
-    description: Option<String>,
-}
-
 /// One profile of a `subagent_settings_set` call. `previous_id` renames:
 /// it names the stored or implicit profile `profile` replaces.
 #[derive(Debug, Deserialize)]
@@ -154,10 +101,9 @@ pub(super) struct ProfileUpsertPayload {
     profile: SubagentProfile,
 }
 
-/// `subagent_settings_set`: a partial of the view; an omitted field keeps
-/// its value. Applied in order: `deleteProfiles`, `upsertProfiles`, then
-/// the legacy per-agent `agents` / `models` / `descriptions`, which edit
-/// the agent's default profile.
+/// `subagent_settings_set`: the gates to change, then the profiles to
+/// delete and to upsert, applied in that order; an omitted field keeps its
+/// value.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct SubagentSettingsPayload {
@@ -168,19 +114,13 @@ pub(super) struct SubagentSettingsPayload {
     #[serde(default)]
     max_depth: Option<u8>,
     #[serde(default)]
-    agents: Option<Vec<AgentAllowPayload>>,
-    #[serde(default)]
-    models: Option<Vec<AgentModelPayload>>,
-    #[serde(default)]
-    descriptions: Option<Vec<AgentDescriptionPayload>>,
-    #[serde(default)]
     upsert_profiles: Option<Vec<ProfileUpsertPayload>>,
     #[serde(default)]
     delete_profiles: Option<Vec<String>>,
 }
 
-/// Apply the payload's fields over `settings`. Agent ids are canonical
-/// already ([`apply_settings_patch`]).
+/// Apply the payload's fields over `settings`. Profile ids are trimmed and
+/// agent ids canonical already ([`apply_settings_patch`]).
 fn merge_settings(
     settings: &mut OrchestratorSettings,
     patch: SubagentSettingsPayload,
@@ -201,35 +141,27 @@ fn merge_settings(
     for upsert in patch.upsert_profiles.unwrap_or_default() {
         upsert_profile(settings, upsert, launchable)?;
     }
-    for agent in patch.agents.unwrap_or_default() {
-        default_profile(settings, &agent.agent_id, launchable).enabled = agent.allowed;
-    }
-    for agent in patch.models.unwrap_or_default() {
-        default_profile(settings, &agent.agent_id, launchable).model = agent.model;
-    }
-    for agent in patch.descriptions.unwrap_or_default() {
-        default_profile(settings, &agent.agent_id, launchable).description = agent
-            .description
-            .filter(|description| !description.trim().is_empty());
-    }
     Ok(())
 }
 
 /// Store `upsert.profile` in place of the profile its `previous_id` (else
 /// its own id) names, or append it. A `previous_id` must name a stored or
-/// implicit profile. A profile id may not be another agent's key, which
-/// that agent's implicit default uses, nor a case variant of its own
-/// agent's key, which the legacy fields store that agent's default under.
+/// implicit profile. A profile id may not be another agent's key, ignoring
+/// ASCII case: that agent's implicit default uses the key, and
+/// [`Launchable::resolve`] drops the default once a stored id takes it. A
+/// case variant of its own agent's key is fine, since a stored profile of
+/// that agent drops the default anyway.
 fn upsert_profile(
     settings: &mut OrchestratorSettings,
     upsert: ProfileUpsertPayload,
     launchable: &Launchable,
 ) -> Result<(), String> {
     let profile = upsert.profile;
-    if let Some(agent) = launchable.agents().iter().find(|agent| {
-        agent.key.eq_ignore_ascii_case(&profile.id)
-            && !(agent.key == profile.agent_id && agent.key == profile.id)
-    }) {
+    if let Some(agent) = launchable
+        .agents()
+        .iter()
+        .find(|agent| agent.key.eq_ignore_ascii_case(&profile.id) && agent.key != profile.agent_id)
+    {
         return Err(format!(
             "the profile id {} is the id of the agent {}",
             profile.id, agent.name
@@ -256,47 +188,13 @@ fn upsert_profile(
     Ok(())
 }
 
-/// The stored default profile of the agent `key`, stored now from its
-/// implicit default when it has none.
-fn default_profile<'a>(
-    settings: &'a mut OrchestratorSettings,
-    key: &str,
-    launchable: &Launchable,
-) -> &'a mut SubagentProfile {
-    let index = match settings
-        .profiles
-        .iter()
-        .position(|profile| profile.id.eq_ignore_ascii_case(key))
-    {
-        Some(index) => index,
-        None => {
-            let implicit = launchable
-                .resolve(settings)
-                .into_iter()
-                .find(|resolved| resolved.implicit && resolved.profile.id == key)
-                .map_or_else(|| SubagentProfile::default_for(key), |resolved| resolved.profile);
-            settings.profiles.push(implicit);
-            settings.profiles.len() - 1
-        }
-    };
-    &mut settings.profiles[index]
-}
-
-/// Merge `patch` into the settings, each agent under the key the listing
-/// and `subagent_start` use, so a bare installed id is not saved unread.
+/// Merge `patch` into the settings, each profile's agent under the key the
+/// listing and `subagent_start` use, so a bare installed id is not saved
+/// unread.
 fn apply_settings_patch(
     engine: &OrchestratorEngine,
     mut patch: SubagentSettingsPayload,
 ) -> Result<OrchestratorSettings, String> {
-    for agent in patch.agents.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
-    }
-    for agent in patch.models.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
-    }
-    for agent in patch.descriptions.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
-    }
     for upsert in patch.upsert_profiles.iter_mut().flatten() {
         let profile = &mut upsert.profile;
         profile.id = profile.id.trim().to_string();
