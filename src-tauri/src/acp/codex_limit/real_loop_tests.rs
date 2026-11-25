@@ -116,6 +116,7 @@ impl Host {
             accounts.insert(*name, id);
         }
         let resets_at = Arc::new(AtomicI64::new(resets_at));
+        codex.set_auto_switch(true).unwrap();
         codex.set_usage_probe_for_test(Arc::new(FixedUsage {
             by_id: percents,
             resets_at: Arc::clone(&resets_at),

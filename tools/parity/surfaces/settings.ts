@@ -319,6 +319,14 @@ export const SETTINGS: Surface[] = [
     steps: []
   },
   {
+    id: 'settings.auto-switch-risk',
+    area: 'settings',
+    title: 'Automatic account switching risk confirm',
+    source: { overlay: ['components/settings/provider/account-provider-terms.tsx'] },
+    blocked: 'needs two accounts of one provider; the seeded host has only the default row',
+    steps: []
+  },
+  {
     id: 'settings.claude-sign-in',
     area: 'settings',
     title: 'Claude sign-in link dialog',

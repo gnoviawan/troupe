@@ -3,7 +3,7 @@ title: Antigravity accounts
 description: Sign in to more than one Google account for Google Antigravity, pick one per project or per chat, check an account's quota when you want, and switch when one runs out.
 ---
 
-If you use Google Antigravity with more than one Google account, for example a personal one and a work one, Troupe can keep them all signed in. Each project uses one account for its Antigravity chats, and one chat can use an account of its own. When a chat's account reaches its quota, Troupe moves that chat to another account.
+If you use Google Antigravity with more than one Google account, for example a personal one and a work one, Troupe can keep them all signed in. Each project uses one account for its Antigravity chats, and one chat can use an account of its own. When a chat's account reaches its quota, Troupe tells you and lets you choose what to do next. Before you add more accounts, read [Risks of switching accounts](#risks-of-switching-accounts).
 
 Accounts apply to the **Google Antigravity** agent from the agent registry. To set up the agent itself, see [Install an agent](/docs/agent-setup/install-agents). For Claude, see [Claude accounts](/docs/agent-setup/claude-accounts). For Codex, see [Codex accounts](/docs/agent-setup/codex-accounts).
 
@@ -94,11 +94,25 @@ In the notice at the limit, you can:
 
 ### Switch automatically
 
-**Switch accounts automatically** in the **Antigravity** group of **Settings** > **Provider** is on by default. When a chat reaches its account's limit, Troupe moves only that chat to the first signed-in account in your list that has not reached its limit, and continues it with a short message, for example "Troupe moved this chat from Antigravity account Work to Spare because Work reached its usage limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
+**Switch accounts automatically** shows in the **Antigravity** group of **Settings** > **Provider** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
+
+When a chat reaches its account's limit, Troupe moves only that chat to the first signed-in account in your list that has not reached its limit, and continues it with a short message, for example "Troupe moved this chat from Antigravity account Work to Spare because Work reached its usage limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
 
 When no other account has room, Troupe continues the chat when the limit resets. The notice shows when, for example "Continues at 14:05", on every device that has the chat open. Click **Cancel** to stop the wait. The wait stays in place if you close the app, and it is still there after Troupe starts again.
 
 Turn the switch off to choose yourself in the notice.
+
+## Risks of switching accounts
+
+More than one account lets you keep, for example, a personal account and a work account apart. A separate work account is fine. Troupe does not recommend that you add many accounts of one provider, or that you use several accounts to get past usage limits.
+
+Google's [Antigravity FAQ](https://antigravity.google/docs/faq) says that automating account rotation is not supported under consumer plans. Google has suspended Antigravity access for violations of its terms.
+
+A provider can flag all the accounts of one person and suspend them together. If you often reach your limits, these options are safer:
+
+- Switch by hand: in the notice at the limit, click **Switch to** _account_ **and continue**, or click **Continue when it resets**.
+- Get more usage from Google, for example with a plan that has higher limits.
+- Use the Gemini API with an API key, which is billed per use. Troupe does not run Antigravity accounts with an API key.
 
 ## Manage accounts on a server
 

@@ -244,7 +244,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="antigravity"
+          provider="antigravity"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}
@@ -271,6 +271,9 @@ export function AntigravityProviderSettings(): React.JSX.Element {
             onOpenChange={setAddOpen}
             existingNames={accounts.map((a) => a.name)}
             defaultAccountName={defaultAccount?.name ?? null}
+            hasSignedInAccount={accounts.some(
+              (a) => antigravityAccountReadiness(a, usage[a.id]) === 'ready'
+            )}
             usage={usage}
             onChanged={reload}
             onSignedIn={() => refreshUsage(true)}
