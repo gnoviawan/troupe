@@ -1,5 +1,6 @@
 import type { McpCatalogIconUrl } from '@shared/types/mcp-catalog.types'
 import { useEffect, useState } from 'react'
+import { McpBrandLogo } from '@/components/settings/McpBrandLogo'
 import { mcpBrandLogo } from '@/lib/mcp-brand-logos'
 import { mcpCatalogApi } from '@/lib/mcp-catalog-api'
 import { cn } from '@/lib/utils'
@@ -58,25 +59,7 @@ export function McpCatalogIcon({
     )
   }
   const brand = name ? mcpBrandLogo(name) : null
-  if (brand) {
-    const mark = size === 40 ? 22 : 18
-    return (
-      <span
-        aria-hidden
-        data-testid="mcp-brand-logo"
-        className={cn(
-          tile,
-          'flex shrink-0 items-center justify-center rounded-md bg-foreground/[0.06] text-foreground'
-        )}
-      >
-        <svg width={mark} height={mark} viewBox={brand.viewBox} aria-hidden role="presentation">
-          {brand.paths.map((d) => (
-            <path key={d} d={d} fill={brand.fill} />
-          ))}
-        </svg>
-      </span>
-    )
-  }
+  if (brand) return <McpBrandLogo logo={brand} size={size} />
   return (
     <span
       aria-hidden
