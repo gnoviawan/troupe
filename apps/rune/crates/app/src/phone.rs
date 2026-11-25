@@ -294,12 +294,7 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
         .border_sides([1.0, 0.0, 0.0, 0.0], c.border)
         .child(foot("Settings", "Settings", "Settings"))
         .child(foot("Camera", "Screenshot", "Screenshots"))
-        .child(
-            mobile::icon_button(t, glyph("History"), "Command history").on_press(|s: &mut State| {
-                s.close(DRAWER);
-                s.open_command_history();
-            }),
-        )
+        .child(foot("History", "Git history", "Git history"))
         .child(foot("CalendarClock", "Automations", "Automations"))
         .child(new_chat);
     col()
