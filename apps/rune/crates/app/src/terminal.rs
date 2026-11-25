@@ -66,9 +66,6 @@ pub struct TerminalUi {
     /// Restarts waiting for their new PTY: the spawn call and the terminal it replaces.
     pub restarts: BTreeMap<CallId, String>,
     pub history: crate::command_history::HistoryUi,
-    /// Every command sent, for the tests (a test state has no terminal link).
-    #[cfg(test)]
-    pub(crate) sent: Vec<Command>,
     /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
     pub blink_shown: Option<bool>,
     /// The last pointer report, by terminal: a move to the same cell is not sent again.
@@ -201,10 +198,11 @@ impl State {
         let Some((session, pane)) = self.terms.sessions.spawned(call, spawned) else { return };
         let (project, cols, rows) = (session.project_id.clone(), session.cols, session.rows);
         log::info!("[term] spawned {} (pid {}) for {project}", s.id, session.pid);
-        if self.workspace.project() != Some(project.as_str()) {
-            // The project closed or switched before the PTY started: release it, as React does
-            // when the pane it was asked for is gone.
-            log::info!("[term] released {}: project {project} is no longer shown", s.id);
+        let orphaned = restarted.as_deref().is_some_and(|old| !self.shows_terminal(old));
+        if self.workspace.project() != Some(project.as_str()) || orphaned {
+            // The project closed or switched, or the restarted tab closed, before the PTY
+            // started: release it, as React does when the pane it was asked for is gone.
+            log::info!("[term] released {}: nothing shows it", s.id);
             self.terms.sessions.close(&s.id);
             self.terms.request(WebTerminalRequestType::Kill, json!({ "terminalId": s.id }), true);
             return;
