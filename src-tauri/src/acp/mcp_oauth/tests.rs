@@ -373,14 +373,27 @@ async fn discover_follows_401_challenge_resource_metadata_and_scope() {
     let app = axum::Router::new()
         .route(
             "/api/mcp",
-            axum::routing::post(move || {
+            axum::routing::post(move |headers: axum::http::HeaderMap| {
                 let header = prm_header.clone();
                 async move {
-                    (
-                        axum::http::StatusCode::UNAUTHORIZED,
-                        [(axum::http::header::WWW_AUTHENTICATE, header)],
-                        "unauthorized",
-                    )
+                    let has_tenant =
+                        headers.get("x-tenant-id").and_then(|v| v.to_str().ok()) == Some("acme");
+                    if has_tenant {
+                        (
+                            axum::http::StatusCode::UNAUTHORIZED,
+                            [(axum::http::header::WWW_AUTHENTICATE, header)],
+                            "unauthorized",
+                        )
+                    } else {
+                        (
+                            axum::http::StatusCode::UNAUTHORIZED,
+                            [(
+                                axum::http::header::WWW_AUTHENTICATE,
+                                "Bearer realm=\"wrong-tenant\"".to_string(),
+                            )],
+                            "unauthorized",
+                        )
+                    }
                 }
             }),
         )
@@ -413,9 +426,17 @@ async fn discover_follows_401_challenge_resource_metadata_and_scope() {
         let _ = axum::serve(listener, app).await;
     });
 
-    let session = start_authorization_session(&resource_url, "http://127.0.0.1:9999/callback")
-        .await
-        .expect("challenge discovery should succeed");
+    let configured_headers = [crate::acp::mcp_probe::McpNameValuePair {
+        name: "X-Tenant-Id".to_string(),
+        value: "acme".to_string(),
+    }];
+    let session = start_authorization_session(
+        &resource_url,
+        "http://127.0.0.1:9999/callback",
+        &configured_headers,
+    )
+    .await
+    .expect("challenge discovery should succeed");
     let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
     assert_eq!(auth_url.path(), "/auth/authorize");
     let scope = auth_url
@@ -539,7 +560,7 @@ async fn desktop_flow_validates_rfc9207_iss_and_ignores_preconnect_and_wrong_sta
     let port = cb_listener.local_addr().unwrap().port();
     let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
 
-    let session = start_authorization_session(&server_url, &redirect_uri)
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
         .await
         .unwrap();
     let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
@@ -604,7 +625,7 @@ async fn desktop_flow_handles_error_redirect_immediately() {
     let cb_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = cb_listener.local_addr().unwrap().port();
     let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
-    let session = start_authorization_session(&server_url, &redirect_uri)
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
         .await
         .unwrap();
     let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
@@ -653,7 +674,7 @@ async fn desktop_flow_returns_502_html_when_token_exchange_fails() {
     let cb_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = cb_listener.local_addr().unwrap().port();
     let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
-    let session = start_authorization_session(&server_url, &redirect_uri)
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
         .await
         .unwrap();
     let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();

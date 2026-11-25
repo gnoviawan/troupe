@@ -337,6 +337,7 @@ pub async fn acp_mcp_oauth_start(
     app: tauri::AppHandle,
     server_url: String,
 ) -> Result<IpcResult<()>, String> {
+    use tauri::Manager;
     use tauri_plugin_opener::OpenerExt;
 
     // Bind an async local TCP listener on an OS-assigned port for the OAuth callback.
@@ -367,9 +368,21 @@ pub async fn acp_mcp_oauth_start(
     );
 
     // 1. Challenge-aware metadata discovery + PKCE dynamic client registration.
+    //    Forward any configured headers for this server from the host store so
+    //    tenant-scoped servers return the same challenge as `mcp_probe`.
+    let configured_headers = app
+        .try_state::<crate::remote::SharedLiveData>()
+        .and_then(|shared| {
+            crate::web::mcp_oauth_api::authorized_mcp_server_headers(
+                Some(shared.store.as_ref()),
+                &server_url,
+            )
+        })
+        .unwrap_or_default();
     let session = match crate::acp::mcp_oauth::start_authorization_session(
         &server_url,
         &redirect_uri,
+        &configured_headers,
     )
     .await
     {

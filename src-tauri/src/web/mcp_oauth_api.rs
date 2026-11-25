@@ -88,8 +88,10 @@ pub async fn oauth_start(
     }
     // Restrict OAuth discovery to a configured MCP server URL so a web
     // client cannot make the host probe an attacker-selected internal
-    // service.
-    if !is_authorized_mcp_server_url(state.store.as_deref(), &request.server_url) {
+    // service, and reuse its configured headers for challenge discovery.
+    let Some(configured_headers) =
+        authorized_mcp_server_headers(state.store.as_deref(), &request.server_url)
+    else {
         log::warn!(
             "[mcp-oauth] web flow start rejected: server URL not in authorized registry (url redacted)"
         );
@@ -97,13 +99,13 @@ pub async fn oauth_start(
             "server URL is not a configured MCP server".to_string(),
             "UNAUTHORIZED_SERVER_URL".to_string(),
         ));
-    }
+    };
     let redirect_uri = format!(
         "{}/oauth/callback",
         state.oauth_base_url.trim_end_matches('/')
     );
     let token_generation = mcp_oauth::token_generation(&request.server_url);
-    match build_web_auth_url(&request.server_url, &redirect_uri).await {
+    match build_web_auth_url(&request.server_url, &redirect_uri, &configured_headers).await {
         Ok((auth_url, csrf_token, session)) => {
             let now = Instant::now();
             let mut flows = state.pending_oauth_flows.write();
@@ -441,10 +443,12 @@ pub async fn oauth_status(
     if let Err(body) = check_project(&state.registry, &request.project_id) {
         return Json(body);
     }
+    // Read generation before token presence so a concurrent disconnect cannot
+    // pair `hasToken: true` (pre-delete) with the post-delete generation.
+    let token_generation = mcp_oauth::token_generation(&request.server_url);
     let has_token = mcp_oauth::load_stored_token(&request.server_url)
         .map(|t| t.is_some())
         .unwrap_or(false);
-    let token_generation = mcp_oauth::token_generation(&request.server_url);
     Json(IpcBody::ok(OAuthStatusResponse {
         has_token,
         token_generation,
@@ -482,20 +486,23 @@ pub async fn oauth_disconnect(
     }
 }
 
-/// Whether `server_url` is an enabled HTTP/SSE entry of the host's MCP
-/// server list. A host without a store, or without a list, authorizes none.
-fn is_authorized_mcp_server_url(store: Option<&WebStore>, server_url: &str) -> bool {
-    let Some(Ok(Some(value))) = store.map(|store| store.peek(STORE_KEY)) else {
-        return false;
-    };
+/// Return the configured headers for `server_url` when it is an enabled
+/// HTTP/SSE entry of the host's MCP server list. A host without a store, or
+/// without a matching entry, returns `None` (authorizes none).
+pub(crate) fn authorized_mcp_server_headers(
+    store: Option<&WebStore>,
+    server_url: &str,
+) -> Option<Vec<crate::acp::mcp_probe::McpNameValuePair>> {
+    let value = store.and_then(|store| store.peek(STORE_KEY).ok().flatten())?;
     let normalized = server_url.trim_end_matches('/');
-    parse_registry(&value).iter().any(|entry| {
-        matches!(entry.config.r#type.as_deref(), Some("http" | "sse"))
+    parse_registry(&value).into_iter().find_map(|entry| {
+        let is_match = matches!(entry.config.r#type.as_deref(), Some("http" | "sse"))
             && entry
                 .config
                 .url
                 .as_deref()
-                .is_some_and(|url| url.trim_end_matches('/') == normalized)
+                .is_some_and(|url| url.trim_end_matches('/') == normalized);
+        is_match.then_some(entry.config.headers)
     })
 }
 
@@ -505,8 +512,9 @@ fn is_authorized_mcp_server_url(store: Option<&WebStore>, server_url: &str) -> b
 async fn build_web_auth_url(
     server_url: &str,
     redirect_uri: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Result<(String, String, AuthorizationSession), mcp_oauth::McpOAuthError> {
-    let session = mcp_oauth::start_authorization_session(server_url, redirect_uri).await?;
+    let session = mcp_oauth::start_authorization_session(server_url, redirect_uri, headers).await?;
     let (auth_url, csrf_token) = remote_auth_url(session.get_authorization_url())?;
     Ok((auth_url, csrf_token, session))
 }

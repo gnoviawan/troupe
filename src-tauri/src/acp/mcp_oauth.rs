@@ -327,7 +327,12 @@ pub(crate) fn extract_www_authenticate(headers: &reqwest::header::HeaderMap) -> 
 /// Probe `server_url` for a `401` `WWW-Authenticate` challenge header so
 /// reactive OAuth discovery can follow custom `resource_metadata` URLs and
 /// seed `scope` selection from the challenge (RFC 9728 + RFC 6750).
-pub(crate) async fn probe_www_authenticate(server_url: &str) -> Option<String> {
+/// Forwards configured server headers (same as `mcp_probe::check_oauth_required`)
+/// so tenant-scoped servers return the right `resource_metadata` challenge.
+pub(crate) async fn probe_www_authenticate(
+    server_url: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
+) -> Option<String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
@@ -342,16 +347,22 @@ pub(crate) async fn probe_www_authenticate(server_url: &str) -> Option<String> {
             "clientInfo": { "name": "troupe-oauth", "version": "0.1" }
         }
     });
-    let response = client
+    let mut request = client
         .post(server_url)
         .header(
             reqwest::header::ACCEPT,
             "application/json, text/event-stream",
         )
-        .json(&body)
-        .send()
-        .await
-        .ok()?;
+        .json(&body);
+    for pair in headers {
+        if let (Ok(name), Ok(value)) = (
+            reqwest::header::HeaderName::from_bytes(pair.name.as_bytes()),
+            reqwest::header::HeaderValue::from_str(&pair.value),
+        ) {
+            request = request.header(name, value);
+        }
+    }
+    let response = request.send().await.ok()?;
     if response.status() != reqwest::StatusCode::UNAUTHORIZED {
         return None;
     }
@@ -363,11 +374,12 @@ pub(crate) async fn probe_www_authenticate(server_url: &str) -> Option<String> {
 /// well-known / legacy endpoint discovery.
 pub async fn discover_authorization_manager(
     server_url: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Result<AuthorizationManager, McpOAuthError> {
     let mut manager = AuthorizationManager::new(server_url)
         .await
         .map_err(|e| McpOAuthError::DiscoveryFailed(e.to_string()))?;
-    let challenge = probe_www_authenticate(server_url).await;
+    let challenge = probe_www_authenticate(server_url, headers).await;
     let resolution = manager
         .resolve_metadata_from_challenge(challenge.as_deref())
         .await
@@ -381,8 +393,9 @@ pub async fn discover_authorization_manager(
 pub async fn start_authorization_session(
     server_url: &str,
     redirect_uri: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Result<AuthorizationSession, McpOAuthError> {
-    let manager = discover_authorization_manager(server_url).await?;
+    let manager = discover_authorization_manager(server_url, headers).await?;
     let request = AuthorizationRequest::new(redirect_uri).with_client_name("Troupe");
     AuthorizationSession::new(manager, request)
         .await
@@ -395,7 +408,7 @@ async fn refresh_token(stored: &StoredToken) -> Result<StoredToken, McpOAuthErro
     } else {
         stored.server_url.as_str()
     };
-    let mut manager = discover_authorization_manager(discovery_url).await?;
+    let mut manager = discover_authorization_manager(discovery_url, &[]).await?;
     let config = rmcp::transport::auth::OAuthClientConfig::new(
         stored.client_id.clone(),
         "http://127.0.0.1/callback",

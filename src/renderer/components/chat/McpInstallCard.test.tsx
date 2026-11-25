@@ -32,6 +32,7 @@ const {
     mcpServers: Array<{ id: string; name: string }>
     mcpOAuthConnecting: Record<string, boolean>
     mcpOAuthConnected: Record<string, boolean>
+    mcpProbeStatus: Record<string, 'connected' | 'disconnected' | 'authRequired'>
   } = {
     answerMcpInstall: answer,
     dismissMcpInstall: dismiss,
@@ -39,7 +40,8 @@ const {
     loadMcpServers,
     mcpServers: [{ id: 'srv-1', name: 'keys' }],
     mcpOAuthConnecting: {},
-    mcpOAuthConnected: {}
+    mcpOAuthConnected: {},
+    mcpProbeStatus: {}
   }
   const projectState: { activeProjectId: string } = { activeProjectId: '' }
   return {
@@ -144,6 +146,7 @@ describe('McpInstallCard', () => {
     storeState.mcpServers = [{ id: 'srv-1', name: 'keys' }]
     storeState.mcpOAuthConnecting = {}
     storeState.mcpOAuthConnected = {}
+    storeState.mcpProbeStatus = {}
     projectState.activeProjectId = ''
   })
 
@@ -358,6 +361,25 @@ describe('McpInstallCard', () => {
     expect(logFrontendError).toHaveBeenCalled()
 
     storeState.mcpOAuthConnected = { 'srv-1': true }
+    storeState.mcpProbeStatus = { 'srv-1': 'authRequired' }
+    rerender(
+      <McpInstallCard
+        projectId="project-1"
+        install={install({
+          result: {
+            outcome: 'installed',
+            name: 'keys',
+            serverId: 'srv-1',
+            oauth: true,
+            nextSteps: []
+          }
+        })}
+      />
+    )
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.queryByText('Signed in')).not.toBeInTheDocument()
+
+    storeState.mcpProbeStatus = { 'srv-1': 'connected' }
     rerender(
       <McpInstallCard
         projectId="project-1"

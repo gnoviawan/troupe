@@ -39,6 +39,10 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
   const oauthConnected = useAcpStore((s) =>
     Boolean(resultServerId && s.mcpOAuthConnected?.[resultServerId])
   )
+  const probeStatus = useAcpStore((s) =>
+    resultServerId ? s.mcpProbeStatus?.[resultServerId] : undefined
+  )
+  const signedIn = oauthConnected && probeStatus !== 'authRequired'
   const activeProjectId = useProjectStore((s) => s.activeProjectId)
   const [values, setValues] = useState(() => initialInstallValues(install.form.fields))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -191,12 +195,12 @@ export function McpInstallCard({ install, projectId }: McpInstallCardProps): Rea
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
           {result ? (
             <>
-              {result.oauth && result.serverId && !oauthConnected && (
+              {result.oauth && result.serverId && !signedIn && (
                 <Button type="button" disabled={oauthConnecting} onClick={() => void signIn()}>
                   {oauthConnecting ? 'Signing in…' : 'Sign in'}
                 </Button>
               )}
-              {result.oauth && oauthConnected && (
+              {result.oauth && signedIn && (
                 <span className="text-xs font-medium text-muted-foreground">Signed in</span>
               )}
               <Button type="button" variant="outline" onClick={() => dismiss(install.requestId)}>
