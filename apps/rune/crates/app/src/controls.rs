@@ -17,7 +17,89 @@ fn composer_options_key(config_id: &str) -> String {
     format!("agents/composer-options/{config_id}")
 }
 
+/// One config's saved picks: patches waiting for the record's first read, then the record.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum SavedPicks {
+    Reading(Vec<Value>),
+    /// The read failed: the patches wait, and the next pick reads again before any write, so a
+    /// failed read never overwrites the saved record with a partial one.
+    Unread(Vec<Value>),
+    Read(Value),
+}
+
+/// `persistComposerOptions`' merge: a patch field replaces the saved one, except that
+/// `configValues` merge by key and `modelValues` merge per model.
+pub(crate) fn merge_picks(saved: &Value, patch: &Value) -> Value {
+    let mut merged = saved.as_object().cloned().unwrap_or_default();
+    let Some(patch) = patch.as_object() else { return Value::Object(merged) };
+    for (k, v) in patch {
+        if v.is_null() {
+            continue;
+        }
+        let deep = match (k.as_str(), merged.get(k).and_then(Value::as_object), v.as_object()) {
+            ("configValues", Some(old), Some(new)) => {
+                let mut values = old.clone();
+                values.extend(new.clone());
+                Some(Value::Object(values))
+            }
+            ("modelValues", Some(old), Some(new)) => {
+                let mut models = old.clone();
+                for (model, values) in new {
+                    let mut entry = models.get(model).and_then(Value::as_object).cloned().unwrap_or_default();
+                    entry.extend(values.as_object().cloned().unwrap_or_default());
+                    models.insert(model.clone(), Value::Object(entry));
+                }
+                Some(Value::Object(models))
+            }
+            _ => None,
+        };
+        merged.insert(k.clone(), deep.unwrap_or_else(|| v.clone()));
+    }
+    Value::Object(merged)
+}
+
 impl State {
+    /// `persistComposerOptions`: merge `patch` into the config's saved picks and write them,
+    /// reading the record first the first time.
+    pub(crate) fn save_picks(&mut self, config_id: String, patch: Value) {
+        match self.chat.saved_picks.get_mut(&config_id) {
+            Some(SavedPicks::Reading(queued)) => queued.push(patch),
+            Some(SavedPicks::Read(saved)) => {
+                let merged = merge_picks(saved, &patch);
+                *saved = merged.clone();
+                log::info!("[chat] saving the composer picks of {config_id}");
+                self.write(&composer_options_key(&config_id), merged, Pending::Write(composer_options_key(&config_id)));
+            }
+            Some(SavedPicks::Unread(_)) | None => {
+                let mut queued = match self.chat.saved_picks.remove(&config_id) {
+                    Some(SavedPicks::Unread(queued)) => queued,
+                    _ => Vec::new(),
+                };
+                queued.push(patch);
+                self.chat.saved_picks.insert(config_id.clone(), SavedPicks::Reading(queued));
+                let key = self.device_key(&composer_options_key(&config_id));
+                self.call(WsRequestType::StoreRead, json!({ "key": key }), Pending::SavedPicks(config_id));
+            }
+        }
+    }
+
+    /// The saved picks' first read: merge the waiting patches into it and write once.
+    pub(crate) fn saved_picks_read(&mut self, config_id: String, result: Result<Option<Value>, WsError>) {
+        let Some(SavedPicks::Reading(queued)) = self.chat.saved_picks.remove(&config_id) else { return };
+        let saved = match result {
+            Ok(reply) => stored_value(reply).filter(Value::is_object).unwrap_or_else(|| json!({})),
+            Err(e) => {
+                log::warn!("[chat] reading the saved composer picks of {config_id} failed, not saving yet: {}", e.code);
+                self.chat.saved_picks.insert(config_id, SavedPicks::Unread(queued));
+                return;
+            }
+        };
+        let merged = queued.iter().fold(saved, |acc, patch| merge_picks(&acc, patch));
+        self.chat.saved_picks.insert(config_id.clone(), SavedPicks::Read(merged.clone()));
+        log::info!("[chat] saving the composer picks of {config_id}");
+        self.write(&composer_options_key(&config_id), merged, Pending::Write(composer_options_key(&config_id)));
+    }
+
     /// Runs a control effect; any other effect comes back.
     pub(crate) fn run_control(&mut self, effect: Effect) -> Option<Effect> {
         let (kind, payload) = match &effect {

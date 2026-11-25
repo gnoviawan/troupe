@@ -17,7 +17,7 @@ test('the list holds the measured inventory plus the starter and phone journeys'
     journeys: count('journey'),
     phone: SURFACES.filter((s) => s.profile === 'phone').length,
     total: SURFACES.length
-  }).toEqual({ overlays: 147, screens: 45, journeys: 29, phone: 37, total: 221 })
+  }).toEqual({ overlays: 148, screens: 45, journeys: 29, phone: 37, total: 222 })
 })
 
 test('the surfaces claim every overlay mount site of the renderer, once', () => {

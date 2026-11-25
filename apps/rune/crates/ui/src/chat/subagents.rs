@@ -260,8 +260,10 @@ pub fn panel<S: 'static>(t: &'static Tokens, p: PanelSpec, lenses: Lenses<S>) ->
         .child(text(place).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).single_line().truncate().min_w(0.0).grow(1.0))
         .child(IconActionButton::new(&i::X, "Close").size(IconActionSize::Sm).build(t).on_press(close("close")));
     let mut actions = row().gap(8.0).items_center().child(status_label(t, st, wait));
-    if can_stop(p.tool, st) {
-        let (session, id) = (p.session.to_owned(), subagent_id(p.tool).unwrap_or_default());
+    if can_stop(p.tool, st)
+        && let Some(id) = subagent_id(p.tool).filter(|id| !id.is_empty())
+    {
+        let session = p.session.to_owned();
         let label = if p.stopping { "Stopping" } else { "Stop" };
         actions = actions.child(el().grow(1.0)).child(
             Button::new(label)

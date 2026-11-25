@@ -193,7 +193,7 @@ fn digits_pick_and_return_answers_the_question_on_screen() {
 }
 
 #[test]
-fn escape_cancels_the_question_on_screen() {
+fn escape_cancels_the_question_only_from_inside_it() {
     use rune::Key;
     let mut rt = chat_at((1280.0, 800.0));
     ask(
@@ -204,6 +204,10 @@ fn escape_cancels_the_question_on_screen() {
         }, 6] }),
     );
     press(&mut rt, Key::Escape);
+    assert!(sent(&rt.state, WsRequestType::AnswerQuestion).is_empty(), "Escape outside the question keeps it");
+    tap(&mut rt, "question-option-0");
+    rt.key(rune::KeyEvent { key: Key::Escape, mods: rune::Mods::default() });
+    rt.frame(0.3);
     assert_eq!(
         sent(&rt.state, WsRequestType::AnswerQuestion),
         [json!({ "agentId": "agent-1", "questionId": "q-1", "values": null })]

@@ -43,12 +43,17 @@ pub struct ChatUi {
     open_when_shown: Option<(String, String)>,
     /// The Markdown of the table the full-window view shows.
     pub zoomed_table: Option<String>,
+    /// The link waiting for the user's "Open" (`ExternalLinkConfirm`); only one at a time.
+    pub link_confirm: Option<String>,
     /// Turn ends the model asked for, run after the events already delivered.
     deferred: Vec<Event>,
     /// Busy-queue retries the model asked for: (due on the frame clock, session, generation).
     retries: Vec<(f64, String, u64)>,
     /// Waits for re-advertised options a model pick asked for: (due on the frame clock, run).
     pub(crate) readvertise: Vec<(f64, model::acp::RunId)>,
+    /// Per agent config, the saved composer picks as last written, or the patches waiting
+    /// for the first read (`persistComposerOptions`' per-key queue).
+    pub(crate) saved_picks: std::collections::BTreeMap<String, crate::controls::SavedPicks>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }
@@ -265,9 +270,7 @@ impl State {
                     self.chat.retries.push((self.now + delay_ms / 1000.0, session_id, generation));
                 }
                 Effect::Answer(answer) => self.send_answer(answer),
-                Effect::PersistComposerOptions { config_id, .. } => {
-                    log::info!("[chat] picks of {config_id} not saved: the Rune client does not write composer picks yet");
-                }
+                Effect::PersistComposerOptions { config_id, patch } => self.save_picks(config_id, patch),
                 Effect::PersistModelCatalog { config_id, .. } => {
                     log::info!("[chat] model list of {config_id} not saved: the Rune client has no catalog store yet");
                 }

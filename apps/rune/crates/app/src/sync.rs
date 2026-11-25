@@ -81,8 +81,12 @@ pub(crate) enum Pending {
     Control(Box<model::acp::Effect>),
     /// The saved composer picks a model pick reads first.
     ComposerOptions(Box<model::acp::Effect>),
+    /// The saved composer picks of a config, read before the first write merges into them.
+    SavedPicks(String),
     /// A subagent's `stop_subagent`, by the record's id.
     StopSubagent(String),
+    /// A browser consent answer, with the ticket to restore if the host refuses it.
+    BrowserConsent(Box<Value>),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
@@ -401,8 +405,10 @@ impl State {
             Pending::Prompt { session_id, turn_id } => self.prompt_settled(session_id, turn_id, result),
             Pending::Answer(answer) => self.answer_settled(*answer, result),
             Pending::StopSubagent(id) => self.subagent_stop_settled(id, result),
+            Pending::BrowserConsent(ticket) => self.browser_consent_settled(*ticket, result),
             Pending::Control(effect) => self.control_settled(*effect, result),
             Pending::ComposerOptions(effect) => self.composer_options_read(*effect, result),
+            Pending::SavedPicks(config_id) => self.saved_picks_read(config_id, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ListChats => {

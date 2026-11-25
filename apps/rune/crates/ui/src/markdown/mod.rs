@@ -32,7 +32,7 @@ use theme::icons as i;
 pub use fences::{PLAN_LANGUAGE, agent_prose, normalize_plan_fence_boundary, strip_empty_fences, strip_plan_fences};
 pub use highlight::{highlighter, recut};
 pub use links::{FILE_SCHEME, LinkTarget, classify, find_paths, link_file_paths};
-pub use style::{markdown_style, syntax_colour};
+pub use style::{markdown_style, syntax_colour, syntax_theme};
 pub use table::{TABLE_ZOOM, table_zoom};
 
 use crate::type_::mono;
