@@ -14,7 +14,6 @@ import {
   useUpdateShortcut
 } from '@/hooks/use-keyboard-shortcuts'
 import { acpApi, shellApi } from '@/lib/api'
-import { isAurUpdateMode } from '@/lib/tauri-updater-api'
 import {
   useAcpSessionNewTimeout,
   useAcpSessionReopenTimeout,
@@ -24,22 +23,18 @@ import {
 } from '@/stores/app-settings-store'
 import { useKeyboardShortcutsStore } from '@/stores/keyboard-shortcuts-store'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
-import { useUpdaterActions, useUpdaterState } from '@/stores/updater-store'
+import { AboutSection } from './app-preferences/about-section'
 import { AiAgentsSection } from './app-preferences/ai-agents-section'
 import { BrowserSection } from './app-preferences/browser-section'
 import { appPrefCategories, appPrefSearchIndex } from './app-preferences/categories'
-import { DiagnosticsSection } from './app-preferences/diagnostics-section'
 import { McpServersSection } from './app-preferences/mcp-servers-section'
 import { PreferencesSection } from './app-preferences/preferences-section'
 import { ProviderSection } from './app-preferences/provider-section'
-import { ResetSection } from './app-preferences/reset-section'
-import { ServerSection } from './app-preferences/server-section'
 import { ShortcutsSection } from './app-preferences/shortcuts-section'
 import { SkillsSection } from './app-preferences/skills-section'
 import { SubagentsSection } from './app-preferences/subagents-section'
 import { TerminalProfilesSection } from './app-preferences/terminal-profiles-section'
 import { TerminalSection } from './app-preferences/terminal-section'
-import { UpdatesSection } from './app-preferences/updates-section'
 
 export function AppPreferencesModal(): React.JSX.Element {
   const isOpen = useSettingsModalStore((state) => state.view === 'app')
@@ -49,7 +44,6 @@ export function AppPreferencesModal(): React.JSX.Element {
   const categories = useMemo(() => appPrefCategories(), [])
   const searchIndex = useMemo(() => appPrefSearchIndex(), [])
   const setAppPage = useSettingsModalStore((state) => state.setAppPage)
-  const isAurUpdater = isAurUpdateMode()
   const acpTurnTimeoutSecs = useAcpTurnTimeout()
   const acpTurnIdleTimeoutSecs = useAcpTurnIdleTimeout()
   const acpSessionNewTimeoutSecs = useAcpSessionNewTimeout()
@@ -67,27 +61,6 @@ export function AppPreferencesModal(): React.JSX.Element {
   const updateShortcut = useUpdateShortcut()
   const resetShortcut = useResetShortcut()
   const resetAllShortcuts = useResetAllShortcuts()
-
-  // Updater state
-  const {
-    isChecking,
-    updateAvailable,
-    version,
-    lastChecked,
-    autoUpdateEnabled,
-    skippedVersion,
-    error: updateError,
-    errorSource: updateErrorSource,
-    isManualUpdateMode,
-    updateChannel
-  } = useUpdaterState()
-  const {
-    checkForUpdates,
-    downloadUpdate,
-    installAndRestart,
-    setAutoUpdateEnabled,
-    setUpdateChannel
-  } = useUpdaterActions()
 
   // Profiles offer the detected shells.
   useEffect(() => {
@@ -161,10 +134,6 @@ export function AppPreferencesModal(): React.JSX.Element {
     setIsResetShortcutsDialogOpen(false)
   }
 
-  const handleAutoUpdateToggle = async (enabled: boolean) => {
-    await setAutoUpdateEnabled(enabled)
-  }
-
   return (
     <>
       <SettingsWindow isOpen={isOpen} onClose={close} title="Preferences">
@@ -202,27 +171,7 @@ export function AppPreferencesModal(): React.JSX.Element {
             resetShortcut={resetShortcut}
             setIsResetShortcutsDialogOpen={setIsResetShortcutsDialogOpen}
           />
-          <UpdatesSection
-            isAurUpdater={isAurUpdater}
-            isChecking={isChecking}
-            updateAvailable={updateAvailable}
-            version={version}
-            lastChecked={lastChecked}
-            autoUpdateEnabled={autoUpdateEnabled}
-            skippedVersion={skippedVersion}
-            updateError={updateError}
-            updateErrorSource={updateErrorSource}
-            isManualUpdateMode={isManualUpdateMode}
-            updateChannel={updateChannel}
-            checkForUpdates={checkForUpdates}
-            downloadUpdate={downloadUpdate}
-            installAndRestart={installAndRestart}
-            handleAutoUpdateToggle={handleAutoUpdateToggle}
-            setUpdateChannel={setUpdateChannel}
-          />
-          <ServerSection />
-          <DiagnosticsSection />
-          <ResetSection setIsResetDialogOpen={setIsResetDialogOpen} />
+          <AboutSection onResetAll={() => setIsResetDialogOpen(true)} />
         </SettingsLayout>
       </SettingsWindow>
 

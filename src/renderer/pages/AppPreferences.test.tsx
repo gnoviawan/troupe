@@ -411,7 +411,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     renderPage()
   }
 
-  it('hides the whole Updates page on web and shows the server version on Logs', async () => {
+  it('hides the update controls on web and shows the server version on About', async () => {
     renderWeb()
 
     const nav = screen.getByRole('navigation', { name: 'Settings pages' })
@@ -420,7 +420,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     expect(screen.queryByText('Release channel')).not.toBeInTheDocument()
 
     goTo('About')
-    expect(await screen.findByRole('heading', { name: 'Server version' })).toBeInTheDocument()
+    expect(await screen.findByText(/^termul-server v/)).toBeInTheDocument()
     expect(
       screen.getByText(/web client is served by the termul-server and updates together with it/i)
     ).toBeInTheDocument()
@@ -610,8 +610,12 @@ describe.each([
     expect(toggle).toHaveAttribute('aria-checked', 'true')
 
     goTo('About')
-    fireEvent.click(screen.getByRole('button', { name: 'Reset settings…' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Reset settings' }))
+    // The page trigger and the confirm share the label; the confirm is the second.
+    fireEvent.click(screen.getByRole('button', { name: 'Reset settings' }))
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: 'Reset settings' })).toHaveLength(2)
+    )
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reset settings' })[1] as HTMLElement)
 
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.terminalScreenReaderMode).toBe(false)
