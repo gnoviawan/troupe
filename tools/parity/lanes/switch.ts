@@ -41,7 +41,9 @@ const options: LaneOptions = {
 }
 process.env[OPTIONS_ENV] = '1'
 process.env[SECOND_AGENT_ENV] = '1'
-const STEPS = ['chat', 'picker', 'armed', 'switched', 'reopened']
+const STEPS = options.phone
+  ? ['chat', 'sheet', 'picker', 'armed', 'switched', 'reopened']
+  : ['chat', 'picker', 'armed', 'switched', 'reopened']
 const SECOND = SECOND_AGENT.name
 const NEXT = 'Carry on with the next step.'
 
@@ -61,6 +63,7 @@ async function arm(
 ): Promise<void> {
   await openPicker(client)
   if (options.phone) {
+    await step('sheet', 'Provider')
     await client.click('Provider', false)
     await step('picker', SECOND)
     await client.click(SECOND)
@@ -128,7 +131,9 @@ async function run(client: Client): Promise<string[]> {
   await step('switched', () => seesHandoff(client))
   await client.page.reload()
   await client.sees('What should we do in alpha?', 30_000)
-  await tryStep('reopening', () => client.click(NEXT.slice(0, 20), false))
+  // React on a phone reopens the chat it showed on reload; its title then takes no press.
+  const reopened = options.phone && (await client.sees('Worked for', 3000))
+  if (!reopened) await tryStep('reopening', () => client.click(NEXT.slice(0, 20), false))
   await client.page.waitForTimeout(3000)
   await step('reopened', () => seesHandoff(client))
   return seen
