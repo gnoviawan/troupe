@@ -40,6 +40,7 @@ mod rail_view;
 mod sync;
 mod term_host;
 mod term_input;
+mod term_keys;
 mod term_menu;
 mod term_select;
 mod terminal;

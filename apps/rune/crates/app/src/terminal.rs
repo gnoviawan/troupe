@@ -66,6 +66,8 @@ pub struct TerminalUi {
     /// Restarts waiting for their new PTY: the spawn call and the terminal it replaces.
     pub restarts: BTreeMap<CallId, String>,
     pub history: crate::command_history::HistoryUi,
+    /// The phone key bar shows only its toggle and Paste.
+    pub keys_hidden: bool,
     /// Every command sent, for the tests (a test state has no terminal link).
     #[cfg(test)]
     pub(crate) sent: Vec<Command>,
