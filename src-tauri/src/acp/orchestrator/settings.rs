@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 use parking_lot::Mutex;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::acp::atomic_file;
@@ -56,7 +57,7 @@ impl Default for OrchestratorSettings {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 struct SettingsFile {
     schema_version: u32,
     #[serde(flatten)]
@@ -88,14 +89,6 @@ struct LegacySettings {
     models: BTreeMap<String, String>,
     #[serde(default)]
     descriptions: BTreeMap<String, String>,
-}
-
-#[derive(Deserialize)]
-struct LegacyFile {
-    #[serde(rename = "schema_version")]
-    _schema_version: u32,
-    #[serde(flatten)]
-    settings: LegacySettings,
 }
 
 impl From<LegacySettings> for OrchestratorSettings {
@@ -131,13 +124,22 @@ impl From<LegacySettings> for OrchestratorSettings {
 /// is migrated in memory; the first save writes it in the current schema.
 fn parse(bytes: &[u8], schema_version: u32) -> Result<OrchestratorSettings, serde_json::Error> {
     if schema_version < SCHEMA_VERSION {
-        let legacy = serde_json::from_slice::<LegacyFile>(bytes)?;
+        let legacy = payload::<LegacySettings>(bytes)?;
         log::info!(
             "[orchestrator] settings schema {schema_version} migrated to sub-agent profiles"
         );
-        return Ok(legacy.settings.into());
+        return Ok(legacy.into());
     }
-    serde_json::from_slice::<SettingsFile>(bytes).map(|file| file.settings)
+    payload(bytes)
+}
+
+/// A file's fields besides `schema_version`. Not `#[serde(flatten)]`, which
+/// hands the payload only the fields it names, so `deny_unknown_fields`
+/// would never see a field it does not know.
+fn payload<T: DeserializeOwned>(bytes: &[u8]) -> Result<T, serde_json::Error> {
+    let mut fields = serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(bytes)?;
+    fields.remove("schema_version");
+    serde_json::from_value(serde_json::Value::Object(fields))
 }
 
 pub(crate) struct SettingsStore {
