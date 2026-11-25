@@ -4041,6 +4041,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "theme",
+ "troupe-term",
  "wasm-bindgen",
  "web-sys",
 ]
