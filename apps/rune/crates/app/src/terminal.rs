@@ -126,6 +126,7 @@ impl State {
                     self.toast_error("Couldn't open a terminal", &e.message);
                 }
             },
+            Output::Reply { call, result } if self.terms.sessions.restoring.contains_key(&call) => self.terminal_restored(call, result),
             Output::Reply { result: Err(e), .. } => log::warn!("[term] request failed: {} {}", e.code, e.message),
             Output::Reply { .. } | Output::Status(_) | Output::Data { .. } | Output::Replay { .. } => {}
             Output::Attached(attached) => log::info!("[term] attached {} (pid {})", attached.id, attached.pid),
@@ -157,17 +158,44 @@ impl State {
             self.terms.request(WebTerminalRequestType::Kill, json!({ "terminalId": s.id }), true);
             return;
         }
-        let Some(host) = &mut self.terms.host else { return };
-        let cells = host.open(&s.id, cols, rows);
-        self.terms.views.insert(s.id.clone(), TermView { cells, cache: RefCell::default(), scrolled: 0, wheel: 0.0 });
-        self.terms.opened += 1;
-        self.terms.names.insert(s.id.clone(), format!("Terminal {}", self.terms.opened));
-        self.terms.send(Command::Attach { terminal_id: s.id.clone(), claim: s.claim, log_epoch: None, last_seq: 0 });
+        self.terminal_attach(&s.id, &s.claim, cols, rows);
         self.workspace.step(WorkspaceEvent::AddTerminalTab(s.id, pane));
     }
 
-    /// A closed terminal tab kills its PTY. A tab that went because the project switched is
-    /// not closed: its session stays.
+    /// Opens the cells of a session this client now holds and attaches from the start, so the
+    /// host replays what the PTY printed.
+    fn terminal_attach(&mut self, id: &str, claim: &str, cols: u16, rows: u16) {
+        let Some(host) = &mut self.terms.host else { return };
+        let cells = host.open(id, cols, rows);
+        self.terms.views.insert(id.to_owned(), TermView { cells, cache: RefCell::default(), scrolled: 0, wheel: 0.0 });
+        self.terms.opened += 1;
+        self.terms.names.insert(id.to_owned(), format!("Terminal {}", self.terms.opened));
+        self.terms.send(Command::Attach { terminal_id: id.to_owned(), claim: claim.to_owned(), log_epoch: None, last_seq: 0 });
+    }
+
+    /// The `list_preserved` reply for a restored tab: re-attach its PTY when the host still
+    /// runs it, as React's restore does.
+    fn terminal_restored(&mut self, call: CallId, result: Result<Value, client::terminal::TermError>) {
+        let terminal_id = self.terms.sessions.restoring.get(&call).map(|r| r.terminal_id.clone()).unwrap_or_default();
+        let found = match result {
+            Ok(data) => preserved_entry(&data, &terminal_id),
+            Err(e) => {
+                log::warn!("[term] list_preserved for a restored tab failed: {} {}", e.code, e.message);
+                None
+            }
+        };
+        let Some(session) = self.terms.sessions.restored(call, found) else {
+            log::info!("[term] restored tab {terminal_id} has no preserved PTY to attach");
+            return;
+        };
+        let (id, claim, cols, rows, pid) = (session.id.clone(), session.claim.clone(), session.cols, session.rows, session.pid);
+        log::info!("[term] re-attaching restored terminal {id} (pid {pid})");
+        self.terminal_attach(&id, &claim, cols, rows);
+    }
+
+    /// A closed terminal tab kills its PTY, when this client holds it. A tab that went because
+    /// the project switched is not closed: its session stays. A shown tab for a PTY this client
+    /// does not hold (a saved layout brought it back) asks the host whether it still runs.
     fn reap_closed_tabs(&mut self) -> bool {
         let Some(project) = self.workspace.project().map(str::to_owned) else { return false };
         let now: BTreeSet<String> = model::workspace::leaves(self.workspace.root())
@@ -182,15 +210,25 @@ impl State {
             Some((shown_project, before)) if *shown_project == project => before.difference(&now).cloned().collect(),
             _ => Vec::new(),
         };
+        if self.terms.host.is_some() {
+            for id in now.iter().filter(|id| self.terms.sessions.should_restore(id)).cloned().collect::<Vec<_>>() {
+                let call = self.terms.request(WebTerminalRequestType::ListPreserved, json!({ "projectId": project, "terminalId": id }), false);
+                self.terms.sessions.restore(call, &project, &id);
+                log::info!("[term] asking whether restored tab {id} still runs (call {call})");
+            }
+        }
         self.terms.shown = Some((project, now));
         for id in &closed {
-            log::info!("[term] tab closed; killing {id}");
-            self.terms.sessions.close(id);
             self.terms.views.remove(id);
             self.terms.names.remove(id);
             if let Some(host) = &mut self.terms.host {
                 host.forget(id);
             }
+            if self.terms.sessions.close(id).is_none() {
+                log::info!("[term] tab closed for {id}, which this client does not hold; nothing to kill");
+                continue;
+            }
+            log::info!("[term] tab closed; killing {id}");
             self.terms.request(WebTerminalRequestType::Kill, json!({ "terminalId": id }), true);
             self.terms.send(Command::Detach { terminal_id: id.clone() });
         }
@@ -256,3 +294,23 @@ impl State {
         self.terms.request(WebTerminalRequestType::Resize, json!({ "terminalId": id, "cols": cols, "rows": rows }), false);
     }
 }
+
+/// The `list_preserved` entry for `terminal_id` with a claim, if the reply holds one.
+fn preserved_entry(data: &Value, terminal_id: &str) -> Option<Spawned> {
+    let entry = data.get("terminals")?.as_array()?.iter().find(|e| e.get("id").and_then(Value::as_str) == Some(terminal_id))?;
+    let text = |key: &str| entry.get(key).and_then(Value::as_str).map(str::to_owned);
+    let number = |key: &str| entry.get(key).and_then(Value::as_u64);
+    Some(Spawned {
+        id: terminal_id.to_owned(),
+        shell: text("shell").unwrap_or_default(),
+        cwd: text("cwd").unwrap_or_default(),
+        pid: number("pid").and_then(|n| u32::try_from(n).ok()).unwrap_or(0),
+        cols: number("cols").and_then(|n| u16::try_from(n).ok()).unwrap_or(DEFAULT_SIZE.0),
+        rows: number("rows").and_then(|n| u16::try_from(n).ok()).unwrap_or(DEFAULT_SIZE.1),
+        claim: text("claim")?,
+    })
+}
+
+#[cfg(test)]
+#[path = "terminal_tests.rs"]
+mod tests;

@@ -38,3 +38,25 @@ fn resize_asks_only_for_a_changed_size_of_a_live_terminal() {
     assert!(!t.resize("pty-a", 100, 30), "an exited PTY takes no resize");
     assert_eq!(t.get("pty-a").map(|s| s.status.clone()), Some(Status::Exited { code: Some(0) }));
 }
+
+#[test]
+fn a_restored_tab_asks_once_and_adopts_the_preserved_pty() {
+    let mut t = Terminals::default();
+    assert!(t.should_restore("pty-r"));
+    t.restore(9, "alpha", "pty-r");
+    assert!(!t.should_restore("pty-r"), "asked once");
+    let session = t.restored(9, Some(spawned("pty-r"))).expect("the preserved PTY");
+    assert_eq!((session.id.as_str(), session.project_id.as_str(), session.status.clone()), ("pty-r", "alpha", Status::Live));
+    assert!(t.restored(9, Some(spawned("pty-r"))).is_none(), "a second reply is ignored");
+}
+
+#[test]
+fn a_restored_tab_whose_pty_is_gone_holds_no_session() {
+    let mut t = Terminals::default();
+    t.restore(3, "alpha", "pty-gone");
+    assert!(t.restored(3, None).is_none());
+    t.restore(4, "alpha", "pty-x");
+    assert!(t.restored(4, Some(spawned("pty-other"))).is_none(), "an entry for another PTY is not this tab's");
+    assert!(t.get("pty-gone").is_none() && t.get("pty-x").is_none());
+    assert!(!t.should_restore("pty-gone"), "not asked again");
+}

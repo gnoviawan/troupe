@@ -5,7 +5,7 @@
 //! their sessions here, attached and fed, so switching back shows the same process; only a
 //! close or the PTY's own exit ends one. The cells live in the app beside each session.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Where a terminal stands.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,7 +42,14 @@ pub struct Spawning {
     pub pane: Option<String>,
 }
 
-/// What a `spawn` reply carried (`SpawnedTerminal`).
+/// A `list_preserved` in flight for a terminal tab a saved layout brought back.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Restoring {
+    pub project_id: String,
+    pub terminal_id: String,
+}
+
+/// What a `spawn` reply carried (`SpawnedTerminal`), or a `list_preserved` entry with a claim.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Spawned {
     pub id: String,
@@ -61,6 +68,9 @@ pub const DEFAULT_SIZE: (u16, u16) = (80, 24);
 pub struct Terminals {
     pub sessions: BTreeMap<String, Session>,
     pub spawning: BTreeMap<u64, Spawning>,
+    pub restoring: BTreeMap<u64, Restoring>,
+    /// Restored tabs already asked about, so each is asked once.
+    asked: BTreeSet<String>,
 }
 
 impl Terminals {
@@ -88,6 +98,28 @@ impl Terminals {
         };
         self.sessions.insert(id.clone(), session);
         self.sessions.get(&id).map(|s| (s, pane))
+    }
+
+    /// Whether a restored tab showing `terminal_id` should ask the host for its PTY: not for a
+    /// session this client holds, nor twice.
+    pub fn should_restore(&self, terminal_id: &str) -> bool {
+        !self.sessions.contains_key(terminal_id) && !self.asked.contains(terminal_id)
+    }
+
+    /// Notes a `list_preserved` sent as `call` for the restored tab showing `terminal_id`.
+    pub fn restore(&mut self, call: u64, project_id: &str, terminal_id: &str) {
+        self.asked.insert(terminal_id.to_owned());
+        self.restoring.insert(call, Restoring { project_id: project_id.to_owned(), terminal_id: terminal_id.to_owned() });
+    }
+
+    /// The `list_preserved` reply for `call`: the PTY it found with a fresh claim becomes this
+    /// client's session, as React re-attaches a preserved terminal. `found` is None when the
+    /// host no longer runs it or would not issue a claim.
+    pub fn restored(&mut self, call: u64, found: Option<Spawned>) -> Option<&Session> {
+        let Restoring { project_id, terminal_id } = self.restoring.remove(&call)?;
+        let spawned = found.filter(|s| s.id == terminal_id && !s.claim.is_empty())?;
+        self.spawning.insert(call, Spawning { project_id, pane: None });
+        self.spawned(call, spawned).map(|(session, _)| session)
     }
 
     /// The `spawn` for `call` failed.
