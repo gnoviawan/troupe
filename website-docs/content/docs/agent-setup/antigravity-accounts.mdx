@@ -69,7 +69,9 @@ Each account row shows the plan the Antigravity agent reports for that account, 
 
 To see how much quota an account has left, click **Check usage** on its row. Troupe starts the Antigravity agent for that account and runs the agent's own `/usage` command. The row then shows one bar per quota the agent lists, for example **Gemini Models · Weekly Limit Remaining**, and the time of the check. The `/usage` command does not run the model, so a check uses no tokens. When the agent has no quota to report, for example "Not applicable for current authentication method.", the row shows the agent's words instead of bars.
 
-Troupe checks only when you click **Check usage**. It never checks in the background, when you open Settings, on a timer, or when a chat reaches a limit. The bars and the account button in the chat box show the last check until you check again, and they clear when Troupe restarts. **Check usage** needs a connection that can make changes and a signed-in account.
+Troupe checks only when you click **Check usage**. It never checks in the background, when you open Settings, on a timer, or when a chat reaches a limit. The bars and the account button in the chat box show the last check until you check again. They clear when Troupe restarts, when you sign in to the account again, and when you remove it. **Check usage** needs a connection that can make changes and a signed-in account.
+
+A check is only for you to read. Troupe never uses it to decide that an account reached its limit, to pick an account for a chat, or to choose when a chat continues.
 
 Each check opens a short session in an empty folder that Troupe owns, never in a project. The Antigravity agent keeps that session in its own session list for the account.
 
@@ -92,7 +94,7 @@ In the notice at the limit, you can:
 
 ### Switch automatically
 
-**Switch accounts automatically** in the **Antigravity** group of **Settings** > **Provider** is on by default. When a chat reaches its account's limit, Troupe moves only that chat to the signed-in account with the most room and continues it with a short message, for example "Troupe moved this chat from Antigravity account Work to Spare because Work reached its usage limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
+**Switch accounts automatically** in the **Antigravity** group of **Settings** > **Provider** is on by default. When a chat reaches its account's limit, Troupe moves only that chat to the first signed-in account in your list that has not reached its limit, and continues it with a short message, for example "Troupe moved this chat from Antigravity account Work to Spare because Work reached its usage limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
 
 When no other account has room, Troupe continues the chat when the limit resets. The notice shows when, for example "Continues at 14:05", on every device that has the chat open. Click **Cancel** to stop the wait. The wait stays in place if you close the app, and it is still there after Troupe starts again.
 
