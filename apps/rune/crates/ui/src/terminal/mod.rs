@@ -9,6 +9,7 @@
 //! changed shapes that row only. Colours resolve here, as xterm.js does at draw time: bold
 //! brightens the eight base colours, inverse swaps, dim halves the foreground's alpha.
 
+mod glyphs;
 pub mod keys;
 mod rows;
 

@@ -90,3 +90,15 @@ fn keys_encode_as_xterm_sends_them() {
         assert_eq!(keys::encode(&e, app).as_deref(), Some(want), "{e:?}");
     }
 }
+
+#[test]
+fn box_drawing_and_blocks_are_shapes_and_text_is_not() {
+    use super::glyphs::{custom, draw};
+    for c in ['─', '│', '┼', '╔', '╬', '╭', '█', '▄', '░', '▞'] {
+        assert!(custom(c), "{c} is drawn");
+        assert!(!draw(rune::Shape::new(), c, 0.0, 8.0, 19.0, rune::Color::WHITE).is_empty(), "{c} draws something");
+    }
+    for c in ['a', '中', '⎺', '·'] {
+        assert!(!custom(c), "{c} is the font's");
+    }
+}

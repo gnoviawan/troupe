@@ -3,7 +3,7 @@
 use rune::{Color, GridRow, LineCap, Shape, Span, TextStyle};
 use troupe_term::{Cell, Flags, Line, Underline};
 
-use super::{Metrics, Palette};
+use super::{Metrics, Palette, glyphs};
 
 /// How a cell draws once its colours are resolved.
 #[derive(Clone, Copy, PartialEq)]
@@ -147,6 +147,10 @@ pub fn grid_row(line: &Line, wraps: bool, cols: usize, p: &Palette, m: &Metrics)
         }
         if cell.width == 0 || !visible {
             text.push(' ');
+        } else if cell.marks.is_none() && glyphs::custom(cell.ch) {
+            text.push(' ');
+            let w = m.cell_w * f32::from(cell.width.max(1));
+            shape = glyphs::draw(shape, cell.ch, col as f32 * m.cell_w, w, m.cell_h, ink.fg);
         } else if cell.width == 1 && cell.marks.is_none() && in_line(cell.ch) {
             text.push(cell.ch);
         } else {
