@@ -1,6 +1,6 @@
 ---
 title: Edit a design on the canvas
-description: Open your project's design file in a tab, edit it, and let an agent design on it.
+description: Open your project's design file in a tab, edit it, let an agent design on it, and mention its layers in chat.
 ---
 
 <Callout type="info">The canvas works in the desktop app and in the browser version on a computer. It isn't available on phone-sized screens.</Callout>
@@ -64,3 +64,18 @@ Troupe also gives agents a set of design guides. They explain how to build a des
 When you don't name a brand or a look, the agent can pick one of ten ready-made styles, such as **Warm Editorial**, **Clean SaaS**, or **Night Tech**. Each style sets colors for light and dark mode, text sizes, spacing, and corner rounding. The agent tells you which style it picked and why. Every style uses the Inter font, because that is the font the canvas includes.
 
 See [Agent setup](/docs/agent-setup) for how to start a chat with an agent.
+
+## Mention canvas layers in chat
+
+You can point an agent at parts of your design from a chat's message box. While the project's canvas is open, or still loaded in the background, type `@` in a chat in that project. The mention menu then has a **Canvas** entry next to **Conversations** and **Explorer**. Pick it to open its panel:
+
+- **Selection** shows the layers you have selected on the canvas right now. When you select several layers, the entry is named after the first one plus a count, such as `Header +2`.
+- Under the page's name, the panel lists the layers at the top level of the current page, with each layer's type and size.
+
+Type to filter the panel by layer name. If nothing matches, the panel says "No layers match. Try another name." An empty page shows "Nothing on this canvas page yet." If Troupe can't read the canvas, the panel shows "Couldn't read the canvas".
+
+Pick a layer or the selection to add it as a pill. The pill keeps the layers you picked, so selecting something else on the canvas later doesn't change it. Press `Backspace` right after a pill to remove the whole pill.
+
+When you send, Troupe reads the mentioned layers from the canvas and gives the agent an outline of each one: its type, name, id, size, position, text, component, and whether it is hidden, plus its children two levels deep. The canvas outlines in one message add up to at most 12,000 characters. If Troupe can't read a layer because the canvas isn't open, the layer isn't found (for example, it was deleted), or the message reached that limit, the agent gets a note that says why instead of the outline. **Retry** reads the layers again. When you open the chat later, your message shows the pills again.
+
+Canvas mentions work the same in the desktop app, on a [shared desktop](/docs/remote/share-desktop) with full control, and in the [browser version](/docs/remote/web-browser). See [Mention a file or another chat](/docs/agents/write-a-prompt#mention-a-file-or-another-chat) for the rest of the mention menu.
