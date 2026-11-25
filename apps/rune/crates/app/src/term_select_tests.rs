@@ -150,3 +150,24 @@ fn terminal_search_opens_a_find_bar_that_counts_and_escape_closes() {
     rt.frame(0.14);
     assert!(rt.state.terms.views["pty-1"].find.is_none(), "Escape closed the find bar");
 }
+
+#[test]
+fn output_under_an_open_find_bar_is_searched_again_once_it_settles() {
+    let mut s = crate::State::default();
+    let mut term = Term::new(20, 5);
+    term.advance(b"needle\r\n");
+    s.terms.views.insert("pty-1".into(), view(term));
+    s.terms.views.get_mut("pty-1").unwrap().find = Some(Find { edit: rune::TextEdit::new("needle"), ..Find::default() });
+    assert!(s.refresh_terminal_finds(&[], 1.0), "a new query is searched at once");
+    let count = |s: &crate::State| s.terms.views["pty-1"].find.as_ref().unwrap().matches.len();
+    assert_eq!(count(&s), 1);
+    s.terms.views["pty-1"].cells.lock().unwrap().advance(b"needle\r\n");
+    let changed = ["pty-1".to_owned()];
+    assert!(!s.refresh_terminal_finds(&changed, 2.0), "output does not rescan at once");
+    s.terms.views["pty-1"].cells.lock().unwrap().advance(b"needle\r\n");
+    assert!(!s.refresh_terminal_finds(&changed, 2.15), "more output waits again");
+    assert_eq!(s.next_find_refresh(), Some(2.15 + 0.2));
+    assert!(!s.refresh_terminal_finds(&[], 2.3));
+    assert!(s.refresh_terminal_finds(&[], 2.36), "200 ms after the last output it reads again");
+    assert_eq!((count(&s), s.next_find_refresh()), (3, None));
+}
