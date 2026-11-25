@@ -74,7 +74,9 @@ class TroupeAnnotationOverlay {
   private pins: PlacedPin[] = []
   private guides: PlacedGuide[] = []
   private sessionId: string | null = null
+  private sessionPromise: Promise<string | null> | null = null
   private dragStart: { x: number; y: number } | null = null
+  private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null
 
   constructor() {
     const existing = document.getElementById(HOST_ID)
@@ -138,31 +140,38 @@ class TroupeAnnotationOverlay {
     }
     const ep = this.getEndpoint()
     if (!ep) return null
-    try {
-      const res = await fetch(`${ep}/sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: window.location.href })
+    if (!this.sessionPromise) {
+      this.sessionPromise = (async () => {
+        try {
+          const res = await fetch(`${ep}/sessions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: window.location.href })
+          })
+          if (!res.ok) return null
+          const json = (await res.json()) as { id?: string }
+          if (json.id) {
+            this.sessionId = json.id
+            return json.id
+          }
+        } catch {
+          // Allow later retries
+        }
+        return null
+      })().finally(() => {
+        if (!this.sessionId) this.sessionPromise = null
       })
-      if (!res.ok) return null
-      const json = (await res.json()) as { id?: string }
-      if (json.id) {
-        this.sessionId = json.id
-        return json.id
-      }
-    } catch {
-      // Ignore network failure in standalone preview
     }
-    return null
+    return this.sessionPromise
   }
 
-  private async postAnnotation(payload: Record<string, unknown>): Promise<void> {
+  private async postAnnotation(payload: Record<string, unknown>): Promise<boolean> {
     const ep = this.getEndpoint()
-    if (!ep) return
+    if (!ep) return true
     const sid = await this.ensureSession()
-    if (!sid) return
+    if (!sid) return false
     try {
-      await fetch(`${ep}/sessions/${sid}/annotations`, {
+      const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -171,8 +180,9 @@ class TroupeAnnotationOverlay {
           ...payload
         })
       })
+      return res.ok
     } catch {
-      // Best effort sync; batch UI remains responsive
+      return false
     }
   }
 
@@ -337,6 +347,30 @@ class TroupeAnnotationOverlay {
         return
       }
       if (this.tool === 'ruler') {
+        if (e.altKey) {
+          const el = this.elementUnderPoint(e.clientX, e.clientY)
+          if (el) {
+            const rect = el.getBoundingClientRect()
+            const summary = inspectElement(el)
+            const topGap = Math.max(0, Math.round(rect.top))
+            const leftGap = Math.max(0, Math.round(rect.left))
+            const axis: GuideAxis = e.shiftKey ? 'vertical' : 'horizontal'
+            const gapPx = axis === 'horizontal' ? topGap : leftGap
+            this.openCommentPopover({
+              title: `Spacing · ${gapPx}px (${summary.element})`,
+              x: e.clientX,
+              y: e.clientY,
+              kind: 'measurement',
+              summary,
+              measurement: {
+                axis,
+                positionPx: axis === 'horizontal' ? Math.round(rect.top) : Math.round(rect.left),
+                gapPx
+              }
+            })
+            return
+          }
+        }
         const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
         const pos = axis === 'vertical' ? Math.round(e.clientX) : Math.round(e.clientY)
         const guide = this.addGuide(axis, pos)
@@ -390,7 +424,7 @@ class TroupeAnnotationOverlay {
       })
     })
 
-    window.addEventListener('keydown', (e) => {
+    this.onWindowKeyDown = (e: KeyboardEvent) => {
       if (!this.active) return
       if (e.key === 'Escape') {
         this.closePopover()
@@ -402,7 +436,8 @@ class TroupeAnnotationOverlay {
       } else if (this.tool === 'ruler' && (e.key === 'v' || e.key === 'V')) {
         this.addGuide('vertical', 32)
       }
-    })
+    }
+    window.addEventListener('keydown', this.onWindowKeyDown)
   }
 
   private addGuide(axis: GuideAxis, pos: number): PlacedGuide {
@@ -505,16 +540,18 @@ class TroupeAnnotationOverlay {
     title: string
     x: number
     y: number
-    kind: 'feedback' | 'rectangle' | 'guide'
+    kind: 'feedback' | 'rectangle' | 'guide' | 'measurement'
     summary?: ElementSummary
     rect?: { x: number; y: number; width: number; height: number }
     guide?: PlacedGuide
+    measurement?: { axis: GuideAxis; positionPx: number; gapPx: number }
   }): void {
     this.closePopover()
     this.hideHoverVisuals()
     const pop = document.createElement('div')
     pop.className = 'popover'
-    const left = Math.max(12, Math.min(window.innerWidth - 348, opts.x + 14))
+    const popWidth = Math.min(332, Math.max(240, window.innerWidth - 24))
+    const left = Math.max(12, Math.min(window.innerWidth - popWidth - 12, opts.x + 14))
     const top = Math.max(12, Math.min(window.innerHeight - 190, opts.y + 14))
     pop.style.left = `${left}px`
     pop.style.top = `${top}px`
@@ -557,6 +594,10 @@ class TroupeAnnotationOverlay {
       foot.appendChild(hint)
     }
 
+    const errorEl = document.createElement('div')
+    errorEl.className = 'pop-error'
+    errorEl.style.display = 'none'
+
     const actions = document.createElement('div')
     actions.className = 'pop-actions'
     const cancelBtn = document.createElement('button')
@@ -570,27 +611,21 @@ class TroupeAnnotationOverlay {
     addBtn.className = 'btn btn-pri'
     addBtn.textContent = 'Add comment'
 
-    const submit = () => {
+    let submitting = false
+    const submit = async () => {
+      if (submitting) return
       const comment = textarea.value.trim()
       if (!comment) return
-      const num = this.pins.length + 1
-      const pin: PlacedPin = {
-        id: `pin-${Date.now()}-${num}`,
-        num,
-        kind: opts.kind,
-        x: Math.round(opts.x),
-        y: Math.round(opts.y),
-        rect: opts.rect,
-        comment,
-        element: opts.summary?.element ?? opts.title
-      }
-      this.pins.push(pin)
-      this.closePopover()
-      this.renderPinsAndGuides()
+      submitting = true
+      addBtn.disabled = true
+      addBtn.textContent = 'Saving…'
+      errorEl.style.display = 'none'
 
+      const pinX = Math.round(opts.x)
+      const pinY = Math.round(opts.y)
       const payload: Record<string, unknown> = {
-        x: pin.x,
-        y: pin.y,
+        x: pinX,
+        y: pinY,
         comment,
         element: opts.summary?.element ?? opts.title,
         elementPath: opts.summary?.elementPath ?? opts.guide?.targetSelector ?? opts.title,
@@ -609,30 +644,77 @@ class TroupeAnnotationOverlay {
           toSelector: opts.guide.targetSelector,
           deltaPx: opts.guide.deltaPx
         }
+      } else if (opts.measurement) {
+        payload.measurement = {
+          axis: opts.measurement.axis,
+          positionPx: opts.measurement.positionPx,
+          toSelector: opts.summary?.elementPath,
+          gapPx: opts.measurement.gapPx
+        }
       }
-      void this.postAnnotation(payload)
+
+      const saved = await this.postAnnotation(payload)
+      submitting = false
+      if (!saved) {
+        addBtn.disabled = false
+        addBtn.textContent = 'Retry'
+        errorEl.textContent = 'Could not save annotation. Try again.'
+        errorEl.style.display = 'block'
+        return
+      }
+
+      const num = this.pins.length + 1
+      const pin: PlacedPin = {
+        id: `pin-${Date.now()}-${num}`,
+        num,
+        kind: opts.kind,
+        x: pinX,
+        y: pinY,
+        rect: opts.rect,
+        comment,
+        element: opts.summary?.element ?? opts.title
+      }
+      this.pins.push(pin)
+      this.closePopover()
+      this.renderPinsAndGuides()
     }
 
-    addBtn.addEventListener('click', submit)
+    addBtn.addEventListener('click', () => void submit())
     textarea.addEventListener('keydown', (ev) => {
       if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
         ev.preventDefault()
-        submit()
+        void submit()
       }
     })
 
     actions.append(cancelBtn, addBtn)
     foot.appendChild(actions)
-    pop.append(head, textarea, foot)
+    pop.append(head, textarea, errorEl, foot)
     this.shadow.appendChild(pop)
     this.popoverEl = pop
     textarea.focus()
     requestAnimationFrame(() => textarea.focus())
   }
 
+  public isConnected(): boolean {
+    return this.host.isConnected
+  }
+
   public destroy(): void {
     this.setAnimationsPaused(false)
+    if (this.onWindowKeyDown) {
+      window.removeEventListener('keydown', this.onWindowKeyDown)
+      this.onWindowKeyDown = null
+    }
     this.host.remove()
+    const win = window as unknown as {
+      __TROUPE_ANNOTATE__?: unknown
+      __TROUPE_ANNOTATE_INSTANCE__?: unknown
+    }
+    if (win.__TROUPE_ANNOTATE_INSTANCE__ === this) {
+      delete win.__TROUPE_ANNOTATE_INSTANCE__
+      delete win.__TROUPE_ANNOTATE__
+    }
   }
 }
 
@@ -642,26 +724,28 @@ function mountOverlay(): TroupeAnnotationOverlay {
       dispatch: (cmd: OverlayCommand) => void
       unmount: () => void
     }
+    __TROUPE_ANNOTATE_INSTANCE__?: TroupeAnnotationOverlay
     TermulAgentation?: {
       mount: () => void
       unmount: () => void
     }
   }
-  if (win.__TROUPE_ANNOTATE__) {
-    return (win as unknown as { __TROUPE_ANNOTATE_INSTANCE__: TroupeAnnotationOverlay })
-      .__TROUPE_ANNOTATE_INSTANCE__
+  const existing = win.__TROUPE_ANNOTATE_INSTANCE__
+  if (win.__TROUPE_ANNOTATE__ && existing?.isConnected()) {
+    return existing
   }
   const overlay = new TroupeAnnotationOverlay()
-  ;(
-    win as unknown as { __TROUPE_ANNOTATE_INSTANCE__: TroupeAnnotationOverlay }
-  ).__TROUPE_ANNOTATE_INSTANCE__ = overlay
+  win.__TROUPE_ANNOTATE_INSTANCE__ = overlay
   win.__TROUPE_ANNOTATE__ = {
     dispatch: (cmd) => overlay.dispatch(cmd),
     unmount: () => overlay.destroy()
   }
   win.TermulAgentation = {
-    mount: () => overlay.dispatch({ type: 'set_active', active: true }),
-    unmount: () => overlay.destroy()
+    mount: () => {
+      const live = mountOverlay()
+      live.dispatch({ type: 'set_active', active: true })
+    },
+    unmount: () => win.__TROUPE_ANNOTATE_INSTANCE__?.destroy()
   }
   return overlay
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Globe, Lock } from '@/components/icons'
+import { INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
 import { browserListLocalServers, type LocalDevServer } from '@/lib/browser-api'
 import { isMac } from '@/lib/platform'
+import { cn } from '@/lib/utils'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 
 interface BrowserStartPageProps {
@@ -74,7 +76,10 @@ export function BrowserStartPage({ onNavigate }: BrowserStartPageProps): React.J
                 placeholder="Enter a URL or localhost port…"
                 aria-label="Open URL or localhost port"
                 autoFocus
-                className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className={cn(
+                  'min-w-0 flex-1 bg-transparent text-[13px] pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
+                  INNER_FIELD_FOCUS_CLASS
+                )}
               />
             </div>
           </form>

@@ -28,7 +28,7 @@ interface AnnotationToolbarProps {
   onSendToChat: (
     markdown: string,
     crops: Array<{ name: string; base64: string; dataUrl: string }>
-  ) => void
+  ) => Promise<boolean> | boolean
 }
 
 const CORE_TOOLS: ReadonlyArray<{
@@ -155,7 +155,7 @@ export function AnnotationToolbar({
     })
   }
 
-  const handleSendBatch = () => {
+  const handleSendBatch = async () => {
     if (count === 0) return
     const markdown = formatBatchAnnotationsForChat(tab?.url ?? '', pending)
     const crops = pending
@@ -165,7 +165,8 @@ export function AnnotationToolbar({
         base64: item.cropBase64 as string,
         dataUrl: item.cropDataUrl as string
       }))
-    onSendToChat(markdown, crops)
+    const delivered = await onSendToChat(markdown, crops)
+    if (!delivered) return
     clearPendingAnnotations(browserTabId)
     sendCmd({ type: 'clear' })
     setQueueOpen(false)

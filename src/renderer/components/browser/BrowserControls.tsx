@@ -19,6 +19,7 @@ import {
   Tablet,
   X
 } from '@/components/icons'
+import { INNER_FIELD_FOCUS_CLASS } from '@/components/ui/panel-styles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Spinner } from '@/components/ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -38,6 +39,11 @@ import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
 import { useAgentTabSession, useSessionBrowserStopped } from '@/stores/browser-control-store'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
+import {
+  findPaneById,
+  useWorkspaceStore,
+  browserTabId as workspaceBrowserTabId
+} from '@/stores/workspace-store'
 import { AnnotationToolbar } from './AnnotationToolbar'
 import { BrowserMoreMenu } from './BrowserMoreMenu'
 import { normalizeBrowserInputUrl } from './BrowserStartPage'
@@ -49,7 +55,7 @@ interface BrowserControlsProps {
   onSendAnnotationsToChat?: (
     markdown: string,
     crops: Array<{ name: string; base64: string; dataUrl: string }>
-  ) => void
+  ) => Promise<boolean> | boolean
 }
 
 function splitDisplayUrl(
@@ -101,6 +107,7 @@ export function BrowserControls({
   const [screenshotOpen, setScreenshotOpen] = useState(false)
   const [stopPending, setStopPending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const annotateReqIdRef = useRef(0)
 
   useEffect(() => {
     if (!urlFocused) {
@@ -154,9 +161,11 @@ export function BrowserControls({
   }, [tabUrl])
 
   const handleEnterAnnotate = useCallback(() => {
+    const reqId = ++annotateReqIdRef.current
     setAnnotateMode(browserTabId, true)
     void browserTabInjectAgentation(browserTabId)
       .then((result) => {
+        if (reqId !== annotateReqIdRef.current) return
         if (!result.success && result.code !== 'NOT_TAURI') {
           setAnnotateMode(browserTabId, false)
           toast.error(result.error || 'Could not start annotation mode.')
@@ -171,6 +180,7 @@ export function BrowserControls({
         void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
       })
       .catch((e) => {
+        if (reqId !== annotateReqIdRef.current) return
         setAnnotateMode(browserTabId, false)
         toast.error('Could not start annotation mode.')
         void logFrontendError({
@@ -182,18 +192,35 @@ export function BrowserControls({
   }, [browserTabId, setAnnotateMode])
 
   const handleExitAnnotate = useCallback(() => {
+    annotateReqIdRef.current += 1
     setAnnotateMode(browserTabId, false)
     void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: false })
   }, [browserTabId, setAnnotateMode])
 
   const handleDefaultSendToChat = useCallback(
-    (markdown: string, crops: Array<{ name: string; base64: string; dataUrl: string }>) => {
+    async (
+      markdown: string,
+      crops: Array<{ name: string; base64: string; dataUrl: string }>
+    ): Promise<boolean> => {
       if (onSendAnnotationsToChat) {
-        onSendAnnotationsToChat(markdown, crops)
-        return
+        return await onSendAnnotationsToChat(markdown, crops)
       }
-      void navigator.clipboard?.writeText(markdown)
-      toast.success('Copied annotations to clipboard for chat.')
+      if (!navigator.clipboard?.writeText) {
+        toast.error('Clipboard is unavailable; annotations kept in batch.')
+        return false
+      }
+      try {
+        await navigator.clipboard.writeText(markdown)
+        toast.success(
+          crops.length > 0
+            ? `Copied annotations to clipboard (${crops.length} image ${crops.length === 1 ? 'crop' : 'crops'} available in batch).`
+            : 'Copied annotations to clipboard for chat.'
+        )
+        return true
+      } catch {
+        toast.error('Could not write annotations to clipboard.')
+        return false
+      }
     },
     [onSendAnnotationsToChat]
   )
@@ -206,17 +233,28 @@ export function BrowserControls({
       return
     }
     const dataUrl = `data:${res.data.mimeType};base64,${res.data.base64}`
-    handleDefaultSendToChat(`Viewport screenshot of ${tabUrl || 'current page'}`, [
+    useBrowserSessionStore.getState().addPendingAnnotation(browserTabId, {
+      id: `visible-${Date.now()}`,
+      kind: 'rectangle',
+      element: 'Visible viewport',
+      elementPath: tabUrl || 'current page',
+      comment: `Viewport screenshot of ${tabUrl || 'current page'}`,
+      cropBase64: res.data.base64,
+      cropDataUrl: dataUrl
+    })
+    void handleDefaultSendToChat(`Viewport screenshot of ${tabUrl || 'current page'}`, [
       { name: 'browser-visible.png', base64: res.data.base64, dataUrl }
     ])
   }, [browserTabId, handleDefaultSendToChat, tabUrl])
 
   const handleQuickScreenshotArea = useCallback(() => {
     setScreenshotOpen(false)
+    const reqId = ++annotateReqIdRef.current
     setAnnotateMode(browserTabId, true)
     setAnnotateTool(browserTabId, 'screenshot-area')
     void browserTabInjectAgentation(browserTabId)
       .then((result) => {
+        if (reqId !== annotateReqIdRef.current) return
         if (!result.success && result.code !== 'NOT_TAURI') {
           setAnnotateMode(browserTabId, false)
           toast.error(result.error || 'Could not start area capture.')
@@ -231,6 +269,7 @@ export function BrowserControls({
         void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'screenshot-area' })
       })
       .catch((e) => {
+        if (reqId !== annotateReqIdRef.current) return
         setAnnotateMode(browserTabId, false)
         toast.error('Could not start area capture.')
         void logFrontendError({
@@ -253,10 +292,15 @@ export function BrowserControls({
       .finally(() => setStopPending(false))
   }, [agentSessionId, stopPending])
 
-  // Panel-level keyboard shortcuts while this browser tab is visible
+  // Panel-level keyboard shortcuts routed only to the focused browser pane
   useEffect(() => {
     if (!isVisible) return
     const onKeyDown = (e: KeyboardEvent) => {
+      const ws = useWorkspaceStore.getState()
+      const activePane = findPaneById(ws.root, ws.activePaneId)
+      const activeTabId = activePane?.type === 'leaf' ? activePane.activeTabId : null
+      if (activeTabId && activeTabId !== workspaceBrowserTabId(browserTabId)) return
+
       const target = e.target as HTMLElement | null
       const inEditable =
         target instanceof HTMLInputElement ||
@@ -438,8 +482,8 @@ export function BrowserControls({
                     disabled={!hasUrl}
                     onClick={() => {
                       if (tabLoading) {
+                        useBrowserSessionStore.getState().bumpStopGeneration(browserTabId)
                         void browserTabStop(browserTabId)
-                        useBrowserSessionStore.getState().setLoading(browserTabId, false)
                       } else {
                         browserTabReload(browserTabId).catch(console.error)
                       }
@@ -512,7 +556,8 @@ export function BrowserControls({
                       placeholder={hasUrl ? 'Enter URL…' : ''}
                       aria-label="Address bar"
                       className={cn(
-                        'min-w-0 flex-1 bg-transparent text-[13px] font-medium text-foreground placeholder:text-muted-foreground focus:outline-none',
+                        'min-w-0 flex-1 bg-transparent text-[13px] pointer-coarse:text-base font-medium text-foreground placeholder:text-muted-foreground',
+                        INNER_FIELD_FOCUS_CLASS,
                         !urlFocused && parts && 'sr-only'
                       )}
                     />

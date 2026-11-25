@@ -52,7 +52,13 @@ export function useBrowserWebview(
   browserTabId: string,
   paneVisible: boolean,
   url: string,
-  opts?: { hasError?: boolean; zoomFactor?: number; layoutKey?: string; reloadNonce?: number }
+  opts?: {
+    hasError?: boolean
+    zoomFactor?: number
+    layoutKey?: string
+    reloadNonce?: number
+    stopGeneration?: number
+  }
 ) {
   // An occluded webview (a shell popover is open), blank Start Page, or offline
   // error view hides the native child webview so React UI renders unobstructed.
@@ -63,6 +69,7 @@ export function useBrowserWebview(
   const zoomFactor = opts?.zoomFactor ?? 1
   const layoutKey = opts?.layoutKey ?? 'desktop'
   const reloadNonce = opts?.reloadNonce ?? 0
+  const stopGeneration = opts?.stopGeneration ?? 0
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
   const [createdTick, setCreatedTick] = useState(0)
@@ -114,14 +121,18 @@ export function useBrowserWebview(
     browserTabCreate(browserTabId, urlRef.current, bounds)
       .then((result) => {
         if (!mountedRef.current || mountToken !== mountTokenRef.current) {
-          browserTabDestroy(browserTabId).catch((e) => {
-            void logFrontendError({
-              message: `browserTabDestroy after stale mount for tab ${browserTabId}: ${
-                e instanceof Error ? e.message : String(e)
-              }`,
-              source: 'useBrowserWebview'
+          // Only destroy if this create actually succeeded and the hook unmounted
+          // (not superseded by a newer mount token sharing the same tabId).
+          if (result.success && !mountedRef.current) {
+            browserTabDestroy(browserTabId).catch((e) => {
+              void logFrontendError({
+                message: `browserTabDestroy after unmount for tab ${browserTabId}: ${
+                  e instanceof Error ? e.message : String(e)
+                }`,
+                source: 'useBrowserWebview'
+              })
             })
-          })
+          }
           return
         }
         if (result.success) {
@@ -303,6 +314,13 @@ export function useBrowserWebview(
         })
     }
   }, [isVisible, browserTabId, updateBounds])
+
+  // Cancel any pending localhost probe when the user clicks Stop
+  useEffect(() => {
+    if (stopGeneration > 0) {
+      probeTokenRef.current += 1
+    }
+  }, [stopGeneration])
 
   // Navigate when url prop changes externally or when reloadNonce bumps (e.g. offline retry)
   useEffect(() => {

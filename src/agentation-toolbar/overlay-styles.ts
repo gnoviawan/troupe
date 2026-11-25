@@ -97,7 +97,7 @@ export const OVERLAY_CSS = `
 .spacing-line.h { border-top: 1px dashed #ec4899; height: 0; }
 .popover {
   position: fixed;
-  width: 332px;
+  width: min(332px, calc(100vw - 24px));
   padding: 14px;
   border-radius: 8px;
   background: #1b1c1f;
@@ -142,7 +142,8 @@ export const OVERLAY_CSS = `
   outline: none;
   box-shadow: 0 0 0 2px #6b7280;
 }
-.pop-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pop-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.pop-error { font-size: 12px; color: #f87171; }
 .pop-hint { font-size: 12px; color: #9ca3af; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .pop-link {
   background: none; border: 0; padding: 0; color: #f87171;

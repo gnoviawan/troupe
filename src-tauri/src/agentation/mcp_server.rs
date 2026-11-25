@@ -224,6 +224,7 @@ impl AgentationMcpServer {
                 .store
                 .list_sessions()
                 .into_iter()
+                .filter(|s| s.status == SessionStatus::Active)
                 .map(|s| s.id)
                 .collect(),
         };

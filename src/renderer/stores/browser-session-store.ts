@@ -55,6 +55,7 @@ export interface BrowserTab {
   pendingAnnotations: PendingAnnotationItem[]
   loadError: BrowserLoadError | null
   previousUrl?: string
+  stopGeneration?: number
 }
 
 export const MIN_BROWSER_ZOOM = 0.5
@@ -130,6 +131,7 @@ export interface BrowserSessionState {
   removePendingAnnotation: (id: string, annotationId: string) => void
   clearPendingAnnotations: (id: string) => void
   setLoadError: (id: string, error: BrowserLoadError | null) => void
+  bumpStopGeneration: (id: string) => void
   clearRecentUrls: () => void
   getTab: (id: string) => BrowserTab | undefined
 }
@@ -339,6 +341,15 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
 
   setLoadError: (id, loadError) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, loadError, loading: false }))),
+
+  bumpStopGeneration: (id) =>
+    set((state) =>
+      updateTab(state, id, (t) => ({
+        ...t,
+        loading: false,
+        stopGeneration: (t.stopGeneration ?? 0) + 1
+      }))
+    ),
 
   clearRecentUrls: () => set({ recentUrls: [] }),
 

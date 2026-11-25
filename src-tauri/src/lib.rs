@@ -1543,23 +1543,33 @@ pub fn run() {
                         let event_handle = handle.clone();
                         tauri::async_runtime::spawn(async move {
                             use agentation::types::AFSEventType;
-                            while let Ok(ev) = rx.recv().await {
-                                match ev.event_type {
-                                    AFSEventType::AnnotationCreated => {
-                                        let _ = event_handle.emit_to(
-                                            "main",
-                                            "agentation:annotation_created",
-                                            &ev.payload,
+                            use tokio::sync::broadcast::error::RecvError;
+                            loop {
+                                match rx.recv().await {
+                                    Ok(ev) => match ev.event_type {
+                                        AFSEventType::AnnotationCreated => {
+                                            let _ = event_handle.emit_to(
+                                                "main",
+                                                "agentation:annotation_created",
+                                                &ev.payload,
+                                            );
+                                        }
+                                        AFSEventType::ActionRequested => {
+                                            let _ = event_handle.emit_to(
+                                                "main",
+                                                "agentation:action_requested",
+                                                &ev.payload,
+                                            );
+                                        }
+                                        _ => {}
+                                    },
+                                    Err(RecvError::Lagged(skipped)) => {
+                                        log::warn!(
+                                            "[agentation] event forwarder lagged by {skipped} event(s); continuing"
                                         );
+                                        continue;
                                     }
-                                    AFSEventType::ActionRequested => {
-                                        let _ = event_handle.emit_to(
-                                            "main",
-                                            "agentation:action_requested",
-                                            &ev.payload,
-                                        );
-                                    }
-                                    _ => {}
+                                    Err(RecvError::Closed) => break,
                                 }
                             }
                         });

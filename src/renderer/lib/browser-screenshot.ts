@@ -10,41 +10,54 @@ export interface CropRect {
 
 /**
  * Crop a full-viewport PNG (base64) to a sub-rectangle using an offscreen canvas.
- * Falls back cleanly to the original full PNG when canvas 2D is unavailable (tests).
+ * Returns null if decoding fails or Canvas 2D is unavailable so callers never
+ * leak an uncropped full-viewport image in place of a requested area crop.
  */
 export async function cropBase64Png(
   base64: string,
   rect: CropRect
-): Promise<{ base64: string; dataUrl: string }> {
+): Promise<{ base64: string; dataUrl: string } | null> {
   const dataUrl = `data:image/png;base64,${base64}`
   if (typeof document === 'undefined') {
-    return { base64, dataUrl }
+    return null
   }
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => {
       const dpr = rect.dpr && rect.dpr > 0 ? rect.dpr : 1
-      const sx = Math.max(0, Math.round(rect.x * dpr))
-      const sy = Math.max(0, Math.round(rect.y * dpr))
-      const sw = Math.max(1, Math.min(img.width - sx, Math.round(rect.width * dpr)))
-      const sh = Math.max(1, Math.min(img.height - sy, Math.round(rect.height * dpr)))
+      const rawX = Math.round(rect.x * dpr)
+      const rawY = Math.round(rect.y * dpr)
+      const sx = Math.max(0, rawX)
+      const sy = Math.max(0, rawY)
+      const sw = Math.max(
+        1,
+        Math.min(img.width - sx, Math.round(rect.width * dpr) + Math.min(0, rawX))
+      )
+      const sh = Math.max(
+        1,
+        Math.min(img.height - sy, Math.round(rect.height * dpr) + Math.min(0, rawY))
+      )
       const canvas = document.createElement('canvas')
       canvas.width = sw
       canvas.height = sh
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        resolve({ base64, dataUrl })
+        resolve(null)
         return
       }
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
       const croppedUrl = canvas.toDataURL('image/png')
       const comma = croppedUrl.indexOf(',')
+      if (comma < 0) {
+        resolve(null)
+        return
+      }
       resolve({
-        base64: comma >= 0 ? croppedUrl.slice(comma + 1) : base64,
+        base64: croppedUrl.slice(comma + 1),
         dataUrl: croppedUrl
       })
     }
-    img.onerror = () => resolve({ base64, dataUrl })
+    img.onerror = () => resolve(null)
     img.src = dataUrl
   })
 }

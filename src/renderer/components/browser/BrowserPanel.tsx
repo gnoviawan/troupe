@@ -65,13 +65,16 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
 
   const stageRef = useRef<HTMLDivElement>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
+  const offlineErrorKeyRef = useRef('')
+  const stopGeneration = tab?.stopGeneration ?? 0
   const layoutKey = `${viewportPreset}-${orientation}-${customWidth ?? 'preset'}`
 
   const { containerRef } = useBrowserWebview(browserTabId, isVisible, url, {
     hasError: Boolean(loadError),
     zoomFactor,
     layoutKey,
-    reloadNonce
+    reloadNonce,
+    stopGeneration
   })
 
   // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue
@@ -94,12 +97,15 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             payload.boundingBox.width > 0 &&
             payload.boundingBox.height > 0
           ) {
+            const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
             const cropped = await cropBase64Png(shot.data.base64, {
               ...payload.boundingBox,
-              dpr: window.devicePixelRatio || 1
+              dpr: (window.devicePixelRatio || 1) * tabZoom
             })
-            cropBase64 = cropped.base64
-            cropDataUrl = cropped.dataUrl
+            if (cropped) {
+              cropBase64 = cropped.base64
+              cropDataUrl = cropped.dataUrl
+            }
           } else {
             cropBase64 = shot.data.base64
             cropDataUrl = `data:${shot.data.mimeType};base64,${shot.data.base64}`
@@ -139,10 +145,15 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             toast.error(shot.error || 'Could not capture area screenshot.')
             return
           }
+          const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
           const cropped = await cropBase64Png(shot.data.base64, {
             ...rect,
-            dpr: parsed.dpr ?? (window.devicePixelRatio || 1)
+            dpr: parsed.dpr ?? (window.devicePixelRatio || 1) * tabZoom
           })
+          if (!cropped) {
+            toast.error('Could not crop selected area.')
+            return
+          }
           addPendingAnnotation(browserTabId, {
             id: `shot-${Date.now()}`,
             kind: 'rectangle',
@@ -167,20 +178,35 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     }
   }, [addPendingAnnotation, annotateMode, browserTabId, isVisible, setAnnotateTool, url])
 
+  // Track current tab/URL/error identity so late probes never clear a newer error
+  const errorKey = loadError
+    ? `${browserTabId}|${url}|${loadError.code}|${loadError.port ?? ''}`
+    : ''
+  offlineErrorKeyRef.current = errorKey
+
+  const attemptOfflineRecovery = useCallback(
+    async (port: number, expectedKey: string, notifyIfStillOffline: boolean) => {
+      const probe = await browserCheckLocalPort(port)
+      if (expectedKey !== offlineErrorKeyRef.current) return
+      if (probe.success && probe.data) {
+        setLoadError(browserTabId, null)
+        setReloadNonce((n) => n + 1)
+      } else if (notifyIfStillOffline && probe.success && !probe.data) {
+        toast.error(`Port ${port} is still not responding.`)
+      }
+    },
+    [browserTabId, setLoadError]
+  )
+
   // Auto-reload localhost offline view once the port begins listening
   useEffect(() => {
-    if (!isVisible || !loadError?.port) return
+    if (!isVisible || !loadError?.port || !errorKey) return
     const port = loadError.port
     const timer = window.setInterval(() => {
-      void browserCheckLocalPort(port).then((probe) => {
-        if (probe.success && probe.data) {
-          setLoadError(browserTabId, null)
-          setReloadNonce((n) => n + 1)
-        }
-      })
+      void attemptOfflineRecovery(port, errorKey, false)
     }, 2000)
     return () => window.clearInterval(timer)
-  }, [browserTabId, isVisible, loadError?.port, setLoadError])
+  }, [attemptOfflineRecovery, errorKey, isVisible, loadError?.port])
 
   const presetSpec = viewportPreset === 'desktop' ? null : VIEWPORT_PRESET_SIZES[viewportPreset]
   const targetWidth =
@@ -221,20 +247,13 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   )
 
   const handleRetryOffline = useCallback(() => {
-    if (loadError?.port) {
-      void browserCheckLocalPort(loadError.port).then((probe) => {
-        if (probe.success && !probe.data) {
-          toast.error(`Port ${loadError.port} is still not responding.`)
-          return
-        }
-        setLoadError(browserTabId, null)
-        setReloadNonce((n) => n + 1)
-      })
+    if (loadError?.port && errorKey) {
+      void attemptOfflineRecovery(loadError.port, errorKey, true)
       return
     }
     setLoadError(browserTabId, null)
     setReloadNonce((n) => n + 1)
-  }, [browserTabId, loadError?.port, setLoadError])
+  }, [attemptOfflineRecovery, browserTabId, errorKey, loadError?.port, setLoadError])
 
   const handleOpenTerminal = useCallback(() => {
     if (!activeProject?.path) return
