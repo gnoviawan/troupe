@@ -218,3 +218,68 @@ grammar draws a key's quotes as punctuation.
   JavaScript, so the two Rune clients would colour code differently.
 
 **Source.** R6b (`reports/R6b.md`). Tools: `tools/parity/highlight/`.
+
+## Code editor buffer
+
+**Answer.** `troupe-editor` keeps one file in a `ropey` rope (default
+features off, so only `\n` breaks lines, as in CodeMirror) with snapshot undo:
+each undo step is a clone of the rope before the edit, which shares every node
+the edit did not touch. Every user action is a `Command` that `Editor::apply`
+runs, so tests replay recorded input. One caret, because the React editor does
+not turn on `allowMultipleSelections`. Steps join as CodeMirror's `history()`
+joins them: the same kind of edit, from the caret the last one left, within
+500 ms. Soft wrap breaks lines by columns, because the editor face is
+monospace.
+
+**Candidates weighed (one sequential pass; workers spawn no subagents).**
+
+- Snapshot undo (chosen). Undo cannot drift from the text, because it restores
+  the text it saved. A step costs a few rope nodes, about 1 to 4 KB (inferred
+  from ropey's node size). The R0 spike measured undo p95 at 6.08 ms at 1 MB.
+- Inverse-change undo (CodeMirror's `ChangeSet` shape): smaller steps, but
+  every edit kind needs an inverse that must be right, and a wrong one corrupts
+  the file. The memory win does not matter at 10,000 steps.
+- Pixel wrap through `text::measure` per line, as `TextEdit` does. Rejected:
+  the caret and Up and Down would need Rune's layout to place them. Column
+  wrap needs no layout. Wide characters (CJK) wrap late, a known gap.
+
+**Numbers.** `cargo test -p troupe-editor` (measured 2026-11-25): 1,000
+recorded edits of every command kind, mixed with moves and selections, undo
+back to the original text and redo back to the edited text.
+
+**Source.** R8a (`reports/R8a.md`), `R0-editor.md`.
+
+## Code editor highlighting
+
+**Answer.** rune-highlights' lexers, the same as chat code, with each token
+named by the Lezer tag that the React editor's grammar gives the same text.
+The view colours that tag from the theme's syntax map, using
+`codemirror-theme.ts`'s `HighlightStyle` rules. A re-cut per language
+(`troupe-editor` `recut.rs`) covers where the two engines split text
+differently. Examples are a method call after `.` (property), CSS units
+(keyword), Markdown marks (keyword), Rust attributes (meta), and JavaScript and
+Rust definitions. The view lexes only the 32-line chunks on screen, each with
+up to 64 lines above it, so a block comment opened above a chunk still colours
+it. Files the React editor loads no grammar for (Go, TOML, shell, XML) draw
+plain in both clients.
+
+**Numbers.** `bun tools/parity/editor-highlight/parity.ts` runs CodeMirror's
+grammars with the `termul` theme's styles and the Rune dump over nine samples
+copied from this repo. It counts non-space characters drawn in the same
+colour (measured 2026-11-25):
+
+| Engine | css | html | js | json | md | py | rs | ts | yaml | all (13,747 chars) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| rune-highlights, tags mapped | 98.1% | 88.8% | 86.8% | 100% | 77.5% | 83.4% | 77.4% | 90.0% | 98.3% | 88.8% |
+| mapped and re-cut (shipped) | 99.3% | 96.3% | 99.6% | 100% | 100% | 96.0% | 91.9% | 97.6% | 100% | 98.3% |
+
+The gaps left are grammar context, not palette. Rust enum variants, struct
+fields and `use` paths are tagged by position in Lezer's tree. Python
+f-string parts and TypeScript type arguments are the others.
+
+**Alternative weighed.** Lezer itself in Rust. There is no Rust Lezer runtime,
+and porting the LR tables and the nine grammars' external tokenizers is a
+project of its own. Take it only if the matrix shows editor colour keeps
+editor surfaces from scoring ported.
+
+**Source.** R8a (`reports/R8a.md`). Tools: `tools/parity/editor-highlight/`.
