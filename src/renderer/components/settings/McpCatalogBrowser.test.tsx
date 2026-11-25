@@ -426,7 +426,10 @@ describe('McpCatalogBrowser catalog source', () => {
 
     expect(await screen.findByText('Up to date.')).toBeInTheDocument()
     expect(screen.getByText('Updated Oct 20, 2026, 12:00 PM.')).toBeInTheDocument()
-    expect(screen.getByText(/^From the/)).toHaveTextContent('From the official MCP Registry')
+    // `^From the official`: the group title "From the catalog" also starts with "From the".
+    expect(screen.getByText(/^From the official/)).toHaveTextContent(
+      'From the official MCP Registry'
+    )
     expect(screen.queryByText(/small sample/)).toBeNull()
     expect(syncSwitch()).toBeChecked()
   })
