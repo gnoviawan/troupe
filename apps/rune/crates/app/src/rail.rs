@@ -109,7 +109,8 @@ impl State {
                 }
             }
             crate::theme_picker::KEY => self.picker_closed(),
-            crate::keys::MENU => self.keys.recording = None,
+            crate::keys::MENU | crate::settings_view::APP => self.keys.recording = None,
+            crate::settings_view::SELECT => self.settings_ui.select = None,
             crate::phone::MORE | crate::phone::PROJECTS | crate::phone::RECENTS => {
                 self.phone.drag = ui::overlay::SheetDrag::default();
                 if key == crate::phone::RECENTS {

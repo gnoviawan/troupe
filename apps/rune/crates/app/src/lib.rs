@@ -54,6 +54,12 @@ mod rail;
 mod rail_forms;
 mod rail_menus;
 mod rail_view;
+mod settings;
+mod settings_pages;
+mod settings_shortcuts;
+#[cfg(test)]
+mod settings_tests;
+mod settings_view;
 mod sync;
 mod term_host;
 mod term_input;
@@ -149,6 +155,10 @@ pub struct State {
     pub git: git::GitUi,
     /// The git history reads and the History tab's own state.
     pub history: git_history::HistoryUi,
+    /// The shared `settings/app` record.
+    pub settings: model::settings::State,
+    /// The Settings window: which one is open, its page and its own fields.
+    pub settings_ui: settings_view::SettingsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -198,6 +208,8 @@ impl Default for State {
             terms: terminal::TerminalUi::default(),
             git: git::GitUi::default(),
             history: git_history::HistoryUi::default(),
+            settings: model::settings::State::default(),
+            settings_ui: settings_view::SettingsUi::default(),
             sync: sync::Sync::default(),
         }
     }

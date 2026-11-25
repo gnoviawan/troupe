@@ -187,10 +187,12 @@ fn the_theme_picker_previews_on_arrows_and_saves_on_return() {
         .filter(|p| p["key"] == "shared/lww/settings/app")
         .collect();
     assert_eq!(saved.len(), 1);
+    let data = &saved[0]["value"]["data"];
     assert_eq!(
-        saved[0]["value"]["data"],
-        json!({ "colorTheme": "termul", "appearanceMode": "light" })
+        (&data["colorTheme"], &data["appearanceMode"]),
+        (&json!("termul"), &json!("light"))
     );
+    assert_eq!(data["uiZoomLevel"], json!(1), "the whole record, as the web client writes it");
 }
 
 #[test]

@@ -117,8 +117,6 @@ pub struct Sync {
     held: Option<ProjectList>,
     /// The revision of each shared key this client last read or wrote.
     revisions: HashMap<Shared, u64>,
-    /// `settings/app` as read, so a theme change rewrites only its own fields.
-    pub(crate) app_settings: serde_json::Map<String, Value>,
     /// A project `add_project` created, selected when its registry row lands.
     select_when_listed: Option<String>,
     /// Every command sent, for the tests (a test state has no host).
@@ -273,6 +271,7 @@ impl State {
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
                 crate::host::Fetch::Git(task) => self.git_replied(task, result),
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
+                crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
             }
         }
         changed
@@ -371,7 +370,12 @@ impl State {
                     self.sync.revisions.insert(shared, revision);
                     self.shared_loaded(shared, stored_value(reply));
                 }
-                Err(e) => log::warn!("[app] reading {} failed: {}", shared.host_key(), e.code),
+                Err(e) => {
+                    log::warn!("[app] reading {} failed: {}", shared.host_key(), e.code);
+                    if shared == Shared::AppSettings {
+                        self.settings_loaded(Err(e.code.clone()));
+                    }
+                }
             },
             Pending::WriteShared(shared) => match result {
                 Ok(reply) => {
