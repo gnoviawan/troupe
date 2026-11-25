@@ -444,6 +444,18 @@ impl BrowserHost for DesktopBrowserHost {
         Box::pin(self.destroy_tab_inner(label))
     }
 
+    fn capture_tab_screenshot<'a>(
+        &'a self,
+        label: &'a str,
+    ) -> HostFuture<'a, Result<Vec<u8>, String>> {
+        Box::pin(async move {
+            self.engine
+                .screenshot(label)
+                .await
+                .map_err(|err| format!("screenshot failed: {:?}", err.kind))
+        })
+    }
+
     fn stop(&self, session_id: &str) -> bool {
         let first = self.gate.stop(session_id);
         log::info!(

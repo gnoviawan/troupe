@@ -125,6 +125,11 @@
     "file": "harn.svg"
   },
   {
+    "id": "hermes",
+    "name": "Hermes Agent",
+    "file": "hermes.svg"
+  },
+  {
     "id": "junie",
     "name": "Junie",
     "file": "junie.svg"

@@ -43,6 +43,7 @@ import {
   SKILL_TOKEN_END,
   SKILL_TOKEN_START
 } from '@/lib/skill-tokens'
+import { canvasToken } from './canvas-tokens'
 import { contextFromAttrs, selectionContextToken } from './selection-context'
 import type { TermulToolId } from './termul-tools'
 import { toolToken } from './tool-tokens'
@@ -81,6 +82,9 @@ export const CONVERSATION_PILL_NODE = 'conversationPill'
 /** A Troupe tool pill. Its token (`\uE00C…\uE00D`) is owned by `tool-tokens.ts`. */
 export const TOOL_PILL_NODE = 'toolPill'
 
+/** A canvas-layer mention. Its token (`\uE00E…\uE00F`) is owned by `canvas-tokens.ts`. */
+export const CANVAS_PILL_NODE = 'canvasPill'
+
 type PillKind =
   | 'pill'
   | 'commandPill'
@@ -88,6 +92,7 @@ type PillKind =
   | 'contextPill'
   | 'conversationPill'
   | 'toolPill'
+  | 'canvasPill'
 
 function isPillKind(kind: DocSegment['kind']): kind is PillKind {
   return kind !== 'text'
@@ -192,6 +197,13 @@ export function walkDocSegments(doc: PmNode): DocSegment[] {
         } else if (node.type.name === TOOL_PILL_NODE) {
           displayText = toolToken(String(node.attrs.id ?? '') as TermulToolId)
           kind = 'toolPill'
+          blockEndedInHardBreak = false
+        } else if (node.type.name === CANVAS_PILL_NODE) {
+          displayText = canvasToken({
+            label: String(node.attrs.label ?? ''),
+            ids: String(node.attrs.ids ?? '').split(',')
+          })
+          kind = 'canvasPill'
           blockEndedInHardBreak = false
         } else if (node.type.name === 'hardBreak') {
           displayText = '\n'

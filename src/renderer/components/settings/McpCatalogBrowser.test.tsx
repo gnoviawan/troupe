@@ -158,7 +158,7 @@ async function findRow(name: string): Promise<HTMLElement> {
 }
 
 function rowOf(name: string): HTMLElement {
-  const element = screen.getByText(name).closest<HTMLElement>('[data-index]')
+  const element = screen.getByText(name).closest<HTMLElement>('[data-card-index]')
   if (!element) throw new Error(`no row for ${name}`)
   return element
 }
@@ -426,7 +426,14 @@ describe('McpCatalogBrowser catalog source', () => {
 
     expect(await screen.findByText('Up to date.')).toBeInTheDocument()
     expect(screen.getByText('Updated Oct 20, 2026, 12:00 PM.')).toBeInTheDocument()
-    expect(screen.getByText(/^From the/)).toHaveTextContent('From the official MCP Registry')
+    // Match the whole line: "From the " and the registry link are separate
+    // nodes, and the group title "From the catalog" also starts with "From the".
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === 'P' && element.textContent === 'From the official MCP Registry'
+      )
+    ).toBeInTheDocument()
     expect(screen.queryByText(/small sample/)).toBeNull()
     expect(syncSwitch()).toBeChecked()
   })

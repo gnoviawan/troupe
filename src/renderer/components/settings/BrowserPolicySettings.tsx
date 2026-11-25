@@ -194,28 +194,18 @@ export function BrowserAppPolicy(): React.JSX.Element {
   return (
     <>
       {locked && <ReadOnlyNotice />}
-      <SettingsGroup
-        title="Agent profile"
-        footnote="Changes on this page save as you make them."
-        className="scroll-mt-4"
-      >
+      {(switchError ?? clearError) && (
+        <SettingsNotice tone="danger" role="alert">
+          {switchError ?? clearError}
+        </SettingsNotice>
+      )}
+      <SettingsGroup title="Ask first" className="scroll-mt-4">
         <SettingsCard>
-          <SwitchRow
-            id={BROWSER_ANCHORS.appProfile}
-            controlId="browser-shared-profile"
-            label="Shared agent profile"
-            description="One agent profile for every project keeps logins between chats. Off: agents always browse logged out."
-            checked={policy.globalProfileEnabled}
-            disabled={locked}
-            onToggle={(enabled) => {
-              void edit({ op: 'set_global_profile', enabled }).then(settle)
-            }}
-          />
           <SwitchRow
             id={BROWSER_ANCHORS.appSitePrompt}
             controlId="browser-site-prompt"
             label="Ask before opening new sites"
-            description="Off: agents open public sites and devices on your local network without asking. Sign-ins, payments, uploads and downloads follow their own rules."
+            description="On: an agent asks you before it opens a site for the first time. Off: agents open public sites and devices on your local network without asking. Sign-ins, payments, uploads and downloads follow their own rules."
             checked={policy.askBeforeOpeningSites}
             disabled={locked}
             onToggle={(enabled) => {
@@ -226,11 +216,36 @@ export function BrowserAppPolicy(): React.JSX.Element {
             id={BROWSER_ANCHORS.appPasswordPrompt}
             controlId="browser-password-prompt"
             label="Ask before an agent submits a password"
-            description="Off: agents sign in to sites without asking you first."
+            description="On: an agent asks you before it signs in to a site."
             checked={policy.askBeforePasswordSubmit}
             disabled={locked}
             onToggle={(enabled) => {
               void edit({ op: 'set_ask_before_password_submit', enabled }).then(settle)
+            }}
+          />
+        </SettingsCard>
+      </SettingsGroup>
+      <PreapprovalEditor
+        id={BROWSER_ANCHORS.appPreapprovals}
+        label="Pre-approved actions in every project"
+        description="Agents skip the question for these on the shared agent profile. Payment forms always ask."
+        actions={APP_PREAPPROVABLE_ACTIONS}
+        entries={policy.preapprovals}
+        disabled={locked}
+        onAdd={({ action, origin }) => edit({ op: 'add_preapproval', action, origin })}
+        onRemove={({ action, origin }) => edit({ op: 'remove_preapproval', action, origin })}
+      />
+      <SettingsGroup title="Logins">
+        <SettingsCard>
+          <SwitchRow
+            id={BROWSER_ANCHORS.appProfile}
+            controlId="browser-shared-profile"
+            label="Shared agent profile"
+            description="On: one agent profile for every project keeps logins between chats. Off: agents always browse logged out."
+            checked={policy.globalProfileEnabled}
+            disabled={locked}
+            onToggle={(enabled) => {
+              void edit({ op: 'set_global_profile', enabled }).then(settle)
             }}
           />
           <SettingsRow
@@ -241,8 +256,9 @@ export function BrowserAppPolicy(): React.JSX.Element {
           >
             <Button
               type="button"
-              size="sm"
-              variant="destructive"
+              size="xs"
+              variant="secondary"
+              className="text-destructive hover:text-destructive"
               disabled={locked}
               onClick={() => setConfirming(true)}
             >
@@ -256,22 +272,7 @@ export function BrowserAppPolicy(): React.JSX.Element {
             macOS 14 or later.
           </SettingsNotice>
         )}
-        {(switchError ?? clearError) && (
-          <SettingsNotice tone="danger" role="alert">
-            {switchError ?? clearError}
-          </SettingsNotice>
-        )}
       </SettingsGroup>
-      <PreapprovalEditor
-        id={BROWSER_ANCHORS.appPreapprovals}
-        label="Pre-approved actions in every project"
-        description="Agents skip the question for these on the shared agent profile. Payment forms always ask."
-        actions={APP_PREAPPROVABLE_ACTIONS}
-        entries={policy.preapprovals}
-        disabled={locked}
-        onAdd={({ action, origin }) => edit({ op: 'add_preapproval', action, origin })}
-        onRemove={({ action, origin }) => edit({ op: 'remove_preapproval', action, origin })}
-      />
       <ConfirmDialog
         isOpen={confirming}
         title="Clear agent profile"

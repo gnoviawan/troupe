@@ -14,6 +14,7 @@ import { READ_ONLY_SERVER_REASON } from '@/lib/write-gate'
 import { applyRemovedAntigravityAccount } from '@/stores/antigravity-account-switch'
 import { useProjectStore } from '@/stores/project-store'
 import type { ProjectColor } from '@/types/project'
+import { SETTINGS_CARD_CLASS } from '../SettingsGroup'
 import { AccountGroupFooter } from './AccountGroupFooter'
 import { AccountNameDialog } from './AccountNameDialog'
 import { AntigravityAccountActions } from './AntigravityAccountActions'
@@ -130,7 +131,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="mt-8 flex flex-col gap-1" data-testid="antigravity-provider-settings">
+    <div className="flex flex-col gap-3" data-testid="antigravity-provider-settings">
       <ProviderGroupHeader
         iconKey="acp:antigravity-acp"
         name="Antigravity"
@@ -179,7 +180,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
       )}
 
       {!loading && !failed && snapshot && (
-        <div>
+        <div className={cn(SETTINGS_CARD_CLASS, 'px-4')}>
           {accounts.map((account) => {
             const read = usage[account.id]
             const readiness = antigravityAccountReadiness(account)
