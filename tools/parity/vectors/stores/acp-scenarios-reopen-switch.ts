@@ -78,6 +78,26 @@ function live(extra: Record<string, unknown> = {}) {
 
 const S1 = payload('s1', 'gemini', [marker('s2', 4)])
 
+/** `s1` to `s<n>`, each switched to the next, the configs alternating. */
+function chain(n: number): Record<string, unknown> {
+  const config = (k: number) => (k % 2 === 1 ? 'gemini' : 'claude')
+  const out: Record<string, unknown> = {}
+  for (let k = 1; k <= n; k++) {
+    const next = k < n ? [marker(`s${k + 1}`, 4, config(k), config(k + 1))] : []
+    out[`s${k}`] = payload(`s${k}`, config(k), next)
+  }
+  return out
+}
+
+const chainIndex = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `s${i + 1}`,
+    title: `Chat s${i + 1}`,
+    agentConfigId: i % 2 === 0 ? 'gemini' : 'claude',
+    projectId: 'p1',
+    createdAt: 60 + i
+  }))
+
 export const reopenSwitchScenarios: Scenario[] = [
   {
     name: 'reopen_switch_redirects_to_its_continuation',
@@ -254,6 +274,32 @@ export const reopenSwitchScenarios: Scenario[] = [
     },
     initial: live(),
     steps: [open(), tick]
+  },
+  {
+    name: 'reopen_switch_redirect_walks_at_most_eight_hops',
+    context: {
+      payloads: chain(11),
+      agentReplies: [{}, {}, {}],
+      projects: PROJECTS,
+      openChatTabs: ['s1']
+    },
+    initial: live({ sessionIndex: chainIndex(11) }),
+    steps: [open(), tick, tick]
+  },
+  {
+    name: 'reopen_switch_redirect_stops_at_a_cycle_past_the_chat',
+    context: {
+      payloads: {
+        s1: S1,
+        s2: payload('s2', 'claude', [marker('s3', 4, 'claude', 'gemini')]),
+        s3: payload('s3', 'gemini', [marker('s2', 4, 'gemini', 'claude')])
+      },
+      agentReplies: [{}, {}, {}],
+      projects: PROJECTS,
+      openChatTabs: ['s1']
+    },
+    initial: live(),
+    steps: [open(), tick, tick]
   },
   {
     name: 'reopen_switch_ignores_a_marker_naming_the_chat_itself',

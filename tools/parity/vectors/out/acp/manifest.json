@@ -624,6 +624,8 @@
         "reopen_switch_ignores_a_marker_without_a_new_session",
         "reopen_switch_ignores_a_marker_without_a_target_config",
         "reopen_switch_redirect_stops_at_a_marker_cycle",
+        "reopen_switch_redirect_walks_at_most_eight_hops",
+        "reopen_switch_redirect_stops_at_a_cycle_past_the_chat",
         "reopen_switch_ignores_a_marker_naming_the_chat_itself",
         "reopen_switch_redirect_stops_at_a_hop_naming_itself",
         "reopen_switch_redirect_skips_the_splice_when_the_chat_was_deleted",
