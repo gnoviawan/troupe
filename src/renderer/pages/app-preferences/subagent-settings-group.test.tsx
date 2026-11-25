@@ -19,21 +19,28 @@ if (typeof document.elementFromPoint !== 'function') {
 const CLAUDE = 'acp-registry:claude-acp'
 const PI = 'acp-registry:pi-acp'
 
-const { getSettings, setSettings, toastError, prepareChat, acpState } = vi.hoisted(() => ({
+const { getSettings, setSettings, toastError, prepareChat, acpState, entries } = vi.hoisted(() => ({
   getSettings: vi.fn(),
   setSettings: vi.fn(),
   toastError: vi.fn(),
   prepareChat: vi.fn(),
-  acpState: { current: {} as Record<string, unknown> }
+  acpState: { current: {} as Record<string, unknown> },
+  entries: { current: [] as unknown[] }
 }))
 
 vi.mock('@/lib/api', () => ({
-  acpApi: { getSubagentSettings: getSettings, setSubagentSettings: setSettings }
+  acpApi: { getSubagentSettings: getSettings, setSubagentSettings: setSettings },
+  persistenceApi: {
+    read: async () => ({ success: true, data: null }),
+    write: async () => ({ success: true }),
+    writeDebounced: async () => ({ success: true }),
+    delete: async () => ({ success: true })
+  }
 }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 vi.mock('sonner', () => ({ toast: { error: toastError, success: vi.fn() } }))
 vi.mock('@/hooks/use-resolved-supported-acp-agents', () => ({
-  useResolvedSupportedAcpAgents: () => []
+  useResolvedSupportedAcpAgents: () => entries.current
 }))
 vi.mock('@/stores/project-store', () => ({
   useProjectStore: (selector: (s: { activeProjectId: string }) => unknown) =>
@@ -199,6 +206,43 @@ describe('SubagentSettingsGroup', () => {
     toastError.mockReset()
     prepareChat.mockReset()
     acpState.current = { agentOptionsCache: CACHE }
+    entries.current = []
+  })
+
+  it("offers other agents' tabs, except to a profile named after its own agent", async () => {
+    const configs = [
+      { id: CLAUDE, name: 'Claude Agent', command: 'claude', args: [] },
+      { id: PI, name: 'Pi', command: 'pi', args: [] }
+    ]
+    acpState.current = { agentOptionsCache: CACHE, agentConfigs: configs }
+    entries.current = configs.map((config) => ({
+      id: config.id,
+      configId: config.id,
+      agent: { id: config.id, name: config.name, version: '', description: '', distribution: {} },
+      config,
+      status: 'ready',
+      install: null,
+      manualInstall: null,
+      runtimeLauncher: null,
+      unavailableReason: null
+    }))
+    await renderPage()
+    const tabs = (id: string): string[] => {
+      fireEvent.click(within(row(id)).getByTestId('agent-model-selector-trigger'))
+      const names = within(
+        screen.getAllByTestId('agent-model-selector-panel').at(-1) as HTMLElement
+      )
+        .queryAllByRole('tab')
+        .map((tab) => tab.getAttribute('aria-label') ?? '')
+      fireEvent.keyDown(document.body, { key: 'Escape' })
+      return names
+    }
+
+    expect(tabs('claude-quick')).toEqual([
+      expect.stringContaining('Claude Agent'),
+      expect.stringContaining('Pi')
+    ])
+    expect(tabs(PI).filter((name) => name.includes('Claude'))).toEqual([])
   })
 
   it('lists every profile with its note, and names the enabled ones the calling agent sees', async () => {

@@ -73,9 +73,15 @@ export function useProfilePicker({
     (entry: SupportedAcpAgentEntry) => armableConfigId(entry, agentConfigs) ?? entry.configId,
     [agentConfigs]
   )
+  // A profile named after its agent's key cannot move: the host refuses an id
+  // that is another agent's key, so its picker offers only its own agent.
+  const ownKey = profile.id.toLowerCase() === agentId.toLowerCase()
   const entries = useMemo(
-    () => supported.filter((entry) => launchableAgentIds.has(tabId(entry))),
-    [supported, launchableAgentIds, tabId]
+    () =>
+      supported.filter((entry) =>
+        ownKey ? tabId(entry) === agentId : launchableAgentIds.has(tabId(entry))
+      ),
+    [supported, launchableAgentIds, tabId, ownKey, agentId]
   )
   const selectedEntry = entries.find((entry) => tabId(entry) === agentId) ?? null
   const config = agentConfigs.find((candidate) => candidate.id === agentId) ?? null
