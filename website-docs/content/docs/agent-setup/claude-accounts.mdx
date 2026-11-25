@@ -9,9 +9,9 @@ Accounts apply to **Claude Agent** chats only. To set up Claude Agent itself, se
 
 ## See your accounts
 
-Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **Provider**. The **Claude Code** group lists every account, whether it is signed in, which projects use it, and how much of its limits it has used.
+Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **Accounts**. The **Claude Code** group lists every account, whether it is signed in, which projects use it, and how much of its limits it has used.
 
-![The Provider page in the browser version, with one account named Default that is signed out, and a note to add or sign in to an account from the desktop app or with termul-server claude account on the host](/screenshots/agent-setup-provider.png)
+![The Accounts page in the browser version, with one account named Default that is signed out, and a note to add or sign in to an account from the desktop app or with termul-server claude account on the host](/screenshots/agent-setup-provider.png)
 
 The first account is called **Default**. It is the Claude Code login you made with `claude auth login`. Troupe shows a name you choose for each account, never its email address.
 
@@ -19,7 +19,7 @@ The first account is called **Default**. It is the Claude Code login you made wi
 
 ### In the desktop app
 
-1. In **Settings** > **Provider**, click **Add account**.
+1. In **Settings** > **Accounts**, click **Add account**.
 2. Type a short name, such as `Work`, and click **Continue**.
 3. Your browser opens claude.ai. Sign in with the account you want to add.
 4. Go back to Troupe. When the sign-in finishes, Troupe shows the account's plan and usage.
@@ -29,7 +29,7 @@ The first account is called **Default**. It is the Claude Code login you made wi
 
 The browser can be on another computer or a phone, so Troupe shows you the sign-in link instead of opening a browser on the server.
 
-1. In **Settings** > **Provider**, click **Add account**.
+1. In **Settings** > **Accounts**, click **Add account**.
 2. Type a short name, such as `Work`, and click **Continue**.
 3. Click **Open sign-in page**. To sign in in another browser or on another device, click **Copy link** and open the link there.
 4. Sign in on claude.com with the account you want to add. The Claude page then shows a code.
@@ -72,13 +72,13 @@ A chat can run on another account than its project, for example to keep a long t
 
 Troupe starts this chat again on that account and keeps the conversation. Other chats of the project keep their account. The account button now shows a pin next to the name, and its label says the account is for this chat only.
 
-To go back to the project's account, pick **Follow project** at the top of the menu. The row shows which account the project uses, for example "Uses Work". Picking the account the chat already uses changes nothing. **Manage accounts** opens **Settings** > **Provider**.
+To go back to the project's account, pick **Follow project** at the top of the menu. The row shows which account the project uses, for example "Uses Work". Picking the account the chat already uses changes nothing. **Manage accounts** opens **Settings** > **Accounts**.
 
 New chats always start on the project's account.
 
 ## Watch your usage and limits
 
-Claude plans have a 5-hour limit and weekly limits. In **Settings** > **Provider**, each account shows how much of its main limit it has used and when the limit resets. Click an account's usage bar to see all of its limits. To read the numbers again, click the refresh button at the right end of the **Claude Code** row.
+Claude plans have a 5-hour limit and weekly limits. In **Settings** > **Accounts**, each account shows how much of its main limit it has used and when the limit resets. Click an account's usage bar to see all of its limits. To read the numbers again, click the refresh button at the right end of the **Claude Code** row.
 
 In a Claude Agent chat, the account button in the chat box shows how much of the 5-hour limit the account has used, for example `5h 42%`. When a weekly limit reaches 80% or more, the button also shows it, for example `5h 42% · Wk 86%`. The number turns yellow at 80% and red at 100%. Open the button to see each account's plan with its 5-hour and weekly use, for example `Max · 5-hour 42% · Weekly 86%`.
 
@@ -94,7 +94,7 @@ When the account has used 80% of a limit, a notice at the top of the chat box sa
 
 ### Switch automatically
 
-**Switch accounts automatically** shows under the accounts in the **Claude Code** group of **Settings** > **Provider** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
+**Switch accounts automatically** shows under the accounts in the **Claude Code** group of **Settings** > **Accounts** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
 
 When a chat reaches its account's limit, Troupe moves the chat to the signed-in account with the most room and continues it. Troupe does this on the computer that runs it, so it also works when no app window or browser has the chat open. The chat gets a short message instead of your last message again, for example "Troupe moved this chat from Claude account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on." Subagents and background commands that were running are stopped, and the message asks the agent to start again the ones it still needs.
 
@@ -104,7 +104,7 @@ When no other account has room, Troupe continues the chat when the limit resets.
 
 When **Switch accounts automatically** is off, or Troupe could not switch, a notice at the top of the chat box says which limit ran out and when it resets. Your draft is kept.
 
-When another account has room, the notice shows **Go on with** and the account Troupe suggests, the one with the most room left. Click it to pick another account. The list shows each account with its usage bar and how much it has used. The account at its limit is listed last and cannot be picked. Click **Manage accounts** to open **Settings** > **Provider**. When the account you want is shown, click **Switch and continue**. Troupe moves this chat to that account and continues it with the same short message.
+When another account has room, the notice shows **Go on with** and the account Troupe suggests, the one with the most room left. Click it to pick another account. The list shows each account with its usage bar and how much it has used. The account at its limit is listed last and cannot be picked. Click **Manage accounts** to open **Settings** > **Accounts**. When the account you want is shown, click **Switch and continue**. Troupe moves this chat to that account and continues it with the same short message.
 
 When no other account has room, the notice says "No other account has room left right now." You can:
 

@@ -1,16 +1,37 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { BrowserControls } from './BrowserControls'
 
-// Mock browser-api
+const { mockOpenUrlWithSystemBrowser } = vi.hoisted(() => ({
+  mockOpenUrlWithSystemBrowser: vi.fn().mockResolvedValue({ success: true, data: undefined })
+}))
+
+vi.mock('@/lib/tauri-opener-api', () => ({
+  openerApi: {
+    openUrlWithSystemBrowser: (...args: unknown[]) => mockOpenUrlWithSystemBrowser(...args)
+  }
+}))
+
 vi.mock('@/lib/browser-api', () => ({
   browserTabGoBack: vi.fn().mockResolvedValue({ success: true }),
   browserTabGoForward: vi.fn().mockResolvedValue({ success: true }),
   browserTabReload: vi.fn().mockResolvedValue({ success: true }),
+  browserTabStop: vi.fn().mockResolvedValue({ success: true }),
+  browserTabSetZoom: vi.fn().mockResolvedValue({ success: true, data: 1 }),
+  browserTabScreenshot: vi
+    .fn()
+    .mockResolvedValue({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } }),
+  browserTabAnnotationCmd: vi.fn().mockResolvedValue({ success: true }),
+  browserAnnotationsSync: vi.fn().mockResolvedValue({ success: true, data: 1 }),
+  browserSaveAnnotationCrop: vi.fn().mockResolvedValue({ success: true, data: '/tmp/crop.png' }),
   browserTabOpenDevtools: vi.fn().mockResolvedValue({ success: true }),
   browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true })
+}))
+
+vi.mock('@/lib/browser-consent-api', () => ({
+  stopBrowserAgent: vi.fn().mockResolvedValue(true)
 }))
 
 function Wrapper({ children }: { children: React.ReactNode }) {
@@ -23,67 +44,154 @@ function renderWithProvider(ui: React.ReactElement) {
 
 describe('BrowserControls', () => {
   beforeEach(() => {
-    useBrowserSessionStore.setState({ tabs: new Map() })
+    useBrowserSessionStore.setState({ tabs: new Map(), recentUrls: [] })
   })
 
   afterEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
   })
 
-  it('renders nothing when tab has no URL', () => {
+  it('renders empty toolbar with disabled actions on new tab start page', () => {
     useBrowserSessionStore.getState().createTab('tab-1', '')
-    const { container } = renderWithProvider(<BrowserControls browserTabId="tab-1" />)
-    expect(container.firstChild).toBeNull()
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    expect(screen.getByLabelText('Back')).toHaveProperty('disabled', true)
+    expect(screen.getByLabelText('Forward')).toHaveProperty('disabled', true)
+    expect(screen.getByLabelText('Annotate page')).toHaveProperty('disabled', true)
   })
 
-  it('renders agentation toolbar button', () => {
+  it('enables Back and Forward once a URL is loaded and invokes native history commands', async () => {
+    const { browserTabGoBack, browserTabGoForward } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
-    expect(screen.getByLabelText('Inject agentation toolbar')).toBeTruthy()
+    const back = screen.getByLabelText('Back')
+    const forward = screen.getByLabelText('Forward')
+    expect(back).toHaveProperty('disabled', false)
+    expect(forward).toHaveProperty('disabled', false)
+    fireEvent.click(back)
+    fireEvent.click(forward)
+    expect(browserTabGoBack).toHaveBeenCalledWith('tab-1')
+    expect(browserTabGoForward).toHaveBeenCalledWith('tab-1')
   })
 
-  it('calls browserTabInjectAgentation on PenTool button click', async () => {
+  it('opens external URL through canonical openerApi.openUrlWithSystemBrowser', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com/docs')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    fireEvent.click(screen.getByLabelText('More browser actions'))
+    fireEvent.click(screen.getByText('Open in default browser'))
+    expect(mockOpenUrlWithSystemBrowser).toHaveBeenCalledWith('https://example.com/docs')
+  })
+
+  it('reverts unsubmitted URL input on blur instead of navigating', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com/page')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    const input = screen.getByLabelText('Address bar') as HTMLInputElement
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: 'https://unsaved.test' } })
+    fireEvent.blur(input)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.url).toBe('https://example.com/page')
+    expect(input.value).toBe('https://example.com/page')
+  })
+
+  it('swaps URL bar into AnnotationToolbar on Annotate click and injects overlay', async () => {
     const { browserTabInjectAgentation } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
 
-    const btn = screen.getByLabelText('Inject agentation toolbar')
-    fireEvent.click(btn)
-
+    fireEvent.click(screen.getByLabelText('Annotate page'))
     expect(browserTabInjectAgentation).toHaveBeenCalledWith('tab-1')
+    expect(screen.getByTestId('browser-annotation-toolbar')).toBeTruthy()
+    expect(screen.getByTitle('Comment (C)')).toBeTruthy()
+    expect(screen.getByTitle('Rectangle (R)')).toBeTruthy()
+    expect(screen.getByTitle('Ruler (M)')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Exit annotate mode'))
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
   })
 
-  it('renders browser navigation and debug button', () => {
+  it('cycles Desktop -> Tablet -> Mobile -> Desktop on Device toggle click', () => {
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    const toggle = screen.getByTestId('browser-device-toggle')
 
-    expect(screen.getByTitle('Back')).toBeTruthy()
-    expect(screen.getByTitle('Forward')).toBeTruthy()
-    expect(screen.getByTitle('Reload')).toBeTruthy()
+    fireEvent.click(toggle)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.viewportPreset).toBe('tablet')
+    fireEvent.click(toggle)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.viewportPreset).toBe('mobile')
+    fireEvent.click(toggle)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.viewportPreset).toBe('desktop')
   })
 
-  // P12: the Debug Console button is hidden in production builds.
-  it('hides the Debug Console button when import.meta.env.PROD is true', () => {
+  it('shows zoom pill only when zoomed away from 100% in desktop mode', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    expect(screen.queryByLabelText(/Page zoom/)).toBeNull()
+
+    act(() => {
+      useBrowserSessionStore.getState().setZoomFactor('tab-1', 1.25)
+    })
+    expect(screen.getByLabelText('Page zoom 125%')).toBeTruthy()
+
+    act(() => {
+      useBrowserSessionStore.getState().setViewportPreset('tab-1', 'mobile')
+    })
+    expect(screen.queryByLabelText('Page zoom 125%')).toBeNull()
+  })
+
+  it('shows 2px loading bar and Stop button while loading', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
+    useBrowserSessionStore.getState().setLoading('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+
+    expect(screen.getByTestId('browser-loading-bar')).toBeTruthy()
+    expect(screen.getByLabelText('Stop loading')).toBeTruthy()
+  })
+
+  it('hides Debug Console in More menu when PROD is true', () => {
     vi.stubEnv('PROD', true)
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    fireEvent.click(screen.getByLabelText('More browser actions'))
     expect(screen.queryByLabelText('Open debug console')).toBeNull()
-    vi.unstubAllEnvs()
   })
 
-  it('renders URL input with current tab URL', () => {
-    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com/page')
+  it('reverts annotateMode when overlay injection fails', async () => {
+    const { browserTabInjectAgentation } = await import('@/lib/browser-api')
+    vi.mocked(browserTabInjectAgentation).mockResolvedValueOnce({
+      success: false,
+      error: 'Injection failed'
+    })
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
     renderWithProvider(<BrowserControls browserTabId="tab-1" />)
 
-    const input = screen.getByPlaceholderText('Enter URL...')
-    expect((input as HTMLInputElement).value).toBe('https://example.com/page')
+    fireEvent.click(screen.getByLabelText('Annotate page'))
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
   })
 
-  it('shows loading spinner when tab is loading', () => {
+  it('handles browser shortcuts without hijacking workspace zoom shortcuts', async () => {
+    const { browserTabReload, browserTabAnnotationCmd } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
-    useBrowserSessionStore.getState().setLoading('tab-1', true)
-    const { container } = renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
 
-    expect(container.querySelector('.tm-comet')).toBeTruthy()
+    // Cmd+= is owned by use-workspace-keyboard (avoids double-zoom collision)
+    fireEvent.keyDown(window, { key: '=', metaKey: true })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.zoomFactor).toBe(1)
+
+    fireEvent.keyDown(window, { key: 'r', metaKey: true, shiftKey: true })
+    expect(browserTabReload).toHaveBeenCalledWith('tab-1')
+
+    act(() => {
+      useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    })
+    fireEvent.keyDown(window, { key: 'm' })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_tool',
+      tool: 'ruler'
+    })
   })
 })

@@ -2,6 +2,28 @@ import { create } from 'zustand'
 
 type SettingsModalView = 'project' | 'app' | null
 
+/**
+ * Old App Preferences page ids still open the page that now holds their
+ * settings, so deep links and saved page state keep working after the pages
+ * were merged into Preferences, Terminal and About.
+ */
+export const APP_PAGE_ALIASES: Readonly<Record<string, string>> = {
+  interface: 'preferences',
+  notifications: 'preferences',
+  editor: 'preferences',
+  appearance: 'terminal',
+  shell: 'terminal',
+  updates: 'about',
+  server: 'about',
+  diagnostics: 'about',
+  reset: 'about'
+}
+
+/** The current page id for `page`, following {@link APP_PAGE_ALIASES}. */
+export function resolveAppPage(page: string): string {
+  return APP_PAGE_ALIASES[page] ?? page
+}
+
 interface SettingsModalState {
   /** Which settings modal is open, or `null` when none. */
   view: SettingsModalView
@@ -40,11 +62,11 @@ export const useSettingsModalStore = create<SettingsModalState>((set) => ({
   },
 
   openApp: (page?: string): void => {
-    set({ view: 'app', appPage: page ?? null, projectId: null })
+    set({ view: 'app', appPage: page ? resolveAppPage(page) : null, projectId: null })
   },
 
   setAppPage: (page: string): void => {
-    set({ appPage: page })
+    set({ appPage: resolveAppPage(page) })
   },
 
   setProjectPage: (page: string): void => {

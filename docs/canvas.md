@@ -74,6 +74,12 @@ Calls that render pixels (a png, jpg or webp `export`, and the render behind `sc
 
 Every answered agent call also shows on the canvas as that session's cursor (`acp/host_mcp/presence`). The host derives what the call touched from the call and its result, looks up the last node's bounds with at most one `node.get` or `document.inspect`, and sends the editor `host.guestCursor`, `host.guestFlash` and, when the turn ends or the session closes, `host.guestHide`. The cursor carries the agent's display name and a colour fixed by the session id. Moves are paced to one per 120 ms per session. This work starts after the agent's reply and never delays or fails it. Its lookups never count as canvas activity or toward the crash timeouts. Nothing is sent when no editor is connected.
 
+### Mentioning canvas layers in chat
+
+While a project's canvas is open, the composer's `@` menu lists a **Canvas** category next to Conversations and Explorer. Its panel offers the current selection first, then the current page's top-level layers, filtered by name (`components/chat/use-mention-canvas.ts`, `lib/canvas-mention.ts`). Picking one inserts a canvas pill. The pill's token holds the label and the node ids (`lib/composer/canvas-tokens.ts`). It saves the ids at pick time, so a later selection change does not change what the message names.
+
+When the message is sent, each pill becomes `(canvas: <label> [troupe-canvas:<ids>])` where the user placed it, plus one `<troupe-canvas>` text block. The block has an outline of each layer (type, name, id, size, page position, text, component, hidden) and its children two levels deep, read now through the mounted editor's bridge (`document.inspect` and `node.get` with `fields`). A send carries at most 12,000 characters of these outlines. If a pill's layers cannot be read, its label says why (the canvas is not open, the layer was not found, or the context limit was reached), and no block is sent for it. Retry reads the layers again. A restored chat turns each label back into its pill and hides the blocks. The renderer reads through the same bridge on every surface, so the desktop app, the shared-live remote and the browser client behave the same way.
+
 ## Interfaces
 
 | Surface | Desktop (Tauri command) | Web (`troupe-server`) |

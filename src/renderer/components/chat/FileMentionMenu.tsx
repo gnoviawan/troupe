@@ -1,9 +1,11 @@
 import { forwardRef, type RefObject } from 'react'
 import {
+  Canvas,
   ChevronLeft,
   File,
   Folder,
   Folder2,
+  Layers,
   MessageSquare,
   type TermulIcon
 } from '@/components/icons'
@@ -34,7 +36,13 @@ interface FileMentionMenuProps {
 function rowIcon(row: MentionRow): TermulIcon {
   switch (row.kind) {
     case 'category':
-      return row.target === 'conversations' ? MessageSquare : Folder2
+      return row.target === 'conversations'
+        ? MessageSquare
+        : row.target === 'canvas'
+          ? Canvas
+          : Folder2
+    case 'canvas-layer':
+      return Layers
     case 'conversation':
       return MessageSquare
     case 'file':

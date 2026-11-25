@@ -30,4 +30,28 @@ describe('settings-modal-store', () => {
     expect(useSettingsModalStore.getState().view).toBe('app')
     expect(useSettingsModalStore.getState().projectId).toBeNull()
   })
+
+  it.each([
+    ['interface', 'preferences'],
+    ['notifications', 'preferences'],
+    ['editor', 'preferences'],
+    ['appearance', 'terminal'],
+    ['shell', 'terminal'],
+    ['updates', 'about'],
+    ['server', 'about'],
+    ['diagnostics', 'about'],
+    ['reset', 'about']
+  ])('opens the merged page for the old page id "%s"', (oldId, newId) => {
+    useSettingsModalStore.getState().openApp(oldId)
+    expect(useSettingsModalStore.getState().appPage).toBe(newId)
+
+    useSettingsModalStore.getState().setAppPage('provider')
+    useSettingsModalStore.getState().setAppPage(oldId)
+    expect(useSettingsModalStore.getState().appPage).toBe(newId)
+  })
+
+  it('keeps page ids that were not merged', () => {
+    useSettingsModalStore.getState().openApp('mcp-servers')
+    expect(useSettingsModalStore.getState().appPage).toBe('mcp-servers')
+  })
 })

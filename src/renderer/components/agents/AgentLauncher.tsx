@@ -862,6 +862,7 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
     modelOption,
     modelSource: modelSource ?? undefined,
     mentions,
+    projectId: activeProjectId,
     scheduleRestoreCaret
   })
   const mentionMenuOpen = mentions.menuOpen && !composerLocked && !slashOpen

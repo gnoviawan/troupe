@@ -10,6 +10,7 @@ import { cycleSSHTab, requestCloseSSHSession } from '@/lib/ssh-sessions'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { getWebAuthGateState } from '@/lib/web-auth-gate'
 import { useUiZoomLevel } from '@/stores/app-settings-store'
+import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useCanvasStore } from '@/stores/canvas-store'
 import { useEditorStore } from '@/stores/editor-store'
 import { useFileExplorerVisible } from '@/stores/file-explorer-store'
@@ -310,23 +311,46 @@ export function useWorkspaceKeyboard({
         return
       }
 
-      // Zoom in/out/reset — whole-UI zoom (VS Code style)
+      const browserZoomTarget =
+        isWorkspaceRoute &&
+        activeTab?.type === 'browser' &&
+        !isInInput &&
+        !isInEditor &&
+        !isAgentLauncherOpen &&
+        !useSSHStore.getState().workspaceOpen
+          ? activeTab.browserTabId
+          : null
+
+      // Zoom in/out/reset — route to the active browser tab's native zoom when
+      // a browser tab is focused on the workspace route, otherwise whole-UI zoom.
       if (matchesShortcut(e, getActiveKey('zoomIn'))) {
         e.preventDefault()
         e.stopPropagation()
-        applyZoomAction('zoomIn')
+        if (browserZoomTarget) {
+          useBrowserSessionStore.getState().stepZoom(browserZoomTarget, 'in')
+        } else {
+          applyZoomAction('zoomIn')
+        }
         return
       }
       if (matchesShortcut(e, getActiveKey('zoomOut'))) {
         e.preventDefault()
         e.stopPropagation()
-        applyZoomAction('zoomOut')
+        if (browserZoomTarget) {
+          useBrowserSessionStore.getState().stepZoom(browserZoomTarget, 'out')
+        } else {
+          applyZoomAction('zoomOut')
+        }
         return
       }
       if (matchesShortcut(e, getActiveKey('zoomReset'))) {
         e.preventDefault()
         e.stopPropagation()
-        applyZoomAction('zoomReset')
+        if (browserZoomTarget) {
+          useBrowserSessionStore.getState().resetZoom(browserZoomTarget)
+        } else {
+          applyZoomAction('zoomReset')
+        }
         return
       }
 
