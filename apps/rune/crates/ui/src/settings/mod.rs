@@ -58,6 +58,7 @@ pub fn card(t: &Tokens, key: &str, rows: Vec<El>) -> El {
         .w_full()
         .radius(8.0)
         .fill(c.card)
+        .border(1.0, c.border)
         .clip_rounded(8.0)
         .items_stretch();
     for (i, r) in rows.into_iter().enumerate() {

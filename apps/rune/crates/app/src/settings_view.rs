@@ -1,6 +1,6 @@
 //! The Settings window (`AppPreferencesModal` in `SettingsWindow` and `SettingsLayout`): a
 //! full-window layer with the rail (Back to app, search, grouped pages) and one page at a time
-//! in a 704 px column, the page's selects as menus, and the two reset confirms. Phones get the
+//! in a 640 px column, the page's selects as menus, and the two reset confirms. Phones get the
 //! narrow layout: a title bar with Close and a scrolling strip of pages over the page. The
 //! page bodies are `settings_pages`.
 
@@ -20,9 +20,9 @@ pub const RESET_SHORTCUTS: &str = "settings-reset-shortcuts";
 pub const SELECT: &str = "settings-select";
 
 /// The rail's width on a wide window.
-const RAIL: f32 = 264.0;
+const RAIL: f32 = 240.0;
 /// The page column's widest.
-const COLUMN: f32 = 704.0;
+const COLUMN: f32 = 640.0;
 
 #[derive(Default)]
 pub struct SettingsUi {
@@ -110,7 +110,7 @@ fn rail_item(t: &Tokens, key: String, label: &str, glyph_name: &str, active: boo
         .key(key)
         .role("button")
         .label(label.to_owned())
-        .h(31.0)
+        .h(28.0)
         .px(8.0)
         .gap(8.0)
         .radius(6.0)
@@ -153,7 +153,7 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
                         .key(format!("group-{group}"))
                         .w_full()
                         .px(8.0)
-                        .pt(19.0)
+                        .pt(16.0)
                         .pb(4.0)
                         .child(text(group).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground)),
                 );
@@ -172,10 +172,10 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
     let search = ui::panel_field(t, &s.settings_ui.search, "Search settings...", false)
         .key("settings-search")
         .w_full()
-        .h(30.0)
+        .h(28.0)
         .pl(30.0)
         .on_edit(|s: &mut State| &mut s.settings_ui.search);
-    let search = row().key("settings-search-band").w_full().px(12.0).pb(8.0).child(
+    let search = row().key("settings-search-band").w_full().px(12.0).pt(4.0).pb(8.0).child(
         row().key("field").w_full().child(search).child(
             icon(glyph("Search"), 13.0)
                 .color(c.muted_foreground)
@@ -273,7 +273,7 @@ fn page_body(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
             .key("settings-page-pad")
             .w_full()
             .px(32.0)
-            .pt(19.0)
+            .pt(16.0)
             .pb(80.0)
             .justify_center()
             .child(column),
