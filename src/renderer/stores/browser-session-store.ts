@@ -129,6 +129,7 @@ export interface BrowserSessionState {
   togglePinsHidden: (id: string) => boolean
   addPendingAnnotation: (id: string, item: Omit<PendingAnnotationItem, 'num'>) => void
   removePendingAnnotation: (id: string, annotationId: string) => void
+  removePendingAnnotations: (id: string, annotationIds: string[]) => void
   clearPendingAnnotations: (id: string) => void
   setLoadError: (id: string, error: BrowserLoadError | null) => void
   bumpStopGeneration: (id: string) => void
@@ -335,6 +336,17 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
           .map((a, idx) => ({ ...a, num: idx + 1 }))
       }))
     ),
+
+  removePendingAnnotations: (id, annotationIds) =>
+    set((state) => {
+      const drop = new Set(annotationIds)
+      return updateTab(state, id, (t) => ({
+        ...t,
+        pendingAnnotations: t.pendingAnnotations
+          .filter((a) => !drop.has(a.id))
+          .map((a, idx) => ({ ...a, num: idx + 1 }))
+      }))
+    }),
 
   clearPendingAnnotations: (id) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, pendingAnnotations: [] }))),

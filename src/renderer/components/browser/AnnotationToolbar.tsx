@@ -51,6 +51,7 @@ export function AnnotationToolbar({
   const toggleAnimationsPaused = useBrowserSessionStore((s) => s.toggleAnimationsPaused)
   const togglePinsHidden = useBrowserSessionStore((s) => s.togglePinsHidden)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
+  const removePendingAnnotations = useBrowserSessionStore((s) => s.removePendingAnnotations)
   const clearPendingAnnotations = useBrowserSessionStore((s) => s.clearPendingAnnotations)
 
   const [copied, setCopied] = useState(false)
@@ -157,8 +158,10 @@ export function AnnotationToolbar({
 
   const handleSendBatch = async () => {
     if (count === 0) return
-    const markdown = formatBatchAnnotationsForChat(tab?.url ?? '', pending)
-    const crops = pending
+    const submitted = [...pending]
+    const submittedIds = submitted.map((item) => item.id)
+    const markdown = formatBatchAnnotationsForChat(tab?.url ?? '', submitted)
+    const crops = submitted
       .filter((item) => item.cropBase64 && item.cropDataUrl)
       .map((item) => ({
         name: `annotation-${item.num}.png`,
@@ -167,9 +170,11 @@ export function AnnotationToolbar({
       }))
     const delivered = await onSendToChat(markdown, crops)
     if (!delivered) return
-    clearPendingAnnotations(browserTabId)
-    sendCmd({ type: 'clear' })
-    setQueueOpen(false)
+    removePendingAnnotations(browserTabId, submittedIds)
+    const remaining =
+      useBrowserSessionStore.getState().getTab(browserTabId)?.pendingAnnotations ?? []
+    sendCmd(remaining.length === 0 ? { type: 'clear' } : { type: 'clear', ids: submittedIds })
+    if (remaining.length === 0) setQueueOpen(false)
   }
 
   return (

@@ -47,7 +47,7 @@ export type BrowserAnnotationCommand =
   | { type: 'set_pause'; paused: boolean }
   | { type: 'set_pins_hidden'; hidden: boolean }
   | { type: 'place_guide'; axis: 'horizontal' | 'vertical' }
-  | { type: 'clear' }
+  | { type: 'clear'; ids?: string[] }
 
 export interface BrowserEventSubscription {
   unlisten: () => void

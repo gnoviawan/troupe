@@ -179,7 +179,7 @@ impl AgentationMcpServer {
 
     #[tool(
         name = "agentation_get_pending",
-        description = "Get all pending (unacknowledged) annotations for a session. Annotations have a `kind` field: \"feedback\" (default), \"placement\" (design component placements), or \"rearrange\" (section reorder/resize). Placement and rearrange annotations include structured data."
+        description = "Get all pending (unacknowledged) annotations for a session. Annotations have a `kind` field: \"feedback\" (default), \"rectangle\" (region box), \"guide\" (red alignment guide), \"measurement\" (ruler spacing), \"placement\" (design component placements), or \"rearrange\" (section reorder/resize). Guide and measurement annotations include a structured `measurement` field."
     )]
     async fn get_pending(&self, Parameters(input): Parameters<GetPendingInput>) -> String {
         let annotations = self.store.get_pending_annotations(&input.session_id);
@@ -323,7 +323,7 @@ impl AgentationMcpServer {
 
     #[tool(
         name = "agentation_watch_annotations",
-        description = "Block until new annotations appear, then collect a batch and return them. Triggers automatically when annotations are created — the user just annotates in the browser and the agent picks them up. Includes all annotation kinds: feedback, placement (design components), and rearrange (section reorder/resize). After detecting the first new annotation, waits for a batch window to collect more before returning. Use in a loop for hands-free processing. After addressing each annotation, call agentation_resolve with the annotation ID and a summary of what you did. Only resolve annotations the user accepted — if the user rejects your change, leave the annotation open."
+        description = "Block until new annotations appear, then collect a batch and return them. Triggers automatically when annotations are created — the user just annotates in the browser and the agent picks them up. Includes all annotation kinds: feedback, rectangle (region box), guide (red alignment guide with structured `measurement`), measurement (ruler spacing with structured `measurement`), placement (design components), and rearrange (section reorder/resize). After detecting the first new annotation, waits for a batch window to collect more before returning. Use in a loop for hands-free processing. After addressing each annotation, call agentation_resolve with the annotation ID and a summary of what you did. Only resolve annotations the user accepted — if the user rejects your change, leave the annotation open."
     )]
     async fn watch_annotations(
         &self,

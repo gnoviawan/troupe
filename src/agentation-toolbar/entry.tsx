@@ -31,6 +31,7 @@ interface OverlayCommand {
   paused?: boolean
   hidden?: boolean
   axis?: GuideAxis
+  ids?: string[]
 }
 
 interface PlacedPin {
@@ -165,11 +166,13 @@ class TroupeAnnotationOverlay {
     return this.sessionPromise
   }
 
-  private async postAnnotation(payload: Record<string, unknown>): Promise<boolean> {
+  private async postAnnotation(
+    payload: Record<string, unknown>
+  ): Promise<{ ok: boolean; id?: string }> {
     const ep = this.getEndpoint()
-    if (!ep) return true
+    if (!ep) return { ok: true }
     const sid = await this.ensureSession()
-    if (!sid) return false
+    if (!sid) return { ok: false }
     try {
       const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
         method: 'POST',
@@ -180,9 +183,11 @@ class TroupeAnnotationOverlay {
           ...payload
         })
       })
-      return res.ok
+      if (!res.ok) return { ok: false }
+      const body = (await res.json().catch(() => null)) as { id?: string } | null
+      return { ok: true, id: body?.id }
     } catch {
-      return false
+      return { ok: false }
     }
   }
 
@@ -248,9 +253,14 @@ class TroupeAnnotationOverlay {
         }
         break
       case 'clear':
-        this.pins = []
-        this.guides = []
-        this.closePopover()
+        if (cmd.ids && cmd.ids.length > 0) {
+          const drop = new Set(cmd.ids)
+          this.pins = this.pins.filter((p) => !drop.has(p.id))
+        } else {
+          this.pins = []
+          this.guides = []
+          this.closePopover()
+        }
         this.renderPinsAndGuides()
         break
     }
@@ -655,7 +665,7 @@ class TroupeAnnotationOverlay {
 
       const saved = await this.postAnnotation(payload)
       submitting = false
-      if (!saved) {
+      if (!saved.ok) {
         addBtn.disabled = false
         addBtn.textContent = 'Retry'
         errorEl.textContent = 'Could not save annotation. Try again.'
@@ -665,7 +675,7 @@ class TroupeAnnotationOverlay {
 
       const num = this.pins.length + 1
       const pin: PlacedPin = {
-        id: `pin-${Date.now()}-${num}`,
+        id: saved.id ?? `pin-${Date.now()}-${num}`,
         num,
         kind: opts.kind,
         x: pinX,
@@ -675,7 +685,7 @@ class TroupeAnnotationOverlay {
         element: opts.summary?.element ?? opts.title
       }
       this.pins.push(pin)
-      this.closePopover()
+      if (this.popoverEl === pop) this.closePopover()
       this.renderPinsAndGuides()
     }
 
