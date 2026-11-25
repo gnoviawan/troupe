@@ -34,7 +34,7 @@ fn a_save_writes_with_the_hash_it_read_and_marks_the_file_clean() {
     );
     assert!(step(&mut docs, Event::Save { path: PATH.into() }, 5.0).is_empty(), "one write at a time");
     let fx = step(&mut docs, Event::Written { path: PATH.into(), content: content.clone(), result: Ok(()) }, 9.0);
-    assert!(fx.contains(&Effect::Saved { path: PATH.into() }));
+    assert!(fx.contains(&Effect::Saved { path: PATH.into(), clean: true }));
     let doc = &docs.docs[PATH];
     assert!(!doc.is_dirty());
     assert_eq!(doc.hash.as_deref(), Some(sha256_hex(&content).as_str()));
@@ -44,7 +44,7 @@ fn a_save_writes_with_the_hash_it_read_and_marks_the_file_clean() {
 fn a_clean_file_saves_without_writing() {
     let mut docs = Docs::default();
     open(&mut docs, None, read("a", 1.0));
-    assert_eq!(step(&mut docs, Event::Save { path: PATH.into() }, 0.0), [Effect::Saved { path: PATH.into() }]);
+    assert_eq!(step(&mut docs, Event::Save { path: PATH.into() }, 0.0), [Effect::Saved { path: PATH.into(), clean: true }]);
 }
 
 #[test]
@@ -120,4 +120,95 @@ fn a_file_over_the_read_limit_reads_as_too_large() {
 #[test]
 fn the_hash_matches_the_hosts() {
     assert_eq!(sha256_hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+}
+
+fn written(docs: &mut Docs, content: &str) -> Vec<Effect> {
+    step(docs, Event::Written { path: PATH.into(), content: content.into(), result: Ok(()) }, 9.0)
+}
+
+#[test]
+fn a_save_asked_for_during_a_write_writes_the_newer_text_once_the_first_lands() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Save { path: PATH.into() }, 0.0);
+    type_text(&mut docs, "c");
+    assert_eq!(step(&mut docs, Event::Save { path: PATH.into() }, 0.0), [], "queued behind the write in flight");
+    let fx = written(&mut docs, "ab");
+    assert_eq!(fx.last(), Some(&Effect::Write { path: PATH.into(), content: "abc".into(), expected: Some(sha256_hex("ab")) }));
+    assert!(!fx.iter().any(|e| matches!(e, Effect::Saved { .. })), "nothing may close before abc is on disk");
+    assert_eq!(written(&mut docs, "abc").last(), Some(&Effect::Saved { path: PATH.into(), clean: true }));
+}
+
+#[test]
+fn a_write_that_lands_under_newer_edits_reports_the_buffer_still_dirty() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Save { path: PATH.into() }, 0.0);
+    type_text(&mut docs, "c");
+    assert_eq!(written(&mut docs, "ab").last(), Some(&Effect::Saved { path: PATH.into(), clean: false }));
+    assert!(docs.docs[PATH].is_dirty());
+}
+
+#[test]
+fn a_lost_reply_reads_the_file_back_and_counts_the_write_if_it_landed() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Save { path: PATH.into() }, 0.0);
+    let lost = Err(("NETWORK_ERROR".to_owned(), "reset".to_owned()));
+    let fx = step(&mut docs, Event::Written { path: PATH.into(), content: "ab".into(), result: lost }, 0.0);
+    assert_eq!(fx, [Effect::ReadBack { path: PATH.into(), content: "ab".into() }]);
+    assert_eq!(step(&mut docs, Event::Save { path: PATH.into() }, 0.0), [], "no second write while the read back runs");
+    let fx = step(&mut docs, Event::ReadBack { path: PATH.into(), content: "ab".into(), disk: Some("ab".into()) }, 0.0);
+    assert_eq!(fx.last(), Some(&Effect::Saved { path: PATH.into(), clean: true }), "the queued save finds nothing left");
+    assert!(!docs.docs[PATH].external_conflict);
+}
+
+#[test]
+fn a_lost_reply_whose_write_did_not_land_keeps_the_read_hash() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Save { path: PATH.into() }, 0.0);
+    let lost = Err(("OUTCOME_UNKNOWN".to_owned(), String::new()));
+    step(&mut docs, Event::Written { path: PATH.into(), content: "ab".into(), result: lost }, 0.0);
+    let fx = step(&mut docs, Event::ReadBack { path: PATH.into(), content: "ab".into(), disk: Some("a".into()) }, 0.0);
+    assert!(fx.iter().any(|e| matches!(e, Effect::SaveFailed { .. })));
+    let doc = &docs.docs[PATH];
+    assert_eq!((doc.hash.as_deref(), doc.is_dirty(), doc.external_conflict), (Some(sha256_hex("a").as_str()), true, false));
+}
+
+#[test]
+fn an_unchecked_write_with_a_lost_reply_asks_the_user_again() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Overwrite { path: PATH.into() }, 0.0);
+    docs.docs.get_mut(PATH).unwrap().hash = None;
+    let lost = Err(("NETWORK_ERROR".to_owned(), String::new()));
+    let fx = step(&mut docs, Event::Written { path: PATH.into(), content: "ab".into(), result: lost }, 0.0);
+    assert!(fx.iter().any(|e| matches!(e, Effect::SaveFailed { .. })));
+    assert!(docs.docs[PATH].external_conflict);
+}
+
+#[test]
+fn a_save_asked_for_while_the_file_loads_writes_the_restored_draft_with_the_read_hash() {
+    let mut docs = Docs::default();
+    step(&mut docs, Event::Open { path: PATH.into(), draft: Some(Draft { content: "draft".into(), saved_at: 5.0 }) }, 0.0);
+    assert_eq!(step(&mut docs, Event::Save { path: PATH.into() }, 0.0), []);
+    let fx = step(&mut docs, Event::Loaded { path: PATH.into(), result: Ok(read("disk", 1.0)) }, 0.0);
+    assert_eq!(fx.last(), Some(&Effect::Write { path: PATH.into(), content: "draft".into(), expected: Some(sha256_hex("disk")) }));
+}
+
+#[test]
+fn a_rename_moves_the_unsaved_buffer_to_the_new_path() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a", 1.0));
+    type_text(&mut docs, "b");
+    step(&mut docs, Event::Rename { from: PATH.into(), to: "/p/src/lib.rs".into() }, 0.0);
+    let doc = &docs.docs["/p/src/lib.rs"];
+    assert_eq!((doc.path.as_str(), doc.editor.text().as_str(), doc.is_dirty()), ("/p/src/lib.rs", "ab", true));
+    assert!(!docs.docs.contains_key(PATH));
 }

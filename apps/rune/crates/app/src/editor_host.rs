@@ -23,7 +23,7 @@ const DRAFT_DEBOUNCE: f64 = 0.3;
 #[derive(Default)]
 pub struct EditorHost {
     /// Files whose tab closes once their save lands (the unsaved-changes dialog's Save).
-    closing: BTreeSet<String>,
+    pub(crate) closing: BTreeSet<String>,
     /// Each file's buffer revision, when it last changed, and whether its draft was copied
     /// since.
     drafted: std::collections::BTreeMap<String, (u64, f64, bool)>,
@@ -83,6 +83,13 @@ impl State {
     }
 
     pub(crate) fn run_editor_effects(&mut self) {
+        // An effect may ask for more (a tab waiting to close saves again).
+        while !self.editors.effects.is_empty() {
+            self.run_editor_effects_once();
+        }
+    }
+
+    fn run_editor_effects_once(&mut self) {
         for effect in std::mem::take(&mut self.editors.effects) {
             match effect {
                 Effect::Read { path } => {
@@ -103,7 +110,24 @@ impl State {
                         host.request(request, Fetch::FileWrite { path, content });
                     }
                 }
-                Effect::Saved { path } => {
+                Effect::ReadBack { path, content } => {
+                    let url = format!("/fs/read?path={}", ui::composer::encode_query(&path));
+                    match &mut self.host {
+                        Some(host) => host.fetch(url, Fetch::FileReadBack { path, content }),
+                        None => self.editors.step(Event::ReadBack { path, content, disk: None }),
+                    }
+                }
+                Effect::Saved { path, clean } => {
+                    let name = path.rsplit(['/', '\\']).next().unwrap_or(&path).to_owned();
+                    self.toasts.push(self.now, ToastKind::Success, format!("{name} saved"), None);
+                    if !clean {
+                        // Edits landed while the write was in flight: a tab waiting to close
+                        // saves again, and closes only once the disk holds them.
+                        if self.editor_host.closing.contains(&path) {
+                            self.editors.save(&path);
+                        }
+                        continue;
+                    }
                     if let Some(file) = self.workspace.files.open.iter_mut().find(|f| f.file_path == path) {
                         file.is_dirty = false;
                         file.draft_content = None;
@@ -112,8 +136,10 @@ impl State {
                     if self.editor_host.closing.remove(&path) {
                         self.workspace.saved(&path);
                     }
-                    let name = path.rsplit(['/', '\\']).next().unwrap_or(&path);
-                    self.toasts.push(self.now, ToastKind::Success, format!("{name} saved"), None);
+                }
+                Effect::SaveFailed { path, message } => {
+                    self.toast_error("Save failed", &message);
+                    self.editor_host.closing.remove(&path);
                 }
                 Effect::ExternalChange { path } => {
                     let name = path.rsplit(['/', '\\']).next().unwrap_or(&path).to_owned();
@@ -148,31 +174,53 @@ impl State {
             }
             Fetch::FileWrite { path, content } => {
                 let result = result.map(|_| ()).map_err(refusal);
-                if let Err((code, message)) = &result {
-                    self.toast_error("Save failed", &format!("{code}: {message}"));
-                    self.editor_host.closing.remove(&path);
-                }
                 self.editors.step(Event::Written { path, content, result });
+            }
+            Fetch::FileReadBack { path, content } => {
+                let disk = result.ok().and_then(|v| v.get("content").and_then(Value::as_str).map(str::to_owned));
+                self.editors.step(Event::ReadBack { path, content, disk });
             }
             _ => {}
         }
         self.run_editor_effects();
     }
 
-    /// The unsaved-changes dialog's Save: write the buffer, then close the tab.
-    pub(crate) fn save_and_close(&mut self, path: String, draft: String) {
+    /// The unsaved-changes dialog's Save: write the buffer with the hash it was read at, and
+    /// close the tab once the disk holds every edit (a write in flight lands first, then the
+    /// newer text is written). A tab whose file never mounted mounts it first, so its draft is
+    /// written with the same check; with no draft there is nothing to write.
+    pub(crate) fn save_and_close(&mut self, path: String) {
         self.editor_host.closing.insert(path.clone());
+        if !self.editors.docs.docs.contains_key(&path) {
+            self.sync_editors();
+        }
         if self.editors.docs.docs.contains_key(&path) {
             self.editors.save(&path);
+        } else if self.workspace.files.get(&path).is_none_or(|f| !f.is_dirty || f.draft_content.is_none()) {
+            self.editor_host.closing.remove(&path);
+            self.workspace.saved(&path);
         } else {
-            self.editors.effects.push(Effect::Write { path, content: draft, expected: None });
+            self.editor_host.closing.remove(&path);
+            log::warn!("[editor] save and close: {path} has a draft but no open file to save it with");
+            self.toast_error("Save failed", "Open the file's tab and save it there");
         }
         self.run_editor_effects();
+    }
+
+    /// Copies every file's draft into the workspace record now, without the debounce: before
+    /// the record is saved and its project is left.
+    pub(crate) fn flush_drafts(&mut self) {
+        self.copy_drafts(self.now, true);
     }
 
     /// Copies each file's dirty state now, and its draft once the buffer rests, into the
     /// workspace record.
     pub(crate) fn sync_drafts(&mut self, now: f64) {
+        self.copy_drafts(now, false);
+    }
+
+    /// Copies drafts that rested [`DRAFT_DEBOUNCE`], or every one when `forced`.
+    fn copy_drafts(&mut self, now: f64, forced: bool) {
         let mut changed = false;
         for (path, doc) in &self.editors.docs.docs {
             let revision = doc.editor.revision();
@@ -195,7 +243,7 @@ impl State {
                 file.draft_content = None;
                 changed = true;
             }
-            if attention && !entry.2 && now - entry.1 >= DRAFT_DEBOUNCE {
+            if attention && (forced || (!entry.2 && now - entry.1 >= DRAFT_DEBOUNCE)) {
                 entry.2 = true;
                 let draft = doc.draft();
                 let content = draft.as_ref().map(|d| d.content.clone());
