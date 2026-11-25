@@ -7,6 +7,7 @@ use parking_lot::Mutex;
 use tokio::sync::watch;
 
 use super::report::parse_usage_reply;
+use super::CheckRun;
 use crate::acp::antigravity_accounts::usage::{AntigravityAccountUsage, AntigravityUsageStatus};
 use crate::acp::antigravity_agent::ANTIGRAVITY_ACP_CONFIG_ID;
 use crate::acp::config::{AgentConfig, AgentId};
@@ -49,14 +50,15 @@ async fn run_check(
     account_id: String,
     config: AgentConfig,
     scratch: PathBuf,
-) -> AntigravityAccountUsage {
+) -> CheckRun {
     let began = Instant::now();
     log::info!("[antigravity-usage] check started");
+    let mut session_tier = None;
     let outcome = match signed_in(&acp, &account_id).await {
         Some(true) => {
             match tokio::time::timeout(
                 CHECK_BUDGET,
-                run_usage_command(&acp, &account_id, config, scratch),
+                run_usage_command(&acp, &account_id, config, scratch, &mut session_tier),
             )
             .await
             {
@@ -82,7 +84,10 @@ async fn run_check(
         usage.windows.len(),
         began.elapsed().as_millis()
     );
-    usage
+    CheckRun {
+        usage,
+        session_tier,
+    }
 }
 
 async fn signed_in(acp: &AcpManager, account_id: &str) -> Option<bool> {
@@ -144,6 +149,7 @@ async fn run_usage_command(
     account_id: &str,
     config: AgentConfig,
     scratch: PathBuf,
+    session_tier: &mut Option<Option<String>>,
 ) -> Result<String, Failure> {
     std::fs::create_dir_all(&scratch).map_err(|error| {
         Failure::Failed(format!(
@@ -184,10 +190,8 @@ async fn run_usage_command(
         )
         .await
         .map_err(Failure::from_error)?;
-    acp.antigravity_agent()
-        .usage_book()
-        .record_tier(account_id, created.antigravity_tier.clone());
-    if !reader.offers(USAGE_COMMAND, COMMANDS_WAIT).await {
+    *session_tier = Some(created.antigravity_tier.clone());
+    if !reader.offers_usage(COMMANDS_WAIT).await {
         log::info!("[antigravity-usage] the agent did not advertise /usage");
         return Err(Failure::NoUsageCommand);
     }
@@ -226,7 +230,9 @@ impl Drop for AgentGuard {
 }
 
 struct UsageReader {
-    commands: watch::Sender<Vec<String>>,
+    /// Latched: set by the first commands update that lists `usage`, and
+    /// never cleared by a later one.
+    usage_listed: watch::Sender<bool>,
     reply: Mutex<Reply>,
 }
 
@@ -241,18 +247,18 @@ struct Reply {
 impl Default for UsageReader {
     fn default() -> Self {
         Self {
-            commands: watch::Sender::new(Vec::new()),
+            usage_listed: watch::Sender::new(false),
             reply: Mutex::new(Reply::default()),
         }
     }
 }
 
 impl UsageReader {
-    /// Whether an `available_commands_update` within `wait` lists `command`.
+    /// Whether an `available_commands_update` within `wait` lists `usage`.
     /// The agent can send several updates; any of them counts.
-    async fn offers(&self, command: &str, wait: Duration) -> bool {
-        let mut commands = self.commands.subscribe();
-        let listed = commands.wait_for(|names| names.iter().any(|name| name == command));
+    async fn offers_usage(&self, wait: Duration) -> bool {
+        let mut receiver = self.usage_listed.subscribe();
+        let listed = receiver.wait_for(|listed| *listed);
         let answer = tokio::time::timeout(wait, listed).await;
         matches!(answer, Ok(Ok(_)))
     }
@@ -267,13 +273,14 @@ impl EventSink for UsageReader {
         let payload = &event.payload;
         match event.type_ {
             events::EVENT_COMMANDS_UPDATE => {
-                let names = payload["availableCommands"]
+                let lists_usage = payload["availableCommands"]
                     .as_array()
                     .into_iter()
                     .flatten()
-                    .filter_map(|command| command["name"].as_str().map(str::to_string))
-                    .collect();
-                self.commands.send_replace(names);
+                    .any(|command| command["name"] == USAGE_COMMAND);
+                if lists_usage {
+                    self.usage_listed.send_replace(true);
+                }
             }
             events::EVENT_MESSAGE_CHUNK
                 if payload["role"] == "agent"

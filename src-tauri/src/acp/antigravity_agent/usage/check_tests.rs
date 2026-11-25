@@ -3,7 +3,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::{run_usage_command, Failure, UsageReader, MAX_REPLY_BYTES};
-use crate::acp::antigravity_accounts::usage::AntigravityUsageStatus;
 use crate::acp::config::AgentConfig;
 use crate::acp::events;
 use crate::acp::manager::real_loop_tests::{find_python, SKIP_ENV, TIMEOUT_TEST_LOCK};
@@ -19,6 +18,37 @@ fn agent_chunk(text: &str) -> AcpEvent {
             "content": { "type": "text", "text": text }
         }),
     }
+}
+
+fn commands_update(names: &[&str]) -> AcpEvent {
+    let commands: Vec<_> = names
+        .iter()
+        .map(|name| serde_json::json!({ "name": name, "description": "" }))
+        .collect();
+    AcpEvent {
+        sid: Some("s1".to_string()),
+        type_: events::EVENT_COMMANDS_UPDATE,
+        payload: serde_json::json!({ "availableCommands": commands }),
+    }
+}
+
+#[tokio::test]
+async fn usage_stays_offered_after_a_later_update_leaves_it_out() {
+    let reader = UsageReader::default();
+
+    reader.emit(&commands_update(&["usage"]));
+    reader.emit(&commands_update(&["logout"]));
+
+    assert!(reader.offers_usage(Duration::from_millis(50)).await);
+}
+
+#[tokio::test]
+async fn usage_is_not_offered_when_no_update_lists_it() {
+    let reader = UsageReader::default();
+
+    reader.emit(&commands_update(&["logout"]));
+
+    assert!(!reader.offers_usage(Duration::from_millis(50)).await);
 }
 
 #[test]
@@ -162,14 +192,18 @@ impl Mock {
         std::fs::read_to_string(self.prompts_file()).unwrap_or_default()
     }
 
-    async fn run(&self, usage: Offer) -> Result<String, Failure> {
-        run_usage_command(
+    /// The reply, and the tier the session named, if a session started.
+    async fn run(&self, usage: Offer) -> (Result<String, Failure>, Option<Option<String>>) {
+        let mut session_tier = None;
+        let reply = run_usage_command(
             &self.acp,
             "work",
             self.config(usage),
             self.dir.path().join("scratch"),
+            &mut session_tier,
         )
-        .await
+        .await;
+        (reply, session_tier)
     }
 
     fn no_agent_left(&self) -> bool {
@@ -190,18 +224,20 @@ async fn the_check_sends_usage_returns_the_agent_text_and_stops_the_agent() {
         return;
     };
 
-    let reply = mock
-        .run(Offer::First)
-        .await
-        .expect("the check reads the reply");
+    let (reply, session_tier) = mock.run(Offer::First).await;
 
-    assert_eq!(reply, REPLY);
+    assert_eq!(reply.expect("the check reads the reply"), REPLY);
+    assert_eq!(session_tier, Some(Some("Google AI Pro".to_string())));
     assert_eq!(mock.prompts(), "/usage\n");
     assert!(mock.dir.path().join("scratch").is_dir());
     assert!(mock.no_agent_left());
-    let read = mock.acp.antigravity_agent().usage_book().read("work");
-    assert_eq!(read.plan_type.as_deref(), Some("Google AI Pro"));
-    assert_eq!(read.status, AntigravityUsageStatus::NotChecked);
+    assert!(!mock
+        .acp
+        .antigravity_agent()
+        .usage_book()
+        .entries
+        .lock()
+        .contains_key("work"));
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -210,7 +246,11 @@ async fn an_agent_without_usage_is_never_prompted_and_is_stopped() {
         return;
     };
 
-    let failure = mock.run(Offer::Never).await.expect_err("no /usage command");
+    let failure = mock
+        .run(Offer::Never)
+        .await
+        .0
+        .expect_err("no /usage command");
 
     assert!(matches!(failure, Failure::NoUsageCommand), "{failure:?}");
     assert_eq!(mock.prompts(), "");
@@ -223,12 +263,9 @@ async fn usage_listed_in_a_later_commands_update_still_counts() {
         return;
     };
 
-    let reply = mock
-        .run(Offer::SecondUpdate)
-        .await
-        .expect("the check reads the reply");
+    let reply = mock.run(Offer::SecondUpdate).await.0;
 
-    assert_eq!(reply, REPLY);
+    assert_eq!(reply.expect("the check reads the reply"), REPLY);
     assert_eq!(mock.prompts(), "/usage\n");
     assert!(mock.no_agent_left());
 }

@@ -18,6 +18,13 @@ pub use check::check_antigravity_usage;
 
 type RunningCheck = Shared<BoxFuture<'static, AntigravityAccountUsage>>;
 
+/// What one check produced. `session_tier` is set once the agent answered
+/// `session/new`, to the tier that reply named; `Some(None)` clears the tier.
+struct CheckRun {
+    usage: AntigravityAccountUsage,
+    session_tier: Option<Option<String>>,
+}
+
 #[derive(Default)]
 struct Entry {
     tier: Option<String>,
@@ -88,7 +95,7 @@ impl UsageBook {
 
     fn join_or_start<F>(self: &Arc<Self>, account_id: &str, run: F) -> RunningCheck
     where
-        F: Future<Output = AntigravityAccountUsage> + Send + 'static,
+        F: Future<Output = CheckRun> + Send + 'static,
     {
         let mut entries = self.entries.lock();
         let entry = entries.entry(account_id.to_string()).or_default();
@@ -100,15 +107,17 @@ impl UsageBook {
         let book = Arc::clone(self);
         let id = account_id.to_string();
         let task = tokio::spawn(async move {
-            let usage = AssertUnwindSafe(run)
+            let run = AssertUnwindSafe(run)
                 .catch_unwind()
                 .await
                 .unwrap_or_else(|_| {
                     log::error!("[antigravity-usage] the check panicked");
-                    stopped(&id)
+                    CheckRun {
+                        usage: stopped(&id),
+                        session_tier: None,
+                    }
                 });
-            book.finish(&id, number, &usage);
-            usage
+            book.finish(&id, number, run)
         });
         let book = Arc::downgrade(self);
         let id = account_id.to_string();
@@ -122,18 +131,30 @@ impl UsageBook {
         running
     }
 
-    /// Keep `usage` as the last check, unless the Account was forgotten or a
-    /// newer check took its place while this one ran.
-    fn finish(&self, account_id: &str, number: u64, usage: &AntigravityAccountUsage) {
+    /// Keep the run's tier and usage, unless the Account was forgotten or a
+    /// newer check took its place while this one ran. Answers the usage with
+    /// the tier, as `read` does.
+    fn finish(&self, account_id: &str, number: u64, run: CheckRun) -> AntigravityAccountUsage {
+        let CheckRun {
+            mut usage,
+            session_tier,
+        } = run;
         let mut entries = self.entries.lock();
-        let Some(entry) = entries.get_mut(account_id) else {
-            return;
-        };
-        if entry.running.as_ref().map(|(running, _)| *running) != Some(number) {
-            return;
+        let current = entries
+            .get_mut(account_id)
+            .filter(|entry| entry.running.as_ref().map(|(running, _)| *running) == Some(number));
+        match current {
+            Some(entry) => {
+                entry.running = None;
+                if let Some(tier) = session_tier {
+                    entry.tier = tier;
+                }
+                entry.last = Some(usage.clone());
+                usage.plan_type = entry.tier.clone();
+            }
+            None => usage.plan_type = session_tier.flatten(),
         }
-        entry.running = None;
-        entry.last = Some(usage.clone());
+        usage
     }
 }
 
@@ -151,11 +172,14 @@ fn finish_stopped(
     account_id: &str,
     number: u64,
 ) -> AntigravityAccountUsage {
-    let usage = stopped(account_id);
-    if let Some(book) = book.upgrade() {
-        book.finish(account_id, number, &usage);
+    let run = CheckRun {
+        usage: stopped(account_id),
+        session_tier: None,
+    };
+    match book.upgrade() {
+        Some(book) => book.finish(account_id, number, run),
+        None => run.usage,
     }
-    usage
 }
 
 #[must_use]

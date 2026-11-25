@@ -354,6 +354,7 @@ async fn a_usage_check_refuses_other_agents_and_unknown_accounts_before_a_proces
 #[tokio::test]
 async fn a_signed_out_check_is_a_message_on_that_check_without_a_process() {
     let (_root, acp) = manager_with_account(&["ab12"]);
+    record_tier(&acp, "ab12", "Google AI Pro");
 
     let reply = handle_check_antigravity_usage(
         "1".into(),
@@ -369,10 +370,13 @@ async fn a_signed_out_check_is_a_message_on_that_check_without_a_process() {
         "This account is not signed in. Sign in to it, then check again."
     );
     assert_eq!(usage["accountId"], "ab12");
+    assert_eq!(usage["planType"], "Google AI Pro");
     assert!(acp.list_agents().is_empty());
     assert_eq!(acp.antigravity_agent().usage_checks_started(), 1);
     let listed = handle_list_antigravity_usage("2".into(), &acp);
-    assert_eq!(listed.payload.unwrap()["usage"][1]["status"], "error");
+    let listed = listed.payload.unwrap()["usage"][1].clone();
+    assert_eq!(listed["status"], "error");
+    assert_eq!(listed["planType"], "Google AI Pro");
 }
 
 #[tokio::test]
