@@ -10,6 +10,8 @@ serde = { version = "1", features = ["derive"] }
 # Objects keep their key order, as JavaScript's do: an agent's plan entry
 # shows in the snapshot fence as it was sent.
 serde_json = { workspace = true, features = ["preserve_order"] }
+sha2 = "0.10"
+troupe-editor = { path = "../editor" }
 
 [dev-dependencies]
 sha1 = "0.10"

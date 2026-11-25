@@ -17,6 +17,16 @@ pub enum Fetch {
     Skills(String),
     /// `/fs/ls` of a folder the mention menu's Explorer shows, under a project root.
     Listing { dir: String, root: String },
+    /// `/fs/read` of a file an editor tab opened.
+    FileRead(String),
+    /// `/fs/write` of an editor's buffer.
+    FileWrite { path: String, content: String },
+    /// `/fs/read` after a write whose reply was lost: does the file hold `content`?
+    FileReadBack { path: String, content: String },
+    /// `/fs/ls` of a folder the explorer opened.
+    ExplorerList(String),
+    /// An explorer change (`/fs/write`, `/fs/mkdir`, `/fs/rename`, `/fs/delete`).
+    ExplorerOp(model::explorer::Op),
     /// A `gitApi` call of a `model::git` task.
     Git(model::git::TaskId),
     /// A history read (`/git/log`, `/git/commit-detail`, `/git/commit-file-diff`).
