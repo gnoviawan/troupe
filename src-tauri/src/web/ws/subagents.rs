@@ -218,7 +218,8 @@ fn merge_settings(
 /// Store `upsert.profile` in place of the profile its `previous_id` (else
 /// its own id) names, or append it. A `previous_id` must name a stored or
 /// implicit profile. A profile id may not be another agent's key, which
-/// that agent's implicit default uses.
+/// that agent's implicit default uses, nor a case variant of its own
+/// agent's key, which the legacy fields store that agent's default under.
 fn upsert_profile(
     settings: &mut OrchestratorSettings,
     upsert: ProfileUpsertPayload,
@@ -226,7 +227,8 @@ fn upsert_profile(
 ) -> Result<(), String> {
     let profile = upsert.profile;
     if let Some(agent) = launchable.agents().iter().find(|agent| {
-        agent.key != profile.agent_id && agent.key.eq_ignore_ascii_case(&profile.id)
+        agent.key.eq_ignore_ascii_case(&profile.id)
+            && !(agent.key == profile.agent_id && agent.key == profile.id)
     }) {
         return Err(format!(
             "the profile id {} is the id of the agent {}",
@@ -261,7 +263,11 @@ fn default_profile<'a>(
     key: &str,
     launchable: &Launchable,
 ) -> &'a mut SubagentProfile {
-    let index = match settings.profiles.iter().position(|profile| profile.id == key) {
+    let index = match settings
+        .profiles
+        .iter()
+        .position(|profile| profile.id.eq_ignore_ascii_case(key))
+    {
         Some(index) => index,
         None => {
             let implicit = launchable

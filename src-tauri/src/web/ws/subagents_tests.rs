@@ -383,6 +383,17 @@ async fn an_upsert_refuses_a_taken_or_malformed_id() {
     );
 
     let error = set(&engine, json!({ "upsertProfiles": [{ "profile": {
+        "id": "ACP-REGISTRY:CODEX", "agentId": "acp-registry:codex", "enabled": true,
+    } }] }))
+    .unwrap_err();
+    assert_eq!(
+        error,
+        "the profile id ACP-REGISTRY:CODEX is the id of the agent codex"
+    );
+    set(&engine, json!({ "agents": [{ "agentId": "acp-registry:codex", "allowed": false }] }))
+        .expect("the legacy switch still saves the default profile");
+
+    let error = set(&engine, json!({ "upsertProfiles": [{ "profile": {
         "id": "pi fast", "agentId": "acp-registry:codex", "enabled": true,
     } }] }))
     .unwrap_err();
