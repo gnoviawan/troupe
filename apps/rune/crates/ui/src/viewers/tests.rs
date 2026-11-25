@@ -76,3 +76,21 @@ fn durations_read_as_the_web_footer_writes_them() {
     assert_eq!(format_duration(65.0), "1:05");
     assert_eq!(format_duration(3_725.0), "1:02:05");
 }
+
+fn draw(v: &Viewers, _cx: &mut rune::Cx<Viewers>) -> rune::El {
+    let t = theme::tokens("termul", true);
+    let path = v.files.keys().next().cloned().unwrap_or_default();
+    super::view(v, |v| v, |v| v, t, &path).unwrap_or_else(rune::el)
+}
+
+#[test]
+fn the_pdf_view_draws_its_pages_in_a_window() {
+    let mut v = Viewers { images: Some(rune::ImageCache::new(std::sync::Arc::new(|| {}))), ..Viewers::default() };
+    v.open("/p/doc.pdf", MediaKind::Pdf);
+    v.loaded("/p/doc.pdf", Ok(PDF.to_vec()));
+    let mut rt = rune::Runtime::new(v, draw, (1000.0, 800.0), rune::Env::new(true, 1.0));
+    rt.frame(0.0);
+    rt.frame(0.016);
+    assert!(rt.find("pdf-page-1").is_some(), "page 1 shows");
+    assert!(rt.find("pdf-page-10").is_none(), "page 10 is outside the window");
+}

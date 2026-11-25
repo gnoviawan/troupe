@@ -4,7 +4,7 @@
  *
  *   bun tools/parity/lanes/viewers.ts --port 8193 --root /tmp/rune-r8b/viewers \
  *     --server-bin <troupe-server> --dist <dist-web> --png a.png --pdf a.pdf --mp4 a.mp4 \
- *     [--only react|rune]
+ *     [--raw-shim] [--only react|rune]
  */
 
 import { copyFileSync } from 'node:fs'
@@ -27,6 +27,7 @@ const { values } = parseArgs({
     png: { type: 'string' },
     pdf: { type: 'string' },
     mp4: { type: 'string' },
+    'raw-shim': { type: 'boolean', default: false },
     only: { type: 'string' }
   }
 })
@@ -45,18 +46,35 @@ interface Result {
   framesDiffer: boolean
 }
 
+/**
+ * `--raw-shim`: answer `GET /fs/raw` from disk in the page, because the test server's route
+ * panics (`futures::stream::unfold` polled after its end; see reports/R8b.md). Both clients
+ * then read the same bytes the route would send.
+ */
+async function shimRaw(client: Client, ready: string): Promise<void> {
+  if (!values['raw-shim']) return
+  await client.page.route('**/fs/raw?**', async (route) => {
+    const file = new URL(route.request().url()).searchParams.get('path') ?? ''
+    await route.fulfill({ path: file, headers: { 'cache-control': 'no-store' } })
+  })
+  await client.page.reload()
+  await client.sees(ready, 60_000)
+}
+
 /** The visible text, for the facts line and the page counter. */
 async function bodyText(client: Client): Promise<string> {
   return client.page.evaluate(() => document.body.innerText.replace(/\s+/g, ' '))
 }
 
 async function image(client: Client): Promise<string> {
+  await shimRaw(client, 'shot.png')
   await client.sees('Fit', 30_000)
   await shot(client, options.root, '1-image')
   return /\d+ × \d+ · [\d.]+ [KM]?B/.exec(await bodyText(client))?.[0] ?? ''
 }
 
 async function pdf(client: Client): Promise<string> {
+  await shimRaw(client, 'ten-pages.pdf')
   await client.sees('1 / 10', 30_000)
   await client.page.waitForTimeout(1500)
   await shot(client, options.root, '2-pdf')
@@ -72,6 +90,7 @@ async function pdf(client: Client): Promise<string> {
 }
 
 async function video(client: Client): Promise<{ facts: string; differ: boolean }> {
+  await shimRaw(client, 'clip.mp4')
   await client.page.waitForTimeout(2000)
   if (client.name === 'react') {
     await client.page.evaluate(() => document.querySelector('video')?.play())
@@ -113,6 +132,11 @@ try {
     const img = await inClient(browser, world, options, image)
     await seedEditorTab(world, device, files.pdf)
     const page = await inClient(browser, world, options, pdf)
+    if (which === 'rune')
+      copyFileSync(
+        path.join(options.root, 'rune-console.log'),
+        path.join(options.root, 'rune-console-pdf.log')
+      )
     await seedEditorTab(world, device, files.mp4)
     const vid = await inClient(browser, world, options, video)
     results.push({

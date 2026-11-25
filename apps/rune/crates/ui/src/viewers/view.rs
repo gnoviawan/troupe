@@ -158,6 +158,7 @@ fn pdf_view<S: 'static>(get: Get<S>, lens: Lens<S>, t: &'static Tokens, path: &s
         .key(format!("pdf-pages-{path}"))
         .w_full()
         .py(16.0)
+        .growth(rune::GrowthSpec::default())
         .virtual_rows_version((scale * 1000.0) as u32)
         .virtual_rows(
             doc.pages(),
@@ -204,7 +205,12 @@ fn video_view<S: 'static>(t: &'static Tokens, lens: Lens<S>, path: &str, player:
     let meta = player.meta();
     let toggled = path.to_owned();
     let playing = player.playing();
-    let picture = player.show(el().key("viewer-video").grow(1.0).w_full().min_h(0.0));
+    let mut frame = el().key("viewer-video").grow(1.0).w_full().min_h(0.0);
+    if meta.width > 0 {
+        // `max-h-full max-w-full`: a clip draws no larger than its own size.
+        frame = frame.max_w(meta.width as f32).max_h(meta.height as f32);
+    }
+    let picture = player.show(frame);
     let play = crate::Button::new(if playing { "Pause" } else { "Play" })
         .variant(crate::ButtonVariant::Ghost)
         .size(crate::ButtonSize::Xs)
