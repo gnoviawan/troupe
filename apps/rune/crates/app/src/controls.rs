@@ -196,44 +196,23 @@ impl ChatModels {
 impl State {
     /// The models a chat's agent offers, when it offers a choice.
     pub(crate) fn chat_models(&self, session_id: &str) -> Option<ChatModels> {
-        let rest = &self.chat.acp.sessions.get(session_id)?.rest;
-        let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
-        let option = rest
-            .get("configOptions")
-            .and_then(Value::as_array)
-            .and_then(|options| options.iter().find(|o| text(o, "category").as_deref() == Some("model")));
-        let models = match option {
-            Some(option) => ChatModels {
-                current: text(option, "currentValue"),
-                choices: option
-                    .get("options")
-                    .and_then(Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(|o| Some((text(o, "value")?, text(o, "name").unwrap_or_default())))
-                    .collect(),
-            },
-            None => {
-                let models = rest.get("models").filter(|m| !m.is_null())?;
-                ChatModels {
-                    current: text(models, "currentModelId"),
-                    choices: models
-                        .get("availableModels")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .filter_map(|m| Some((text(m, "modelId")?, text(m, "name").unwrap_or_default())))
-                        .collect(),
-                }
-            }
-        };
-        (!models.choices.is_empty()).then_some(models)
+        models_of(&self.chat.acp.sessions.get(session_id)?.rest)
     }
 
     /// A chat's modes for the mode chip.
     pub(crate) fn mode_view(&self, host: &Host) -> Option<ModeView> {
         let Host::Chat(id) = host else { return None };
-        let modes = self.chat.acp.sessions.get(id)?.rest.get("modes").filter(|m| !m.is_null())?;
+        let own = self.chat.acp.sessions.get(id)?;
+        let not_null = |s: &model::acp::types::Session| s.rest.get("modes").filter(|m| !m.is_null()).cloned();
+        // An armed switch shows its target's modes, current at the pick it holds
+        // (`armedOptions ? armedOptions.modes : session.modes`).
+        let armed = self.chat.acp.switch_target_session(id).and_then(not_null).map(|mut modes| {
+            if let Some(pick) = own.rest.get("switching").and_then(|sw| sw.pointer("/pendingOptions/modeId")).filter(|m| m.is_string()) {
+                modes["currentModeId"] = pick.clone();
+            }
+            modes
+        });
+        let modes = &armed.or_else(|| not_null(own))?;
         let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
         let rows: Vec<ModeRow> = modes
             .get("availableModes")
@@ -270,11 +249,54 @@ impl State {
             ControlAct::Usage(open) => self.draft_mut(host).usage_open = open,
             ControlAct::Mode(mode_id) => {
                 self.draft_mut(host).mode_open = false;
-                if let Host::Chat(session) = host {
-                    log::info!("[composer] chat {session} mode: {mode_id}");
-                    self.acp_step(Event::SetMode(session.clone(), mode_id));
+                let Host::Chat(session) = host else { return };
+                // An armed switch takes the pick for its target (`handleSetMode`).
+                if self.armed_config(session).is_some() {
+                    log::info!("[composer] chat {session} picks mode {mode_id} for its switch");
+                    match serde_json::from_value(serde_json::json!({ "modeId": mode_id })) {
+                        Ok(picks) => self.acp_step(Event::SetSwitchPendingOption(session.clone(), picks)),
+                        Err(e) => log::warn!("[composer] unreadable switch pick: {e}"),
+                    }
+                    return;
                 }
+                log::info!("[composer] chat {session} mode: {mode_id}");
+                self.acp_step(Event::SetMode(session.clone(), mode_id));
             }
         }
     }
+}
+
+/// The models a session's options offer, when they offer a choice.
+pub(crate) fn models_of(rest: &model::acp::types::Object) -> Option<ChatModels> {
+    let text = |v: &Value, k: &str| v.get(k).and_then(Value::as_str).map(str::to_owned);
+    let option = rest
+        .get("configOptions")
+        .and_then(Value::as_array)
+        .and_then(|options| options.iter().find(|o| text(o, "category").as_deref() == Some("model")));
+    let models = match option {
+        Some(option) => ChatModels {
+            current: text(option, "currentValue"),
+            choices: option
+                .get("options")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|o| Some((text(o, "value")?, text(o, "name").unwrap_or_default())))
+                .collect(),
+        },
+        None => {
+            let models = rest.get("models").filter(|m| !m.is_null())?;
+            ChatModels {
+                current: text(models, "currentModelId"),
+                choices: models
+                    .get("availableModels")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|m| Some((text(m, "modelId")?, text(m, "name").unwrap_or_default())))
+                    .collect(),
+            }
+        }
+    };
+    (!models.choices.is_empty()).then_some(models)
 }

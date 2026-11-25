@@ -53,6 +53,8 @@ pub struct Draft {
     pub usage_open: bool,
     /// The queue panel was folded or unfolded from where it starts (open on desktop).
     pub queue_toggled: bool,
+    /// The agent a busy chat's menu holds until Wait or Cancel turn and switch.
+    pub switch_confirm: Option<String>,
 }
 
 impl Default for Draft {
@@ -69,6 +71,7 @@ impl Default for Draft {
             mode_open: false,
             usage_open: false,
             queue_toggled: false,
+            switch_confirm: None,
         }
     }
 }
@@ -561,7 +564,7 @@ impl State {
             Rc::new(move |s: &mut State, tx: &mut Tx| f(s, &host, tx)) as Rc<dyn Fn(&mut State, &mut Tx)>
         };
         let (agent_host, pick_agent_host, sheet_host, queue_host) = (host.clone(), host.clone(), host.clone(), host.clone());
-        let control_host = host.clone();
+        let (control_host, switch_host) = (host.clone(), host.clone());
         let (edit_host, key_host, paste_host, pick_host, hover_host, menu_host, add_host, rm_host) = (
             host.clone(),
             host.clone(),
@@ -597,13 +600,11 @@ impl State {
             }),
             add: Rc::new(move |s: &mut State, what: &str, tx: &mut Tx| s.composer_add(&add_host, what, tx)),
             add_sheet: Rc::new(move |s: &mut State, _: &mut Tx| s.open_add_sheet(&sheet_host)),
-            agent: Rc::new(move |s: &mut State, open: bool| match &agent_host {
-                Host::Chat(id) if open && s.chat_models(id).is_none() => s.toast_later("Switching agents in a chat"),
-                _ => s.draft_mut(&agent_host).agent_open = open,
-            }),
+            agent: Rc::new(move |s: &mut State, open: bool| s.composer_agent_menu(&agent_host, open)),
             control: Rc::new(move |s: &mut State, act| s.composer_control(&control_host, act)),
             queue: Rc::new(move |s: &mut State, act: QueueAct, tx: &mut Tx| s.composer_queue(&queue_host, act, tx)),
             pick_agent: Rc::new(move |s: &mut State, id: &str, tx: &mut Tx| s.composer_pick_agent(&pick_agent_host, id, tx)),
+            switch: Rc::new(move |s: &mut State, act, tx: &mut Tx| s.composer_switch(&switch_host, act, tx)),
             remove_attachment: Rc::new(move |s: &mut State, n: usize| {
                 if s.composer_locked(&rm_host) {
                     return;

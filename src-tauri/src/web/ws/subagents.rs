@@ -2,6 +2,9 @@
 //! view `subagent_settings_get` / `subagent_settings_set`.
 
 use super::*;
+use crate::acp::orchestrator::{
+    Launchable, OrchestratorEngine, OrchestratorSettings, ResolvedProfile, SubagentProfile,
+};
 use crate::acp::subagents::StopSubagentError;
 
 /// `stop_subagent` → `AcpManager::stop_subagent(agent_id, root, subagent)`.
@@ -48,29 +51,33 @@ pub(super) async fn handle_stop_subagent(
     }
 }
 
-/// The orchestrator's settings view: the gates plus every launchable agent
-/// with its allow switch, default model and description.
-fn settings_view(engine: &crate::acp::orchestrator::OrchestratorEngine) -> Value {
+/// The orchestrator's settings view: the gates and every profile, stored
+/// then implicit.
+///
+/// `agents` is always empty: a 0.5.x client, from before profiles, reads
+/// `view.agents.length` and crashes without it. Remove it in 0.7.0, one
+/// stable release after the profiles page shipped.
+fn settings_view(engine: &OrchestratorEngine) -> Value {
+    let launchable = engine.launchable();
     let settings = engine.settings_view();
-    let agents: Vec<Value> = engine
-        .list_agents()
-        .into_iter()
-        .map(|agent| {
-            json!({
-                "agentId": agent.agent_id,
-                "name": agent.name,
-                "allowed": agent.allowed,
-                "model": agent.default_model,
-                "description": agent.description,
-            })
-        })
-        .collect();
+    let profiles = launchable.resolve(&settings);
     json!({
         "enabled": settings.enabled,
         "maxRunning": settings.max_running,
         "maxDepth": settings.max_depth,
-        "agents": agents,
+        "agents": [],
+        "profiles": profiles.iter().map(profile_view).collect::<Vec<_>>(),
     })
+}
+
+/// `{id, agentId, agentName, enabled, model, mode, configOptions,
+/// approvals, description, implicit}`; `agentName` is null for a profile
+/// whose agent is not installed.
+fn profile_view(resolved: &ResolvedProfile) -> Value {
+    let mut view = json!(resolved.profile);
+    view["agentName"] = json!(resolved.agent_name);
+    view["implicit"] = json!(resolved.implicit);
+    view
 }
 
 fn no_engine(id: String) -> WsReply {
@@ -89,33 +96,19 @@ pub(super) fn handle_subagent_settings_get(id: String) -> WsReply {
     WsReply::ok(id, Some(settings_view(&engine)))
 }
 
-/// One allow switch of a `subagent_settings_set` call.
+/// One profile of a `subagent_settings_set` call. `previous_id` renames:
+/// it names the stored or implicit profile `profile` replaces.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentAllowPayload {
-    agent_id: String,
-    allowed: bool,
+pub(super) struct ProfileUpsertPayload {
+    #[serde(default)]
+    previous_id: Option<String>,
+    profile: SubagentProfile,
 }
 
-/// One default model of a `subagent_settings_set` call; `null` clears it.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentModelPayload {
-    agent_id: String,
-    model: Option<String>,
-}
-
-/// One description of a `subagent_settings_set` call; `null` or a blank
-/// string clears it.
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct AgentDescriptionPayload {
-    agent_id: String,
-    description: Option<String>,
-}
-
-/// `subagent_settings_set`: a partial of the view; an omitted field keeps
-/// its value.
+/// `subagent_settings_set`: the gates to change, then the profiles to
+/// delete and to upsert, applied in that order; an omitted field keeps its
+/// value.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct SubagentSettingsPayload {
@@ -126,18 +119,18 @@ pub(super) struct SubagentSettingsPayload {
     #[serde(default)]
     max_depth: Option<u8>,
     #[serde(default)]
-    agents: Option<Vec<AgentAllowPayload>>,
+    upsert_profiles: Option<Vec<ProfileUpsertPayload>>,
     #[serde(default)]
-    models: Option<Vec<AgentModelPayload>>,
-    #[serde(default)]
-    descriptions: Option<Vec<AgentDescriptionPayload>>,
+    delete_profiles: Option<Vec<String>>,
 }
 
-/// Apply the payload's fields over `settings`.
+/// Apply the payload's fields over `settings`. Profile ids are trimmed and
+/// agent ids canonical already ([`apply_settings_patch`]).
 fn merge_settings(
-    settings: &mut crate::acp::orchestrator::OrchestratorSettings,
+    settings: &mut OrchestratorSettings,
     patch: SubagentSettingsPayload,
-) {
+    launchable: &Launchable,
+) -> Result<(), String> {
     if let Some(enabled) = patch.enabled {
         settings.enabled = enabled;
     }
@@ -147,45 +140,73 @@ fn merge_settings(
     if let Some(max_depth) = patch.max_depth {
         settings.max_depth = max_depth;
     }
-    for agent in patch.agents.unwrap_or_default() {
-        settings
-            .agents
-            .insert(agent.agent_id.trim().to_string(), agent.allowed);
+    for id in patch.delete_profiles.unwrap_or_default() {
+        settings.profiles.retain(|profile| profile.id != id.trim());
     }
-    for agent in patch.models.unwrap_or_default() {
-        let key = agent.agent_id.trim().to_string();
-        match agent.model {
-            Some(model) => settings.models.insert(key, model),
-            None => settings.models.remove(&key),
-        };
+    for upsert in patch.upsert_profiles.unwrap_or_default() {
+        upsert_profile(settings, upsert, launchable)?;
     }
-    for agent in patch.descriptions.unwrap_or_default() {
-        let key = agent.agent_id.trim().to_string();
-        match agent.description.as_deref().map(str::trim) {
-            Some(description) if !description.is_empty() => {
-                settings.descriptions.insert(key, description.to_string())
-            }
-            _ => settings.descriptions.remove(&key),
-        };
-    }
+    Ok(())
 }
 
-/// Merge `patch` into the settings, each agent under the key the listing
-/// and `subagent_start` use, so a bare installed id is not saved unread.
+/// Store `upsert.profile` in place of the profile its `previous_id` (else
+/// its own id) names, or append it. A `previous_id` must name a stored or
+/// implicit profile. A profile id may not be another agent's key, ignoring
+/// ASCII case: that agent's implicit default uses the key, and
+/// [`Launchable::resolve`] drops the default once a stored id takes it. A
+/// case variant of its own agent's key is fine, since a stored profile of
+/// that agent drops the default anyway.
+fn upsert_profile(
+    settings: &mut OrchestratorSettings,
+    upsert: ProfileUpsertPayload,
+    launchable: &Launchable,
+) -> Result<(), String> {
+    let profile = upsert.profile;
+    if let Some(agent) = launchable
+        .agents()
+        .iter()
+        .find(|agent| agent.key.eq_ignore_ascii_case(&profile.id) && agent.key != profile.agent_id)
+    {
+        return Err(format!(
+            "the profile id {} is the id of the agent {}",
+            profile.id, agent.name
+        ));
+    }
+    let target = match upsert.previous_id.as_deref().map(str::trim) {
+        Some(previous) => {
+            let stored = settings.profiles.iter().position(|p| p.id == previous);
+            let implicit = launchable
+                .resolve(settings)
+                .iter()
+                .any(|resolved| resolved.implicit && resolved.profile.id == previous);
+            if stored.is_none() && !implicit {
+                return Err(format!("no sub-agent profile is named {previous}"));
+            }
+            stored
+        }
+        None => settings.profiles.iter().position(|p| p.id == profile.id),
+    };
+    match target {
+        Some(index) => settings.profiles[index] = profile,
+        None => settings.profiles.push(profile),
+    }
+    Ok(())
+}
+
+/// Merge `patch` into the settings, each profile's agent under the key the
+/// listing and `subagent_start` use, so a bare installed id is not saved
+/// unread.
 fn apply_settings_patch(
-    engine: &crate::acp::orchestrator::OrchestratorEngine,
+    engine: &OrchestratorEngine,
     mut patch: SubagentSettingsPayload,
-) -> Result<crate::acp::orchestrator::OrchestratorSettings, String> {
-    for agent in patch.agents.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
+) -> Result<OrchestratorSettings, String> {
+    for upsert in patch.upsert_profiles.iter_mut().flatten() {
+        let profile = &mut upsert.profile;
+        profile.id = profile.id.trim().to_string();
+        profile.agent_id = engine.canonical_agent(profile.agent_id.trim());
     }
-    for agent in patch.models.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
-    }
-    for agent in patch.descriptions.iter_mut().flatten() {
-        agent.agent_id = engine.canonical_agent(agent.agent_id.trim());
-    }
-    engine.update_settings(|settings| merge_settings(settings, patch))
+    let launchable = engine.launchable();
+    engine.try_update_settings(|settings| merge_settings(settings, patch, &launchable))
 }
 
 /// `subagent_settings_set` → merge into the current settings, persist, and
@@ -206,7 +227,10 @@ pub(super) fn handle_subagent_settings_set(id: String, payload: &Value) -> WsRep
     };
     match apply_settings_patch(&engine, parsed) {
         Ok(_) => WsReply::ok(id, Some(settings_view(&engine))),
-        Err(error) => WsReply::err_with_code(id, "VALIDATION_ERROR", error),
+        Err(error) => {
+            info!("[orchestrator] sub-agent settings change refused: {error}");
+            WsReply::err_with_code(id, "VALIDATION_ERROR", error)
+        }
     }
 }
 

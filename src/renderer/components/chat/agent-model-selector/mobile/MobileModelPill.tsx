@@ -11,13 +11,26 @@ interface MobileModelPillProps extends React.ButtonHTMLAttributes<HTMLButtonElem
   label: string
   effort?: string
   modeId?: string
+  /** An icon after the mode, such as the sub-agent profile's shield. */
+  marker?: React.ReactNode
   armed: boolean
   pending: boolean
 }
 
 export const MobileModelPill = forwardRef<HTMLButtonElement, MobileModelPillProps>(
   function MobileModelPill(
-    { agentTemplateId, agentIcon, label, effort, modeId, armed, pending, className, ...props },
+    {
+      agentTemplateId,
+      agentIcon,
+      label,
+      effort,
+      modeId,
+      marker,
+      armed,
+      pending,
+      className,
+      ...props
+    },
     ref
   ) {
     return (
@@ -38,6 +51,7 @@ export const MobileModelPill = forwardRef<HTMLButtonElement, MobileModelPillProp
         <span className="min-w-0 truncate">{label}</span>
         {!armed && effort ? <span className="shrink-0 text-muted-foreground">{effort}</span> : null}
         {modeId ? <ModeIcon modeId={modeId} size={14} /> : null}
+        {marker}
         {pending ? (
           <Spinner size={12} decorative className="shrink-0" />
         ) : (

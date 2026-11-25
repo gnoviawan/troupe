@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useId, useRef, useState } from 'react'
 import { AgentGlyph } from '@/components/chat/AgentGlyph'
 import { ComposerPill } from '@/components/chat/ComposerPill'
 import {
@@ -86,6 +86,10 @@ interface AgentModelSelectorProps {
    */
   onCloseAutoFocus?: (event: Event) => void
   phone?: PhoneSelectorControls
+  /** Sub-agent profiles: an icon after the model name, inside the pill. */
+  marker?: ReactNode
+  /** Sub-agent profiles: told on every open and close, to load the agent's models. */
+  onOpenChange?: (open: boolean) => void
   /**
    * Design canvas only: always show the v2 panel, with these v2-only props
    * (agent rail, favorites). The app leaves it unset and follows the flag.
@@ -144,6 +148,8 @@ export function AgentModelSelector({
   onSetModel,
   onCloseAutoFocus,
   phone,
+  marker,
+  onOpenChange,
   v2PanelProps
 }: AgentModelSelectorProps): React.JSX.Element | null {
   const isMobile = useMobileWebShell()
@@ -228,11 +234,15 @@ export function AgentModelSelector({
       visibleUsage
   )
 
-  const handleOpenChange = useCallback((next: boolean) => {
-    if (next) setGeneration((n) => n + 1)
-    setOpen(next)
-  }, [])
-  const close = useCallback(() => setOpen(false), [])
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) setGeneration((n) => n + 1)
+      setOpen(next)
+      onOpenChange?.(next)
+    },
+    [onOpenChange]
+  )
+  const close = useCallback(() => handleOpenChange(false), [handleOpenChange])
   // The mobile sheet is an overlay like any other: system back closes it (and
   // its own X / scrim / Esc close consumes the history sentinel). The desktop
   // popover is inert here.
@@ -311,6 +321,7 @@ export function AgentModelSelector({
       />
       <span className={cn('truncate', armed && 'text-foreground')}>{pillText}</span>
       {!armed && modelName && effortName ? <span className="shrink-0">{effortName}</span> : null}
+      {marker}
     </ComposerPill>
   )
 
@@ -357,6 +368,7 @@ export function AgentModelSelector({
               label={pillText}
               effort={modelName ? effortName : undefined}
               modeId={nonDefaultMode?.id}
+              marker={marker}
               armed={armed}
               pending={pending || Boolean(modelStatus?.loading)}
               aria-label={phoneAria || 'Model and effort'}

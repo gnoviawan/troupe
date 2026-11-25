@@ -67,8 +67,8 @@ pub(crate) enum Pending {
         record: Option<Value>,
     },
     WriteWorkspace(String),
-    /// A chat's history (`get_session_payload`).
-    ChatPayload(String),
+    /// A session payload the model's history read asked for (`get_session_payload`).
+    Payload(Box<model::acp::Effect>),
     /// The agent configs (`acp/agents`).
     ReadAgents,
     /// The launcher's last agent (`agents/last-selected`).
@@ -87,10 +87,16 @@ pub(crate) enum Pending {
     StopSubagent(String),
     /// A browser consent answer, with the ticket to restore if the host refuses it.
     BrowserConsent(Box<Value>),
+    /// An agent, session or switch command the model sent; its reply goes back to the model.
+    Agent(Box<model::acp::Effect>),
     /// The launcher's `spawn_agent`.
     LaunchSpawn,
     /// Then its `create_session`, on that agent.
     LaunchSession(String),
+    /// A project's saved commands, for the command history modal.
+    ReadHistory(String),
+    /// The empty list the history's Clear wrote for a project.
+    ClearHistory(String),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -409,8 +415,11 @@ impl State {
             Pending::Control(effect) => self.control_settled(*effect, result),
             Pending::ComposerOptions(effect) => self.composer_options_read(*effect, result),
             Pending::SavedPicks(config_id) => self.saved_picks_read(config_id, result),
+            Pending::Agent(effect) => self.agent_command_settled(*effect, result),
             Pending::LaunchSpawn => self.launch_spawned(result),
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
+            Pending::ReadHistory(project) => self.history_read(project, result),
+            Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::ListChats => {
                 match result.map(|r| r.map(serde_json::from_value::<Vec<Chat>>)) {
                     Ok(Some(Ok(list))) => self.chats.replace(list),
@@ -483,7 +492,7 @@ impl State {
                     self.toast_error("Failed to create the project", &e.message);
                 }
             },
-            Pending::ChatPayload(session_id) => self.chat_payload(session_id, result),
+            Pending::Payload(effect) => self.history_payload_read(*effect, result),
             Pending::WriteWorkspace(project_id) => {
                 if let Err(e) = result {
                     log::warn!(
@@ -599,7 +608,10 @@ impl State {
         let logs = std::mem::take(&mut self.workspace.logs);
         self.run(logs);
         for request in std::mem::take(&mut self.workspace.requests) {
-            log::info!("[app] workspace request not wired in the Rune shell yet: {request:?}");
+            match request {
+                ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
+                other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
+            }
         }
         if self.workspace.revision == self.sync.persisted_revision {
             return;

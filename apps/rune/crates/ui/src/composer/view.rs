@@ -73,6 +73,8 @@ pub struct Hooks<S> {
     pub agent: OnFlag<S>,
     /// An agent menu row, by config id.
     pub pick_agent: OnAdd<S>,
+    /// A chat's agent switch: an agent row, the cancel button, Wait or Cancel turn and switch.
+    pub switch: super::agent_menu::OnSwitch<S>,
     pub remove_attachment: OnIndex<S>,
     pub queue: OnQueue<S>,
     /// The mode chip and the context ring.
@@ -96,6 +98,7 @@ impl<S> Clone for Hooks<S> {
             add: self.add.clone(),
             agent: self.agent.clone(),
             pick_agent: self.pick_agent.clone(),
+            switch: self.switch.clone(),
             remove_attachment: self.remove_attachment.clone(),
             queue: self.queue.clone(),
             control: self.control.clone(),
@@ -141,6 +144,8 @@ pub struct Spec<'a> {
     /// The agents the chip's menu offers; none, and the chip only reports its press.
     pub agents: Vec<AgentChoice>,
     pub agent_open: bool,
+    /// A chat's agent switch; the launcher has none.
+    pub switch: Option<super::agent_menu::SwitchView>,
     /// The working copy under the card.
     pub foot: Foot,
     pub attachments: &'a [Attachment],
@@ -312,49 +317,6 @@ fn add_button<S: 'static>(t: &'static Tokens, spec: &Spec, hooks: &Hooks<S>, lay
         .open(spec.add_open)
         .on_close(move |s: &mut S| close(s, false))
         .build(t, layer, trigger)
-}
-
-fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &str, hooks: &Hooks<S>, layer: &mut Vec<El>) -> El {
-    let c = &t.colors;
-    let agent = hooks.agent.clone();
-    let chip = row()
-        .key(format!("{}-agent", spec.key))
-        .h(28.0)
-        .px(6.0)
-        .gap(6.0)
-        .items_center()
-        .radius(8.0)
-        .role("button")
-        .label(label.to_owned())
-        .hover(c.foreground.alpha(0.06))
-        .child(icon(&i::BOT, 12.0).color(c.muted_foreground))
-        .child(
-            text(label.to_owned())
-                .font(sans(12.0, 400.0, 16.0))
-                .color(c.muted_foreground)
-                .truncate(),
-        )
-        .child(icon(&i::CHEVRON_DOWN, 12.0).color(c.muted_foreground))
-        .on_press(move |s: &mut S| agent(s, true));
-    if spec.agents.is_empty() {
-        return chip;
-    }
-    let mut menu = Menu::new(format!("{}-agent-menu", spec.key))
-        .name("Agent")
-        .width(224.0)
-        .placement(if spec.place == Place::Phone { Placement::TopStart } else { Placement::TopEnd });
-    for choice in &spec.agents {
-        let (pick, id) = (hooks.pick_agent.clone(), choice.id.clone());
-        menu = menu.item(
-            MenuItem::new(choice.name.clone())
-                .checked(choice.picked)
-                .on_select_tx(move |s: &mut S, tx: &mut Tx| pick(s, &id, tx)),
-        );
-    }
-    let close = hooks.agent.clone();
-    menu.open(spec.agent_open)
-        .on_close(move |s: &mut S| close(s, false))
-        .build(t, layer, chip)
 }
 
 /// A 22-point icon action of a queue row.
@@ -695,7 +657,7 @@ pub fn composer<S: 'static>(t: &'static Tokens, mut spec: Spec, hooks: &Hooks<S>
         .items_center()
         .min_w(0.0);
     if let Some(agent) = &spec.agent {
-        let chip = agent_chip(t, &spec, agent, hooks, layer);
+        let chip = super::agent_menu::agent_chip(t, &spec, agent, hooks, layer);
         if spec.place == Place::Phone {
             start = start.child(chip);
         } else {

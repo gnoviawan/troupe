@@ -139,15 +139,22 @@ impl State {
     /// turn, a restore, a launch, queued prompts, a wait on the user, or
     /// background work a new agent process would kill.
     pub(crate) fn switch_blocked_reason(&self, session_id: &str) -> Option<&'static str> {
+        if self.sessions.get(session_id).is_some_and(|s| s.turn_busy()) {
+            return Some(
+                "the agent is still working on a turn — cancel it or wait for it to finish before switching",
+            );
+        }
+        self.switch_blocked_besides_turn(session_id)
+    }
+
+    /// The busy gate without the running turn: what cancelling the turn
+    /// would not clear.
+    pub(crate) fn switch_blocked_besides_turn(&self, session_id: &str) -> Option<&'static str> {
         let Some(session) = self.sessions.get(session_id) else {
             return Some("session not found");
         };
         let mine = |id: &str| id == session_id;
-        if session.turn_busy() {
-            Some(
-                "the agent is still working on a turn — cancel it or wait for it to finish before switching",
-            )
-        } else if session.replaying().is_some() {
+        if session.replaying().is_some() {
             Some(
                 "the chat history is still being restored — wait for it to finish before switching",
             )

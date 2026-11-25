@@ -176,6 +176,87 @@ fn missing_options_fall_back_to_a_refusal_or_a_cancel() {
     );
 }
 
+fn selected(outcome: Option<RequestPermissionOutcome>) -> Option<String> {
+    outcome.map(|outcome| match outcome {
+        RequestPermissionOutcome::Selected(selected) => selected.option_id.0.to_string(),
+        _ => "cancelled".to_string(),
+    })
+}
+
+#[test]
+fn an_auto_approved_session_gets_allow_once_and_never_allow_always() {
+    let mut policies = ToolPolicies::default();
+    policies.auto_approve("child-1".to_string());
+    let execute = tool_call("t1", Some("execute"), &[]);
+    assert_eq!(
+        selected(policies.auto_approval(
+            "child-1",
+            &execute,
+            &options(&[("always", "allow_always"), ("once", "allow_once"), ("no", "reject_once")])
+        )),
+        Some("once".into())
+    );
+    assert_eq!(
+        selected(policies.auto_approval(
+            "child-1",
+            &execute,
+            &options(&[("always", "allow_always"), ("no", "reject_once")])
+        )),
+        None,
+        "a request without allow-once goes to the user"
+    );
+    assert_eq!(
+        selected(policies.auto_approval("chat-1", &execute, &all_options())),
+        None,
+        "only the approved session"
+    );
+    policies.forget("child-1");
+    assert_eq!(
+        selected(policies.auto_approval("child-1", &execute, &all_options())),
+        None,
+        "a closed session's approval is forgotten"
+    );
+}
+
+/// Claude asks `ExitPlanMode` as a permission request whose allow options
+/// leave plan mode; its kind comes only on the preceding `tool_call`.
+#[test]
+fn an_auto_approved_session_never_gets_a_mode_switch_or_an_unseen_kind_answered() {
+    let mut policies = ToolPolicies::default();
+    policies.auto_approve("child-1".to_string());
+    let exit_plan = options(&[
+        ("acceptEdits", "allow_always"),
+        ("default", "allow_once"),
+        ("plan", "reject_once"),
+    ]);
+    assert_eq!(
+        selected(policies.auto_approval(
+            "child-1",
+            &tool_call("t1", Some("switch_mode"), &[]),
+            &exit_plan
+        )),
+        None,
+        "a mode switch named on the request goes to the user"
+    );
+    assert_eq!(
+        selected(policies.auto_approval("child-1", &tool_call("t2", None, &[]), &exit_plan)),
+        None,
+        "a kind the host never saw goes to the user"
+    );
+    policies.note_auto_call("child-1", "t2", Some(ToolKind::SwitchMode));
+    assert_eq!(
+        selected(policies.auto_approval("child-1", &tool_call("t2", None, &[]), &exit_plan)),
+        None,
+        "a mode switch named on the earlier tool call goes to the user"
+    );
+    policies.note_auto_call("child-1", "t3", Some(ToolKind::Edit));
+    assert_eq!(
+        selected(policies.auto_approval("child-1", &tool_call("t3", None, &[]), &all_options())),
+        Some("once".into()),
+        "an earlier tool call's kind answers a request that omits it"
+    );
+}
+
 #[test]
 fn a_session_without_an_allowlist_gets_no_answer() {
     let mut f = Fixture::new(&[ToolKind::Fetch]);

@@ -231,6 +231,20 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     anchorId: rowId('subagent-max-depth')
   },
   {
+    categoryId: 'subagents',
+    label: 'Sub-agent profiles',
+    description: 'Each profile runs one agent with its own model, thinking level, mode and note.',
+    keywords: ['subagent', 'sub-agent', 'profile', 'model', 'thinking', 'effort', 'mode', 'note'],
+    anchorId: rowId('subagent-profiles')
+  },
+  {
+    categoryId: 'subagents',
+    label: 'Sub-agent approvals',
+    description: 'Answer permission prompts in the chat, or let Troupe allow them.',
+    keywords: ['subagent', 'sub-agent', 'approvals', 'allow', 'bypass', 'permissions', 'auto'],
+    anchorId: rowId('subagent-profiles')
+  },
+  {
     categoryId: 'skills',
     label: 'Skills',
     description: 'See skills installed for every project and for the open project.',

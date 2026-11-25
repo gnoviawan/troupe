@@ -35,7 +35,7 @@ vi.mock('@/lib/api', () => ({
     getAgentIdleWindow: vi.fn().mockResolvedValue({ secs: 1800, source: 'default' }),
     getSubagentSettings: vi
       .fn()
-      .mockResolvedValue({ enabled: true, maxRunning: 4, maxDepth: 2, agents: [] }),
+      .mockResolvedValue({ enabled: true, maxRunning: 4, maxDepth: 2, profiles: [] }),
     setSubagentSettings: vi.fn()
   },
   logApi: {

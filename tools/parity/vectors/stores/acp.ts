@@ -413,6 +413,7 @@ import { oneShotScenarios } from './acp-scenarios-oneshot'
 import { pickScenarios } from './acp-scenarios-picks'
 import { promptScenarios } from './acp-scenarios-prompt'
 import { reconcileScenarios } from './acp-scenarios-reconcile'
+import { reopenSwitchScenarios } from './acp-scenarios-reopen-switch'
 import { restoreScenarios } from './acp-scenarios-restore'
 import { rosterScenarios } from './acp-scenarios-roster'
 import { sessionScenarios } from './acp-scenarios-session'
@@ -454,5 +455,6 @@ export const acpScenarios = [
   ...armScenarios,
   ...pendingPickScenarios,
   ...launcherOptionScenarios,
-  ...switchRunScenarios
+  ...switchRunScenarios,
+  ...reopenSwitchScenarios
 ]

@@ -1,5 +1,5 @@
-//! The transcript's rows (`components/chat/chat-timeline.ts`): messages and tool calls merged
-//! in arrival order (`buildTimeline`), runs of thoughts joined (`consolidateThoughtGroups`),
+//! The transcript's rows (`components/chat/chat-timeline.ts`): messages, tool calls and agent
+//! switch markers merged in arrival order (`buildTimeline`), runs of thoughts joined (`consolidateThoughtGroups`),
 //! then each user turn split into the user's message, one activity row for the agent's work,
 //! and the replies that stay visible (`groupTurnActivity`).
 //!
@@ -20,6 +20,8 @@ pub enum Item {
     Tool(usize),
     /// Adjacent thoughts, by index, oldest first.
     Thoughts(Vec<usize>),
+    /// An agent switch marker; it never stays inside a turn.
+    Switch(usize),
 }
 
 /// The disclosure that folds a turn's work: thoughts, tools and narration.
@@ -41,6 +43,9 @@ pub enum RowKind {
     Activity(Activity),
     /// A visible agent reply; `tail` ends the turn and carries its copy action.
     Reply { index: usize, tail: bool },
+    /// An agent switch marker, by its index in the session's switches: a row of its own
+    /// between turns.
+    Switch(usize),
 }
 
 /// One transcript row with the key that names it across commits.
@@ -84,6 +89,10 @@ pub fn tool_id(tool: &Object) -> &str {
     str_field(tool, "toolCallId").unwrap_or("")
 }
 
+fn switch_key(record: &Value) -> String {
+    record.get("id").and_then(Value::as_str).unwrap_or("switch").to_owned()
+}
+
 fn is_subagent(tool: &Object) -> bool {
     tool.get("subagent").is_some_and(|v| !v.is_null())
 }
@@ -91,10 +100,11 @@ fn is_subagent(tool: &Object) -> bool {
 enum Entry {
     Message(usize),
     Tool(usize),
+    Switch(usize),
 }
 
 /// `buildTimeline`: seqless history first by timestamp, then by seq; source order breaks ties.
-fn build(messages: &[ChatMessage], tools: &[Object]) -> Vec<Entry> {
+fn build(messages: &[ChatMessage], tools: &[Object], switches: &[Value]) -> Vec<Entry> {
     struct Stamped {
         entry: Entry,
         seq: Option<f64>,
@@ -121,6 +131,14 @@ fn build(messages: &[ChatMessage], tools: &[Object]) -> Vec<Entry> {
             order: 1000 + i,
         });
     }
+    for (i, record) in switches.iter().enumerate() {
+        stamped.push(Stamped {
+            entry: Entry::Switch(i),
+            seq: record.get("seq").and_then(Value::as_f64),
+            ts: record.get("timestamp").and_then(Value::as_f64).unwrap_or(0.0),
+            order: 2000 + i,
+        });
+    }
     stamped.sort_by(|a, b| match (a.seq, b.seq) {
         (Some(x), Some(y)) => x.total_cmp(&y),
         (Some(_), None) => std::cmp::Ordering::Greater,
@@ -131,9 +149,9 @@ fn build(messages: &[ChatMessage], tools: &[Object]) -> Vec<Entry> {
 }
 
 /// The rows of a session: `active_turn` while the agent's turn runs.
-pub fn rows(messages: &[ChatMessage], tools: &[Object], active_turn: bool) -> Vec<Row> {
+pub fn rows(messages: &[ChatMessage], tools: &[Object], switches: &[Value], active_turn: bool) -> Vec<Row> {
     let mut items: Vec<Item> = Vec::new();
-    for entry in build(messages, tools) {
+    for entry in build(messages, tools, switches) {
         match entry {
             Entry::Message(i) if messages[i].role == Role::Thought => match items.last_mut() {
                 Some(Item::Thoughts(run)) => run.push(i),
@@ -141,14 +159,16 @@ pub fn rows(messages: &[ChatMessage], tools: &[Object], active_turn: bool) -> Ve
             },
             Entry::Message(i) => items.push(Item::Message(i)),
             Entry::Tool(i) => items.push(Item::Tool(i)),
+            Entry::Switch(i) => items.push(Item::Switch(i)),
         }
     }
-    Grouper { messages, tools, out: Vec::new() }.group(items, active_turn)
+    Grouper { messages, tools, switches, out: Vec::new() }.group(items, active_turn)
 }
 
 struct Grouper<'a> {
     messages: &'a [ChatMessage],
     tools: &'a [Object],
+    switches: &'a [Value],
     out: Vec<Row>,
 }
 
@@ -158,6 +178,7 @@ impl Grouper<'_> {
             Item::Message(i) => self.messages[*i].id.clone(),
             Item::Tool(i) => tool_id(&self.tools[*i]).to_owned(),
             Item::Thoughts(run) => self.messages[run[0]].id.clone(),
+            Item::Switch(i) => switch_key(&self.switches[*i]),
         }
     }
 
@@ -173,6 +194,7 @@ impl Grouper<'_> {
             Item::Message(i) => Some(self.messages[*i].timestamp),
             Item::Tool(i) => num(&self.tools[*i], "timestamp"),
             Item::Thoughts(run) => run.iter().map(|&i| self.messages[i].timestamp).reduce(f64::max),
+            Item::Switch(_) => None,
         };
         ts.filter(|&t| t > 0.0)
     }
@@ -199,6 +221,11 @@ impl Grouper<'_> {
                         self.flush(&mut user, &mut turn, &mut turn_index, false);
                     }
                     user = Some(i);
+                }
+                // A switch flushes the open turn, as a user message does, and is its own row.
+                Item::Switch(i) => {
+                    self.flush(&mut user, &mut turn, &mut turn_index, false);
+                    self.out.push(Row { key: switch_key(&self.switches[i]), kind: RowKind::Switch(i) });
                 }
                 other => turn.push(other),
             }

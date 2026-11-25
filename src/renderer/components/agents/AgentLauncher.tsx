@@ -49,13 +49,7 @@ import {
 import { AttachmentPreviewGroup } from '@/components/chat/AttachmentPreviewGroup'
 import { AsciiGlow } from '@/components/chat/ascii-glow/AsciiGlow'
 import { appOwnedTempPaths, dedupeAttachmentBlocks } from '@/components/chat/chat-attachments'
-import {
-  filterDuplicateModeConfigOptions,
-  isUsableConfigOption,
-  partitionConfigOptions,
-  resolveModelOption,
-  splitFastModeOption
-} from '@/components/chat/chat-input-bar-config'
+import { composerOptionControls } from '@/components/chat/chat-input-bar-config'
 import {
   COMPOSER_PHONE_CARD_CLASS,
   COMPOSER_PHONE_INPUT_MAX_HEIGHT,
@@ -605,23 +599,18 @@ export function AgentLauncher({ target, className }: AgentLauncherProps): React.
   const optionsInteractive = Boolean(draftSession || hasCachedOptions)
   const showModelLoading = !prepareError && isPreparing && !draftSession && !hasCachedModels
 
-  const usableConfigOptions = effectiveConfigOptions.filter(isUsableConfigOption)
   const {
-    model,
+    modelOption,
+    modelSource,
     thoughtLevel,
-    modelConfig: allModelConfig,
-    rest: genericConfigOptions
-  } = partitionConfigOptions(usableConfigOptions)
-  const { option: modelOption, source: modelSource } = resolveModelOption(model, effectiveModels)
-  const visibleGenericConfigOptions = filterDuplicateModeConfigOptions(
-    genericConfigOptions,
-    effectiveModes
-  )
-  const {
     fastMode,
     modelConfig,
-    rest: nonFastGenericOptions
-  } = splitFastModeOption(allModelConfig, visibleGenericConfigOptions)
+    genericOptions: nonFastGenericOptions
+  } = composerOptionControls({
+    models: effectiveModels,
+    modes: effectiveModes,
+    configOptions: effectiveConfigOptions
+  })
   const modePreviewSession = useMemo((): AcpSession | null => {
     if (draftSession) return draftSession
     if (!effectiveModes) return null

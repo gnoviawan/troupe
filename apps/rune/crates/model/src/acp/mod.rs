@@ -60,6 +60,7 @@ mod queries_tests;
 mod reconcile;
 #[cfg(test)]
 mod reconcile_tests;
+mod reopen_switch;
 mod restore;
 #[cfg(test)]
 mod restore_tests;
@@ -781,15 +782,7 @@ pub fn step(state: &mut State, event: Event, env: &mut Env<'_>) -> Vec<Effect> {
     // A one-shot whose collector settled moves on after the handler, as the
     // TypeScript promise chain does.
     state.advance_settled_oneshots(&mut fx);
-    // A create the host answered from its records answers once its session
-    // opened.
-    for (create, session_id) in std::mem::take(&mut state.book.history.created) {
-        state.resolve_create(create, session_id, env, &mut fx);
-    }
-    // A prompt typed while a history open ran goes out once it ends.
-    for session_id in std::mem::take(&mut state.book.history.flush) {
-        state.flush_next_queued_prompt(&session_id, env, &mut fx);
-    }
+    state.after_history_step(env, &mut fx);
     // A run waiting for re-advertised options moves on once an event changed
     // them, as the TypeScript poll would see.
     state.poll_readvertise(None, &mut fx);

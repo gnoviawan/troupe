@@ -20,6 +20,13 @@ impl State {
     /// (`AgentModelSelector`'s pill).
     pub fn agent_label(&self, host: &Host) -> Option<String> {
         if let Host::Chat(id) = host
+            && let Some(target) = self.armed_config(id)
+        {
+            let model = self.chat.acp.switch_target_session(id).and_then(|s| crate::controls::models_of(&s.rest)).and_then(|m| m.current_name());
+            let name = self.composer.agents.iter().find(|a| a.id == target).map_or(target.clone(), |a| a.name.clone());
+            return Some(format!("→ {}", model.unwrap_or(name)));
+        }
+        if let Host::Chat(id) = host
             && let Some(model) = self.chat_models(id).and_then(|m| m.current_name())
         {
             return Some(model);
@@ -44,8 +51,8 @@ impl State {
     }
 
     /// `useCurrentAgentConfigId`: the live reuse key that runs the chat's agent, then the
-    /// config its history names (`stableAgentNamespace` `config:<id>`).
-    fn chat_config_id(&self, session_id: &str) -> Option<String> {
+    /// config its history names (`stableAgentNamespace` `config:<id>`), then its index row.
+    pub(crate) fn chat_config_id(&self, session_id: &str) -> Option<String> {
         let acp = &self.chat.acp;
         let agent = acp.sessions.get(session_id).map(|s| s.agent_id.as_str()).filter(|a| !a.is_empty());
         let live = agent.and_then(|agent| {
@@ -61,13 +68,29 @@ impl State {
                 .and_then(|ns| ns.strip_prefix("config:"))
                 .map(str::to_owned)
         })
+        .or_else(|| {
+            acp.session_index
+                .iter()
+                .find(|e| e.get("id").and_then(Value::as_str) == Some(session_id))
+                .and_then(|e| e.get("agentConfigId").and_then(Value::as_str))
+                .map(str::to_owned)
+        })
     }
 
     /// `promptCapabilities.image` of the agent a composer sends to, when that agent is known:
-    /// a chat's running agent. The launcher's agent starts on Send, so it is checked then.
+    /// a chat's running agent, or an armed switch's warmed target (`promptAgentId`); a target
+    /// not warmed yet takes no images. The launcher's agent starts on Send, so it is checked
+    /// then.
     pub(crate) fn image_capable(&self, host: &Host) -> Option<bool> {
         let Host::Chat(id) = host else { return None };
-        let agent = &self.chat.acp.sessions.get(id)?.agent_id;
+        let session = match self.armed_config(id) {
+            Some(_) => match self.chat.acp.switch_target_session(id) {
+                Some(target) => target,
+                None => return Some(false),
+            },
+            None => self.chat.acp.sessions.get(id)?,
+        };
+        let agent = &session.agent_id;
         let capabilities = self.chat.acp.agents.get(agent)?.get("capabilities")?;
         Some(capabilities.pointer("/promptCapabilities/image").and_then(Value::as_bool) == Some(true))
     }
@@ -115,6 +138,9 @@ impl State {
     pub fn composer_pick_agent(&mut self, host: &Host, id: &str, tx: &mut Tx) {
         self.draft_mut(host).agent_open = false;
         if let Host::Chat(session) = host {
+            if self.pick_switch_model(session, id) {
+                return;
+            }
             log::info!("[composer] chat {session} model: {id}");
             self.acp_step(model::acp::Event::PickModel(session.clone(), id.to_owned(), None));
             return;
@@ -132,6 +158,10 @@ impl State {
     /// What the launcher's agent menu lists; a chat's menu lists its models.
     pub fn agent_choices(&self, host: &Host) -> Vec<ui::composer::view::AgentChoice> {
         if let Host::Chat(id) = host {
+            if self.armed_config(id).is_some() {
+                let target = self.chat.acp.switch_target_session(id);
+                return target.and_then(|s| crate::controls::models_of(&s.rest)).map(|m| m.choices()).unwrap_or_default();
+            }
             return self.chat_models(id).map(|m| m.choices()).unwrap_or_default();
         }
         let shown = self.shown_agent(host).map(|a| a.id.as_str());
@@ -159,6 +189,8 @@ impl State {
             })
             .collect();
         log::info!("[composer] {} agent configs", self.composer.agents.len());
+        let configs = self.composer.agents.iter().filter_map(|a| a.raw.as_object().cloned()).collect();
+        self.acp_step(model::acp::Event::AgentConfigsChanged(configs));
     }
 
     /// `readLastSelectedAgentId`: the saved pick counts only when its mode is `acp`, and never

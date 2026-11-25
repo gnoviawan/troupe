@@ -229,6 +229,10 @@ pub struct ChildOrigin {
     pub dispatch_id: String,
     /// 1 = the chat's agent spawned the run directly.
     pub depth: u8,
+    /// The user's profile for this run allows every tool: the host answers
+    /// the child's own permission requests with their allow-once option
+    /// instead of asking in the chat. Never set from an agent's input.
+    pub auto_approve: bool,
 }
 
 /// Commands sent from Tauri command handlers to an agent's driver thread.
