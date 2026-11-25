@@ -172,7 +172,7 @@ impl SqliteStore {
         let bbox: Option<String> = r.get("bounding_box").unwrap_or(None);
         let thread: Option<String> = r.get("thread").unwrap_or(None);
         let extra: Option<String> = r.get("extra").unwrap_or(None);
-        let (placement, rearrange) = extra
+        let (placement, rearrange, measurement, screenshot_crop_path) = extra
             .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
             .map(|v| {
                 (
@@ -180,9 +180,13 @@ impl SqliteStore {
                         .and_then(|p| serde_json::from_value(p.clone()).ok()),
                     v.get("rearrange")
                         .and_then(|p| serde_json::from_value(p.clone()).ok()),
+                    v.get("measurement")
+                        .and_then(|m| serde_json::from_value(m.clone()).ok()),
+                    v.get("screenshotCropPath")
+                        .and_then(|p| p.as_str().map(String::from)),
                 )
             })
-            .unwrap_or((None, None));
+            .unwrap_or((None, None, None, None));
 
         let status_str: String = r.get("status").unwrap_or_else(|_| "pending".into());
         let kind_str: String = r.get("kind").unwrap_or_else(|_| "feedback".into());
@@ -210,6 +214,8 @@ impl SqliteStore {
             kind: parse_kind(&kind_str),
             placement,
             rearrange,
+            measurement,
+            screenshot_crop_path,
             url: r.get("url").unwrap_or(None),
             intent: r
                 .get::<_, Option<String>>("intent")
@@ -255,6 +261,8 @@ fn parse_kind(s: &str) -> AnnotationKind {
     match s {
         "placement" => AnnotationKind::Placement,
         "rearrange" => AnnotationKind::Rearrange,
+        "measurement" => AnnotationKind::Measurement,
+        "guide" => AnnotationKind::Guide,
         _ => AnnotationKind::Feedback,
     }
 }
@@ -412,15 +420,37 @@ impl AnnotationStore for SqliteStore {
         let kind_str = match kind {
             AnnotationKind::Placement => "placement",
             AnnotationKind::Rearrange => "rearrange",
-            _ => "feedback",
+            AnnotationKind::Measurement => "measurement",
+            AnnotationKind::Guide => "guide",
+            AnnotationKind::Feedback => "feedback",
         };
 
-        let extra = if data.placement.is_some() {
-            serde_json::to_string(&serde_json::json!({"placement": data.placement})).ok()
-        } else if data.rearrange.is_some() {
-            serde_json::to_string(&serde_json::json!({"rearrange": data.rearrange})).ok()
-        } else {
+        let mut extra_map = serde_json::Map::new();
+        if let Some(p) = &data.placement {
+            if let Ok(v) = serde_json::to_value(p) {
+                extra_map.insert("placement".to_string(), v);
+            }
+        }
+        if let Some(r) = &data.rearrange {
+            if let Ok(v) = serde_json::to_value(r) {
+                extra_map.insert("rearrange".to_string(), v);
+            }
+        }
+        if let Some(m) = &data.measurement {
+            if let Ok(v) = serde_json::to_value(m) {
+                extra_map.insert("measurement".to_string(), v);
+            }
+        }
+        if let Some(path) = &data.screenshot_crop_path {
+            extra_map.insert(
+                "screenshotCropPath".to_string(),
+                serde_json::Value::String(path.clone()),
+            );
+        }
+        let extra = if extra_map.is_empty() {
             None
+        } else {
+            serde_json::to_string(&serde_json::Value::Object(extra_map)).ok()
         };
 
         let bbox_str = data
@@ -455,6 +485,8 @@ impl AnnotationStore for SqliteStore {
             kind: kind.clone(),
             placement: data.placement.clone(),
             rearrange: data.rearrange.clone(),
+            measurement: data.measurement.clone(),
+            screenshot_crop_path: data.screenshot_crop_path.clone(),
             url: data.url.clone(),
             intent: data.intent.clone(),
             severity: data.severity.clone(),

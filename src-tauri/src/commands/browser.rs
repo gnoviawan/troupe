@@ -224,3 +224,140 @@ pub async fn browser_stop(session_id: String, webview: Webview) -> Result<IpcRes
         None => IpcResult::error("browser automation is not running", "BROWSER_STOP_UNAVAILABLE"),
     })
 }
+
+/// Stop an in-flight navigation load in a browser tab.
+#[tauri::command]
+pub async fn browser_tab_stop(
+    tab_id: String,
+    webview: Webview,
+    browser_manager: State<'_, Arc<BrowserTabManager>>,
+) -> Result<IpcResult<()>, String> {
+    require_main_webview(&webview, "browser_tab_stop")?;
+    match browser_manager.stop_loading(&tab_id) {
+        Ok(()) => Ok(IpcResult::success(())),
+        Err(e) => Ok(IpcResult::error(e, "BROWSER_TAB_STOP_FAILED")),
+    }
+}
+
+/// Set native zoom factor (0.5..=2.0) on a browser tab webview.
+#[tauri::command]
+pub async fn browser_tab_set_zoom(
+    tab_id: String,
+    zoom_factor: f64,
+    webview: Webview,
+    browser_manager: State<'_, Arc<BrowserTabManager>>,
+) -> Result<IpcResult<f64>, String> {
+    require_main_webview(&webview, "browser_tab_set_zoom")?;
+    match browser_manager.set_zoom(&tab_id, zoom_factor) {
+        Ok(applied) => Ok(IpcResult::success(applied)),
+        Err(e) => Ok(IpcResult::error(e, "BROWSER_TAB_SET_ZOOM_FAILED")),
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BrowserScreenshotPayload {
+    pub base64: String,
+    pub mime_type: &'static str,
+}
+
+/// Capture a native PNG screenshot of a browser tab's visible viewport.
+#[tauri::command]
+pub async fn browser_tab_screenshot(
+    tab_id: String,
+    webview: Webview,
+) -> Result<IpcResult<BrowserScreenshotPayload>, String> {
+    use base64::Engine;
+    require_main_webview(&webview, "browser_tab_screenshot")?;
+    match crate::browser_automation::capture_tab_screenshot(&tab_id).await {
+        Ok(bytes) => {
+            log::info!(
+                "[BrowserTab] Captured viewport screenshot tab={} bytes={}",
+                tab_id,
+                bytes.len()
+            );
+            Ok(IpcResult::success(BrowserScreenshotPayload {
+                base64: base64::engine::general_purpose::STANDARD.encode(bytes),
+                mime_type: "image/png",
+            }))
+        }
+        Err(e) => {
+            log::warn!("[BrowserTab] Screenshot capture failed tab={tab_id}: {e}");
+            Ok(IpcResult::error(e, "BROWSER_TAB_SCREENSHOT_FAILED"))
+        }
+    }
+}
+
+/// Dispatch an annotation control command to a user browser tab overlay.
+#[tauri::command]
+pub async fn browser_tab_annotation_cmd(
+    tab_id: String,
+    command: serde_json::Value,
+    webview: Webview,
+    browser_manager: State<'_, Arc<BrowserTabManager>>,
+) -> Result<IpcResult<()>, String> {
+    require_main_webview(&webview, "browser_tab_annotation_cmd")?;
+    let json = serde_json::to_string(&command)
+        .map_err(|e| format!("Failed to serialize annotation command: {e}"))?;
+    match browser_manager.send_annotation_command(&tab_id, &json) {
+        Ok(()) => Ok(IpcResult::success(())),
+        Err(e) => Ok(IpcResult::error(e, "BROWSER_TAB_ANNOTATION_CMD_FAILED")),
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalDevServer {
+    pub host: String,
+    pub port: u16,
+    pub url: String,
+    pub label: String,
+}
+
+const LOCAL_DEV_PORTS: &[(u16, &str)] = &[
+    (5173, "Vite dev server"),
+    (5174, "Vite dev server"),
+    (3000, "Local web server"),
+    (3001, "Local web server"),
+    (4173, "Vite preview"),
+    (4321, "Astro dev server"),
+    (8000, "Local HTTP server"),
+    (8080, "Local server"),
+    (8787, "Workers dev server"),
+];
+
+/// Probe common local dev server ports in parallel with a short timeout.
+#[tauri::command]
+pub async fn browser_list_local_servers(
+    webview: Webview,
+) -> Result<IpcResult<Vec<LocalDevServer>>, String> {
+    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::time::Duration;
+
+    require_main_webview(&webview, "browser_list_local_servers")?;
+    let mut handles = Vec::with_capacity(LOCAL_DEV_PORTS.len());
+    for &(port, label) in LOCAL_DEV_PORTS {
+        handles.push(tokio::spawn(async move {
+            let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
+            let ok = tokio::time::timeout(
+                Duration::from_millis(75),
+                tokio::net::TcpStream::connect(addr),
+            )
+            .await
+            .is_ok_and(|res| res.is_ok());
+            ok.then(|| LocalDevServer {
+                host: format!("localhost:{port}"),
+                port,
+                url: format!("http://localhost:{port}"),
+                label: label.to_string(),
+            })
+        }));
+    }
+    let mut found = Vec::new();
+    for handle in handles {
+        if let Ok(Some(server)) = handle.await {
+            found.push(server);
+        }
+    }
+    Ok(IpcResult::success(found))
+}

@@ -79,6 +79,13 @@ pub struct WatchAnnotationsInput {
     pub timeout_seconds: Option<u64>,
 }
 
+#[derive(Debug, Deserialize, Serialize, schemars::JsonSchema)]
+pub struct GetRulerGuidesInput {
+    /// Optional session ID to filter. If omitted, returns guides across all active sessions.
+    #[serde(default)]
+    pub session_id: Option<String>,
+}
+
 // ---------------------------------------------------------------------------
 // MCP server
 // ---------------------------------------------------------------------------
@@ -99,6 +106,8 @@ impl AgentationMcpServer {
                 AnnotationKind::Feedback => "feedback",
                 AnnotationKind::Placement => "placement",
                 AnnotationKind::Rearrange => "rearrange",
+                AnnotationKind::Measurement => "measurement",
+                AnnotationKind::Guide => "guide",
             },
             "comment": a.comment,
             "element": a.element,
@@ -111,7 +120,7 @@ impl AgentationMcpServer {
             "reactComponents": a.react_components,
         });
 
-        // Add placement/rearrange only when applicable
+        // Add kind-specific structured payloads only when applicable
         if matches!(a.kind, AnnotationKind::Placement) {
             if let Some(p) = &a.placement {
                 val["placement"] = serde_json::to_value(p).unwrap();
@@ -121,6 +130,14 @@ impl AgentationMcpServer {
             if let Some(r) = &a.rearrange {
                 val["rearrange"] = serde_json::to_value(r).unwrap();
             }
+        }
+        if matches!(a.kind, AnnotationKind::Measurement | AnnotationKind::Guide) {
+            if let Some(m) = &a.measurement {
+                val["measurement"] = serde_json::to_value(m).unwrap();
+            }
+        }
+        if let Some(path) = &a.screenshot_crop_path {
+            val["screenshotCropPath"] = serde_json::Value::String(path.clone());
         }
         val
     }
@@ -178,7 +195,7 @@ impl AgentationMcpServer {
 
     #[tool(
         name = "agentation_get_all_pending",
-        description = "Get all pending annotations across ALL sessions. Includes feedback, design placements, and rearrange annotations. Each annotation has a `kind` field."
+        description = "Get all pending annotations across ALL sessions. Includes feedback, ruler measurements, alignment guides, design placements, and rearrange annotations. Each annotation has a `kind` field."
     )]
     async fn get_all_pending(&self) -> String {
         let sessions = self.store.list_sessions();
@@ -191,6 +208,35 @@ impl AgentationMcpServer {
         serde_json::to_string_pretty(&serde_json::json!({
             "count": all.len(),
             "annotations": all,
+        }))
+        .unwrap()
+    }
+
+    #[tool(
+        name = "agentation_get_ruler_guides",
+        description = "Get pending ruler spacing measurements and red horizontal/vertical alignment guides placed by the user in the embedded browser, including exact x/y axis pixel coordinates, element selectors, and offset deltas."
+    )]
+    async fn get_ruler_guides(&self, Parameters(input): Parameters<GetRulerGuidesInput>) -> String {
+        let sessions: Vec<String> = match input.session_id {
+            Some(sid) => vec![sid],
+            None => self
+                .store
+                .list_sessions()
+                .into_iter()
+                .map(|s| s.id)
+                .collect(),
+        };
+        let mut guides = Vec::new();
+        for sid in sessions {
+            for ann in self.store.get_pending_annotations(&sid) {
+                if matches!(ann.kind, AnnotationKind::Guide | AnnotationKind::Measurement) {
+                    guides.push(Self::map_annotation_for_mcp(&ann));
+                }
+            }
+        }
+        serde_json::to_string_pretty(&serde_json::json!({
+            "count": guides.len(),
+            "guides": guides,
         }))
         .unwrap()
     }

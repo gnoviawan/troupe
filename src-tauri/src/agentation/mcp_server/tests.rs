@@ -124,3 +124,63 @@ async fn test_watch_annotations_drain() {
     assert!(result.contains("count"));
     assert!(result.contains("1"));
 }
+
+#[tokio::test]
+async fn test_get_ruler_guides_filters_measurements_and_guides() {
+    let store = Arc::new(SqliteStore::open_in_memory().unwrap());
+    let session = store.create_session("http://localhost:5173/settings", None);
+    // Plain feedback annotation should not appear in ruler guides
+    store
+        .add_annotation(
+            &session.id,
+            &AnnotationInput {
+                x: 10.0,
+                y: 20.0,
+                comment: "Plain feedback".to_string(),
+                element: "button".to_string(),
+                element_path: "body > button".to_string(),
+                timestamp: 100,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    // Alignment guide annotation with axis + offset delta + crop path
+    store
+        .add_annotation(
+            &session.id,
+            &AnnotationInput {
+                x: 32.0,
+                y: 180.0,
+                comment: "Align card left edge at x = 32px".to_string(),
+                element: "div.project-url-card".to_string(),
+                element_path: "main > div.project-url-card".to_string(),
+                timestamp: 200,
+                kind: Some(AnnotationKind::Guide),
+                measurement: Some(RulerMeasurement {
+                    axis: Some(GuideAxis::Vertical),
+                    position_px: Some(32.0),
+                    from_selector: Some("h1.workspace-title".to_string()),
+                    to_selector: Some("div.project-url-card".to_string()),
+                    gap_px: None,
+                    delta_px: Some(8.0),
+                }),
+                screenshot_crop_path: Some("/tmp/crop-2.png".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    let server = AgentationMcpServer::new(store);
+    let raw = server
+        .get_ruler_guides(Parameters(GetRulerGuidesInput {
+            session_id: Some(session.id),
+        }))
+        .await;
+    let parsed: serde_json::Value = serde_json::from_str(&raw).unwrap();
+    assert_eq!(parsed["count"], 1);
+    assert_eq!(parsed["guides"][0]["kind"], "guide");
+    assert_eq!(parsed["guides"][0]["measurement"]["axis"], "vertical");
+    assert_eq!(parsed["guides"][0]["measurement"]["positionPx"], 32.0);
+    assert_eq!(parsed["guides"][0]["measurement"]["deltaPx"], 8.0);
+    assert_eq!(parsed["guides"][0]["screenshotCropPath"], "/tmp/crop-2.png");
+}

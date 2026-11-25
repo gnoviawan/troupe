@@ -53,6 +53,33 @@ pub enum AnnotationKind {
     Feedback,
     Placement,
     Rearrange,
+    Measurement,
+    Guide,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum GuideAxis {
+    Horizontal,
+    Vertical,
+}
+
+/// Structured ruler spacing or red symmetry guide line context.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RulerMeasurement {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub axis: Option<GuideAxis>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position_px: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_selector: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_selector: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gap_px: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub delta_px: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -156,6 +183,10 @@ pub struct Annotation {
     pub placement: Option<Placement>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rearrange: Option<Rearrange>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub measurement: Option<RulerMeasurement>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub screenshot_crop_path: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -349,6 +380,10 @@ pub struct AnnotationInput {
     pub placement: Option<Placement>,
     #[serde(default)]
     pub rearrange: Option<Rearrange>,
+    #[serde(default)]
+    pub measurement: Option<RulerMeasurement>,
+    #[serde(default)]
+    pub screenshot_crop_path: Option<String>,
 
     #[serde(default)]
     pub url: Option<String>,

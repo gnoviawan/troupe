@@ -2230,6 +2230,11 @@ pub fn run() {
             commands::browser_tab_go_back,
             commands::browser_tab_go_forward,
             commands::browser_tab_reload,
+            commands::browser_tab_stop,
+            commands::browser_tab_set_zoom,
+            commands::browser_tab_screenshot,
+            commands::browser_tab_annotation_cmd,
+            commands::browser_list_local_servers,
             commands::browser_tab_open_devtools,
             // Agentation toolbar injection (on-demand)
             commands::browser_tab_inject_agentation,

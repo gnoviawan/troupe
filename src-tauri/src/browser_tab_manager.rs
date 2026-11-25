@@ -10,6 +10,16 @@ use tauri::{AppHandle, Manager};
 use crate::browser_automation::engine::profile::{self, AgentProfiles, DataStore};
 use crate::browser_automation::engine::{events::TabEvents, hooks};
 
+pub const MIN_TAB_ZOOM: f64 = 0.5;
+pub const MAX_TAB_ZOOM: f64 = 2.0;
+
+pub fn clamp_tab_zoom(factor: f64) -> f64 {
+    if !factor.is_finite() {
+        return 1.0;
+    }
+    (factor.clamp(MIN_TAB_ZOOM, MAX_TAB_ZOOM) * 100.0).round() / 100.0
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BrowserTabInfo {
@@ -497,6 +507,45 @@ impl BrowserTabManager {
         Ok(())
     }
 
+    /// Stop an in-flight document load in this browser tab.
+    pub fn stop_loading(&self, tab_id: &str) -> Result<(), String> {
+        let webview = self.get_webview(tab_id)?;
+        webview
+            .eval("window.stop()")
+            .map_err(|e| format!("Stop loading failed: {}", e))?;
+        log::info!("[BrowserTab] Stopped loading tab={tab_id}");
+        Ok(())
+    }
+
+    /// Set the native webview zoom factor for a browser tab (clamped to 0.5..=2.0).
+    pub fn set_zoom(&self, tab_id: &str, zoom_factor: f64) -> Result<f64, String> {
+        let clamped = clamp_tab_zoom(zoom_factor);
+        let webview = self.get_webview(tab_id)?;
+        webview
+            .set_zoom(clamped)
+            .map_err(|e| format!("Set zoom failed: {}", e))?;
+        log::info!("[BrowserTab] Set zoom={clamped:.2} for tab={tab_id}");
+        Ok(clamped)
+    }
+
+    /// Send a structured annotation control command to the host-controlled
+    /// Troupe annotation overlay inside a user browser tab.
+    pub fn send_annotation_command(&self, tab_id: &str, command_json: &str) -> Result<(), String> {
+        if !crate::host_perimeter::agentation_allowed(tab_id) {
+            return Err("Annotation overlay is not available in agent tabs".to_string());
+        }
+        let webview = self.get_webview(tab_id)?;
+        let encoded = serde_json::to_string(command_json)
+            .map_err(|e| format!("Failed to encode annotation command: {e}"))?;
+        let script = format!(
+            "if (window.__TROUPE_ANNOTATE__ && typeof window.__TROUPE_ANNOTATE__.dispatch === 'function') {{ window.__TROUPE_ANNOTATE__.dispatch(JSON.parse({encoded})); }}"
+        );
+        webview
+            .eval(&script)
+            .map_err(|e| format!("Annotation command failed: {}", e))?;
+        Ok(())
+    }
+
     /// Open DevTools for the webview backing this browser tab.
     ///
     /// Debug-gated: only exists in debug builds. In release builds, the
@@ -625,3 +674,7 @@ fn native_history(platform: &tauri::webview::PlatformWebview, direction: History
         HistoryDirection::Forward => webview.go_forward(),
     }
 }
+
+#[cfg(test)]
+#[path = "browser_tab_manager_tests.rs"]
+mod tests;
