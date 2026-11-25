@@ -50,15 +50,15 @@ The default shell is the shell Troupe uses when you don't pick one, for example 
 To set the default for all projects:
 
 1. Select **Settings** at the bottom of the sidebar, or press `Ctrl+,` (`Cmd+,` on macOS, `Alt+,` in a browser).
-2. Select **Default Shell**.
-3. Choose a shell from **Shell**. **System Default** uses your system's default shell.
+2. Select **Terminal**.
+3. Under **New terminals**, choose a shell from **Default shell**. **System default** uses your system's default shell.
 
-![The Default Shell section of Application Preferences, with the Shell drop-down set to System Default](/screenshots/terminals-default-shell.png)
+![The New terminals group on the Terminal page of Settings, with Default shell set to System default](/screenshots/terminals-default-shell.png)
 
 To set the default for one project:
 
 1. Hover the project in the sidebar and select the gear icon (**Project settings**).
-2. Click **Shell** and choose a shell in the **Shell** list. **App default** uses the shell from Application Preferences.
+2. Click **Shell** and choose a shell in the **Shell** list. **App default** uses the shell from **Settings** > **Terminal**.
 3. Select **Save changes**.
 
 When you create a project, **Advanced options** in the new project dialog has a **Default Terminal** field. It sets the same per-project default. Troupe fills in this field for you, so every project you create there starts with its own default shell.
@@ -76,7 +76,7 @@ Because projects you create in Troupe already have a default shell, the Settings
 
 A terminal profile is a saved shell setup. It has a shell, its arguments, a start folder, and environment variables. Use a profile when you often open the same kind of terminal, such as a shell with `NODE_ENV=development` set.
 
-1. Open **Settings** and select **Terminal Profiles**.
+1. Open **Settings** and select **Profiles**.
 2. Select **Add profile**.
 3. Fill in the fields you need:
    - **Name**. The name of the profile and of the tabs it opens. This field is required.
@@ -84,7 +84,7 @@ A terminal profile is a saved shell setup. It has a shell, its arguments, a star
    - **Arguments**. Type one argument per line. To add arguments, you must also choose a shell.
    - **Start folder**. Leave it empty to start in the active project or worktree folder. If you fill it in, type a full path.
    - **Environment variables**. Type one `KEY=value` per line. These variables override project environment variables that have the same name.
-4. Select **Save**.
+4. Select **Save profile**.
 
 ![The New terminal profile dialog with the name Node dev and the variable NODE_ENV=development](/screenshots/terminals-profile-dialog.png)
 
