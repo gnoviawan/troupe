@@ -4,9 +4,11 @@ import { isTranslucentRailSupported } from '@/hooks/use-translucent-rail'
 import type { SettingsSearchEntry } from '@/lib/settings-search'
 import { isTauriContext } from '@/lib/tauri-runtime'
 
-// Rows on About that exist on one runtime only: the updater is desktop-only
-// (issue #843) and the server form is web-only (gh-1105).
+// Rows that exist on one runtime only: the updater is desktop-only (issue
+// #843), the Troupe browser (Open links in) is desktop-only, and the server
+// form is web-only (gh-1105).
 const DESKTOP_ONLY_ANCHORS = new Set([
+  rowId('link-open-mode'),
   rowId('check-updates'),
   rowId('auto-update'),
   rowId('release-channel')
@@ -15,6 +17,13 @@ const WEB_ONLY_ANCHORS = new Set([rowId('server-config'), rowId('server-version'
 
 const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   // Preferences
+  {
+    categoryId: 'preferences',
+    label: 'Theme',
+    description: 'Pick the colors for the whole app.',
+    keywords: ['theme', 'color theme', 'dark', 'light', 'appearance', 'colors'],
+    anchorId: rowId('color-theme')
+  },
   {
     categoryId: 'preferences',
     label: 'Interface zoom',

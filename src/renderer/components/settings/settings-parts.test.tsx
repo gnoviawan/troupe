@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { SettingsDisclosure } from './SettingsDisclosure'
 import { SettingsFilter } from './SettingsFilter'
+import { SETTINGS_REVEAL_EVENT } from './SettingsLayout'
 import { SettingsSegmented } from './SettingsSegmented'
 
 const CHANNELS = [
@@ -85,6 +86,23 @@ describe('SettingsDisclosure', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('Renderer row')).toBeVisible()
     expect(screen.queryByText('Auto · 10,000 lines')).not.toBeInTheDocument()
+  })
+})
+
+describe('SettingsDisclosure search reveal', () => {
+  it('opens when a search jump targets a row inside it', () => {
+    render(
+      <SettingsDisclosure title="Advanced" summary="Auto">
+        <p id="setting-terminal-renderer">Renderer row</p>
+      </SettingsDisclosure>
+    )
+
+    const row = screen.getByText('Renderer row')
+    expect(row).not.toBeVisible()
+    act(() => {
+      row.dispatchEvent(new CustomEvent(SETTINGS_REVEAL_EVENT, { bubbles: true }))
+    })
+    expect(row).toBeVisible()
   })
 })
 

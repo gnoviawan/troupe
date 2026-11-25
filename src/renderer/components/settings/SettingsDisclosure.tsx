@@ -1,9 +1,10 @@
-import { useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { ChevronDown } from '@/components/icons'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
 import { SETTINGS_CARD_CLASS } from './SettingsGroup'
+import { SETTINGS_REVEAL_EVENT } from './SettingsLayout'
 
 interface SettingsDisclosureProps {
   /** Card title, e.g. "Advanced". */
@@ -36,14 +37,28 @@ export function SettingsDisclosure({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
   const open = openProp ?? uncontrolledOpen
   const contentId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
 
-  const setOpen = (next: boolean): void => {
-    if (openProp === undefined) setUncontrolledOpen(next)
-    onOpenChange?.(next)
-  }
+  const setOpen = useCallback(
+    (next: boolean): void => {
+      if (openProp === undefined) setUncontrolledOpen(next)
+      onOpenChange?.(next)
+    },
+    [openProp, onOpenChange]
+  )
+
+  // A settings search that jumps to a row inside opens the card first.
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const reveal = (): void => setOpen(true)
+    root.addEventListener(SETTINGS_REVEAL_EVENT, reveal)
+    return () => root.removeEventListener(SETTINGS_REVEAL_EVENT, reveal)
+  }, [setOpen])
 
   return (
     <Collapsible
+      ref={rootRef}
       open={open}
       onOpenChange={setOpen}
       id={id}

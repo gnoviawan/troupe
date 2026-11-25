@@ -64,6 +64,12 @@ interface SettingsLayoutProps {
 /** How long a search jump marks its target row. */
 export const SETTINGS_TARGET_MS = 2000
 
+/**
+ * Sent (bubbling) from a search target that sits inside a closed part of the
+ * page, such as an Advanced card, so that part opens before the jump.
+ */
+export const SETTINGS_REVEAL_EVENT = 'settings:reveal'
+
 /** Width of the page column on every page, so nothing jumps sideways between pages. */
 export const SETTINGS_COLUMN_CLASS = 'mx-auto w-full max-w-[640px]'
 
@@ -192,10 +198,23 @@ export function SettingsLayout({
         clearMark()
         const target = bodyRef.current?.querySelector<HTMLElement>(`#${CSS.escape(anchorId)}`)
         if (!target) return
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        target.setAttribute('data-settings-target', '')
-        markedRef.current = target
-        targetTimerRef.current = setTimeout(clearMark, SETTINGS_TARGET_MS)
+        const mark = (): void => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          target.setAttribute('data-settings-target', '')
+          markedRef.current = target
+          targetTimerRef.current = setTimeout(clearMark, SETTINGS_TARGET_MS)
+        }
+        // A row inside a closed Advanced card: ask the card to open, then
+        // wait one more frame so the row is laid out before scrolling to it.
+        if (target.closest('[hidden]')) {
+          target.dispatchEvent(new CustomEvent(SETTINGS_REVEAL_EVENT, { bubbles: true }))
+          rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null
+            mark()
+          })
+          return
+        }
+        mark()
       })
     },
     [selectPage, clearMark, cancelJump]

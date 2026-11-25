@@ -239,42 +239,34 @@ describe('AppPreferences editor auto-save controls (GH-539)', () => {
     useAppSettingsStore.setState({ settings: { ...DEFAULT_APP_SETTINGS }, isLoaded: true })
   })
 
-  it('toggling the auto-save switch writes editorAutoSave (with correct negation)', async () => {
+  it('is one select: a delay turns auto save on, Off turns it off', async () => {
     renderPage()
     goTo('Preferences')
 
-    const toggle = await screen.findByRole('switch', { name: 'Auto save' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    const select = await screen.findByLabelText('Auto save')
+    expect(select).toHaveValue('off')
 
-    fireEvent.click(toggle)
+    fireEvent.change(select, { target: { value: '2000' } })
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.editorAutoSave).toBe(true)
+      expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
     })
     expect(mockWriteDebounced).toHaveBeenCalled()
 
-    fireEvent.click(toggle)
+    fireEvent.change(screen.getByLabelText('Auto save'), { target: { value: 'off' } })
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.editorAutoSave).toBe(false)
     })
+    // Off keeps the chosen delay for the next time auto save is on.
+    expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
   })
 
-  it('changing the delay select writes editorAutoSaveDelayMs and is disabled while off', async () => {
+  it('has no second delay row', async () => {
     renderPage()
     goTo('Preferences')
 
-    const select = await screen.findByLabelText('Auto save delay')
-    expect(select).toBeDisabled()
-    expect(screen.getByText('Turn on auto save to choose a delay.')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Auto save' }))
-    await waitFor(() => {
-      expect(screen.getByLabelText('Auto save delay')).toBeEnabled()
-    })
-
-    fireEvent.change(screen.getByLabelText('Auto save delay'), { target: { value: '2000' } })
-    await waitFor(() => {
-      expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
-    })
+    await screen.findByLabelText('Auto save')
+    expect(screen.queryByLabelText('Auto save delay')).not.toBeInTheDocument()
   })
 })
 
@@ -528,15 +520,15 @@ describe.each([
     expect(description).toHaveTextContent(/repeat typed characters/i)
   })
 
-  it('sits after the Renderer control and before Preview', async () => {
+  it('sits under New terminals, after Default shell and before the Advanced card', async () => {
     renderPage()
 
     const toggle = await findSwitch()
-    const renderer = screen.getByLabelText('Renderer')
-    const preview = screen.getByRole('heading', { name: 'Preview' })
+    const shell = screen.getByLabelText('Default shell')
+    const advanced = screen.getByRole('button', { name: /Advanced/ })
 
-    expect(renderer.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(toggle.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(shell.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(toggle.compareDocumentPosition(advanced) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('toggles through the label as well as the switch', async () => {

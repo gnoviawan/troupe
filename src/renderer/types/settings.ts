@@ -18,7 +18,8 @@ export const DEFAULT_TOC_SETTINGS: TocSettings = {
   width: 240
 }
 
-export type TerminalUrlOpenMode = 'system' | 'termul'
+/** Where a link opens: the system's default browser or a Troupe browser tab. */
+export type LinkOpenMode = 'system' | 'troupe'
 
 /** Which interface the remote terminal HTTP server binds to when started. */
 export type RemoteBindMode = 'localhost' | 'all'
@@ -53,7 +54,8 @@ export interface AppSettings {
   defaultShell: string
   defaultProjectColor: string // Default color for new projects (from PROJECT_COLORS)
   confirmTerminalClose: boolean // Show a confirmation dialog before closing a terminal
-  terminalUrlOpenMode: TerminalUrlOpenMode // Controls how Ctrl/Cmd+Click terminal URLs are opened
+  /** Where links in chats, terminals, Markdown and files open (the confirm still asks first). */
+  linkOpenMode: LinkOpenMode
   /** Remote server bind: localhost (127.0.0.1) or all interfaces (0.0.0.0). */
   remoteBindMode: RemoteBindMode
   /** App-wide color theme family id (without `-light` suffix). */
@@ -151,18 +153,18 @@ export const EDITOR_AUTO_SAVE_DELAY_OPTIONS = [
 
 // Terminal renderer strategy options
 export const TERMINAL_RENDERER_OPTIONS = [
-  { value: 'auto', label: 'Auto (Prefer WebGL, DOM fallback)' },
+  { value: 'auto', label: 'Auto' },
   { value: 'webgl', label: 'WebGL' },
   { value: 'dom', label: 'DOM' }
 ]
 
-// Terminal URL opening mode options
-export const TERMINAL_URL_OPEN_MODE_OPTIONS: Array<{
-  value: TerminalUrlOpenMode
+// Where links open. The Troupe browser exists only in the desktop app.
+export const LINK_OPEN_MODE_OPTIONS: Array<{
+  value: LinkOpenMode
   label: string
 }> = [
-  { value: 'system', label: 'System Default Browser' },
-  { value: 'termul', label: 'Troupe Browser' }
+  { value: 'system', label: 'Default browser' },
+  { value: 'troupe', label: 'Troupe browser' }
 ]
 
 export const REMOTE_BIND_MODE_OPTIONS: Array<{
@@ -277,7 +279,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   defaultShell: '',
   defaultProjectColor: 'blue',
   confirmTerminalClose: true,
-  terminalUrlOpenMode: 'system',
+  linkOpenMode: 'system',
   remoteBindMode: 'localhost',
   colorTheme: 'termul',
   appearanceMode: 'dark',
