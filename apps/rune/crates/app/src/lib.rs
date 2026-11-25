@@ -26,6 +26,7 @@ mod composer_agents;
 mod composer_sheet;
 mod composer_view;
 mod controls;
+mod editor_host;
 #[cfg(test)]
 mod controls_tests;
 mod host;
@@ -128,6 +129,9 @@ pub struct State {
     pub composer: composer::ComposerUi,
     /// The terminals: their link, sessions and cells.
     pub terms: terminal::TerminalUi,
+    /// The open text files and their editor tabs.
+    pub editors: ui::editor::Editors,
+    pub(crate) editor_host: editor_host::EditorHost,
     pub(crate) sync: sync::Sync,
 }
 
@@ -175,6 +179,8 @@ impl Default for State {
             chat: chat::ChatUi::default(),
             composer: composer::ComposerUi::default(),
             terms: terminal::TerminalUi::default(),
+            editors: ui::editor::Editors::default(),
+            editor_host: editor_host::EditorHost::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -264,7 +270,10 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let (retried, next_retry) = state.fire_retries(now);
     let (waited, next_wait) = state.fire_readvertise_waits(now);
     changed |= retried | waited;
-    let waits = [state.toasts.next_expiry(), next_retry, next_wait, state.next_blink(), state.next_find_refresh()];
+    state.editors.now = editor_host::epoch_ms();
+    state.sync_editors();
+    state.sync_drafts(now);
+    let waits = [state.toasts.next_expiry(), next_retry, next_wait, state.next_blink(), state.next_find_refresh(), state.next_draft_sync()];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);
     }
@@ -292,7 +301,7 @@ pub fn app(launch: Launch) -> rune::App<State> {
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
     };
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
-    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu)
+    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }
 
 #[cfg(test)]

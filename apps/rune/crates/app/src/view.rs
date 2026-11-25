@@ -54,6 +54,22 @@ fn workspace(s: &mut State) -> &mut ui::workspace::Workspace {
     &mut s.workspace
 }
 
+fn editors(s: &State) -> &ui::editor::Editors {
+    &s.editors
+}
+
+fn editors_mut(s: &mut State) -> &mut ui::editor::Editors {
+    &mut s.editors
+}
+
+/// An editor tab's body: the code editor for its file.
+fn editor_body(s: &State, t: &'static Tokens, tab: &model::workspace::Tab) -> Option<El> {
+    let model::workspace::Tab::Editor { file_path, .. } = tab else {
+        return None;
+    };
+    ui::editor::view(s, editors, editors_mut, t, file_path)
+}
+
 fn desktop_frame(
     s: &State,
     t: &'static Tokens,
@@ -166,7 +182,9 @@ fn main_area(
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
         let tab = |tab: &model::workspace::Tab| {
-            crate::terminal_view::tab_body(s, t, tab).or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
+            crate::terminal_view::tab_body(s, t, tab)
+                .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
+                .or_else(|| editor_body(s, t, tab))
         };
         let slots = ui::workspace::Slots {
             leading,

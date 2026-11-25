@@ -269,6 +269,7 @@ impl State {
             match tag {
                 crate::host::Fetch::Skills(root) => self.skills_listed(root, result),
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
+                tag => self.editor_fetched(tag, result),
             }
         }
         changed
@@ -607,6 +608,7 @@ impl State {
         for request in std::mem::take(&mut self.workspace.requests) {
             match request {
                 ui::workspace::Request::NewTerminal { pane } => self.new_terminal(Some(pane)),
+                ui::workspace::Request::SaveAndClose { path, content } => self.save_and_close(path, content),
                 other => log::info!("[app] workspace request not wired in the Rune shell yet: {other:?}"),
             }
         }
