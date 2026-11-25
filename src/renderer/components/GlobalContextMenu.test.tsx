@@ -58,6 +58,13 @@ function menuItemLabels(): Array<string | null> {
   return screen.getAllByRole('menuitem').map((item) => item.textContent)
 }
 
+// Bun shuffles tests by seed, so no describe may inherit another's desktop
+// mode or selection spy.
+beforeEach(() => {
+  vi.restoreAllMocks()
+  mockIsTauriContext.mockReturnValue(false)
+})
+
 describe('GlobalContextMenu', () => {
   beforeEach(() => {
     vi.clearAllMocks()
