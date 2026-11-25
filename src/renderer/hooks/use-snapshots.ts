@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { terminalApi } from '@/lib/api'
-import { resolveEnvForSpawn } from '@/lib/env-parser'
+import { passThroughProjectEnv } from '@/lib/env-parser'
 import { useProjectStore } from '@/stores/project-store'
 import { useSnapshotActions } from '@/stores/snapshot-store'
 import { useTerminalStore } from '@/stores/terminal-store'
@@ -126,8 +126,7 @@ async function restoreFromSnapshot(projectId: string, snapshot: PersistedSnapsho
   const project = projectStore.projects.find((p) => p.id === projectId)
 
   // Resolve project env vars for spawn
-  // TODO: Pass actual system env from backend for variable expansion
-  const { env, hasProjectEnv } = resolveEnvForSpawn(project?.envVars, {})
+  const { env, hasProjectEnv } = passThroughProjectEnv(project?.envVars)
 
   // Close all existing terminals for this project
   // CRITICAL: Kill PTYs before removing from store to prevent orphaned processes

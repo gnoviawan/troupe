@@ -36,6 +36,15 @@ mod explorer_host;
 mod explorer_host_tests;
 #[cfg(test)]
 mod editor_host_tests;
+mod git;
+mod git_diff;
+mod git_history;
+mod git_history_view;
+#[cfg(test)]
+mod git_history_tests;
+#[cfg(test)]
+mod git_tests;
+mod git_view;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;
@@ -147,6 +156,10 @@ pub struct State {
     pub(crate) editor_host: editor_host::EditorHost,
     pub explorer: ui::explorer::Explorer,
     pub(crate) explorer_host: explorer_host::ExplorerHost,
+    /// The git cache and the Changes panel's own state.
+    pub git: git::GitUi,
+    /// The git history reads and the History tab's own state.
+    pub history: git_history::HistoryUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -198,6 +211,8 @@ impl Default for State {
             editor_host: editor_host::EditorHost::default(),
             explorer: ui::explorer::Explorer::default(),
             explorer_host: explorer_host::ExplorerHost::default(),
+            git: git::GitUi::default(),
+            history: git_history::HistoryUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -292,6 +307,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_drafts(now);
     state.sync_editors();
     state.sync_explorer();
+    let next_git = state.git_tick();
+    state.history_tick();
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -300,6 +317,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_blink(),
         state.next_find_refresh(),
         state.next_draft_sync(),
+        next_git,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

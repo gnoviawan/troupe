@@ -42,6 +42,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::keys::build(s, t, window.1, &mut layer);
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
+    crate::git_view::dialogs(s, t, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
@@ -183,9 +184,12 @@ fn main_area(
             .into_iter()
             .map(|toggle| row().pl(8.0).pr(4.0).h_full().items_center().child(toggle))
             .collect();
+        let menus = std::cell::RefCell::new(Vec::new());
         let tab = |tab: &model::workspace::Tab| {
             crate::terminal_view::tab_body(s, t, tab)
+                .or_else(|| crate::git_history_view::tab_body(s, t, tab, &mut menus.borrow_mut()))
                 .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
+                .or_else(|| crate::git_diff::tab_body(s, t, tab))
                 .or_else(|| editor_body(s, t, tab))
         };
         let slots = ui::workspace::Slots {
@@ -193,9 +197,15 @@ fn main_area(
             empty: &empty,
             tab: &tab,
             title: &|tab: &model::workspace::Tab| crate::terminal_view::tab_title(s, tab).or_else(|| crate::chat_view::tab_title(s, tab)),
+            badge: &|tab: &model::workspace::Tab| match tab {
+                model::workspace::Tab::Git { cwd, .. } => model::git::changed_file_count(&s.git.cache, cwd),
+                _ => 0,
+            },
             dark: true,
         };
-        return main.child(ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer));
+        let view = ui::workspace::view(&s.workspace, workspace, t, cx, slots, layer);
+        layer.extend(menus.into_inner());
+        return main.child(view);
     }
     col()
         .key("shell-main")
@@ -286,15 +296,16 @@ fn side_panel(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     let close = shell::rail_button(t, &i::X, "Close panel", 28.0, 13.0, false)
         .key("close-panel")
         .on_press(close_panel);
-    let (actions, body) = match tab {
+    let (mut actions, body) = match tab {
         Tab::Explorer => {
-            let mut actions = ui::explorer::header_actions(s, explorer_host::get, explorer_host::lens, t, layer);
-            actions.push(close);
+            let actions = ui::explorer::header_actions(s, explorer_host::get, explorer_host::lens, t, layer);
             ui::explorer::layer(s, explorer_host::get, explorer_host::lens, t, explorer_host::hooks(), layer);
             (actions, ui::explorer::view(s, explorer_host::get, explorer_host::lens, t, explorer_host::hooks()))
         }
-        _ => (vec![close], shell::panel_skeleton(t)),
+        Tab::Changes => (crate::git_view::header_actions(s, t, layer), crate::git_view::changes_panel(s, t, false)),
+        _ => (Vec::new(), shell::panel_skeleton(t).key(format!("side-panel-{}", tab.label().to_lowercase()))),
     };
+    actions.push(close);
     col()
         .key("side-panel")
         .role("complementary")
@@ -303,7 +314,7 @@ fn side_panel(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
         .h_full()
         .border_sides([0.0, 0.0, 0.0, 1.0], t.colors.border)
         .child(shell::panel_header(t, tab.label(), actions))
-        .child(body.key(format!("side-panel-{}", tab.label().to_lowercase())).grow(1.0).min_h(0.0))
+        .child(body)
         .child(
             shell::resize_handle(t, "Resize side panel")
                 .key("side-panel-resize")
@@ -327,6 +338,13 @@ fn toggle_view(s: &mut State, tab: Tab) {
     }
 }
 
+/// The Changes button's count of changed files (`ToolStrip`'s git badge).
+fn changes_badge(s: &State, tab: Tab) -> Option<u64> {
+    let cwd = s.git_cwd().filter(|_| tab == Tab::Changes)?;
+    let count = model::git::changed_file_count(&s.git.cache, &cwd) as u64;
+    (count > 0).then_some(count)
+}
+
 fn tool_strip(s: &State, t: &'static Tokens) -> El {
     let project = s.active_project();
     let has_path = project.is_some_and(|p| p.path.is_some());
@@ -344,7 +362,7 @@ fn tool_strip(s: &State, t: &'static Tokens) -> El {
             tab.label(),
             visible && selected == Some(tab),
             !has_path,
-            None,
+            changes_badge(s, tab),
         )
         .key(format!("tool-strip-{}", tab.label().to_lowercase()))
         .on_press(move |s: &mut State| toggle_view(s, tab))

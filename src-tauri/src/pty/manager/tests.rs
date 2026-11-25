@@ -1081,3 +1081,30 @@ async fn terminal_set_observer_hears_each_change_of_the_project_once() {
     );
     assert!(manager.terminal_set("proj-x").is_empty());
 }
+
+/// `merge_environment` expands `$VAR` references in custom env against the
+/// real process env: `PATH=$HOME/bin:$PATH` keeps the inherited PATH
+/// instead of expanding to empty (the pre-fix renderer behavior, which
+/// expanded against `{}`).
+#[test]
+fn merge_environment_expands_custom_refs_against_process_env() {
+    let manager = crate::web::test_pty_manager();
+    #[cfg(windows)]
+    let (var, home) = (
+        "USERPROFILE",
+        std::env::var("USERPROFILE").expect("USERPROFILE is set"),
+    );
+    #[cfg(not(windows))]
+    let (var, home) = ("HOME", std::env::var("HOME").expect("HOME is set"));
+    let custom = HashMap::from([("PATH".to_string(), format!("${var}/bin:$PATH"))]);
+    let merged = manager.merge_environment(Some(custom));
+    let path = merged.get("PATH").expect("PATH survives the merge");
+    assert!(
+        path.starts_with(&format!("{home}/bin:")),
+        "PATH should start with the expanded home bin dir, got: {path}"
+    );
+    assert!(
+        !path.contains(&format!("${var}")) && !path.contains("$PATH"),
+        "no reference may survive expansion, got: {path}"
+    );
+}
