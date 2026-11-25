@@ -253,7 +253,8 @@ impl UsageReader {
     async fn offers(&self, command: &str, wait: Duration) -> bool {
         let mut commands = self.commands.subscribe();
         let listed = commands.wait_for(|names| names.iter().any(|name| name == command));
-        matches!(tokio::time::timeout(wait, listed).await, Ok(Ok(_)))
+        let answer = tokio::time::timeout(wait, listed).await;
+        matches!(answer, Ok(Ok(_)))
     }
 
     fn take_text(&self) -> String {
