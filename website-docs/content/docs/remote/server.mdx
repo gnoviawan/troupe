@@ -171,7 +171,7 @@ To let phones and other computers connect, listen on all network interfaces:
 troupe-server --host 0.0.0.0 --port 8080
 ```
 
-Flags such as `--host` and `--port` count as a configuration, so a fresh install started this way skips the setup page. Once a `server-config.json` exists it wins over these flags for the settings it holds — change those under **Settings**, in the **Server** tab, instead. Flags the file doesn't cover, such as `--allowed-origins`, still apply.
+Flags such as `--host` and `--port` count as a configuration, so a fresh install started this way skips the setup page. Once a `server-config.json` exists it wins over these flags for the settings it holds — change those in **Settings** > **About**, in the **Server** group, instead. Flags the file doesn't cover, such as `--allowed-origins`, still apply.
 
 The first time the server listens on `0.0.0.0` without a token, it creates an access token and prints the path of the file that holds it. Read the token from that file, then open `http://<server-address>:8080/#token=<token>`. See [The access token](/docs/remote/server-options#the-access-token).
 
