@@ -40,7 +40,8 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
     };
     let focused = s.terms.focused.as_deref() == Some(terminal_id.as_str());
     let marks = term_select::marks(view, &term, &palette, [t.colors.search_match, t.colors.search_match_active], focused);
-    let shown = Screen { term: &term, scrolled: view.scrolled, focused: true, blink_on: true, marks: &marks };
+    let blink_on = s.cursor_shown(terminal_id, term.cursor().blink.unwrap_or(true));
+    let shown = Screen { term: &term, scrolled: view.scrolled, focused: true, blink_on, marks: &marks };
     let id = terminal_id.clone();
     let screen = ui::terminal::screen(&format!("terminal-{terminal_id}"), &shown, &palette, &m, &view.cache)
         .cursor(if view.hover.is_some() { Cursor::Pointer } else { Cursor::Text })
@@ -65,7 +66,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
         .clip_rounded(0.0)
         .focusable(true)
         .on_key(move |s: &mut State, key, tx| s.terminal_key(&keyed, key, tx))
-        .on_wheel(move |s: &mut State, e, _tx| s.terminal_wheel(&wheeled, e.dy))
+        .on_wheel(move |s: &mut State, e, _tx| s.terminal_wheel(&wheeled, &e))
         .on_layout_tx(move |s: &mut State, [_, _, w, h], tx| s.terminal_measured(&measured, w, h, tx))
         .child(screen);
     if let Some(find) = &view.find {

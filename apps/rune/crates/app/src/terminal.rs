@@ -57,6 +57,8 @@ pub struct TerminalUi {
     pub focused: Option<String>,
     /// What a find field edits when its terminal is gone mid-frame.
     pub spare_edit: rune::TextEdit,
+    /// When the cursor's blink last restarted (input or output).
+    pub blink_from: f64,
 }
 
 impl TerminalUi {
@@ -118,7 +120,12 @@ impl State {
         for event in events {
             changed = true;
             match event {
-                TermEvent::Changed(id) => redrawn.push(id),
+                TermEvent::Changed(id) => {
+                    if self.terms.focused.as_ref() == Some(&id) {
+                        self.terms.blink_from = now;
+                    }
+                    redrawn.push(id)
+                }
                 TermEvent::Link(output) => self.terminal_output(output),
             }
         }
@@ -253,10 +260,15 @@ impl State {
     /// A key while terminal `id` has focus: true when the terminal took it.
     pub(crate) fn terminal_key(&mut self, id: &str, key: &KeyEvent, tx: &mut Tx) -> bool {
         self.terms.focused = Some(id.to_owned());
+        self.terms.blink_from = self.now;
         // The platform modifier (⌘, or Ctrl elsewhere) with C copies a selection and with A
         // selects everything, as React's clipboard keys do; ^C without a selection interrupts.
         if !key.mods.alt && !key.mods.shift {
             if key.is_command('c') && self.terminal_copy(id, tx) {
+                return true;
+            }
+            if key.is_command('v') {
+                self.terminal_paste_clipboard(id, tx);
                 return true;
             }
             if key.is_command('a') {
@@ -288,14 +300,19 @@ impl State {
         true
     }
 
-    /// The wheel over terminal `id` moved its content `dy` points down: scroll the scrollback.
-    pub(crate) fn terminal_wheel(&mut self, id: &str, dy: f32) -> bool {
+    /// The wheel over terminal `id` moved its content `dy` points down: the program takes it
+    /// when it reports the pointer or shows the alternate screen, else the scrollback scrolls.
+    pub(crate) fn terminal_wheel(&mut self, id: &str, e: &rune::WheelEvent) -> bool {
         let cell_h = self.terms.metrics().cell_h;
         let Some(view) = self.terms.views.get_mut(id) else { return false };
-        let history = view.cells.lock().map(|t| t.screen_start()).unwrap_or(0);
-        view.wheel += dy / cell_h;
+        view.wheel += e.dy / cell_h;
         let lines = view.wheel.trunc();
         view.wheel -= lines;
+        if self.terminal_wheel_input(id, lines as i32, e.x, e.y) {
+            return true;
+        }
+        let Some(view) = self.terms.views.get_mut(id) else { return false };
+        let history = view.cells.lock().map(|t| t.screen_start()).unwrap_or(0);
         view.scrolled = (view.scrolled as f32 + lines).clamp(0.0, history as f32) as usize;
         true
     }

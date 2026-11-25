@@ -86,6 +86,10 @@ impl State {
     pub(crate) fn terminal_drag(&mut self, id: &str, d: &Drag) -> bool {
         let m = self.terms.metrics();
         self.terms.focused = Some(id.to_owned());
+        if self.terminal_wants_mouse(id) {
+            self.terminal_mouse_drag(id, d);
+            return true;
+        }
         let Some(view) = self.terms.views.get_mut(id) else { return false };
         let cells = view.cells.clone();
         let Ok(term) = cells.lock() else { return false };
@@ -119,6 +123,7 @@ impl State {
 
     /// The pointer moved over terminal `id`'s screen: underline the link under it.
     pub(crate) fn terminal_hover(&mut self, id: &str, x: f32, y: f32) -> bool {
+        self.terminal_mouse_motion(id, x, y);
         let m = self.terms.metrics();
         let Some(view) = self.terms.views.get_mut(id) else { return false };
         let link = match view.cells.lock() {

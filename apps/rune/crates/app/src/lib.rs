@@ -38,6 +38,7 @@ mod rail_menus;
 mod rail_view;
 mod sync;
 mod term_host;
+mod term_input;
 mod term_select;
 mod terminal;
 mod terminal_view;
@@ -259,7 +260,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let (retried, next_retry) = state.fire_retries(now);
     let (waited, next_wait) = state.fire_readvertise_waits(now);
     changed |= retried | waited;
-    for due in [state.toasts.next_expiry(), next_retry, next_wait].into_iter().flatten() {
+    for due in [state.toasts.next_expiry(), next_retry, next_wait, state.next_blink()].into_iter().flatten() {
         tx.wake_at(due);
     }
     state.persist_workspace();
