@@ -37,7 +37,7 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 
 | Feature                | Description                                                                                                                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent Chat**         | Chat with ACP agents such as Claude Agent, Codex, Gemini CLI, Cursor, and OpenCode in any pane, with a model picker, slash commands, `@` mentions of files and other chats, permission prompts, and a plan view |
+| **Agent Chat**         | Chat with ACP agents such as Claude Agent, Codex, Gemini CLI, Cursor, OpenCode, and Hermes Agent in any pane, with a model picker, slash commands, `@` mentions of files and other chats, permission prompts, and a plan view |
 | **Saved Chats**        | Troupe saves chats per project and lists them in the sidebar. Reopen a chat when its agent can reload a past session                                                                        |
 | **Agent Launcher**     | Start a chat from a prompt in the active pane (`Ctrl+T`), pick the agent and model, and optionally isolate the chat in a new Git worktree                                                   |
 | **Custom ACP Agents**  | Add your own ACP agents in Settings, or paste a Zed-style `agent_servers` config                                                                                                            |
