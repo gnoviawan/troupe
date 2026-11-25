@@ -11,6 +11,7 @@
 mod buffer;
 mod cell;
 pub mod links;
+pub mod mouse;
 mod perform;
 pub mod search;
 pub mod selection;
