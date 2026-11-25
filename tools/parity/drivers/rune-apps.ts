@@ -115,7 +115,8 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'settings.app-terminal',
   'settings.app-ai-agents',
   'settings.app-shortcuts',
-  'settings.app-about'
+  'settings.app-about',
+  'phone.journey-mobile-header-palette-parity'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
