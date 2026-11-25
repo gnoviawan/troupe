@@ -106,11 +106,17 @@ pub(super) fn agent_chip<S: 'static>(t: &'static Tokens, spec: &Spec, label: &st
         .mx(-reach)
         .my(-reach)
         .center()
-        .radius(4.0)
         .role("button")
         .label("Cancel agent switch")
-        .hover(t.colors.foreground.alpha(0.1))
-        .child(icon(&i::X, 10.0).color(t.colors.muted_foreground).a11y_hidden())
+        .child(
+            row()
+                .w(22.0)
+                .h(22.0)
+                .center()
+                .radius(4.0)
+                .hover(t.colors.foreground.alpha(0.1))
+                .child(icon(&i::X, 10.0).color(t.colors.muted_foreground).a11y_hidden()),
+        )
         .on_press_tx(move |s: &mut S, tx: &mut Tx| switch(s, SwitchAct::Cancel, tx));
     row().gap(2.0).items_center().min_w(0.0).child(menu).child(cancel)
 }
