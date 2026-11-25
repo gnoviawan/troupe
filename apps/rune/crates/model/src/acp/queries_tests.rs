@@ -153,13 +153,11 @@ fn a_session_project_reads_the_live_record_then_the_index() {
         ("loose", None),
         ("missing", None),
     ];
-    for (session_id, expected) in cases {
-        assert_eq!(
-            state.session_project_id(session_id),
-            expected,
-            "{session_id}"
-        );
-    }
+    let found: Vec<_> = cases
+        .iter()
+        .map(|(id, _)| (*id, state.session_project_id(id)))
+        .collect();
+    assert_eq!(found, cases);
 }
 
 #[test]
