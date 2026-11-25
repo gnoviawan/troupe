@@ -1,5 +1,5 @@
 //! The model's agent and session commands on the host (`acp-api.ts` over the web transport):
-//! `spawn_agent`, `create_session`, `kill_agent`, `promote_session`,
+//! `spawn_agent`, `create_session`, `kill_agent`, `authenticate_agent`, `promote_session`,
 //! `dispose_ephemeral_session` and `record_agent_switch`, each answered back to the model as
 //! `AgentCommandDone` or `AgentCommandFailed`, and the workspace effects an agent switch asks
 //! for (the tab remap, the draft delete, its toasts).
@@ -36,6 +36,13 @@ impl State {
                 (WsRequestType::CreateSession, payload)
             }
             Effect::KillAgent { agent_id, .. } => (WsRequestType::KillAgent, json!({ "agentId": agent_id })),
+            Effect::Authenticate { agent_id, method_id, input, .. } => {
+                let mut payload = json!({ "agentId": agent_id, "methodId": method_id });
+                for (key, value) in input.as_ref().and_then(Value::as_object).into_iter().flatten() {
+                    payload[key] = value.clone();
+                }
+                (WsRequestType::AuthenticateAgent, payload)
+            }
             Effect::PromoteSession { agent_id, session_id } => {
                 (WsRequestType::PromoteSession, json!({ "agentId": agent_id, "sessionId": session_id }))
             }
