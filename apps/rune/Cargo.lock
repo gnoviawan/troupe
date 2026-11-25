@@ -3949,6 +3949,7 @@ dependencies = [
  "serde_json",
  "theme",
  "troupe-protocol",
+ "troupe-term",
  "ui",
  "wasm-bindgen",
  "wasm-bindgen-futures",

@@ -37,6 +37,9 @@ mod rail_forms;
 mod rail_menus;
 mod rail_view;
 mod sync;
+mod term_host;
+mod terminal;
+mod terminal_view;
 mod theme_picker;
 mod view;
 
@@ -118,6 +121,8 @@ pub struct State {
     pub chat: chat::ChatUi,
     /// The composers' drafts and what their menus list.
     pub composer: composer::ComposerUi,
+    /// The terminals: their link, sessions and cells.
+    pub terms: terminal::TerminalUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -164,6 +169,7 @@ impl Default for State {
             workspace: Workspace::new(Box::new(Uuids::new(seed()))),
             chat: chat::ChatUi::default(),
             composer: composer::ComposerUi::default(),
+            terms: terminal::TerminalUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -233,6 +239,7 @@ fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
+        state.terms.host = Some(term_host::TermHost::connect(config.clone(), wake.clone()));
         state.connect(Host::connect(config, wake));
     }
 }
@@ -244,6 +251,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         changed |= state.close_top();
     }
     changed |= state.pump(now);
+    changed |= state.pump_terminals(now);
     state.sync_chats();
     state.read_agents();
     changed |= state.flush_chat();
