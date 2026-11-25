@@ -59,6 +59,8 @@ pub struct TerminalUi {
     pub spare_edit: rune::TextEdit,
     /// When the cursor's blink last restarted (input or output).
     pub blink_from: f64,
+    /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
+    pub blink_shown: Option<bool>,
 }
 
 impl TerminalUi {

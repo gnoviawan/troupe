@@ -21,8 +21,11 @@ fn the_focused_cursor_blinks_every_600_ms_from_the_last_input() {
     s.now = 10.3;
     assert!(s.cursor_shown("pty-1", true));
     assert_eq!(s.next_blink(), Some(10.6));
+    assert!(s.blink_flipped(), "the first frame draws the cursor");
+    assert!(!s.blink_flipped(), "nothing to redraw within a phase");
     s.now = 10.7;
     assert!(!s.cursor_shown("pty-1", true), "off in the second phase");
+    assert!(s.blink_flipped(), "the frame redraws when it turns off");
     assert!(s.cursor_shown("pty-1", false), "a steady cursor never blinks");
     assert!(s.cursor_shown("pty-2", true), "an unfocused terminal does not blink");
 }
