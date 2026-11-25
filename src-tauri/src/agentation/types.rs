@@ -51,6 +51,7 @@ pub enum SessionStatus {
 pub enum AnnotationKind {
     #[default]
     Feedback,
+    Rectangle,
     Placement,
     Rearrange,
     Measurement,

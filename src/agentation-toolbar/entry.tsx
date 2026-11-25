@@ -35,7 +35,7 @@ interface OverlayCommand {
 interface PlacedPin {
   id: string
   num: number
-  kind: 'feedback' | 'guide' | 'measurement'
+  kind: 'feedback' | 'rectangle' | 'guide' | 'measurement'
   x: number
   y: number
   rect?: { x: number; y: number; width: number; height: number }
@@ -502,7 +502,7 @@ class TroupeAnnotationOverlay {
         title: `Rectangle · ${rect.width}×${rect.height}px`,
         x: rect.x,
         y: rect.y,
-        kind: 'feedback',
+        kind: 'rectangle',
         rect
       })
     })
@@ -539,7 +539,6 @@ class TroupeAnnotationOverlay {
   private renderPinsAndGuides(): void {
     this.pinsContainer.innerHTML = ''
     this.guidesContainer.innerHTML = ''
-    if (this.pinsHidden) return
 
     for (const guide of this.guides) {
       const line = document.createElement('div')
@@ -576,6 +575,8 @@ class TroupeAnnotationOverlay {
       })
       this.guidesContainer.appendChild(badge)
     }
+
+    if (this.pinsHidden) return
 
     for (const pin of this.pins) {
       if (pin.rect) {
@@ -621,7 +622,7 @@ class TroupeAnnotationOverlay {
     title: string
     x: number
     y: number
-    kind: 'feedback' | 'guide'
+    kind: 'feedback' | 'rectangle' | 'guide'
     summary?: ElementSummary
     rect?: { x: number; y: number; width: number; height: number }
     guide?: PlacedGuide
@@ -641,7 +642,7 @@ class TroupeAnnotationOverlay {
     title.textContent = opts.title
     const pill = document.createElement('span')
     pill.className = 'pop-pill'
-    pill.textContent = 'Crop attached'
+    pill.textContent = 'Auto-crop on add'
     head.append(title, pill)
 
     const textarea = document.createElement('textarea')

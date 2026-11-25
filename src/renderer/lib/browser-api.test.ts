@@ -16,6 +16,7 @@ vi.mock('@/lib/tauri-runtime', () => ({
 
 import { invoke } from '@tauri-apps/api/core'
 import {
+  browserCheckLocalPort,
   browserListLocalServers,
   browserTabAnnotationCmd,
   browserTabInjectAgentation,
@@ -59,6 +60,9 @@ describe('browser-api wrappers (desktop + non-Tauri parity)', () => {
 
     await browserListLocalServers()
     expect(invoke).toHaveBeenCalledWith('browser_list_local_servers')
+
+    await browserCheckLocalPort(3000)
+    expect(invoke).toHaveBeenCalledWith('browser_check_local_port', { port: 3000 })
   })
 
   it('gates desktop-only commands cleanly with NOT_TAURI outside Tauri runtime', async () => {
@@ -68,8 +72,9 @@ describe('browser-api wrappers (desktop + non-Tauri parity)', () => {
     const shot = await browserTabScreenshot('tab-1')
     const cmd = await browserTabAnnotationCmd('tab-1', { type: 'clear' })
     const servers = await browserListLocalServers()
+    const port = await browserCheckLocalPort(3000)
 
-    for (const res of [zoom, stop, shot, cmd, servers]) {
+    for (const res of [zoom, stop, shot, cmd, servers, port]) {
       expect(res.success).toBe(false)
       if (!res.success) expect(res.code).toBe('NOT_TAURI')
     }

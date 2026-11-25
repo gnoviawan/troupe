@@ -104,6 +104,7 @@ impl AgentationMcpServer {
             "id": a.id,
             "kind": match a.kind {
                 AnnotationKind::Feedback => "feedback",
+                AnnotationKind::Rectangle => "rectangle",
                 AnnotationKind::Placement => "placement",
                 AnnotationKind::Rearrange => "rearrange",
                 AnnotationKind::Measurement => "measurement",
@@ -229,7 +230,10 @@ impl AgentationMcpServer {
         let mut guides = Vec::new();
         for sid in sessions {
             for ann in self.store.get_pending_annotations(&sid) {
-                if matches!(ann.kind, AnnotationKind::Guide | AnnotationKind::Measurement) {
+                if matches!(
+                    ann.kind,
+                    AnnotationKind::Guide | AnnotationKind::Measurement
+                ) {
                     guides.push(Self::map_annotation_for_mcp(&ann));
                 }
             }

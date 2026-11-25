@@ -44,6 +44,7 @@ import { BrowserZoomControl } from './BrowserZoomControl'
 
 interface BrowserControlsProps {
   browserTabId: string
+  isVisible?: boolean
   onSendAnnotationsToChat?: (
     markdown: string,
     crops: Array<{ name: string; base64: string; dataUrl: string }>
@@ -71,6 +72,7 @@ function splitDisplayUrl(
 
 export function BrowserControls({
   browserTabId,
+  isVisible = true,
   onSendAnnotationsToChat
 }: BrowserControlsProps): React.JSX.Element {
   const tab = useBrowserSessionStore((state) => state.tabs.get(browserTabId))
@@ -155,6 +157,8 @@ export function BrowserControls({
     void browserTabInjectAgentation(browserTabId)
       .then((result) => {
         if (!result.success && result.code !== 'NOT_TAURI') {
+          setAnnotateMode(browserTabId, false)
+          toast.error(result.error || 'Could not start annotation mode.')
           void logFrontendError({
             level: 'warn',
             message: `Toolbar injection failed: ${result.error ?? 'unknown'} [${result.code ?? 'NO_CODE'}]`,
@@ -166,6 +170,8 @@ export function BrowserControls({
         void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
       })
       .catch((e) => {
+        setAnnotateMode(browserTabId, false)
+        toast.error('Could not start annotation mode.')
         void logFrontendError({
           level: 'warn',
           message: `Toolbar injection error: ${e instanceof Error ? e.message : String(e)}`,
@@ -226,27 +232,78 @@ export function BrowserControls({
       .finally(() => setStopPending(false))
   }, [agentSessionId, stopPending])
 
-  // Keyboard shortcuts when toolbar is active (⌘L focus URL, ⌘+/⌘-/⌘0 zoom)
-  const handleToolbarKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!(e.metaKey || e.ctrlKey)) return
-      if (e.key.toLowerCase() === 'l') {
-        e.preventDefault()
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      } else if (e.key === '=' || e.key === '+') {
-        e.preventDefault()
-        stepZoom(browserTabId, 'in')
-      } else if (e.key === '-') {
-        e.preventDefault()
-        stepZoom(browserTabId, 'out')
-      } else if (e.key === '0') {
-        e.preventDefault()
-        resetZoom(browserTabId)
+  // Panel-level keyboard shortcuts while this browser tab is visible
+  useEffect(() => {
+    if (!isVisible) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const inEditable =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+      const mod = e.metaKey || e.ctrlKey
+      if (mod) {
+        const key = e.key.toLowerCase()
+        if (key === 'l') {
+          e.preventDefault()
+          setUrlFocused(true)
+          requestAnimationFrame(() => {
+            inputRef.current?.focus()
+            inputRef.current?.select()
+          })
+        } else if (e.key === '=' || e.key === '+') {
+          e.preventDefault()
+          stepZoom(browserTabId, 'in')
+        } else if (e.key === '-') {
+          e.preventDefault()
+          stepZoom(browserTabId, 'out')
+        } else if (e.key === '0') {
+          e.preventDefault()
+          resetZoom(browserTabId)
+        } else if (e.shiftKey && key === 'r' && tabUrl) {
+          e.preventDefault()
+          browserTabReload(browserTabId).catch(console.error)
+        } else if (e.shiftKey && key === 's' && tabUrl) {
+          e.preventDefault()
+          void handleQuickScreenshotVisible()
+        } else if (e.shiftKey && key === 'a' && tabUrl) {
+          e.preventDefault()
+          handleQuickScreenshotArea()
+        }
+        return
       }
-    },
-    [browserTabId, resetZoom, stepZoom]
-  )
+      if (!annotateMode || inEditable) return
+      const key = e.key.toLowerCase()
+      if (key === 'c') {
+        setAnnotateTool(browserTabId, 'comment')
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
+      } else if (key === 'r') {
+        setAnnotateTool(browserTabId, 'rectangle')
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'rectangle' })
+      } else if (key === 'm') {
+        setAnnotateTool(browserTabId, 'ruler')
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'ruler' })
+      } else if (key === 'p') {
+        const next = useBrowserSessionStore.getState().toggleAnimationsPaused(browserTabId)
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_pause', paused: next })
+      } else if (key === 'h') {
+        const next = useBrowserSessionStore.getState().togglePinsHidden(browserTabId)
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_pins_hidden', hidden: next })
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [
+    annotateMode,
+    browserTabId,
+    handleQuickScreenshotArea,
+    handleQuickScreenshotVisible,
+    isVisible,
+    resetZoom,
+    setAnnotateTool,
+    stepZoom,
+    tabUrl
+  ])
 
   const parts = splitDisplayUrl(tabUrl)
   const hasUrl = Boolean(tabUrl)
@@ -255,10 +312,7 @@ export function BrowserControls({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div
-        className="relative flex shrink-0 flex-col bg-background"
-        onKeyDown={handleToolbarKeyDown}
-      >
+      <div className="relative flex shrink-0 flex-col bg-background">
         <div className="relative h-10 overflow-hidden">
           <AnimatePresence mode="popLayout" initial={false}>
             {modeKey === 'agent' ? (
@@ -301,7 +355,7 @@ export function BrowserControls({
                     disabled={stopPending}
                     onClick={handleStopAgent}
                     aria-label="Stop agent browsing"
-                    className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/15 px-2.5 text-xs font-medium tracking-[-0.01em] text-destructive shadow-[0_0_0_0.5px_color-mix(in_srgb,var(--color-destructive)_36%,#000),0_1px_2px_rgba(0,0,0,0.45)] transition-[transform,background-color] duration-150 hover:bg-destructive/20 active:scale-[0.97] disabled:opacity-50"
+                    className="tactile-destructive inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-destructive/15 px-2.5 text-xs font-medium tracking-[-0.01em] text-destructive transition-[transform,background-color] duration-150 hover:bg-destructive/20 active:scale-[0.97] disabled:opacity-50"
                   >
                     <Square size={9} aria-hidden="true" />
                     <span>Stop</span>

@@ -36,7 +36,14 @@ export function ResponsiveViewportBar({
   const resetZoom = useBrowserSessionStore((s) => s.resetZoom)
 
   const open = viewportPreset !== 'desktop'
+  const panelRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (panelRef.current) {
+      panelRef.current.inert = !open
+    }
+  }, [open])
   const tabRefs = useRef<Record<ViewportPreset, HTMLButtonElement | null>>({
     desktop: null,
     tablet: null,
@@ -83,6 +90,7 @@ export function ResponsiveViewportBar({
 
   return (
     <div
+      ref={panelRef}
       className="t-acc-panel shrink-0"
       data-open={open ? 'true' : 'false'}
       aria-hidden={!open}

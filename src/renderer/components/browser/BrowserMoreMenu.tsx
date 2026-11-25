@@ -97,7 +97,6 @@ export function BrowserMoreMenu({
             className="flex h-[30px] items-center justify-between rounded-md px-2 text-[13px] font-medium text-secondary-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:opacity-40"
           >
             <span>Copy address</span>
-            <span className="font-mono text-xs text-muted-foreground">⌘L</span>
           </button>
 
           <button

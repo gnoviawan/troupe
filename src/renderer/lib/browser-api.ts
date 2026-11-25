@@ -153,6 +153,11 @@ export async function browserListLocalServers(): Promise<IpcResult<LocalDevServe
   return invoke('browser_list_local_servers')
 }
 
+export async function browserCheckLocalPort(port: number): Promise<IpcResult<boolean>> {
+  if (!isTauriContext()) return notTauriError('Local port check')
+  return invoke('browser_check_local_port', { port })
+}
+
 export async function browserTabOpenDevtools(tabId: string): Promise<IpcResult<void>> {
   return invoke('browser_tab_open_devtools', { tabId })
 }
@@ -188,4 +193,39 @@ export function onBrowserTabUpdated(
   callback: (view: BrowserTabView) => void
 ): BrowserEventSubscription {
   return createBrowserEventSubscription('browser_tab_updated', callback)
+}
+
+export interface AgentationCreatedPayload {
+  id: string
+  url?: string
+  kind?: 'feedback' | 'rectangle' | 'guide' | 'measurement' | 'placement' | 'rearrange'
+  element: string
+  elementPath: string
+  comment: string
+  boundingBox?: { x: number; y: number; width: number; height: number }
+  measurement?: {
+    axis?: 'horizontal' | 'vertical'
+    positionPx?: number
+    toSelector?: string
+    deltaPx?: number
+  }
+}
+
+export interface AgentationActionPayload {
+  sessionId?: string
+  output?: string
+}
+
+export function onAgentationAnnotationCreated(
+  callback: (payload: AgentationCreatedPayload) => void
+): BrowserEventSubscription {
+  if (!isTauriContext()) return { unlisten: () => {} }
+  return createBrowserEventSubscription('agentation:annotation_created', callback)
+}
+
+export function onAgentationActionRequested(
+  callback: (payload: AgentationActionPayload) => void
+): BrowserEventSubscription {
+  if (!isTauriContext()) return { unlisten: () => {} }
+  return createBrowserEventSubscription('agentation:action_requested', callback)
 }

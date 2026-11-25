@@ -1,11 +1,23 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import type { AgentationActionPayload, AgentationCreatedPayload } from '@/lib/browser-api'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
+import { useProjectStore } from '@/stores/project-store'
 import { BrowserPanel } from './BrowserPanel'
+
+const { annotationListeners, actionListeners, mockOpenTerminalAtCwd } = vi.hoisted(() => ({
+  annotationListeners: [] as Array<(p: AgentationCreatedPayload) => void>,
+  actionListeners: [] as Array<(p: AgentationActionPayload) => void>,
+  mockOpenTerminalAtCwd: vi.fn().mockResolvedValue({ status: 'opened', terminalId: 'term-1' })
+}))
 
 vi.mock('@/hooks/use-browser-webview', () => ({
   useBrowserWebview: () => ({ containerRef: { current: null } })
+}))
+
+vi.mock('@/lib/terminal-spawn', () => ({
+  openTerminalAtCwd: (...args: unknown[]) => mockOpenTerminalAtCwd(...args)
 }))
 
 vi.mock('@/lib/browser-api', () => ({
@@ -15,6 +27,7 @@ vi.mock('@/lib/browser-api', () => ({
       { host: 'localhost:5173', port: 5173, url: 'http://localhost:5173', label: 'Vite dev server' }
     ]
   }),
+  browserCheckLocalPort: vi.fn().mockResolvedValue({ success: true, data: false }),
   browserTabGoBack: vi.fn().mockResolvedValue({ success: true }),
   browserTabGoForward: vi.fn().mockResolvedValue({ success: true }),
   browserTabReload: vi.fn().mockResolvedValue({ success: true }),
@@ -25,12 +38,27 @@ vi.mock('@/lib/browser-api', () => ({
     .mockResolvedValue({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } }),
   browserTabAnnotationCmd: vi.fn().mockResolvedValue({ success: true }),
   browserTabOpenDevtools: vi.fn().mockResolvedValue({ success: true }),
-  browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true })
+  browserTabInjectAgentation: vi.fn().mockResolvedValue({ success: true }),
+  onAgentationAnnotationCreated: (cb: (p: AgentationCreatedPayload) => void) => {
+    annotationListeners.push(cb)
+    return { unlisten: () => {} }
+  },
+  onAgentationActionRequested: (cb: (p: AgentationActionPayload) => void) => {
+    actionListeners.push(cb)
+    return { unlisten: () => {} }
+  }
 }))
 
 describe('BrowserPanel', () => {
   beforeEach(() => {
+    annotationListeners.length = 0
+    actionListeners.length = 0
+    mockOpenTerminalAtCwd.mockClear()
     useBrowserSessionStore.setState({ tabs: new Map(), recentUrls: [] })
+    useProjectStore.setState({
+      activeProjectId: 'proj-1',
+      projects: [{ id: 'proj-1', name: 'Troupe', path: '/repo' }] as never
+    })
   })
 
   it('renders developer start page when URL is empty and navigates on localhost submission', () => {
@@ -59,7 +87,7 @@ describe('BrowserPanel', () => {
     expect(screen.queryByText('Loading...')).toBeNull()
   })
 
-  it('renders offline error view when loadError is set and clears on Retry', () => {
+  it('renders offline view with Open terminal wired and clears error on Retry', () => {
     useBrowserSessionStore.getState().createTab('tab-1', 'http://localhost:5173')
     useBrowserSessionStore.getState().setLoadError('tab-1', {
       code: 'ERR_CONNECTION_REFUSED',
@@ -73,6 +101,9 @@ describe('BrowserPanel', () => {
       </TooltipProvider>
     )
     expect(screen.getByTestId('browser-offline-view')).toBeTruthy()
+    fireEvent.click(screen.getByText('Open terminal'))
+    expect(mockOpenTerminalAtCwd).toHaveBeenCalledWith('proj-1', '/repo')
+
     fireEvent.click(screen.getByText('Retry'))
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.loadError).toBeNull()
   })
@@ -88,5 +119,36 @@ describe('BrowserPanel', () => {
     expect(screen.getByTestId('responsive-viewport-bar').getAttribute('data-open')).toBe('true')
     expect(screen.getByLabelText(/left handle/i)).toBeTruthy()
     expect(screen.getByLabelText(/right handle/i)).toBeTruthy()
+  })
+
+  it('receives overlay annotations into pending batch queue with auto-crop attached', async () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'http://localhost:5173/signup')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    act(() => {
+      annotationListeners[0]?.({
+        id: 'ann-1',
+        url: 'http://localhost:5173/signup',
+        kind: 'guide',
+        element: 'Vertical guide · x = 32px',
+        elementPath: 'div.project-url-card',
+        comment: 'Align left edge at x = 32px',
+        measurement: { axis: 'vertical', positionPx: 32, deltaPx: 8 }
+      })
+    })
+
+    await waitFor(() => {
+      const pending = useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations ?? []
+      expect(pending.length).toBe(1)
+      expect(pending[0].kind).toBe('guide')
+      expect(pending[0].axis).toBe('vertical')
+      expect(pending[0].positionPx).toBe(32)
+      expect(pending[0].cropBase64).toBe('AA==')
+    })
   })
 })

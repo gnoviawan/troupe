@@ -259,6 +259,7 @@ fn parse_session_status(s: &str) -> SessionStatus {
 
 fn parse_kind(s: &str) -> AnnotationKind {
     match s {
+        "rectangle" => AnnotationKind::Rectangle,
         "placement" => AnnotationKind::Placement,
         "rearrange" => AnnotationKind::Rearrange,
         "measurement" => AnnotationKind::Measurement,
@@ -418,6 +419,7 @@ impl AnnotationStore for SqliteStore {
         let id = generate_id();
         let kind = data.kind.clone().unwrap_or_default();
         let kind_str = match kind {
+            AnnotationKind::Rectangle => "rectangle",
             AnnotationKind::Placement => "placement",
             AnnotationKind::Rearrange => "rearrange",
             AnnotationKind::Measurement => "measurement",

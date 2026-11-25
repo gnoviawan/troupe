@@ -53,7 +53,7 @@ export function BrowserOfflineView({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary-fill px-3 text-[13px] font-medium tracking-[-0.01em] text-primary-foreground shadow-[0_0_0_0.5px_var(--color-primary-fill),0_1px_2px_rgba(0,0,0,0.5)] transition-[transform,background-color] duration-150 hover:bg-primary-fill-hover active:scale-[0.97]"
+            className="tactile-primary inline-flex h-8 items-center gap-1.5 rounded-md bg-primary-fill px-3 text-[13px] font-medium tracking-[-0.01em] text-primary-foreground transition-[transform,background-color] duration-150 hover:bg-primary-fill-hover active:scale-[0.97]"
           >
             <RotateCcw size={14} aria-hidden="true" />
             <span>Retry</span>

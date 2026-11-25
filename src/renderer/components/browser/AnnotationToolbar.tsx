@@ -421,7 +421,7 @@ export function AnnotationToolbar({
           className={cn(
             'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium tracking-[-0.01em] transition-[transform,background-color] duration-150',
             count > 0
-              ? 'bg-primary-fill text-primary-foreground shadow-[0_0_0_0.5px_var(--color-primary-fill),0_1px_2px_rgba(0,0,0,0.5)] hover:bg-primary-fill-hover active:scale-[0.97]'
+              ? 'tactile-primary bg-primary-fill text-primary-foreground hover:bg-primary-fill-hover active:scale-[0.97]'
               : 'bg-muted text-disabled-foreground'
           )}
         >

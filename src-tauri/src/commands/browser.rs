@@ -221,7 +221,10 @@ pub async fn browser_stop(session_id: String, webview: Webview) -> Result<IpcRes
     require_main_webview(&webview, "browser_stop")?;
     Ok(match crate::browser_automation::stop_session(&session_id) {
         Some(_) => IpcResult::success(()),
-        None => IpcResult::error("browser automation is not running", "BROWSER_STOP_UNAVAILABLE"),
+        None => IpcResult::error(
+            "browser automation is not running",
+            "BROWSER_STOP_UNAVAILABLE",
+        ),
     })
 }
 
@@ -360,4 +363,24 @@ pub async fn browser_list_local_servers(
         }
     }
     Ok(IpcResult::success(found))
+}
+
+/// Probe whether a specific localhost TCP port is accepting connections.
+#[tauri::command]
+pub async fn browser_check_local_port(
+    port: u16,
+    webview: Webview,
+) -> Result<IpcResult<bool>, String> {
+    use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::time::Duration;
+
+    require_main_webview(&webview, "browser_check_local_port")?;
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
+    let ok = tokio::time::timeout(
+        Duration::from_millis(75),
+        tokio::net::TcpStream::connect(addr),
+    )
+    .await
+    .is_ok_and(|res| res.is_ok());
+    Ok(IpcResult::success(ok))
 }

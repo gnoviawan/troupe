@@ -221,6 +221,16 @@
     0 1px 2px 0 rgba(0, 0, 0, 0.5),
     0 6px 8px -4px rgba(0, 0, 0, 0.5);
 }
+.tactile-primary {
+  box-shadow:
+    0 0 0 0.5px var(--color-primary-fill),
+    0 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+.tactile-destructive {
+  box-shadow:
+    0 0 0 0.5px color-mix(in srgb, var(--color-destructive) 36%, #000),
+    0 1px 2px 0 rgba(0, 0, 0, 0.45);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .t-dropdown,

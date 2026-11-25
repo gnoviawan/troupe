@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNativeWebviewOccluded } from '@/hooks/use-native-webview-occlusion'
 import { getAppliedUiZoom } from '@/hooks/use-ui-zoom'
 import {
+  browserCheckLocalPort,
   browserTabCreate,
   browserTabDestroy,
   browserTabHide,
@@ -35,6 +36,18 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
 
 const ZOOM_EPSILON = 0.001
 
+function parseLocalhostPort(rawUrl: string): { host: string; port: number } | null {
+  try {
+    const parsed = new URL(rawUrl)
+    if (parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') return null
+    const port = parsed.port ? Number(parsed.port) : parsed.protocol === 'https:' ? 443 : 80
+    if (!Number.isInteger(port) || port <= 0) return null
+    return { host: parsed.host, port }
+  } catch {
+    return null
+  }
+}
+
 export function useBrowserWebview(
   browserTabId: string,
   paneVisible: boolean,
@@ -51,6 +64,7 @@ export function useBrowserWebview(
   const layoutKey = opts?.layoutKey ?? 'desktop'
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
+  const [createdTick, setCreatedTick] = useState(0)
   const mountedRef = useRef(true)
   const mountTokenRef = useRef(0)
   const urlRef = useRef(url)
@@ -108,6 +122,8 @@ export function useBrowserWebview(
         }
         if (result.success) {
           createdRef.current = true
+          zoomAppliedRef.current = 1
+          setCreatedTick((n) => n + 1)
           useBrowserSessionStore
             .getState()
             .setAgentControlled(browserTabId, result.data.agentControlled)
@@ -284,8 +300,21 @@ export function useBrowserWebview(
     }
   }, [isVisible, browserTabId, updateBounds])
 
-  // Navigate when url prop changes externally
+  // Navigate when url prop changes externally (and probe localhost ports for offline view)
   useEffect(() => {
+    const localTarget = parseLocalhostPort(url)
+    if (localTarget) {
+      void browserCheckLocalPort(localTarget.port).then((probe) => {
+        if (probe.success && !probe.data) {
+          useBrowserSessionStore.getState().setLoadError(browserTabId, {
+            code: 'ERR_CONNECTION_REFUSED',
+            host: localTarget.host,
+            port: localTarget.port,
+            message: `No local server is listening on port ${localTarget.port}. Start your dev server or check the port number.`
+          })
+        }
+      })
+    }
     if (url === urlRef.current) return
     urlRef.current = url
     if (!createdRef.current) return
@@ -311,8 +340,9 @@ export function useBrowserWebview(
       })
   }, [url, browserTabId])
 
-  // Resize observer
+  // Resize observer — re-attaches when containerRef mounts after Start Page or Offline view
   useEffect(() => {
+    if (!hasDocument) return
     const el = containerRef.current
     if (!el) return
 
@@ -324,7 +354,7 @@ export function useBrowserWebview(
     return () => {
       ro.disconnect()
     }
-  }, [updateBounds])
+  }, [updateBounds, hasDocument])
 
   // Resync webview bounds when responsive preset / orientation / width changes
   useEffect(() => {
@@ -335,9 +365,9 @@ export function useBrowserWebview(
     return () => cancelAnimationFrame(raf)
   }, [layoutKey, updateBounds])
 
-  // Apply native per-tab zoom factor when changed (epsilon check avoids redundant IPC)
+  // Apply native per-tab zoom factor when changed or right after webview creation
   useEffect(() => {
-    if (!createdRef.current) return
+    if (!createdRef.current || createdTick === 0) return
     if (Math.abs(zoomAppliedRef.current - zoomFactor) < ZOOM_EPSILON) return
     zoomAppliedRef.current = zoomFactor
     void browserTabSetZoom(browserTabId, zoomFactor).then((result) => {
@@ -349,7 +379,7 @@ export function useBrowserWebview(
         })
       }
     })
-  }, [browserTabId, zoomFactor])
+  }, [browserTabId, zoomFactor, createdTick])
 
   // The host registry reports what the engine committed, whoever started
   // it. Record the URL as current first so the url prop catching up does

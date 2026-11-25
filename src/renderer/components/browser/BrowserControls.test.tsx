@@ -128,4 +128,46 @@ describe('BrowserControls', () => {
     fireEvent.click(screen.getByLabelText('More browser actions'))
     expect(screen.queryByLabelText('Open debug console')).toBeNull()
   })
+
+  it('reverts annotateMode when overlay injection fails', async () => {
+    const { browserTabInjectAgentation } = await import('@/lib/browser-api')
+    vi.mocked(browserTabInjectAgentation).mockResolvedValueOnce({
+      success: false,
+      error: 'Injection failed'
+    })
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" />)
+
+    fireEvent.click(screen.getByLabelText('Annotate page'))
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
+  })
+
+  it('handles window-level keyboard shortcuts when browser tab is visible', async () => {
+    const { browserTabReload, browserTabAnnotationCmd } = await import('@/lib/browser-api')
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://example.com')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    fireEvent.keyDown(window, { key: '=', metaKey: true })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.zoomFactor).toBe(1.1)
+
+    fireEvent.keyDown(window, { key: '0', metaKey: true })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.zoomFactor).toBe(1)
+
+    fireEvent.keyDown(window, { key: 'r', metaKey: true, shiftKey: true })
+    expect(browserTabReload).toHaveBeenCalledWith('tab-1')
+
+    act(() => {
+      useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    })
+    fireEvent.keyDown(window, { key: 'm' })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_tool',
+      tool: 'ruler'
+    })
+  })
 })
