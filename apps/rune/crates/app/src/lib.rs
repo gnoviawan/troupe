@@ -30,6 +30,13 @@ mod composer_agents;
 mod composer_sheet;
 mod composer_view;
 mod controls;
+mod editor_host;
+mod explorer_host;
+mod phone_files;
+#[cfg(test)]
+mod explorer_host_tests;
+#[cfg(test)]
+mod editor_host_tests;
 mod git;
 mod git_diff;
 mod git_history;
@@ -151,6 +158,11 @@ pub struct State {
     pub composer: composer::ComposerUi,
     /// The terminals: their link, sessions and cells.
     pub terms: terminal::TerminalUi,
+    /// The open text files and their editor tabs.
+    pub editors: ui::editor::Editors,
+    pub(crate) editor_host: editor_host::EditorHost,
+    pub explorer: ui::explorer::Explorer,
+    pub(crate) explorer_host: explorer_host::ExplorerHost,
     /// The git cache and the Changes panel's own state.
     pub git: git::GitUi,
     /// The git history reads and the History tab's own state.
@@ -206,6 +218,10 @@ impl Default for State {
             chat: chat::ChatUi::default(),
             composer: composer::ComposerUi::default(),
             terms: terminal::TerminalUi::default(),
+            editors: ui::editor::Editors::default(),
+            editor_host: editor_host::EditorHost::default(),
+            explorer: ui::explorer::Explorer::default(),
+            explorer_host: explorer_host::ExplorerHost::default(),
             git: git::GitUi::default(),
             history: git_history::HistoryUi::default(),
             settings: model::settings::State::default(),
@@ -300,9 +316,22 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let (waited, next_wait) = state.fire_readvertise_waits(now);
     let (gave_up, next_arm) = state.expire_pending_arms(now);
     changed |= retried | waited | gave_up;
+    state.editors.now = editor_host::epoch_ms();
+    state.sync_drafts(now);
+    state.sync_editors();
+    state.sync_explorer();
     let next_git = state.git_tick();
     state.history_tick();
-    let waits = [state.toasts.next_expiry(), next_retry, next_wait, next_arm, state.next_blink(), state.next_find_refresh(), next_git];
+    let waits = [
+        state.toasts.next_expiry(),
+        next_retry,
+        next_wait,
+        next_arm,
+        state.next_blink(),
+        state.next_find_refresh(),
+        state.next_draft_sync(),
+        next_git,
+    ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);
     }
@@ -330,7 +359,7 @@ pub fn app(launch: Launch) -> rune::App<State> {
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
     };
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
-    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu)
+    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }
 
 #[cfg(test)]

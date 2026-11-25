@@ -9,6 +9,8 @@
 
 pub mod acp;
 pub mod chats;
+pub mod editor;
+pub mod explorer;
 pub mod git;
 pub mod overlay;
 pub mod persistence;

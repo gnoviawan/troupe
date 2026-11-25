@@ -113,13 +113,19 @@ impl State {
     /// Asks the host for a shell in the visible project's folder; the spawn's call, when a
     /// project is shown.
     pub(crate) fn spawn_terminal(&mut self, pane: Option<String>) -> Option<CallId> {
+        self.spawn_terminal_in(pane, None)
+    }
+
+    /// [`Self::spawn_terminal`] in `cwd` instead of the project's folder (the explorer's Open in
+    /// Terminal).
+    pub(crate) fn spawn_terminal_in(&mut self, pane: Option<String>, cwd: Option<String>) -> Option<CallId> {
         let Some(project) = self.active_project().cloned() else {
             log::warn!("[term] new terminal with no project shown");
             return None;
         };
         let (cols, rows) = DEFAULT_SIZE;
         let options = TerminalSpawnOptions {
-            cwd: project.path.clone(),
+            cwd: cwd.or_else(|| project.path.clone()),
             cols: Some(cols),
             rows: Some(rows),
             kind: Some(TerminalKind::Shell),

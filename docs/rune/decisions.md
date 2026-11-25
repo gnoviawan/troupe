@@ -283,3 +283,25 @@ project of its own. Take it only if the matrix shows editor colour keeps
 editor surfaces from scoring ported.
 
 **Source.** R8a (`reports/R8a.md`). Tools: `tools/parity/editor-highlight/`.
+
+## Explorer tree
+
+**Answer.** The explorer keeps its own state in `model::explorer`: the listed
+folders, which are open, the selection, the inline name field and the delete
+confirm. `ui::explorer` draws each visible row with rune-kit's `TreeItem` and
+`TreeStyle`, the same row the `Tree` widget draws, in Rune's `virtual_rows`.
+It does not use the `Tree` widget itself. The phone's Files sheet reads the
+same listings and runs the same operations.
+
+**Candidates weighed (one sequential pass).**
+
+- rune-kit `Tree` over a `TreeModel` (rejected). Its rows take only
+  `on_press` and `on_double_press`, so a row cannot open a context menu, be
+  dragged onto a pane, or turn into the rename field. Its model also has no
+  "listed or not" state for a folder whose children are not loaded yet. Such
+  a folder would draw as a leaf with no chevron.
+- Hand-drawn rows (rejected). They would duplicate the indent guides,
+  chevron, icon and selection that `TreeItem::build` already draws.
+
+**Source.** R8a (`reports/R8a.md`). Lanes: `tools/parity/lanes/explorer.ts`
+(desktop and `--phone`), `tools/parity/lanes/editor-desktop.ts`.
