@@ -273652,5 +273652,788 @@
     }
    }
   ]
+ },
+ {
+  "store": "acp",
+  "name": "create_session_lookup_of_a_switched_chat_answers_once_the_continuation_opens",
+  "context": {
+   "payloads": {
+    "s1": {
+     "metadata": {
+      "id": "s1",
+      "agentId": "agent-1",
+      "agentConfigId": "gemini",
+      "cwd": "/work",
+      "projectId": "p1",
+      "title": "Chat s1",
+      "status": "closed",
+      "createdAt": 5,
+      "lastSeq": 4,
+      "lastActivityAt": 77
+     },
+     "messages": [
+      {
+       "id": "turn:s1-1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "ask s1"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "s1-m2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "answer s1"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      }
+     ],
+     "toolCalls": [
+      {
+       "toolCallId": "s1-tc",
+       "title": "Read",
+       "status": "completed",
+       "seq": 3
+      }
+     ],
+     "switches": [
+      {
+       "id": "switch:seq-4",
+       "seq": 4,
+       "fromConfigId": "gemini",
+       "toConfigId": "claude",
+       "newSessionId": "s2",
+       "summaryText": "Handoff",
+       "timestamp": 54
+      }
+     ]
+    },
+    "s2": {
+     "metadata": {
+      "id": "s2",
+      "agentId": "agent-1",
+      "agentConfigId": "claude",
+      "cwd": "/work",
+      "projectId": "p1",
+      "title": "Chat s2",
+      "status": "closed",
+      "createdAt": 5,
+      "lastSeq": 4,
+      "lastActivityAt": 77
+     },
+     "messages": [
+      {
+       "id": "turn:s2-1",
+       "role": "user",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "ask s2"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 1
+      },
+      {
+       "id": "s2-m2",
+       "role": "agent",
+       "blocks": [
+        {
+         "type": "text",
+         "text": "answer s2"
+        }
+       ],
+       "streaming": false,
+       "timestamp": 1,
+       "seq": 2
+      }
+     ],
+     "toolCalls": [
+      {
+       "toolCallId": "s2-tc",
+       "title": "Read",
+       "status": "completed",
+       "seq": 3
+      }
+     ],
+     "switches": []
+    }
+   },
+   "agentReplies": [
+    {
+     "sessionId": "s1",
+     "lookup": true
+    },
+    {}
+   ],
+   "projects": [
+    {
+     "id": "p1",
+     "name": "Work",
+     "path": "/work"
+    }
+   ]
+  },
+  "initial": {
+   "sessions": {},
+   "messages": {},
+   "toolCalls": {},
+   "plans": {},
+   "commands": {},
+   "commandsSeq": {},
+   "sessionUsage": {},
+   "sessionIndex": [
+    {
+     "id": "s1",
+     "title": "Chat s1",
+     "agentConfigId": "gemini",
+     "projectId": "p1"
+    },
+    {
+     "id": "s2",
+     "title": "Chat s2",
+     "agentConfigId": "claude",
+     "projectId": "p1",
+     "createdAt": 60
+    },
+    {
+     "id": "s3",
+     "title": "Chat s3",
+     "agentConfigId": "gemini",
+     "projectId": "p1",
+     "createdAt": 70
+    }
+   ],
+   "pendingPermissions": {},
+   "pendingQuestions": {},
+   "pendingElicitations": {},
+   "pendingBrowserConsents": {},
+   "agentStatus": {
+    "agent-1": "connected"
+   },
+   "turnEndNotices": {},
+   "promptQueues": {},
+   "suppressQueueFlush": {},
+   "agentOptionsCache": {},
+   "configToLiveAgent": {
+    "gemini\u0000/work\u0000project\u0000p1": "agent-1",
+    "claude\u0000/work\u0000project\u0000p1": "agent-1"
+   },
+   "activeSessionId": null,
+   "preparedSessions": {},
+   "agentSwitches": {},
+   "agents": {
+    "agent-1": {
+     "id": "agent-1",
+     "capabilities": {
+      "loadSession": true
+     },
+     "authMethods": []
+    }
+   },
+   "pendingSignIn": {},
+   "autoOpenBrowserUrl": {},
+   "launchingSessionIds": {},
+   "discoveredSessions": {},
+   "agentConfigs": [
+    {
+     "id": "gemini",
+     "name": "Gemini",
+     "command": "gemini-acp"
+    },
+    {
+     "id": "claude",
+     "name": "Claude",
+     "command": "claude-acp"
+    }
+   ],
+   "book": {
+    "seq": 65600,
+    "historyWatermarks": {},
+    "mcpSharedSync": true
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSession",
+     "args": [
+      "agent-1",
+      "/work",
+      [],
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "newSession",
+      "agentId": "agent-1",
+      "cwd": "/work",
+      "mcpServers": [],
+      "ephemeral": false,
+      "promotable": false,
+      "projectId": "p1",
+      "additionalDirectories": []
+     },
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "acp.createSession.lookup",
+      "message": "session/new for agent agent-1 was answered by entity lookup (session s1); opening it from history"
+     },
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s1"
+     },
+     {
+      "kind": "reloadSessionPayload",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "readSessionPayload",
+      "sessionId": "s2"
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "acp.openHistorySession.mcpAttach",
+      "message": "Reopen of session s2 attaches 0 mcp server(s)"
+     },
+     {
+      "kind": "loadSession",
+      "agentId": "agent-1",
+      "sessionId": "s2",
+      "cwd": "/work",
+      "additionalDirectories": [],
+      "mcpServers": []
+     },
+     {
+      "kind": "actionResolved",
+      "value": "s1"
+     }
+    ],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": "Chat s1",
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 5,
+       "replaying": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": "Chat s2",
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 5,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:s1-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "s1-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [
+       {
+        "id": "switch-splice:s1:turn:s1-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": -4
+       },
+       {
+        "id": "switch-splice:s1:s1-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": -3
+       },
+       {
+        "id": "turn:s2-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "s2-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "s1-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": 3
+       }
+      ],
+      "s2": [
+       {
+        "toolCallId": "switch-splice:s1:s1-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": -2
+       },
+       {
+        "toolCallId": "s2-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": 3
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2",
+       "title": "Chat s2",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "createdAt": 60,
+       "continuedFrom": "s1"
+      },
+      {
+       "id": "s1",
+       "title": "Chat s1",
+       "agentConfigId": "gemini",
+       "projectId": "p1"
+      },
+      {
+       "id": "s3",
+       "title": "Chat s3",
+       "agentConfigId": "gemini",
+       "projectId": "p1",
+       "createdAt": 70
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1",
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {
+      "s1": [
+       {
+        "id": "switch:seq-4",
+        "seq": 4,
+        "fromConfigId": "gemini",
+        "toConfigId": "claude",
+        "newSessionId": "s2",
+        "summaryText": "Handoff",
+        "timestamp": 54
+       }
+      ],
+      "s2": [
+       {
+        "id": "switch-splice:s1:switch:seq-4",
+        "seq": -1,
+        "fromConfigId": "gemini",
+        "toConfigId": "claude",
+        "newSessionId": "s2",
+        "summaryText": "Handoff",
+        "timestamp": 54
+       }
+      ]
+     },
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      },
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      }
+     ],
+     "book": {
+      "seq": 65600,
+      "historyWatermarks": {
+       "s1": 4,
+       "s2": 4
+      },
+      "mcpSharedSync": true
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "clearPendingSignIn",
+     "args": [
+      "none"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "sessions": {
+      "s1": {
+       "id": "s1",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "closed",
+       "title": "Chat s1",
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 5,
+       "replaying": null
+      },
+      "s2": {
+       "id": "s2",
+       "agentId": "agent-1",
+       "cwd": "/work",
+       "projectId": "p1",
+       "status": "active",
+       "title": "Chat s2",
+       "activeTurn": false,
+       "openTurnId": null,
+       "modes": null,
+       "models": null,
+       "configOptions": [],
+       "lastError": null,
+       "lastErrorCode": null,
+       "createdAt": 5,
+       "replaying": null
+      }
+     },
+     "messages": {
+      "s1": [
+       {
+        "id": "turn:s1-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "s1-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ],
+      "s2": [
+       {
+        "id": "switch-splice:s1:turn:s1-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": -4
+       },
+       {
+        "id": "switch-splice:s1:s1-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s1"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": -3
+       },
+       {
+        "id": "turn:s2-1",
+        "role": "user",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "ask s2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 1
+       },
+       {
+        "id": "s2-m2",
+        "role": "agent",
+        "blocks": [
+         {
+          "type": "text",
+          "text": "answer s2"
+         }
+        ],
+        "streaming": false,
+        "timestamp": 1,
+        "seq": 2
+       }
+      ]
+     },
+     "toolCalls": {
+      "s1": [
+       {
+        "toolCallId": "s1-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": 3
+       }
+      ],
+      "s2": [
+       {
+        "toolCallId": "switch-splice:s1:s1-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": -2
+       },
+       {
+        "toolCallId": "s2-tc",
+        "title": "Read",
+        "status": "completed",
+        "seq": 3
+       }
+      ]
+     },
+     "plans": {},
+     "commands": {},
+     "commandsSeq": {},
+     "sessionUsage": {},
+     "sessionIndex": [
+      {
+       "id": "s2",
+       "title": "Chat s2",
+       "agentConfigId": "claude",
+       "projectId": "p1",
+       "createdAt": 60,
+       "continuedFrom": "s1"
+      },
+      {
+       "id": "s1",
+       "title": "Chat s1",
+       "agentConfigId": "gemini",
+       "projectId": "p1"
+      },
+      {
+       "id": "s3",
+       "title": "Chat s3",
+       "agentConfigId": "gemini",
+       "projectId": "p1",
+       "createdAt": 70
+      }
+     ],
+     "pendingPermissions": {},
+     "pendingQuestions": {},
+     "pendingElicitations": {},
+     "pendingBrowserConsents": {},
+     "agentStatus": {
+      "agent-1": "connected"
+     },
+     "turnEndNotices": {},
+     "promptQueues": {},
+     "suppressQueueFlush": {},
+     "agentOptionsCache": {},
+     "configToLiveAgent": {
+      "gemini\u0000/work\u0000project\u0000p1": "agent-1",
+      "claude\u0000/work\u0000project\u0000p1": "agent-1"
+     },
+     "activeSessionId": null,
+     "preparedSessions": {},
+     "agentSwitches": {
+      "s1": [
+       {
+        "id": "switch:seq-4",
+        "seq": 4,
+        "fromConfigId": "gemini",
+        "toConfigId": "claude",
+        "newSessionId": "s2",
+        "summaryText": "Handoff",
+        "timestamp": 54
+       }
+      ],
+      "s2": [
+       {
+        "id": "switch-splice:s1:switch:seq-4",
+        "seq": -1,
+        "fromConfigId": "gemini",
+        "toConfigId": "claude",
+        "newSessionId": "s2",
+        "summaryText": "Handoff",
+        "timestamp": 54
+       }
+      ]
+     },
+     "agents": {
+      "agent-1": {
+       "id": "agent-1",
+       "capabilities": {
+        "loadSession": true
+       },
+       "authMethods": []
+      }
+     },
+     "pendingSignIn": {},
+     "autoOpenBrowserUrl": {},
+     "launchingSessionIds": {},
+     "discoveredSessions": {},
+     "agentConfigs": [
+      {
+       "id": "gemini",
+       "name": "Gemini",
+       "command": "gemini-acp"
+      },
+      {
+       "id": "claude",
+       "name": "Claude",
+       "command": "claude-acp"
+      }
+     ],
+     "book": {
+      "seq": 65600,
+      "historyWatermarks": {
+       "s1": 4,
+       "s2": 4
+      },
+      "mcpSharedSync": true
+     }
+    }
+   }
+  ]
  }
 ]

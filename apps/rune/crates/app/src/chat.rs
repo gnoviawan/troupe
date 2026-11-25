@@ -54,8 +54,8 @@ pub struct ChatUi {
     /// Per agent config, the saved composer picks as last written, or the patches waiting
     /// for the first read (`persistComposerOptions`' per-key queue).
     pub(crate) saved_picks: std::collections::BTreeMap<String, crate::controls::SavedPicks>,
-    /// A cancel-then-switch waiting for the cancelled turn to end: (session, config).
-    pub(crate) pending_arm: Option<(String, String)>,
+    /// Cancel-then-switches waiting for their cancelled turns to end: session to config.
+    pub(crate) pending_arm: std::collections::BTreeMap<String, String>,
     /// Pictures for images in replies; set up with the app's waker.
     pub images: Option<std::rc::Rc<crate::chat_images::ChatImages>>,
 }

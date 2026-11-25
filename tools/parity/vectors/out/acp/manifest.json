@@ -634,7 +634,8 @@
         "reopen_resplice_fabricates_a_boundary_from_the_activity_time",
         "reopen_resplice_stops_when_a_source_has_no_history",
         "reopen_resplice_stops_at_an_edge_cycle",
-        "reopen_resplice_reads_the_host_copy_of_a_source"
+        "reopen_resplice_reads_the_host_copy_of_a_source",
+        "create_session_lookup_of_a_switched_chat_answers_once_the_continuation_opens"
       ]
     }
   }

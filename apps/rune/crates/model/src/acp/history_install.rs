@@ -598,15 +598,17 @@ impl State {
     /// answered from its records answers once its session opened, and a
     /// prompt typed while an open ran goes out once it ends.
     pub(crate) fn after_history_step(&mut self, env: &mut super::Env<'_>, fx: &mut Vec<Effect>) {
-        for (create, session_id) in std::mem::take(&mut self.book.history.created) {
-            self.resolve_create(create, session_id, env, fx);
-        }
+        // A redirected open finished below can queue a create of its own: drain until all
+        // three are empty, creates before flushes.
         loop {
+            for (create, session_id) in std::mem::take(&mut self.book.history.created) {
+                self.resolve_create(create, session_id, env, fx);
+            }
             for session_id in std::mem::take(&mut self.book.history.flush) {
                 self.flush_next_queued_prompt(&session_id, env, fx);
             }
             let redirected = std::mem::take(&mut self.book.history.redirected);
-            if redirected.is_empty() {
+            if redirected.is_empty() && self.book.history.created.is_empty() {
                 break;
             }
             for open in redirected {

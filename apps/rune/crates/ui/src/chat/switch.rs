@@ -48,7 +48,8 @@ pub(super) fn separator<S: 'static>(ctx: &Ctx<S>, s: &S, key: &str, record: &Val
     let from = config_name(configs, field("fromConfigId"), "previous agent");
     let to = config_name(configs, field("toConfigId"), "another agent");
     let summary = strip_handoff_header(field("summaryText")).trim().to_owned();
-    let folded_key = format!("switch-folded-{key}");
+    // The reader is shared by every chat and marker ids repeat across chats.
+    let folded_key = format!("switch-folded-{}-{key}", ctx.session);
     let open = !summary.is_empty() && !(ctx.lenses.reader)(s).is_tool_open(&folded_key);
     let small = sans(12.0, 400.0, 16.0);
     let rule = || el().h(1.0).grow(1.0).fill(c.border).a11y_hidden();
