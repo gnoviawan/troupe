@@ -31,3 +31,23 @@ describe('APP_PREF_SEARCH_INDEX screen reader mode (L-28)', () => {
     )
   })
 })
+
+describe('APP_PREF_SEARCH_INDEX sub-agent profiles', () => {
+  it.each([
+    ['sub-agent profile', 'Sub-agent profiles'],
+    ['thinking', 'Sub-agent profiles'],
+    ['effort', 'Sub-agent profiles'],
+    ['bypass', 'Sub-agent approvals'],
+    ['approvals', 'Sub-agent approvals']
+  ])('finds "%s" on the Sub-agents page as %s', (query, label) => {
+    const results = searchSettings(query, APP_PREF_SEARCH_INDEX)
+
+    expect(results[0]).toEqual(
+      expect.objectContaining({
+        categoryId: 'subagents',
+        label,
+        anchorId: 'setting-subagent-profiles'
+      })
+    )
+  })
+})
