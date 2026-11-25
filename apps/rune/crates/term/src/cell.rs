@@ -108,6 +108,9 @@ impl Cell {
     }
 }
 
+/// The most combining marks one cell keeps.
+pub const MAX_MARKS: usize = 16;
+
 static REV: AtomicU64 = AtomicU64::new(1);
 
 /// A fresh line revision: unique across every terminal in the process.
@@ -154,12 +157,17 @@ impl Line {
         }
     }
 
+    /// Adds a combining mark to the cell at `col`. A cell keeps at most [`MAX_MARKS`]; more
+    /// would draw nothing new, and copying an ever longer string made a run of marks cost
+    /// quadratic time.
     pub(crate) fn add_mark(&mut self, col: usize, mark: char) {
-        if let Some(c) = self.cells.get_mut(col) {
-            let mut marks = c.marks.take().map(String::from).unwrap_or_default();
-            marks.push(mark);
-            c.marks = Some(marks.into_boxed_str());
+        let Some(c) = self.cells.get_mut(col) else { return };
+        if c.marks.as_ref().is_some_and(|m| m.chars().count() >= MAX_MARKS) {
+            return;
         }
+        let mut marks = c.marks.take().map(String::from).unwrap_or_default();
+        marks.push(mark);
+        c.marks = Some(marks.into_boxed_str());
     }
 
     /// `BufferLine.insertCells`.

@@ -224,7 +224,9 @@ impl Emu {
         if join && x > 0 {
             let offset = if self.row_width(x - 1) != 0 { 1 } else { 2 };
             let line = self.row(y);
-            line.add_mark(x - offset, c);
+            if let Some(col) = x.checked_sub(offset) {
+                line.add_mark(col, c);
+            }
             for col in x..x + usize::from(w - old_width) {
                 line.put_spacer(col, pen);
             }
@@ -458,6 +460,8 @@ impl Emu {
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
         let old = (self.cols, self.rows);
+        // The cursor may now sit where the last character never was.
+        self.preceding = 0;
         self.normal.resize(old, cols, rows, self.scrollback);
         if self.alt_active {
             self.alt.resize(old, cols, rows, 0);

@@ -70,3 +70,48 @@ fn reverse_wrap_backspace_changes_the_unwrapped_line() {
     assert!(!line.wrapped);
     assert_ne!(Some(line.rev), before, "a line whose wrap flag cleared has a new revision");
 }
+
+#[test]
+fn a_mark_after_a_resize_to_two_columns_does_not_underflow() {
+    // A lone variation selector leaves a zero-width cell at column 0; the resize puts the
+    // cursor on column 1 right after it, where a mark used to reach for column -1.
+    let mut t = Term::new(4, 2);
+    t.advance("\u{fe0f}a".as_bytes());
+    t.resize(2, 2);
+    t.advance("\u{301}".as_bytes());
+    assert_eq!(t.cursor().col, 2);
+    assert_eq!(text(&t, 0), "\u{fe0f}\u{301}");
+}
+
+#[test]
+fn a_cell_keeps_a_bounded_run_of_marks() {
+    let mut t = Term::new(10, 2);
+    let mut bytes = b"e".to_vec();
+    bytes.extend("\u{301}".repeat(100).as_bytes());
+    t.advance(&bytes);
+    let cell = &t.screen_line(0).unwrap().cells[0];
+    assert_eq!(cell.marks.as_deref().map(|m| m.chars().count()), Some(crate::cell::MAX_MARKS));
+    assert_eq!(t.cursor().col, 1);
+}
+
+/// Parse time for `n` marks on one cell, the best of three runs.
+fn mark_run_secs(n: usize) -> f64 {
+    let mut bytes = b"e".to_vec();
+    bytes.extend("\u{301}".repeat(n).as_bytes());
+    (0..3)
+        .map(|_| {
+            let mut t = Term::new(80, 24);
+            let start = std::time::Instant::now();
+            t.advance(&bytes);
+            start.elapsed().as_secs_f64()
+        })
+        .fold(f64::INFINITY, f64::min)
+}
+
+#[test]
+fn a_million_marks_parse_in_linear_time() {
+    let small = mark_run_secs(100_000);
+    let big = mark_run_secs(1_000_000);
+    // Linear time reads about 10x; the quadratic append read over 1000x.
+    assert!(big < small * 40.0, "100k marks {small:.3}s, 1M marks {big:.3}s");
+}
