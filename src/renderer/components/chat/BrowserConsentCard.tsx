@@ -82,17 +82,19 @@ export function BrowserConsentCard({ consent }: BrowserConsentCardProps): React.
     <section
       aria-labelledby={titleId}
       aria-live="polite"
-      className="rounded-2xl border border-warning/25 bg-card px-3.5 py-3 shadow-sm sm:px-4"
+      className="tactile-modal rounded-lg bg-card px-3.5 py-3 sm:px-4"
       data-testid="browser-consent-card"
     >
       <div className="flex items-start gap-2.5">
-        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border border-warning/30 bg-warning/15 text-warning">
-          <ShieldAlert size={13} aria-hidden="true" />
-        </span>
         <div className="min-w-0 flex-1">
-          <h2 id={titleId} className="text-xs font-semibold leading-5 text-foreground">
-            {browserConsentTitle(consent.action, consent.targetKind)}
-          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 id={titleId} className="text-sm font-medium leading-5 text-foreground">
+              {browserConsentTitle(consent.action, consent.targetKind)}
+            </h2>
+            <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-primary/15 px-2 text-xs font-medium text-primary">
+              {browserConsentProfileLabel(consent.profile)}
+            </span>
+          </div>
           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
             {browserConsentSummary(agentName, consent)} You'll watch it work in a visible tab.
           </p>
@@ -132,8 +134,6 @@ export function BrowserConsentCard({ consent }: BrowserConsentCardProps): React.
                 <dd className="break-words text-muted-foreground">"{consent.element}"</dd>
               </>
             ) : null}
-            <dt className="text-muted-foreground">Profile</dt>
-            <dd className="text-muted-foreground">{browserConsentProfileLabel(consent.profile)}</dd>
           </dl>
         </div>
       </div>

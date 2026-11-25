@@ -29,6 +29,26 @@ export interface BrowserTabView {
   epoch: number
 }
 
+export interface BrowserScreenshotPayload {
+  base64: string
+  mimeType: string
+}
+
+export interface LocalDevServer {
+  host: string
+  port: number
+  url: string
+  label: string
+}
+
+export type BrowserAnnotationCommand =
+  | { type: 'set_active'; active: boolean }
+  | { type: 'set_tool'; tool: 'comment' | 'rectangle' | 'ruler' | 'screenshot-area' }
+  | { type: 'set_pause'; paused: boolean }
+  | { type: 'set_pins_hidden'; hidden: boolean }
+  | { type: 'place_guide'; axis: 'horizontal' | 'vertical' }
+  | { type: 'clear' }
+
 export interface BrowserEventSubscription {
   unlisten: () => void
 }
@@ -47,6 +67,14 @@ export function newUserBrowserTabId(): string {
 
 export function isUserBrowserTabId(id: string): boolean {
   return USER_TAB_LABEL.test(id)
+}
+
+function notTauriError<T>(feature: string): IpcResult<T> {
+  return {
+    success: false,
+    error: `${feature} requires Tauri desktop`,
+    code: 'NOT_TAURI'
+  }
 }
 
 export async function browserTabCreate(
@@ -90,6 +118,39 @@ export async function browserTabGoForward(tabId: string): Promise<IpcResult<void
 
 export async function browserTabReload(tabId: string): Promise<IpcResult<void>> {
   return invoke('browser_tab_reload', { tabId })
+}
+
+export async function browserTabStop(tabId: string): Promise<IpcResult<void>> {
+  if (!isTauriContext()) return notTauriError('Stop loading')
+  return invoke('browser_tab_stop', { tabId })
+}
+
+export async function browserTabSetZoom(
+  tabId: string,
+  zoomFactor: number
+): Promise<IpcResult<number>> {
+  if (!isTauriContext()) return notTauriError('Browser zoom')
+  return invoke('browser_tab_set_zoom', { tabId, zoomFactor })
+}
+
+export async function browserTabScreenshot(
+  tabId: string
+): Promise<IpcResult<BrowserScreenshotPayload>> {
+  if (!isTauriContext()) return notTauriError('Browser screenshot')
+  return invoke('browser_tab_screenshot', { tabId })
+}
+
+export async function browserTabAnnotationCmd(
+  tabId: string,
+  command: BrowserAnnotationCommand
+): Promise<IpcResult<void>> {
+  if (!isTauriContext()) return notTauriError('Browser annotation')
+  return invoke('browser_tab_annotation_cmd', { tabId, command })
+}
+
+export async function browserListLocalServers(): Promise<IpcResult<LocalDevServer[]>> {
+  if (!isTauriContext()) return notTauriError('Local dev server discovery')
+  return invoke('browser_list_local_servers')
 }
 
 export async function browserTabOpenDevtools(tabId: string): Promise<IpcResult<void>> {

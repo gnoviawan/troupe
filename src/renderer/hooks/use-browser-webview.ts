@@ -7,6 +7,7 @@ import {
   browserTabHide,
   browserTabNavigate,
   browserTabResize,
+  browserTabSetZoom,
   browserTabShow,
   onBrowserTabUpdated
 } from '@/lib/browser-api'
@@ -32,15 +33,30 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
   }
 }
 
-export function useBrowserWebview(browserTabId: string, paneVisible: boolean, url: string) {
-  // An occluded webview (a shell popover is open) behaves as not visible.
+const ZOOM_EPSILON = 0.001
+
+export function useBrowserWebview(
+  browserTabId: string,
+  paneVisible: boolean,
+  url: string,
+  opts?: { hasError?: boolean; zoomFactor?: number; layoutKey?: string }
+) {
+  // An occluded webview (a shell popover is open), blank Start Page, or offline
+  // error view hides the native child webview so React UI renders unobstructed.
   const occluded = useNativeWebviewOccluded()
-  const isVisible = paneVisible && !occluded
+  const hasUrl = url.trim().length > 0
+  const hasDocument = hasUrl && !opts?.hasError
+  const isVisible = paneVisible && !occluded && hasDocument
+  const zoomFactor = opts?.zoomFactor ?? 1
+  const layoutKey = opts?.layoutKey ?? 'desktop'
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
   const mountedRef = useRef(true)
   const mountTokenRef = useRef(0)
   const urlRef = useRef(url)
+  const latestUrlRef = useRef(url)
+  latestUrlRef.current = url
+  const zoomAppliedRef = useRef(1)
   const visibilityRef = useRef(isVisible)
 
   const updateBounds = useCallback((): Promise<void> => {
@@ -71,7 +87,8 @@ export function useBrowserWebview(browserTabId: string, paneVisible: boolean, ur
     mountTokenRef.current += 1
     const mountToken = mountTokenRef.current
     const el = containerRef.current
-    if (!el) return
+    if (!el || !hasUrl) return
+    urlRef.current = latestUrlRef.current
 
     useBrowserSessionStore.getState().setLoading(browserTabId, true)
 
@@ -221,7 +238,7 @@ export function useBrowserWebview(browserTabId: string, paneVisible: boolean, ur
         })
       createdRef.current = false
     }
-  }, [browserTabId, updateBounds])
+  }, [browserTabId, hasUrl, updateBounds])
 
   // Show / hide on visibility change
   useEffect(() => {
@@ -308,6 +325,31 @@ export function useBrowserWebview(browserTabId: string, paneVisible: boolean, ur
       ro.disconnect()
     }
   }, [updateBounds])
+
+  // Resync webview bounds when responsive preset / orientation / width changes
+  useEffect(() => {
+    if (!createdRef.current || !layoutKey) return
+    const raf = requestAnimationFrame(() => {
+      void updateBounds()
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [layoutKey, updateBounds])
+
+  // Apply native per-tab zoom factor when changed (epsilon check avoids redundant IPC)
+  useEffect(() => {
+    if (!createdRef.current) return
+    if (Math.abs(zoomAppliedRef.current - zoomFactor) < ZOOM_EPSILON) return
+    zoomAppliedRef.current = zoomFactor
+    void browserTabSetZoom(browserTabId, zoomFactor).then((result) => {
+      if (!result.success) {
+        void logFrontendError({
+          level: 'warn',
+          message: `browserTabSetZoom failed for tab ${browserTabId}: ${result.error}`,
+          source: 'useBrowserWebview'
+        })
+      }
+    })
+  }, [browserTabId, zoomFactor])
 
   // The host registry reports what the engine committed, whoever started
   // it. Record the URL as current first so the url prop catching up does
