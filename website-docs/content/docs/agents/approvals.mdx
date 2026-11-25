@@ -27,6 +27,8 @@ A request has no close button. It stays until you choose an option or stop the t
 
 When the agent [started another agent as a subagent](/docs/agents/start-other-agents), that subagent's requests come to this chat too. The title shows the subagent's icon and title after **Approval needed**, and the text names the agent, for example "Codex sub-agent wants to run `bun test` in its worktree." Answer it like any other request. When the subagent ends, its open requests go away.
 
+A subagent whose profile has **Approvals** set to **Allow everything** does not ask. Troupe answers its requests with Allow, except a switch of the agent's mode, which still comes to this chat. See [Profiles](/docs/agents/start-other-agents#profiles).
+
 ## Answer a question
 
 When an agent asks you something, the question takes the place of the message box until you answer it.
