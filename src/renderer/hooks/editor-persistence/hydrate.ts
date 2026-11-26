@@ -9,6 +9,7 @@
 
 import { loadPersistedTerminals } from '@/hooks/useTerminalAutoSave'
 import { persistenceApi } from '@/lib/api'
+import { type EditorViewMode, normalizeViewMode } from '@/lib/editor-file-kind'
 import { emptyStagedProject, type StagedProject } from '@/lib/project-switch/types'
 import {
   type EditorFileState,
@@ -53,6 +54,16 @@ function applyPersistedDraft(file: TextFileState, persisted: PersistedEditorFile
   return reconcileDraft(file, { content: persisted.draftContent, savedAt: persisted.lastModified })
 }
 
+/** A saved Source falls back to the path's default view; `markdown` is the legacy name of preview. */
+function restoredViewMode(
+  filePath: string,
+  saved: PersistedEditorFile['viewMode'],
+  fallback: EditorViewMode
+): EditorViewMode {
+  if (saved === 'code') return fallback
+  return normalizeViewMode(filePath, saved === 'markdown' ? 'preview' : saved)
+}
+
 function applyPersistedViewState(
   file: EditorFileState,
   persisted: PersistedEditorFile
@@ -63,7 +74,7 @@ function applyPersistedViewState(
       ...file,
       cursorPosition: { line: persisted.cursorPosition.line, col: persisted.cursorPosition.col },
       scrollTop: persisted.scrollTop,
-      viewMode: persisted.viewMode === 'code' ? file.viewMode : 'preview'
+      viewMode: restoredViewMode(file.filePath, persisted.viewMode, file.viewMode)
     },
     persisted
   )

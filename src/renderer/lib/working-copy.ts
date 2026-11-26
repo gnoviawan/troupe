@@ -80,8 +80,9 @@ function resolveDotSegments(path: string): string {
     else if (!root) kept.push('..')
   }
   const joined = kept.join('/')
-  // A UNC server/share root has no trailing slash of its own.
-  const needsSlash = joined !== '' && !root.endsWith('/')
+  // A UNC server/share root has no trailing slash of its own. A relative
+  // path has no root at all, so it must not gain a leading slash.
+  const needsSlash = root !== '' && joined !== '' && !root.endsWith('/')
   return root + (needsSlash ? '/' : '') + joined
 }
 

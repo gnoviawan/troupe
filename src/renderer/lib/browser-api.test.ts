@@ -29,6 +29,7 @@ import {
   browserTabInjectAgentation,
   browserTabNavigate,
   browserTabOpenDevtools,
+  browserTabPollAnnotationOutbox,
   browserTabReload,
   browserTabResize,
   browserTabScreenshot,
@@ -67,6 +68,9 @@ describe('browser-api wrappers (desktop + non-Tauri parity)', () => {
       command: { type: 'set_tool', tool: 'ruler' }
     })
 
+    await browserTabPollAnnotationOutbox('tab-1')
+    expect(invoke).toHaveBeenCalledWith('browser_tab_poll_annotation_outbox', { tabId: 'tab-1' })
+
     await browserAnnotationsSync('delete', ['ann-1'])
     expect(invoke).toHaveBeenCalledWith('browser_annotations_sync', {
       action: 'delete',
@@ -102,6 +106,7 @@ describe('browser-api wrappers (desktop + non-Tauri parity)', () => {
       browserTabSetZoom('tab-1', 1.25),
       browserTabScreenshot('tab-1'),
       browserTabAnnotationCmd('tab-1', { type: 'clear' }),
+      browserTabPollAnnotationOutbox('tab-1'),
       browserAnnotationsSync('resolve', ['ann-1']),
       browserSaveAnnotationCrop('ann-1', 'AA=='),
       browserListLocalServers(),

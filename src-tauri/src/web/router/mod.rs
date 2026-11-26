@@ -415,6 +415,9 @@ pub fn router(
                 },
             },
         ))
+        // HTML preview: open/update/close are bearer-gated ("/html-preview/");
+        // /preview/<token>/* is authorized by the session token in the path.
+        .merge(crate::web::html_preview_api::html_preview_router())
         // Canvas web routes: open/close/persistence (IpcBody) and the
         // same-origin /canvas/<id>/* bundle. Merged BEFORE the static fallback
         // so the SPA mount cannot shadow them. The API routes are bearer-gated
@@ -633,6 +636,7 @@ pub fn router_with_static(
     // Canvas routes parity (test/dev variant): the boundary is wired so
     // open's doc-path validation behavior matches production.
     let mut r = r
+        .merge(crate::web::html_preview_api::html_preview_router())
         .merge(crate::web::browser_policy_api::browser_policy_router(
             crate::web::browser_policy_api::PolicyRouteState {
                 service: crate::acp::browser_policy::installed(),

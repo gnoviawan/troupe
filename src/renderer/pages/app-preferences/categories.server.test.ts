@@ -37,6 +37,7 @@ describe('appPrefSearchIndex runtime rows', () => {
   it('searches the server rows and not the updater rows on the web runtime', () => {
     const anchors = anchorsOn(false)
 
+    expect(anchors).toContain(rowId('server-qr'))
     expect(anchors).toContain(rowId('server-config'))
     expect(anchors).toContain(rowId('server-version'))
     expect(anchors).not.toContain(rowId('check-updates'))
@@ -48,6 +49,7 @@ describe('appPrefSearchIndex runtime rows', () => {
 
     expect(anchors).toContain(rowId('check-updates'))
     expect(anchors).toContain(rowId('auto-update'))
+    expect(anchors).not.toContain(rowId('server-qr'))
     expect(anchors).not.toContain(rowId('server-config'))
     expect(anchors).not.toContain(rowId('server-version'))
   })

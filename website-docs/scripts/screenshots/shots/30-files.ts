@@ -209,12 +209,15 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       await page.keyboard.press('Alt+,')
-      const label = page.getByText('Editor Auto Save', { exact: true })
-      await label.waitFor()
-      await page.getByRole('switch', { name: /Enable auto save/ }).click()
-      await label.scrollIntoViewIfNeeded()
+      await page.getByRole('dialog', { name: 'Preferences' }).waitFor()
+      await page.locator('#editor-auto-save').click()
+      await page.getByRole('option', { name: 'After 1 second' }).click()
+      const group = page
+        .getByRole('heading', { name: 'Editor', exact: true })
+        .locator('xpath=ancestor::section[1]')
+      await group.scrollIntoViewIfNeeded()
       await page.waitForTimeout(500)
-      return page.locator('#settings-section-behavior')
+      return group
     }
   }
 ]

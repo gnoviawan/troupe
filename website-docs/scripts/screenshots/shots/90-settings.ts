@@ -5,7 +5,7 @@ import { openApp } from '../ui'
 
 async function openAppSettings(page: Page): Promise<Locator> {
   await page.getByRole('button', { name: 'Settings', exact: true }).first().click()
-  const dialog = page.getByRole('dialog', { name: 'Application Preferences' })
+  const dialog = page.getByRole('dialog', { name: 'Preferences' })
   await dialog.waitFor()
   await page.waitForTimeout(500)
   return dialog
@@ -14,7 +14,7 @@ async function openAppSettings(page: Page): Promise<Locator> {
 async function openProjectSettings(page: Page): Promise<Locator> {
   await page.locator('[aria-label^="Project: acme-shop"]').first().click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Settings', exact: true }).click()
-  const dialog = page.getByRole('dialog', { name: 'Project Settings' })
+  const dialog = page.getByRole('dialog', { name: 'Project settings' })
   await dialog.waitFor()
   await page.waitForTimeout(800)
   return dialog
@@ -22,15 +22,22 @@ async function openProjectSettings(page: Page): Promise<Locator> {
 
 async function showCategory(page: Page, dialog: Locator, label: string): Promise<void> {
   await dialog
-    .getByRole('navigation', { name: 'Settings categories' })
+    .getByRole('navigation', { name: 'Settings pages' })
     .getByRole('button', { name: label, exact: true })
     .click()
   await page.waitForTimeout(800)
 }
 
+function settingsGroup(page: Page, title: string): Locator {
+  return page
+    .getByRole('heading', { name: title, exact: true })
+    .locator('xpath=ancestor::section[1]')
+}
+
 export const shots: Shot[] = [
   {
     id: 'settings-app-preferences',
+    viewport: { width: 1280, height: 920 },
     run: async (page) => {
       await openApp(page)
       await openAppSettings(page)
@@ -38,10 +45,11 @@ export const shots: Shot[] = [
   },
   {
     id: 'settings-behavior',
+    viewport: { width: 1280, height: 920 },
     run: async (page) => {
       await openApp(page)
       const dialog = await openAppSettings(page)
-      await showCategory(page, dialog, 'Behavior')
+      await showCategory(page, dialog, 'Preferences')
       return dialog
     }
   },
@@ -50,10 +58,13 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       const dialog = await openAppSettings(page)
-      await showCategory(page, dialog, 'Keyboard Shortcuts')
-      await dialog.getByRole('button', { name: 'Record Terminal Search shortcut' }).click()
+      await showCategory(page, dialog, 'Keyboard shortcuts')
+      await dialog.getByRole('textbox', { name: 'Filter shortcuts' }).fill('Search in terminal')
+      await page.waitForTimeout(300)
+      await dialog.getByRole('button', { name: 'Record Search in terminal shortcut' }).click()
       await page.waitForTimeout(300)
       await page.keyboard.press('Control+B')
+      await page.getByText('Use anyway').waitFor()
       await page.waitForTimeout(500)
       return dialog
     }
@@ -63,8 +74,11 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       const dialog = await openAppSettings(page)
-      await showCategory(page, dialog, 'Diagnostics & Logs')
-      return dialog
+      await showCategory(page, dialog, 'About')
+      const logs = settingsGroup(page, 'Logs and bug reports')
+      await logs.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(400)
+      return logs
     }
   },
   {
@@ -79,10 +93,10 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       const dialog = await openProjectSettings(page)
-      await showCategory(page, dialog, 'Environment Variables')
-      await dialog.getByRole('button', { name: 'Add Variable' }).click()
+      await showCategory(page, dialog, 'Environment variables')
+      await dialog.getByRole('button', { name: 'Add variable' }).click()
       await dialog.getByPlaceholder('KEY').last().fill('STRIPE_MODE')
-      await dialog.getByPlaceholder('Value').last().fill('test')
+      await dialog.getByPlaceholder('value').last().fill('test')
       await page.waitForTimeout(400)
       return dialog
     }
@@ -92,7 +106,7 @@ export const shots: Shot[] = [
     run: async (page) => {
       await openApp(page)
       const dialog = await openProjectSettings(page)
-      await showCategory(page, dialog, 'Worktree Symlinks')
+      await showCategory(page, dialog, 'Worktree symlinks')
       return dialog
     }
   },

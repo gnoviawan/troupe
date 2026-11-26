@@ -27,6 +27,7 @@ import {
   segmentClass
 } from '@/components/ui/panel-styles'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { browserAnnotationsSync, browserTabAnnotationCmd } from '@/lib/browser-api'
 import { formatBatchAnnotationsForChat } from '@/lib/browser-screenshot'
 import { logFrontendError } from '@/lib/log-api'
@@ -62,6 +63,7 @@ export function AnnotationToolbar({
 }: AnnotationToolbarProps): React.JSX.Element {
   const tab = useBrowserSessionStore((s) => s.tabs.get(browserTabId))
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
+  const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
   const toggleAnimationsPaused = useBrowserSessionStore((s) => s.toggleAnimationsPaused)
   const togglePinsHidden = useBrowserSessionStore((s) => s.togglePinsHidden)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
@@ -235,7 +237,10 @@ export function AnnotationToolbar({
         <div className="hidden items-center gap-1 lg:flex">
           <button
             type="button"
-            onClick={() => selectTool('screenshot-area')}
+            onClick={() => {
+              setStandaloneScreenshotArea(browserTabId, false)
+              selectTool('screenshot-area')
+            }}
             aria-label="Screenshot area"
             title={`Screenshot area (${areaHint})`}
             className={cn(
@@ -293,22 +298,33 @@ export function AnnotationToolbar({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={handleTogglePins}
-          aria-label={pinsHidden ? 'Show annotation pins' : 'Hide annotation pins'}
-          title={pinsHidden ? 'Show pins (H)' : 'Hide pins (H)'}
-          className={PANEL_ICON_BUTTON_CLASS}
-        >
-          <span className="t-icon-swap" data-state={pinsHidden ? 'b' : 'a'}>
-            <span className="t-icon" data-icon="a">
-              <Eye size={14} />
-            </span>
-            <span className="t-icon" data-icon="b">
-              <EyeOff size={14} />
-            </span>
-          </span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={handleTogglePins}
+              aria-label={pinsHidden ? 'Show annotations & guides' : 'Hide annotations & guides'}
+              aria-pressed={pinsHidden}
+              title={pinsHidden ? 'Show annotations & guides (H)' : 'Hide annotations & guides (H)'}
+              className={cn(
+                PANEL_ICON_BUTTON_CLASS,
+                pinsHidden && 'bg-control-fill text-foreground shadow-control'
+              )}
+            >
+              <span className="t-icon-swap" data-state={pinsHidden ? 'b' : 'a'}>
+                <span className="t-icon" data-icon="a">
+                  <Eye size={14} />
+                </span>
+                <span className="t-icon" data-icon="b">
+                  <EyeOff size={14} />
+                </span>
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {pinsHidden ? 'Show annotations & guides (H)' : 'Hide annotations & guides (H)'}
+          </TooltipContent>
+        </Tooltip>
 
         <button
           type="button"

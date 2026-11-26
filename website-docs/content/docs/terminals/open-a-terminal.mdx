@@ -83,7 +83,7 @@ A terminal profile is a saved shell setup. It has a shell, its arguments, a star
    - **Shell**. Pick a shell from the list. To use another shell, pick **Other path or name** and type a shell name or path in **Shell path or name**, for example `nu` or `C:\tools\nu.exe`. Leave the field on **Default shell** to use the [default shell](#set-the-default-shell).
    - **Arguments**. Type one argument per line. To add arguments, you must also choose a shell.
    - **Start folder**. Leave it empty to start in the active project or worktree folder. If you fill it in, type a full path.
-   - **Environment variables**. Type one `KEY=value` per line. These variables override project environment variables that have the same name.
+   - **Environment variables**. Type one `KEY=value` per line. These variables override project environment variables that have the same name. A value can use a variable from Troupe's environment, such as `PATH=$HOME/bin:$PATH`, the same way as [project environment variables](/docs/settings/project-settings#environment-variables).
 4. Select **Save profile**.
 
 ![The New terminal profile dialog with the name Node dev and the variable NODE_ENV=development](/screenshots/terminals-profile-dialog.png)
