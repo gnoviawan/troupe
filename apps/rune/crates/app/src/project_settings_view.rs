@@ -40,6 +40,7 @@ fn field(t: &Tokens, edit: &TextEdit, label: String, placeholder: &str, code: bo
         .placeholder(placeholder.to_owned(), c.muted_foreground)
         .color(c.foreground)
         .h(if coarse { 44.0 } else { 32.0 })
+        .py(if coarse { 9.0 } else { 7.0 })
         .px(10.0)
         .radius(8.0)
         .fill(c.card)
