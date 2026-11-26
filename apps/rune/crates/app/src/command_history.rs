@@ -139,7 +139,10 @@ impl State {
                 log::info!("[history] {} commands saved for {project}", list.len());
                 self.terms.history.loaded.insert(project, list);
             }
-            Err(e) => log::warn!("[history] reading the command history of {project} failed: {}", e.code),
+            Err(e) => {
+                log::warn!("[history] reading the command history of {project} failed: {}", e.code);
+                self.command_history_unread(&project);
+            }
         }
     }
 
@@ -191,7 +194,7 @@ impl State {
         match result {
             Ok(_) => {
                 log::info!("[history] cleared the command history of {project}");
-                self.command_history_loaded(&project, &json!([]));
+                self.command_history_cleared(&project);
                 self.terms.history.loaded.insert(project, Vec::new());
                 self.close(CONFIRM);
             }

@@ -243,3 +243,54 @@ fn on_the_phone_the_editor_keeps_the_touch_font_and_the_key_bar_drives_it() {
     assert_eq!(rt.state.terms.editor.lines["pty-1"].text(), "", "Ctrl+C clears the draft");
     assert!(calls(&rt).iter().all(|(k, ..)| *k != WebTerminalRequestType::Write), "no key bar key reached the PTY");
 }
+
+/// The app's last store call of `kind`: its call id and payload.
+fn store_call(rt: &rune::Runtime<crate::State>, kind: troupe_protocol::ws::WsRequestType) -> Option<(u64, Value)> {
+    rt.state.sync.sent.iter().rev().find_map(|c| match c {
+        client::ws::Command::Call { call, kind: k, payload, .. } if *k == kind => Some((*call, payload.clone())),
+        _ => None,
+    })
+}
+
+#[test]
+fn a_command_accepted_before_the_history_is_read_joins_the_stored_list_instead_of_replacing_it() {
+    use troupe_protocol::ws::{WsError, WsRequestType};
+    let mut rt = shown();
+    at_prompt(&mut rt, 1);
+    let (read, payload) = store_call(&rt, WsRequestType::StoreRead).expect("the mount reads the history");
+    assert!(payload["key"].as_str().unwrap().ends_with("/projects/p-a/command-history"), "{payload}");
+    rt.state.apply(client::ws::Output::Reply { call: read, result: Err(WsError { code: "TIMEOUT".into(), message: "slow".into(), details: None }) });
+
+    typed(&mut rt, "ls");
+    press(&mut rt, Key::Enter, false);
+    let (_, _, submit) = calls(&rt).last().cloned().expect("a submit");
+    rt.state.terminal_output(Output::Reply { call: submit, result: Ok(json!("Accepted")) });
+    assert!(store_call(&rt, WsRequestType::StoreWrite).is_none(), "no write while the stored list is unknown");
+
+    rt.state.terminal_output(lifecycle("CommandStarted", None));
+    rt.state.terminal_output(lifecycle("CommandFinished", None));
+    at_prompt(&mut rt, 2);
+    let (again, _) = store_call(&rt, WsRequestType::StoreRead).expect("a read");
+    assert_ne!(again, read, "the failed read is asked again on the next mount");
+    let stored = json!([{ "id": "1", "command": "npm test", "terminalName": "Terminal 1", "terminalId": "t-0", "projectId": "p-a", "timestamp": 1 }]);
+    rt.state.apply(crate::tests::read_reply(again, json!({ "_version": 1, "data": stored })));
+    assert_eq!(rt.state.terms.editor.history.recall("p-a"), ["npm test", "ls"], "the stored list, then the new command");
+    let (_, write) = store_call(&rt, WsRequestType::StoreWrite).expect("the merged list is written");
+    let written: Vec<&str> = write["value"]["data"].as_array().unwrap().iter().map(|e| e["command"].as_str().unwrap()).collect();
+    assert_eq!(written, ["ls", "npm test"]);
+}
+
+#[test]
+fn an_input_method_composes_at_the_caret_and_commits_into_the_draft() {
+    let mut rt = shown();
+    at_prompt(&mut rt, 1);
+    typed(&mut rt, "echo ");
+    assert!(rt.state.command_editor_ime("pty-1", &rune::Ime::Preedit("ni".into(), None, Vec::new())));
+    step(&mut rt);
+    assert!(rt.elements().iter().any(|e| e.text.as_deref() == Some("ni")), "the composition shows at the caret");
+    assert!(rt.state.command_editor_ime("pty-1", &rune::Ime::Commit("你".into())));
+    step(&mut rt);
+    assert_eq!(rt.state.terms.editor.lines["pty-1"].text(), "echo 你");
+    assert!(!rt.elements().iter().any(|e| !e.exiting && e.text.as_deref() == Some("ni")), "and leaves");
+    assert_eq!(crate::command_editor::field_terminal(&crate::command_editor::field_key("pty-1")), Some("pty-1"));
+}

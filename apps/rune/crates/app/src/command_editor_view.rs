@@ -105,7 +105,17 @@ pub fn strip(s: &State, t: &'static Tokens, id: &str, touch: bool) -> Option<El>
         body = body.child(text(ghost).font(m.style).color(c.muted_foreground).absolute(caret_x, caret_y));
     }
     if focused {
-        body = body.child(el().absolute(caret_x, caret_y).size(2.0, cell_h).fill(c.foreground));
+        body = body.child(el().absolute(caret_x, caret_y).size(2.0, cell_h).fill(c.foreground).ime_cursor());
+        if let Some(preedit) = s.terms.editor.preedit.get(id) {
+            body = body.child(
+                text(preedit.clone())
+                    .font(m.style)
+                    .color(c.foreground)
+                    .spans(vec![rune::Span { underline: Some(c.foreground), ..rune::Span::new(0, preedit.len()) }])
+                    .fill(c.card)
+                    .absolute(caret_x, caret_y),
+            );
+        }
     }
     let pressed = id.to_owned();
     let measured = id.to_owned();

@@ -25,9 +25,16 @@ use troupe_protocol::ws::WsRequestType;
 use crate::State;
 use crate::sync::Pending as SyncPending;
 
+const FIELD: &str = "command-editor-";
+
 /// The focusable strip of terminal `id`'s editor.
 pub fn field_key(id: &str) -> String {
-    format!("command-editor-{id}")
+    format!("{FIELD}{id}")
+}
+
+/// The terminal whose editor field has `key`.
+pub fn field_terminal(key: &str) -> Option<&str> {
+    key.strip_prefix(FIELD)
 }
 
 /// What a session call's reply settles.
@@ -55,14 +62,19 @@ pub struct EditorUi {
     /// The mounted editors, by terminal.
     pub lines: BTreeMap<String, Line>,
     pub schedulers: BTreeMap<String, Scheduler>,
+    /// The input method's composition at each editor's caret.
+    pub preedit: BTreeMap<String, String>,
     /// The completion list open over an editor.
     pub shown: BTreeMap<String, Shown>,
     /// The latest valid completion for each editor, until its text changes.
     completions: BTreeMap<String, completion::Completion>,
     pub pending: BTreeMap<CallId, Pending>,
     pub history: History,
-    /// Projects whose history was read from the host.
+    /// Projects whose history read was sent.
     asked: BTreeSet<String>,
+    /// Projects whose stored history was read: until then an accepted command stays in memory,
+    /// so a write cannot replace the stored list with a partial one.
+    read: BTreeSet<String>,
     /// Each terminal's git branch, from `git_branch_changed`.
     pub branches: BTreeMap<String, String>,
     /// The editor's cell on the desktop and on touch, measured once.
@@ -207,7 +219,11 @@ impl State {
         match (session.mode == Mode::Editor, mounted) {
             (true, false) => {
                 let draft = self.terms.editor.sessions.draft(id).to_owned();
-                self.terms.editor.lines.insert(id.to_owned(), Line::new(&draft));
+                let mut line = Line::new(&draft);
+                if let Some(&columns) = self.terms.editor.columns.get(id) {
+                    line.editor.set_wrap(columns);
+                }
+                self.terms.editor.lines.insert(id.to_owned(), line);
                 log::info!("[CommandEditor] Command editor mounted on {id}");
                 if self.terms.focused.as_deref() == Some(id) {
                     self.terms.editor.focus = Some(id.to_owned());
@@ -221,6 +237,7 @@ impl State {
     }
 
     fn unmount_command_editor(&mut self, id: &str) {
+        self.terms.editor.preedit.remove(id);
         if self.terms.editor.lines.remove(id).is_some() {
             log::info!("[CommandEditor] Command editor unmounted from {id}");
         }
@@ -252,9 +269,31 @@ impl State {
     }
 
     /// A project's list read from the host: the editor recalls from it too.
+    /// Commands accepted before the first read are kept on top of the stored list and written.
     pub(crate) fn command_history_loaded(&mut self, project: &str, list: &Value) {
         let entries: Vec<Entry> = list.as_array().into_iter().flatten().filter_map(|v| serde_json::from_value(v.clone()).ok()).collect();
-        self.terms.editor.history.loaded(project, entries);
+        let editor = &mut self.terms.editor;
+        let early: Vec<Entry> = if editor.read.insert(project.to_owned()) { editor.history.entries.iter().filter(|e| e.project_id == project).cloned().collect() } else { Vec::new() };
+        editor.history.loaded(project, entries);
+        let mut write = None;
+        for e in early.into_iter().rev() {
+            write = editor.history.add(&e.command, &e.terminal_name, &e.terminal_id, project, e.timestamp, e.id).or(write);
+        }
+        if let Some(write) = write {
+            log::info!("[history] writing commands accepted before {project}'s history was read");
+            self.write_command_history(project, write);
+        }
+    }
+
+    /// The history modal cleared the project's list: nothing accepted earlier comes back.
+    pub(crate) fn command_history_cleared(&mut self, project: &str) {
+        self.terms.editor.read.insert(project.to_owned());
+        self.terms.editor.history.loaded(project, Vec::new());
+    }
+
+    /// The read failed: the next editor to mount asks again.
+    pub(crate) fn command_history_unread(&mut self, project: &str) {
+        self.terms.editor.asked.remove(project);
     }
 
     fn recall_list(&self, id: &str) -> Vec<String> {
@@ -320,8 +359,32 @@ impl State {
         changed
     }
 
+    /// An input method event for terminal `id`'s focused editor. True when it was used.
+    pub(crate) fn command_editor_ime(&mut self, id: &str, ime: &rune::Ime) -> bool {
+        if !self.terms.editor.lines.contains_key(id) {
+            return false;
+        }
+        match ime {
+            rune::Ime::Preedit(text, ..) if text.is_empty() => self.terms.editor.preedit.remove(id).is_some(),
+            rune::Ime::Preedit(text, ..) => {
+                self.terms.editor.preedit.insert(id.to_owned(), text.clone());
+                true
+            }
+            rune::Ime::Commit(text) => {
+                self.terms.editor.preedit.remove(id);
+                self.command_apply(id, Command::Insert(text.clone()));
+                true
+            }
+            _ => false,
+        }
+    }
+
     /// Text pasted into terminal `id`'s editor.
     pub(crate) fn command_paste(&mut self, id: &str, text: &str) {
+        if text.len() > crate::term_input::MAX_PASTE {
+            log::warn!("[term] paste of {} bytes refused; the most is {}", text.len(), crate::term_input::MAX_PASTE);
+            return;
+        }
         let clean = words::sanitize_paste(text);
         if !clean.is_empty() {
             self.command_apply(id, Command::Insert(clean));
@@ -469,8 +532,16 @@ impl State {
         let at = (crate::editor_host::epoch_ms()) as i64;
         let entry_id = format!("{at}-{}", self.terms.editor.history.entries.len());
         let Some(write) = self.terms.editor.history.add(draft, &name, id, &project, at, entry_id) else { return };
+        if !self.terms.editor.read.contains(&project) {
+            log::info!("[history] {project}'s history is not read yet; the command waits in memory");
+            return;
+        }
+        self.write_command_history(&project, write);
+    }
+
+    fn write_command_history(&mut self, project: &str, write: model::terminal::history::Write) {
         if let Some(list) = write.value.get("data") {
-            self.terms.history.loaded.insert(project.clone(), crate::command_history::parse_list(list));
+            self.terms.history.loaded.insert(project.to_owned(), crate::command_history::parse_list(list));
         }
         let key = self.device_key(&write.key);
         self.call(WsRequestType::StoreWrite, json!({ "key": key, "value": write.value }), SyncPending::Write(write.key));

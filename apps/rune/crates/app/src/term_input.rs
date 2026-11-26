@@ -11,7 +11,7 @@ use crate::State;
 /// xterm.js's cursor blink: on and off every 600 ms, restarted by input and output.
 pub const BLINK: f64 = 0.6;
 /// The largest paste React sends (`MAX_CLIPBOARD_SIZE`).
-const MAX_PASTE: usize = 10 * 1024 * 1024;
+pub(crate) const MAX_PASTE: usize = 10 * 1024 * 1024;
 
 /// The screen cell under `(x, y)` points.
 fn cell(term: &Term, cell_w: f32, cell_h: f32, x: f32, y: f32) -> (usize, usize) {
