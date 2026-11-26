@@ -129,6 +129,9 @@ pub struct AutomationsUi {
     pub run_id: Option<String>,
     pub steps: Query<Vec<Step>>,
     pub busy: Option<Act>,
+    /// The automation the delete confirm names, `(id, name)`, captured when it opened: the
+    /// selection may move to another automation before the user confirms.
+    pub deleting: Option<(String, String)>,
     pub cancelling: bool,
     /// The detail page's read-only diagram.
     pub diagram: FlowState,
@@ -525,12 +528,22 @@ impl State {
     }
 
     pub fn automation_ask_delete(&mut self) {
+        let Some(detail) = self.automations.detail.data.as_ref() else {
+            return;
+        };
+        self.automations.deleting =
+            Some((detail.automation.id.clone(), detail.automation.name.clone()));
         self.overlays.open(DELETE_CONFIRM);
+    }
+
+    pub fn automation_cancel_delete(&mut self) {
+        self.automations.deleting = None;
+        self.close(DELETE_CONFIRM);
     }
 
     pub fn automation_confirm_delete(&mut self) {
         self.close(DELETE_CONFIRM);
-        if let Some(id) = self.automations.detail.key.clone() {
+        if let Some((id, _)) = self.automations.deleting.take() {
             self.act(Act::Delete, Call::Remove { id });
         }
     }

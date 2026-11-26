@@ -598,10 +598,9 @@ pub fn dialogs(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     }
     let name = s
         .automations
-        .detail
-        .data
+        .deleting
         .as_ref()
-        .map_or_else(String::new, |d| d.automation.name.clone());
+        .map_or("", |(_, name)| name.as_str());
     ConfirmDialog::new(
         DELETE_CONFIRM,
         "Delete automation",
@@ -610,7 +609,7 @@ pub fn dialogs(s: &State, t: &'static Tokens, layer: &mut Vec<El>) {
     .variant(ConfirmVariant::Danger)
     .confirm_label("Delete")
     .open(true)
-    .on_cancel(|s: &mut State| s.close(DELETE_CONFIRM))
+    .on_cancel(|s: &mut State| s.automation_cancel_delete())
     .on_confirm(|s: &mut State| s.automation_confirm_delete())
     .build(t, layer);
 }
