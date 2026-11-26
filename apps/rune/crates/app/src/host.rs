@@ -43,6 +43,8 @@ pub enum Fetch {
     Mcp(Box<model::acp::Effect>),
     /// A web sign-in's token poll (`/mcp-servers/oauth/status`), by server URL.
     McpPoll(String),
+    /// A catalog read on the MCP servers page.
+    Catalog(crate::mcp_catalog::CatalogFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);
