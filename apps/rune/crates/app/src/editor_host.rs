@@ -297,8 +297,13 @@ fn refusal(e: HttpError) -> (String, String) {
     }
 }
 
-/// The app's input method handler: compositions go to the focused editor.
-pub(crate) fn on_ime(s: &mut State, ime: &rune::Ime, _tx: &mut rune::Tx) -> bool {
+/// The app's input method handler: compositions go to the focused command editor, else to the
+/// focused file editor.
+pub(crate) fn on_ime(s: &mut State, ime: &rune::Ime, tx: &mut rune::Tx) -> bool {
+    if let Some(id) = tx.focused().and_then(crate::command_editor::field_terminal) {
+        let id = id.to_owned();
+        return s.command_editor_ime(&id, ime);
+    }
     s.editors.ime(ime)
 }
 

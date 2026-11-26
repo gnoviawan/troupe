@@ -8,6 +8,7 @@ description = "Troupe's Rune app root: connects to a Troupe server and draws the
 [dependencies]
 client = { path = "../client" }
 log = "0.4"
+troupe-editor = { path = "../editor" }
 model = { path = "../model" }
 rune = { workspace = true, features = ["tooling"] }
 rune-kit = { workspace = true }
