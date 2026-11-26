@@ -37,3 +37,12 @@ fn the_distance_to_a_curve_is_zero_on_it() {
     assert!(distance(&c, [50.0, 0.0]) < 1e-3);
     assert!((distance(&c, [50.0, 10.0]) - 10.0).abs() < 1e-3);
 }
+
+#[test]
+fn a_dashed_edge_far_from_the_origin_ends() {
+    // At x = 1e9 an f32 cannot step by 4 points: the loop must still end.
+    let pieces = dashes(&[[1.0e9, 0.0], [0.0, 0.0]], 5.0, 4.0);
+    assert!(pieces.len() <= MAX_DASH_STEPS);
+    let far = flatten(&bezier([1.0e9, 0.0], [1.0e9 + 300.0, 2.0e9]));
+    assert!(dashes(&far, 6.0, 5.0).len() <= MAX_DASH_STEPS);
+}
