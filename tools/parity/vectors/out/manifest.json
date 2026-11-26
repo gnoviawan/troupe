@@ -206,12 +206,54 @@
       "sources": {
         "src/renderer/stores/recent-commands-store.ts": "8cb3a560de957bd4eab9ed77aa764fdbefc3c49f",
         "src/renderer/stores/pinned-commands-store.ts": "ee65cf14413418dd352e14a4f39a6fc8baf4f763",
-        "src/renderer/components/CommandPalette.tsx": "b4d3c0e00c3be7cfd0405552be480cb9ef2bddff"
+        "src/renderer/components/CommandPalette.tsx": "b4d3c0e00c3be7cfd0405552be480cb9ef2bddff",
+        "src/renderer/components/CommandPaletteChats.tsx": "eeaa880ed8adb4b900e539e3ac002c68ef1deb85",
+        "src/renderer/components/CommandPaletteQuickChats.tsx": "ec72d6b31d2162d9a558068bc85b361c874cd80e",
+        "src/renderer/components/shell/chat-cards.ts": "8b689bf01b05b6b7bd6e8014f78d4cd402137532"
       },
       "vectors": [
         "recent_keeps_five_newest_first",
         "pins_toggle_in_order",
+        "chat_filter",
+        "chat_item_scores",
         "command_scores"
+      ]
+    },
+    "terminal-profiles": {
+      "sources": {
+        "src/renderer/lib/terminal-profiles.ts": "1cec5dfe62d3e4be0c3c7174ff19b98559567799"
+      },
+      "vectors": [
+        "drafts_parse_or_name_each_bad_field",
+        "profiles_read_back_and_show_their_command"
+      ]
+    },
+    "project-settings": {
+      "sources": {
+        "src/renderer/lib/env-parser.ts": "22f02e7cd11210b5c1065f38d37a9cd1f5434d75",
+        "src/renderer/components/settings/shell-options.ts": "4e83c57facf33ca61c92accc92b9fcd0062fa845"
+      },
+      "vectors": [
+        "env_path_keeps_the_roots_separator",
+        "env_files_parse_line_by_line",
+        "imports_merge_over_the_list",
+        "the_shell_select"
+      ]
+    },
+    "mcp-servers": {
+      "sources": {
+        "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
+        "src/renderer/lib/mcp-server-draft.ts": "2aa122699a92f39b69b4823481d8972177d7f6ce",
+        "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9"
+      },
+      "vectors": [
+        "the_registry_keeps_valid_entries",
+        "validation_names_each_problem",
+        "command_lines_split_and_join_like_a_shell",
+        "drafts_become_servers_or_name_their_errors",
+        "servers_open_as_drafts",
+        "url_and_sign_in_edits",
+        "cards_show_status_target_and_tools"
       ]
     }
   }

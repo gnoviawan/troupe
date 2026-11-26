@@ -36,6 +36,8 @@ pub struct Toast {
     /// When it leaves, in the app's clock seconds; None while it waits off screen. Its clock
     /// starts once it shows.
     pub until: Option<f64>,
+    /// No timer (`duration: Infinity`): it stays until closed or its action runs.
+    pub sticky: bool,
 }
 
 /// The toasts raised and not yet gone, oldest first.
@@ -56,6 +58,7 @@ impl Toasts {
             description: description.map(str::to_owned),
             action: None,
             until: None,
+            sticky: false,
         });
         self.settle(now);
         self.next
@@ -65,11 +68,19 @@ impl Toasts {
     fn settle(&mut self, now: f64) {
         let waiting = self.list.len().saturating_sub(VISIBLE);
         for (i, t) in self.list.iter_mut().enumerate() {
-            if i < waiting {
+            if i < waiting || t.sticky {
                 t.until = None;
             } else if t.until.is_none() {
                 t.until = Some(now + DURATION);
             }
+        }
+    }
+
+    /// Keeps toast `id` until it is closed (`duration: Number.POSITIVE_INFINITY`).
+    pub fn stick(&mut self, id: u64) {
+        if let Some(t) = self.list.iter_mut().find(|t| t.id == id) {
+            t.sticky = true;
+            t.until = None;
         }
     }
 
@@ -113,6 +124,16 @@ impl Toasts {
     /// The region keyed `toaster`, bottom-right; push it into the overlay layer. `close` builds
     /// each close button's handler from the toast's id.
     pub fn build<S: 'static>(&self, t: &Tokens, close: impl Fn(u64) -> Box<dyn Fn(&mut S)>) -> El {
+        self.build_with_action(t, close, |_| None)
+    }
+
+    /// [`Toasts::build`], with `action` giving each action button's handler (`action.onClick`).
+    pub fn build_with_action<S: 'static>(
+        &self,
+        t: &Tokens,
+        close: impl Fn(u64) -> Box<dyn Fn(&mut S)>,
+        action: impl Fn(u64) -> Option<Box<dyn Fn(&mut S)>>,
+    ) -> El {
         let c = &t.colors;
         let mut region = col().key("toaster").role("region").label("Notifications").w(356.0).gap(14.0);
         for toast in self.visible() {
@@ -143,7 +164,11 @@ impl Toasts {
             }
             card = card.child(body);
             if let Some(label) = &toast.action {
-                card = card.child(Button::new(label.clone()).variant(ButtonVariant::Default).size(ButtonSize::Xs).build(t).key("action"));
+                let mut button = Button::new(label.clone()).variant(ButtonVariant::Default).size(ButtonSize::Xs).build(t).key("action");
+                if let Some(press) = action(toast.id) {
+                    button = button.on_press(press);
+                }
+                card = card.child(button);
             }
             let x = theme::icons::named("X").expect("bundled icon");
             let close_button = row()

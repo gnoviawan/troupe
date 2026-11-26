@@ -44,12 +44,16 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
     crate::git_view::dialogs(s, t, &mut layer);
-    crate::settings_view::build(s, t, phone, &mut layer);
+    crate::settings_view::build(s, t, phone, window.1, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
             .pin(None, None, Some(16.0), Some(16.0))
-            .child(s.toasts.build(t, |id| Box::new(move |s: &mut State| s.toasts.dismiss(id)))),
+            .child(s.toasts.build_with_action(
+                t,
+                |id| Box::new(move |s: &mut State| s.toasts.dismiss(id)),
+                |id| Some(Box::new(move |s: &mut State| s.run_undo(id)) as Box<dyn Fn(&mut State)>),
+            )),
     );
     ui::overlay::root(root, layer)
 }

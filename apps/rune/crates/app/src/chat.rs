@@ -37,7 +37,7 @@ pub struct ChatUi {
     /// Sessions whose payload is in.
     pub loaded: BTreeSet<String>,
     /// A chat to open once its project's workspace is showing.
-    open_when_shown: Option<(String, String)>,
+    pub(crate) open_when_shown: Option<(String, String)>,
     /// The Markdown of the table the full-window view shows.
     pub zoomed_table: Option<String>,
     /// The link waiting for the user's "Open" (`ExternalLinkConfirm`); only one at a time.
@@ -315,6 +315,7 @@ impl State {
                     json!({ "agentId": agent_id, "sessionId": session_id }),
                     Pending::Host("Could not stop the turn"),
                 ),
+                Effect::ActionRejected { message } if self.mcp_rejected(&message) => {}
                 Effect::ActionRejected { message } => {
                     self.composer.rejected = true;
                     self.toast_error("Could not send your message", &message);
@@ -332,6 +333,7 @@ impl State {
                         .run_control(other)
                         .and_then(|other| self.run_agent_command(other))
                         .and_then(|other| self.run_history_effect(other))
+                        .and_then(|other| self.run_mcp_effect(other))
                     {
                         log::info!("[chat] effect not wired in the Rune client yet: {other:?}");
                     }

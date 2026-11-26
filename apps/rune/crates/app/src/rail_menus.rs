@@ -84,8 +84,8 @@ fn project_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
                 s.open_from_menu(PROJECT_MENU, NEW_GROUP);
             }),
     );
-    let (rename_id, colour_id, archive_id, settings_name) =
-        (id.clone(), id.clone(), id.clone(), project.name.clone());
+    let (rename_id, colour_id, archive_id, settings_id) =
+        (id.clone(), id.clone(), id.clone(), id.clone());
     let menu =
         Menu::new(PROJECT_MENU)
             .width(224.0)
@@ -93,7 +93,7 @@ fn project_menu(s: &State, t: &Tokens, layer: &mut Vec<El>) {
             .item(MenuItem::new("Settings").icon(glyph("Settings")).on_select(
                 move |s: &mut State| {
                     s.close(PROJECT_MENU);
-                    s.toast_later(&format!("Settings for {settings_name}"));
+                    s.open_project_settings(Some(&settings_id), None);
                 },
             ))
             .item(MenuItem::new("Rename").icon(glyph("Edit")).on_select_tx(
