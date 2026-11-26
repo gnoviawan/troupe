@@ -42,6 +42,11 @@ this device or this window:
   signature that skips a write when nothing changed.
 - `shortcuts`. The key bindings and their user overrides, with the pure key
   matching helpers.
+- `settings`. The shared `settings/app` record: the boot read and its
+  migrations, a change synced from another device, edits, the reset and the
+  agent idle-window pushes (`app-settings-store.ts`, `use-app-settings.ts`).
+  The server owns the key; the client keeps the copy it edits and writes the
+  whole record back, as the React client does.
 - `overlay`. The stack of open overlays, for back and Esc. The model holds the
   ids. Each overlay's close is the owner's, so `step` returns a `close` effect
   and the owner runs it.
@@ -65,3 +70,14 @@ The TypeScript stores mint ids with `crypto.randomUUID()`. The model never
 generates randomness: `step` takes an [`Ids`](src/lib.rs) source. The app
 passes a random one; the vector replay passes the ids the TypeScript run drew,
 in order, and checks that the model drew the same number.
+
+## The ACP chat model
+
+`src/acp/` ports the ACP chat store (`src/renderer/stores/acp-store/`):
+sessions, transcripts, tool calls, plans, commands and usage, one module per
+slice. `docs/rune/acp-model.md` at the repository root maps each TypeScript
+module to its Rust one, says what is state, effect or React glue, and lists
+what is not ported yet. Its vectors are recorded apart, by
+`tools/parity/vectors/record-acp.test.ts` into `out/acp/`, and replayed by
+`tests/acp_vectors.rs`. A step reads the clock and draws ids only through
+`acp::Env`.

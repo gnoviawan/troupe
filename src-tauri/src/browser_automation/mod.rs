@@ -89,6 +89,13 @@ pub trait BrowserHost: Send + Sync {
     fn destroy_tab<'a>(&'a self, _label: &'a str) -> HostFuture<'a, ()> {
         Box::pin(async {})
     }
+    /// Native PNG screenshot of a browser tab's visible viewport.
+    fn capture_tab_screenshot<'a>(
+        &'a self,
+        _label: &'a str,
+    ) -> HostFuture<'a, Result<Vec<u8>, String>> {
+        Box::pin(async { Err("browser host is not available".to_string()) })
+    }
     /// Stop: latch the session until the user's next prompt turn. Returns
     /// false when it was already stopped. Hosts that drive no tabs have
     /// nothing to stop.
@@ -191,6 +198,14 @@ pub async fn create_tab(
 pub async fn destroy_tab(label: &str) {
     if let Some(host) = browser_host() {
         host.destroy_tab(label).await;
+    }
+}
+
+/// Capture a native PNG screenshot of a browser tab's visible viewport.
+pub async fn capture_tab_screenshot(label: &str) -> Result<Vec<u8>, String> {
+    match browser_host() {
+        Some(host) => host.capture_tab_screenshot(label).await,
+        None => Err("browser host is not available".to_string()),
     }
 }
 

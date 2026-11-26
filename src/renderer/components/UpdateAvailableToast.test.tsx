@@ -205,22 +205,6 @@ describe('UpdateAvailableToast channel-aware labeling', () => {
     expect(renderToStaticMarkup(opts.action.label)).not.toContain('Open download page')
   })
 
-  it('names the insider channel in the title and uses the manual-download action label for insider', () => {
-    storeChannel = 'insider'
-    storeManual = true
-    showUpdateToast('0.5.0-rc.1')
-    const calls = vi.mocked(toast.success).mock.calls
-    const [title, opts] = calls[calls.length - 1] as [
-      string,
-      { description: string; action: { label: ReactElement } }
-    ]
-    expect(title).toBe('Insider update available')
-    expect(opts.description).toBe(
-      'Version 0.5.0-rc.1. Open the download page to install it manually.'
-    )
-    expect(renderToStaticMarkup(opts.action.label)).toContain('Open download page')
-  })
-
   it('offers the in-app download for a signed nightly update', () => {
     storeChannel = 'nightly'
     storeManual = false

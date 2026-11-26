@@ -71,6 +71,7 @@ describe('parseNightlyVersion', () => {
 
   test('returns null for other names', () => {
     expect(parseNightlyVersion('latest-nightly.json')).toBeNull();
+    expect(parseNightlyVersion('Troupe_aarch64.app.tar.gz')).toBeNull();
   });
 });
 
@@ -98,6 +99,29 @@ describe('channels', () => {
     const channel = toNightlyChannel({ ...nightlyRelease, assets: [] });
     expect(channel?.build).toBe(108);
     expect(channel?.assets).toEqual({});
+  });
+
+  test('an X.Y.N nightly wins over older-scheme builds and dates from its upload', () => {
+    const uploaded = (name: string) => ({ ...asset(name), updated_at: '2026-11-25T17:40:00Z' });
+    const channel = toNightlyChannel({
+      ...nightlyRelease,
+      name: 'Troupe Nightly (0.5.38)',
+      assets: [
+        ...nightlyRelease.assets,
+        uploaded('Troupe_0.5.37_aarch64.dmg'),
+        uploaded('Troupe_0.5.38_aarch64.dmg'),
+        uploaded('Troupe_0.5.38_x64-setup.exe'),
+        uploaded('Troupe-0.5.38-1.x86_64.rpm'),
+        asset('Troupe_aarch64.app.tar.gz'),
+        asset('nightly.json'),
+      ],
+    });
+    expect(channel?.version).toBe('0.5.38');
+    expect(channel?.build).toBeUndefined();
+    expect(channel?.publishedAt).toBe('2026-11-25T17:40:00Z');
+    expect(channel?.assets.macArm).toContain('Troupe_0.5.38_aarch64.dmg');
+    expect(channel?.assets.windows).toContain('Troupe_0.5.38_x64-setup.exe');
+    expect(channel?.assets.linuxAppImage).toBeUndefined();
   });
 
   test('nightly with no version anywhere is null', () => {

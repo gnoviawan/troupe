@@ -24,7 +24,7 @@ export const CHROME: Surface[] = [
       step(
         'b-menu',
         [click(label('Open keyboard shortcuts menu'))],
-        see('Shortcut Menu', 'Command Palette')
+        see('Shortcut Menu', 'Command palette')
       )
     ]
   },

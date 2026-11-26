@@ -187,9 +187,16 @@ pub(super) async fn serve_request(
                 return Some(());
             }
             info!("[terminal-ws] request success type={op_type} id={id}");
-            send_json(tx, json!({ "id": id, "success": true, "data": data }))
-                .await
-                .ok()?;
+            send_json(
+                tx,
+                WebTerminalOkReply {
+                    id,
+                    success: True,
+                    data,
+                },
+            )
+            .await
+            .ok()?;
         }
         Err((code, message)) => {
             warn!("[terminal-ws] request failed type={op_type} id={id} code={code}");

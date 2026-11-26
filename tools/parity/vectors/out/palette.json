@@ -1,0 +1,1895 @@
+[
+ {
+  "store": "palette",
+  "name": "recent_keeps_five_newest_first",
+  "initial": {
+   "recentCommandIds": [],
+   "pinnedCommandIds": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "a"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "b",
+      "a"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "a",
+      "b"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "c"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "c",
+      "a",
+      "b"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "d"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "d",
+      "c",
+      "a",
+      "b"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "e"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "e",
+      "d",
+      "c",
+      "a",
+      "b"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "addRecentCommand",
+     "args": [
+      "f"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "f",
+      "e",
+      "d",
+      "c",
+      "a"
+     ],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "setRecentCommands",
+     "args": [
+      [
+       "x",
+       "y"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [
+      "x",
+      "y"
+     ],
+     "pinnedCommandIds": []
+    }
+   }
+  ]
+ },
+ {
+  "store": "palette",
+  "name": "pins_toggle_in_order",
+  "initial": {
+   "recentCommandIds": [],
+   "pinnedCommandIds": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "togglePinned",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": [
+      "a"
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "togglePinned",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": [
+      "a",
+      "b"
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "togglePinned",
+     "args": [
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": [
+      "b"
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "togglePinned",
+     "args": [
+      "c"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": [
+      "b",
+      "c"
+     ]
+    }
+   },
+   {
+    "event": {
+     "action": "setPinned",
+     "args": [
+      [
+       "z"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": [
+      "z"
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "store": "palette",
+  "name": "command_scores",
+  "initial": {
+   "recentCommandIds": [],
+   "pinnedCommandIds": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.989901,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.1507141631860572,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.013591443983267703,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.8909109000000001,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "App Preferences Open global application preferences navigation Navigation preferences prefs settings app global",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.0004298494674323647,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.08910000000000001,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.14669734324529557,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.1683,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.000012300210664893943,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.01683,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Open Canvas Open the project's .figcraft design document as a canvas tab workspace Workspace canvas figcraft design drawing vector",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.0006344032511388215,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.7188274873738818,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.15147000000000002,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.06475275717343645,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.025519075736649653,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Project Settings Configure the active project workspace navigation Navigation settings project configure config",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.7188274873738818,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.8908218089100001,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.0043165949999223,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.1356427468674515,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New Terminal Open a new shell in the active pane workspace Workspace shell console pty workspace",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.98970302969901,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.151303398147,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.013388993259541493,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.0042011293541871185,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.004663719955143217,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Change Color Theme Preview and apply a UI color theme tools Tools theme color appearance palette dark dracula nord",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.80101799019,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "alpha /tmp/w/alpha projects Projects project switch alpha /tmp/w/alpha",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.0038152163380203575,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.1683,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.02260017646897117,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Command History Review and reuse recent terminal commands tools Tools history recent terminal commands shell",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.02533844311708708,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.99,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "App Pref"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.7173905512266214,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.024080375670587902,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "color theme"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "nt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.8855787804586404,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "alpha"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.022921256793826877,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "canvas"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.003440916500112851,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "Settings"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "his"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.02518931095973835,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "New chat Start a new chat in the active pane workspace Workspace agent ai claude codex prompt chat new",
+      "new-term"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.004109257563304542,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   }
+  ]
+ }
+]

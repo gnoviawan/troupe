@@ -45,6 +45,7 @@ pub const BUBBLE_TEXT: rune::TextStyle = sans(14.0, 400.0, 22.75);
 
 pub struct Bubble {
     body: String,
+    spans: Vec<rune::Span>,
     variant: BubbleVariant,
     align: BubbleAlign,
     max_w: f32,
@@ -55,6 +56,7 @@ impl Bubble {
     pub fn new(body: impl Into<String>) -> Bubble {
         Bubble {
             body: body.into(),
+            spans: Vec::new(),
             variant: BubbleVariant::Default,
             align: BubbleAlign::Start,
             max_w: f32::INFINITY,
@@ -74,6 +76,11 @@ impl Bubble {
         self.max_w = w;
         self
     }
+    /// Styled runs of the body (a sent message's pills).
+    pub fn spans(mut self, spans: Vec<rune::Span>) -> Self {
+        self.spans = spans;
+        self
+    }
     /// A [`bubble_reactions`] pill hung over the bubble's bottom edge.
     pub fn reactions(mut self, r: El) -> Self {
         self.reactions = Some(r);
@@ -91,7 +98,8 @@ impl Bubble {
             BubbleVariant::Ghost => (None, c.foreground),
             BubbleVariant::Destructive => (Some(c.destructive_fill), c.destructive_foreground),
         };
-        let words = text(self.body).font(BUBBLE_TEXT).color(ink).wrap();
+        let words = if self.spans.is_empty() { text(self.body) } else { rune::rich(self.body, self.spans) };
+        let words = words.font(BUBBLE_TEXT).color(ink).wrap();
         let mut content = col().child(words);
         if self.variant == BubbleVariant::Ghost {
             content = content.w_full();

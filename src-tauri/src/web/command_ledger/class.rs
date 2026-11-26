@@ -179,6 +179,36 @@ pub const WS_COMMAND_CLASSES: &[(&str, CommandClass)] = &[
         "start_codex_account_login",
         CommandClass::command(Replay::Payload),
     ),
+    ("list_antigravity_accounts", CommandClass::read()),
+    ("list_antigravity_usage", CommandClass::read()),
+    (
+        "check_antigravity_usage",
+        CommandClass::command(Replay::Payload),
+    ),
+    (
+        "set_default_antigravity_account",
+        CommandClass::idempotent(),
+    ),
+    (
+        "set_project_antigravity_account",
+        CommandClass::idempotent(),
+    ),
+    ("set_chat_antigravity_account", CommandClass::idempotent()),
+    ("set_antigravity_auto_switch", CommandClass::idempotent()),
+    ("set_antigravity_resume", CommandClass::idempotent()),
+    // A resend answers with the Account the first run added.
+    (
+        "add_antigravity_account",
+        CommandClass::command(Replay::Payload),
+    ),
+    ("rename_antigravity_account", CommandClass::idempotent()),
+    ("remove_antigravity_account", CommandClass::idempotent()),
+    // The reply is the spawned sign-in agent; a resend returns it. The config
+    // env is not part of the fingerprint.
+    (
+        "start_antigravity_account_login",
+        CommandClass::command(Replay::Payload),
+    ),
     ("kill_agent", CommandClass::idempotent()),
     ("list_agents", CommandClass::read()),
     ("authenticate", CommandClass::read()),
@@ -205,6 +235,7 @@ pub const WS_COMMAND_CLASSES: &[(&str, CommandClass)] = &[
     ("list_acp_catalog", CommandClass::read()),
     ("set_catalog_opt_in", CommandClass::idempotent()),
     ("fetch_acp_registry_snapshot", CommandClass::read()),
+    ("get_acp_agent_overlay", CommandClass::read()),
     ("search_mcp_catalog", CommandClass::read()),
     ("describe_mcp_install", CommandClass::read()),
     ("plan_mcp_install", CommandClass::idempotent()),
@@ -289,8 +320,9 @@ fn identifying_fields(request_type: &str) -> &'static [&'static str] {
         }
         "add_claude_account" => &["name"],
         "finish_claude_link_login" => &["accountId"],
-        "add_codex_account" => &["name"],
-        "start_codex_account_login" => &[
+        "add_codex_account" | "add_antigravity_account" => &["name"],
+        "check_antigravity_usage" => &["accountId", "config.configId"],
+        "start_codex_account_login" | "start_antigravity_account_login" => &[
             "accountId",
             "config.name",
             "config.command",

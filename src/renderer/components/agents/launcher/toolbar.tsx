@@ -1,3 +1,4 @@
+import { ANTIGRAVITY_AGENT_CONFIG_ID } from '@shared/types/antigravity-accounts.types'
 import { CODEX_AGENT_CONFIG_ID } from '@shared/types/codex-accounts.types'
 import { useReducedMotion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -7,6 +8,7 @@ import {
   type PhoneSelectorControls
 } from '@/components/chat/agent-model-selector/AgentModelSelector'
 import type { SelectorSource } from '@/components/chat/agent-model-selector/selector-source'
+import { ProjectAntigravityAccountChip } from '@/components/chat/antigravity-account/AntigravityAccountChip'
 import type { ComposerToolbarMode } from '@/components/chat/chat-layout'
 import { ProjectClaudeAccountChip } from '@/components/chat/claude-account/ClaudeAccountChip'
 import { ProjectCodexAccountChip } from '@/components/chat/codex-account/CodexAccountChip'
@@ -190,6 +192,10 @@ export function LauncherToolbar({
     selectedEntry?.configId === CLAUDE_AGENT_CONFIG_ID && activeProjectId ? activeProjectId : null
   const codexProjectId =
     selectedEntry?.configId === CODEX_AGENT_CONFIG_ID && activeProjectId ? activeProjectId : null
+  const antigravityProjectId =
+    selectedEntry?.configId === ANTIGRAVITY_AGENT_CONFIG_ID && activeProjectId
+      ? activeProjectId
+      : null
   const mcpListProps = launcherMcpListProps({
     mcpCount,
     mcpServers,
@@ -277,6 +283,9 @@ export function LauncherToolbar({
             claudeProjectId
           })}
           {codexProjectId ? <ProjectCodexAccountChip projectId={codexProjectId} /> : null}
+          {antigravityProjectId ? (
+            <ProjectAntigravityAccountChip projectId={antigravityProjectId} />
+          ) : null}
           <div className="flex-1" />
           {updateCta}
           {launchButton}
@@ -308,6 +317,9 @@ export function LauncherToolbar({
         )}
         {claudeProjectId ? <ProjectClaudeAccountChip projectId={claudeProjectId} /> : null}
         {codexProjectId ? <ProjectCodexAccountChip projectId={codexProjectId} /> : null}
+        {antigravityProjectId ? (
+          <ProjectAntigravityAccountChip projectId={antigravityProjectId} />
+        ) : null}
       </div>
       <div
         className={cn(

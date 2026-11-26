@@ -7,7 +7,7 @@
  */
 
 import { terminalApi } from '@/lib/api'
-import { resolveEnvForSpawn } from '@/lib/env-parser'
+import { passThroughProjectEnv } from '@/lib/env-parser'
 import { logFrontendError } from '@/lib/log-api'
 import { ensureWorktreeSymlinks } from '@/lib/worktree-context'
 import { useAppSettingsStore } from '@/stores/app-settings-store'
@@ -78,7 +78,7 @@ export async function spawnTerminalInPane(
       await ensureWorktreeSymlinks(projectId)
     }
 
-    const { env: projectEnv } = resolveEnvForSpawn(options?.envVars ?? project?.envVars, {})
+    const { env: projectEnv } = passThroughProjectEnv(options?.envVars ?? project?.envVars)
     const env = { ...projectEnv, ...options?.env }
     // A program spawn skips the shell's login flag, so only args make one.
     const launch =

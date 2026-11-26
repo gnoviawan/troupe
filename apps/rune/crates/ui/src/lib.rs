@@ -16,9 +16,21 @@
 #![forbid(unsafe_code)]
 
 pub mod base;
+pub mod chat;
+pub mod composer;
+pub mod editor;
+pub mod explorer;
+pub mod git;
+pub mod mobile;
 pub mod overlay;
+pub mod markdown;
 pub mod paint;
+pub mod settings;
+pub mod shell;
+pub mod terminal;
 pub mod type_;
+pub mod viewers;
+pub mod workspace;
 pub mod zoom;
 
 pub use base::*;

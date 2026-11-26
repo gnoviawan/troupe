@@ -4,10 +4,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useShallow } from 'zustand/shallow'
 import { AgentIcon } from '@/components/agents/AgentIcon'
 import { AgentLauncher } from '@/components/agents/AgentLauncher'
-import {
-  LAUNCHER_EXIT_REDUCED_MS,
-  LAUNCHER_EXIT_WINDOW_MS
-} from '@/components/agents/launcher/launcher-motion'
+import { launcherExitTransition as exitTransitionFor } from '@/components/agents/launcher/launcher-motion'
 import { TopRowStartSlot, useTopRowStartSlotVisible } from '@/components/shell/TopRowStartSlot'
 import { usePaneTopRow } from '@/components/shell/top-row-context'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -145,9 +142,7 @@ export function PaneContent({
   // presence window — all exit visuals (composer morph, in-place dismiss,
   // backdrop reveal, root fade) are owned inside AgentLauncher so timing
   // can branch on launch vs dismiss.
-  const launcherExitTransition = reducedMotion
-    ? { duration: LAUNCHER_EXIT_REDUCED_MS / 1000 }
-    : { delay: LAUNCHER_EXIT_WINDOW_MS / 1000, duration: 0.05 }
+  const launcherExitTransition = exitTransitionFor(reducedMotion)
 
   // Agent loading: show pulsing icon for a minimum duration after the terminal
   // is first seen. The xterm renderer attaches almost instantly (same frame),
@@ -620,7 +615,7 @@ export function PaneContent({
                   transition={launcherExitTransition}
                 >
                   {/* ADR-004.5: agent launch + plain terminal picker */}
-                  <AgentLauncher paneId={pane.id} />
+                  <AgentLauncher target={{ kind: 'pane', paneId: pane.id }} />
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -673,7 +668,7 @@ export function PaneContent({
               }
             }}
           >
-            <AgentLauncher paneId={pane.id} />
+            <AgentLauncher target={{ kind: 'pane', paneId: pane.id }} />
           </motion.div>
         ) : null}
       </AnimatePresence>

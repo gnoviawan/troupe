@@ -468,8 +468,27 @@ function installMatchMediaStub(): void {
   })
 }
 
+/**
+ * jsdom keeps one `window.history` for the whole file. The overlay back
+ * handler (`installOverlayBackHandler`) pushes `termulOverlay` sentinels while
+ * a sheet or the palette is open, and consumes them with `history.back()`,
+ * whose popstate jsdom fires a few tasks later. A test that ends with an
+ * overlay open (or right after closing one) leaves a sentinel as the current
+ * entry, or a traversal still queued, and the next test's handler then
+ * "consumes" it: the stray popstate closes that test's ⋯ sheet or palette
+ * mid-assertion. Let any queued traversal land, then start each test on a
+ * plain entry, as a fresh page load would.
+ */
+async function resetOverlayHistory(): Promise<void> {
+  // jsdom queues a traversal through three chained 0 ms timers.
+  for (let i = 0; i < 5; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  }
+  window.history.replaceState(null, '')
+}
+
 describe('WorkspaceLayout mobile breakpoint (real useMobileWebShell hook)', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     tauriRef.current = false
     projectRef.current = { id: 'p1', name: 'Demo', path: '/demo', color: 'blue', gitBranch: 'main' }
@@ -477,6 +496,7 @@ describe('WorkspaceLayout mobile breakpoint (real useMobileWebShell hook)', () =
     gitState.selectedFile = null
     gitState.commitContexts = {}
     installMatchMediaStub()
+    await resetOverlayHistory()
   })
 
   afterEach(() => {
@@ -648,7 +668,7 @@ describe('WorkspaceLayout desktop parity for the mobile shell fixes', () => {
     )
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     tauriRef.current = false
     projectRef.current = { id: 'p1', name: 'Demo', path: '/demo', color: 'blue', gitBranch: 'main' }
@@ -656,6 +676,7 @@ describe('WorkspaceLayout desktop parity for the mobile shell fixes', () => {
     gitState.selectedFile = null
     gitState.commitContexts = {}
     installMatchMediaStub()
+    await resetOverlayHistory()
   })
 
   afterEach(() => {

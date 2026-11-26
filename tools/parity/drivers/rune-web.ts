@@ -43,6 +43,8 @@ import {
   detectRenderer,
   type RuneRenderer,
   runeWebDist,
+  type StaticServer,
+  serveRuneClient,
   serveStatic,
   WEBGPU_ARGS
 } from './rune-apps'
@@ -64,7 +66,7 @@ export const runeWebArgs = (args: string[]) => (runeWebGpu() ? [...args, ...WEBG
  * `exact` is false, with its centre inside `within` when given. Null while
  * no element matches.
  */
-function mirrorPoint(
+export function mirrorPoint(
   page: Page,
   want: string,
   exact: boolean,
@@ -273,6 +275,8 @@ export interface RuneWebOptions {
   clock?: number
   /** localStorage entries written before the page loads. */
   storage?: Record<string, string>
+  /** Play motion (the matrix reduces it, so frames settle at once). */
+  motion?: boolean
 }
 
 /** Opens `url` in a fresh context of `browser`, waits for `ready` in the mirror and for the GPU hand-over. */
@@ -285,7 +289,7 @@ export async function openRuneWeb(opts: RuneWebOptions): Promise<RuneWebSession>
     permissions: ['clipboard-read', 'clipboard-write'],
     deviceScaleFactor: 1,
     colorScheme: 'dark',
-    reducedMotion: 'reduce',
+    reducedMotion: opts.motion ? 'no-preference' : 'reduce',
     serviceWorkers: 'block'
   })
   try {
@@ -332,19 +336,22 @@ export async function openRuneWeb(opts: RuneWebOptions): Promise<RuneWebSession>
 }
 
 /**
- * The matrix's `rune-web` client: the Rune web client the server serves at
- * `/?ui=rune`. Until R5 builds it, the runner marks every surface pending
- * (`TROUPE_ON_RUNE_PENDING`) and never opens a session.
+ * The matrix's `rune-web` client: the Rune web client's build (`troupe-web`)
+ * served on the seeded server's origin through `serveRuneClient`, signed in
+ * with the React client's `localStorage` keys. One server serves every session
+ * of a run. When the Troupe server serves the build itself, open it there.
  */
 export function runeWebClient(opts: { browser: Browser }): ClientLauncher {
+  let served: Promise<StaticServer> | null = null
   return {
     client: 'rune-web',
     resolvesTargets: true,
     async session({ world, surface, deviceId, points }, body) {
+      served ??= serveRuneClient(runeWebDist('troupe'), world.server.baseUrl)
       const phone = surface.profile === 'phone'
       const session = await openRuneWeb({
         browser: opts.browser,
-        url: `${world.server.baseUrl}/?ui=rune${surface.start?.hash ?? ''}`,
+        url: `${(await served).url}/${surface.start?.hash ?? ''}`,
         ready: surface.start?.ready ?? BOOT_TEXT,
         viewport: phone ? PHONE_VIEWPORT : VIEWPORT,
         touch: phone,
@@ -357,6 +364,11 @@ export function runeWebClient(opts: { browser: Browser }): ClientLauncher {
       } finally {
         await session.close()
       }
+    },
+    async close() {
+      const server = served
+      served = null
+      await (await server)?.close()
     }
   }
 }

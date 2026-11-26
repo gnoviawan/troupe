@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { AccountGlyph } from './AccountGlyph'
 
 /*
- * The parts of the "Add account" dialogs. Claude and Codex use the same
+ * The parts of the "Add account" dialogs. Claude, Codex and Antigravity use the same
  * steps, copy and layout: Name → Sign in → Done, or a failed step.
  */
 
@@ -64,9 +64,10 @@ export function AccountNameStep({
   error,
   busy,
   onSubmit,
-  onCancel
+  onCancel,
+  children
 }: {
-  /** "Claude" or "Codex". */
+  /** "Claude", "Codex" or "Antigravity". */
   provider: string
   name: string
   onNameChange: (name: string) => void
@@ -76,6 +77,7 @@ export function AccountNameStep({
   busy: boolean
   onSubmit: () => void
   onCancel: () => void
+  children?: React.ReactNode
 }): React.JSX.Element {
   const inputId = useId()
   const suggestions = NAME_SUGGESTIONS.filter(
@@ -84,7 +86,9 @@ export function AccountNameStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add a {provider} account</DialogTitle>
+        <DialogTitle>
+          Add {/^[aeiou]/i.test(provider) ? 'an' : 'a'} {provider} account
+        </DialogTitle>
         <DialogDescription>
           Give it a short name. Troupe shows this name, never the email.
         </DialogDescription>
@@ -125,6 +129,7 @@ export function AccountNameStep({
         )}
         {error && <p className="text-xs text-destructive">{error}</p>}
       </form>
+      {children}
       <DialogFooter>
         <Button variant="ghost" size="sm" onClick={onCancel} disabled={busy}>
           Cancel

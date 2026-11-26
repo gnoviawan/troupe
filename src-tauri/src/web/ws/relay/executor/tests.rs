@@ -71,6 +71,12 @@ fn entity_keys_name_the_first_entity_and_never_collide_across_kinds() {
         None,
         "a code never holds up a cancel"
     );
+    assert_eq!(
+        key("subagent_settings_set", json!({"maxRunning": 2})),
+        key("subagent_settings_get", json!({})),
+        "settings reads and writes run in arrival order"
+    );
+    assert_eq!(key("subagent_settings_get", json!({})).as_deref(), Some("subagent_settings"));
     assert_eq!(key("ping", json!({})), None);
     assert_eq!(key("list_agents", json!({})), None);
     assert_eq!(key("subscribe", json!({"sessionId": ""})), None, "an empty id names nothing");

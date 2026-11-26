@@ -49,8 +49,8 @@
     },
     "shortcuts": {
       "sources": {
-        "src/renderer/stores/keyboard-shortcuts-store.ts": "790c7bc23bb124601af106ced7a365a147e65bfa",
-        "src/renderer/types/settings.ts": "1eb4d46e8097214368522f67941a5576a61978e9",
+        "src/renderer/stores/keyboard-shortcuts-store.ts": "5950ca70d442e27b357a98e274c283b936c51f02",
+        "src/renderer/types/settings.ts": "14f1da6819bae1619f530a723f4ea95704017ede",
         "src/renderer/lib/platform.ts": "17a189bf41b26507ad845fa1605e303018dd3d67"
       },
       "vectors": [
@@ -74,7 +74,7 @@
     },
     "projects": {
       "sources": {
-        "src/renderer/stores/project-store.ts": "444b3ce412505d9408c82c5bd39577e95b8d3009",
+        "src/renderer/stores/project-store.ts": "d0435cf8d23d84fde360d7b169e539f278fd7f92",
         "src/renderer/stores/project-registry-feed.ts": "902f5b3a3b44b0b2ab6545a5eefa4d084007db2d",
         "src/renderer/lib/project-prefs.ts": "cf89f1c53afc6438ac5325b130df3db941582acf"
       },
@@ -89,6 +89,129 @@
         "groups",
         "persist_prefs_skips_unchanged_record",
         "remembered_prefs_reach_a_new_project"
+      ]
+    },
+    "shell-layout": {
+      "sources": {
+        "src/renderer/stores/shell-layout-store.ts": "b3b21628023f847158ed5958d57d8af006b5644d",
+        "src/renderer/lib/shell-layout-record.ts": "cacd65f45ea3524dedc6ce87550a06e99e623e2f",
+        "src/renderer/lib/shell-layout-migration.ts": "b4206d6a3565e40b7fec7e4b328225cbe8eea610"
+      },
+      "vectors": [
+        "gate_then_fresh_install",
+        "load_existing_record_clamped",
+        "version_1_record_is_saved_as_current",
+        "version_2_chats_view_becomes_explorer",
+        "non_object_record_loads_defaults",
+        "read_error_goes_unavailable",
+        "newer_version_goes_unavailable",
+        "tabs_picks_and_sections",
+        "remove_project_when_ready",
+        "remove_project_before_hydration",
+        "remove_project_before_fresh_install",
+        "remove_project_while_unavailable"
+      ]
+    },
+    "pane-tree": {
+      "sources": {
+        "src/renderer/hooks/editor-persistence/pane-tree.ts": "0440ab7b7976f34906c47e6378d70e80f6c88f09",
+        "src/renderer/lib/workspace-tab-kinds.ts": "99aa05cc1857c1927ffb2cf7160a18a152c75f6a"
+      },
+      "vectors": [
+        "serialize_every_kind_and_splits",
+        "deserialize_every_kind",
+        "deserialize_drops_corrupt_tabs",
+        "deserialize_legacy_leaf_and_split",
+        "reconcile_terminals_by_id_then_name",
+        "reconcile_keeps_saved_terminals_when_none_live"
+      ]
+    },
+    "git-status": {
+      "sources": {
+        "src/renderer/stores/git-status-store.ts": "bef0766c3cc0ec8de0add3846d74efce8c1dc0fd"
+      },
+      "vectors": [
+        "fetch_commit_context_stores_it_with_its_head",
+        "fetch_commit_context_failure_drops_the_stale_context",
+        "a_stale_commit_context_is_ignored",
+        "a_superseded_context_records_no_head",
+        "a_stale_status_is_ignored",
+        "a_status_failure_keeps_the_previous_status_and_clears_on_success",
+        "commit_sends_the_head_last_shown_and_refreshes",
+        "commit_on_an_unborn_branch_expects_the_empty_head",
+        "a_commit_before_any_context_reads_the_head_first",
+        "a_commit_refused_because_head_moved_refreshes_and_rejects",
+        "a_head_that_cannot_be_read_refuses_the_commit",
+        "a_failed_context_forgets_the_head_and_the_commit_refetches_it",
+        "commit_errors_reject_without_a_refresh",
+        "a_commit_resolves_when_its_refresh_fails",
+        "push_refreshes_and_a_failed_push_rejects",
+        "stage_files_stages_each_then_refreshes_once",
+        "a_mid_batch_stage_failure_still_refreshes_and_rejects",
+        "single_file_writes_and_an_empty_batch",
+        "hunk_writes_invalidate_the_file_and_refresh",
+        "stash_and_branch_lists_and_writes",
+        "branch_switch_and_create_clear_the_selection_and_refresh",
+        "a_failed_diff_notifies_by_default_and_clears_on_success",
+        "a_quiet_diff_failure_keeps_the_cache_empty_and_logs",
+        "a_diff_invalidated_in_flight_is_discarded",
+        "a_watched_diff_stat_reads_and_an_unwatched_one_does_not",
+        "a_diff_stat_failure_is_stored_and_logged",
+        "refresh_working_copy_never_rejects",
+        "two_spellings_of_a_windows_path_share_one_entry"
+      ]
+    },
+    "git-routes": {
+      "sources": {
+        "src/renderer/lib/git-api.ts": "a359c581abb4405f9bb9e71035999d72670afe6a",
+        "src/renderer/lib/web-server-api.ts": "e9ec35c56f2a1ccae507cf78f2774d0d491d7d04",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "reads",
+        "writes"
+      ]
+    },
+    "app-settings": {
+      "sources": {
+        "src/renderer/stores/app-settings-store.ts": "b17bda9779bd0c4b63b24d68c48bc20ba3f50eee",
+        "src/renderer/hooks/use-app-settings.ts": "b2eb71771b3f47852dc0b7c4ff4e54fe74471318",
+        "src/renderer/types/settings.ts": "14f1da6819bae1619f530a723f4ea95704017ede",
+        "src/renderer/lib/terminal-profiles.ts": "1cec5dfe62d3e4be0c3c7174ff19b98559567799",
+        "src/renderer/lib/themes/theme-appearance.ts": "e5cc2d761062a7a057a2e0847aef9797c9ea83cf"
+      },
+      "vectors": [
+        "first_run_reads_nothing_and_keeps_the_defaults",
+        "a_failed_read_keeps_the_defaults_and_warns",
+        "a_stored_record_fills_in_from_the_defaults",
+        "old_records_migrate_and_rewrite",
+        "system_and_unknown_appearances_migrate",
+        "the_hosts_idle_window_replaces_the_saved_one",
+        "edits_write_the_whole_record",
+        "a_synced_change_replaces_the_settings_and_keeps_the_read",
+        "reset_keeps_profiles_and_onboarding",
+        "idle_window_choice_pushes_then_writes"
+      ]
+    },
+    "settings-routes": {
+      "sources": {
+        "src/renderer/lib/acp-transport/ws-transport.ts": "6bcbf55796ea7f0aff8c5ca7046c9d44fcbd29ca",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "idle_window"
+      ]
+    },
+    "palette": {
+      "sources": {
+        "src/renderer/stores/recent-commands-store.ts": "8cb3a560de957bd4eab9ed77aa764fdbefc3c49f",
+        "src/renderer/stores/pinned-commands-store.ts": "ee65cf14413418dd352e14a4f39a6fc8baf4f763",
+        "src/renderer/components/CommandPalette.tsx": "b4d3c0e00c3be7cfd0405552be480cb9ef2bddff"
+      },
+      "vectors": [
+        "recent_keeps_five_newest_first",
+        "pins_toggle_in_order",
+        "command_scores"
       ]
     }
   }

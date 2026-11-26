@@ -1,6 +1,7 @@
 //! Route seeding for orchestrated child sessions: a child session created
 //! with a `ChildOrigin` routes its permission requests to the chat, while a
-//! plain ephemeral session still has its permissions answered headlessly.
+//! plain ephemeral session still has its permissions answered headlessly
+//! and an auto-approved child has them allowed once by the host.
 //! Drives the production command loop through a scripted mock agent.
 
 use std::sync::Arc;
@@ -36,7 +37,7 @@ for line in sys.stdin:
         session = msg["params"]["sessionId"]
         send({"jsonrpc": "2.0", "id": perm_id, "method": "session/request_permission",
               "params": {"sessionId": session,
-                         "toolCall": {"toolCallId": "tc-1", "title": "run a tool"},
+                         "toolCall": {"toolCallId": "tc-1", "title": "run a tool", "kind": "execute"},
                          "options": [{"optionId": "allow", "name": "Allow",
                                       "kind": "allow_once"}]}})
         pending_prompt = rid
@@ -99,6 +100,7 @@ fn origin(root: &str, parent: &str) -> ChildOrigin {
         parent_dispatch_id: None,
         dispatch_id: "termul-subagent:sub-9f2c1a".to_string(),
         depth: 1,
+        auto_approve: false,
     }
 }
 
@@ -212,5 +214,46 @@ async fn an_unseeded_ephemeral_session_still_answers_permissions_headlessly() {
         log.0.lock().is_empty(),
         "no permission event reaches a sink for a headless session"
     );
+    let _ = acp.kill(&agent).await;
+}
+
+/// A child whose sub-agent profile allows every tool has its permission
+/// request answered by the host with the allow-once option: the turn ends
+/// with the allow outcome and no permission card reaches the chat.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_auto_approved_childs_permission_request_is_allowed_once_by_the_host() {
+    if find_python().is_none() {
+        return;
+    }
+    let _serial = super::real_loop_tests::TIMEOUT_TEST_LOCK.lock().await;
+    let root = tempfile::tempdir().expect("tempdir");
+    let log = Arc::new(EventLog::default());
+    let acp = Arc::new(AcpManager::new(vec![log.clone()]));
+    let agent = spawn_mock(&acp, root.path()).await.expect("mock agent");
+    let created = acp
+        .new_session_with_context(
+            &agent,
+            root.path().to_string_lossy().into_owned(),
+            vec![],
+            SessionCreationContext {
+                ephemeral: true,
+                child_origin: Some(ChildOrigin {
+                    auto_approve: true,
+                    ..origin("chat-root", "chat-root")
+                }),
+                ..SessionCreationContext::default()
+            },
+        )
+        .await
+        .expect("child session");
+    let stop = tokio::time::timeout(
+        Duration::from_secs(30),
+        prompt(&acp, &agent, &created.session_id),
+    )
+    .await
+    .expect("turn bounded")
+    .expect("turn completes");
+    assert_eq!(stop, StopReason::EndTurn, "the host picked the allow option");
+    assert!(log.0.lock().is_empty(), "no permission card reaches the chat");
     let _ = acp.kill(&agent).await;
 }

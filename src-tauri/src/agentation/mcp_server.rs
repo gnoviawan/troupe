@@ -79,6 +79,13 @@ pub struct WatchAnnotationsInput {
     pub timeout_seconds: Option<u64>,
 }
 
+#[derive(Debug, Deserialize, Serialize, schemars::JsonSchema)]
+pub struct GetRulerGuidesInput {
+    /// Optional session ID to filter. If omitted, returns guides across all active sessions.
+    #[serde(default)]
+    pub session_id: Option<String>,
+}
+
 // ---------------------------------------------------------------------------
 // MCP server
 // ---------------------------------------------------------------------------
@@ -92,13 +99,21 @@ impl AgentationMcpServer {
         Self { store }
     }
 
+    fn to_json_string(value: &serde_json::Value) -> String {
+        serde_json::to_string_pretty(value)
+            .unwrap_or_else(|e| format!("{{\"error\":\"serialization failed: {e}\"}}"))
+    }
+
     fn map_annotation_for_mcp(a: &Annotation) -> serde_json::Value {
         let mut val = serde_json::json!({
             "id": a.id,
             "kind": match a.kind {
                 AnnotationKind::Feedback => "feedback",
+                AnnotationKind::Rectangle => "rectangle",
                 AnnotationKind::Placement => "placement",
                 AnnotationKind::Rearrange => "rearrange",
+                AnnotationKind::Measurement => "measurement",
+                AnnotationKind::Guide => "guide",
             },
             "comment": a.comment,
             "element": a.element,
@@ -111,16 +126,35 @@ impl AgentationMcpServer {
             "reactComponents": a.react_components,
         });
 
-        // Add placement/rearrange only when applicable
+        // Add kind-specific structured payloads only when applicable
         if matches!(a.kind, AnnotationKind::Placement) {
             if let Some(p) = &a.placement {
-                val["placement"] = serde_json::to_value(p).unwrap();
+                if let Ok(v) = serde_json::to_value(p) {
+                    val["placement"] = v;
+                }
             }
         }
         if matches!(a.kind, AnnotationKind::Rearrange) {
             if let Some(r) = &a.rearrange {
-                val["rearrange"] = serde_json::to_value(r).unwrap();
+                if let Ok(v) = serde_json::to_value(r) {
+                    val["rearrange"] = v;
+                }
             }
+        }
+        if matches!(a.kind, AnnotationKind::Measurement | AnnotationKind::Guide) {
+            if let Some(m) = &a.measurement {
+                if let Ok(v) = serde_json::to_value(m) {
+                    val["measurement"] = v;
+                }
+            }
+        }
+        if let Some(bb) = &a.bounding_box {
+            if let Ok(v) = serde_json::to_value(bb) {
+                val["boundingBox"] = v;
+            }
+        }
+        if let Some(path) = &a.screenshot_crop_path {
+            val["screenshotCropPath"] = serde_json::Value::String(path.clone());
         }
         val
     }
@@ -145,7 +179,7 @@ impl AgentationMcpServer {
                 })
             })
             .collect();
-        serde_json::to_string_pretty(&serde_json::json!({"sessions": mapped})).unwrap()
+        Self::to_json_string(&serde_json::json!({"sessions": mapped}))
     }
 
     #[tool(
@@ -154,14 +188,15 @@ impl AgentationMcpServer {
     )]
     async fn get_session(&self, Parameters(input): Parameters<GetSessionInput>) -> String {
         match self.store.get_session_with_annotations(&input.session_id) {
-            Some(s) => serde_json::to_string_pretty(&s).unwrap_or_else(|_| "error".into()),
+            Some(s) => serde_json::to_string_pretty(&s)
+                .unwrap_or_else(|e| format!("{{\"error\":\"serialization failed: {e}\"}}")),
             None => format!("Session not found: {}", input.session_id),
         }
     }
 
     #[tool(
         name = "agentation_get_pending",
-        description = "Get all pending (unacknowledged) annotations for a session. Annotations have a `kind` field: \"feedback\" (default), \"placement\" (design component placements), or \"rearrange\" (section reorder/resize). Placement and rearrange annotations include structured data."
+        description = "Get all pending (unacknowledged) annotations for a session. Annotations have a `kind` field: \"feedback\" (default), \"rectangle\" (region box), \"guide\" (red alignment guide), \"measurement\" (ruler spacing), \"placement\" (design component placements), or \"rearrange\" (section reorder/resize). Guide and measurement annotations include a structured `measurement` field."
     )]
     async fn get_pending(&self, Parameters(input): Parameters<GetPendingInput>) -> String {
         let annotations = self.store.get_pending_annotations(&input.session_id);
@@ -169,16 +204,15 @@ impl AgentationMcpServer {
             .iter()
             .map(Self::map_annotation_for_mcp)
             .collect();
-        serde_json::to_string_pretty(&serde_json::json!({
+        Self::to_json_string(&serde_json::json!({
             "count": mapped.len(),
             "annotations": mapped,
         }))
-        .unwrap()
     }
 
     #[tool(
         name = "agentation_get_all_pending",
-        description = "Get all pending annotations across ALL sessions. Includes feedback, design placements, and rearrange annotations. Each annotation has a `kind` field."
+        description = "Get all pending annotations across ALL sessions. Includes feedback, ruler measurements, alignment guides, design placements, and rearrange annotations. Each annotation has a `kind` field."
     )]
     async fn get_all_pending(&self) -> String {
         let sessions = self.store.list_sessions();
@@ -188,11 +222,42 @@ impl AgentationMcpServer {
                 all.push(Self::map_annotation_for_mcp(&a));
             }
         }
-        serde_json::to_string_pretty(&serde_json::json!({
+        Self::to_json_string(&serde_json::json!({
             "count": all.len(),
             "annotations": all,
         }))
-        .unwrap()
+    }
+
+    #[tool(
+        name = "agentation_get_ruler_guides",
+        description = "Get pending ruler spacing measurements and red horizontal/vertical alignment guides placed by the user in the embedded browser, including exact x/y axis pixel coordinates, element selectors, and offset deltas."
+    )]
+    async fn get_ruler_guides(&self, Parameters(input): Parameters<GetRulerGuidesInput>) -> String {
+        let sessions: Vec<String> = match input.session_id {
+            Some(sid) => vec![sid],
+            None => self
+                .store
+                .list_sessions()
+                .into_iter()
+                .filter(|s| s.status == SessionStatus::Active)
+                .map(|s| s.id)
+                .collect(),
+        };
+        let mut guides = Vec::new();
+        for sid in sessions {
+            for ann in self.store.get_pending_annotations(&sid) {
+                if matches!(
+                    ann.kind,
+                    AnnotationKind::Guide | AnnotationKind::Measurement
+                ) {
+                    guides.push(Self::map_annotation_for_mcp(&ann));
+                }
+            }
+        }
+        Self::to_json_string(&serde_json::json!({
+            "count": guides.len(),
+            "guides": guides,
+        }))
     }
 
     #[tool(
@@ -205,10 +270,9 @@ impl AgentationMcpServer {
             AnnotationStatus::Acknowledged,
             Some("agent"),
         ) {
-            Some(_) => serde_json::to_string_pretty(
+            Some(_) => Self::to_json_string(
                 &serde_json::json!({"acknowledged": true, "annotationId": input.annotation_id}),
-            )
-            .unwrap(),
+            ),
             None => format!("Annotation not found: {}", input.annotation_id),
         }
     }
@@ -231,7 +295,9 @@ impl AgentationMcpServer {
                         &format!("Resolved: {summary}"),
                     );
                 }
-                serde_json::to_string_pretty(&serde_json::json!({"resolved": true, "annotationId": input.annotation_id, "summary": input.summary})).unwrap()
+                Self::to_json_string(
+                    &serde_json::json!({"resolved": true, "annotationId": input.annotation_id, "summary": input.summary}),
+                )
             }
             None => format!("Annotation not found: {}", input.annotation_id),
         }
@@ -253,7 +319,9 @@ impl AgentationMcpServer {
                     ThreadRole::Agent,
                     &format!("Dismissed: {}", input.reason),
                 );
-                serde_json::to_string_pretty(&serde_json::json!({"dismissed": true, "annotationId": input.annotation_id, "reason": input.reason})).unwrap()
+                Self::to_json_string(
+                    &serde_json::json!({"dismissed": true, "annotationId": input.annotation_id, "reason": input.reason}),
+                )
             }
             None => format!("Annotation not found: {}", input.annotation_id),
         }
@@ -265,14 +333,16 @@ impl AgentationMcpServer {
     )]
     async fn reply(&self, Parameters(input): Parameters<ReplyInput>) -> String {
         match self.store.add_thread_message(&input.annotation_id, ThreadRole::Agent, &input.message) {
-            Some(_) => serde_json::to_string_pretty(&serde_json::json!({"replied": true, "annotationId": input.annotation_id, "message": input.message})).unwrap(),
+            Some(_) => Self::to_json_string(
+                &serde_json::json!({"replied": true, "annotationId": input.annotation_id, "message": input.message}),
+            ),
             None => format!("Annotation not found: {}", input.annotation_id),
         }
     }
 
     #[tool(
         name = "agentation_watch_annotations",
-        description = "Block until new annotations appear, then collect a batch and return them. Triggers automatically when annotations are created — the user just annotates in the browser and the agent picks them up. Includes all annotation kinds: feedback, placement (design components), and rearrange (section reorder/resize). After detecting the first new annotation, waits for a batch window to collect more before returning. Use in a loop for hands-free processing. After addressing each annotation, call agentation_resolve with the annotation ID and a summary of what you did. Only resolve annotations the user accepted — if the user rejects your change, leave the annotation open."
+        description = "Block until new annotations appear, then collect a batch and return them. Triggers automatically when annotations are created — the user just annotates in the browser and the agent picks them up. Includes all annotation kinds: feedback, rectangle (region box), guide (red alignment guide with structured `measurement`), measurement (ruler spacing with structured `measurement`), placement (design components), and rearrange (section reorder/resize). After detecting the first new annotation, waits for a batch window to collect more before returning. Use in a loop for hands-free processing. After addressing each annotation, call agentation_resolve with the annotation ID and a summary of what you did. Only resolve annotations the user accepted — if the user rejects your change, leave the annotation open."
     )]
     async fn watch_annotations(
         &self,
@@ -298,13 +368,12 @@ impl AgentationMcpServer {
             let sessions: std::collections::HashSet<_> =
                 pending.iter().map(|a| a.session_id.clone()).collect();
             let mapped: Vec<_> = pending.iter().map(Self::map_annotation_for_mcp).collect();
-            return serde_json::to_string_pretty(&serde_json::json!({
+            return Self::to_json_string(&serde_json::json!({
                 "timeout": false,
                 "count": mapped.len(),
                 "sessions": sessions,
                 "annotations": mapped,
-            }))
-            .unwrap();
+            }));
         }
 
         // Block on broadcast channel for new annotation.created events
@@ -374,20 +443,18 @@ impl AgentationMcpServer {
                 .filter_map(|e| serde_json::from_value::<Annotation>(e.payload.clone()).ok())
                 .map(|a| Self::map_annotation_for_mcp(&a))
                 .collect();
-            serde_json::to_string_pretty(&serde_json::json!({
+            Self::to_json_string(&serde_json::json!({
                 "timeout": false,
                 "count": mapped.len(),
                 "sessions": sessions,
                 "annotations": mapped,
             }))
-            .unwrap()
         } else {
             let _ = timeout_result; // consume to avoid unused warning
-            serde_json::to_string_pretty(&serde_json::json!({
+            Self::to_json_string(&serde_json::json!({
                 "timeout": true,
                 "message": format!("No new annotations within {timeout_secs} seconds"),
             }))
-            .unwrap()
         }
     }
 }

@@ -64,7 +64,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('@/lib/env-parser', () => ({
-  resolveEnvForSpawn: () => ({ env: {}, hasProjectEnv: false })
+  passThroughProjectEnv: () => ({ env: {}, hasProjectEnv: false })
 }))
 
 import { useRenameSnapshot, useRestoreSnapshot } from './use-snapshots'

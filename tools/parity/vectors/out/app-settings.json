@@ -1,0 +1,3153 @@
+[
+ {
+  "store": "app-settings",
+  "name": "first_run_reads_nothing_and_keeps_the_defaults",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {}
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "missing"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "a_failed_read_keeps_the_defaults_and_warns",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "code": "STORE_UNAVAILABLE"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "useAppSettingsLoader",
+      "message": "App settings read failed (STORE_UNAVAILABLE); using defaults"
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "failed"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "a_stored_record_fills_in_from_the_defaults",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "colorTheme": "nord",
+        "appearanceMode": "light",
+        "terminalFontSize": 16,
+        "futureKey": "kept",
+        "onboardingCompletedAt": "2026-11-01T00:00:00Z"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 16,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "nord",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": "2026-11-01T00:00:00Z",
+      "futureKey": "kept"
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "old_records_migrate_and_rewrite",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "colorTheme": "dracula-light",
+        "terminalUrlOpenMode": "termul",
+        "maxTerminalsPerProject": 10,
+        "orphanDetectionEnabled": true,
+        "terminalRenderer": "canvas",
+        "terminalProfiles": [
+         {
+          "id": "p1",
+          "name": "Zsh",
+          "shell": "/bin/zsh",
+          "args": [
+           "-l"
+          ],
+          "cwd": "",
+          "env": {
+           "A": "1"
+          }
+         },
+         {
+          "id": "p1",
+          "name": "dup",
+          "shell": "",
+          "args": [],
+          "cwd": "",
+          "env": {}
+         },
+         7
+        ],
+        "onboardingCompletedAt": 42
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "warn",
+      "source": "terminal-profiles.normalizeTerminalProfiles",
+      "message": "Dropped 2 malformed terminal profile(s) from settings"
+     },
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "dom",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "troupe",
+       "remoteBindMode": "localhost",
+       "colorTheme": "dracula",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "dom",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "troupe",
+      "remoteBindMode": "localhost",
+      "colorTheme": "dracula",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "system_and_unknown_appearances_migrate",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    },
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "system",
+        "linkOpenMode": "troupe",
+        "terminalUrlOpenMode": "system"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "troupe",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "light",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "troupe",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "sepia"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "the_hosts_idle_window_replaces_the_saved_one",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 3600,
+     "source": "setting"
+    },
+    {
+     "secs": 1800,
+     "source": "setting"
+    },
+    {
+     "secs": 900,
+     "source": "env"
+    },
+    {
+     "reject": "offline"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     },
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": 3600,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": 3600,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark",
+        "agentIdleWindowSecs": 7200
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     },
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "useAppSettingsLoader.agentIdleWindow",
+      "message": "Failed to apply the agent idle window: offline"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "edits_write_the_whole_record",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark",
+        "terminalProfiles": [
+         {
+          "id": "p1",
+          "name": "Zsh",
+          "shell": "/bin/zsh",
+          "args": [
+           "-l"
+          ],
+          "cwd": "",
+          "env": {
+           "A": "1"
+          }
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "updateSetting",
+     "args": [
+      "terminalFontSize",
+      18
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 18,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 18,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "updateSetting",
+     "args": [
+      "colorTheme",
+      "nord"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 18,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "nord",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 18,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "nord",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "updateSettings",
+     "args": [
+      {
+       "colorTheme": "termul",
+       "appearanceMode": "light"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 18,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "light",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 18,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "writeNow",
+     "args": [
+      {
+       "onboardingCompletedAt": "2026-11-25T10:00:00Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 18,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "light",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": "2026-11-25T10:00:00Z"
+      },
+      "immediate": true
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 18,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": "2026-11-25T10:00:00Z"
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "updateSetting",
+     "args": [
+      "acpTurnTimeoutSecs",
+      3600
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 18,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "light",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": 3600,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": "2026-11-25T10:00:00Z"
+      },
+      "immediate": false
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 18,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": 3600,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": "2026-11-25T10:00:00Z"
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "a_synced_change_replaces_the_settings_and_keeps_the_read",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "sharedChange",
+     "args": [
+      {
+       "exists": true,
+       "data": {
+        "colorTheme": "nord-light",
+        "uiZoomLevel": 1.2
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "nord",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1.2,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "sharedChange",
+     "args": [
+      {
+       "exists": false
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "nord",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1.2,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "sharedChange",
+     "args": [
+      {
+       "exists": true,
+       "data": {
+        "appearanceMode": "light",
+        "terminalRenderer": "canvas"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "dom",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "reset_keeps_profiles_and_onboarding",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "light",
+        "colorTheme": "nord",
+        "acpTurnTimeoutSecs": 3600,
+        "terminalProfiles": [
+         {
+          "id": "p1",
+          "name": "Zsh",
+          "shell": "/bin/zsh",
+          "args": [
+           "-l"
+          ],
+          "cwd": "",
+          "env": {
+           "A": "1"
+          }
+         }
+        ],
+        "onboardingCompletedAt": "2026-11-01T00:00:00Z"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": 3600
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "nord",
+      "appearanceMode": "light",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": 3600,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": "2026-11-01T00:00:00Z"
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "reset",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "shellLayout",
+      "action": "setRailExpanded",
+      "value": true
+     },
+     {
+      "kind": "shellLayout",
+      "action": "setSidePanelVisible",
+      "value": false
+     },
+     {
+      "kind": "shellLayout",
+      "action": "setSshSectionVisible",
+      "value": true
+     },
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [
+        {
+         "id": "p1",
+         "name": "Zsh",
+         "shell": "/bin/zsh",
+         "args": [
+          "-l"
+         ],
+         "cwd": "",
+         "env": {
+          "A": "1"
+         }
+        }
+       ],
+       "onboardingCompletedAt": "2026-11-01T00:00:00Z"
+      },
+      "immediate": true
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setAgentIdleWindow",
+      "secs": null
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [
+       {
+        "id": "p1",
+        "name": "Zsh",
+        "shell": "/bin/zsh",
+        "args": [
+         "-l"
+        ],
+        "cwd": "",
+        "env": {
+         "A": "1"
+        }
+       }
+      ],
+      "onboardingCompletedAt": "2026-11-01T00:00:00Z"
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ },
+ {
+  "store": "app-settings",
+  "name": "idle_window_choice_pushes_then_writes",
+  "context": {
+   "idleWindow": [
+    {
+     "secs": 1800,
+     "source": "default"
+    },
+    {
+     "failPush": "host refused"
+    }
+   ]
+  },
+  "initial": {
+   "settings": {
+    "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+    "terminalFontSize": 14,
+    "terminalBufferSize": 10000,
+    "terminalRenderer": "auto",
+    "terminalScreenReaderMode": false,
+    "automaticCompletionRefresh": true,
+    "suggestAutomations": true,
+    "defaultShell": "",
+    "defaultProjectColor": "blue",
+    "confirmTerminalClose": true,
+    "linkOpenMode": "system",
+    "remoteBindMode": "localhost",
+    "colorTheme": "termul",
+    "appearanceMode": "dark",
+    "uiZoomLevel": 1,
+    "translucentRail": false,
+    "acpTurnTimeoutSecs": null,
+    "editorAutoSave": false,
+    "editorAutoSaveDelayMs": 1000,
+    "canvasAutosaveMs": 1500,
+    "canvasAutosaveMaxMs": 10000,
+    "canvasLeaseGraceMs": 5000,
+    "canvasMaxMounted": 2,
+    "canvasCrashTimeouts": 3,
+    "acpTurnIdleTimeoutSecs": null,
+    "acpSessionNewTimeoutSecs": null,
+    "acpSessionReopenTimeoutSecs": null,
+    "agentIdleWindowSecs": null,
+    "notifyOnTerminalIdle": true,
+    "notifyOnAgentChatTurnFinished": true,
+    "notifyOnAgentChatNeedsYou": true,
+    "terminalProfiles": [],
+    "onboardingCompletedAt": null
+   },
+   "isLoaded": false,
+   "hostRead": "pending"
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "load",
+     "args": [
+      {
+       "data": {
+        "appearanceMode": "dark"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "acp",
+      "op": "setTurnTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setTurnIdleTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionNewTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "setSessionReopenTimeout",
+      "secs": null
+     },
+     {
+      "kind": "acp",
+      "op": "getAgentIdleWindow"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "setAgentIdleWindow",
+     "args": [
+      3600
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": 3600,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setAgentIdleWindow",
+      "secs": 3600
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "queueAgentIdleWindowPush",
+      "message": "Failed to apply the agent idle window: host refused"
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": 3600,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "setAgentIdleWindow",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": null,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setAgentIdleWindow",
+      "secs": null
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": null,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   },
+   {
+    "event": {
+     "action": "setAgentIdleWindow",
+     "args": [
+      900
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSettings",
+      "record": {
+       "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+       "terminalFontSize": 14,
+       "terminalBufferSize": 10000,
+       "terminalRenderer": "auto",
+       "terminalScreenReaderMode": false,
+       "automaticCompletionRefresh": true,
+       "suggestAutomations": true,
+       "defaultShell": "",
+       "defaultProjectColor": "blue",
+       "confirmTerminalClose": true,
+       "linkOpenMode": "system",
+       "remoteBindMode": "localhost",
+       "colorTheme": "termul",
+       "appearanceMode": "dark",
+       "uiZoomLevel": 1,
+       "translucentRail": false,
+       "acpTurnTimeoutSecs": null,
+       "editorAutoSave": false,
+       "editorAutoSaveDelayMs": 1000,
+       "canvasAutosaveMs": 1500,
+       "canvasAutosaveMaxMs": 10000,
+       "canvasLeaseGraceMs": 5000,
+       "canvasMaxMounted": 2,
+       "canvasCrashTimeouts": 3,
+       "acpTurnIdleTimeoutSecs": null,
+       "acpSessionNewTimeoutSecs": null,
+       "acpSessionReopenTimeoutSecs": null,
+       "agentIdleWindowSecs": 900,
+       "notifyOnTerminalIdle": true,
+       "notifyOnAgentChatTurnFinished": true,
+       "notifyOnAgentChatNeedsYou": true,
+       "terminalProfiles": [],
+       "onboardingCompletedAt": null
+      },
+      "immediate": false
+     },
+     {
+      "kind": "acp",
+      "op": "setAgentIdleWindow",
+      "secs": 900
+     }
+    ],
+    "state": {
+     "settings": {
+      "terminalFontFamily": "\"Paper Mono\", \"Termul Symbols\", monospace",
+      "terminalFontSize": 14,
+      "terminalBufferSize": 10000,
+      "terminalRenderer": "auto",
+      "terminalScreenReaderMode": false,
+      "automaticCompletionRefresh": true,
+      "suggestAutomations": true,
+      "defaultShell": "",
+      "defaultProjectColor": "blue",
+      "confirmTerminalClose": true,
+      "linkOpenMode": "system",
+      "remoteBindMode": "localhost",
+      "colorTheme": "termul",
+      "appearanceMode": "dark",
+      "uiZoomLevel": 1,
+      "translucentRail": false,
+      "acpTurnTimeoutSecs": null,
+      "editorAutoSave": false,
+      "editorAutoSaveDelayMs": 1000,
+      "canvasAutosaveMs": 1500,
+      "canvasAutosaveMaxMs": 10000,
+      "canvasLeaseGraceMs": 5000,
+      "canvasMaxMounted": 2,
+      "canvasCrashTimeouts": 3,
+      "acpTurnIdleTimeoutSecs": null,
+      "acpSessionNewTimeoutSecs": null,
+      "acpSessionReopenTimeoutSecs": null,
+      "agentIdleWindowSecs": 900,
+      "notifyOnTerminalIdle": true,
+      "notifyOnAgentChatTurnFinished": true,
+      "notifyOnAgentChatNeedsYou": true,
+      "terminalProfiles": [],
+      "onboardingCompletedAt": null
+     },
+     "isLoaded": true,
+     "hostRead": "found"
+    }
+   }
+  ]
+ }
+]

@@ -5,13 +5,20 @@
 //! `orchestrator::engine_tests`.
 
 use super::*;
+use crate::acp::orchestrator::{SubagentApprovals, SubagentProfile};
 use crate::acp::subagents::{SubagentUsage, SubagentWorkspace};
 
 #[test]
 fn every_start_refusal_has_its_contract_code() {
     let cases = [
         (StartError::Disabled, "disabled"),
-        (StartError::UnknownAgent("x".into()), "unknown_agent"),
+        (
+            StartError::UnknownAgent {
+                agent: "x".into(),
+                allowed: vec!["codex".into()],
+            },
+            "unknown_agent",
+        ),
         (StartError::AgentNotAllowed("x".into()), "agent_not_allowed"),
         (StartError::Capacity { max: 4 }, "capacity"),
         (StartError::Depth { max: 2 }, "depth"),
@@ -29,15 +36,30 @@ fn every_start_refusal_has_its_contract_code() {
 }
 
 #[tokio::test]
-async fn the_agent_listing_carries_the_users_description() {
+async fn the_agent_listing_names_each_profile_and_its_agent() {
     let (engine, _data) =
         crate::acp::orchestrator::engine_with_installed(&[], &["codex", "opencode"]).await;
     engine
         .update_settings(|settings| {
-            settings.descriptions.insert(
-                "acp-registry:opencode".to_string(),
-                "Good at long refactors.".to_string(),
-            );
+            settings.profiles = vec![
+                SubagentProfile {
+                    model: Some("gpt-5.5-mini".to_string()),
+                    mode: Some("full-access".to_string()),
+                    config_options: [("reasoning".to_string(), "low".to_string())].into(),
+                    approvals: SubagentApprovals::AllowAll,
+                    description: Some("Quick UI tweaks.".to_string()),
+                    ..SubagentProfile::default_for("acp-registry:codex")
+                },
+                SubagentProfile {
+                    id: "codex-off".to_string(),
+                    enabled: false,
+                    ..SubagentProfile::default_for("acp-registry:codex")
+                },
+                SubagentProfile {
+                    id: "gone".to_string(),
+                    ..SubagentProfile::default_for("acp-registry:uninstalled")
+                },
+            ];
         })
         .unwrap();
     let reply = list_agents(&engine);
@@ -48,19 +70,43 @@ async fn the_agent_listing_carries_the_users_description() {
             {
                 "agentId": "acp-registry:codex",
                 "name": "codex",
+                "agent": "acp-registry:codex",
                 "allowed": true,
+                "defaultModel": "gpt-5.5-mini",
+                "description": "Quick UI tweaks.",
+            },
+            {
+                "agentId": "codex-off",
+                "name": "codex",
+                "agent": "acp-registry:codex",
+                "allowed": false,
                 "defaultModel": null,
                 "description": null,
             },
             {
                 "agentId": "acp-registry:opencode",
                 "name": "opencode",
+                "agent": "acp-registry:opencode",
                 "allowed": true,
                 "defaultModel": null,
-                "description": "Good at long refactors.",
+                "description": null,
             },
-        ])
+        ]),
+        "the mode, config options and approvals stay with the user"
     );
+}
+
+#[test]
+fn a_start_cannot_set_the_childs_mode_config_or_approvals() {
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(SubagentStartInput)).unwrap();
+    let mut inputs: Vec<&str> = schema["properties"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    inputs.sort_unstable();
+    assert_eq!(inputs, ["agent", "model", "task", "title", "workspace"]);
 }
 
 #[test]

@@ -33,7 +33,9 @@ import {
   type AgentIdleWindowStatus,
   type CommandCallOptions,
   getAcpTransport,
-  type SubagentSettingsAgentView,
+  type SubagentApprovals,
+  type SubagentProfile,
+  type SubagentProfileView,
   type SubagentSettingsInput,
   type SubagentSettingsView
 } from '@/lib/acp-transport'
@@ -52,7 +54,9 @@ import { webServerMcpOAuth } from '@/lib/web-server-api'
 
 export type {
   AgentIdleWindowStatus,
-  SubagentSettingsAgentView,
+  SubagentApprovals,
+  SubagentProfile,
+  SubagentProfileView,
   SubagentSettingsInput,
   SubagentSettingsView
 }
@@ -577,6 +581,15 @@ export interface ModeUpdateEvent {
   currentModeId: string
   availableModes?: SessionMode[]
 }
+/**
+ * `acp:models_update`: the model of a session whose models come only from the
+ * legacy `models` field changed (Hermes Agent). Carries the whole list.
+ */
+export interface ModelsUpdateEvent {
+  agentId: AgentId
+  sessionId: SessionId
+  models: SessionModelState
+}
 export interface ConfigOptionsUpdateEvent {
   agentId: AgentId
   sessionId: SessionId
@@ -842,6 +855,7 @@ export const ACP_EVENTS = {
   planUpdate: 'acp:plan_update',
   commandsUpdate: 'acp:commands_update',
   modeUpdate: 'acp:mode_update',
+  modelsUpdate: 'acp:models_update',
   configOptionsUpdate: 'acp:config_options_update',
   permissionRequest: 'acp:permission_request',
   questionRequest: 'acp:question_request',
@@ -860,6 +874,7 @@ export const ACP_EVENTS = {
   usageUpdate: 'acp:usage_update',
   claudeLimitAction: 'acp:claude_limit_action',
   codexLimitAction: 'acp:codex_limit_action',
+  antigravityLimitAction: 'acp:antigravity_limit_action',
   agentWorking: 'acp:agent_working',
   backgroundCommands: 'acp:background_commands',
   browserOpenRequest: 'acp:browser_open_request',
@@ -1050,6 +1065,7 @@ export async function startMcpOAuth(
   if (popup) popup.opener = null
   let authUrl: string
   let redirectUri: string
+  let startGeneration: number | undefined
   try {
     const result = await webServerMcpOAuth.start(projectId, serverUrl)
     if (!result.success) {
@@ -1058,16 +1074,18 @@ export async function startMcpOAuth(
     if (signal?.aborted) throw oauthCancelled()
     authUrl = result.data.authUrl
     redirectUri = result.data.redirectUri
+    startGeneration = result.data.tokenGeneration
   } catch (err) {
     popup?.close()
     throw err
   }
   if (popup) popup.location.href = authUrl
   onAuthUrl?.(authUrl, redirectUri)
-  // Wait for OAuth completion by polling the status endpoint until the token
-  // is stored. Either the host's `/oauth/callback` (a browser on the host's
-  // machine) or a pasted redirect (`complete`) stores it; once `hasToken` is
-  // true, the flow is complete.
+  // Wait for OAuth completion by polling the status endpoint until a fresh
+  // token is stored. Either the host's `/oauth/callback` (a browser on the
+  // host's machine) or a pasted redirect (`complete`) stores it; comparing
+  // `tokenGeneration` against the start snapshot prevents a pre-existing stale
+  // token from ending a re-sign-in flow early.
   const POLL_INTERVAL_MS = 1000
   const POLL_TIMEOUT_MS = 300_000 // 5 min — matches OAUTH_FLOW_TIMEOUT_SECS
   const deadline = Date.now() + POLL_TIMEOUT_MS
@@ -1078,10 +1096,20 @@ export async function startMcpOAuth(
       const status = await webServerMcpOAuth.status(projectId, serverUrl, signal)
       if (signal?.aborted) throw oauthCancelled()
       if (status.success && status.data?.hasToken) {
-        return
+        const currentGeneration = status.data.tokenGeneration
+        const isFreshToken =
+          startGeneration === undefined ||
+          currentGeneration === undefined ||
+          currentGeneration > startGeneration
+        if (isFreshToken) {
+          return
+        }
       }
     }
-    throw new Error('OAuth flow timed out — user did not complete authorization in time')
+    throw new McpOAuthError(
+      'OAuth flow timed out — user did not complete authorization in time',
+      'OAUTH_TIMEOUT'
+    )
   } catch (err) {
     // A cancelled or timed-out sign-in closes its provider window.
     popup?.close()

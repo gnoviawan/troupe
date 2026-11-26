@@ -201,6 +201,34 @@ async fn config_options_update_without_usable_model_keeps_previous_value() {
     assert_eq!(persistence.metadata("session-1").unwrap().last_seq, 2);
 }
 
+fn models_update(seq: u64, current: &str) -> PersistedEventRecord {
+    PersistedEventRecord {
+        schema_version: SESSION_SCHEMA_VERSION,
+        session_id: "session-1".to_string(),
+        seq,
+        type_: "models_update".to_string(),
+        recorded_at: now_millis(),
+        payload: json!({"agentId": "a", "sessionId": "session-1",
+            "models": state(current, &[("m1", "Model One"), ("m2", "Model Two")])}),
+    }
+}
+
+/// A legacy-only session's `session/set_model` (Hermes Agent) reaches the
+/// index as a durable `models_update`.
+#[tokio::test]
+async fn durable_models_update_changes_model_and_survives_restart() {
+    let root = temp_dir("legacy-switch");
+    let persistence = open(&root).await;
+    register(&persistence, &root, Some(snapshot("m1", "Model One"))).await;
+    persistence.enqueue_event(models_update(1, "m2")).unwrap();
+    persistence.flush_session("session-1").await.unwrap();
+    assert_eq!(listed(&persistence), some_model("m2", "Model Two"));
+
+    persistence.shutdown().await.unwrap();
+    let reloaded = open(&root).await;
+    assert_eq!(listed(&reloaded), some_model("m2", "Model Two"));
+}
+
 #[test]
 fn snapshot_from_record_ignores_other_record_types() {
     let mut record = config_update(
@@ -325,4 +353,28 @@ async fn discovered_and_imported_sessions_have_no_model() {
         .list_sessions()
         .iter()
         .all(|entry| entry.model_id.is_none() && entry.model_name.is_none()));
+}
+
+/// Legacy model lists usually carry `{modelId, name}` and no `description`
+/// (Hermes Agent); a `models_update` in that shape still sets the index model.
+#[test]
+fn a_models_update_without_descriptions_sets_the_model() {
+    let record = PersistedEventRecord {
+        schema_version: SESSION_SCHEMA_VERSION,
+        session_id: "session-1".to_string(),
+        seq: 1,
+        type_: "models_update".to_string(),
+        recorded_at: now_millis(),
+        payload: json!({"agentId": "a", "sessionId": "session-1", "models": {
+            "currentModelId": "m2",
+            "availableModels": [
+                {"modelId": "m1", "name": "Model One"},
+                {"modelId": "m2", "name": "Model Two"}
+            ]
+        }}),
+    };
+    assert_eq!(
+        snapshot_from_record(&record),
+        Some(snapshot("m2", "Model Two"))
+    );
 }

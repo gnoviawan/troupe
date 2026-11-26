@@ -7,6 +7,7 @@
  * token is "active" while the caret sits within `(at, end]`. See ADR 0003.
  */
 
+import type { CanvasRef } from '@/lib/composer/canvas-tokens'
 import { basename } from '@/lib/path-basename'
 import { isComposerTriggerBoundary } from '@/lib/skill-tokens'
 
@@ -83,6 +84,7 @@ export type MentionPanel =
   | { kind: 'root' }
   | { kind: 'conversations' }
   | { kind: 'explorer'; dir: string }
+  | { kind: 'canvas' }
 
 export interface ConversationMatch {
   sessionId: string
@@ -93,11 +95,12 @@ export interface ConversationMatch {
 }
 
 export type MentionRow =
-  | { kind: 'category'; target: 'conversations' | 'explorer' }
+  | { kind: 'category'; target: 'conversations' | 'explorer' | 'canvas' }
   | { kind: 'use-folder'; match: MentionMatch }
   | { kind: 'file'; match: MentionMatch }
   | { kind: 'dir'; match: MentionMatch }
   | { kind: 'conversation'; conversation: ConversationMatch }
+  | { kind: 'canvas-layer'; ref: CanvasRef; selection: boolean }
 
 export type DirListing =
   | { status: 'loading' }
@@ -119,6 +122,25 @@ export interface MentionSection {
   items: MentionItem[]
 }
 
+/** One layer the canvas panel lists (ids as decimal text). */
+export interface CanvasLayerItem {
+  id: string
+  name: string
+  /** `FRAME · 320×480`-style detail line. */
+  detail: string
+}
+
+export type CanvasListing =
+  | { status: 'loading' }
+  | {
+      status: 'ready'
+      pageName: string | null
+      /** The selection as one ref, null when nothing is selected. */
+      selection: { ref: CanvasRef; detail: string } | null
+      layers: CanvasLayerItem[]
+    }
+  | { status: 'error' }
+
 export interface MentionMenuInput {
   panel: MentionPanel
   root: string
@@ -127,12 +149,19 @@ export interface MentionMenuInput {
   recents: MentionMatch[]
   conversations: ConversationMatch[]
   listing?: DirListing
+  /** True when the project's canvas is open: the root lists a Canvas category. */
+  canvasAvailable?: boolean
+  canvas?: CanvasListing
 }
 
 export const MAX_ROOT_CONVERSATION_RESULTS = 5
 
 export const CONVERSATIONS_EMPTY_LABEL = 'No other chats in this project yet.'
 export const CONVERSATIONS_NO_MATCH_LABEL = 'No chats match. Try another title.'
+
+export const CANVAS_EMPTY_LABEL = 'Nothing on this canvas page yet.'
+export const CANVAS_NO_MATCH_LABEL = 'No layers match. Try another name.'
+export const CANVAS_ERROR_LABEL = "Couldn't read the canvas"
 
 export const LISTING_LOADING_LABEL = 'Loading…'
 export const LISTING_ERROR_LABEL = "Couldn't list this folder"
@@ -264,7 +293,69 @@ export function filterConversations(
   )
 }
 
-function categorySection(root: string, conversationCount: number): MentionSection {
+function canvasSections(canvas: CanvasListing | undefined, filter: string): MentionSection[] {
+  if (!canvas || canvas.status === 'loading') {
+    return [{ id: 'canvas-status', notice: LISTING_LOADING_LABEL, items: [] }]
+  }
+  if (canvas.status === 'error') {
+    return [{ id: 'canvas-status', notice: CANVAS_ERROR_LABEL, items: [] }]
+  }
+  const q = filter.trim().toLowerCase()
+  const matches = (name: string): boolean => q === '' || name.toLowerCase().includes(q)
+  const sections: MentionSection[] = []
+  const { selection } = canvas
+  if (selection && (matches(selection.ref.label) || matches('selection'))) {
+    sections.push({
+      id: 'canvas-selection',
+      heading: 'Selection',
+      items: [
+        {
+          key: `canvas-selection:${selection.ref.ids.join(',')}`,
+          label: selection.ref.label,
+          description: selection.detail,
+          ignored: false,
+          row: { kind: 'canvas-layer', ref: selection.ref, selection: true }
+        }
+      ]
+    })
+  }
+  const layers = canvas.layers
+    .filter((layer) => matches(layer.name))
+    .map(
+      (layer): MentionItem => ({
+        key: `canvas-layer:${layer.id}`,
+        label: layer.name,
+        description: layer.detail,
+        ignored: false,
+        row: {
+          kind: 'canvas-layer',
+          ref: { label: layer.name, ids: [layer.id] },
+          selection: false
+        }
+      })
+    )
+  if (layers.length > 0) {
+    sections.push({ id: 'canvas-layers', heading: canvas.pageName ?? 'Page', items: layers })
+  }
+  return sections
+}
+
+function categorySection(
+  root: string,
+  conversationCount: number,
+  canvasAvailable: boolean
+): MentionSection {
+  const canvas: MentionItem[] = canvasAvailable
+    ? [
+        {
+          key: 'category:canvas',
+          label: 'Canvas',
+          description: 'Selection and layers on the current page',
+          ignored: false,
+          row: { kind: 'category', target: 'canvas' }
+        }
+      ]
+    : []
   return {
     id: 'categories',
     items: [
@@ -281,7 +372,8 @@ function categorySection(root: string, conversationCount: number): MentionSectio
         description: `Files and folders in ${basename(root)}/`,
         ignored: false,
         row: { kind: 'category', target: 'explorer' }
-      }
+      },
+      ...canvas
     ]
   }
 }
@@ -289,6 +381,7 @@ function categorySection(root: string, conversationCount: number): MentionSectio
 export function buildMentionSections(input: MentionMenuInput): MentionSection[] {
   const { panel, root, filter, matches, recents, conversations, listing } = input
   const searching = filter.trim() !== ''
+  if (panel.kind === 'canvas') return canvasSections(input.canvas, filter)
   if (panel.kind === 'conversations') {
     const items = filterConversations(conversations, filter).map(conversationItem)
     return items.length > 0 ? [{ id: 'conversations', items }] : []
@@ -304,7 +397,7 @@ export function buildMentionSections(input: MentionMenuInput): MentionSection[] 
   }
   if (searching) return searchSections(matches)
   if (panel.kind === 'explorer') return explorerSections(panel.dir, root, recents, listing)
-  return [categorySection(root, conversations.length)]
+  return [categorySection(root, conversations.length, input.canvasAvailable ?? false)]
 }
 
 export function mentionPanelHeader(
@@ -313,6 +406,7 @@ export function mentionPanelHeader(
 ): { title: string; crumb: string } | null {
   if (panel.kind === 'root') return null
   if (panel.kind === 'conversations') return { title: 'Conversations', crumb: '' }
+  if (panel.kind === 'canvas') return { title: 'Canvas', crumb: '' }
   return { title: 'Explorer', crumb: relativeDir(root, panel.dir) }
 }
 

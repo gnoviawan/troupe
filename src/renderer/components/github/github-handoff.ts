@@ -239,6 +239,7 @@ async function handOff(
   const { placeholderId, started } = launchChat({
     configId,
     projectId,
+    surface: { kind: 'pane' },
     checkout: { launchCwd: itemRef.cwd },
     newWorktree,
     placeholder: reviewTurn ? { initialUserBlocks: reviewTurn } : undefined,

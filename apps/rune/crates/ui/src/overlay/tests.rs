@@ -176,6 +176,34 @@ fn toasts_show_four_and_leave_after_their_time() {
 }
 
 #[test]
+fn a_sheet_drag_closes_past_the_threshold_or_on_a_flick_and_settles_otherwise() {
+    use rune::Phase::{Down, Move, Up};
+    let h = 600.0;
+    let mut d = SheetDrag::default();
+    d.step(Down, 0.0, 0.0, h, false);
+    assert_eq!(d.step(Move, 3.0, 0.01, h, false), SheetRelease::None);
+    assert_eq!(d.y, 0.0, "a tap stays a tap inside the slop");
+    d.step(Move, 80.0, 0.1, h, false);
+    assert_eq!(d.y, 80.0);
+    assert_eq!(d.step(Up, 80.0, 0.5, h, false), SheetRelease::Close, "past min(64, 15 %) closes");
+    assert_eq!(d.y, 0.0);
+
+    d.step(Down, 0.0, 1.0, h, false);
+    d.step(Move, 10.0, 1.1, h, false);
+    d.step(Move, 30.0, 2.0, h, false);
+    assert_eq!(d.step(Up, 30.0, 2.01, h, false), SheetRelease::Settle, "a slow short pull springs back");
+
+    d.step(Down, 0.0, 3.0, h, false);
+    d.step(Move, 30.0, 3.05, h, false);
+    assert_eq!(d.step(Up, 30.0, 3.06, h, false), SheetRelease::Close, "a downward flick closes");
+
+    d.step(Down, 0.0, 4.0, h, false);
+    d.step(Move, -50.0, 4.1, h, false);
+    assert_eq!(d.y, -10.0, "an upward pull follows a fifth of the finger");
+    assert_eq!(d.step(Up, -50.0, 4.2, h, true), SheetRelease::Settle);
+}
+
+#[test]
 fn a_toast_a_dismissal_reveals_gets_its_full_time() {
     let mut toasts = Toasts::default();
     for i in 0..5 {

@@ -141,13 +141,24 @@ function resetAlphaChanges(dir: string, head: string): void {
   write(dir, 'notes.txt', 'untracked notes\n')
 }
 
-/** Save `AGENT` as the device's only custom agent and its launcher pick. */
+/** With this set to `1`, a device also gets `SECOND_AGENT`, an agent a chat can switch to. */
+export const SECOND_AGENT_ENV = 'PARITY_SECOND_AGENT'
+
+/** The scripted agent again under another config, for the in-chat agent switch. */
+export const SECOND_AGENT: AgentConfig = {
+  ...AGENT,
+  configId: 'custom-second-agent',
+  name: 'Second Agent'
+}
+
+/** Save `AGENT` (and `SECOND_AGENT` when asked) as the device's custom agents, `AGENT` its launcher pick. */
 async function registerAgent(ws: WsClient, deviceId: string): Promise<void> {
   const agentsKey = scopedKey('acp/agents', deviceId)
   const current = await ws.request<{ revision?: number }>('store_read', { key: agentsKey })
+  const agents = process.env[SECOND_AGENT_ENV] === '1' ? [AGENT, SECOND_AGENT] : [AGENT]
   await ws.request('store_write', {
     key: agentsKey,
-    value: { _version: 1, data: [{ id: AGENT.configId, ...AGENT }] },
+    value: { _version: 1, data: agents.map((agent) => ({ id: agent.configId, ...agent })) },
     baseRevision: current.revision ?? 0
   })
   await ws.request('store_write', {
@@ -242,6 +253,38 @@ export async function prepareDevice(world: World, deviceId: string): Promise<voi
   } finally {
     ws.close()
   }
+}
+
+/** Open `filePath` in one editor tab of alpha's only pane on `deviceId` (the workspace record). */
+export async function seedEditorTab(
+  world: World,
+  deviceId: string,
+  filePath: string,
+  viewMode: 'code' | 'preview' = 'code'
+): Promise<void> {
+  const tabId = `edit-${filePath}`
+  await writeDevice(world, deviceId, `workspace/${PROJECTS.alpha.id}`, {
+    openFiles: [
+      {
+        filePath,
+        cursorPosition: { line: 1, col: 1 },
+        scrollTop: 0,
+        viewMode,
+        isDirty: false,
+        lastModified: 0
+      }
+    ],
+    activeFilePath: filePath,
+    expandedDirs: [],
+    activeTabId: tabId,
+    paneLayout: {
+      type: 'leaf',
+      id: 'editor-lane-pane',
+      tabs: [{ type: 'editor', filePath }],
+      activeTabId: tabId
+    },
+    activePaneId: 'editor-lane-pane'
+  })
 }
 
 /** The workspace snapshot `seedSnapshot` saves for alpha. */

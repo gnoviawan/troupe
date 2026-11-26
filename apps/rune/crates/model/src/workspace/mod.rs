@@ -7,11 +7,11 @@
 //! `{action, args}` is not its serde form: `tests/vectors.rs` (`call`)
 //! rewrites it as `{action: args}`, `{action: arg}` or `"action"` first.
 
-mod ids;
+pub(crate) mod ids;
 mod pane;
 mod sync;
 mod tabs;
-mod tree;
+pub(crate) mod tree;
 
 use std::collections::BTreeMap;
 
@@ -19,7 +19,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Effect, Ids};
 
-pub use ids::{commit_diff_tab_id, diff_tab_id, normalize_path};
+pub use ids::{commit_diff_tab_id, diff_tab_id, editor as editor_tab_id, normalize_path};
+pub use tree::{find_leaf, find_pane_containing_tab, find_split, leaves};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

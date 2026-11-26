@@ -8,7 +8,13 @@
  * (`.message` is the human string callers already toast).
  */
 
-import type { AcpCatalog } from '@shared/types/acp-catalog.types'
+import type { AcpAgentOverlay, AcpCatalog } from '@shared/types/acp-catalog.types'
+import type {
+  AntigravityAccount,
+  AntigravityAccountsSnapshot,
+  AntigravityAccountUsage,
+  RemovedAntigravityAccount
+} from '@shared/types/antigravity-accounts.types'
 import type {
   ClaudeAccount,
   ClaudeAccountsSnapshot,
@@ -194,6 +200,8 @@ const FALLBACK_SEND_PROMPT_INACTIVITY_MS = 3_600_000
  * judged: liveness of the host comes from the frames it sends (`liveness.ts`).
  */
 const HEARTBEAT_INTERVAL_MS = 30_000
+
+const ANTIGRAVITY_USAGE_CHECK_TIMEOUT_MS = 90_000
 
 type Pending = {
   resolve: (value: unknown) => void
@@ -963,6 +971,11 @@ export class WsAcpTransport implements AcpTransport {
     return this.request<AcpCatalog>('list_acp_catalog', { refresh })
   }
 
+  /** `get_acp_agent_overlay`: see {@link AcpTransport.getAgentOverlay}. */
+  async getAgentOverlay(): Promise<AcpAgentOverlay> {
+    return this.request<AcpAgentOverlay>('get_acp_agent_overlay', {})
+  }
+
   /** `search_mcp_catalog`: one page of the host's MCP catalog (see {@link AcpTransport.searchMcpCatalog}). */
   async searchMcpCatalog(request: McpCatalogSearchRequest): Promise<McpCatalogPage> {
     return this.request<McpCatalogPage>('search_mcp_catalog', request)
@@ -1348,6 +1361,131 @@ export class WsAcpTransport implements AcpTransport {
     await this.connect()
     return this.request<SpawnAgentResult>(
       'start_codex_account_login',
+      { accountId, config },
+      undefined,
+      options
+    )
+  }
+
+  async listAntigravityAccounts(): Promise<AntigravityAccountsSnapshot> {
+    await this.connect()
+    const reply = await this.request<
+      Omit<AntigravityAccountsSnapshot, 'chatAccounts'> & { chatAccounts?: unknown }
+    >('list_antigravity_accounts', {})
+    return { ...reply, chatAccounts: stringRecord(reply.chatAccounts) }
+  }
+
+  async listAntigravityUsage(force = false): Promise<AntigravityAccountUsage[]> {
+    await this.connect()
+    const reply = await this.request<{ usage: AntigravityAccountUsage[] }>(
+      'list_antigravity_usage',
+      { force }
+    )
+    return reply?.usage ?? []
+  }
+
+  async checkAntigravityUsage(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<AntigravityAccountUsage> {
+    await this.connect()
+    const reply = await this.request<{ usage: AntigravityAccountUsage }>(
+      'check_antigravity_usage',
+      { accountId, config },
+      ANTIGRAVITY_USAGE_CHECK_TIMEOUT_MS,
+      options
+    )
+    return reply.usage
+  }
+
+  async setDefaultAntigravityAccount(accountId: string): Promise<void> {
+    await this.connect()
+    await this.request('set_default_antigravity_account', { accountId })
+  }
+
+  async setProjectAntigravityAccount(
+    projectId: string,
+    accountId: string | null,
+    expectedAccountId?: string
+  ): Promise<boolean> {
+    await this.connect()
+    const reply = await this.request<{ applied?: boolean }>('set_project_antigravity_account', {
+      projectId,
+      accountId,
+      ...(expectedAccountId ? { expectedAccountId } : {})
+    })
+    return reply?.applied !== false
+  }
+
+  async setChatAntigravityAccount(
+    projectId: string,
+    sessionId: string,
+    accountId: string | null,
+    expectedAccountId?: string
+  ): Promise<boolean> {
+    await this.connect()
+    const reply = await this.request<{ applied?: boolean }>('set_chat_antigravity_account', {
+      projectId,
+      sessionId,
+      accountId,
+      ...(expectedAccountId ? { expectedAccountId } : {})
+    })
+    return reply?.applied !== false
+  }
+
+  async setAntigravityAutoSwitch(enabled: boolean): Promise<void> {
+    await this.connect()
+    await this.request('set_antigravity_auto_switch', { enabled })
+  }
+
+  async setAntigravityResume(sessionId: string, at: number | null): Promise<void> {
+    await this.connect()
+    await this.request('set_antigravity_resume', { sessionId, at })
+  }
+
+  async addAntigravityAccount(
+    name: string,
+    options?: CommandCallOptions
+  ): Promise<AntigravityAccount> {
+    await this.connect()
+    return this.request<AntigravityAccount>('add_antigravity_account', { name }, undefined, options)
+  }
+
+  async renameAntigravityAccount(accountId: string, name: string): Promise<void> {
+    await this.connect()
+    await this.request('rename_antigravity_account', { accountId, name })
+  }
+
+  async removeAntigravityAccount(accountId: string): Promise<RemovedAntigravityAccount> {
+    await this.connect()
+    const reply = await this.request<{ movedProjectIds?: unknown; movedChatIds?: unknown }>(
+      'remove_antigravity_account',
+      { accountId }
+    )
+    if (!Array.isArray(reply.movedProjectIds)) {
+      throw new AcpTransportError(
+        'protocol',
+        'malformed remove_antigravity_account reply (missing movedProjectIds)'
+      )
+    }
+    const ids = (list: unknown[]): string[] =>
+      list.filter((id): id is string => typeof id === 'string')
+    return {
+      movedProjectIds: ids(reply.movedProjectIds),
+      // A host older than per-chat Accounts sends no `movedChatIds`.
+      movedChatIds: Array.isArray(reply.movedChatIds) ? ids(reply.movedChatIds) : []
+    }
+  }
+
+  async startAntigravityAccountLogin(
+    accountId: string,
+    config: AgentConfig,
+    options?: CommandCallOptions
+  ): Promise<SpawnAgentResult> {
+    await this.connect()
+    return this.request<SpawnAgentResult>(
+      'start_antigravity_account_login',
       { accountId, config },
       undefined,
       options

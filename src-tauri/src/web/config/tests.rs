@@ -119,6 +119,7 @@ fn server_config_bind_addr() {
         state_dir: None,
         explicit_config: false,
         host_explicit: false,
+        rune_web_dir: None,
     };
     assert_eq!(
         cfg.bind_addr(),
@@ -148,6 +149,7 @@ fn server_config_bind_addr() {
         state_dir: None,
         explicit_config: false,
         host_explicit: false,
+        rune_web_dir: None,
     };
     assert_eq!(bad.bind_addr(), None);
 }
@@ -653,6 +655,7 @@ fn service_account_state_dir_falls_through_empty_env_var() {
         state_dir: None,
         explicit_config: false,
         host_explicit: false,
+        rune_web_dir: None,
     };
     // Under `lock_env` the state-dir env vars are ours to pin (#1710):
     // unlocked, a sibling test's `XDG_STATE_HOME=relative/state` leaked in.
@@ -725,6 +728,10 @@ const TERMUL_ENV_KEYS: &[&str] = &[
     "TROUPE_MAX_TERMINALS_PER_PROJECT",
     "TROUPE_PARTITION_GC_AGE_SECS",
     "TROUPE_PARTITION_BYTE_BUDGET",
+    "TERMUL_EXPERIMENTAL_RUNE_CLIENT",
+    "TERMUL_RUNE_WEB_DIR",
+    "TROUPE_EXPERIMENTAL_RUNE_CLIENT",
+    "TROUPE_RUNE_WEB_DIR",
 ];
 
 /// The platform state-dir vars. [`lock_env`] keeps their values (the
@@ -1984,6 +1991,34 @@ fn corrupt_config_file_recovers_into_setup_mode() {
     );
 }
 
+#[test]
+fn config_file_with_removed_insider_channel_loads_as_stable() {
+    let state = tempdir_like("insider-channel");
+    std::fs::write(
+        state.join(server_config_file::SERVER_CONFIG_FILE_NAME),
+        serde_json::json!({
+            "host": "0.0.0.0",
+            "port": 9090,
+            "sessionsDir": state.join("sessions"),
+            "projectsFile": state.join("projects.json"),
+            "allowRemoteWrites": false,
+            "updateChannel": "insider",
+            "updateIntervalSecs": 21600,
+        })
+        .to_string(),
+    )
+    .expect("write config file");
+
+    let file = server_config_file::load(&state)
+        .expect("config file loads")
+        .expect("config file present");
+    assert_eq!(
+        file.update_channel,
+        Some(crate::server_update::UpdateChannel::Stable)
+    );
+    cleanup(&state);
+}
+
 /// A file that PARSES but carries semantically invalid values (a hand-edit
 /// or a partial write) must be treated as corrupt too — it would otherwise
 /// win the argv/env merge and wedge the boot (port `0`, unparseable host)
@@ -2036,4 +2071,93 @@ fn semantically_invalid_config_file_is_ignored_and_recovers() {
     // The invalid file must NOT win the merge — argv values stand.
     assert_eq!(flagged.host, "127.0.0.1", "invalid file host must not win");
     assert_eq!(flagged.port, 8088, "invalid file port must not win");
+}
+
+// --- experimental Rune web client (plan R5) ---
+
+fn rune_warnings(cfg: &ServerConfig) -> Vec<&String> {
+    cfg.deprecation_warnings
+        .iter()
+        .filter(|warning| warning.contains("/rune/ stays off"))
+        .collect()
+}
+
+#[test]
+fn rune_client_is_off_by_default() {
+    let cfg = from_args_isolated(Vec::<&str>::new()).expect("parse");
+    assert_eq!(cfg.rune_web_dir, None);
+    assert!(rune_warnings(&cfg).is_empty());
+}
+
+#[test]
+fn flags_turn_the_rune_client_on() {
+    let cfg = from_args_isolated([
+        "--experimental-rune-client",
+        "--rune-web-dir",
+        " /srv/rune ",
+    ])
+    .expect("parse");
+    assert_eq!(cfg.rune_web_dir, Some(PathBuf::from("/srv/rune")));
+    assert!(rune_warnings(&cfg).is_empty());
+}
+
+#[test]
+fn env_turns_the_rune_client_on() {
+    let _env = lock_env();
+    std::env::set_var("TROUPE_EXPERIMENTAL_RUNE_CLIENT", "TRUE");
+    std::env::set_var("TROUPE_RUNE_WEB_DIR", "/srv/rune");
+    let cfg = ServerConfig::from_args(["--state-dir", "/tmp/rune-config-env"]).expect("parse");
+    assert_eq!(cfg.rune_web_dir, Some(PathBuf::from("/srv/rune")));
+}
+
+#[test]
+fn flag_dir_wins_over_env_dir() {
+    let _env = lock_env();
+    std::env::set_var("TROUPE_RUNE_WEB_DIR", "/srv/env");
+    let cfg = ServerConfig::from_args([
+        "--state-dir",
+        "/tmp/rune-config-flag",
+        "--experimental-rune-client",
+        "--rune-web-dir",
+        "/srv/flag",
+    ])
+    .expect("parse");
+    assert_eq!(cfg.rune_web_dir, Some(PathBuf::from("/srv/flag")));
+}
+
+#[test]
+fn an_env_value_other_than_true_or_1_stays_off() {
+    let _env = lock_env();
+    std::env::set_var("TROUPE_EXPERIMENTAL_RUNE_CLIENT", "yes");
+    std::env::set_var("TROUPE_RUNE_WEB_DIR", "/srv/rune");
+    let cfg = ServerConfig::from_args(["--state-dir", "/tmp/rune-config-yes"]).expect("parse");
+    assert_eq!(cfg.rune_web_dir, None);
+    assert_eq!(rune_warnings(&cfg).len(), 1);
+}
+
+#[test]
+fn setting_on_without_a_dir_stays_off_with_a_warning() {
+    let cfg = from_args_isolated(["--experimental-rune-client"]).expect("parse");
+    assert_eq!(cfg.rune_web_dir, None);
+    let warnings = rune_warnings(&cfg);
+    assert_eq!(warnings.len(), 1);
+    assert!(warnings[0].contains("no bundle directory"), "{warnings:?}");
+}
+
+#[test]
+fn dir_without_the_setting_stays_off_with_a_warning() {
+    let cfg = from_args_isolated(["--rune-web-dir", "/srv/rune"]).expect("parse");
+    assert_eq!(cfg.rune_web_dir, None);
+    let warnings = rune_warnings(&cfg);
+    assert_eq!(warnings.len(), 1);
+    assert!(warnings[0].contains("client is off"), "{warnings:?}");
+}
+
+#[test]
+fn an_empty_rune_web_dir_flag_is_an_error() {
+    let error = ServerConfig::from_args(["--rune-web-dir", "  "]).expect_err("empty dir");
+    assert!(
+        format!("{error:?}").contains("--rune-web-dir"),
+        "{error:?}"
+    );
 }

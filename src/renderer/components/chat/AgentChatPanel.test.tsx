@@ -1743,6 +1743,16 @@ describe('AgentChatPanel changed files', () => {
 describe('AgentChatPanel filePathContext parity', () => {
   beforeEach(() => {
     chatMessageListPropsRef.current = null
+    // Bun shuffles describe blocks (randomize = true). Other blocks leave the
+    // session index, live sessions and restore marks set for 's1', which put
+    // it behind the "Restoring chat" preload so the message list never mounts.
+    // Start from the same clean store as the rehydration block.
+    sessionsMapRef.current = {}
+    indexRef.current = []
+    openingRef.current = {}
+    restoringRef.current = {}
+    launchingRef.current = {}
+    discoveredContextRef.current = {}
     // An empty chat shows the start hero instead of the message list.
     messagesRef.current = [{ id: 'm1', role: 'user', blocks: [{ type: 'text', text: 'hello' }] }]
   })

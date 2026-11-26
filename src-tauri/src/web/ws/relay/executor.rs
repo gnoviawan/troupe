@@ -41,8 +41,8 @@ pub(super) type EntityKey = String;
 
 /// The serial-queue key for `request`: the first entity it names, in the order
 /// session, terminal, agent, project, store key, or the Claude sign-in of an
-/// Account. `None` for requests that name no entity (they run concurrently
-/// with everything).
+/// Account. The sub-agent settings are one entity. `None` for requests that
+/// name no entity (they run concurrently with everything).
 ///
 /// Ticket answers (`respond_permission`, `answer_question`,
 /// `respond_elicitation`) are keyless on purpose: they carry only the ticket
@@ -91,6 +91,14 @@ pub(super) fn entity_key(request: &WsRequest) -> Option<EntityKey> {
         if let Some(account) = text("accountId") {
             return Some(format!("claude_login:{account}"));
         }
+    }
+    // The settings page sends whole profiles, each built on the reply to
+    // the one before; run out of order, an older one would undo a newer.
+    if matches!(
+        request.type_.as_str(),
+        "subagent_settings_get" | "subagent_settings_set"
+    ) {
+        return Some("subagent_settings".to_string());
     }
     // `add_project` carries the new project's id as `id`.
     if request.type_ == "add_project" {

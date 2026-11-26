@@ -23,8 +23,42 @@ export type SupportedAcpAgentStatus =
   | 'manual-install'
   | 'unavailable'
 
-/** Whether a catalog entry came from the trusted bundled baseline or the CDN. */
-export type CatalogSource = 'bundled' | 'registry'
+/**
+ * Whether a catalog entry came from the trusted bundled baseline, the CDN, or
+ * Troupe's own registry overlay (only ids neither of the others lists).
+ */
+export type CatalogSource = 'bundled' | 'registry' | 'troupe'
+
+/**
+ * An agent's brand colour per appearance: `light` for light themes, `dark`
+ * for dark ones. It tints a single-colour (`currentColor`) logo only.
+ */
+export interface AgentBrandColor {
+  light: string
+  dark: string
+  /** Optional two-stop gradient per appearance (bottom-left to top-right). */
+  gradient?: { light: readonly [string, string]; dark: readonly [string, string] }
+}
+
+/** One `overrides[]` entry of Troupe's registry overlay. `icon` is raw SVG. */
+export interface AcpAgentOverride {
+  id: string
+  name?: string
+  hidden?: boolean
+  icon?: string
+  brandColor?: AgentBrandColor
+}
+
+/**
+ * `get_acp_agent_overlay` reply: the presentation half of Troupe's registry
+ * overlay. Mirrors `AgentOverlayPresentation` in
+ * `src-tauri/src/acp/troupe_overlay.rs`.
+ */
+export interface AcpAgentOverlay {
+  overrides: AcpAgentOverride[]
+  source: 'bundled' | 'cache' | 'network'
+  fetchedAt?: string
+}
 
 /** Host runtime availability. Mirrors `CatalogRuntimeAvailability` (camelCase). */
 export interface CatalogRuntimeAvailability {

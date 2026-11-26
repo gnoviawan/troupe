@@ -46,6 +46,7 @@ import {
 } from '@/lib/plan-session'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { useProjectStore } from '@/stores/project-store'
+import { followQuickLaunch } from '@/stores/quick-chat-store'
 import {
   agentChatTabId,
   findPaneContainingTab,
@@ -2130,7 +2131,11 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
       // conversations their transcript again. No skill paths are at hand here,
       // so a skill pill reads `(name)`. The original (token) blocks stay as the
       // display so the timeline keeps chips.
-      const wireBlocks = await retryWireBlocks(lastUserBlocks, [])
+      const wireBlocks = await retryWireBlocks(
+        lastUserBlocks,
+        [],
+        get().sessions[sessionId]?.projectId
+      )
       const only = wireBlocks.length === 1 ? wireBlocks[0] : null
       await runPromptTurn(
         set,
@@ -2237,6 +2242,12 @@ export const createSessionSlice: StateCreator<AcpState, [], [], SessionSliceStat
         initialText: null,
         initialBlocks: lastUserBlocks ?? failed.launchFirstTurnBlocks ?? null,
         adoptSession: (from, to) => {
+          // A quick chat lives in the quick view, not a pane: the view (and
+          // its route) follows the placeholder, as on its first launch.
+          if (failed.kind === 'quick') {
+            followQuickLaunch(from, to)
+            return
+          }
           // Only remap when the tab is still open: remapAgentChatSession's
           // no-pane fallback would ADD an uninvited new tab for a session the
           // user deliberately closed mid-retry.

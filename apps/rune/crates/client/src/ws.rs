@@ -48,7 +48,9 @@ pub enum Command {
         scope: String,
     },
     /// Send one request. A `ledgered` one carries a `commandId` and survives a
-    /// reconnect; use it for every mutating request the host ledgers.
+    /// reconnect; use it for every mutating request the host ledgers. A ledgered
+    /// `send_prompt` with a `turnId` carries that as its `commandId`, as the host
+    /// requires.
     Call {
         call: CallId,
         kind: WsRequestType,
@@ -344,7 +346,11 @@ impl WsClient {
                 payload,
                 ledgered,
             } => {
-                if !self.ledger.add(call, kind, payload, ledgered) {
+                let added = match prompt_command_id(kind, &payload, ledgered) {
+                    Some(turn_id) => self.ledger.add_as(call, kind, payload, turn_id),
+                    None => self.ledger.add(call, kind, payload, ledgered),
+                };
+                if !added {
                     log::error!("[client] call handle {call} is already in use");
                     let error = WsError {
                         code: "duplicate_call".into(),
@@ -756,4 +762,12 @@ impl WsClient {
             },
         }
     }
+}
+
+/// The host takes a prompt's `turnId` as its `commandId` and refuses any other.
+fn prompt_command_id(kind: WsRequestType, payload: &Value, ledgered: bool) -> Option<String> {
+    if !ledgered || kind != WsRequestType::SendPrompt {
+        return None;
+    }
+    payload.get("turnId").and_then(Value::as_str).map(str::to_owned)
 }

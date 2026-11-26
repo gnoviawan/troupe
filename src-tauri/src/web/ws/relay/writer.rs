@@ -7,6 +7,7 @@
 
 use futures_util::{Sink, SinkExt};
 use tokio_util::sync::CancellationToken;
+use troupe_protocol::ws::{GapTag, HeartbeatTag, WsGapFrame, WsHeartbeatFrame};
 
 use crate::web::connection_runtime::{send_close, send_going_away};
 
@@ -47,6 +48,32 @@ fn encode<T: Serialize>(frame: &T, describe: impl Fn() -> String) -> Option<Stri
     }
 }
 
+/// The `heartbeat` frame.
+pub(in crate::web::ws) fn heartbeat_text() -> Option<String> {
+    encode(&WsHeartbeatFrame { kind: HeartbeatTag }, || {
+        "heartbeat".to_string()
+    })
+}
+
+/// The `gap` frame for `sid`.
+pub(in crate::web::ws) fn gap_text(sid: String) -> Option<String> {
+    encode(&WsGapFrame { kind: GapTag, sid }, || {
+        "gap frame".to_string()
+    })
+}
+
+/// The frame for a drained run of events: the lone event, or one `events`
+/// frame around several.
+pub(in crate::web::ws) fn events_text(batch: &[SequencedEvent]) -> Option<String> {
+    if let [event] = batch {
+        encode(event, || format!("event {}", event.type_))
+    } else {
+        encode(&json!({ "type": WS_BATCH_TYPE, "events": batch }), || {
+            "event batch".to_string()
+        })
+    }
+}
+
 /// Run the write loop until the peer is gone, a close handshake completes, the
 /// queue's senders are all dropped, or the host stops.
 pub(super) async fn run_writer<S>(mut sink: S, mut out_rx: OutboundReceiver, stop: CancellationToken)
@@ -83,8 +110,7 @@ where
                 send(&mut sink, Message::Ping(PING_PAYLOAD.to_vec().into()), &stop).await
             }
             _ = heartbeat.tick() => {
-                let frame = json!({ "type": WS_HEARTBEAT_TYPE });
-                match encode(&frame, || "heartbeat".to_string()) {
+                match heartbeat_text() {
                     Some(text) => send(&mut sink, Message::Text(text.into()), &stop).await,
                     None => Ok(()),
                 }
@@ -134,20 +160,12 @@ where
                         Err(_) => break,
                     }
                 }
-                let text = if batch.len() == 1 {
-                    encode(&batch[0], || format!("event {}", batch[0].type_))
-                } else {
-                    encode(&json!({ "type": WS_BATCH_TYPE, "events": batch }), || {
-                        "event batch".to_string()
-                    })
-                };
-                if let Some(text) = text {
+                if let Some(text) = events_text(&batch) {
                     send(sink, Message::Text(text.into()), stop).await?;
                 }
             }
             Outbound::Gap(sid) => {
-                let frame = json!({ "type": WS_GAP_TYPE, "sid": sid });
-                if let Some(text) = encode(&frame, || "gap frame".to_string()) {
+                if let Some(text) = gap_text(sid) {
                     send(sink, Message::Text(text.into()), stop).await?;
                 }
             }

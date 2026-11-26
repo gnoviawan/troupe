@@ -288,6 +288,33 @@ fn a_ledgered_command_is_resent_with_its_command_id_and_answered_once() {
 }
 
 #[test]
+fn a_prompt_with_a_turn_id_is_resent_under_that_id_and_its_receipt_answers() {
+    let mut host = Host::new();
+    host.connect();
+    let payload = json!({ "agentId": "a1", "sessionId": "s1", "turnId": "turn-42", "content": [] });
+    host.command(Command::Call {
+        call: 5,
+        kind: troupe_protocol::ws::WsRequestType::SendPrompt,
+        payload,
+        ledgered: true,
+    });
+    assert_eq!(host.request("send_prompt")["command_id"], "turn-42");
+
+    let out = host.reconnect();
+    assert!(!out.iter().any(|o| matches!(o, Output::Reply { .. })));
+    assert_eq!(host.request("send_prompt")["command_id"], "turn-42");
+
+    let out = host.reply("send_prompt", json!({ "receipt": "in_progress" }));
+    assert_eq!(
+        out,
+        vec![Output::Reply {
+            call: 5,
+            result: Ok(Some(json!({ "receipt": "in_progress" })))
+        }]
+    );
+}
+
+#[test]
 fn an_unledgered_request_on_a_lost_socket_fails_with_closed() {
     let mut host = Host::new();
     host.connect();

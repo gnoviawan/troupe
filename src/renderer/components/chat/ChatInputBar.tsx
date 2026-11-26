@@ -2,6 +2,8 @@ import type { Editor } from '@tiptap/core'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
+import { AntigravityAccountChip } from '@/components/chat/antigravity-account/AntigravityAccountChip'
+import { AntigravityLimitWarning } from '@/components/chat/antigravity-account/AntigravityLimitWarning'
 import { ClaudeAccountChip } from '@/components/chat/claude-account/ClaudeAccountChip'
 import { ClaudeLimitWarning } from '@/components/chat/claude-account/ClaudeLimitWarning'
 import { CodexAccountChip } from '@/components/chat/codex-account/CodexAccountChip'
@@ -24,6 +26,7 @@ import { cn } from '@/lib/utils'
 import type { AcpSession, PendingPermission, QueuedPrompt } from '@/stores/acp-store'
 import { useAcpMessages, useSessionUsage } from '@/stores/acp-store'
 import type { OptionValues } from '@/stores/acp-store/composer-options'
+import { useAntigravityRestartingStore } from '@/stores/antigravity-account-restart'
 import { useCodexRestartingStore } from '@/stores/codex-account-restart'
 import { ModeChip } from './AgentHeader'
 import { AttachmentPreviewGroup } from './AttachmentPreviewGroup'
@@ -224,7 +227,11 @@ export function ChatInputBar({
   startScreen = false,
   worktree = null
 }: ChatInputBarProps): React.JSX.Element {
-  const accountRestarting = useCodexRestartingStore((state) => state.ids.includes(session.id))
+  const codexRestarting = useCodexRestartingStore((state) => state.ids.includes(session.id))
+  const antigravityRestarting = useAntigravityRestartingStore((state) =>
+    state.ids.includes(session.id)
+  )
+  const accountRestarting = codexRestarting || antigravityRestarting
   const disabled = composerDisabled || accountRestarting
   const usableConfigOptions = configOptions.filter(
     (option) => option.type === 'boolean' || (option.options?.length ?? 0) > 0
@@ -363,6 +370,7 @@ export function ChatInputBar({
     onSetMode,
     onSetModel,
     mentions,
+    projectId: session.projectId,
     scheduleRestoreCaret
   })
   const slashOpen = composerSlashOpen && !sending
@@ -390,6 +398,9 @@ export function ChatInputBar({
       // the rejection, so leaving here is what keeps the unsent draft.
       if (useCodexRestartingStore.getState().ids.includes(session.id)) {
         throw new Error('This chat is switching Codex accounts')
+      }
+      if (useAntigravityRestartingStore.getState().ids.includes(session.id)) {
+        throw new Error('This chat is switching Antigravity accounts')
       }
       const send = buildComposerSend(parts, attachments)
       if (!send) return
@@ -668,6 +679,7 @@ export function ChatInputBar({
                   <>
                     <ClaudeLimitWarning sessionId={session.id} />
                     <CodexLimitWarning sessionId={session.id} />
+                    <AntigravityLimitWarning sessionId={session.id} />
                   </>
                 )}
                 <AttachmentPreviewGroup
@@ -792,6 +804,7 @@ export function ChatInputBar({
                         {agentModeChip}
                         <ClaudeAccountChip sessionId={session.id} />
                         <CodexAccountChip sessionId={session.id} />
+                        <AntigravityAccountChip sessionId={session.id} />
                       </motion.div>
                       <motion.div
                         {...morph.content}

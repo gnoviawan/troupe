@@ -372,16 +372,19 @@ pub struct RunSummary {
     pub(crate) usage: Option<SubagentUsage>,
 }
 
-/// One launchable agent in the engine's listing.
+/// One startable sub-agent profile in the engine's listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AgentListing {
-    /// The launch key `subagent_start`'s `agent` takes.
+    /// The profile id `subagent_start`'s `agent` takes.
     pub(crate) agent_id: String,
+    /// The display name of the profile's agent.
     pub(crate) name: String,
+    /// The listing key of the profile's agent.
+    pub(crate) agent: String,
     pub(crate) allowed: bool,
     /// The model a start that names none asks for.
     pub(crate) default_model: Option<String>,
-    /// The user's note on what this agent is good at.
+    /// The user's note on what this profile is good at.
     pub(crate) description: Option<String>,
 }
 
@@ -407,7 +410,8 @@ pub struct StartRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StartError {
     Disabled,
-    UnknownAgent(String),
+    /// `allowed`: the profile ids a start may name, for the error text.
+    UnknownAgent { agent: String, allowed: Vec<String> },
     AgentNotAllowed(String),
     Capacity { max: u32 },
     Depth { max: u8 },
@@ -421,7 +425,15 @@ impl std::fmt::Display for StartError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Disabled => f.write_str("subagents are disabled in the settings"),
-            Self::UnknownAgent(agent) => write!(f, "unknown agent {agent}"),
+            Self::UnknownAgent { agent, allowed } if allowed.is_empty() => write!(
+                f,
+                "unknown agent {agent}; subagent_list_agents lists the agentIds you can start"
+            ),
+            Self::UnknownAgent { agent, allowed } => write!(
+                f,
+                "unknown agent {agent}; the agentIds you can start are {}",
+                allowed.join(", ")
+            ),
             Self::AgentNotAllowed(agent) => write!(f, "agent {agent} is not allowed"),
             Self::Capacity { max } => write!(f, "too many running subagents (max {max})"),
             Self::Depth { max } => write!(f, "the subagent depth limit is {max}"),

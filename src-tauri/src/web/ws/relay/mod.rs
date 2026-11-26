@@ -41,6 +41,8 @@ pub(crate) use outbound::{
 pub(crate) use outbound::{OutboundReceiver, FULL_QUEUE_ATTEMPT};
 pub(super) use watchdog::{PING_INTERVAL, PONG_TIMEOUT};
 #[cfg(test)]
+pub(super) use writer::{events_text, gap_text, heartbeat_text};
+#[cfg(test)]
 pub(super) use watchdog::HEARTBEAT_INTERVAL;
 #[cfg(test)]
 pub(super) use watchdog::{watchdog_is_stale, BACKGROUND_TIMEOUT, WATCHDOG_TICK};

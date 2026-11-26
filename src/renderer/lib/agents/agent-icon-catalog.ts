@@ -1,12 +1,16 @@
-import type { CSSProperties } from 'react'
+import type { AgentBrandColor } from '@shared/types/acp-catalog.types'
+import { type CSSProperties, useSyncExternalStore } from 'react'
 /**
- * Bundled icon catalog for the custom-agent icon picker.
+ * Icon catalog for agent glyphs and the custom-agent icon picker.
  *
- * All icons are offline SVG using `currentColor`, sourced from:
+ * Bundled icons are offline SVG using `currentColor`, sourced from:
  * 1. ACP Registry (acp/*.svg, frozen bundled snapshot)
  * 2. Generic category icons (terminal, dev, robot, sparkles, code, brain, zap)
  *
- * All picker icons render as `text-foreground` on `bg-muted` cells.
+ * Troupe's registry overlay (`agent-overlay.ts`) goes first: its logo, name
+ * and brand colour replace the bundled ones, and it can add a logo for an
+ * agent the bundle has none for. The catalog is rebuilt when the overlay
+ * changes, so read it through `useAgentIconCatalog` in components.
  */
 
 import acpManifest from '@/assets/agent-icons/acp/manifest.json'
@@ -18,6 +22,11 @@ import sparklesIcon from '@/assets/agent-icons/sparkles.svg?raw'
 // Generic icons — hand-bundled category symbols
 import terminalIcon from '@/assets/agent-icons/terminal.svg?raw'
 import zapIcon from '@/assets/agent-icons/zap.svg?raw'
+import {
+  type AgentOverlayIndex,
+  getAgentOverlay,
+  subscribeAgentOverlay
+} from '@/lib/agents/agent-overlay'
 
 // ACP icons — loaded via Vite's import.meta.glob
 const acpSvgModules = import.meta.glob<string>('@/assets/agent-icons/acp/*.svg', {
@@ -26,60 +35,37 @@ const acpSvgModules = import.meta.glob<string>('@/assets/agent-icons/acp/*.svg',
   import: 'default'
 })
 
-/**
- * An agent's brand colour per appearance: `light` for light themes, `dark`
- * for dark ones (Troupe Dark, Dracula). Each clears 3:1 against the panel.
- * Agents without one (monochrome marks, custom agents) use `currentColor`.
- */
-export interface AgentBrandColor {
-  light: string
-  dark: string
-  /**
-   * Optional gradient fill (start and end stops per appearance, bottom-left
-   * to top-right), e.g. Gemini's blue to purple. `light`/`dark` stay the
-   * solid fallback. Every stop clears 3:1 too.
-   */
-  gradient?: { light: readonly [string, string]; dark: readonly [string, string] }
-}
-
 export interface BundledIconEntry {
   key: string
   label: string
   svg: string
+  /** Set only when `svg` is single-colour (`currentColor`). */
   brandColor?: AgentBrandColor
 }
 
 export { normalizeRootIconSvg as normalizeIconSvg } from '@/lib/agents/sanitize-agent-icon'
 
 /**
- * Build ACP icon entries from manifest + glob-loaded SVG modules.
- * The manifest provides id + name; the glob provides the raw SVG content.
+ * A full-colour logo keeps its own fills; only a `currentColor` one takes a
+ * brand colour.
  */
-function buildAcpEntries(): BundledIconEntry[] {
-  const entries: BundledIconEntry[] = []
-  for (const entry of acpManifest as Array<{
-    id: string
-    name: string
-    file: string
-    brandColor?: AgentBrandColor
-  }>) {
-    // Match the glob key pattern to find the loaded SVG module.
-    // import.meta.glob keys are like /src/renderer/assets/agent-icons/acp/claude-acp.svg
-    const moduleKey = Object.keys(acpSvgModules).find((k) => k.endsWith(`/acp/${entry.file}`))
-    if (moduleKey) {
-      const svg = acpSvgModules[moduleKey] as string
-      if (svg) {
-        entries.push({
-          key: `acp:${entry.id}`,
-          label: entry.name,
-          svg,
-          ...(entry.brandColor ? { brandColor: entry.brandColor } : {})
-        })
-      }
-    }
-  }
-  return entries
+function isSingleColour(svg: string): boolean {
+  return /currentColor/i.test(svg)
 }
+
+interface BundledAcpIcon {
+  id: string
+  name: string
+  svg: string
+}
+
+/** Manifest entries joined with their glob-loaded SVG. */
+const BUNDLED_ACP_ICONS: readonly BundledAcpIcon[] = acpManifest.flatMap((entry) => {
+  // import.meta.glob keys are like /src/renderer/assets/agent-icons/acp/claude-acp.svg
+  const moduleKey = Object.keys(acpSvgModules).find((k) => k.endsWith(`/acp/${entry.file}`))
+  const svg = moduleKey ? acpSvgModules[moduleKey] : undefined
+  return svg ? [{ id: entry.id, name: entry.name, svg }] : []
+})
 
 const GENERIC_ICONS: readonly BundledIconEntry[] = [
   { key: 'generic:terminal', label: 'Terminal', svg: terminalIcon as string },
@@ -91,38 +77,78 @@ const GENERIC_ICONS: readonly BundledIconEntry[] = [
   { key: 'generic:zap', label: 'Zap', svg: zapIcon as string }
 ] as const
 
-/**
- * All bundled icons available in the picker — fully offline, no network fetch.
- * ACP registry icons first, then generic category icons.
- */
-export const BUNDLED_ICON_CATALOG: readonly BundledIconEntry[] = [
-  ...buildAcpEntries(),
-  ...GENERIC_ICONS
-]
-
-/** Look up a bundled icon entry by its stored SVG content. */
-export function findBundledIconBySvg(svg: string): BundledIconEntry | undefined {
-  if (!svg) return undefined
-  return BUNDLED_ICON_CATALOG.find((entry) => entry.svg === svg)
+export interface AgentIconCatalog {
+  /** Picker order: ACP agents, then the generic category icons. */
+  entries: readonly BundledIconEntry[]
+  /** By catalog key, e.g. `acp:gemini`. */
+  byKey(key: string): BundledIconEntry | undefined
+  /** By stored SVG. A bundled logo the overlay replaced still resolves. */
+  bySvg(svg: string): BundledIconEntry | undefined
+  /**
+   * The brand colour for a glyph. A persisted icon is coloured only when it
+   * IS a catalog icon (an uploaded one keeps `currentColor`).
+   */
+  brandColor(
+    icon: string | null | undefined,
+    templateId: string | null | undefined
+  ): AgentBrandColor | null
 }
 
-/** Look up a bundled icon entry by its catalog key (e.g. `acp:gemini`). */
-export function findBundledIconByKey(key: string): BundledIconEntry | undefined {
-  if (!key) return undefined
-  return BUNDLED_ICON_CATALOG.find((entry) => entry.key === key)
+function acpEntry(id: string, label: string, svg: string, brand?: AgentBrandColor) {
+  const entry: BundledIconEntry = { key: `acp:${id}`, label, svg }
+  if (brand && isSingleColour(svg)) entry.brandColor = brand
+  return entry
 }
 
-/**
- * The brand colour for a glyph. A persisted icon is coloured only when it IS
- * the bundled icon (an uploaded one keeps `currentColor`).
- */
-export function agentBrandColor(
-  icon: string | null | undefined,
-  templateId: string | null | undefined
-): AgentBrandColor | null {
-  if (icon) return findBundledIconBySvg(icon)?.brandColor ?? null
-  if (!templateId) return null
-  return findBundledIconByKey(`acp:${templateId}`)?.brandColor ?? null
+export function buildAgentIconCatalog(overlay: AgentOverlayIndex): AgentIconCatalog {
+  const bySvg = new Map<string, BundledIconEntry>()
+  const acp: BundledIconEntry[] = []
+  for (const bundled of BUNDLED_ACP_ICONS) {
+    const own = overlay.get(bundled.id)
+    const entry = acpEntry(
+      bundled.id,
+      own?.name ?? bundled.name,
+      own?.icon ?? bundled.svg,
+      own?.brandColor
+    )
+    acp.push(entry)
+    bySvg.set(entry.svg, entry)
+    if (!bySvg.has(bundled.svg)) bySvg.set(bundled.svg, entry)
+  }
+  const bundledIds = new Set(BUNDLED_ACP_ICONS.map((icon) => icon.id))
+  for (const [id, own] of overlay) {
+    if (bundledIds.has(id) || !own.icon) continue
+    const entry = acpEntry(id, own.name ?? id, own.icon, own.brandColor)
+    acp.push(entry)
+    bySvg.set(entry.svg, entry)
+  }
+  const entries = [...acp, ...GENERIC_ICONS]
+  for (const entry of GENERIC_ICONS) bySvg.set(entry.svg, entry)
+  const byKey = new Map(entries.map((entry) => [entry.key, entry]))
+  return {
+    entries,
+    byKey: (key) => byKey.get(key),
+    bySvg: (svg) => bySvg.get(svg),
+    brandColor(icon, templateId) {
+      if (icon) return bySvg.get(icon)?.brandColor ?? null
+      if (!templateId) return null
+      return byKey.get(`acp:${templateId}`)?.brandColor ?? null
+    }
+  }
+}
+
+let built: { overlay: AgentOverlayIndex; catalog: AgentIconCatalog } | null = null
+
+/** The catalog for the overlay in use. Same object until the overlay changes. */
+export function getAgentIconCatalog(): AgentIconCatalog {
+  const overlay = getAgentOverlay()
+  if (built?.overlay !== overlay) built = { overlay, catalog: buildAgentIconCatalog(overlay) }
+  return built.catalog
+}
+
+/** {@link getAgentIconCatalog}, re-rendering when the overlay changes. */
+export function useAgentIconCatalog(): AgentIconCatalog {
+  return useSyncExternalStore(subscribeAgentOverlay, getAgentIconCatalog)
 }
 
 /**

@@ -69,6 +69,7 @@
       "type": "object"
     },
     "AddProjectPayload": {
+      "additionalProperties": false,
       "description": "`add_project` request payload.",
       "properties": {
         "color": {
@@ -370,7 +371,26 @@
       "type": "object"
     },
     "ChatReadMark": {
-      "description": "`mark_chat_read` request payload and reply: a chat's shared last-read\nmarker. `logEpoch` is absent only from a peer that predates it.",
+      "additionalProperties": false,
+      "description": "`mark_chat_read` request payload: a chat's shared last-read marker.\n`logEpoch` is absent only from a peer that predates it.",
+      "properties": {
+        "logEpoch": {
+          "type": "string"
+        },
+        "seq": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": ["sessionId", "seq"],
+      "type": "object"
+    },
+    "ChatReadMarkReply": {
+      "description": "`mark_chat_read` reply: the marker as it stands. Unlike the request it\naccepts fields it does not name, so a client keeps reading the reply after\nthe host adds one.",
       "properties": {
         "logEpoch": {
           "type": "string"
@@ -403,6 +423,7 @@
       "type": "object"
     },
     "DeleteSessionPayload": {
+      "additionalProperties": false,
       "description": "`delete_session` request payload. The reply is `true` when the record was\ndeleted and `false` when it was already absent.",
       "properties": {
         "sessionId": {
@@ -675,6 +696,7 @@
       "type": "object"
     },
     "RecordAgentSwitchPayload": {
+      "additionalProperties": false,
       "description": "`record_agent_switch` request payload: the host appends one durable\n`agent_switch` record built from it.",
       "properties": {
         "fromConfigId": {
@@ -703,6 +725,7 @@
       "type": "string"
     },
     "RemoveProjectPayload": {
+      "additionalProperties": false,
       "description": "`remove_project` request payload.",
       "properties": {
         "cascade": {
@@ -884,6 +907,7 @@
       "type": "object"
     },
     "StoreDeletePayload": {
+      "additionalProperties": false,
       "description": "`store_delete` request payload; shared keys follow the write preconditions.",
       "properties": {
         "baseRevision": {
@@ -925,6 +949,7 @@
       "type": "object"
     },
     "StoreReadPayload": {
+      "additionalProperties": false,
       "description": "`store_read` request payload.",
       "properties": {
         "key": {
@@ -978,6 +1003,7 @@
       "type": "object"
     },
     "StoreWritePayload": {
+      "additionalProperties": false,
       "description": "`store_write` request payload. `expected: null` (key must be absent)\ndiffers from no `expected`.",
       "properties": {
         "baseRevision": {
@@ -1160,6 +1186,7 @@
       "type": "string"
     },
     "UpdateProjectPayload": {
+      "additionalProperties": false,
       "description": "`update_project` request payload. `cascade: true` stops the project's live\nsessions and terminals instead of refusing `project_busy`.",
       "properties": {
         "cascade": {
@@ -1897,6 +1924,7 @@
         "invalid_command_id",
         "claude_account_signed_out",
         "codex_account_signed_out",
+        "antigravity_account_signed_out",
         "claude_login_code_incomplete",
         "claude_login_busy"
       ],
@@ -1949,6 +1977,7 @@
         "tool_call",
         "mode_update",
         "config_options_update",
+        "models_update",
         "session_info_update",
         "usage_update",
         "permission_request",
@@ -1973,7 +2002,8 @@
         "mcp_registry_changed",
         "browser_ticket_closed",
         "claude_limit_action",
-        "codex_limit_action"
+        "codex_limit_action",
+        "antigravity_limit_action"
       ],
       "type": "string"
     },
@@ -2095,6 +2125,7 @@
         "list_acp_catalog",
         "set_catalog_opt_in",
         "fetch_acp_registry_snapshot",
+        "get_acp_agent_overlay",
         "search_mcp_catalog",
         "get_mcp_catalog_status",
         "set_mcp_catalog_sync",
@@ -2142,6 +2173,18 @@
         "rename_codex_account",
         "remove_codex_account",
         "start_codex_account_login",
+        "list_antigravity_accounts",
+        "list_antigravity_usage",
+        "check_antigravity_usage",
+        "set_default_antigravity_account",
+        "set_project_antigravity_account",
+        "set_chat_antigravity_account",
+        "set_antigravity_auto_switch",
+        "set_antigravity_resume",
+        "add_antigravity_account",
+        "rename_antigravity_account",
+        "remove_antigravity_account",
+        "start_antigravity_account_login",
         "canvas_mount",
         "canvas_unmount",
         "canvas_reply"

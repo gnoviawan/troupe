@@ -55,6 +55,8 @@ export interface ClientLauncher {
   resolvesTargets: boolean
   /** Start a session on the surface's start route, run `body`, tear the session down. */
   session<T>(ctx: SessionContext, body: (driver: Driver) => Promise<T>): Promise<T>
+  /** Frees what the launcher holds across sessions, such as a served build. */
+  close?(): Promise<void>
 }
 
 /** One `design-system` registry entry, and the Rune gallery scene of the same id. */

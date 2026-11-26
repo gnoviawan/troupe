@@ -58,7 +58,7 @@ vi.mock('@/lib/env-parser', async (orig) => {
   const actual = await orig<typeof import('@/lib/env-parser')>()
   return {
     ...actual,
-    resolveEnvForSpawn: () => ({ env: {}, hasProjectEnv: false })
+    passThroughProjectEnv: () => ({ env: {}, hasProjectEnv: false })
   }
 })
 

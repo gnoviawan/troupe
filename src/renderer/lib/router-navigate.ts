@@ -30,6 +30,17 @@ export function navigateToChatSession(sessionId: string, options?: { replace?: b
 }
 
 /**
+ * Go to the workspace root `#/` from a chat route or a routed page (the quick
+ * chat launcher has no route of its own). A no-op on `#/`.
+ */
+export function navigateToWorkspaceRoot(): void {
+  if (!navigateFn) return
+  const [path] = window.location.hash.slice(1).split(/[?#]/, 1)
+  if (path === '/' || path === '') return
+  navigateFn('/')
+}
+
+/**
  * Leave the chat route. With `sessionId`, only when the URL still names that
  * session — a caller acting on a stale route (router updates run in a
  * transition) must not clobber a newer chat route.

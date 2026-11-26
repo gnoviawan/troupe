@@ -566,23 +566,23 @@ describe('updater-store', () => {
 
   describe('channel preference', () => {
     it('passes the active channel to the updater API on check', async () => {
-      useUpdaterStore.setState({ updateChannel: 'insider' })
+      useUpdaterStore.setState({ updateChannel: 'nightly' })
 
       await useUpdaterStore.getState().checkForUpdates()
 
       // A regression that hardcoded the channel (e.g. always 'stable') would
       // ship undetected without this assertion.
-      expect(tauriUpdaterApi.checkForUpdates).toHaveBeenCalledWith('insider')
+      expect(tauriUpdaterApi.checkForUpdates).toHaveBeenCalledWith('nightly')
     })
 
     it('hydrates the persisted channel into state during initialization', async () => {
-      vi.mocked(tauriUpdateChannel.getUpdateChannel).mockResolvedValue('insider')
+      vi.mocked(tauriUpdateChannel.getUpdateChannel).mockResolvedValue('nightly')
 
       await useUpdaterStore.getState().initializeUpdater({ autoCheck: false })
 
       // The initial state default is also 'stable', so removing the load line
       // would pass every other test — this assertion pins the hydration.
-      expect(useUpdaterStore.getState().updateChannel).toBe('insider')
+      expect(useUpdaterStore.getState().updateChannel).toBe('nightly')
       expect(tauriUpdateChannel.getUpdateChannel).toHaveBeenCalledTimes(1)
     })
 
@@ -598,24 +598,24 @@ describe('updater-store', () => {
         updateChannel: 'stable'
       })
 
-      await useUpdaterStore.getState().setUpdateChannel('insider')
+      await useUpdaterStore.getState().setUpdateChannel('nightly')
 
       // (b) persisted via the channel facade
-      expect(tauriUpdateChannel.setUpdateChannel).toHaveBeenCalledWith('insider')
+      expect(tauriUpdateChannel.setUpdateChannel).toHaveBeenCalledWith('nightly')
       // stale module-level pending state in tauri-updater-api.ts cleared before
       // the re-check, so a stable Update / downloaded bytes can't survive into
-      // the insider channel.
+      // the nightly channel.
       expect(tauriUpdaterApi.clearPendingUpdate).toHaveBeenCalled()
       // (a) update state cleared
       const state = useUpdaterStore.getState()
-      expect(state.updateChannel).toBe('insider')
+      expect(state.updateChannel).toBe('nightly')
       expect(state.updateAvailable).toBe(false)
       expect(state.downloaded).toBe(false)
       expect(state.version).toBeNull()
       expect(state.downloadProgress).toBe(0)
       expect(state.releaseNotes).toBeNull()
       // (c) re-check fired against the new channel (auto-update enabled)
-      expect(tauriUpdaterApi.checkForUpdates).toHaveBeenCalledWith('insider')
+      expect(tauriUpdaterApi.checkForUpdates).toHaveBeenCalledWith('nightly')
     })
 
     it('setUpdateChannel persists + clears state but does NOT re-check when auto-update is disabled', async () => {
@@ -623,14 +623,14 @@ describe('updater-store', () => {
         autoUpdateEnabled: false,
         updateAvailable: true,
         version: '2.0.0',
-        updateChannel: 'stable'
+        updateChannel: 'nightly'
       })
 
-      await useUpdaterStore.getState().setUpdateChannel('nightly')
+      await useUpdaterStore.getState().setUpdateChannel('stable')
 
-      expect(tauriUpdateChannel.setUpdateChannel).toHaveBeenCalledWith('nightly')
+      expect(tauriUpdateChannel.setUpdateChannel).toHaveBeenCalledWith('stable')
       const state = useUpdaterStore.getState()
-      expect(state.updateChannel).toBe('nightly')
+      expect(state.updateChannel).toBe('stable')
       expect(state.updateAvailable).toBe(false)
       expect(state.version).toBeNull()
       // No re-check when auto-update is off (the preference still persisted).
@@ -645,9 +645,9 @@ describe('updater-store', () => {
     it('clears the manual flag when switching channel with auto-update off', async () => {
       useUpdaterStore.setState({
         autoUpdateEnabled: false,
-        updateChannel: 'insider',
+        updateChannel: 'stable',
         updateAvailable: true,
-        version: '0.5.0-rc.1',
+        version: '0.6.0',
         isManualUpdateMode: true
       })
 

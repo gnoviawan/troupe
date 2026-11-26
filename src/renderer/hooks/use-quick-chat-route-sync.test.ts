@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn() }))
 
+import { adoptQuickChat } from '@/lib/no-project-chat'
 import { setRouterNavigate } from '@/lib/router-navigate'
 import { mockSessionIndexEntry } from '@/lib/test-utils/acp'
 import { useAcpStore } from '@/stores/acp-store'
@@ -61,5 +62,42 @@ describe('useQuickChatRouteSync', () => {
     const { rerender } = renderSync('/c/p1')
     rerender({ path: '/c/q1' })
     expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+  })
+
+  it('keeps the quick chat launcher on the workspace root, which is its route', () => {
+    useQuickChatStore.getState().openLauncher()
+    const launcher = useQuickChatStore.getState().view
+    const { rerender } = renderSync('/')
+    expect(useQuickChatStore.getState().view).toBe(launcher)
+    // Forward to a quick chat shows it.
+    rerender({ path: '/c/q2' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'q2' })
+  })
+
+  it('closes the quick chat launcher for a routed page or a project chat', () => {
+    useQuickChatStore.getState().openLauncher()
+    const { rerender } = renderSync('/')
+    rerender({ path: '/snapshots' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+    useQuickChatStore.getState().openLauncher()
+    rerender({ path: '/c/p1' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'closed' })
+  })
+
+  it('takes Back to a quick launch that started behind a new launcher to its chat', () => {
+    const navigate = vi.fn()
+    setRouterNavigate(navigate)
+    // Send, then + before the agent started: the launcher replaced the
+    // placeholder's view, and #/c/launch-q1 stays in history.
+    useQuickChatStore.getState().openLauncher()
+    const launcher = useQuickChatStore.getState().view
+    adoptQuickChat('launch-q1', 'q2', 'test')
+    expect(useQuickChatStore.getState().view).toBe(launcher)
+
+    const { rerender } = renderSync('/')
+    rerender({ path: '/c/launch-q1' })
+    expect(navigate).toHaveBeenCalledWith('/c/q2', { replace: true })
+    rerender({ path: '/c/q2' })
+    expect(useQuickChatStore.getState().view).toEqual({ mode: 'chat', sessionId: 'q2' })
   })
 })
