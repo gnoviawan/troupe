@@ -1,7 +1,8 @@
 /**
  * The R8c command editor lane: each client opens a terminal and waits for the command editor
- * the shell's trusted prompt mounts, types a two-line command, asks for a completion with Tab
- * and accepts it, sends it, then recalls it with Arrow Up and sends it again. The page's
+ * the shell's trusted prompt mounts, types a two-line command, pastes a bracketed CRLF paste
+ * into it, asks for a completion with Tab and accepts it, sends it, then recalls it with Arrow
+ * Up and sends it again. The page's
  * `/terminal/ws` frames are read over CDP, so the lane compares the `command_editor_submit`
  * drafts the clients sent: the host writes exactly that draft to the PTY. The command writes
  * a file, so the lane also checks what the shell ran.
@@ -38,7 +39,9 @@ const options: LaneOptions = {
 }
 const TARGET = 'completion-target-dir'
 const OUT = 'r8c-out.txt'
-const WANT_DRAFT = `printf '%s\\n' "multi\nline" > ${OUT} && ls -d ${TARGET}`
+const PASTE = '\x1b[200~"pasted\r\nrows"\x1b[201~'
+const WANT_DRAFT = `printf '%s\\n' "multi\nline" "pasted\nrows" > ${OUT} && ls -d ${TARGET}`
+const WANT_RAN = 'multi\nline\npasted\nrows\n'
 
 interface Result {
   ok: boolean
@@ -63,10 +66,15 @@ async function watchSubmits(page: Page): Promise<string[]> {
   return drafts
 }
 
-async function editorShown(client: Client): Promise<boolean> {
+async function editorShown(client: Client, world: World): Promise<boolean> {
   if (client.name === 'react')
     return (await client.page.locator('[data-slot="command-editor-block"]').count()) > 0
-  return (await mirrorPoint(client.page, 'Command editor', true)) !== null
+  return (await chipPoint(client.page, world)) !== null
+}
+
+/** The Rune strip's working-directory chip; the mirror at the pin lists no unfocused field. */
+function chipPoint(page: Page, world: World): Promise<{ x: number; y: number } | null> {
+  return mirrorPoint(page, world.dirs.alpha, true)
 }
 
 async function run(client: Client, world: World): Promise<Result> {
@@ -79,12 +87,18 @@ async function run(client: Client, world: World): Promise<Result> {
   const { page } = client
   const out = path.join(world.dirs.alpha, OUT)
   rmSync(out, { force: true })
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   const drafts = await watchSubmits(page)
   await page.waitForTimeout(1500)
   await client.click('New terminal')
   let ok = check(await client.sees('Terminal 1', 30_000), 'tab "Terminal 1" opened')
-  const mounted = await until(() => editorShown(client), 30_000)
+  const mounted = await until(() => editorShown(client, world), 30_000)
   ok = check(mounted, 'the trusted prompt mounted the command editor') && ok
+  if (!mounted && client.name === 'rune')
+    await Bun.write(
+      path.join(options.root, 'rune-mirror.html'),
+      await page.evaluate(() => document.querySelector('[data-rune-a11y]')?.outerHTML ?? '')
+    )
   await shot(client, options.root, '1-open')
   const box =
     client.name === 'react'
@@ -97,12 +111,16 @@ async function run(client: Client, world: World): Promise<Result> {
   const at =
     client.name === 'react'
       ? box && { x: box.x + 40, y: box.y + box.height / 2 }
-      : await mirrorPoint(page, 'Command editor', true)
+      : await chipPoint(page, world).then((p) => p && { x: p.x, y: p.y + 30 })
   if (at) await page.mouse.click(at.x, at.y)
   await page.waitForTimeout(500)
   await page.keyboard.type(`printf '%s\\n' "multi`, { delay: 20 })
   await page.keyboard.press('Shift+Enter')
-  await page.keyboard.type(`line" > ${OUT} && ls -d compl`, { delay: 20 })
+  await page.keyboard.type('line" ', { delay: 20 })
+  await page.evaluate((text) => navigator.clipboard.writeText(text), PASTE)
+  await page.keyboard.press('ControlOrMeta+V')
+  await page.waitForTimeout(300)
+  await page.keyboard.type(` > ${OUT} && ls -d compl`, { delay: 20 })
   await shot(client, options.root, '2-typed')
   await page.keyboard.press('Tab')
   await page.waitForTimeout(1500)
@@ -116,8 +134,8 @@ async function run(client: Client, world: World): Promise<Result> {
     check(sent && drafts[0] === WANT_DRAFT, `the submit carried ${JSON.stringify(drafts[0])}`) && ok
   await until(async () => (await Bun.file(out).exists()) && Bun.file(out).size > 0, 10_000)
   const ran = (await Bun.file(out).exists()) ? readFileSync(out, 'utf8') : ''
-  ok = check(ran === 'multi\nline\n', `the shell ran it (${JSON.stringify(ran)})`) && ok
-  await until(() => editorShown(client), 15_000)
+  ok = check(ran === WANT_RAN, `the shell ran it (${JSON.stringify(ran)})`) && ok
+  await until(() => editorShown(client, world), 15_000)
   await page.waitForTimeout(1000)
   await shot(client, options.root, '5-sent')
   await page.keyboard.press('ArrowUp')

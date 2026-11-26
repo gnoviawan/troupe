@@ -62,6 +62,8 @@ pub struct EditorUi {
     asked: BTreeSet<String>,
     /// Each terminal's git branch, from `git_branch_changed`.
     pub branches: BTreeMap<String, String>,
+    /// The editor's cell on the desktop and on touch, measured once.
+    pub metrics: [std::cell::OnceCell<ui::terminal::Metrics>; 2],
     /// The columns each editor wraps at, as last laid out.
     pub columns: BTreeMap<String, usize>,
     /// An editor that mounted since the last frame; it takes focus when its terminal had it.
@@ -566,6 +568,23 @@ impl State {
         insert.strip_prefix(&typed).filter(|s| !s.is_empty()).map(str::to_owned)
     }
 
+    /// The lit row's start, as a char index into the draft.
+    pub(crate) fn completion_from(&self, id: &str) -> Option<usize> {
+        let shown = self.terms.editor.shown.get(id)?;
+        let row = shown.rows.get(shown.lit)?;
+        let units: Vec<u16> = self.terms.editor.lines.get(id)?.text().encode_utf16().collect();
+        Some(String::from_utf16_lossy(&units[..row.from.min(units.len())]).chars().count())
+    }
+
+    /// What is typed of the word being completed: the draft from the lit row's start to the caret.
+    pub(crate) fn completion_typed(&self, id: &str) -> String {
+        let (Some(shown), Some(line)) = (self.terms.editor.shown.get(id), self.terms.editor.lines.get(id)) else { return String::new() };
+        let Some(row) = shown.rows.get(shown.lit) else { return String::new() };
+        let units: Vec<u16> = line.text().encode_utf16().collect();
+        let head = usize::try_from(line.caret_utf16()).unwrap_or(0).min(units.len());
+        String::from_utf16_lossy(&units[row.from.min(head)..head])
+    }
+
     /// Tab with nothing open: ask now (`binder.requestCompletion`).
     fn request_completion(&mut self, id: &str) {
         let now = self.now * 1000.0;
@@ -624,6 +643,8 @@ impl State {
         if !self.terms.editor.lines.contains_key(id) {
             return false;
         }
+        // The key bar is not where typing goes: the editor keeps the soft keyboard.
+        tx.focus(field_key(id), false);
         let ctrl = rune::Mods { ctrl: true, cmd: cfg!(not(target_os = "macos")), ..rune::Mods::default() };
         let (key, mods) = match bytes {
             "\x1b" => (Key::Escape, rune::Mods::default()),

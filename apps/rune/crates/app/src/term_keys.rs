@@ -105,10 +105,11 @@ impl State {
     /// The key bar's Paste: the clipboard's text, unbracketed, as React's bar sends it.
     pub(crate) fn key_bar_paste(&mut self, id: &str, tx: &mut Tx) {
         let id = id.to_owned();
-        tx.read_clipboard(move |s: &mut State, content, _tx| {
+        tx.read_clipboard(move |s: &mut State, content, tx| {
             let text = content.text();
             if s.terms.editor.lines.contains_key(&id) {
                 log::info!("[foreign-insert] Mobile paste routed to editor");
+                tx.focus(crate::command_editor::field_key(&id), false);
                 s.command_paste(&id, text);
             } else if !text.is_empty() {
                 s.terminal_write(&id, text);

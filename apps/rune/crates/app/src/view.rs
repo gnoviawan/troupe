@@ -189,7 +189,7 @@ fn main_area(
             .collect();
         let menus = std::cell::RefCell::new(Vec::new());
         let tab = |tab: &model::workspace::Tab| {
-            crate::terminal_view::tab_body(s, t, tab)
+            crate::terminal_view::tab_body(s, t, tab, false)
                 .or_else(|| crate::git_history_view::tab_body(s, t, tab, &mut menus.borrow_mut()))
                 .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
                 .or_else(|| crate::git_diff::tab_body(s, t, tab))
@@ -413,7 +413,7 @@ fn active_phone_tab(s: &State) -> Option<&model::workspace::Tab> {
 
 fn workspace_main(s: &State, t: &'static Tokens) -> El {
     if let Some(tab @ model::workspace::Tab::Terminal { terminal_id, .. }) = active_phone_tab(s)
-        && let Some(body) = crate::terminal_view::tab_body(s, t, tab)
+        && let Some(body) = crate::terminal_view::tab_body(s, t, tab, true)
     {
         // `MobileChatShell`: the key bar shows under a terminal this client runs.
         let mut main = col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);

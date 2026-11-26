@@ -17,7 +17,8 @@ pub fn tab_title(s: &State, tab: &Tab) -> Option<String> {
     s.terms.names.get(terminal_id).cloned()
 }
 
-pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
+/// `touch` is the phone shell, whose command editor keeps the touch font floor.
+pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, touch: bool) -> Option<El> {
     let Tab::Terminal { terminal_id, .. } = tab else { return None };
     let palette = Palette::new(t);
     let m = s.terms.metrics();
@@ -41,7 +42,9 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
     let focused = s.terms.focused.as_deref() == Some(terminal_id.as_str());
     let marks = term_select::marks(view, &term, &palette, [t.colors.search_match, t.colors.search_match_active], focused);
     let blink_on = s.cursor_shown(terminal_id, term.cursor().blink.unwrap_or(true));
-    let shown = Screen { term: &term, scrolled: view.scrolled, focused: true, blink_on, marks: &marks };
+    // The command editor holds focus at a prompt, so xterm.js draws its cursor hollow.
+    let editing = s.terms.editor.lines.contains_key(terminal_id);
+    let shown = Screen { term: &term, scrolled: view.scrolled, focused: !editing, blink_on, marks: &marks };
     let id = terminal_id.clone();
     let screen = ui::terminal::screen(&format!("terminal-{terminal_id}"), &shown, &palette, &m, &view.cache)
         .cursor(if view.hover.is_some() { Cursor::Pointer } else { Cursor::Text })
@@ -89,7 +92,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
         _ => {}
     }
     // At a trusted prompt the command editor sits under the screen, the full width of the tab.
-    match crate::command_editor_view::strip(s, t, terminal_id) {
+    match crate::command_editor_view::strip(s, t, terminal_id, touch) {
         Some(strip) => Some(col().key(format!("tab-stack-{}", tab.id())).w_full().grow(1.0).min_h(0.0).child(body).child(strip)),
         None => Some(body),
     }

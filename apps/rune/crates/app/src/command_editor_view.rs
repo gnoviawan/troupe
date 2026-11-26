@@ -14,6 +14,25 @@ use crate::command_editor::field_key;
 const PAD: f32 = 8.0;
 /// The most completion rows shown at once.
 const ROWS_SHOWN: usize = 8;
+/// Touch surfaces keep a 16px floor (`TOUCH_MIN_FONT_SIZE`).
+const TOUCH_MIN_FONT_SIZE: f32 = 16.0;
+
+/// CodeMirror's `.cm-content` padding above and below the lines.
+const CONTENT_PAD: f32 = 4.0;
+
+/// The editor's cell and font (`commandEditorFontSize`): the terminal's size, floored on touch,
+/// at the font's own advance and `TERMINAL_LINE_HEIGHT`, as CodeMirror lays out text. xterm.js's
+/// whole-pixel cell is the screen's, not the editor's.
+fn metrics(s: &State, touch: bool) -> ui::terminal::Metrics {
+    let size = s.terms.metrics().style.size;
+    let size = if touch { size.max(TOUCH_MIN_FONT_SIZE) } else { size };
+    *s.terms.editor.metrics[usize::from(touch)].get_or_init(|| {
+        let probe = rune::TextStyle::new(size, 400.0).mono();
+        let cell_w = rune::text::advance(&"W".repeat(64), probe) / 64.0;
+        let cell_h = size * ui::terminal::LINE_HEIGHT;
+        ui::terminal::Metrics { cell_w, cell_h, style: probe.lh(cell_h) }
+    })
+}
 
 fn chip(t: &'static Tokens, glyph: &str, label: &str, what: &str, max_w: f32) -> El {
     let c = &t.colors;
@@ -50,10 +69,10 @@ fn layout(editor: &troupe_editor::Editor, columns: usize) -> Vec<(usize, usize, 
 }
 
 /// The strip for terminal `id`, when its editor is mounted.
-pub fn strip(s: &State, t: &'static Tokens, id: &str) -> Option<El> {
+pub fn strip(s: &State, t: &'static Tokens, id: &str, touch: bool) -> Option<El> {
     let line = s.terms.editor.lines.get(id)?;
     let c = &t.colors;
-    let m = s.terms.metrics();
+    let m = metrics(s, touch);
     let (cell_w, cell_h) = (m.cell_w, m.cell_h);
     let editor = &line.editor;
     let sel = editor.selection();
@@ -121,12 +140,15 @@ pub fn strip(s: &State, t: &'static Tokens, id: &str) -> Option<El> {
         .role("textbox")
         .label("Command editor".to_owned())
         .focusable(true)
+        .no_focus_ring()
         .w_full()
         .px(PAD)
-        .py(PAD)
+        .py(PAD + CONTENT_PAD)
         .on_key(move |s: &mut State, key, tx| s.command_editor_key(&keyed, key, tx))
         .child(body);
-    if let Some(list) = completion_list(s, t, id, caret_x + PAD, caret_y + PAD) {
+    // CodeMirror anchors the list at the completed word's start, not at the caret.
+    let word_x = s.completion_from(id).map_or(caret_x, |from| caret_x - sel.head.saturating_sub(from) as f32 * cell_w).max(0.0);
+    if let Some(list) = completion_list(s, t, m, id, word_x + PAD, caret_y + PAD + CONTENT_PAD) {
         field = field.child(list);
     }
     let mut chips = row().items_center().gap(6.0).px(PAD).min_w(0.0);
@@ -150,41 +172,57 @@ pub fn strip(s: &State, t: &'static Tokens, id: &str) -> Option<El> {
     )
 }
 
-/// The completion list over the caret (`autocompletion` with `aboveCursor`): the plain words,
-/// the lit one highlighted; a press accepts it.
-fn completion_list(s: &State, t: &'static Tokens, id: &str, x: f32, caret_y: f32) -> Option<El> {
+/// CodeMirror's empty icon slot before each label (`.cm-completionIcon`: 0.8em and 0.6em of
+/// padding at 14px), plus the row's own 8px.
+const LABEL_INSET: f32 = 28.0;
+
+/// The completion list over the caret (`autocompletion` with `aboveCursor`, `termulTooltipThemeSpec`):
+/// each word with its typed part bold, the lit one tinted; a press accepts it.
+fn completion_list(s: &State, t: &'static Tokens, m: ui::terminal::Metrics, id: &str, x: f32, caret_y: f32) -> Option<El> {
     let shown = s.terms.editor.shown.get(id)?;
     let c = &t.colors;
-    let m = s.terms.metrics();
     let first = shown.lit.saturating_sub(ROWS_SHOWN - 1);
     let visible: Vec<(usize, &model::terminal::words::Row)> = shown.rows.iter().enumerate().skip(first).take(ROWS_SHOWN).collect();
-    let row_h = m.cell_h + 4.0;
-    let height = visible.len() as f32 * row_h + 4.0;
+    let row_h = m.cell_h + 8.0;
+    let height = visible.len() as f32 * row_h + 10.0;
+    let typed = s.completion_typed(id);
+    let mut bold = m.style;
+    bold.weight = 700.0;
     let mut list = col()
         .key(format!("command-completions-{id}"))
         .role("listbox")
         .label("Completions".to_owned())
         .absolute(x, caret_y - height - 2.0)
         .min_w(120.0)
-        .px(2.0)
-        .py(2.0)
-        .radius(6.0)
+        .px(4.0)
+        .py(4.0)
+        .radius(10.0)
         .fill(c.popover)
         .border(1.0, c.border);
     for (i, r) in visible {
         let lit = i == shown.lit;
         let pressed = id.to_owned();
+        let color = if lit { c.foreground } else { c.popover_foreground };
+        let (matched, rest) = match r.text.strip_prefix(typed.as_str()) {
+            Some(rest) if !typed.is_empty() => (typed.as_str(), rest),
+            _ => ("", r.text.as_str()),
+        };
+        let mut option = row()
+            .key(format!("command-completion-{id}-{i}"))
+            .role("option")
+            .label(r.text.clone())
+            .h(row_h)
+            .pl(LABEL_INSET)
+            .pr(8.0)
+            .items_center()
+            .radius(6.0)
+            .fill(if lit { c.foreground.alpha(0.06) } else { c.popover });
+        if !matched.is_empty() {
+            option = option.child(text(matched.to_owned()).font(bold).color(color));
+        }
         list = list.child(
-            row()
-                .key(format!("command-completion-{id}-{i}"))
-                .role("option")
-                .label(r.text.clone())
-                .h(row_h)
-                .px(6.0)
-                .items_center()
-                .radius(4.0)
-                .fill(if lit { c.accent } else { c.popover })
-                .child(text(r.text.clone()).font(m.style).color(if lit { c.accent_foreground } else { c.popover_foreground }))
+            option
+                .child(text(rest.to_owned()).font(m.style).color(color))
                 .on_press(move |s: &mut State| s.accept_completion(&pressed, Some(i))),
         );
     }

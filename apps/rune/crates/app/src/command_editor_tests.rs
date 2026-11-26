@@ -5,8 +5,12 @@ use troupe_protocol::terminal::{WebTerminalEventPayload, WebTerminalRequestType}
 
 use crate::tests::present;
 
-/// A runtime showing live terminal `pty-1`, focused.
+/// A desktop runtime showing live terminal `pty-1`, focused.
 fn shown() -> rune::Runtime<crate::State> {
+    sized((1280.0, 800.0), false)
+}
+
+fn sized(size: (f32, f32), touch: bool) -> rune::Runtime<crate::State> {
     let mut s = crate::tests::showing_alpha();
     s.apply(client::ws::Output::Reply { call: 7, result: Ok(None) });
     s.apply(client::ws::Output::Reply { call: 8, result: Ok(None) });
@@ -21,7 +25,7 @@ fn shown() -> rune::Runtime<crate::State> {
         crate::terminal::TermView::new(std::sync::Arc::new(std::sync::Mutex::new(troupe_term::Term::new(60, 20)))),
     );
     s.terms.focused = Some("pty-1".into());
-    let mut rt = rune::Runtime::new(s, crate::view, (1280.0, 800.0), rune::Env::new(false, 1.0));
+    let mut rt = rune::Runtime::new(s, crate::view, size, rune::Env::new(touch, 1.0));
     step(&mut rt);
     rt
 }
@@ -205,4 +209,37 @@ fn the_alternate_screen_takes_the_editor_away_and_gives_it_back() {
     step(&mut rt);
     assert!(present(&rt, "command-editor-pty-1"), "leaving it brings the prompt's editor back");
     assert_eq!(rt.state.terms.editor.lines["pty-1"].text(), "vim", "with the draft");
+}
+
+/// The editor's height to a tenth of a point (layout keeps 1/64 pt).
+fn field_height(rt: &rune::Runtime<crate::State>) -> f32 {
+    rt.elements().into_iter().find(|e| e.key.as_deref() == Some("command-editor-pty-1")).map(|e| (e.rect[3] * 10.0).round() / 10.0).expect("the editor")
+}
+
+fn key_bar(rt: &mut rune::Runtime<crate::State>, label: &str) {
+    let (x, y) = rt.find(&format!("terminal-key-{label}")).expect("the key");
+    rt.pointer_down(x, y);
+    rt.pointer_up(x, y);
+    step(rt);
+}
+
+#[test]
+fn on_the_phone_the_editor_keeps_the_touch_font_and_the_key_bar_drives_it() {
+    let mut desktop = shown();
+    at_prompt(&mut desktop, 1);
+    let mut rt = sized((390.0, 844.0), true);
+    at_prompt(&mut rt, 1);
+    assert!(present(&rt, "terminal-key-bar-pty-1"), "the key bar stays under the editor");
+    assert_eq!((field_height(&desktop), field_height(&rt)), (40.8, 43.2), "one 16.8 px line on the desktop, one 19.2 px line at the 16 px floor");
+
+    typed(&mut rt, "ls");
+    key_bar(&mut rt, "Tab");
+    let (kind, payload, _) = calls(&rt).last().cloned().expect("a request");
+    assert_eq!((kind, payload["draft"].as_str()), (WebTerminalRequestType::CommandEditorRequestCompletion, Some("ls")), "Tab asks the host");
+    key_bar(&mut rt, "←");
+    typed(&mut rt, "x");
+    assert_eq!(rt.state.terms.editor.lines["pty-1"].text(), "lxs", "the arrows move the caret");
+    key_bar(&mut rt, "Ctrl+C");
+    assert_eq!(rt.state.terms.editor.lines["pty-1"].text(), "", "Ctrl+C clears the draft");
+    assert!(calls(&rt).iter().all(|(k, ..)| *k != WebTerminalRequestType::Write), "no key bar key reached the PTY");
 }
