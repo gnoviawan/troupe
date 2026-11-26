@@ -328,6 +328,7 @@ fn replays_every_vector() {
                 "palette" => settings::replay_palette(vector),
                 "terminal-profiles" => settings::replay_terminal_profiles(vector),
                 "project-settings" => settings::replay_project_settings(vector),
+                "mcp-servers" => settings::replay_mcp_servers(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

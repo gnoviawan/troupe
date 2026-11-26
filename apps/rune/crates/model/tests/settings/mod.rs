@@ -281,3 +281,53 @@ pub fn replay_project_settings(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays the MCP servers page's reads: the registry, the form's draft and the status word.
+pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
+    use model::settings::mcp::{self, Auth, Draft, Object};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let object = |i: usize| -> Result<Object, String> { parse::<Object>(&args[i]) };
+        let draft = || -> Result<Draft, String> { parse::<Draft>(&args[0]) };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "normalize" => to_value(&mcp::normalize_registry(&args[0])),
+            "validate" => to_value(&mcp::validate(&object(0)?)),
+            "sameLaunch" => json!(mcp::same_launch(&object(0)?, &object(1)?)),
+            "tokenize" => to_value(&mcp::tokenize(text(0))),
+            "join" => json!(mcp::join(&parse::<Vec<String>>(&args[0])?)),
+            "transportForUrl" => json!(mcp::transport_for_url(text(0)).as_str()),
+            "liftEnvPrefix" => to_value(&mcp::lift_env_prefix(&draft()?.local)),
+            "rowProblem" => json!(mcp::row_problem(&mcp::Row::new(text(0), text(1)))),
+            "toConfig" => match mcp::draft_to_config(&draft()?) {
+                Ok(config) => json!({ "config": config }),
+                Err(errors) => {
+                    let map: Map<String, Value> = errors.into_iter().map(|(f, m)| (to_value(&f).as_str().unwrap_or_default().to_owned(), json!(m))).collect();
+                    json!({ "errors": map })
+                }
+            },
+            "uncheckedConfig" => Value::Object(mcp::unchecked_config(&draft()?)),
+            "fromServer" => to_value(&mcp::draft_from_server(&object(0)?)),
+            "withUrl" => {
+                let mut d = draft()?;
+                d.remote = mcp::with_url(&d.remote, text(1));
+                to_value(&d)
+            }
+            "withAuth" => {
+                let mut d = draft()?;
+                d.remote = mcp::with_auth(&d.remote, parse::<Auth>(&args[1])?);
+                to_value(&d)
+            }
+            "status" => to_value(&mcp::status(args[0].as_bool().unwrap_or_default(), args[1].as_bool().unwrap_or_default(), args[2].as_str())),
+            "target" => json!(mcp::target(&object(0)?)),
+            "toolCount" => json!(mcp::tool_count(args[0].as_u64().unwrap_or_default() as usize)),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
