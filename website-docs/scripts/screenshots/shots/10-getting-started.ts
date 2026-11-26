@@ -226,16 +226,19 @@ export const shots: Shot[] = [
   },
   {
     id: 'getting-started-shortcuts-settings',
+    viewport: { width: 1280, height: 1200 },
     run: async (page) => {
       await openApp(page)
       await page.locator('body').click({ position: { x: 640, y: 790 } })
       await page.keyboard.press('Alt+Comma')
-      await page
-        .locator('[data-category-button="true"]')
-        .filter({ hasText: 'Keyboard Shortcuts' })
+      const dialog = page.getByRole('dialog', { name: 'Preferences' })
+      await dialog.waitFor()
+      await dialog
+        .getByRole('navigation', { name: 'Settings pages' })
+        .getByRole('button', { name: 'Keyboard shortcuts', exact: true })
         .click()
       await page.waitForTimeout(600)
-      return panelWithHeading(page, 'Application Preferences')
+      return dialog
     }
   },
   {
