@@ -47,6 +47,9 @@ import { WorktreeCreationCard } from './WorktreeCreationCard'
  */
 const LIST_PADDING_Y_PX = 24
 
+/** Distance from the end is never negative, so the virtualizer never sees the reader at the end. */
+const NEVER_AT_END_PX = -1
+
 /** Reports the live item count to the scroller so the jump button can badge unread. */
 function ItemCountReporter({ count }: { count: number }): null {
   const { setItemCount } = useMessageScroller()
@@ -119,11 +122,13 @@ function VirtualizedTimeline({
   statusLine,
   live
 }: TimelineRenderProps): React.JSX.Element {
-  const { viewportEl, pinned, setEndScroller } = useMessageScroller()
-  // The virtualizer is the only scroll writer for the live edge. `anchorTo:
-  // 'end'` keeps a pinned viewport pinned while the last row grows, follows
-  // appended rows only when the reader was at the end, and holds the visible
-  // row in place when older history is prepended (keys must stay stable).
+  const { viewportEl, pinned, anchoring, setEndScroller, scrollToEnd } = useMessageScroller()
+  // `anchorTo: 'end'` holds the visible row in place when older history is
+  // prepended (keys must stay stable). Following the stream has one writer:
+  // the browser's scroll anchoring where supported, else the virtualizer,
+  // which keeps a pinned viewport pinned while the last row grows and follows
+  // appended rows. It stops the moment the reader lets go of the live edge.
+  const virtualizerFollows = pinned && !anchoring
   const virtualizer = useVirtualizer({
     count: groupedItems.length,
     getScrollElement: () => viewportEl,
@@ -133,8 +138,8 @@ function VirtualizedTimeline({
     paddingStart: LIST_PADDING_Y_PX,
     paddingEnd: LIST_PADDING_Y_PX,
     anchorTo: 'end',
-    followOnAppend: true,
-    scrollEndThreshold: BOTTOM_THRESHOLD_PX
+    followOnAppend: virtualizerFollows,
+    scrollEndThreshold: virtualizerFollows ? BOTTOM_THRESHOLD_PX : NEVER_AT_END_PX
   })
 
   // The jump-to-latest button and viewport resizes go through the virtualizer,
@@ -150,8 +155,8 @@ function VirtualizedTimeline({
   // switches, and new keys give `anchorTo: 'end'` nothing to anchor to.
   // biome-ignore lint/correctness/useExhaustiveDependencies: sessionId retriggers the jump on a session switch
   useEffect(() => {
-    if (viewportEl) virtualizer.scrollToEnd()
-  }, [sessionId, viewportEl, virtualizer])
+    if (viewportEl) scrollToEnd('auto')
+  }, [sessionId, viewportEl, scrollToEnd])
 
   // `followOnAppend` follows only when the count grows. A coalesced flush can
   // append rows and trim the same number from the head of the live window
