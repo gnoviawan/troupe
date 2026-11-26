@@ -39,14 +39,6 @@ teardown() {
   done
 }
 
-@test "classifies prerelease before build metadata only" {
-  run is_release_prerelease "1.2.3-beta.1+signed-macos.7"
-  [ "$status" -eq 0 ]
-
-  run is_release_prerelease "1.2.3+signed-macos.7"
-  [ "$status" -ne 0 ]
-}
-
 @test "resolves exact DMG checksums" {
   local checksums="$TERMUL_TEST_TMP_DIR/SHA256SUMS.txt"
   local arm_sha="$(printf 'a%.0s' {1..64})"
@@ -136,14 +128,13 @@ EOF
   ! grep -Fq 'com.apple.quarantine' "$future"
 }
 
-@test "prerelease metadata path does not require a Homebrew token" {
+@test "metadata and checksum jobs do not require a Homebrew token" {
   local workflow="$TERMUL_TEST_REPO_ROOT/.github/workflows/publish-homebrew.yml"
   local metadata_section
   local checksums_section
   metadata_section="$(sed -n '/release_metadata:/,/checksums:/p' "$workflow")"
   checksums_section="$(sed -n '/checksums:/,/homebrew:/p' "$workflow")"
 
-  grep -Fq "if: needs.release_metadata.outputs.is_prerelease == 'false'" "$workflow"
   [ -n "$metadata_section" ]
   [ -n "$checksums_section" ]
   ! grep -q 'HOMEBREW_TAP_TOKEN' <<<"$metadata_section"

@@ -188,7 +188,9 @@ export const KEEP_PATTERNS: readonly KeepPattern[] = [
       'docs/design/status-rail-handoff.md',
       'docs/design/composer-v2-handoff.md',
       'landing/DESIGN.md',
-      'docs/pocket/spec/2026-11-19-landing-redesign/plan.md'
+      'docs/pocket/spec/2026-11-19-landing-redesign/plan.md',
+      'docs/pocket/spec/2026-11-25-settings-full-window/plan.md',
+      'docs/preferences-redesign-handoff.md'
     ]
   },
   {

@@ -1,0 +1,65 @@
+[
+ {
+  "store": "settings-routes",
+  "name": "idle_window",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "getAgentIdleWindow",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/host/agent-idle-window",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "setAgentIdleWindow",
+     "args": [
+      3600
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/host/agent-idle-window",
+     "body": {
+      "secs": 3600
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "setAgentIdleWindow",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/host/agent-idle-window",
+     "body": {
+      "secs": null
+     },
+     "commandId": false
+    },
+    "state": null
+   }
+  ]
+ }
+]

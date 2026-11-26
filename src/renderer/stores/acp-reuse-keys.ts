@@ -29,6 +29,12 @@ const NUL = '\0'
 /** Marker segment of a Project-scoped key; the following segment is the Project id. */
 const PROJECT_SEGMENT = 'project'
 
+/**
+ * The cwd a quick chat's agent is spawned under. It is not a folder: the host
+ * picks the quick chat's folder at `session/new`, and no project env applies.
+ */
+export const QUICK_CHAT_AGENT_CWD = 'quick-chat'
+
 /** Marker segment of a chat's own key; the following segment is the chat (session) id. */
 const CHAT_SEGMENT = 'chat'
 
@@ -37,8 +43,9 @@ const CHAT_SEGMENT = 'chat'
  * of a live agent *process* (the agent process is MCP-agnostic; only the
  * session folds MCP selection in — see `prepareChatKey` in `acp-store.ts`).
  *
- * `projectId` selects the Claude Account of a managed Claude agent and the
- * Codex Account of `acp-registry:codex-acp`. Two Projects that share a cwd
+ * `projectId` selects the Claude Account of a managed Claude agent, the
+ * Codex Account of `acp-registry:codex-acp` and the Antigravity Account of
+ * `acp-registry:antigravity-acp`. Two Projects that share a cwd
  * must not share that process, so a non-empty Project id is part of the key.
  * `renewAgentCredentials` bumps the credential epoch for that config and
  * project after an account switch, so a process spawned on the old home is

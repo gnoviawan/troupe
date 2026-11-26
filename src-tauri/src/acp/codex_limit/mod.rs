@@ -4,6 +4,7 @@
 //! it when the limit resets. The renderer only shows what happened
 //! (`acp:codex_limit_action`).
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -58,6 +59,7 @@ enum Input {
 pub struct CodexLimitHandle {
     tx: mpsc::UnboundedSender<Input>,
     clock: Arc<TurnClock>,
+    limited: Arc<LimitedAccounts>,
 }
 
 pub struct CodexLimitInbox {
@@ -76,6 +78,7 @@ impl CodexLimitHandle {
             Self {
                 tx,
                 clock: Arc::clone(&clock),
+                limited: Arc::clone(&limited),
             },
             CodexLimitInbox { rx, clock, limited },
         )
@@ -105,6 +108,12 @@ impl CodexLimitHandle {
         answer
             .await
             .map_err(|_| "the Codex limit supervisor stopped".to_string())?
+    }
+
+    /// The Accounts the supervisor saw reach a limit, and when each resets.
+    #[must_use]
+    pub(crate) fn limited_until(&self) -> HashMap<String, SystemTime> {
+        self.limited.snapshot()
     }
 
     /// A turn of the chat started: its scheduled resume no longer applies.
@@ -139,10 +148,16 @@ impl EventSink for LimitSignalSink {
         if event.type_ != EVENT_AGENT_ERROR {
             return;
         }
-        let Some(kind) = event
-            .payload
-            .get("data")
-            .and_then(crate::acp::codex_accounts::usage::codex_plan_limit_kind)
+        let data = event.payload.get("data");
+        // An Antigravity plan limit carries the same `errorKind`; its own
+        // supervisor handles it.
+        if data
+            .and_then(crate::acp::antigravity_accounts::usage::antigravity_plan_limit)
+            .is_some()
+        {
+            return;
+        }
+        let Some(kind) = data.and_then(crate::acp::codex_accounts::usage::codex_plan_limit_kind)
         else {
             return;
         };
@@ -254,8 +269,12 @@ pub fn resume_notice(account: &str, window: &str, reset: &str) -> String {
 
 #[cfg(test)]
 #[path = "real_loop_tests.rs"]
-mod real_loop_tests;
+pub(crate) mod real_loop_tests;
 
 #[cfg(test)]
 #[path = "cross_keep_tests.rs"]
 mod cross_keep_tests;
+
+#[cfg(test)]
+#[path = "sink_tests.rs"]
+mod sink_tests;

@@ -1,0 +1,420 @@
+[
+ {
+  "store": "overlay",
+  "name": "register_and_close_topmost",
+  "initial": {
+   "stack": [],
+   "mobileShell": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "closeTopmostOverlay",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "registerOverlay",
+     "args": [
+      "mobile-drawer"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "mobile-drawer"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "registerOverlay",
+     "args": [
+      "git-sheet"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "mobile-drawer",
+      "git-sheet"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "registerOverlay",
+     "args": [
+      "mobile-drawer"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "mobile-drawer",
+      "git-sheet"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "closeTopmostOverlay",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeOverlay",
+      "id": "git-sheet"
+     }
+    ],
+    "result": true,
+    "state": {
+     "stack": [
+      "mobile-drawer",
+      "git-sheet"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "unregisterOverlay",
+     "args": [
+      "git-sheet"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "mobile-drawer"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "unregisterOverlay",
+     "args": [
+      "git-sheet"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "mobile-drawer"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "closeTopmostOverlay",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "closeOverlay",
+      "id": "mobile-drawer"
+     }
+    ],
+    "result": true,
+    "state": {
+     "stack": [
+      "mobile-drawer"
+     ],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "unregisterOverlay",
+     "args": [
+      "mobile-drawer"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "closeTopmostOverlay",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "overlay",
+  "name": "mobile_shell_flag",
+  "initial": {
+   "stack": [],
+   "mobileShell": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setMobileShell",
+     "args": [
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [],
+     "mobileShell": true
+    }
+   },
+   {
+    "event": {
+     "action": "setMobileShell",
+     "args": [
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [],
+     "mobileShell": true
+    }
+   },
+   {
+    "event": {
+     "action": "registerOverlay",
+     "args": [
+      "settings-modal"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "settings-modal"
+     ],
+     "mobileShell": true
+    }
+   },
+   {
+    "event": {
+     "action": "setMobileShell",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "stack": [
+      "settings-modal"
+     ],
+     "mobileShell": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "overlay",
+  "name": "sentinel_depth",
+  "initial": {
+   "stack": [],
+   "mobileShell": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      "route"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": true
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": true,
+       "termulOverlayDepth": 3
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 3,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": true,
+       "termulOverlayDepth": 0
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": true,
+       "termulOverlayDepth": 2.5
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": true,
+       "termulOverlayDepth": "2"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 1,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "termulOverlay": "true",
+       "termulOverlayDepth": 2
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   },
+   {
+    "event": {
+     "action": "readOverlaySentinelDepth",
+     "args": [
+      {
+       "idx": 4,
+       "termulOverlay": true,
+       "termulOverlayDepth": 7
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 7,
+    "state": {
+     "stack": [],
+     "mobileShell": false
+    }
+   }
+  ]
+ }
+]

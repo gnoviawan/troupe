@@ -115,7 +115,7 @@ export function renderReport(
     '',
     '## Surfaces',
     '',
-    'Status is `ported` only when no step differs perceptually, or when a review in `tools/parity/reviews.ts` covers the difference (marked reviewed). Any other difference reads `needs-review`. Reference and candidate count passed actions plus checks over the total. Mismatch is exact / perceptual for the last step, over the full 1280x800 frame and over the region the surface names. Text, icons and boxes are the perceptual mismatch within the pixels of each part, over the region when there is one. Max exact and max perceptual are the most mismatched pixels in the full frame of any step.',
+    'Status is `ported` only when no step differs perceptually, or when a review in `tools/parity/reviews.ts` covers the difference (marked reviewed). Any other difference reads `needs-review`. Reference and candidate count passed actions plus checks over the total. Mismatch is exact / perceptual for the last step, over the full frame (1280x800 on desktop, 390x844 on the phone) and over the region the surface names. Text, icons and boxes are the perceptual mismatch within the pixels of each part, over the region when there is one. Max exact and max perceptual are the most mismatched pixels in the full frame of any step.',
     '',
     '| Surface | Area | Status | Reference | Candidate | Full | Region | Text | Icons | Boxes | Max exact px | Max perceptual px |',
     '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'
@@ -158,8 +158,9 @@ export function renderReport(
   out.push('', '## Driven interactions and literal results', '')
   for (const { surface, result } of rows) {
     if (!result?.reference) {
+      const pending = surface.pending ?? result?.pending
       out.push(
-        `- \`${surface.id}\`: ${surface.pending ? `pending ${surface.pending.unit}: ${surface.pending.reason}` : (surface.blocked ?? 'not run')}`
+        `- \`${surface.id}\`: ${pending ? `pending ${pending.unit}: ${pending.reason}` : (surface.blocked ?? 'not run')}`
       )
       continue
     }

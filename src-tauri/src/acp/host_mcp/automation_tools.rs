@@ -64,7 +64,18 @@ pub struct AutomationApplyOpsInput {
     /// Ops applied atomically in order, each an object tagged by `op`
     /// (add_node, update_node, remove_node, connect, disconnect, set_trigger,
     /// rename, set_isolation). See automation_guide for every field.
+    #[schemars(schema_with = "ops_schema")]
     pub ops: Vec<Value>,
+}
+
+/// `ops` as an array of objects. A bare `Value` item schema is `{}`, which
+/// Gemini refuses for the whole session (issue #1981); the parent still
+/// parses each op itself (`parent/automation.rs`).
+fn ops_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    schemars::json_schema!({
+        "type": "array",
+        "items": { "type": "object" }
+    })
 }
 
 pub const GUIDE_DESCRIPTION: &str = "Read this first when the user wants something to run on \

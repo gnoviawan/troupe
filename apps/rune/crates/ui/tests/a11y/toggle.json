@@ -1,0 +1,21 @@
+{
+  "children": [
+    {
+      "actions": ["focus"],
+      "name": "Bold",
+      "role": "button",
+      "states": ["checked"]
+    },
+    {
+      "actions": ["focus"],
+      "name": "Wrap",
+      "role": "button",
+      "states": ["unchecked"]
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

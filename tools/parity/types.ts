@@ -9,10 +9,12 @@ import type { DiffResult, Rect } from './diff'
 /**
  * A client the matrix can drive. `react` is today's web client in Playwright
  * Chromium. `tauri` is the shipped desktop app, driven with XTEST and read
- * only through its pixels. The Rune clients join this list in R3c.
+ * only through its pixels. `rune-web` is a Rune wasm build in Playwright
+ * Chromium, read through Rune's accessibility mirror. `rune-desktop` is a
+ * native Rune window under Xvfb, driven through the live driver's socket.
  */
-export type Client = 'react' | 'tauri'
-export const CLIENTS: readonly Client[] = ['react', 'tauri']
+export type Client = 'react' | 'tauri' | 'rune-web' | 'rune-desktop'
+export const CLIENTS: readonly Client[] = ['react', 'tauri', 'rune-web', 'rune-desktop']
 
 /**
  * How an action finds its element. `testId` and `text` name an element any
@@ -97,11 +99,43 @@ export type AreaId =
   | 'remote'
   | 'snapshots'
   | 'dialogs'
+  | 'automations'
+  | 'github'
+
+/**
+ * The window a surface runs in. `desktop` is 1280x800 with a mouse. `phone`
+ * is 390x844 with touch and `isMobile`, which puts the web client on its
+ * phone shell; only web clients run it. `gallery` is not a window: it
+ * compares the `design-system` registry entries with the Rune gallery's
+ * scenes, one frame per registry id (`gallery.ts`).
+ */
+export type Profile = 'desktop' | 'phone' | 'gallery'
+export const PROFILES: readonly Profile[] = ['desktop', 'phone', 'gallery']
+
+/** The kinds of screen the inventory counts (`surfaces/inventory.ts`). */
+export type ScreenKind = 'route' | 'gate' | 'pane' | 'side-panel' | 'settings'
+
+/**
+ * Where a surface sits in the UI inventory. An `overlay` names its mount
+ * sites in `src/renderer` (paths relative to it, one entry per mount site, so
+ * a phone/desktop twin names two). A `screen` names its kind and its name in
+ * the code: the route path, the gate component, the pane tab `type`, the
+ * side-panel tab, or the settings category as `app:<id>` / `project:<id>`.
+ * A `journey` is outside the inventory: a starter flow, or a phone journey
+ * named by its `tests/e2e` spec.
+ */
+export type Source =
+  | { overlay: string[] }
+  | { screen: ScreenKind; name: string }
+  | { journey: string }
 
 export interface Surface {
   id: string
   area: AreaId
   title: string
+  source: Source
+  /** Defaults to `desktop`. */
+  profile?: Profile
   steps: Step[]
   /**
    * The client this surface is compared against when it is not the run's
@@ -118,8 +152,12 @@ export interface Surface {
   pending?: { unit: string; reason: string }
   /** Not driven: no reference to compare against, for the reason given. */
   blocked?: string
-  /** Server-side setup run before each client's run (re-seeds what an earlier run changed). */
-  prepare?(world: import('./world').World): Promise<void>
+  /**
+   * Server-side setup run before each client's run (re-seeds what an earlier
+   * run changed). `deviceId` is the fresh device the run uses, for state the
+   * host keeps per device.
+   */
+  prepare?(world: import('./world').World, deviceId: string): Promise<void>
 }
 
 export interface ActionLog {
@@ -152,6 +190,8 @@ export interface ClientRun {
   checks: CheckLog[]
   /** One frame per step, in step order. */
   frames: string[]
+  /** What drew the frames, for a client that can tell (the Rune web build: WebGPU, WebGL2 or the CPU canvas). */
+  renderer?: string
 }
 
 export interface StepDiff {

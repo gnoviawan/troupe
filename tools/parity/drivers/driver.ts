@@ -55,6 +55,32 @@ export interface ClientLauncher {
   resolvesTargets: boolean
   /** Start a session on the surface's start route, run `body`, tear the session down. */
   session<T>(ctx: SessionContext, body: (driver: Driver) => Promise<T>): Promise<T>
+  /** Frees what the launcher holds across sessions, such as a served build. */
+  close?(): Promise<void>
+}
+
+/** One `design-system` registry entry, and the Rune gallery scene of the same id. */
+export interface GalleryEntry {
+  id: string
+  name: string
+  width: number
+  height: number
+}
+
+/** A client of the gallery profile, open on its gallery for the whole run. */
+export interface GallerySession {
+  /** What drew the frames, when the client can tell. */
+  renderer?: string
+  /**
+   * Shows `entry` and writes its frame, `entry.width` x `entry.height`, to
+   * `file`. Returns how the entry was picked and, for a client with a DOM,
+   * where text and icons were painted in the frame's coordinates.
+   */
+  shoot(
+    entry: GalleryEntry,
+    file: string
+  ): Promise<{ via: ActionLog['via']; parts: PartRects | null }>
+  close(): Promise<void>
 }
 
 /**

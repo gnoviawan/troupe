@@ -10,7 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import { openerApi } from '@/lib/api'
+import { openLink } from '@/lib/browser/open-link'
+import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
 
 /**
@@ -111,7 +112,15 @@ function settle(id: number, open: boolean): void {
   const { pending } = state
   if (pending === null || pending.id !== id) return
   setState({ pending: null })
-  if (open) void openerApi.openUrlWithSystemBrowser(pending.url)
+  if (!open) return
+  // Opens where "Open links in" says (default browser or a Troupe tab).
+  openLink(pending.url).catch((error: unknown) => {
+    void logFrontendError({
+      level: 'warn',
+      source: 'ExternalLinkConfirm',
+      message: `Could not open a confirmed link: ${error instanceof Error ? error.message : String(error)}`
+    })
+  })
 }
 
 /** Marks a container (message, thought, panel) that scopes link lookups. */

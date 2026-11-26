@@ -16,7 +16,7 @@ export const AREA_WEIGHTS: Record<AreaId, number> = {
   editor: 7,
   'side-panel': 5,
   settings: 4,
-  statusbar: 3,
+  statusbar: 1,
   palette: 3,
   theme: 2,
   shortcuts: 1,
@@ -26,17 +26,19 @@ export const AREA_WEIGHTS: Record<AreaId, number> = {
   canvas: 0.5,
   ssh: 0.5,
   remote: 0.5,
-  snapshots: 0.5
+  snapshots: 0.5,
+  automations: 1,
+  github: 1
 }
 
 /**
  * Ported counts fully, partial counts half, everything else counts zero. An
- * unreviewed difference counts half too: it is not ported, and it should not
- * score below a surface a person judged partial.
+ * unreviewed difference counts zero: only a person's verdict in `reviews.ts`
+ * can turn a difference into score, so no run raises the score by itself.
  */
 export const STATUS_SCORE: Record<Status, number> = {
   ported: 1,
-  'needs-review': 0.5,
+  'needs-review': 0,
   partial: 0.5,
   broken: 0,
   blocked: 0,

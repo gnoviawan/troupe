@@ -14,7 +14,13 @@
  * `vi.unmock('@/lib/acp-transport/desktop-transport')`.
  */
 
-import type { AcpCatalog } from '@shared/types/acp-catalog.types'
+import type { AcpAgentOverlay, AcpCatalog } from '@shared/types/acp-catalog.types'
+import type {
+  AntigravityAccount,
+  AntigravityAccountsSnapshot,
+  AntigravityAccountUsage,
+  RemovedAntigravityAccount
+} from '@shared/types/antigravity-accounts.types'
 import type {
   ClaudeAccount,
   ClaudeAccountsSnapshot,
@@ -173,6 +179,11 @@ export function createInvokeAcpTransport(): AcpTransport {
       const result = await invoke<IpcResult<void>>('acp_set_catalog_opt_in', { enabled })
       if (!result.success) throw new AcpTransportError(result.code, result.error)
     },
+    getAgentOverlay: async () => {
+      const result = await invoke<IpcResult<AcpAgentOverlay>>('get_acp_agent_overlay')
+      if (result.success) return result.data
+      throw new AcpTransportError(result.code, result.error)
+    },
     searchMcpCatalog: async (request) => {
       const result = await invoke<IpcResult<McpCatalogPage>>('search_mcp_catalog', { request })
       if (result.success) return result.data
@@ -310,6 +321,50 @@ export function createInvokeAcpTransport(): AcpTransport {
       invoke<RemovedCodexAccount>('codex_accounts_remove', { accountId }),
     startCodexAccountLogin: (accountId, config, options) =>
       invokeCommand<SpawnAgentResult>('codex_accounts_start_login', { accountId, config }, options),
+    listAntigravityAccounts: () => invoke<AntigravityAccountsSnapshot>('antigravity_accounts_list'),
+    listAntigravityUsage: (force = false) =>
+      invoke<AntigravityAccountUsage[]>('antigravity_accounts_usage', { force }),
+    checkAntigravityUsage: (accountId, config, options) =>
+      invokeCommand<AntigravityAccountUsage>(
+        'antigravity_accounts_check_usage',
+        { accountId, config },
+        options
+      ),
+    setDefaultAntigravityAccount: async (accountId) => {
+      await invoke('antigravity_accounts_set_default', { accountId })
+    },
+    setProjectAntigravityAccount: (projectId, accountId, expectedAccountId) =>
+      invoke<boolean>('antigravity_accounts_set_project', {
+        projectId,
+        accountId,
+        expectedAccountId: expectedAccountId ?? null
+      }),
+    setChatAntigravityAccount: (projectId, sessionId, accountId, expectedAccountId) =>
+      invoke<boolean>('antigravity_accounts_set_chat', {
+        projectId,
+        sessionId,
+        accountId,
+        expectedAccountId: expectedAccountId ?? null
+      }),
+    setAntigravityAutoSwitch: async (enabled) => {
+      await invoke('antigravity_accounts_set_auto_switch', { enabled })
+    },
+    setAntigravityResume: async (sessionId, at) => {
+      await invoke('antigravity_accounts_set_resume', { sessionId, at })
+    },
+    addAntigravityAccount: (name, options) =>
+      invokeCommand<AntigravityAccount>('antigravity_accounts_add', { name }, options),
+    renameAntigravityAccount: async (accountId, name) => {
+      await invoke('antigravity_accounts_rename', { accountId, name })
+    },
+    removeAntigravityAccount: (accountId) =>
+      invoke<RemovedAntigravityAccount>('antigravity_accounts_remove', { accountId }),
+    startAntigravityAccountLogin: (accountId, config, options) =>
+      invokeCommand<SpawnAgentResult>(
+        'antigravity_accounts_start_login',
+        { accountId, config },
+        options
+      ),
     spawnAgent: (config, options, projectId, sessionId) =>
       invokeCommand<SpawnAgentResult>(
         'acp_spawn_agent',

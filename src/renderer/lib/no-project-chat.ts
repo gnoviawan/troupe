@@ -3,11 +3,14 @@ import { toast } from 'sonner'
 import { UNTITLED_HOST_TITLE } from '@/lib/acp-history-persistence'
 import { focusComposerWhenReady } from '@/lib/focus-composer'
 import { logFrontendError } from '@/lib/log-api'
-import { isChatRouteCurrent, navigateToChatSession } from '@/lib/router-navigate'
+import { navigateToChatSession, navigateToWorkspaceRoot } from '@/lib/router-navigate'
 import type { AcpState } from '@/stores/acp-store'
 import { useAcpStore } from '@/stores/acp-store'
 import {
   closeQuickChatView,
+  describeQuickChatView,
+  followQuickLaunch,
+  startedQuickLaunch,
   useQuickChatSessionId,
   useQuickChatStore
 } from '@/stores/quick-chat-store'
@@ -44,20 +47,48 @@ export function showNoProjectChat(sessionId: string, kind: NoProjectChat, source
 }
 
 /**
- * The launch placeholder `from` on screen became session `to`. The view
- * moves to `to` with the same panel (the typed text stays), and the route
- * entry of the placeholder is replaced, so Back never lands on it.
+ * Show the agent launcher for a new quick chat in the quick view. No session
+ * starts: Send in the launcher starts the chat with its first message. The
+ * launcher owns no `#/c/<id>` route, so the route goes to `#/`.
  */
-export function adoptQuickChat(from: string, to: string, source: string): void {
-  const view = useQuickChatStore.getState().view
-  if (view.mode !== 'chat' || view.sessionId !== from) return
-  useQuickChatStore.getState().adoptChat(from, to)
-  navigateToChatSession(to, isChatRouteCurrent(from) ? { replace: true } : undefined)
+export function showQuickChatLauncher(source: string): void {
+  useQuickChatStore.getState().openLauncher()
+  navigateToWorkspaceRoot()
   void logFrontendError({
     level: 'info',
     source,
-    message: `Quick chat ${from} started as ${to}`
+    message: 'Opened the quick chat launcher'
   })
+}
+
+/**
+ * The quick launch placeholder `from` became session `to`: the view follows
+ * it when it is on screen (see {@link followQuickLaunch}).
+ */
+export function adoptQuickChat(from: string, to: string, source: string): void {
+  const followed = followQuickLaunch(from, to)
+  void logFrontendError({
+    level: 'info',
+    source,
+    message: `Quick chat ${from} started as ${to}${followed ? '' : ' off screen'}`
+  })
+}
+
+/**
+ * When the route names a quick launch placeholder that started off screen
+ * (Back to its stale history entry), replace that entry with its session and
+ * return `true`. The route change then shows the session.
+ */
+export function followStartedQuickLaunchRoute(placeholderId: string, source: string): boolean {
+  const sessionId = startedQuickLaunch(placeholderId)
+  if (!sessionId) return false
+  navigateToChatSession(sessionId, { replace: true })
+  void logFrontendError({
+    level: 'info',
+    source,
+    message: `Route of quick chat launch ${placeholderId} now names its session ${sessionId}`
+  })
+  return true
 }
 
 /**
@@ -101,22 +132,24 @@ export function openNoProjectChat(sessionId: string, source: string): boolean {
  * project change is not visible. A no-op when the view is closed.
  */
 export function leaveQuickChatView(source: string): void {
-  const sessionId = closeQuickChatView()
-  if (!sessionId) return
+  const closed = closeQuickChatView()
+  if (!closed) return
   void logFrontendError({
     level: 'info',
     source,
-    message: `Closed the quick chat view (${sessionId}) for a project view`
+    message: `Closed ${describeQuickChatView(closed)} for a project view`
   })
 }
 
 /**
- * Put focus in the open quick chat's composer. The composer focuses itself
- * only on mount in some layouts, so `+` (a new chat, or the empty one already
- * on screen) needs this.
+ * Put focus in the quick chat launcher's composer. The launcher focuses itself
+ * only on mount, and mounts read-only until its agent resolves, so `+` (a new
+ * launcher, or the one already on screen) needs this.
  */
-export function focusQuickChatComposer(): void {
-  focusComposerWhenReady('[data-testid="quick-chat-main"] [contenteditable="true"]')
+export function focusQuickLauncherComposer(): void {
+  focusComposerWhenReady(
+    '[data-testid="quick-chat-main"] [aria-label="Agent prompt"][contenteditable="true"]'
+  )
 }
 
 /** The open quick chat's title (live, then index), or `undefined` when none is open. */

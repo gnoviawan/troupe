@@ -9,11 +9,11 @@ export type ReleaseAssets = {
 };
 
 export type ReleaseChannel = {
-  /** "0.4.60" for stable, "0.5.0-nightly" for nightly. */
+  /** "0.6.0" for stable; "0.6.12" for nightly, or "0.5.0-nightly" for an older nightly build. */
   version: string;
   /** Git tag: "v0.4.60" or "nightly". */
   tag: string;
-  /** ISO date. For nightly, the build date from the version string. */
+  /** ISO date. For nightly, when the build's files were uploaded. */
   publishedAt: string;
   /** Nightly run number, for example 108. */
   build?: number;
@@ -29,7 +29,7 @@ export type ReleasesResponse = {
   fetchedAt: string;
 };
 
-export type GitHubAsset = { name: string; browser_download_url: string };
+export type GitHubAsset = { name: string; browser_download_url: string; updated_at?: string };
 
 export type GitHubRelease = {
   tag_name: string;
@@ -62,24 +62,39 @@ export function pickAssets(assets: GitHubAsset[]): ReleaseAssets {
   return picked;
 }
 
+/**
+ * A nightly is "0.6.12": the stable minor it follows and the dev commits
+ * since. Builds from before that scheme are "0.5.0-nightly.<date>.<run>.<sha>".
+ */
 export type NightlyVersion = {
-  /** "0.5.0" */
+  /** "0.6.12" */
   base: string;
-  /** "20261119" */
-  date: string;
-  build: number;
-  commit: string;
-  /** "0.5.0-nightly.20261119.108.3e31072" */
+  /** "0.6.12", or "0.5.0-nightly.20261119.108.3e31072" */
   full: string;
+  /** Only older builds carry a date, run number and commit. */
+  date?: string;
+  build?: number;
+  commit?: string;
 };
 
-const NIGHTLY_PATTERN = /(\d+\.\d+\.\d+)-nightly\.(\d{8})\.(\d+)\.([0-9a-f]{7,40})/;
+const NIGHTLY_PATTERN = /(\d+)\.(\d+)\.(\d+)(?:-nightly\.(\d{8})\.(\d+)\.([0-9a-f]{7,40}))?/;
 
 export function parseNightlyVersion(text: string): NightlyVersion | null {
   const match = NIGHTLY_PATTERN.exec(text);
   if (!match) return null;
-  const [full, base, date, build, commit] = match;
-  return { base, date, build: Number(build), commit, full };
+  const [full, major, minor, patch, date, build, commit] = match;
+  const base = `${major}.${minor}.${patch}`;
+  return date ? { base, full, date, build: Number(build), commit } : { base, full };
+}
+
+function compareNightly(a: NightlyVersion, b: NightlyVersion): number {
+  const [aCore, bCore] = [a.base, b.base].map((base) => base.split('.').map(Number));
+  for (let index = 0; index < 3; index += 1) {
+    const diff = aCore[index] - bCore[index];
+    if (diff !== 0) return diff;
+  }
+  if (!a.date || !b.date) return Number(!a.date) - Number(!b.date);
+  return a.date.localeCompare(b.date) || (a.build ?? 0) - (b.build ?? 0);
 }
 
 function dateFromStamp(stamp: string): string {
@@ -98,13 +113,13 @@ export function toStableChannel(release: GitHubRelease): ReleaseChannel {
 
 /**
  * The moving `nightly` release keeps files of more than one build. Use the
- * build with the highest run number, and only its files.
+ * newest build, and only its files.
  */
 export function toNightlyChannel(release: GitHubRelease): ReleaseChannel | null {
   let newest: NightlyVersion | null = null;
   for (const asset of release.assets) {
     const parsed = parseNightlyVersion(asset.name);
-    if (parsed && (!newest || parsed.build > newest.build)) newest = parsed;
+    if (parsed && (!newest || compareNightly(parsed, newest) > 0)) newest = parsed;
   }
   if (!newest) {
     newest = parseNightlyVersion(release.name ?? '');
@@ -112,15 +127,18 @@ export function toNightlyChannel(release: GitHubRelease): ReleaseChannel | null 
   if (!newest) return null;
 
   const current = newest;
-  const assets = pickAssets(release.assets.filter((asset) => asset.name.includes(current.full)));
+  const files = release.assets.filter((asset) => parseNightlyVersion(asset.name)?.full === current.full);
+  const uploadedAt = files.find((asset) => asset.updated_at)?.updated_at;
   return {
-    version: `${current.base}-nightly`,
+    version: current.date ? `${current.base}-nightly` : current.base,
     tag: release.tag_name,
-    publishedAt: dateFromStamp(current.date),
+    publishedAt: current.date
+      ? dateFromStamp(current.date)
+      : (uploadedAt ?? release.published_at ?? new Date(0).toISOString()),
     build: current.build,
     commit: current.commit,
     releaseUrl: release.html_url,
-    assets,
+    assets: pickAssets(files),
   };
 }
 

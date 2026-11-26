@@ -72,16 +72,13 @@ const isOpen = (state: AcpState, sessionId: string): boolean => {
   return status === 'active' || status === 'error'
 }
 
-export function openChatIds(): Set<string> {
+function openChatIds(): Set<string> {
   const ids = getAgentChatSessionIdsInAllTrees(useWorkspaceStore.getState())
   for (const kept of Object.values(useAgentChatLifetimeStore.getState().retainedByProject)) {
     for (const id of kept) ids.add(id)
   }
   return ids
 }
-
-/** Whether this client has the chat open: a tab, or kept for its off-screen Project. */
-export const isChatOpenHere = (sessionId: string): boolean => openChatIds().has(sessionId)
 
 async function stopOldAgent(agentId: string, reason: string): Promise<void> {
   void logFrontendError({

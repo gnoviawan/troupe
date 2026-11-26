@@ -23,3 +23,12 @@ test('usage-weighted score weights each area mean by the area weight', () => {
   // (17 * 0.75 + 14 * 1 + 14 * 0 + 4 * 0.5) / (17 + 14 + 14 + 4) = 28.75 / 49
   expect(weightedScore(FIXTURE)).toBeCloseTo(58.673, 3)
 })
+
+test('an unreviewed difference scores nothing', () => {
+  const rows: Scored[] = [
+    { area: 'chat', status: 'ported' },
+    { area: 'chat', status: 'needs-review' }
+  ]
+  expect(unweightedScore(rows)).toBe(50)
+  expect(weightedScore([{ area: 'chat', status: 'needs-review' }])).toBe(0)
+})

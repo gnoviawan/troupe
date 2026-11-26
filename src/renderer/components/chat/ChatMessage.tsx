@@ -7,6 +7,7 @@ import { Message, MessageContent } from '@/components/ui/message'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
 import type { ContentBlock } from '@/lib/acp-api'
 import { splitLinks } from '@/lib/chat-links'
+import { parseCanvasSegments } from '@/lib/composer/canvas-tokens'
 import {
   parseSelectionContextSegments,
   type SelectionContext,
@@ -29,6 +30,7 @@ import {
 import { normalizePlanFenceBoundary, stripEmptyFences } from '@/lib/strip-empty-fences'
 import { cn } from '@/lib/utils'
 import type { ChatMessage as ChatMessageType } from '@/stores/acp-store'
+import { CanvasChip } from './CanvasChip'
 import { ChatImageTile, ChatMedia, useChatImageViewer } from './ChatMedia'
 import { ConversationChip } from './ConversationChip'
 import { AgentProse } from './chat-agent-prose'
@@ -74,6 +76,7 @@ function UserMessageText({ text }: { text: string }): React.JSX.Element {
     | { kind: 'context'; context: SelectionContext; index: number }
     | { kind: 'conversation'; title: string }
     | { kind: 'tool'; tool: TermulToolEntry }
+    | { kind: 'canvas'; label: string; count: number }
     | { kind: 'link'; url: string }
   const flat: FlatSeg[] = []
   let hasPills = false
@@ -85,15 +88,22 @@ function UserMessageText({ text }: { text: string }): React.JSX.Element {
         hasPills = true
         continue
       }
-      for (const tseg of parseToolSegments(cseg.text)) {
-        if (tseg.kind === 'tool') {
-          flat.push(tseg)
+      for (const vseg of parseCanvasSegments(cseg.text)) {
+        if (vseg.kind === 'canvas') {
+          flat.push({ kind: 'canvas', label: vseg.ref.label, count: vseg.ref.ids.length })
           hasPills = true
           continue
         }
-        for (const lseg of splitLinks(tseg.text)) {
-          flat.push(lseg)
-          if (lseg.kind === 'link') hasPills = true
+        for (const tseg of parseToolSegments(vseg.text)) {
+          if (tseg.kind === 'tool') {
+            flat.push(tseg)
+            hasPills = true
+            continue
+          }
+          for (const lseg of splitLinks(tseg.text)) {
+            flat.push(lseg)
+            if (lseg.kind === 'link') hasPills = true
+          }
         }
       }
     }
@@ -166,6 +176,8 @@ function UserMessageText({ text }: { text: string }): React.JSX.Element {
               <ConversationChip key={`conversation-${i}`} title={seg.title} />
             ) : seg.kind === 'tool' ? (
               <ToolChip key={`tool-${i}`} tool={seg.tool} />
+            ) : seg.kind === 'canvas' ? (
+              <CanvasChip key={`canvas-${i}`} label={seg.label} count={seg.count} />
             ) : seg.kind === 'link' ? (
               <LinkChip key={`link-${i}`} url={seg.url} />
             ) : seg.kind === 'context' ? (

@@ -1,10 +1,9 @@
 import { useId, useMemo } from 'react'
 import { Bot } from '@/components/icons'
 import {
-  agentBrandColor,
   agentBrandProps,
   brandGradientId,
-  findBundledIconByKey,
+  useAgentIconCatalog,
   withBrandGradient
 } from '@/lib/agents/agent-icon-catalog'
 import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
@@ -15,7 +14,7 @@ import { cn } from '@/lib/utils'
  * a registry `brandColor` is drawn in it (per theme, overriding a caller's
  * text colour); the rest keep `text-foreground/80` unless the caller sets one.
  * Resolution precedence: `icon` prop (persisted custom SVG, bundled or
- * uploaded) → `findBundledIconByKey(`acp:${templateId}`)` (registry catalog) →
+ * uploaded) → `catalog.byKey(`acp:${templateId}`)` (overlay, then bundled) →
  * lucide `<Bot>` fallback.
  *
  * Used by every chat-side surface (AgentBadge, ChatHistoryEntryRow,
@@ -34,17 +33,18 @@ export function AgentGlyph({
   size?: number
   className?: string
 }): React.JSX.Element {
+  const catalog = useAgentIconCatalog()
   const normalized = useMemo(() => {
     if (icon) {
       const sanitized = sanitizeInlineAgentSvg(icon)
       if (sanitized) return sanitized
     }
     if (!templateId) return null
-    const svg = findBundledIconByKey(`acp:${templateId}`)?.svg
+    const svg = catalog.byKey(`acp:${templateId}`)?.svg
     return svg ? sanitizeInlineAgentSvg(svg) : null
-  }, [icon, templateId])
+  }, [catalog, icon, templateId])
   const gradientId = brandGradientId(useId())
-  const brand = normalized ? agentBrandColor(icon, templateId) : null
+  const brand = normalized ? catalog.brandColor(icon, templateId) : null
   const brandProps = brand ? agentBrandProps(brand, gradientId) : null
 
   if (normalized) {

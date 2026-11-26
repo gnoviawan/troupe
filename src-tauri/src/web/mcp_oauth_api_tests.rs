@@ -66,7 +66,9 @@ fn start_failure_codes_name_the_unsafe_url_refusal() {
         "refused an unsafe link: only https links are allowed"
     );
     let discovery = mcp_oauth::McpOAuthError::DiscoveryFailed("down".to_string());
-    assert_eq!(start_error_code(&discovery), "OAUTH_START_FAILED");
+    assert_eq!(start_error_code(&discovery), "OAUTH_DISCOVERY_FAILED");
+    let registration = mcp_oauth::McpOAuthError::RegistrationFailed("nope".to_string());
+    assert_eq!(start_error_code(&registration), "OAUTH_REGISTRATION_FAILED");
 }
 
 const REDIRECT: &str = "http://127.0.0.1:8080/oauth/callback";
@@ -600,7 +602,7 @@ mod routes {
             // Authorized: it fails later, at discovery against a closed port.
             assert_eq!(
                 code_of(&app, request("start", project, "http://127.0.0.1:1/mcp")).await,
-                "OAUTH_START_FAILED",
+                "OAUTH_DISCOVERY_FAILED",
                 "{project}"
             );
         }
@@ -659,5 +661,54 @@ mod routes {
                 );
             }
         }
+    }
+
+    #[tokio::test]
+    async fn status_reports_advancing_token_generation() {
+        let _tokens = crate::acp::mcp_oauth::tests::TokenDirGuard::new("status-gen");
+        let dir = tempfile::tempdir().unwrap();
+        let registry = ProjectRegistry::with_roots_for_test(&[("pa", dir.path())]);
+        let url = "https://gen-test.example.com/mcp";
+        let store = store_with(
+            dir.path(),
+            json!([{ "id": "h", "type": "http", "name": "H", "url": url }]),
+        );
+        let app = app(registry, Some(store));
+
+        let resp1 = app
+            .clone()
+            .oneshot(request("status", "pa", url))
+            .await
+            .unwrap();
+        let body1: Value =
+            serde_json::from_slice(&to_bytes(resp1.into_body(), usize::MAX).await.unwrap())
+                .unwrap();
+        let gen1 = body1["data"]["tokenGeneration"].as_u64().unwrap();
+        assert_eq!(body1["data"]["hasToken"], false);
+
+        crate::acp::mcp_oauth::store_token(
+            url,
+            &crate::acp::mcp_oauth::StoredToken {
+                access_token: "tok".into(),
+                refresh_token: None,
+                expires_at: None,
+                client_id: "c".into(),
+                issuer: url.into(),
+                server_url: url.into(),
+            },
+        )
+        .unwrap();
+
+        let resp2 = app
+            .clone()
+            .oneshot(request("status", "pa", url))
+            .await
+            .unwrap();
+        let body2: Value =
+            serde_json::from_slice(&to_bytes(resp2.into_body(), usize::MAX).await.unwrap())
+                .unwrap();
+        let gen2 = body2["data"]["tokenGeneration"].as_u64().unwrap();
+        assert_eq!(body2["data"]["hasToken"], true);
+        assert!(gen2 > gen1, "expected tokenGeneration to advance");
     }
 }

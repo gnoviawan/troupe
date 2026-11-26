@@ -148,6 +148,7 @@ async function startServer() {
         HOME,
         CLAUDE_CONFIG_DIR: join(HOME, '.claude'),
         CODEX_HOME: join(HOME, '.codex'),
+        GEMINI_HOME: join(HOME, '.gemini'),
         RUST_LOG: 'warn'
       }
     }
@@ -663,6 +664,40 @@ async function recordWs() {
     { commandId: 'fixture-codex-login' }
   )
   await ws.request('remove_codex_account', { accountId: codexId })
+
+  await ws.request('list_antigravity_accounts', {})
+  await ws.request('list_antigravity_usage', {})
+  await ws.request(
+    'check_antigravity_usage',
+    { accountId: 'missing-account', config: fakeAgent },
+    { commandId: 'fixture-antigravity-check' }
+  )
+  const antigravity = await ws.request(
+    'add_antigravity_account',
+    { name: 'Fixture' },
+    { commandId: 'fixture-antigravity-add' }
+  )
+  const antigravityId =
+    antigravity.payload?.id ?? antigravity.payload?.accountId ?? 'missing-account'
+  await ws.request('rename_antigravity_account', { accountId: antigravityId, name: 'Fixture 2' })
+  await ws.request('set_default_antigravity_account', { accountId: 'missing-account' })
+  await ws.request('set_project_antigravity_account', {
+    projectId: 'fixture-proj-a',
+    accountId: null
+  })
+  await ws.request('set_chat_antigravity_account', {
+    projectId: 'fixture-proj-a',
+    sessionId,
+    accountId: null
+  })
+  await ws.request('set_antigravity_auto_switch', { enabled: false })
+  await ws.request('set_antigravity_resume', { sessionId, at: null })
+  await ws.request(
+    'start_antigravity_account_login',
+    { accountId: 'missing-account', config: fakeAgent },
+    { commandId: 'fixture-antigravity-login' }
+  )
+  await ws.request('remove_antigravity_account', { accountId: antigravityId })
 
   await ws.request('canvas_mount', { projectId: 'fixture-proj-a', mountSeq: 1 })
   await ws.request('canvas_reply', { callId: 1, mountSeq: 1, ok: true, result: '{}' })

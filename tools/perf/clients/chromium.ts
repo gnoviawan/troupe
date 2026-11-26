@@ -94,7 +94,7 @@ export async function launchChromium(opts: ClientLaunchOptions): Promise<Chromiu
 }
 
 /** Playwright spawns Chromium as a direct child of this Node process. */
-function browserPid(): number {
+export function browserPid(): number {
   for (const pid of descendants(process.pid)) {
     if (pid === process.pid) continue
     const cmd = readCmdline(pid)

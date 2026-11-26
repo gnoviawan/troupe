@@ -314,6 +314,7 @@ fn a_routed_child_update_nudges_the_childs_own_turn() {
         parent_dispatch_id: None,
         dispatch_id: format!("termul-subagent:{RUN}"),
         depth: 1,
+        auto_approve: false,
     };
     state.lock().seed_child_route(&origin, "child-1");
     let idle = state.lock().try_begin_turn("child-1").expect("turn").idle_rx;

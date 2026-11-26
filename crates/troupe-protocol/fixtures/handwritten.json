@@ -121,6 +121,34 @@
   },
   {
     "file": "ws-event.json",
+    "name": "models_update",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs ModelsUpdateEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "models_update",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "models": {
+          "currentModelId": "openrouter:openai/gpt-5",
+          "availableModels": [
+            {
+              "modelId": "openrouter:anthropic/claude-sonnet-4",
+              "name": "anthropic/claude-sonnet-4"
+            },
+            {
+              "modelId": "openrouter:openai/gpt-5",
+              "name": "openai/gpt-5"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
     "name": "mcp_install_request",
     "_handwritten": true,
     "source": "src-tauri/src/acp/host_mcp/parent/mcp_install/mod.rs Card",
@@ -248,6 +276,32 @@
     }
   },
   {
+    "file": "ws-event.json",
+    "name": "antigravity_limit_action",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/antigravity_limit/mod.rs AntigravityLimitActionEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "antigravity_limit_action",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "projectId": "fixture-proj-a",
+        "action": "switched",
+        "from": {
+          "id": "default",
+          "name": "Default"
+        },
+        "to": {
+          "id": "antigravity-2",
+          "name": "Work"
+        },
+        "fromAgentId": "agent-fixture",
+        "newAgentId": "agent-fixture-2"
+      }
+    }
+  },
+  {
     "file": "ws-frame.json",
     "name": "gap",
     "_handwritten": true,
@@ -325,6 +379,45 @@
           "quickChatId": "qc-fixture"
         }
       ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "type": "get_acp_agent_overlay",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "ok": true,
+      "payload": {
+        "overrides": [
+          {
+            "id": "claude-acp",
+            "brandColor": {
+              "light": "#C15F3C",
+              "dark": "#D97757"
+            }
+          },
+          {
+            "id": "gemini",
+            "name": "Gemini CLI",
+            "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#4796E3\" d=\"M0 0h24v24H0z\"/></svg>"
+          }
+        ],
+        "source": "network",
+        "fetchedAt": "2026-11-24T08:00:00+00:00"
+      }
     }
   }
 ]

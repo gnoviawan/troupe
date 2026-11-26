@@ -1,0 +1,13 @@
+{
+  "children": [
+    {
+      "name": "feature/very-long-branch-name",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

@@ -557,6 +557,7 @@ pub(super) fn production_router(root: &std::path::Path) -> axum::Router {
         crate::web::host_allow::HostAllowList::loopback(),
         crate::web::connection_runtime::ConnectionRuntime::default(),
         None,
+        None,
     )
 }
 

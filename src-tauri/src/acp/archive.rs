@@ -8,10 +8,10 @@
 //!
 //! # Protections (mirrors the legacy command)
 //!
-//! - Streaming download cap: `MAX_ARCHIVE_BYTES` (256 MiB), enforced
-//!   incrementally during `stage_archive` so a hostile server can't force an
-//!   unbounded buffer.
-//! - Decompressed-output quotas: `MAX_EXTRACTED_BYTES` (1 GiB) +
+//! - Streaming download cap: `MAX_ARCHIVE_BYTES` (1 GiB), checked against
+//!   `Content-Length` up front and enforced incrementally during the stream
+//!   so a hostile server can't force an unbounded write.
+//! - Decompressed-output quotas: `MAX_EXTRACTED_BYTES` (4 GiB) +
 //!   `MAX_EXTRACTED_FILES` (50_000), to bound zip/tar bombs.
 //! - Path-traversal rejection: zip `enclosed_name`, tar rejects
 //!   `ParentDir`/`RootDir`/`Prefix`.
@@ -27,13 +27,38 @@ use std::time::Duration;
 
 use futures_util::StreamExt;
 
-/// Fetch timeout for the archive download (mirrors the legacy command).
-pub(crate) const FETCH_TIMEOUT_SECS: u64 = 120;
-/// Streaming-download cap: a hostile server can't force an unbounded buffer.
-pub(crate) const MAX_ARCHIVE_BYTES: u64 = 256 * 1024 * 1024;
-/// Decompressed-output quotas, to bound zip/tar bombs.
-pub(crate) const MAX_EXTRACTED_BYTES: u64 = 1024 * 1024 * 1024;
+/// Connect timeout for the archive download.
+pub(crate) const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+/// Longest wait for the next body chunk. There is no total deadline: a large
+/// archive on a slow link keeps going as long as bytes keep arriving.
+pub(crate) const READ_IDLE_TIMEOUT: Duration = Duration::from_secs(60);
+/// Download cap. Google Antigravity's Linux x64 archive is 261 MiB (1.5.2).
+pub(crate) const MAX_ARCHIVE_BYTES: u64 = 1024 * 1024 * 1024;
+/// Decompressed-output quotas, to bound zip/tar bombs. Google Antigravity's
+/// Linux x64 archive unpacks to 814 MiB (1.5.2).
+pub(crate) const MAX_EXTRACTED_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 pub(crate) const MAX_EXTRACTED_FILES: usize = 50_000;
+
+/// The download-cap error for an archive of `size` bytes, or for one that
+/// passed the cap mid-stream when `size` is unknown.
+pub(crate) fn archive_too_large_message(size: Option<u64>) -> String {
+    const MIB: u64 = 1024 * 1024;
+    let cap = MAX_ARCHIVE_BYTES / MIB;
+    match size {
+        Some(bytes) => format!(
+            "archive is {} MiB, above the {cap} MiB download cap",
+            bytes.div_ceil(MIB)
+        ),
+        None => format!("archive is larger than the {cap} MiB download cap"),
+    }
+}
+
+/// An HTTP client for archive downloads.
+pub(crate) fn download_client() -> reqwest::ClientBuilder {
+    reqwest::Client::builder()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .read_timeout(READ_IDLE_TIMEOUT)
+}
 
 /// Strip a leading `./` / `.\` and trim so a catalog `cmd` like
 /// `./dist-package/cursor-agent` resolves relative to the install root.
@@ -299,8 +324,7 @@ pub(crate) async fn stage_archive(
     tmp_dir: &Path,
     staging: &Path,
 ) -> Result<PathBuf, String> {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
+    let client = download_client()
         .build()
         .map_err(|e| format!("http client: {e}"))?;
 
@@ -311,6 +335,9 @@ pub(crate) async fn stage_archive(
         .map_err(|e| format!("download failed: {e}"))?;
     if !response.status().is_success() {
         return Err(format!("download returned HTTP {}", response.status()));
+    }
+    if let Some(size) = response.content_length().filter(|&n| n > MAX_ARCHIVE_BYTES) {
+        return Err(archive_too_large_message(Some(size)));
     }
 
     // Stream the body to disk, enforcing the download cap incrementally.
@@ -327,7 +354,7 @@ pub(crate) async fn stage_archive(
         let chunk = chunk.map_err(|e| format!("download stream: {e}"))?;
         downloaded += chunk.len() as u64;
         if downloaded > MAX_ARCHIVE_BYTES {
-            return Err("archive too large".to_string());
+            return Err(archive_too_large_message(None));
         }
         file.write_all(&chunk).map_err(|e| e.to_string())?;
     }

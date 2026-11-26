@@ -34,6 +34,8 @@ import {
 } from './driver'
 
 export const VIEWPORT = { width: 1280, height: 800 }
+/** The phone profile: an iPhone 12-class portrait window with touch, at device scale 1. */
+export const PHONE_VIEWPORT = { width: 390, height: 844 }
 export const BOOT_TEXT = 'What should we do in alpha?'
 const READY_TIMEOUT_MS = 30_000
 const SETTLE_BEFORE_GRAB_MS = 400
@@ -87,7 +89,7 @@ function locate(page: Page, target: Target): Locator {
  * box of every visible text node, the content box of every text field, and
  * the box of every outermost svg and every img.
  */
-function paintedParts(): PartRects {
+export function paintedParts(): PartRects {
   const box = (r: DOMRect) => ({ x: r.x, y: r.y, width: r.width, height: r.height })
   const onScreen = (r: DOMRect) =>
     r.width > 0 &&
@@ -120,7 +122,8 @@ function paintedParts(): PartRects {
   return { text, icons }
 }
 
-function pageDriver(page: Page, points: Points, filesDir: string): Driver {
+/** `touch`: a click is a tap and no pointer is parked (the phone profile). */
+function pageDriver(page: Page, points: Points, filesDir: string, touch: boolean): Driver {
   /** Where the client acts on `target`: its centre, or the `at` / `frac` spot inside it. */
   const pointOf = async (key: string, target: Target): Promise<Point> => {
     if ('point' in target) return target.point
@@ -147,6 +150,11 @@ function pageDriver(page: Page, points: Points, filesDir: string): Driver {
         switch (action.do) {
           case 'click': {
             const point = await pointOf(key, action.target)
+            if (touch && !action.button && !action.modifiers) {
+              if (atPoint(action.target)) await page.touchscreen.tap(point.x, point.y)
+              else await locate(page, action.target).tap()
+              break
+            }
             if (atPoint(action.target)) {
               if (action.modifiers) await page.keyboard.down('Control')
               await page.mouse.click(point.x, point.y, { button: action.button })
@@ -211,7 +219,8 @@ function pageDriver(page: Page, points: Points, filesDir: string): Driver {
             break
           }
         }
-        if (PARKS_POINTER.has(action.do)) await page.mouse.move(PARK_POINT.x, PARK_POINT.y)
+        if (!touch && PARKS_POINTER.has(action.do))
+          await page.mouse.move(PARK_POINT.x, PARK_POINT.y)
         await page.waitForTimeout(SETTLE_AFTER_ACTION_MS)
       } catch (error) {
         log.ok = false
@@ -220,16 +229,20 @@ function pageDriver(page: Page, points: Points, filesDir: string): Driver {
       return log
     },
     async check(step, check) {
+      /** The painted text: rendered text, then the placeholder of each visible empty field. */
       const textOf = (within?: string) =>
-        page.evaluate(
-          (testId) =>
-            (
-              (testId
-                ? document.querySelector(`[data-testid="${testId}"]`)
-                : document.body) as HTMLElement | null
-            )?.innerText ?? '',
-          within
-        )
+        page.evaluate((testId) => {
+          const root = (
+            testId ? document.querySelector(`[data-testid="${testId}"]`) : document.body
+          ) as HTMLElement | null
+          if (!root) return ''
+          const placeholders = [
+            ...root.querySelectorAll<HTMLInputElement>('input[placeholder], textarea[placeholder]')
+          ]
+            .filter((field) => field.value === '' && field.checkVisibility())
+            .map((field) => field.placeholder)
+          return [root.innerText, ...placeholders].join('\n')
+        }, within)
       if (check.order) {
         const order = check.order
         return {
@@ -272,8 +285,13 @@ export function reactClient(opts: { browser: Browser; dist: string }): ClientLau
     client: 'react',
     resolvesTargets: true,
     async session({ world, surface, deviceId, points }, body) {
+      const phone = surface.profile === 'phone'
       const context = await opts.browser.newContext({
-        viewport: VIEWPORT,
+        viewport: phone ? PHONE_VIEWPORT : VIEWPORT,
+        isMobile: phone,
+        hasTouch: phone,
+        // Copy buttons write the clipboard; headless Chromium leaves that promise pending without the grant.
+        permissions: ['clipboard-read', 'clipboard-write'],
         deviceScaleFactor: 1,
         colorScheme: 'dark',
         reducedMotion: 'reduce',
@@ -313,7 +331,7 @@ export function reactClient(opts: { browser: Browser; dist: string }): ClientLau
           .getByText(surface.start?.ready ?? BOOT_TEXT)
           .first()
           .waitFor({ state: 'visible', timeout: READY_TIMEOUT_MS })
-        const result = await body(pageDriver(page, points, world.root))
+        const result = await body(pageDriver(page, points, world.root, phone))
         if (errors.length > 0)
           console.error(`[parity] ${surface.id}: page errors: ${errors.slice(0, 3).join(' | ')}`)
         return result

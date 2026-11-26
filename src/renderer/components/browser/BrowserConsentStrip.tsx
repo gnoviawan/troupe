@@ -32,7 +32,6 @@ import {
   browserConsentTitle,
   useConsentArmed
 } from '@/components/browser/consent-intent'
-import { ShieldAlert } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { useAgentDisplayName } from '@/hooks/use-agent-display-name'
 import { useInterfaceOverlayOpen } from '@/hooks/use-native-webview-occlusion'
@@ -108,12 +107,16 @@ export function BrowserConsentStrip({
       requestId={first.requestId}
       title={browserConsentTitle(first.action, first.targetKind)}
     >
-      <ShieldAlert size={14} className="shrink-0 text-warning" />
-      <div className="min-w-0 flex-1 text-2xs">
-        <span className="font-medium text-foreground">
-          {browserConsentTitle(first.action, first.targetKind)}
-        </span>{' '}
-        <span className="break-words text-muted-foreground">
+      <div className="min-w-0 flex-1 text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-foreground">
+            {browserConsentTitle(first.action, first.targetKind)}
+          </span>
+          <span className="inline-flex h-5 items-center rounded-full bg-primary/15 px-2 text-xs font-medium text-primary">
+            {browserConsentProfileLabel(first.profile)}
+          </span>
+        </div>
+        <span className="block break-words text-muted-foreground">
           {browserConsentSummary(agentName, first)}
         </span>
         {first.targetKind === 'file' ? (
@@ -136,10 +139,11 @@ export function BrowserConsentStrip({
             File: {browserConsentFileLine(first.file)}
           </span>
         ) : null}
-        <span className="block truncate text-muted-foreground">
-          {first.element ? `Agent says: "${first.element}" · ` : ''}
-          {browserConsentProfileLabel(first.profile)}
-        </span>
+        {first.element ? (
+          <span className="block truncate text-muted-foreground">
+            Agent says: "{first.element}"
+          </span>
+        ) : null}
       </div>
       {first.options.map((optionId) => (
         <Button
@@ -151,7 +155,7 @@ export function BrowserConsentStrip({
           }
           disabled={!armed}
           onClick={() => respond(first.requestId, optionId)}
-          className="shrink-0 text-2xs"
+          className="shrink-0 text-xs disabled:shadow-none"
         >
           {browserConsentOptionLabel(optionId, first.action, first.targetKind)}
         </Button>

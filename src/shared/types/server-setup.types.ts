@@ -34,7 +34,7 @@ export const SETUP_API_PATHS = {
   serverConfig: '/server/config'
 } as const
 
-export type ServerUpdateChannel = 'stable' | 'insider' | 'nightly'
+export type ServerUpdateChannel = 'stable' | 'nightly'
 
 /** The wizard answers — same fields as `server-config.json`. */
 export interface ServerSetupAnswers {

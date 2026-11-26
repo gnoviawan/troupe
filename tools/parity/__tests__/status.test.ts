@@ -8,7 +8,6 @@ import { renderReport } from '../report'
 import type { Reviews } from '../reviews'
 import { autoStatus, statusOf } from '../status'
 import type { Client, ClientRun, StepDiff, Surface, SurfaceResult } from '../types'
-import { unweightedScore } from '../weights'
 
 const FIXTURES = path.join(import.meta.dir, '../fixtures')
 const A = path.join(FIXTURES, 'frame-a.png')
@@ -40,7 +39,13 @@ const run = (client: Client = 'react', ok = true): ClientRun => ({
   frames: []
 })
 
-const SURFACE: Surface = { id: 'rail.project-settings', area: 'rail', title: 'Settings', steps: [] }
+const SURFACE: Surface = {
+  id: 'rail.project-settings',
+  area: 'rail',
+  title: 'Settings',
+  source: { journey: 'starter' },
+  steps: []
+}
 
 const result = (diffs: StepDiff[], client: Client = 'react'): SurfaceResult => ({
   id: SURFACE.id,
@@ -104,15 +109,6 @@ describe('statusOf', () => {
     const broken = { ...result([stepDiff('a', B)], 'tauri'), candidate: run('tauri', false) }
     expect(statusOf(SURFACE, broken, reviewed)).toBe('broken')
   })
-})
-
-test('an unreviewed difference scores half, like partial', () => {
-  expect(
-    unweightedScore([
-      { area: 'rail', status: 'ported' },
-      { area: 'rail', status: 'needs-review' }
-    ])
-  ).toBe(75)
 })
 
 test('the report counts a planted one-pixel change as needs-review and names the review', () => {

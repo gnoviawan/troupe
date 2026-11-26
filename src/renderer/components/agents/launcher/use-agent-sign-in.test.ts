@@ -142,6 +142,31 @@ describe('useAgentSignIn terminal sign-in', () => {
     expect(onSignedIn).not.toHaveBeenCalled()
   })
 
+  it('says a quick chat agent signs in from a project instead of opening a terminal', () => {
+    useAcpStore.setState({
+      configToLiveAgent: { [agentReuseKey('devin', 'quick-chat', null)]: 'agent-quick' },
+      agents: { 'agent-quick': { id: 'agent-quick', authMethods: [terminalLogin] } } as never
+    } as never)
+    const { result } = renderHook(() =>
+      useAgentSignIn({
+        registryAgentId: null,
+        config,
+        cwd: 'quick-chat',
+        projectId: null,
+        projectEnvVars: undefined,
+        paneId: '',
+        onSignedIn: vi.fn()
+      })
+    )
+
+    act(() => result.current.handleAuthMethod(terminalLogin))
+
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      'Devin signs in from a terminal, which needs a project. Sign in from a chat in a project first.'
+    )
+    expect(mocks.spawnLogin).not.toHaveBeenCalled()
+  })
+
   it('ignores the exit of an unrelated terminal', async () => {
     const onSignedIn = vi.fn()
     const { result } = renderSignIn(onSignedIn)

@@ -109,6 +109,8 @@ mod agent_tools_loop_tests;
 #[cfg(test)]
 mod background_commands_tests;
 #[cfg(test)]
+mod legacy_model_switch_tests;
+#[cfg(test)]
 mod native_subagents_loop_tests;
 #[cfg(test)]
 mod native_subagents_tests;
@@ -169,6 +171,8 @@ pub struct NewSessionOutcome {
     /// Canonical quick-chat folder. Absent for a project chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cwd: Option<String>,
+    #[serde(skip)]
+    pub antigravity_tier: Option<String>,
 }
 
 /// Trusted server-side context attached to durable session registration.
@@ -227,6 +231,10 @@ pub struct ChildOrigin {
     pub dispatch_id: String,
     /// 1 = the chat's agent spawned the run directly.
     pub depth: u8,
+    /// The user's profile for this run allows every tool: the host answers
+    /// the child's own permission requests with their allow-once option
+    /// instead of asking in the chat. Never set from an agent's input.
+    pub auto_approve: bool,
 }
 
 /// Commands sent from Tauri command handlers to an agent's driver thread.
@@ -590,6 +598,10 @@ pub struct AcpManager {
     /// Host-wide Codex Account homes. Only `acp-registry:codex-acp` receives
     /// a `CODEX_HOME`. Test managers leave this inactive.
     codex_agent: Arc<crate::acp::codex_agent::CodexAgentService>,
+    /// Host-wide Antigravity Account homes. Only
+    /// `acp-registry:antigravity-acp` receives a `GEMINI_HOME`. Test managers
+    /// leave this inactive.
+    antigravity_agent: Arc<crate::acp::antigravity_agent::AntigravityAgentService>,
     launches: Mutex<HashMap<AgentId, AgentLaunch>>,
     recipes: Mutex<HashMap<SessionId, LaunchRecipe>>,
     /// Chats whose launch recipe must survive an idle reap. Both the Claude
@@ -598,6 +610,7 @@ pub struct AcpManager {
     kept_recipes: Mutex<std::collections::HashSet<String>>,
     claude_limit: std::sync::OnceLock<crate::acp::claude_limit::ClaudeLimitHandle>,
     codex_limit: std::sync::OnceLock<crate::acp::codex_limit::CodexLimitHandle>,
+    antigravity_limit: std::sync::OnceLock<crate::acp::antigravity_limit::AntigravityLimitHandle>,
     reopen_gates: Arc<reopen_gate::ReopenGates>,
 }
 
@@ -642,11 +655,15 @@ impl AcpManager {
             host_plan_server,
             claude_agent,
             codex_agent: Arc::new(crate::acp::codex_agent::CodexAgentService::without_host_state()),
+            antigravity_agent: Arc::new(
+                crate::acp::antigravity_agent::AntigravityAgentService::without_host_state(),
+            ),
             launches: Mutex::new(HashMap::new()),
             recipes: Mutex::new(HashMap::new()),
             kept_recipes: Mutex::new(std::collections::HashSet::new()),
             claude_limit: std::sync::OnceLock::new(),
             codex_limit: std::sync::OnceLock::new(),
+            antigravity_limit: std::sync::OnceLock::new(),
             reopen_gates: Arc::default(),
         }
     }
@@ -702,11 +719,15 @@ impl AcpManager {
             host_plan_server,
             claude_agent,
             codex_agent: Arc::new(crate::acp::codex_agent::CodexAgentService::without_host_state()),
+            antigravity_agent: Arc::new(
+                crate::acp::antigravity_agent::AntigravityAgentService::without_host_state(),
+            ),
             launches: Mutex::new(HashMap::new()),
             recipes: Mutex::new(HashMap::new()),
             kept_recipes: Mutex::new(std::collections::HashSet::new()),
             claude_limit: std::sync::OnceLock::new(),
             codex_limit: std::sync::OnceLock::new(),
+            antigravity_limit: std::sync::OnceLock::new(),
             reopen_gates: Arc::default(),
         }
     }
@@ -723,6 +744,18 @@ impl AcpManager {
         let mut manager = Self::with_persistence_and_claude_agent(sinks, persistence, claude_agent);
         manager.codex_agent = codex_agent;
         manager
+    }
+
+    /// Use the host Antigravity Account service. Desktop and `troupe-server`
+    /// chain this after [`with_host_agents`](Self::with_host_agents) or
+    /// [`with_persistence_and_host_agents`](Self::with_persistence_and_host_agents).
+    #[must_use]
+    pub fn with_antigravity_agent(
+        mut self,
+        antigravity_agent: Arc<crate::acp::antigravity_agent::AntigravityAgentService>,
+    ) -> Self {
+        self.antigravity_agent = antigravity_agent;
+        self
     }
 
     #[must_use]
@@ -793,6 +826,41 @@ impl AcpManager {
         &self.codex_agent
     }
 
+    /// The host's Antigravity Account service.
+    #[must_use]
+    pub fn antigravity_agent(
+        &self,
+    ) -> &Arc<crate::acp::antigravity_agent::AntigravityAgentService> {
+        &self.antigravity_agent
+    }
+
+    /// Spawn the Antigravity ACP agent against one Account's home without the
+    /// signed-out gate. The client then calls `authenticate` with a Google
+    /// sign-in method. `host_auth_ready` is false so that call is not skipped.
+    /// A resent `command_id` returns the agent already stamped with it.
+    pub async fn spawn_antigravity_sign_in(
+        &self,
+        mut config: AgentConfig,
+        account_id: &str,
+        command_id: Option<String>,
+    ) -> Result<SpawnOutcome, String> {
+        if let Some(command_id) = command_id.as_deref() {
+            if let Some(outcome) = self.spawn_outcome_by_command_id(command_id) {
+                log::info!(
+                    "[antigravity-accounts] sign-in spawn reused the agent for this command"
+                );
+                return Ok(outcome);
+            }
+        }
+        crate::acp::factory_key::normalize_launch_args(&mut config);
+        crate::acp::factory_key::inject(&mut config)?;
+        self.antigravity_agent
+            .prepare_sign_in_config(&mut config, account_id)
+            .await?;
+        self.spawn_with_sinks(config, false, self.sinks.clone(), command_id)
+            .await
+    }
+
     /// Spawn the Codex ACP agent against one Account's home without the
     /// signed-out gate. The client then calls `authenticate`. `host_auth_ready`
     /// is false so that call is not skipped. A resent `command_id` returns the
@@ -843,7 +911,7 @@ impl AcpManager {
         scope: SpawnScope,
     ) -> Result<SpawnOutcome, String> {
         let launch_config = config.clone();
-        let (host_auth_ready, claude, codex) = self
+        let (host_auth_ready, claude, codex, antigravity) = self
             .prepare_spawn_config(&mut config, scope.project_id.as_deref(), &scope.chat)
             .await?;
         let outcome = self
@@ -856,6 +924,7 @@ impl AcpManager {
                 project_id: scope.project_id,
                 claude,
                 codex,
+                antigravity,
             },
         );
         Ok(outcome)
@@ -881,6 +950,22 @@ impl AcpManager {
     #[must_use]
     pub fn codex_limit(&self) -> Option<&crate::acp::codex_limit::CodexLimitHandle> {
         self.codex_limit.get()
+    }
+
+    pub fn set_antigravity_limit(
+        &self,
+        handle: crate::acp::antigravity_limit::AntigravityLimitHandle,
+    ) {
+        if self.antigravity_limit.set(handle).is_err() {
+            log::warn!("[antigravity-limit] supervisor already installed; kept the first");
+        }
+    }
+
+    #[must_use]
+    pub fn antigravity_limit(
+        &self,
+    ) -> Option<&crate::acp::antigravity_limit::AntigravityLimitHandle> {
+        self.antigravity_limit.get()
     }
 
     /// Keep or drop the launch recipe of a chat whose agent may be reaped
@@ -930,7 +1015,7 @@ impl AcpManager {
         chat: &crate::acp::claude_agent::LaunchChat,
         sinks: Vec<Arc<dyn EventSink>>,
     ) -> Result<SpawnOutcome, String> {
-        let (host_auth_ready, _, _) = self
+        let (host_auth_ready, _, _, _) = self
             .prepare_spawn_config(&mut config, project_id, chat)
             .await?;
         self.spawn_with_sinks(config, host_auth_ready, sinks, None)
@@ -950,6 +1035,7 @@ impl AcpManager {
             bool,
             crate::acp::claude_agent::ClaudeLaunchAuth,
             crate::acp::codex_agent::CodexLaunchAuth,
+            crate::acp::antigravity_agent::AntigravityLaunchAuth,
         ),
         String,
     > {
@@ -963,7 +1049,16 @@ impl AcpManager {
             .codex_agent
             .prepare_managed_launch(config, project_id, chat)
             .await?;
-        Ok((claude.host_auth_ready() || codex.applied(), claude, codex))
+        let antigravity = self
+            .antigravity_agent
+            .prepare_managed_launch(config, project_id, chat)
+            .await?;
+        Ok((
+            claude.host_auth_ready() || codex.applied() || antigravity.applied(),
+            claude,
+            codex,
+            antigravity,
+        ))
     }
 
     /// The [`SpawnOutcome`] of the live agent spawned under `command_id`, or
@@ -1446,6 +1541,10 @@ impl AcpManager {
                     self.host_plan_server
                         .bind_session(&token, &outcome.session_id.0);
                 }
+                self.antigravity_agent.record_session_tier(
+                    self.agent_launch(agent_id).map(|launch| launch.antigravity),
+                    outcome.antigravity_tier.clone(),
+                );
                 self.record_launch_recipe(
                     agent_id,
                     &outcome.session_id.0,
@@ -1873,12 +1972,16 @@ impl AcpManager {
             Some(hook) => {
                 let claude = self.claude_limit.get().cloned();
                 let codex = self.codex_limit.get().cloned();
+                let antigravity = self.antigravity_limit.get().cloned();
                 let session = session_id.clone();
                 Some(Box::new(move || {
                     if let Some(limit) = &claude {
                         limit.turn_started(session.clone());
                     }
                     if let Some(limit) = &codex {
+                        limit.turn_started(session.clone());
+                    }
+                    if let Some(limit) = &antigravity {
                         limit.turn_started(session);
                     }
                     hook();
@@ -2297,6 +2400,7 @@ impl AcpManager {
         self.forget_launch_recipe(session_id, None);
         self.claude_agent.forget_chat_account(session_id);
         self.codex_agent.forget_chat_account(session_id);
+        self.antigravity_agent.forget_chat_account(session_id);
         if let Ok(metadata) = persistence.metadata(session_id) {
             if metadata.kind == crate::acp::session_persistence::SessionKind::Quick {
                 // `runtime_agent_id` is the agent from create. Reopen starts a
@@ -2728,6 +2832,7 @@ impl AcpManager {
                             models: None,
                             config_options: None,
                             cwd: None,
+                            antigravity_tier: None,
                         }));
                     }
                     AcpCommand::OwnsSession { session_id, reply } => {

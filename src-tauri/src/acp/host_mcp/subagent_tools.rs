@@ -46,7 +46,7 @@ pub enum SubagentWorkspaceInput {
 #[derive(Debug, Clone, Deserialize, Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct SubagentStartInput {
-    /// The `agentId` of an allowed agent from `subagent_list_agents`.
+    /// The `agentId` of an allowed profile from `subagent_list_agents`.
     pub agent: String,
     /// The complete task for the subagent, 1 to 8000 characters. This
     /// chat's transcript is not included in its prompt.
@@ -59,7 +59,7 @@ pub struct SubagentStartInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     /// The model id to ask the agent for, when it offers a choice. Absent:
-    /// the agent's `defaultModel` from `subagent_list_agents`, if any.
+    /// the profile's `defaultModel` from `subagent_list_agents`, if any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
 }
@@ -96,22 +96,26 @@ pub struct SubagentRefInput {
 pub const WAIT_MIN_MS: u64 = 1_000;
 pub const WAIT_MAX_MS: u64 = 240_000;
 
-pub const LIST_AGENTS_DESCRIPTION: &str = "List the installed agents you can start as \
-subagents, and the limits that apply. Returns JSON {agents: [{agentId, name, allowed, \
-defaultModel, description}], enabled, maxRunning, maxDepth}. Only agents with allowed true can \
-be started, and only while enabled is true; the user changes both in Preferences. defaultModel \
-is the model a start without `model` asks for (null: the agent's own default). description is \
-the user's note on what that agent is good at (null: no note); start the allowed agent whose \
-description fits the task.";
+pub const LIST_AGENTS_DESCRIPTION: &str = "List the sub-agent profiles you can start, and the \
+limits that apply. Returns JSON {agents: [{agentId, name, agent, allowed, defaultModel, \
+description}], enabled, maxRunning, maxDepth}. Each entry is a profile: agentId is the id to \
+start, name the installed agent it runs (Codex, Gemini CLI, ...), and agent that agent's id. \
+Several profiles can run the same agent with a different model and thinking level. Only \
+profiles with allowed true can be started, and only while enabled is true; the user changes \
+both in Preferences. defaultModel is the model a start without `model` asks for (null: the \
+agent's own default). description is the user's note on what that profile is good at (null: \
+no note); start the allowed profile whose description fits the task.";
 
 pub const START_DESCRIPTION: &str = "Start another installed agent (Codex, Gemini CLI, ...) as \
-a subagent on a task, in the background. `agent` is an agentId from subagent_list_agents; \
-`task` must be complete on its own, because this chat's transcript is not included in the \
-subagent's prompt. \
+a subagent on a task, in the background. `agent` is the agentId of a profile from \
+subagent_list_agents; the profile sets the agent, its model, thinking level and other session \
+settings. `task` must be complete on its own, because this chat's transcript is not included \
+in the subagent's prompt. \
 `workspace` is `worktree` (default: a private git worktree on a snapshot of the current \
 state, uncommitted changes included, so its edits never touch yours) or `shared` (this chat's \
 directory). The user sees it as a sub-agent row with its live transcript and a Stop button, \
-and approves its tool permissions in this chat. Returns JSON {subagentId, state, title, \
+and approves its tool permissions in this chat unless the user set its profile to allow \
+them. Returns JSON {subagentId, state, title, \
 workspace} once it is running; collect the result with subagent_wait. Errors: disabled, \
 unknown_agent, agent_not_allowed, capacity, depth, invalid_input, workspace_failed, \
 spawn_failed.";

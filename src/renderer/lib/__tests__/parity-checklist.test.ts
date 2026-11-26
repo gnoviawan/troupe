@@ -24,8 +24,11 @@ import { describe, expect, it } from 'vitest'
 import { mapTauriVerdict } from '../acp-transport/tauri-verdicts'
 import { AcpTransportError } from '../acp-transport/types'
 import {
+  antigravityAccountSignedOutMessage,
   claudeAccountSignedOutMessage,
-  isClaudeAccountSignedOutError
+  isAntigravityAccountSignedOutError,
+  isClaudeAccountSignedOutError,
+  isCodexAccountSignedOutError
 } from '../agents/acp-spawn-errors'
 
 // Type definitions for our test data
@@ -44,6 +47,15 @@ interface DomainCheck {
  */
 const LIB_DIR = join(__dirname, '..')
 const TESTS_DIR = __dirname
+
+/**
+ * The `/ws` contract as source text: `web-protocol.types.ts` and the
+ * generated `protocol.ts` whose message types and name lists it re-exports.
+ */
+const readWsProtocol = (): string =>
+  ['web-protocol.types.ts', join('generated', 'protocol.ts')]
+    .map((file) => readFileSync(join(LIB_DIR, '..', '..', 'shared', 'types', file), 'utf-8'))
+    .join('\n')
 
 /**
  * Read a Rust module that may be a single file (`foo.rs`) or a directory
@@ -495,10 +507,28 @@ describe('Parity Checklist Automation', () => {
     })
 
     it('web-protocol.types.ts declares the WS request types for catalog', () => {
-      const protoPath = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
-      const content = readFileSync(protoPath, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'list_acp_catalog'/)
       expect(content).toMatch(/'set_catalog_opt_in'/)
+    })
+  })
+
+  // Troupe registry overlay parity. One `/ws` request serves the desktop
+  // channel carrier and the browser socket; `acp-transport-carriers.test.ts`
+  // runs `getAgentOverlay` over both carriers against the same fake host.
+  describe('ACP agent overlay parity', () => {
+    it('declares get_acp_agent_overlay as a read in the /ws contract', () => {
+      expect(readWsProtocol()).toMatch(/get_acp_agent_overlay: \['read', null\]/)
+    })
+
+    it('the host routes it to the catalog service on every carrier', () => {
+      const dispatch = readFileSync(
+        join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src', 'web', 'ws', 'dispatch.rs'),
+        'utf-8'
+      )
+      expect(dispatch).toMatch(
+        /"get_acp_agent_overlay" => handle_get_acp_agent_overlay\(id, acp_catalog\)/
+      )
     })
   })
 
@@ -548,8 +578,7 @@ describe('Parity Checklist Automation', () => {
     })
 
     it('web-protocol.types.ts declares the WS request type for install', () => {
-      const protoPath = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
-      const content = readFileSync(protoPath, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'install_acp_agent'/)
     })
   })
@@ -651,7 +680,7 @@ describe('Parity Checklist Automation', () => {
 
     it('web-protocol.types.ts declares the WS request types list_sessions + get_session_payload', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'list_sessions'/)
       expect(content).toMatch(/'get_session_payload'/)
     })
@@ -721,9 +750,9 @@ describe('Parity Checklist Automation', () => {
 
     it('web-protocol.types.ts declares the record_agent_switch WS request type', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'record_agent_switch'/)
-      expect(content).toMatch(/interface RecordAgentSwitchPayload/)
+      expect(content).toMatch(/type RecordAgentSwitchPayload = \{/)
     })
 
     it('renderer carries the event name + transport facade + payload type', () => {
@@ -866,7 +895,7 @@ describe('Parity Checklist Automation', () => {
 
     it('WS request type spawn_agent + the agent_spawned event are declared', () => {
       expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-      const content = readFileSync(ProtoTypes, 'utf-8')
+      const content = readWsProtocol()
       expect(content).toMatch(/'spawn_agent'/)
       expect(content).toMatch(/agent_spawned/) // the event channel (reliability tier)
     })
@@ -1880,7 +1909,7 @@ describe('Web FS watcher parity (#856)', () => {
 
   it('web-protocol.types.ts names the fs watch and no longer registers fs_changed or watch_project', () => {
     expect(existsSync(ProtoTypes), 'web-protocol.types.ts should exist').toBe(true)
-    const content = readFileSync(ProtoTypes, 'utf-8')
+    const content = readWsProtocol()
     expect(content).toMatch(/'fs',/)
     expect(content).not.toMatch(/'fs_changed'|'fs_watch_ended'|'watch_project'|'unwatch_project'/)
   })
@@ -1963,7 +1992,6 @@ describe('Worktree branch rename parity (shell revamp story 16)', () => {
   const ManagerRust = join(SRC_TAURI, 'acp', 'manager', 'worktree_branch.rs')
   const CommandsWorktreeRust = join(SRC_TAURI, 'commands', 'worktree.rs')
   const LibRust = join(SRC_TAURI, 'lib.rs')
-  const ProtocolTypes = join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts')
   const SinkRust = join(SRC_TAURI, 'web', 'sink', 'watch_bridge.rs')
 
   it('worktree-api.ts branches renameBranch on isTauriContext() between invoke and webServerWorktree', () => {
@@ -2016,7 +2044,7 @@ describe('Worktree branch rename parity (shell revamp story 16)', () => {
   })
 
   it('the worktree_branch_renamed rename is a chat_history watch delta, not a registered event', () => {
-    const protocol = readFileSync(ProtocolTypes, 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).not.toMatch(/worktree_branch_renamed: WS_RELAY_TIERS/)
     expect(protocol).toMatch(/event\?: 'worktree_branch_renamed'/)
     const bridge = readFileSync(SinkRust, 'utf-8')
@@ -2074,21 +2102,15 @@ describe('Bounded delivery parity (host heartbeat, gap frame)', () => {
     const relay = readFileSync(join(RELAY, 'mod.rs'), 'utf-8')
     expect(relay).toMatch(/WS_GAP_TYPE: &str = "gap"/)
     expect(relay).toMatch(/WS_HEARTBEAT_TYPE: &str = "heartbeat"/)
-    const protocol = readFileSync(
-      join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-      'utf-8'
-    )
-    expect(protocol).toMatch(/interface WsGapFrame \{\s+type: 'gap'/)
-    expect(protocol).toMatch(/interface WsHeartbeatFrame \{\s+type: 'heartbeat'/)
+    const protocol = readWsProtocol()
+    expect(protocol).toMatch(/type WsGapFrame = \{[^}]*type: 'gap'/)
+    expect(protocol).toMatch(/type WsHeartbeatFrame = \{\s+type: 'heartbeat'/)
   })
 })
 
 describe('Shared chat read marker parity (cross-surface unread)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('one host service owns the marker and every carrier moves it', () => {
     const service = readFileSync(join(SRC_TAURI, 'web', 'chat_reads.rs'), 'utf-8')
@@ -2121,10 +2143,7 @@ describe('Shared chat read marker parity (cross-surface unread)', () => {
 describe('Host-owned chat activity parity (chat list status on every surface)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
   const rust = (...parts: string[]) => readFileSync(join(SRC_TAURI, ...parts), 'utf-8')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('the relay derives one record per chat from every numbered session event', () => {
     expect(rust('web', 'chat_activity.rs')).toMatch(/pub struct ChatActivity \{/)
@@ -2150,8 +2169,8 @@ describe('Host-owned chat activity parity (chat list status on every surface)', 
 
   it('the protocol declares the watch and its payloads', () => {
     expect(protocol).toMatch(/'chat_activity'\n\] as const/)
-    expect(protocol).toMatch(/interface ChatActivityRecord \{/)
-    expect(protocol).toMatch(/interface ChatActivityWatchState/)
+    expect(protocol).toMatch(/type ChatActivityRecord = \{/)
+    expect(protocol).toMatch(/type ChatActivityWatchState = \{/)
   })
 
   it('both renderer roots mirror it from the shell, and every chat list reads it', () => {
@@ -2251,15 +2270,12 @@ describe('Window ACL parity (issue #1443)', () => {
 describe('Watch hub parity (projects, chat history, agent roster)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
   const hubSource = readFileSync(join(SRC_TAURI, 'web', 'watch', 'hub.rs'), 'utf-8')
-  const protocol = readFileSync(
-    join(LIB_DIR, '..', '..', 'shared', 'types', 'web-protocol.types.ts'),
-    'utf-8'
-  )
+  const protocol = readWsProtocol()
 
   it('the watch names the host serves are the ones the client names', () => {
     const asStr = hubSource.slice(hubSource.indexOf('fn as_str'), hubSource.indexOf('pub fn parse'))
     const rust = [...asStr.matchAll(/Self::\w+ => "(\w+)"/g)].map((match) => match[1])
-    const client = /WS_WATCH_NAMES = \[([^\]]+)\]/.exec(protocol)
+    const client = /WsWatchNameValues = \[([^\]]+)\]/.exec(protocol)
     expect(client).not.toBeNull()
     const names = [...(client?.[1] ?? '').matchAll(/'(\w+)'/g)].map((match) => match[1])
     expect(rust.sort()).toEqual([...names].sort())
@@ -2420,6 +2436,104 @@ describe('Claude Accounts parity (ADR-0004)', () => {
       expect(claudeAccountSignedOutMessage(error)).toBe(reason)
     }
     expect(isClaudeAccountSignedOutError(new Error(reason))).toBe(false)
+  })
+})
+
+describe('Antigravity Accounts parity', () => {
+  const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+  const read = (...parts: string[]): string => readFileSync(join(SRC_TAURI, ...parts), 'utf-8')
+  const desktopTransport = readFileSync(
+    join(LIB_DIR, 'acp-transport', 'desktop-transport.ts'),
+    'utf-8'
+  )
+  const wsTransport = readFileSync(join(LIB_DIR, 'acp-transport', 'ws-transport.ts'), 'utf-8')
+  const invokeTransport = readFileSync(
+    join(LIB_DIR, 'test-utils', 'invoke-acp-transport.ts'),
+    'utf-8'
+  )
+  const facade = readFileSync(join(LIB_DIR, 'antigravity-accounts-api.ts'), 'utf-8')
+  const REQUESTS = [
+    'list_antigravity_accounts',
+    'list_antigravity_usage',
+    'check_antigravity_usage',
+    'set_default_antigravity_account',
+    'set_project_antigravity_account',
+    'set_chat_antigravity_account',
+    'set_antigravity_auto_switch',
+    'set_antigravity_resume',
+    'add_antigravity_account',
+    'rename_antigravity_account',
+    'remove_antigravity_account',
+    'start_antigravity_account_login'
+  ]
+
+  it('desktop and web reach every Antigravity account operation over /ws', () => {
+    // Desktop speaks /ws over the Tauri Channel carrier, so it inherits these.
+    expect(desktopTransport).toMatch(/class DesktopAcpTransport extends WsAcpTransport/)
+    expect(desktopTransport).not.toMatch(/AntigravityAccount|AntigravityUsage/)
+    const dispatch = readRustModule(join(SRC_TAURI, 'web', 'ws', 'dispatch'))
+    for (const request of REQUESTS) {
+      expect(wsTransport).toContain(`'${request}'`)
+      expect(dispatch).toContain(`"${request}"`)
+    }
+    expect(readWsProtocol()).toContain(`'antigravity_limit_action'`)
+    // The facade goes through the transport only; no carrier-specific branch.
+    expect(facade).not.toMatch(/isTauriContext|invoke\(/)
+  })
+
+  it('the invoke carrier names the Tauri commands the host registers, as for Codex', () => {
+    const lib = read('lib.rs')
+    for (const suffix of ['list', 'usage', 'set_default', 'set_project', 'set_auto_switch']) {
+      expect(invokeTransport).toContain(`'antigravity_accounts_${suffix}'`)
+      expect(lib).toContain(`acp::commands::antigravity_accounts_${suffix}`)
+    }
+  })
+
+  it('only the Check usage button of an account row starts a usage check', () => {
+    const RENDERER = join(LIB_DIR, '..')
+    const sources = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) return entry.name === '__tests__' ? [] : sources(path)
+        return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : []
+      })
+    const callers = sources(RENDERER)
+      .filter((file) => /\b(checkUsage|checkAntigravityUsage)\b/.test(readFileSync(file, 'utf-8')))
+      .map((file) => file.slice(RENDERER.length + 1))
+      .sort()
+    expect(callers).toEqual([
+      'components/settings/provider/AntigravityProviderSettings.tsx',
+      'hooks/use-antigravity-accounts.ts',
+      'lib/acp-transport/types.ts',
+      'lib/acp-transport/ws-transport.ts',
+      'lib/antigravity-accounts-api.ts',
+      'lib/test-utils/invoke-acp-transport.ts'
+    ])
+  })
+
+  it('the Antigravity host code never calls Google itself', () => {
+    const files = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name)
+        return entry.isDirectory() ? files(path) : entry.name.endsWith('.rs') ? [path] : []
+      })
+    const offenders = files(join(SRC_TAURI, 'acp'))
+      .filter((file) => file.includes('antigravity'))
+      .filter((file) => /googleapis\.com|cloudcode-pa/.test(readFileSync(file, 'utf-8')))
+    expect(offenders).toEqual([])
+  })
+
+  it('a signed-out refusal reads the same on the /ws code and the desktop invoke prefix', () => {
+    const reason = 'The Antigravity account "Work" is not signed in.'
+    const viaWs = new AcpTransportError(WS_ERROR_CODES.ANTIGRAVITY_ACCOUNT_SIGNED_OUT, reason)
+    const viaInvoke = mapTauriVerdict(`ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`)
+    expect(viaInvoke).toEqual(viaWs)
+    for (const error of [viaWs, viaInvoke, `ACP_ANTIGRAVITY_ACCOUNT_SIGNED_OUT: ${reason}`]) {
+      expect(isAntigravityAccountSignedOutError(error)).toBe(true)
+      expect(isCodexAccountSignedOutError(error)).toBe(false)
+      expect(antigravityAccountSignedOutMessage(error)).toBe(reason)
+    }
+    expect(isAntigravityAccountSignedOutError(new Error(reason))).toBe(false)
   })
 })
 
@@ -2761,7 +2875,7 @@ describe('MCP catalog parity (spine AD-1)', () => {
     expect(capabilities).toMatch(/\| "search_mcp_catalog"/)
     const gate = readFileSync(join(SRC_TAURI, 'web', 'router', 'gate.rs'), 'utf-8')
     expect(gate).toMatch(/"\/mcp-catalog\/",/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/'search_mcp_catalog',/)
     expect(protocol).toMatch(/search_mcp_catalog: \['read', null\]/)
   })
@@ -2839,7 +2953,7 @@ describe('MCP install plan parity (spine AD-5, AD-7, AD-12)', () => {
       )
     }
     expect(http).toMatch(/check_local_only::<T>\(/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/describe_mcp_install: \['read', null\]/)
     for (const request of ['plan_mcp_install', 'commit_mcp_install', 'cancel_mcp_install']) {
       expect(protocol).toMatch(new RegExp(`'${request}',`))
@@ -2919,7 +3033,6 @@ describe('Chat MCP install approval parity', () => {
 
 describe('MCP catalog sync parity (spine AD-3, AD-12)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
-  const SHARED_TYPES = join(LIB_DIR, '..', '..', 'shared', 'types')
 
   it('both carriers answer from the one host service', () => {
     const dispatch = readFileSync(join(SRC_TAURI, 'web', 'ws', 'dispatch.rs'), 'utf-8')
@@ -2952,7 +3065,7 @@ describe('MCP catalog sync parity (spine AD-3, AD-12)', () => {
     const capabilities = readFileSync(join(SRC_TAURI, 'web', 'capabilities.rs'), 'utf-8')
     expect(capabilities).toMatch(/\| "get_mcp_catalog_status"/)
     expect(capabilities).not.toMatch(/"set_mcp_catalog_sync"/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/get_mcp_catalog_status: \['read', null\]/)
     expect(protocol).toMatch(/set_mcp_catalog_sync: \['idempotent', null\]/)
   })
@@ -3235,7 +3348,7 @@ describe('MCP catalog icon parity (spine AD-1, AD-15)', () => {
     expect(ledger).toMatch(/\("get_mcp_catalog_icon", CommandClass::read\(\)\)/)
     const gate = readFileSync(join(SRC_TAURI, 'web', 'router', 'gate.rs'), 'utf-8')
     expect(gate).toMatch(/"\/mcp-catalog\/",/)
-    const protocol = readFileSync(join(SHARED_TYPES, 'web-protocol.types.ts'), 'utf-8')
+    const protocol = readWsProtocol()
     expect(protocol).toMatch(/'get_mcp_catalog_icon',/)
     expect(protocol).toMatch(/get_mcp_catalog_icon: \['read', null\]/)
   })

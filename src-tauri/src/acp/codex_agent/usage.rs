@@ -177,6 +177,28 @@ impl CodexAgentService {
     }
 }
 
+impl super::CodexAgentService {
+    /// Drop the cached usage of one Account, so the next read probes it again.
+    /// A sign-in calls this: a read taken before the login would otherwise keep
+    /// the Account signed out until the cache expires.
+    pub(super) fn forget_usage(&self, account_id: &str) {
+        self.usage_cache.lock().remove(account_id);
+    }
+
+    /// Drop a cached `signed_out` read of an Account whose login probe now
+    /// confirms a sign-in. The read is older than the login.
+    pub(super) fn forget_signed_out_usage(&self, account_id: &str) {
+        let mut cache = self.usage_cache.lock();
+        if cache
+            .get(account_id)
+            .is_some_and(|entry| entry.usage.status == CodexUsageStatus::SignedOut)
+        {
+            cache.remove(account_id);
+            log::info!("[codex-accounts] dropped a signed-out usage read after a sign-in");
+        }
+    }
+}
+
 /// Keep a good read when a later probe cannot reach Codex. A signed-out read
 /// replaces it: the login is gone. A result older than the cached read is
 /// dropped, so a slow probe cannot overwrite a newer one. A failed attempt

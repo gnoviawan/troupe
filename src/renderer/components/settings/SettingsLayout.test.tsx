@@ -264,22 +264,34 @@ describe('SettingsLayout', () => {
     expect(within(nav()).getByRole('button', { name: 'Shell' })).toHaveFocus()
   })
 
-  it('renders a named Close button when onClose is given', () => {
+  it('renders Back to app and a named narrow Close button when onClose is given', () => {
     const onClose = vi.fn()
     renderLayout({ onClose })
 
-    const [close] = screen.getAllByRole('button', { name: 'Close Settings' })
-    fireEvent.click(close)
-    expect(onClose).toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Back to app' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close Settings' }))
+    expect(onClose).toHaveBeenCalledTimes(2)
   })
 
-  it('marks the active page with a neutral keycap; idle rows hover at 3%', () => {
+  it('marks the active page with a 10% fill; idle rows hover at 4%', () => {
     renderLayout()
 
     const active = within(nav()).getByRole('button', { name: 'Appearance' })
     const idle = within(nav()).getByRole('button', { name: 'Shell' })
-    expect(active.className).toContain('keycap')
+    expect(active.className).toContain('bg-foreground/10')
     expect(active.className).not.toContain('bg-primary')
-    expect(idle.className).toContain('hover:bg-foreground/[0.03]')
+    expect(idle.className).toContain('hover:bg-foreground/[0.04]')
+  })
+
+  it('shows the title and subtitle in the rail when a subtitle is given', () => {
+    renderLayout({ subtitle: 'termul' })
+
+    expect(screen.getAllByText('termul').length).toBeGreaterThan(0)
+  })
+
+  it('pins a footer under the page', () => {
+    renderLayout({ footer: <p>Unsaved changes</p> })
+
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument()
   })
 })

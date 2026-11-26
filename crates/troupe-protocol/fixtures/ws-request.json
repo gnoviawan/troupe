@@ -8,6 +8,14 @@
     },
     "command_id": "fixture-redirect"
   },
+  "add_antigravity_account": {
+    "id": "req-ag-93",
+    "type": "add_antigravity_account",
+    "payload": {
+      "name": "Fixture"
+    },
+    "command_id": "fixture-antigravity-add"
+  },
   "add_claude_account": {
     "id": "req-80",
     "type": "add_claude_account",
@@ -126,6 +134,24 @@
       "projectId": "fixture-proj-a",
       "mountSeq": 1
     }
+  },
+  "check_antigravity_usage": {
+    "id": "req-ag-102",
+    "type": "check_antigravity_usage",
+    "payload": {
+      "accountId": "missing-account",
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      }
+    },
+    "command_id": "fixture-antigravity-check"
   },
   "close_session": {
     "id": "req-106",
@@ -272,6 +298,16 @@
     "type": "list_agents",
     "payload": {}
   },
+  "list_antigravity_accounts": {
+    "id": "req-ag-91",
+    "type": "list_antigravity_accounts",
+    "payload": {}
+  },
+  "list_antigravity_usage": {
+    "id": "req-ag-92",
+    "type": "list_antigravity_usage",
+    "payload": {}
+  },
   "list_claude_accounts": {
     "id": "req-78",
     "type": "list_claude_accounts",
@@ -391,6 +427,13 @@
     },
     "command_id": "fixture-register"
   },
+  "remove_antigravity_account": {
+    "id": "req-ag-101",
+    "type": "remove_antigravity_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29"
+    }
+  },
   "remove_claude_account": {
     "id": "req-90",
     "type": "remove_claude_account",
@@ -410,6 +453,14 @@
     "type": "remove_project",
     "payload": {
       "projectId": "fixture-proj-b"
+    }
+  },
+  "rename_antigravity_account": {
+    "id": "req-ag-94",
+    "type": "rename_antigravity_account",
+    "payload": {
+      "accountId": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture 2"
     }
   },
   "rename_claude_account": {
@@ -485,11 +536,35 @@
     },
     "command_id": "fixture-turn-1"
   },
+  "set_antigravity_auto_switch": {
+    "id": "req-ag-98",
+    "type": "set_antigravity_auto_switch",
+    "payload": {
+      "enabled": false
+    }
+  },
+  "set_antigravity_resume": {
+    "id": "req-ag-99",
+    "type": "set_antigravity_resume",
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "at": null
+    }
+  },
   "set_catalog_opt_in": {
     "id": "req-71",
     "type": "set_catalog_opt_in",
     "payload": {
       "enabled": false
+    }
+  },
+  "set_chat_antigravity_account": {
+    "id": "req-ag-97",
+    "type": "set_chat_antigravity_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "sessionId": "sess-b9ac9edb",
+      "accountId": null
     }
   },
   "set_chat_claude_account": {
@@ -550,6 +625,13 @@
       "valueId": "high"
     }
   },
+  "set_default_antigravity_account": {
+    "id": "req-ag-95",
+    "type": "set_default_antigravity_account",
+    "payload": {
+      "accountId": "missing-account"
+    }
+  },
   "set_default_claude_account": {
     "id": "req-82",
     "type": "set_default_claude_account",
@@ -596,6 +678,14 @@
       "modelId": "opus-5-5"
     }
   },
+  "set_project_antigravity_account": {
+    "id": "req-ag-96",
+    "type": "set_project_antigravity_account",
+    "payload": {
+      "projectId": "fixture-proj-a",
+      "accountId": null
+    }
+  },
   "set_project_claude_account": {
     "id": "req-83",
     "type": "set_project_claude_account",
@@ -630,6 +720,24 @@
       "sessionId": null
     },
     "command_id": "fixture-spawn"
+  },
+  "start_antigravity_account_login": {
+    "id": "req-ag-100",
+    "type": "start_antigravity_account_login",
+    "payload": {
+      "accountId": "missing-account",
+      "config": {
+        "configId": "fake-longrun",
+        "name": "Fake Longrun",
+        "command": "bun",
+        "args": ["/fixture/repo/tests/e2e/fake-longrun-agent.ts"],
+        "env": {
+          "RATE": "5"
+        },
+        "allowTerminal": false
+      }
+    },
+    "command_id": "fixture-antigravity-login"
   },
   "start_claude_link_login": {
     "id": "req-87",

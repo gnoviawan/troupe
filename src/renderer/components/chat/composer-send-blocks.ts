@@ -28,6 +28,7 @@ export function buildComposerSend(
     hasCommand,
     hasSelectionContexts,
     hasConversations,
+    hasCanvas,
     hasTools,
     wireWithCommand,
     displayWithCommand,
@@ -52,6 +53,7 @@ export function buildComposerSend(
         hasCommand ||
         hasSelectionContexts ||
         hasConversations ||
+        hasCanvas ||
         hasTools
       )
     ) {
@@ -60,7 +62,7 @@ export function buildComposerSend(
     const display = textWithAttachmentBlocks(displayWithCommand, attachments)
     return { kind: 'blocks', wire, display: dedupeAttachmentBlocks(display) }
   }
-  if (hasSkills || hasFileRefs || hasConversations) {
+  if (hasSkills || hasFileRefs || hasConversations || hasCanvas) {
     const wireBlocks: ContentBlock[] = wireTrimmed ? [{ type: 'text', text: wireWithCommand }] : []
     wireBlocks.push(...fileBlocks, ...contextBlocks)
     return {

@@ -26,6 +26,7 @@
 //! tree-kill, exactly as before this transport existed.
 
 use std::collections::VecDeque;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -41,24 +42,54 @@ type DebugCallback = Arc<dyn Fn(&str, LineDirection) + Send + Sync + 'static>;
 /// Apply ACP stdio env entries. When the Codex account gate set
 /// [`STRIP_CODEX_API_CREDENTIALS`](crate::acp::codex_agent::STRIP_CODEX_API_CREDENTIALS),
 /// also drop that marker and the two credential names from the child,
-/// including values inherited from this process. The host environment is
-/// left unchanged.
+/// including values inherited from this process. The Antigravity account gate
+/// does the same with
+/// [`STRIP_ANTIGRAVITY_API_CREDENTIALS`](crate::acp::antigravity_agent::STRIP_ANTIGRAVITY_API_CREDENTIALS)
+/// for `GEMINI_API_KEY` and `GOOGLE_API_KEY`. The host environment is left
+/// unchanged.
 pub(super) fn apply_stdio_env(
     command: &mut std::process::Command,
     env: &[agent_client_protocol::schema::v1::EnvVariable],
 ) {
-    let marker = crate::acp::codex_agent::STRIP_CODEX_API_CREDENTIALS;
-    let strip = env.iter().any(|var| var.name == marker && var.value == "1");
+    let marked = |marker: &str| env.iter().any(|var| var.name == marker && var.value == "1");
+    let codex_marker = crate::acp::codex_agent::STRIP_CODEX_API_CREDENTIALS;
+    let antigravity_marker = crate::acp::antigravity_agent::STRIP_ANTIGRAVITY_API_CREDENTIALS;
+    let strip_codex = marked(codex_marker);
+    let strip_antigravity = marked(antigravity_marker);
+    // Project env values arrive unexpanded from the renderer (it has no
+    // process env): expand `$VAR`/`${VAR}`/`%VAR%` against the host process
+    // env, the same expansion the PTY spawn path applies in
+    // `merge_environment`, so an ACP agent does not receive a literal `$HOME`.
+    // Non-Unicode entries are skipped: they cannot be named by a reference.
+    let base: HashMap<String, String> = std::env::vars_os()
+        .filter_map(|(key, value)| {
+            Some((key.to_str()?.to_string(), value.to_str()?.to_string()))
+        })
+        .collect();
     for env_var in env {
-        if strip && is_stripped_codex_credential(&env_var.name) {
+        if strip_codex && is_stripped_codex_credential(&env_var.name) {
             continue;
         }
-        command.env(&env_var.name, &env_var.value);
+        if strip_antigravity && is_stripped_antigravity_credential(&env_var.name) {
+            continue;
+        }
+        let value = crate::pty::env_expand::expand_env_references(
+            &env_var.value,
+            &base,
+            cfg!(target_os = "windows"),
+        );
+        command.env(&env_var.name, value);
     }
-    if strip {
-        command.env_remove(marker);
+    if strip_codex {
+        command.env_remove(codex_marker);
         command.env_remove("OPENAI_API_KEY");
         command.env_remove("CODEX_ACCESS_TOKEN");
+    }
+    if strip_antigravity {
+        command.env_remove(antigravity_marker);
+        for name in crate::acp::antigravity_agent::STRIPPED_CREDENTIALS {
+            command.env_remove(name);
+        }
     }
 }
 
@@ -66,6 +97,11 @@ fn is_stripped_codex_credential(name: &str) -> bool {
     name == "OPENAI_API_KEY"
         || name == "CODEX_ACCESS_TOKEN"
         || name == crate::acp::codex_agent::STRIP_CODEX_API_CREDENTIALS
+}
+
+fn is_stripped_antigravity_credential(name: &str) -> bool {
+    crate::acp::antigravity_agent::STRIPPED_CREDENTIALS.contains(&name)
+        || name == crate::acp::antigravity_agent::STRIP_ANTIGRAVITY_API_CREDENTIALS
 }
 
 const STDERR_CAPTURE_LIMIT: usize = 64 * 1024;

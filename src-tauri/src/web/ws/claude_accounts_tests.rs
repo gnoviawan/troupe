@@ -69,15 +69,15 @@ async fn an_expected_account_makes_the_project_choice_a_compare_and_set() {
 }
 
 #[tokio::test]
-async fn automatic_switching_is_on_by_default_and_toggles_on_the_host() {
+async fn automatic_switching_is_off_by_default_and_toggles_on_the_host() {
     let (root, acp) = manager_with_account(&[]);
     let listed = handle_list_claude_accounts("1".into(), &acp).await;
-    assert_eq!(listed.payload.unwrap()["autoSwitch"], true);
-    let reply = handle_set_claude_auto_switch("2".into(), &json!({ "enabled": false }), &acp).await;
-    assert_eq!(reply.payload.unwrap(), json!({}));
-    assert_eq!(stored(&root)["autoSwitch"], false);
-    let listed = handle_list_claude_accounts("3".into(), &acp).await;
     assert_eq!(listed.payload.unwrap()["autoSwitch"], false);
+    let reply = handle_set_claude_auto_switch("2".into(), &json!({ "enabled": true }), &acp).await;
+    assert_eq!(reply.payload.unwrap(), json!({}));
+    assert_eq!(stored(&root)["autoSwitchOptIn"], true);
+    let listed = handle_list_claude_accounts("3".into(), &acp).await;
+    assert_eq!(listed.payload.unwrap()["autoSwitch"], true);
     let malformed = handle_set_claude_auto_switch("4".into(), &json!({}), &acp).await;
     assert_eq!(malformed.err.unwrap().code, "unsupported");
 }

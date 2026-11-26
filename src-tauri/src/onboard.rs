@@ -174,7 +174,7 @@ impl OnboardAnswers {
         let update_channel: Option<UpdateChannel> = prompt_validated(
             stdin,
             stdout,
-            "Update channel (stable/insider/nightly/none)",
+            "Update channel (stable/nightly/none)",
             "none",
             |s| {
                 let t = s.trim().to_ascii_lowercase();
@@ -182,7 +182,7 @@ impl OnboardAnswers {
                     return Ok(None);
                 }
                 UpdateChannel::parse(&t).map(Some).ok_or_else(|| {
-                    format!("invalid channel '{s}': use stable/insider/nightly/none")
+                    format!("invalid channel '{s}': use stable/nightly/none")
                 })
             },
         );
@@ -255,6 +255,7 @@ impl OnboardAnswers {
             // answers must never enter setup mode.
             explicit_config: true,
             host_explicit: true,
+            rune_web_dir: None,
         }
     }
 
@@ -333,7 +334,6 @@ impl OnboardAnswers {
 fn channel_name(channel: UpdateChannel) -> &'static str {
     match channel {
         UpdateChannel::Stable => "stable",
-        UpdateChannel::Insider => "insider",
         UpdateChannel::Nightly => "nightly",
     }
 }

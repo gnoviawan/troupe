@@ -124,3 +124,126 @@ async fn test_watch_annotations_drain() {
     assert!(result.contains("count"));
     assert!(result.contains("1"));
 }
+
+#[tokio::test]
+async fn test_get_ruler_guides_filters_measurements_and_guides() {
+    let store = Arc::new(SqliteStore::open_in_memory().unwrap());
+    let session = store.create_session("http://localhost:5173/settings", None);
+    // Plain feedback annotation should not appear in ruler guides
+    store
+        .add_annotation(
+            &session.id,
+            &AnnotationInput {
+                x: 10.0,
+                y: 20.0,
+                comment: "Plain feedback".to_string(),
+                element: "button".to_string(),
+                element_path: "body > button".to_string(),
+                timestamp: 100,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    // Alignment guide annotation with axis + offset delta + crop path
+    store
+        .add_annotation(
+            &session.id,
+            &AnnotationInput {
+                x: 32.0,
+                y: 180.0,
+                comment: "Align card left edge at x = 32px".to_string(),
+                element: "div.project-url-card".to_string(),
+                element_path: "main > div.project-url-card".to_string(),
+                timestamp: 200,
+                kind: Some(AnnotationKind::Guide),
+                measurement: Some(RulerMeasurement {
+                    axis: Some(GuideAxis::Vertical),
+                    position_px: Some(32.0),
+                    from_selector: Some("h1.workspace-title".to_string()),
+                    to_selector: Some("div.project-url-card".to_string()),
+                    gap_px: None,
+                    delta_px: Some(8.0),
+                }),
+                bounding_box: Some(BoundingBox {
+                    x: 32.0,
+                    y: 180.0,
+                    width: 240.0,
+                    height: 96.0,
+                }),
+                screenshot_crop_path: Some("/tmp/crop-2.png".to_string()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    store
+        .add_annotation(
+            &session.id,
+            &AnnotationInput {
+                x: 48.0,
+                y: 220.0,
+                comment: "Increase gap to 24px".to_string(),
+                element: "section.cards".to_string(),
+                element_path: "main > section.cards".to_string(),
+                timestamp: 250,
+                kind: Some(AnnotationKind::Measurement),
+                measurement: Some(RulerMeasurement {
+                    axis: Some(GuideAxis::Horizontal),
+                    position_px: Some(220.0),
+                    from_selector: Some("h1.workspace-title".to_string()),
+                    to_selector: Some("section.cards".to_string()),
+                    gap_px: Some(12.0),
+                    delta_px: None,
+                }),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    // Closed session guide should be excluded when session_id is omitted
+    let closed_session = store.create_session("http://localhost:5173/old", None);
+    store
+        .add_annotation(
+            &closed_session.id,
+            &AnnotationInput {
+                x: 10.0,
+                y: 10.0,
+                comment: "Old guide".to_string(),
+                element: "header".to_string(),
+                element_path: "header".to_string(),
+                timestamp: 300,
+                kind: Some(AnnotationKind::Guide),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    store.update_session_status(&closed_session.id, SessionStatus::Closed);
+
+    let server = AgentationMcpServer::new(store);
+    let raw = server
+        .get_ruler_guides(Parameters(GetRulerGuidesInput {
+            session_id: Some(session.id),
+        }))
+        .await;
+    let parsed: serde_json::Value = serde_json::from_str(&raw).unwrap();
+    assert_eq!(parsed["count"], 2);
+    assert_eq!(parsed["guides"][0]["kind"], "guide");
+    assert_eq!(parsed["guides"][0]["measurement"]["axis"], "vertical");
+    assert_eq!(parsed["guides"][0]["measurement"]["positionPx"], 32.0);
+    assert_eq!(parsed["guides"][0]["measurement"]["deltaPx"], 8.0);
+    assert_eq!(parsed["guides"][0]["screenshotCropPath"], "/tmp/crop-2.png");
+    assert_eq!(parsed["guides"][0]["boundingBox"]["x"], 32.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["y"], 180.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["width"], 240.0);
+    assert_eq!(parsed["guides"][0]["boundingBox"]["height"], 96.0);
+    assert_eq!(parsed["guides"][1]["kind"], "measurement");
+    assert_eq!(parsed["guides"][1]["measurement"]["gapPx"], 12.0);
+    assert!(parsed["guides"][1].get("boundingBox").is_none());
+
+    // Unscoped lookup returns active session items only (excludes closed session)
+    let unscoped_raw = server
+        .get_ruler_guides(Parameters(GetRulerGuidesInput { session_id: None }))
+        .await;
+    let unscoped: serde_json::Value = serde_json::from_str(&unscoped_raw).unwrap();
+    assert_eq!(unscoped["count"], 2);
+}

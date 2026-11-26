@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Check, Edit, Upload } from '@/components/icons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { BUNDLED_ICON_CATALOG, findBundledIconBySvg } from '@/lib/agents/agent-icon-catalog'
+import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
 import { cn } from '@/lib/utils'
 
@@ -36,7 +36,8 @@ export function IconPicker({ value, onChange }: IconPickerProps): React.JSX.Elem
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const selectedEntry = useMemo(() => findBundledIconBySvg(value), [value])
+  const catalog = useAgentIconCatalog()
+  const selectedEntry = useMemo(() => catalog.bySvg(value), [catalog, value])
   // A non-empty value not in the bundled catalog is a custom (uploaded) SVG.
   const isCustomSvg = value.length > 0 && !selectedEntry
 
@@ -145,7 +146,7 @@ export function IconPicker({ value, onChange }: IconPickerProps): React.JSX.Elem
                 </button>
               )}
 
-              {BUNDLED_ICON_CATALOG.map((entry) => {
+              {catalog.entries.map((entry) => {
                 const isSelected = selectedEntry?.key === entry.key
                 return (
                   <button

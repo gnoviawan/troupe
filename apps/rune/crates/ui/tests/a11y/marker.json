@@ -1,0 +1,17 @@
+{
+  "children": [
+    {
+      "name": "Switched to dev",
+      "role": "label"
+    },
+    {
+      "name": "Today",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

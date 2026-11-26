@@ -175,3 +175,133 @@ is the window's frame rate on lavapipe under contention, not the decode
    - Scrolling and pinch do not break the layout.
    - Rotating to landscape and back relays out the window.
 4. Record pass or fail per item, with a screenshot per phone, in this section.
+
+## Code highlighting
+
+**Answer.** rune-highlights, the lexers rune-kit's `Markdown` already uses,
+with each token kind coloured from the theme's syntax map exactly as the web
+client's Shiki theme colours the TextMate scopes that kind stands for
+(`ui::markdown::syntax_colour`), and a small re-cut where the two engines name
+the same text differently (`ui::markdown::recut`: word-shaped `Number` tokens
+become language constants or plain namespaces, primitive types become
+keywords). It does not reach exact colour parity. Exact parity needs Shiki's
+own engine, a TextMate tokenizer running the same grammars, which no section
+has built yet.
+
+**Numbers.** `bun tools/parity/highlight/parity.ts` runs Shiki with the default `termul`
+theme (`syntaxThemeFor`) and `cargo run -p ui --example highlight_dump` over
+the same eight samples, and counts non-space characters drawn in the same
+colour (measured 2026-11-24):
+
+| Engine | ts | tsx | bash | rust | python | json | css | go | all (1,742 chars) |
+|---|---|---|---|---|---|---|---|---|---|
+| rune-highlights, kinds mapped | 74.8% | 76.7% | 60.0% | 86.3% | 70.3% | 85.2% | 76.1% | 80.9% | 76.8% |
+| rune-highlights, mapped and re-cut (shipped) | 81.6% | 76.7% | 60.0% | 86.3% | 75.6% | 88.1% | 79.8% | 80.9% | 79.6% |
+| A TextMate engine with Shiki's grammars | not built | | | | | | | | 100% by construction (guess) |
+
+The differences are token boundaries the grammars draw, not palette: Shiki's
+TypeScript grammar colours a function's whole parameter list in the function
+colour, Shiki's shell grammar colours every argument as a string, and its JSON
+grammar draws a key's quotes as punctuation.
+
+**Alternatives weighed.**
+
+- A TextMate engine in Rust (for example `syntect` with `fancy-regex`) running
+  the VS Code grammars Shiki bundles. Rejected for now: the eight grammars in
+  the table are 623 KB of grammar source (measured from `@shikijs/langs`), all
+  of Shiki's are 9.9 MB, TextMate matching is backtracking regex per line
+  rather than linear lexing, and `fancy-regex` does not cover every Oniguruma
+  construct the grammars use (guess, not tried). It is the only route to exact
+  parity; take it if the matrix shows code colour is what keeps chat surfaces
+  from scoring ported.
+- Shiki through JavaScript in the web build. Rejected: the desktop app has no
+  JavaScript, so the two Rune clients would colour code differently.
+
+**Source.** R6b (`reports/R6b.md`). Tools: `tools/parity/highlight/`.
+
+## Code editor buffer
+
+**Answer.** `troupe-editor` keeps one file in a `ropey` rope (default
+features off, so only `\n` breaks lines, as in CodeMirror) with snapshot undo:
+each undo step is a clone of the rope before the edit, which shares every node
+the edit did not touch. Every user action is a `Command` that `Editor::apply`
+runs, so tests replay recorded input. One caret, because the React editor does
+not turn on `allowMultipleSelections`. Steps join as CodeMirror's `history()`
+joins them: the same kind of edit, from the caret the last one left, within
+500 ms. Soft wrap breaks lines by columns, because the editor face is
+monospace.
+
+**Candidates weighed (one sequential pass; workers spawn no subagents).**
+
+- Snapshot undo (chosen). Undo cannot drift from the text, because it restores
+  the text it saved. A step costs a few rope nodes, about 1 to 4 KB (inferred
+  from ropey's node size). The R0 spike measured undo p95 at 6.08 ms at 1 MB.
+- Inverse-change undo (CodeMirror's `ChangeSet` shape): smaller steps, but
+  every edit kind needs an inverse that must be right, and a wrong one corrupts
+  the file. The memory win does not matter at 10,000 steps.
+- Pixel wrap through `text::measure` per line, as `TextEdit` does. Rejected:
+  the caret and Up and Down would need Rune's layout to place them. Column
+  wrap needs no layout. Wide characters (CJK) wrap late, a known gap.
+
+**Numbers.** `cargo test -p troupe-editor` (measured 2026-11-25): 1,000
+recorded edits of every command kind, mixed with moves and selections, undo
+back to the original text and redo back to the edited text.
+
+**Source.** R8a (`reports/R8a.md`), `R0-editor.md`.
+
+## Code editor highlighting
+
+**Answer.** rune-highlights' lexers, the same as chat code, with each token
+named by the Lezer tag that the React editor's grammar gives the same text.
+The view colours that tag from the theme's syntax map, using
+`codemirror-theme.ts`'s `HighlightStyle` rules. A re-cut per language
+(`troupe-editor` `recut.rs`) covers where the two engines split text
+differently. Examples are a method call after `.` (property), CSS units
+(keyword), Markdown marks (keyword), Rust attributes (meta), and JavaScript and
+Rust definitions. The view lexes only the 32-line chunks on screen, each with
+up to 64 lines above it, so a block comment opened above a chunk still colours
+it. Files the React editor loads no grammar for (Go, TOML, shell, XML) draw
+plain in both clients.
+
+**Numbers.** `bun tools/parity/editor-highlight/parity.ts` runs CodeMirror's
+grammars with the `termul` theme's styles and the Rune dump over nine samples
+copied from this repo. It counts non-space characters drawn in the same
+colour (measured 2026-11-25):
+
+| Engine | css | html | js | json | md | py | rs | ts | yaml | all (13,747 chars) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| rune-highlights, tags mapped | 98.1% | 88.8% | 86.8% | 100% | 77.5% | 83.4% | 77.4% | 90.0% | 98.3% | 88.8% |
+| mapped and re-cut (shipped) | 99.3% | 96.3% | 99.6% | 100% | 100% | 96.0% | 91.9% | 97.6% | 100% | 98.3% |
+
+The gaps left are grammar context, not palette. Rust enum variants, struct
+fields and `use` paths are tagged by position in Lezer's tree. Python
+f-string parts and TypeScript type arguments are the others.
+
+**Alternative weighed.** Lezer itself in Rust. There is no Rust Lezer runtime,
+and porting the LR tables and the nine grammars' external tokenizers is a
+project of its own. Take it only if the matrix shows editor colour keeps
+editor surfaces from scoring ported.
+
+**Source.** R8a (`reports/R8a.md`). Tools: `tools/parity/editor-highlight/`.
+
+## Explorer tree
+
+**Answer.** The explorer keeps its own state in `model::explorer`: the listed
+folders, which are open, the selection, the inline name field and the delete
+confirm. `ui::explorer` draws each visible row with rune-kit's `TreeItem` and
+`TreeStyle`, the same row the `Tree` widget draws, in Rune's `virtual_rows`.
+It does not use the `Tree` widget itself. The phone's Files sheet reads the
+same listings and runs the same operations.
+
+**Candidates weighed (one sequential pass).**
+
+- rune-kit `Tree` over a `TreeModel` (rejected). Its rows take only
+  `on_press` and `on_double_press`, so a row cannot open a context menu, be
+  dragged onto a pane, or turn into the rename field. Its model also has no
+  "listed or not" state for a folder whose children are not loaded yet. Such
+  a folder would draw as a leaf with no chevron.
+- Hand-drawn rows (rejected). They would duplicate the indent guides,
+  chevron, icon and selection that `TreeItem::build` already draws.
+
+**Source.** R8a (`reports/R8a.md`). Lanes: `tools/parity/lanes/explorer.ts`
+(desktop and `--phone`), `tools/parity/lanes/editor-desktop.ts`.

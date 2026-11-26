@@ -1,0 +1,19 @@
+{
+  "children": [
+    {
+      "actions": ["focus"],
+      "name": "Copy",
+      "role": "button"
+    },
+    {
+      "name": "Delete",
+      "role": "button",
+      "states": ["disabled"]
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

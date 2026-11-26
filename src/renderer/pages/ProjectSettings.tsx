@@ -3,18 +3,24 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Info } from '@/components/icons'
+import { AntigravityProjectAccountSettings } from '@/components/settings/provider/AntigravityProjectAccountSettings'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { CodexProjectAccountSettings } from '@/components/settings/provider/CodexProjectAccountSettings'
 import { ProjectProviderSettings } from '@/components/settings/provider/ProjectProviderSettings'
 import { SettingsLayout, SettingsSection } from '@/components/settings/SettingsLayout'
-import { SettingsModal } from '@/components/settings/SettingsModal'
+import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import { Button } from '@/components/ui/button'
+import { useProjectAntigravityAccountDraft } from '@/hooks/use-project-antigravity-account-draft'
 import { useProjectClaudeAccountDraft } from '@/hooks/use-project-claude-account-draft'
 import { useProjectCodexAccountDraft } from '@/hooks/use-project-codex-account-draft'
 import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { dialogApi, filesystemApi, shellApi, worktreeApi } from '@/lib/api'
 import { mergeEnvVars, parseEnvFile, resolveProjectEnvPath } from '@/lib/env-parser'
 import { renewAgentCredentials } from '@/stores/acp-store'
+import {
+  ANTIGRAVITY_AGENT_CONFIG_ID,
+  applyProjectAntigravityAccount
+} from '@/stores/antigravity-account-switch'
 import { applyProjectClaudeAccount } from '@/stores/claude-account-switch'
 import { applyProjectCodexAccount, CODEX_AGENT_CONFIG_ID } from '@/stores/codex-account-switch'
 import { useActiveProjectId, useProjectActions, useProjectStore } from '@/stores/project-store'
@@ -52,6 +58,9 @@ export function ProjectSettingsModal() {
   )
   const claudeAccountDraft = useProjectClaudeAccountDraft(settingsProject?.id, { enabled: isOpen })
   const codexAccountDraft = useProjectCodexAccountDraft(settingsProject?.id, { enabled: isOpen })
+  const antigravityAccountDraft = useProjectAntigravityAccountDraft(settingsProject?.id, {
+    enabled: isOpen
+  })
   const { updateProject } = useProjectActions()
 
   const [projectName, setProjectName] = useState(settingsProject?.name || '')
@@ -122,6 +131,8 @@ export function ProjectSettingsModal() {
   claudeDraftRef.current = claudeAccountDraft
   const codexDraftRef = useRef(codexAccountDraft)
   codexDraftRef.current = codexAccountDraft
+  const antigravityDraftRef = useRef(antigravityAccountDraft)
+  antigravityDraftRef.current = antigravityAccountDraft
   const removedHandledRef = useRef<string | null>(null)
   const targetGone =
     isOpen && Boolean(targetProjectId) && (!settingsProject || Boolean(settingsProject.isArchived))
@@ -134,6 +145,7 @@ export function ProjectSettingsModal() {
     removedHandledRef.current = targetProjectId
     claudeDraftRef.current.reset()
     codexDraftRef.current.reset()
+    antigravityDraftRef.current.reset()
     envImportRequestRef.current += 1
     // Forget the initialized project so the next open re-reads its fields.
     symlinkInitProjectRef.current = null
@@ -148,6 +160,7 @@ export function ProjectSettingsModal() {
   const handleDiscard = () => {
     claudeAccountDraft.reset()
     codexAccountDraft.reset()
+    antigravityAccountDraft.reset()
     if (settingsProject) resetForm(settingsProject)
     else setHasChanges(false)
   }
@@ -218,6 +231,9 @@ export function ProjectSettingsModal() {
       // the save runs must not land on an agent of the old Account.
       if (claudeAccountDraft.dirty) renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, projectId)
       if (codexAccountDraft.dirty) renewAgentCredentials(CODEX_AGENT_CONFIG_ID, projectId)
+      if (antigravityAccountDraft.dirty) {
+        renewAgentCredentials(ANTIGRAVITY_AGENT_CONFIG_ID, projectId)
+      }
       void claudeAccountDraft
         .save()
         .then((changed) => {
@@ -233,6 +249,15 @@ export function ProjectSettingsModal() {
         })
         .catch((err) => {
           toastAccountChoiceError(err, 'Could not save the Codex account')
+          setHasChanges(true)
+        })
+      void antigravityAccountDraft
+        .save()
+        .then((changed) => {
+          if (changed) void applyProjectAntigravityAccount(projectId, { credentialsRenewed: true })
+        })
+        .catch((err) => {
+          toastAccountChoiceError(err, 'Could not save the Antigravity account')
           setHasChanges(true)
         })
       setEnvVars(normalizedEnvVars)
@@ -390,36 +415,7 @@ export function ProjectSettingsModal() {
 
   return (
     <>
-      <SettingsModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        title="Project settings"
-        footer={
-          hasChanges ? (
-            <div className="flex items-center justify-end gap-2 px-4 py-3">
-              <p
-                role="status"
-                className="mr-auto flex items-center gap-2 text-xs text-muted-foreground"
-              >
-                <Info size={14} aria-hidden="true" className="text-warning" />
-                Unsaved changes
-              </p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8"
-                onClick={handleDiscard}
-              >
-                Discard
-              </Button>
-              <Button type="button" size="sm" className="h-8" onClick={handleSave}>
-                Save changes
-              </Button>
-            </div>
-          ) : undefined
-        }
-      >
+      <SettingsWindow isOpen={isOpen} onClose={handleClose} title="Project settings">
         <SettingsLayout
           title="Project settings"
           subtitle={settingsProject?.name}
@@ -428,6 +424,31 @@ export function ProjectSettingsModal() {
           onClose={handleClose}
           page={projectPage ?? PROJECT_SETTINGS_CATEGORIES[0]?.id}
           onPageChange={setProjectPage}
+          footer={
+            hasChanges ? (
+              <div className="flex items-center justify-end gap-2">
+                <p
+                  role="status"
+                  className="mr-auto flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <Info size={14} aria-hidden="true" className="text-warning" />
+                  Unsaved changes
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={handleDiscard}
+                >
+                  Discard
+                </Button>
+                <Button type="button" size="sm" className="h-8" onClick={handleSave}>
+                  Save changes
+                </Button>
+              </div>
+            ) : undefined
+          }
         >
           <GeneralSection
             name={projectName}
@@ -496,15 +517,26 @@ export function ProjectSettingsModal() {
                 openAppSettings('provider')
               }}
             />
+            <AntigravityProjectAccountSettings
+              antigravity={antigravityAccountDraft}
+              onChange={() => setHasChanges(true)}
+              onManageAccounts={() => {
+                if (hasChanges) {
+                  toast.warning('Save or discard your changes first.')
+                  return
+                }
+                openAppSettings('provider')
+              }}
+            />
           </SettingsSection>
 
           <ProjectBrowserSection projectId={settingsProject?.id} />
         </SettingsLayout>
-      </SettingsModal>
+      </SettingsWindow>
 
       <ConfirmDialog
         isOpen={isCloseConfirmOpen}
-        title="Unsaved Changes"
+        title="Unsaved changes"
         message={`You have unsaved changes in ${settingsProject?.name ?? 'this project'}. Leaving will discard them.`}
         confirmLabel="Leave"
         cancelLabel="Cancel"

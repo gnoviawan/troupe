@@ -14,7 +14,7 @@
 
 import { buildAgentArgv, type TerminalAgentDefinition } from '@/lib/agents/agent-registry'
 import { terminalApi } from '@/lib/api'
-import { resolveAgentEnv, resolveEnvForSpawn } from '@/lib/env-parser'
+import { passThroughProjectEnv, resolveAgentEnv } from '@/lib/env-parser'
 import { ensureWorktreeSymlinks } from '@/lib/worktree-context'
 import { useProjectStore } from '@/stores/project-store'
 import { useTerminalStore } from '@/stores/terminal-store'
@@ -61,9 +61,8 @@ export async function launchAgentInPane(
     }
 
     // Resolve project env vars for spawn (same as terminal spawn).
-    const { env: projectEnv, hasProjectEnv } = resolveEnvForSpawn(
-      options?.envVars ?? project?.envVars,
-      {}
+    const { env: projectEnv, hasProjectEnv } = passThroughProjectEnv(
+      options?.envVars ?? project?.envVars
     )
 
     // Merge any agent-declared env on top of project env. Values may reference

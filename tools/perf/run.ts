@@ -16,6 +16,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { RUNE_APPS, type RuneAppName } from '../parity/drivers/rune-apps.ts'
 import { startByteProxy } from './byte-proxy.ts'
 import {
   DEFAULTS,
@@ -25,7 +26,20 @@ import {
   type ScenarioName
 } from './client-scenarios.ts'
 import { chromiumDriver, launchChromium } from './clients/chromium.ts'
-import type { ChatStartPart, ClientDriver, ClientKind, ClientTreeCensus } from './clients/client.ts'
+import type {
+  ChatStartPart,
+  ClientDriver,
+  ClientKind,
+  ClientLaunchOptions,
+  ClientTreeCensus
+} from './clients/client.ts'
+import {
+  launchRuneDesktop,
+  launchRuneWeb,
+  runeDesktopDriver,
+  runeDesktopRole,
+  runeWebDriver
+} from './clients/rune.ts'
 import {
   chromiumRole,
   type MachineSample,
@@ -76,11 +90,13 @@ interface Options {
   /** Per-run server state, client state and probe files go under here. */
   stateRoot: string
   distWeb: string
+  /** The Rune app the Rune clients open (`--rune-app`). */
+  runeApp: RuneAppName
   outDir: string
   overrides: Flags
 }
 
-const CLIENT_KINDS: ClientKind[] = ['chromium']
+const CLIENT_KINDS: ClientKind[] = ['chromium', 'rune-web', 'rune-desktop']
 
 /** `kind[:label]` — a bare kind labels itself; a duplicated kind needs labels. */
 function parseClientSpec(raw: string): ClientSpec {
@@ -126,10 +142,12 @@ export function parseRunArgs(argv: string[]): Options {
       take('state-root', process.env.TROUPE_PERF_STATE ?? '/tmp/troupe-perf')
     ),
     distWeb: path.resolve(take('dist-web', DIST_WEB)),
+    runeApp: take('rune-app', 'hello') as RuneAppName,
     outDir: path.resolve(take('out', path.join(TOOLKIT_ROOT, 'results', `linux-${stamp}`))),
     overrides: {}
   }
   for (const s of opts.scenarios) if (!(s in SCENARIOS)) throw new Error(`unknown scenario ${s}`)
+  if (!(opts.runeApp in RUNE_APPS)) throw new Error(`unknown --rune-app ${opts.runeApp}`)
   const labels = new Set(opts.clients.map((c) => c.label))
   if (labels.size !== opts.clients.length) {
     // Same kind twice without labels: suffix them a, b, ... so run dirs differ.
@@ -303,30 +321,45 @@ async function runOnce(
   try {
     const t0 = performance.now()
     const wall0 = Date.now()
-    const launchOpts = {
+    const launchOpts: ClientLaunchOptions = {
       url: proxy.url,
       display: opts.display,
       width: opts.width,
       height: opts.height,
       distWeb: opts.distWeb,
       gl: opts.gl,
-      noPageMetrics: opts.noPageMetrics
+      noPageMetrics: opts.noPageMetrics,
+      runeApp: opts.runeApp
     }
-    if (client.kind === 'chromium') {
-      const handle = await launchChromium(launchOpts)
-      sampler = startProcSampler(handle.rootPid, chromiumRole)
-      driver = chromiumDriver(handle)
-    } else {
-      throw new Error(`client ${client.kind} is not implemented yet`)
+    switch (client.kind) {
+      case 'chromium': {
+        const handle = await launchChromium(launchOpts)
+        sampler = startProcSampler(handle.rootPid, chromiumRole)
+        driver = chromiumDriver(handle)
+        break
+      }
+      case 'rune-web': {
+        const handle = await launchRuneWeb(launchOpts)
+        sampler = startProcSampler(handle.rootPid, chromiumRole)
+        driver = runeWebDriver(handle, opts.runeApp)
+        break
+      }
+      case 'rune-desktop': {
+        const handle = await launchRuneDesktop(launchOpts)
+        sampler = startProcSampler(handle.rootPid, runeDesktopRole)
+        driver = runeDesktopDriver(handle, opts.runeApp)
+        break
+      }
     }
     const handle = driver.handle
     notes.client = handle.version
-    notes.backend = handle.backend
     startup['startup.processUpMs'] = Math.round(handle.launchedMs)
     await driver.waitForProjectList()
     startup['startup.projectListMs'] = Math.round(performance.now() - t0)
     await driver.waitForLauncher()
     startup['startup.launcherReadyMs'] = Math.round(performance.now() - t0)
+    // A Rune web client knows its renderer only once the GPU hand-over settled.
+    notes.backend = handle.backend
     const bootPage = await driver.endPhase('boot')
     const bootTo = Date.now()
     windows.push({
@@ -395,7 +428,7 @@ async function runOnce(
       clientSamples = sampler.stop()
       processes = sampler.processes()
       const roleOfPid = new Map(processes.map((p) => [p.pid, p.role]))
-      if (client.kind === 'chromium')
+      if (client.kind !== 'rune-desktop')
         notes.pageRendererPid = withPageRenderer(clientSamples, roleOfPid)
       const pageRenderer = notes.pageRendererPid
       const role = (pid: number) =>
@@ -479,7 +512,8 @@ async function runOnce(
       clientVersion: notes.client,
       backend: notes.backend,
       gl: opts.gl,
-      pageMetrics: client.kind === 'chromium' && !opts.noPageMetrics,
+      pageMetrics: client.kind !== 'rune-desktop' && !opts.noPageMetrics,
+      runeApp: client.kind === 'chromium' ? undefined : opts.runeApp,
       screenFrames: screen !== null,
       seed: opts.seed,
       flags,

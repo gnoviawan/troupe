@@ -182,7 +182,7 @@ describe('sendFromChatStart', () => {
     expect(request).toMatchObject({
       configId: 'cfg-1',
       projectId: 'p1',
-      paneId: 'pane-1',
+      surface: { kind: 'pane', paneId: 'pane-1' },
       checkout: { launchCwd: WT, worktreePath: WT, worktreeBranch: 'feat/x' },
       placeholder: { initialUserBlocks: display }
     })

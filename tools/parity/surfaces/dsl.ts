@@ -46,3 +46,9 @@ export const DASHBOARD = step(
 /** The seeded chat's title, as its card shows it. */
 export const CHAT_TITLE = 'How does the web client decide which routes rend'
 export const openChat = click(txt(CHAT_TITLE, false))
+
+/** The seeded chat is open and its transcript rests at its end (the scroller's button is gone). */
+export const CHAT_SETTLED: Check[] = [
+  ...see('Where else is the chat route parsed?'),
+  { text: 'Scroll to latest', gone: true, timeoutMs: 15_000 }
+]

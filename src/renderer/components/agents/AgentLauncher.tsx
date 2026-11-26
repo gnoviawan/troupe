@@ -21,6 +21,7 @@ import {
   LAUNCHER_EXIT_FADE_DELAY_MS,
   LAUNCHER_EXIT_FADE_MS
 } from '@/components/agents/launcher/launcher-motion'
+import { type LauncherTarget, useLauncherPlace } from '@/components/agents/launcher/launcher-target'
 import { LauncherOverlayChrome } from '@/components/agents/launcher/overlay-chrome'
 import {
   persistedIsolationMode,
@@ -48,13 +49,7 @@ import {
 import { AttachmentPreviewGroup } from '@/components/chat/AttachmentPreviewGroup'
 import { AsciiGlow } from '@/components/chat/ascii-glow/AsciiGlow'
 import { appOwnedTempPaths, dedupeAttachmentBlocks } from '@/components/chat/chat-attachments'
-import {
-  filterDuplicateModeConfigOptions,
-  isUsableConfigOption,
-  partitionConfigOptions,
-  resolveModelOption,
-  splitFastModeOption
-} from '@/components/chat/chat-input-bar-config'
+import { composerOptionControls } from '@/components/chat/chat-input-bar-config'
 import {
   COMPOSER_PHONE_CARD_CLASS,
   COMPOSER_PHONE_INPUT_MAX_HEIGHT,
@@ -136,7 +131,6 @@ import { logFrontendError } from '@/lib/log-api'
 import { platform as osPlatform } from '@/lib/tauri-os'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { cn } from '@/lib/utils'
-import { getDefaultCwdForProject, getProjectRootPath } from '@/lib/worktree-context'
 import { READ_ONLY_SERVER_REASON } from '@/lib/write-gate'
 import {
   type AcpSession,
@@ -152,22 +146,26 @@ import {
   readComposerOptions,
   savedModelValues
 } from '@/stores/acp-store/composer-options'
-import { useActiveProject, useProjectStore } from '@/stores/project-store'
+import { quickLauncherOnScreen } from '@/stores/quick-chat-store'
 import { useWorktreePick } from '@/stores/shell-layout-store'
 import { findPaneById, useWorkspaceStore } from '@/stores/workspace-store'
 
 interface AgentLauncherProps {
-  paneId: string
+  target: LauncherTarget
   className?: string
 }
 
 /**
- * Agent launcher surface for a pane — hero + launch composer. Rendered either
- * as empty-pane content or as the Ctrl+T overlay; when a launch hands off to
- * a chat tab it morphs its composer onto the live ChatInputBar card, and when
- * dismissed without a launch it fades in place.
+ * Agent launcher surface — hero + launch composer. Rendered as empty-pane
+ * content, as the Ctrl+T overlay, or in the quick chat view for a new quick
+ * chat; when a launch hands off to the chat it morphs its composer onto the
+ * live ChatInputBar card, and when dismissed without a launch it fades in
+ * place. No session exists until Send.
  */
-export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.JSX.Element {
+export function AgentLauncher({ target, className }: AgentLauncherProps): React.JSX.Element {
+  // Project, folder, pane and chat surface of this launcher, resolved once.
+  const place = useLauncherPlace(target)
+  const { paneId } = place
   const [prompt, setPrompt] = useState('')
   const [selectedConfigId, setSelectedConfigId] = useState(() => cachedLastSelectedAgentId() ?? '')
   /**
@@ -235,10 +233,12 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   // Exit classification needs the pane's active tab BEFORE vs AT the exit:
   // a fresh agent-chat tab becoming active means launch.
   const paneLeaf = useWorkspaceStore((s) => {
-    const node = findPaneById(s.root, paneId)
+    const node = paneId ? findPaneById(s.root, paneId) : null
     return node?.type === 'leaf' ? node : null
   })
-  const isOverlayLauncher = useWorkspaceStore((s) => s.agentLauncherPaneId === paneId)
+  const isOverlayLauncher = useWorkspaceStore(
+    (s) => paneId !== undefined && s.agentLauncherPaneId === paneId
+  )
   const prevActiveTabIdRef = useRef<string | null | undefined>(paneLeaf?.activeTabId)
   // `hideAgentLauncher` clears agentLauncherPaneId in the same commit the
   // exit starts, so `isOverlayLauncher` already reads false in the exiting
@@ -261,7 +261,8 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     rootRef,
     composerCardRef,
     launchInFlightRef,
-    prevActiveTabIdRef
+    prevActiveTabIdRef,
+    chatHostSelector: place.chatHostSelector
   })
 
   const acpConfigs = useAcpStore((s) => s.agentConfigs)
@@ -273,10 +274,8 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   const mcpProbeError = useAcpStore((s) => s.mcpProbeError) ?? EMPTY_PROBE_ERROR
   const mcpTools = useAcpStore((s) => s.mcpTools) ?? EMPTY_MCP_TOOLS
   const loadMcpTools = useAcpStore((s) => s.loadMcpTools)
-  const activeProjectId = useProjectStore((s) => s.activeProjectId)
-  const activeProject = useActiveProject()
+  const { projectId: activeProjectId, project: activeProject, projectRoot } = place
   const projectLabel = activeProject?.name ?? 'this folder'
-  const projectRoot = activeProjectId ? getDefaultCwdForProject(activeProjectId) : undefined
   const projectIsGitRepo = Boolean(activeProject?.isGitRepo)
   const projectGitBranch = activeProject?.gitBranch ?? null
   // CAP-2: isolation mode + base-branch picker. Worktree mode requires a git
@@ -332,7 +331,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   // Skills live at {project.path}/.agents/skills/ which is gitignored and
   // excluded from worktree symlinks, so resolve against the main project root
   // — not the worktree CWD which has no .agents/skills/.
-  const skillsRoot = activeProjectId ? getProjectRootPath(activeProjectId) : undefined
+  const skillsRoot = place.skillsRoot
   const { skills } = useAgentSkills(skillsRoot)
   const supportedAgents = useResolvedSupportedAcpAgents(acpConfigs)
   const { usingRemoteRegistry, activeRegistry, remoteRegistry, applyRemoteRegistry } =
@@ -378,8 +377,12 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     applyRemoteRegistry,
     applyAgentUpdate
   })
+  // Restart opens a new chat in the pane. A quick launcher has none: its next
+  // Send starts the updated agent anyway.
   const pendingRestartVersion = useAcpStore((s) =>
-    selectedEntry ? (s.pendingRestartVersions[selectedEntry.configId] ?? null) : null
+    selectedEntry && !place.quick
+      ? (s.pendingRestartVersions[selectedEntry.configId] ?? null)
+      : null
   )
   const [restartingUpdatedAgent, setRestartingUpdatedAgent] = useState(false)
   const handleRestartUpdatedAgent = useCallback(() => {
@@ -414,7 +417,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
           await launchChat({
             configId,
             projectId: activeProjectId,
-            paneId,
+            surface: place.surface,
             checkout: { launchCwd: projectRoot },
             newWorktree: { projectRoot, baseBranch },
             onOpened: () => useWorkspaceStore.getState().hideAgentLauncher(),
@@ -484,6 +487,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     projectRoot,
     activeProjectId,
     paneId,
+    place.surface,
     restartingUpdatedAgent,
     isolationMode,
     canUseWorktree,
@@ -595,23 +599,18 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   const optionsInteractive = Boolean(draftSession || hasCachedOptions)
   const showModelLoading = !prepareError && isPreparing && !draftSession && !hasCachedModels
 
-  const usableConfigOptions = effectiveConfigOptions.filter(isUsableConfigOption)
   const {
-    model,
+    modelOption,
+    modelSource,
     thoughtLevel,
-    modelConfig: allModelConfig,
-    rest: genericConfigOptions
-  } = partitionConfigOptions(usableConfigOptions)
-  const { option: modelOption, source: modelSource } = resolveModelOption(model, effectiveModels)
-  const visibleGenericConfigOptions = filterDuplicateModeConfigOptions(
-    genericConfigOptions,
-    effectiveModes
-  )
-  const {
     fastMode,
     modelConfig,
-    rest: nonFastGenericOptions
-  } = splitFastModeOption(allModelConfig, visibleGenericConfigOptions)
+    genericOptions: nonFastGenericOptions
+  } = composerOptionControls({
+    models: effectiveModels,
+    modes: effectiveModes,
+    configOptions: effectiveConfigOptions
+  })
   const modePreviewSession = useMemo((): AcpSession | null => {
     if (draftSession) return draftSession
     if (!effectiveModes) return null
@@ -863,6 +862,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     modelOption,
     modelSource: modelSource ?? undefined,
     mentions,
+    projectId: activeProjectId,
     scheduleRestoreCaret
   })
   const mentionMenuOpen = mentions.menuOpen && !composerLocked && !slashOpen
@@ -1021,9 +1021,9 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     selectedConfigId !== '' &&
     entryServesConfigId(selectedEntry, selectedConfigId)
 
+  const warm = place.warm
   useEffect(() => {
-    if (!activeConfigId || !projectRoot || selectedEntry?.status !== 'ready' || !selectedConfig)
-      return
+    if (!activeConfigId || !warm || selectedEntry?.status !== 'ready' || !selectedConfig) return
     // Until the saved selection is read, `selectedEntry` shows the default as
     // a placeholder. Warming it would spawn an agent the user may never use.
     if (!warmSavedSelection) return
@@ -1064,15 +1064,12 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
           }
           if (cancelled) return
         }
-        // Retarget the app-level warm pool to this agent+cwd: drains stale
-        // pooled sessions for other agents (same cwd) and seeds a warm session
-        // for this one. The pool owns the session lifecycle, so — unlike the
-        // old launcher-scoped prepareChat — we do NOT cancel on close (a warm
-        // session stays ready for the next chat / a project switch-back).
-        useAcpStore.getState().setSelectedAgentConfigId(activeConfigId)
-        useAcpStore.getState().retargetWarmPool(activeConfigId, projectRoot, activeProjectId)
+        // A pane retargets the warm pool (a prepared session); a quick chat
+        // starts the agent process only (`useLauncherPlace`). Nothing is
+        // cancelled on close: warm work stays ready for the next chat.
+        warm(activeConfigId)
       } catch (err) {
-        console.warn('[acp] failed to retarget warm pool for', activeConfigId, err)
+        console.warn('[acp] failed to warm', activeConfigId, err)
       }
     })()
     return () => {
@@ -1081,12 +1078,11 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   }, [
     activeConfigId,
     acpConfigs,
-    projectRoot,
+    warm,
     saveAgentConfig,
     selectedConfig,
     warmSavedSelection,
     selectedEntry?.status,
-    activeProjectId,
     userPickedConfigId
   ])
 
@@ -1176,10 +1172,11 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   } = useAgentSignIn({
     registryAgentId: selectedEntry?.id ?? null,
     config: selectedConfig,
-    cwd: projectRoot,
-    projectId: activeProjectId,
+    cwd: place.agentScope.cwd,
+    projectId: place.agentScope.projectId,
     projectEnvVars: activeProject?.envVars,
-    paneId,
+    // A quick chat opens no login terminal: it has no project (useAgentSignIn).
+    paneId: paneId ?? '',
     onSignedIn: handleRetryPrepare
   })
 
@@ -1276,7 +1273,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   }, [preparedSessionId, pendingOptions])
 
   const launch = useCallback(async () => {
-    if (!activeProjectId || !projectRoot) {
+    if (!activeProjectId || place.launchCwd === null) {
       toast.error('No active project')
       return
     }
@@ -1318,8 +1315,10 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     const preparedKeySnapshot = preparedKey
     const configSnapshot = selectedConfig
     const paneSnapshot = paneId
+    const surfaceSnapshot = place.surface
+    const quickLauncherSnapshot = surfaceSnapshot.kind === 'quick' ? quickLauncherOnScreen() : null
     const projectIdSnapshot = activeProjectId
-    const projectRootSnapshot = projectRoot ?? ''
+    const projectRootSnapshot = place.launchCwd
     const needsSave = !acpConfigs.some((config) => config.id === selectedConfig.id)
 
     // Build the wire text (skills framed by path under `# Agent Skills`, then
@@ -1407,8 +1406,13 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
           pendingOptions.configValues,
           configOptionsSnapshot
         ),
-        isolationMode: persistedIsolationMode(isolationMode),
-        baseBranch: isolationMode === 'worktree' ? baseBranch : null
+        // A quick chat has no workspace pick: it keeps the project's.
+        ...(place.quick
+          ? {}
+          : {
+              isolationMode: persistedIsolationMode(isolationMode),
+              baseBranch: isolationMode === 'worktree' ? baseBranch : null
+            })
       })
       const blocks = textWithAttachmentBlocks(wireWithCommand, attachmentsSnapshot)
       // File-mention `resource_link` blocks append to the wire only — the
@@ -1419,6 +1423,22 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         wireBlocks: dedupeAttachmentBlocks(blocks),
         pendingPayload: hasPendingLauncherOptions(launchSnapshot) ? launchSnapshot : null
       }
+    }
+
+    // The user left this quick launcher (picked a project, or closed it and
+    // opened a new one) while the launch waited above: opening the quick chat
+    // now would pull them back, or send this prompt from the new launcher.
+    if (
+      surfaceSnapshot.kind === 'quick' &&
+      (quickLauncherSnapshot === null || quickLauncherOnScreen() !== quickLauncherSnapshot)
+    ) {
+      void logFrontendError({
+        level: 'info',
+        source: 'agentLauncher.launch',
+        message: `Quick chat launch for agent ${configSnapshot.id} called off: the quick chat launcher closed before it started`
+      })
+      releaseLaunch()
+      return
     }
 
     // Open the chat immediately; worktree prepare + ACP spawn/session/send
@@ -1433,7 +1453,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
       const { started } = launchChat({
         configId: configSnapshot.id,
         projectId: projectIdSnapshot,
-        paneId: paneSnapshot,
+        surface: surfaceSnapshot,
         checkout,
         newWorktree: makeWorktree
           ? { projectRoot: projectRootSnapshot, baseBranch: baseBranch ?? null }
@@ -1512,7 +1532,9 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
     })()
   }, [
     activeProjectId,
-    projectRoot,
+    place.launchCwd,
+    place.surface,
+    place.quick,
     selectedConfig,
     selectedEntry?.status,
     acpConfigs,
@@ -1565,12 +1587,12 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
         return true
       }
       if (event.key === 'Escape') {
-        useWorkspaceStore.getState().hideAgentLauncher()
+        place.dismiss()
         return true
       }
       return undefined
     },
-    [onSlashOrMentionKeyDown, launch]
+    [onSlashOrMentionKeyDown, launch, place.dismiss]
   )
 
   const canLaunch =
@@ -1598,7 +1620,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
   )
   const handleSignInFromSelector = useCallback(() => void handleSignIn(), [handleSignIn])
   const selectorSource = useLauncherSelectorSource({
-    paneKey: paneId,
+    paneKey: place.key,
     supportedAgents,
     agentConfigs: acpConfigs,
     selectedEntry,
@@ -1637,21 +1659,23 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
 
   // The worktree pick: in the Composer V2 foot row on desktop, under the
   // card on the phone.
-  const contextStrip = (className?: string): React.JSX.Element => (
-    <LauncherContextStrip
-      workspace={workspace}
-      worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
-      baseBranch={baseBranch}
-      setBaseBranch={setBaseBranch}
-      baseBranchInfo={baseBranchInfo}
-      baseOptions={baseOptions}
-      interactive={projectIsGitRepo}
-      newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
-      gitBranch={projectGitBranch}
-      isGitRepo={projectIsGitRepo}
-      className={className}
-    />
-  )
+  // A quick chat has none: it runs in a folder the host owns.
+  const contextStrip = (className?: string): React.JSX.Element | null =>
+    place.quick ? null : (
+      <LauncherContextStrip
+        workspace={workspace}
+        worktrees={activeProject?.worktrees ?? EMPTY_WORKTREES}
+        baseBranch={baseBranch}
+        setBaseBranch={setBaseBranch}
+        baseBranchInfo={baseBranchInfo}
+        baseOptions={baseOptions}
+        interactive={projectIsGitRepo}
+        newWorktreeDisabledReason={serverAdmitsWrites ? undefined : READ_ONLY_SERVER_REASON}
+        gitBranch={projectGitBranch}
+        isGitRepo={projectIsGitRepo}
+        className={className}
+      />
+    )
 
   return (
     <div
@@ -1706,6 +1730,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
               isExiting={isExiting}
               reducedMotion={reducedMotion}
               projectLabel={projectLabel}
+              quick={place.quick}
             />
           </div>
         ) : (
@@ -1714,6 +1739,7 @@ export function AgentLauncher({ paneId, className }: AgentLauncherProps): React.
               isExiting={isExiting}
               reducedMotion={reducedMotion}
               projectLabel={projectLabel}
+              quick={place.quick}
             />
           </div>
         )}

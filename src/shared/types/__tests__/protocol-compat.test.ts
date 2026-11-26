@@ -3,22 +3,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type * as G from '../generated/protocol'
-import {
-  WS_PROTOCOL_VERSION as GENERATED_VERSION,
-  WsErrorCodeValues,
-  WsEventTypeValues,
-  WsRequestTypeValues,
-  WsWatchNameValues
-} from '../generated/protocol'
+import { WsErrorCodeValues, WsEventTypeValues } from '../generated/protocol'
 import type * as Ipc from '../ipc.types'
 import type * as H from '../web-protocol.types'
-import {
-  WS_ERROR_CODES,
-  WS_EVENT_TYPES,
-  WS_PROTOCOL_VERSION,
-  WS_REQUEST_TYPES,
-  WS_WATCH_NAMES
-} from '../web-protocol.types'
+import { WS_ERROR_CODES, WS_EVENT_TYPES } from '../web-protocol.types'
 import type * as T from '../web-terminal-protocol.types'
 
 /** `true` when each type is assignable to the other. */
@@ -27,69 +15,9 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
 type Fits<A, B> = [A] extends [B] ? true : false
 const check = <_ extends true>(): void => {}
 
-// The generated types and the hand-written contract describe the same wire.
-check<Same<G.AcpAuthenticatePayload, H.AcpAuthenticatePayload>>()
-check<Same<G.AcpAuthenticateReply, H.AcpAuthenticateReply>>()
-check<Same<G.AcpRuntimePolicy, H.AcpRuntimePolicy>>()
-check<Same<G.DeleteSessionPayload, H.DeleteSessionPayload>>()
-check<Same<G.RecordAgentSwitchPayload, H.RecordAgentSwitchPayload>>()
-check<Same<G.ChatReadMark, H.ChatReadMark>>()
-check<Same<G.SessionSubscribeReply, H.SessionSubscribeReply>>()
-check<Same<G.SessionCursorReply, H.SessionCursorReply>>()
-check<Same<G.PersistedSessionSummary, H.PersistedSessionSummary>>()
-check<Same<G.UserPromptEvent, H.UserPromptEvent>>()
-check<Same<G.StoreReadPayload, H.StoreReadPayload>>()
-check<Same<G.StoreReadReply, H.StoreReadReply>>()
-check<Same<G.StoreWritePayload, H.StoreWritePayload>>()
-check<Same<G.StoreDeviceWriteReply, H.StoreDeviceWriteReply>>()
-check<Same<G.StoreSharedWriteReply, H.StoreSharedWriteReply>>()
-check<Same<G.StoreDeletePayload, H.StoreDeletePayload>>()
-check<Same<G.StoreDeleteReply, H.StoreDeleteReply>>()
-check<Same<G.AddProjectPayload, H.AddProjectPayload>>()
-check<Same<G.UpdateProjectPayload, H.UpdateProjectPayload>>()
-check<Same<G.RemoveProjectPayload, H.RemoveProjectPayload>>()
-check<Same<G.ProjectBusyDetails, H.ProjectBusyDetails>>()
-check<Same<G.AgentCapabilities, H.AgentCapabilities>>()
-check<Same<G.WsAgentSummary, H.WsAgentSummary>>()
-check<Same<G.BackgroundCommand, H.BackgroundCommand>>()
-check<Same<G.BackgroundCommandList, H.BackgroundCommandList>>()
-check<Same<G.WsRequestType, H.WsRequestType>>()
-check<Same<G.WsWatchName, H.WsWatchName>>()
-check<Same<G.WsErrorCode, H.WsErrorCode>>()
-check<Same<G.ReliabilityTier, H.ReliabilityTier>>()
-check<Same<G.HistoryMode, H.HistoryMode>>()
-check<Same<G.WsRequest, H.WsRequest>>()
-check<Same<G.WsGapFrame, H.WsGapFrame>>()
-check<Same<G.WsHeartbeatFrame, H.WsHeartbeatFrame>>()
-check<Same<G.WsCanvasCallFrame, H.WsCanvasCallFrame>>()
-check<Same<G.WsCanvasLeaseLostFrame, H.WsCanvasLeaseLostFrame>>()
-check<Same<G.WsCanvasMountReply, H.WsCanvasMountReply>>()
-check<Same<G.WsCanvasReplyPayload, H.WsCanvasReplyPayload>>()
-check<Same<G.WsWatchRevision, H.WsWatchRevision>>()
-check<Same<G.WsWatchFrame, H.WsWatchFrame>>()
-check<Same<G.WsWatchReply, H.WsWatchReply>>()
-check<Same<G.WatchResyncDelta, H.WatchResyncDelta>>()
-check<Same<G.ChatHistoryWatchDelta, H.ChatHistoryWatchDelta>>()
-check<Same<G.AgentsWatchDelta, H.AgentsWatchDelta>>()
-check<Same<G.ChatActivityRecord, H.ChatActivityRecord>>()
-check<Same<G.ChatActivityWatchState, H.ChatActivityWatchState>>()
-check<Same<G.ChatActivityWatchDelta, H.ChatActivityWatchDelta>>()
-check<Same<G.FsWatchState, H.FsWatchState>>()
-check<Same<G.FsWatchDelta, H.FsWatchDelta>>()
-check<Same<G.StoreWatchState, H.StoreWatchState>>()
-check<Same<G.WsTerminalSetEntry, H.WsTerminalSetEntry>>()
-check<Same<G.TerminalsWatchState, H.TerminalsWatchState>>()
-
-check<Same<G.WebTerminalRequestType, T.WebTerminalRequestType>>()
+// The hand-written types the generated ones do not replace describe the same
+// wire.
 check<Same<G.WebTerminalReply, T.WebTerminalReply>>()
-check<Same<G.WebTerminalDataFrame, T.WebTerminalDataFrame>>()
-check<Same<G.WebTerminalReplayFrame, T.WebTerminalReplayFrame>>()
-check<Same<G.WebTerminalGapFrame, T.WebTerminalGapFrame>>()
-check<Same<G.WebTerminalEventFrame, T.WebTerminalEventFrame>>()
-check<Same<G.WebTerminalEventPayload, T.WebTerminalEventPayload>>()
-check<
-  Same<Extract<G.WebTerminalEventPayload, { type: 'session_lifecycle' }>, T.SessionLifecyclePayload>
->()
 check<Same<G.WebTerminalFrame, T.WebTerminalFrame>>()
 check<Same<G.TerminalStateSnapshot, Ipc.TerminalStateSnapshot>>()
 check<Same<G.GitStatus, Ipc.GitStatus>>()
@@ -110,6 +38,7 @@ type ExtraEventTypes =
   | 'browser_ticket_closed'
   | 'claude_limit_action'
   | 'codex_limit_action'
+  | 'antigravity_limit_action'
 check<Same<Exclude<G.WsEventType, H.WsEventType>, ExtraEventTypes>>()
 check<Fits<H.WsEventType, G.WsEventType>>()
 check<Same<Omit<G.WsEvent, 'type'>, Omit<H.WsEvent, 'type'>>>()
@@ -239,7 +168,7 @@ describe('troupe-protocol fixtures', () => {
       ['get_session_cursor', 'SessionCursorReply'],
       ['store_read', 'StoreReadReply'],
       ['watch', 'WsWatchReply'],
-      ['mark_chat_read', 'ChatReadMark'],
+      ['mark_chat_read', 'ChatReadMarkReply'],
       ['canvas_mount', 'WsCanvasMountReply']
     ]
     for (const [request, type] of typed) {
@@ -290,9 +219,6 @@ describe('troupe-protocol fixtures', () => {
 
 describe('generated constants', () => {
   it('match the hand-written contract', () => {
-    expect(GENERATED_VERSION).toBe(WS_PROTOCOL_VERSION)
-    expect([...WsRequestTypeValues]).toEqual([...WS_REQUEST_TYPES])
-    expect([...WsWatchNameValues]).toEqual([...WS_WATCH_NAMES])
     expect([...WsErrorCodeValues]).toEqual(Object.values(WS_ERROR_CODES))
     expect(WsEventTypeValues.slice(0, WS_EVENT_TYPES.length)).toEqual([...WS_EVENT_TYPES])
     expect(WsEventTypeValues.slice(WS_EVENT_TYPES.length)).toEqual([
@@ -304,7 +230,8 @@ describe('generated constants', () => {
       'mcp_registry_changed',
       'browser_ticket_closed',
       'claude_limit_action',
-      'codex_limit_action'
+      'codex_limit_action',
+      'antigravity_limit_action'
     ])
   })
 })

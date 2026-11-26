@@ -10,6 +10,11 @@ import {
   type AddAccountStep
 } from './account-dialog-parts'
 import { accountErrorText } from './account-error'
+import {
+  type AccountProviderId,
+  PROVIDER_TERMS,
+  SecondAccountNotice
+} from './account-provider-terms'
 
 interface NamedAccount {
   id: string
@@ -26,10 +31,9 @@ export interface SignInStepContext<A extends NamedAccount> {
   setLocked: (locked: boolean) => void
 }
 
-/** The parts of "Add account" that differ between Claude and Codex. */
+/** The parts of "Add account" that differ between Claude, Codex and Antigravity. */
 export interface AddAccountProvider<A extends NamedAccount> {
-  /** "Claude" or "Codex". */
-  name: string
+  id: AccountProviderId
   create: (name: string) => Promise<A>
   setDefault: (accountId: string) => Promise<void>
   /** Plan and usage of the new account, for the ready step. */
@@ -53,6 +57,7 @@ interface AddAccountDialogShellProps<A extends NamedAccount> {
   /** Names already in use, so suggestions skip them. */
   existingNames: string[]
   defaultAccountName: string | null
+  hasSignedInAccount: boolean
   /** Called after the account list changed (created, signed in, default). */
   onChanged: () => Promise<void>
   /** Reads the new account's usage after it signed in. */
@@ -99,6 +104,7 @@ function AddAccountFlow<A extends NamedAccount>({
   provider,
   existingNames,
   defaultAccountName,
+  hasSignedInAccount,
   onChanged,
   onSignedIn,
   setLocked,
@@ -194,7 +200,7 @@ function AddAccountFlow<A extends NamedAccount>({
 
       {step === 'name' && (
         <AccountNameStep
-          provider={provider.name}
+          provider={PROVIDER_TERMS[provider.id].name}
           name={name}
           onNameChange={setName}
           existingNames={existingNames}
@@ -202,7 +208,9 @@ function AddAccountFlow<A extends NamedAccount>({
           busy={busy}
           onSubmit={() => void submitName()}
           onCancel={close}
-        />
+        >
+          {hasSignedInAccount && <SecondAccountNotice provider={provider.id} />}
+        </AccountNameStep>
       )}
 
       {step === 'signing' && account && (
