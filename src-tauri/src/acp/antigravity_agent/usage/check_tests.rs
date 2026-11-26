@@ -189,7 +189,11 @@ impl Mock {
     }
 
     fn prompts(&self) -> String {
-        std::fs::read_to_string(self.prompts_file()).unwrap_or_default()
+        // Windows text-mode writes may turn LF into CRLF, so compare
+        // the text, not the line endings.
+        std::fs::read_to_string(self.prompts_file())
+            .map(|text| text.replace("\r\n", "\n"))
+            .unwrap_or_default()
     }
 
     /// The reply, and the tier the session named, if a session started.

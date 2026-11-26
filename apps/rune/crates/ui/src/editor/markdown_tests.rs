@@ -157,3 +157,18 @@ fn only_markdown_files_have_the_document_view() {
     e.set_preview("/p/main.rs", true);
     assert!(!e.previewing("/p/main.rs"));
 }
+
+#[test]
+fn a_reloaded_file_is_split_again() {
+    let path = "/p/reload.md";
+    let mut rt = open(path, "# One\nTwo\n");
+    let first = rt.state.panes[path].blocks(&rt.state.docs.docs[path]);
+    rt.update(|e, _| {
+        e.step(Event::Reload { path: path.into() });
+        let read = Read { content: "One\nTwo\nX\n".into(), modified_at: 2.0, content_hash: None };
+        e.step(Event::Loaded { path: path.into(), result: Ok(read) });
+    });
+    let e = &rt.state;
+    assert_eq!(first.len(), 2, "a heading and a paragraph");
+    assert_eq!(e.panes[path].blocks(&e.docs.docs[path]).len(), 1, "same revision 0 and length, new text: one paragraph");
+}

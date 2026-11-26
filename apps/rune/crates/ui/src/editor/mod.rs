@@ -42,8 +42,8 @@ pub struct FindBar {
     pub replacing: bool,
     /// The query the selection last followed (find as you type).
     followed: Query,
-    /// The matches and the buffer revision and query they were read for.
-    matches: RefCell<Option<(u64, Query, Matches)>>,
+    /// The matches and the buffer version and query they were read for.
+    matches: RefCell<Option<((u64, u64), Query, Matches)>>,
 }
 
 impl FindBar {
@@ -73,7 +73,7 @@ impl FindBar {
     /// The matches in `doc`, read again only when the text or the query changed.
     pub fn matches(&self, doc: &store::Doc) -> Matches {
         let query = self.query();
-        let revision = doc.editor.revision();
+        let revision = doc.version();
         let mut cache = self.matches.borrow_mut();
         if let Some((r, q, m)) = cache.as_ref()
             && *r == revision
@@ -87,8 +87,8 @@ impl FindBar {
     }
 }
 
-/// Markdown blocks keyed by the buffer revision and length they were split at.
-type BlockCache = RefCell<Option<((u64, usize), Vec<model::editor::markdown::Block>)>>;
+/// Markdown blocks keyed by the buffer version they were split at.
+type BlockCache = RefCell<Option<((u64, u64), Vec<model::editor::markdown::Block>)>>;
 
 /// One editor tab's view state.
 pub struct Pane {
@@ -108,8 +108,7 @@ pub struct Pane {
     pub markdown: bool,
     /// Drawn as a document (`markdown`), not as source.
     pub preview: bool,
-    /// The Markdown blocks, and the buffer revision and length they were split at (a reload
-    /// starts the revision again).
+    /// The Markdown blocks, and the buffer version they were split at.
     blocks: BlockCache,
 }
 
@@ -131,7 +130,7 @@ impl Pane {
 
     /// `doc`'s Markdown blocks, split again only when the text changed.
     pub fn blocks(&self, doc: &store::Doc) -> Vec<model::editor::markdown::Block> {
-        let revision = (doc.editor.revision(), doc.editor.rope().len_chars());
+        let revision = doc.version();
         let mut cache = self.blocks.borrow_mut();
         if let Some((r, blocks)) = cache.as_ref()
             && *r == revision

@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::body::{to_bytes, Body};
 use axum::http::{Request, StatusCode};
 use axum::Router;
+use futures::StreamExt;
 use tower::ServiceExt;
 
 use super::{hold_slot, MAX_CONCURRENT_RAW};
@@ -212,6 +213,26 @@ async fn multi_chunk_bodies_arrive_whole_and_release_their_read_slot() {
         let bytes = to_bytes(resp.into_body(), usize::MAX).await.expect("body");
         assert_eq!(&bytes[..], &payload[..]);
     }
+}
+
+#[tokio::test]
+async fn polling_a_finished_multi_chunk_body_again_does_not_panic() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let file = dir.path().join("frame.png");
+    let payload: Vec<u8> = (0..700 * 1024).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&file, &payload).expect("write");
+
+    let resp = get(app(dir.path(), None), file.to_str().expect("utf8"), None).await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    let mut stream = resp.into_body().into_data_stream();
+    let mut got: Vec<u8> = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        got.extend_from_slice(&chunk.expect("chunk"));
+    }
+    assert_eq!(&got[..], &payload[..]);
+    // The HTTP stack polls once more after the stream ends; an unfused
+    // `unfold` panics on that poll (issue #2128).
+    assert!(stream.next().await.is_none());
 }
 
 #[tokio::test]
