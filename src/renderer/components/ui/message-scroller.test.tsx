@@ -228,6 +228,24 @@ describe('MessageScrollerProvider reader intent', () => {
     expect(viewport.scrollTop).toBe(390)
   })
 
+  it('keeps following when a bottom bounce settles back to the end', () => {
+    const { viewport, probe } = renderNearEnd()
+    // macOS rubber-banding reports scrollTop past the end (max is 400), then settles.
+    scrollViewportTo(viewport, 420)
+    scrollViewportTo(viewport, 400)
+    expect(probe.dataset.pinned).toBe('true')
+    expect(probe.dataset.button).toBe('false')
+  })
+
+  it('still lets go on a wheel up during a bottom bounce', () => {
+    const { viewport, probe } = renderNearEnd()
+    scrollViewportTo(viewport, 420)
+    act(() => {
+      viewport.dispatchEvent(new WheelEvent('wheel', { deltaY: -40, bubbles: true }))
+    })
+    expect(probe.dataset.pinned).toBe('false')
+  })
+
   it('pins again when the reader scrolls back to the end', () => {
     const { viewport, probe } = renderNearEnd()
     act(() => {

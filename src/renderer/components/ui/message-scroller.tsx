@@ -118,8 +118,15 @@ function MessageScrollerProvider({
       const { scrollTop, scrollHeight, clientHeight } = viewportEl
       const distance = scrollHeight - scrollTop - clientHeight
       // A scroll up that no layout change explains is the reader's own
-      // (a scrollbar drag); every scroll writer here only moves down.
-      if (scrollTop < last.top && scrollHeight >= last.height && clientHeight === last.client) {
+      // (a scrollbar drag); every scroll writer here only moves down. A bounce
+      // past the end (macOS rubber-banding) settling back is not.
+      const settlingFromOverscroll = last.top > last.height - last.client
+      if (
+        scrollTop < last.top &&
+        !settlingFromOverscroll &&
+        scrollHeight >= last.height &&
+        clientHeight === last.client
+      ) {
         releasedRef.current = true
       } else if (releasedRef.current && scrollTop > last.top && distance <= BOTTOM_THRESHOLD_PX) {
         releasedRef.current = false
