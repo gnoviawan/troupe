@@ -2442,6 +2442,10 @@ pub fn run() {
             commands::canvas_disk_changed,
             commands::canvas_resolve_conflict,
             commands::canvas_crashed,
+            // Live preview of .html files in the editor
+            commands::html_preview_open,
+            commands::html_preview_update,
+            commands::html_preview_close,
         ]))
         .build(app_context())
         .expect("error while building tauri application");
