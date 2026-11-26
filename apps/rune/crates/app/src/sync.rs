@@ -201,7 +201,22 @@ impl State {
         }
         self.list_chats();
         self.layout_step(LayoutEvent::StartHydrate);
-        self.palette.read = false;
+        self.palette_link_reset();
+    }
+
+    /// A watched store key changed (`StoreWatchState`: `exists` and the stored `value`). While
+    /// this client's own write to the key is out, its reply settles the value instead.
+    fn store_watched(&mut self, scope: &str, state: &Value) {
+        let shared = Shared::PinnedCommands;
+        if scope != shared.host_key() || self.sync.writing.contains(&shared) {
+            return;
+        }
+        if state.get("exists").and_then(Value::as_bool) != Some(true) {
+            return;
+        }
+        if let Some(value) = state.get("value").cloned().map(persistence::unwrap_stored) {
+            self.pinned_commands_changed(value);
+        }
     }
 
     /// The palette's pinned and recent lists, read the first time it opens on this link.
@@ -210,6 +225,11 @@ impl State {
             return;
         }
         self.palette.read = true;
+        // `useSharedKeySync`: a pin another device saves shows without a reload.
+        self.send(Command::Watch {
+            watch: WsWatchName::Store,
+            scope: Shared::PinnedCommands.host_key().to_owned(),
+        });
         self.call(
             WsRequestType::StoreRead,
             json!({ "key": Shared::PinnedCommands.host_key() }),
@@ -330,6 +350,16 @@ impl State {
                 Ok(list) => self.registry_list(list),
                 Err(e) => log::warn!("[app] unreadable projects frame: {e}"),
             },
+            Output::WatchState {
+                watch: WsWatchName::Store,
+                scope,
+                state,
+            }
+            | Output::WatchDelta {
+                watch: WsWatchName::Store,
+                scope,
+                delta: state,
+            } => self.store_watched(&scope, &state),
             Output::WatchDelta {
                 watch: WsWatchName::ChatHistory,
                 ..
@@ -393,7 +423,7 @@ impl State {
             }
             Pending::ReadRecentCommands => match result {
                 Ok(reply) => self.recent_commands_loaded(stored_value(reply)),
-                Err(e) => log::warn!("[app] reading the recent commands failed: {}", e.code),
+                Err(e) => self.recent_commands_unread(&e.code),
             },
             Pending::ReadShared(shared) => match result {
                 Ok(reply) => {
@@ -407,8 +437,10 @@ impl State {
                 }
                 Err(e) => {
                     log::warn!("[app] reading {} failed: {}", shared.host_key(), e.code);
-                    if shared == Shared::AppSettings {
-                        self.settings_loaded(Err(e.code.clone()));
+                    match shared {
+                        Shared::AppSettings => self.settings_loaded(Err(e.code.clone())),
+                        Shared::PinnedCommands => self.pinned_commands_unread(&e.code),
+                        Shared::Shortcuts => {}
                     }
                 }
             },

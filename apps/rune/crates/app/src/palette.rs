@@ -27,6 +27,18 @@ pub struct PaletteUi {
     phone: bool,
     /// The lists were asked for on this link.
     pub(crate) read: bool,
+    /// Each list's read answered on this link; until then a write would replace what
+    /// another session saved, so runs and pins wait in `early`.
+    recent_ready: bool,
+    pins_ready: bool,
+    early: Early,
+}
+
+/// Runs and pins made before their list's read answered, replayed over what it returns.
+#[derive(Default)]
+struct Early {
+    runs: Vec<String>,
+    pins: Vec<String>,
 }
 
 impl PaletteUi {
@@ -366,9 +378,11 @@ impl State {
     pub(crate) fn run_command(&mut self, id: &str) {
         log::info!("[palette] run {id}");
         self.palette.lists.step(Event::AddRecentCommand(id.to_owned()));
-        let ids = Value::from(self.palette.lists.recent_command_ids.clone());
-        let key = self.device_key(palette::RECENT_KEY);
-        self.write(palette::RECENT_KEY, ids, Pending::Write(key));
+        if self.palette.recent_ready {
+            self.write_recent();
+        } else {
+            self.palette.early.runs.push(id.to_owned());
+        }
         self.close(KEY);
         let later = |s: &mut State, what: &str| s.toast_later(what);
         match id {
@@ -393,20 +407,82 @@ impl State {
     pub(crate) fn toggle_pinned(&mut self, id: &str) {
         log::info!("[palette] pin {id}");
         self.palette.lists.step(Event::TogglePinned(id.to_owned()));
+        if self.palette.pins_ready {
+            self.write_pins();
+        } else {
+            self.palette.early.pins.push(id.to_owned());
+        }
+    }
+
+    fn write_recent(&mut self) {
+        let ids = Value::from(self.palette.lists.recent_command_ids.clone());
+        let key = self.device_key(palette::RECENT_KEY);
+        self.write(palette::RECENT_KEY, ids, Pending::Write(key));
+    }
+
+    fn write_pins(&mut self) {
         let ids = Value::from(self.palette.lists.pinned_command_ids.clone());
         self.write_shared(Shared::PinnedCommands, ids);
     }
 
-    /// `settings/recent-commands` was read.
+    /// A new link: the lists are read again the next time the palette opens.
+    pub(crate) fn palette_link_reset(&mut self) {
+        self.palette.read = false;
+        self.palette.recent_ready = false;
+        self.palette.pins_ready = false;
+    }
+
+    /// `settings/recent-commands` was read (None when it is empty): the saved list, with the
+    /// runs made before the read added on top and written back.
     pub(crate) fn recent_commands_loaded(&mut self, value: Option<Value>) {
-        if let Some(ids) = value.and_then(|v| serde_json::from_value::<Vec<String>>(v).ok()) {
-            self.palette.lists.step(Event::SetRecentCommands(ids));
+        let saved = value.and_then(|v| serde_json::from_value::<Vec<String>>(v).ok()).unwrap_or_default();
+        self.palette.lists.step(Event::SetRecentCommands(saved));
+        let early = std::mem::take(&mut self.palette.early.runs);
+        for id in &early {
+            self.palette.lists.step(Event::AddRecentCommand(id.clone()));
+        }
+        self.palette.recent_ready = true;
+        if !early.is_empty() {
+            self.write_recent();
         }
     }
 
-    /// `settings/pinned-commands` was read; anything but a list of ids is ignored.
+    /// The recent list could not be read: runs stay on this screen and nothing is written,
+    /// so the saved list survives.
+    pub(crate) fn recent_commands_unread(&mut self, code: &str) {
+        log::warn!("[palette] reading the recent commands failed: {code}; runs are not saved on this link");
+        self.palette.early.runs.clear();
+    }
+
+    /// `settings/pinned-commands` was read (None when it is empty): the saved list, with the
+    /// pins toggled before the read replayed on top and written back.
     pub(crate) fn pinned_commands_loaded(&mut self, value: Option<Value>) {
-        if let Some(ids) = value.and_then(|v| serde_json::from_value::<Vec<String>>(v).ok()) {
+        let saved = value.and_then(|v| serde_json::from_value::<Vec<String>>(v).ok()).unwrap_or_default();
+        self.palette.lists.step(Event::SetPinned(saved));
+        let early = std::mem::take(&mut self.palette.early.pins);
+        for id in &early {
+            self.palette.lists.step(Event::TogglePinned(id.clone()));
+        }
+        self.palette.pins_ready = true;
+        if !early.is_empty() {
+            self.write_pins();
+        }
+    }
+
+    /// The pinned list could not be read: it is never written on this link.
+    pub(crate) fn pinned_commands_unread(&mut self, code: &str) {
+        log::warn!("[palette] reading the pinned commands failed: {code}; pins are not saved on this link");
+        self.palette.early.pins.clear();
+    }
+
+    /// Another device changed the pinned list, or the host merged our write with its change
+    /// (`useSharedKeySync`): anything but a list of ids is ignored. A change seen while this
+    /// client's own write is out waits for that write's reply, which carries the merge.
+    pub(crate) fn pinned_commands_changed(&mut self, value: Value) {
+        if !self.palette.pins_ready {
+            return;
+        }
+        if let Ok(ids) = serde_json::from_value::<Vec<String>>(value) {
             self.palette.lists.step(Event::SetPinned(ids));
         }
     }

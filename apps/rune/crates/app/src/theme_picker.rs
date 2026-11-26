@@ -368,6 +368,7 @@ impl State {
                 system_dark: crate::settings::system_dark(),
             }),
             Shared::Shortcuts => self.shortcuts_loaded(Some(value)),
+            Shared::PinnedCommands => self.pinned_commands_changed(value),
         }
     }
 }
