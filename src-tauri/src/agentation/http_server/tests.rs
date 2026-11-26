@@ -104,6 +104,32 @@ async fn test_full_annotation_lifecycle() {
     assert_eq!(pending["count"], 1);
 }
 
+#[tokio::test]
+async fn test_pna_preflight_sets_private_network_header() {
+    let app = router(test_state(), SECRET);
+    let resp = app
+        .oneshot(
+            axum::http::Request::builder()
+                .method("OPTIONS")
+                .uri("/run-secret/sessions")
+                .header("origin", "https://absenin.id")
+                .header("access-control-request-method", "POST")
+                .header("access-control-request-headers", "content-type")
+                .header("access-control-request-private-network", "true")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert!(resp.status().is_success());
+    assert_eq!(
+        resp.headers()
+            .get("access-control-allow-private-network")
+            .and_then(|v| v.to_str().ok()),
+        Some("true")
+    );
+}
+
 /// Raw HTTP/1.1 GET over a real socket so the `Host` header is exactly the
 /// one a rebinding page would send.
 async fn raw_status(addr: SocketAddr, path: &str, host: &str) -> String {

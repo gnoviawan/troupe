@@ -61,6 +61,9 @@ const GATED_PREFIXES: &[&str] = &[
     // gh-1105: `/server/config` host-administration reconfigure routes —
     // registered only on the standalone `termul-server` (`server_admin`).
     "/server/",
+    // HTML preview sessions. The /preview/<token>/* pages are not under a
+    // gated prefix: the session token in the path authorizes them.
+    "/html-preview/",
     // The /canvas/ API routes require the token. The /canvas/<id>/* bundle
     // paths are exempt — see [`is_bundle_path`] (canvas-token authed
     // in the sub-router).

@@ -11,17 +11,43 @@ import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { useProjectStore } from '@/stores/project-store'
 import { BrowserPanel } from './BrowserPanel'
 
-const { annotationListeners, updatedListeners, actionListeners, mockOpenTerminalAtCwd } =
-  vi.hoisted(() => ({
-    annotationListeners: [] as Array<(p: AgentationCreatedPayload) => void>,
-    updatedListeners: [] as Array<(p: AgentationUpdatedPayload) => void>,
-    actionListeners: [] as Array<(p: AgentationActionPayload) => void>,
-    mockOpenTerminalAtCwd: vi.fn().mockResolvedValue({ status: 'opened', terminalId: 'term-1' })
-  }))
+const {
+  annotationListeners,
+  updatedListeners,
+  actionListeners,
+  mockOpenTerminalAtCwd,
+  mockCopyBase64PngToClipboard,
+  mockCropBase64Png,
+  mockOcclusionPreview
+} = vi.hoisted(() => ({
+  annotationListeners: [] as Array<(p: AgentationCreatedPayload) => void>,
+  updatedListeners: [] as Array<(p: AgentationUpdatedPayload) => void>,
+  actionListeners: [] as Array<(p: AgentationActionPayload) => void>,
+  mockOpenTerminalAtCwd: vi.fn().mockResolvedValue({ status: 'opened', terminalId: 'term-1' }),
+  mockCopyBase64PngToClipboard: vi.fn().mockResolvedValue({ ok: true }),
+  mockCropBase64Png: vi
+    .fn()
+    .mockResolvedValue({ base64: 'CROPPED==', dataUrl: 'data:image/png;base64,CROPPED==' }),
+  mockOcclusionPreview: { current: null as string | null }
+}))
 
 vi.mock('@/hooks/use-browser-webview', () => ({
-  useBrowserWebview: () => ({ containerRef: useRef<HTMLDivElement>(null) })
+  useBrowserWebview: () => ({
+    containerRef: useRef<HTMLDivElement>(null),
+    occlusionPreviewUrl: mockOcclusionPreview.current
+  })
 }))
+
+vi.mock('@/lib/browser-screenshot', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/browser-screenshot')>(
+    '@/lib/browser-screenshot'
+  )
+  return {
+    ...actual,
+    cropBase64Png: (...args: unknown[]) => mockCropBase64Png(...args),
+    copyBase64PngToClipboard: (...args: unknown[]) => mockCopyBase64PngToClipboard(...args)
+  }
+})
 
 vi.mock('@/lib/terminal-spawn', () => ({
   openTerminalAtCwd: (...args: unknown[]) => mockOpenTerminalAtCwd(...args)
@@ -44,6 +70,7 @@ vi.mock('@/lib/browser-api', () => ({
     .fn()
     .mockResolvedValue({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } }),
   browserTabAnnotationCmd: vi.fn().mockResolvedValue({ success: true }),
+  browserTabPollAnnotationOutbox: vi.fn().mockResolvedValue({ success: true, data: 0 }),
   browserAnnotationsSync: vi.fn().mockResolvedValue({ success: true, data: 1 }),
   browserSaveAnnotationCrop: vi
     .fn()
@@ -69,6 +96,9 @@ describe('BrowserPanel', () => {
     annotationListeners.length = 0
     actionListeners.length = 0
     mockOpenTerminalAtCwd.mockClear()
+    mockCopyBase64PngToClipboard.mockClear()
+    mockCropBase64Png.mockClear()
+    mockOcclusionPreview.current = null
     useBrowserSessionStore.setState({ tabs: new Map(), recentUrls: [] })
     useProjectStore.setState({
       activeProjectId: 'proj-1',
@@ -301,5 +331,52 @@ describe('BrowserPanel', () => {
       })
     })
     await waitFor(() => expect(browserTabInjectAgentation).toHaveBeenCalledWith('tab-1'))
+  })
+
+  it('copies area screenshot to clipboard without queuing into Send to chat and exits standalone mode', async () => {
+    const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    useBrowserSessionStore.getState().setAnnotateTool('tab-1', 'screenshot-area')
+    useBrowserSessionStore.getState().setStandaloneScreenshotArea('tab-1', true)
+
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    act(() => {
+      actionListeners[0]?.({
+        tabId: 'tab-1',
+        output: JSON.stringify({
+          kind: 'screenshot_area',
+          tabId: 'tab-1',
+          rect: { x: 10, y: 20, width: 200, height: 120 },
+          dpr: 2,
+          viewportWidth: 1200
+        })
+      })
+    })
+
+    await waitFor(() => expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('CROPPED=='))
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_active',
+      active: false
+    })
+  })
+
+  it('renders frozen occlusion snapshot image behind open dropdowns when provided by useBrowserWebview', () => {
+    mockOcclusionPreview.current = 'data:image/png;base64,AA=='
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+    const img = screen.getByTestId('browser-occlusion-preview') as HTMLImageElement
+    expect(img.getAttribute('src')).toBe('data:image/png;base64,AA==')
   })
 })

@@ -61,7 +61,7 @@ function seedFile(isDirty: boolean, operationStatus = 'idle' as const): void {
 
 const renderToolbar = (): HTMLElement => {
   const { container } = render(
-    <EditorToolbar viewMode="markdown" onToggleViewMode={vi.fn()} filePath={FILE_PATH} />
+    <EditorToolbar viewMode="preview" onViewModeChange={vi.fn()} filePath={FILE_PATH} />
   )
   return container
 }

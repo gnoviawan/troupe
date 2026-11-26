@@ -566,3 +566,228 @@ pub async fn browser_check_local_port(
     require_main_webview(&webview, "browser_check_local_port")?;
     Ok(IpcResult::success(is_local_port_listening(port).await))
 }
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OverlayOutboxEnvelope {
+    req_id: String,
+    nonce: String,
+    kind: String,
+    #[serde(default)]
+    url: String,
+    #[serde(default)]
+    session_id: Option<String>,
+    #[serde(default)]
+    payload: serde_json::Value,
+}
+
+#[derive(Debug, Clone, serde::Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct OverlayOutboxAck {
+    #[serde(rename = "type")]
+    pub(crate) msg_type: &'static str,
+    pub(crate) req_id: String,
+    pub(crate) ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) session_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) error: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum OutboxOutcome {
+    Ack(OverlayOutboxAck),
+    Rejected,
+}
+
+pub(crate) fn process_outbox_item(
+    store: &crate::agentation::store::SqliteStore,
+    tab_id: &str,
+    expected_nonce: &str,
+    raw: serde_json::Value,
+) -> OutboxOutcome {
+    use crate::agentation::types::{
+        AFSEventType, ActionRequest, AnnotationInput, AnnotationStore,
+    };
+    use subtle::ConstantTimeEq;
+
+    let env: OverlayOutboxEnvelope = match serde_json::from_value(raw) {
+        Ok(e) => e,
+        Err(e) => {
+            log::warn!("[BrowserTab] Dropped malformed overlay outbox item tab={tab_id}: {e}");
+            return OutboxOutcome::Rejected;
+        }
+    };
+    if env.req_id.is_empty()
+        || expected_nonce.is_empty()
+        || !bool::from(env.nonce.as_bytes().ct_eq(expected_nonce.as_bytes()))
+    {
+        log::warn!(
+            "[BrowserTab] Rejected overlay outbox item with invalid nonce tab={tab_id}"
+        );
+        return OutboxOutcome::Rejected;
+    }
+
+    let page_url = if env.url.is_empty() {
+        "about:blank".to_string()
+    } else {
+        env.url
+    };
+    let session_id = match env.session_id.as_deref() {
+        Some(sid) if !sid.is_empty() && store.get_session(sid).is_some() => sid.to_string(),
+        _ => store.create_session(&page_url, None).id,
+    };
+
+    match env.kind.as_str() {
+        "annotation" => match serde_json::from_value::<AnnotationInput>(env.payload) {
+            Ok(mut input) => {
+                input.tab_id = Some(tab_id.to_string());
+                if input.url.is_none() {
+                    input.url = Some(page_url);
+                }
+                match store.add_annotation(&session_id, &input) {
+                    Some(ann) => {
+                        log::info!(
+                            "[BrowserTab] Saved overlay annotation via host bridge tab={} id={} kind={:?}",
+                            tab_id,
+                            ann.id,
+                            ann.kind
+                        );
+                        OutboxOutcome::Ack(OverlayOutboxAck {
+                            msg_type: "outbox_ack",
+                            req_id: env.req_id,
+                            ok: true,
+                            id: Some(ann.id),
+                            session_id: Some(session_id),
+                            error: None,
+                        })
+                    }
+                    None => {
+                        log::warn!(
+                            "[BrowserTab] Failed to persist overlay annotation via host bridge tab={tab_id}"
+                        );
+                        OutboxOutcome::Ack(OverlayOutboxAck {
+                            msg_type: "outbox_ack",
+                            req_id: env.req_id,
+                            ok: false,
+                            id: None,
+                            session_id: Some(session_id),
+                            error: Some("Failed to persist annotation".to_string()),
+                        })
+                    }
+                }
+            }
+            Err(e) => {
+                log::warn!(
+                    "[BrowserTab] Invalid annotation payload in host bridge tab={tab_id}: {e}"
+                );
+                OutboxOutcome::Ack(OverlayOutboxAck {
+                    msg_type: "outbox_ack",
+                    req_id: env.req_id,
+                    ok: false,
+                    id: None,
+                    session_id: Some(session_id),
+                    error: Some("Invalid annotation payload".to_string()),
+                })
+            }
+        },
+        "action" => {
+            let output = env
+                .payload
+                .get("output")
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+                .unwrap_or_else(|| env.payload.to_string());
+            let action_req = ActionRequest {
+                session_id: session_id.clone(),
+                annotations: Vec::new(),
+                output,
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                tab_id: Some(tab_id.to_string()),
+            };
+            if let Ok(val) = serde_json::to_value(&action_req) {
+                store
+                    .event_bus()
+                    .emit(AFSEventType::ActionRequested, &session_id, val);
+            }
+            log::info!("[BrowserTab] Dispatched overlay action via host bridge tab={tab_id}");
+            OutboxOutcome::Ack(OverlayOutboxAck {
+                msg_type: "outbox_ack",
+                req_id: env.req_id,
+                ok: true,
+                id: None,
+                session_id: Some(session_id),
+                error: None,
+            })
+        }
+        other => {
+            log::warn!(
+                "[BrowserTab] Unknown overlay outbox kind '{other}' tab={tab_id}"
+            );
+            OutboxOutcome::Ack(OverlayOutboxAck {
+                msg_type: "outbox_ack",
+                req_id: env.req_id,
+                ok: false,
+                id: None,
+                session_id: Some(session_id),
+                error: Some(format!("Unknown outbox kind: {other}")),
+            })
+        }
+    }
+}
+
+/// Drain any queued overlay annotation/action messages from a user browser tab's
+/// DOM outbox via the isolated engine bridge (immune to page CSP, mixed-content,
+/// and HTTPS->HTTP loopback blocks) and persist them into `AgentationService`.
+#[tauri::command]
+pub async fn browser_tab_poll_annotation_outbox(
+    tab_id: String,
+    webview: Webview,
+    browser_manager: State<'_, Arc<BrowserTabManager>>,
+) -> Result<IpcResult<usize>, String> {
+    use tauri::Manager;
+
+    require_main_webview(&webview, "browser_tab_poll_annotation_outbox")?;
+    if !crate::host_perimeter::agentation_allowed(&tab_id)
+        || !browser_manager.is_agentation_enabled()
+    {
+        return Ok(IpcResult::success(0));
+    }
+    let Some(service) = webview
+        .app_handle()
+        .try_state::<crate::agentation::AgentationService>()
+    else {
+        return Ok(IpcResult::success(0));
+    };
+
+    let items = match crate::browser_automation::drain_annotation_outbox(&tab_id).await {
+        Ok(items) => items,
+        Err(e) => {
+            log::debug!("[BrowserTab] Outbox drain skipped tab={tab_id}: {e}");
+            return Ok(IpcResult::success(0));
+        }
+    };
+    if items.is_empty() {
+        return Ok(IpcResult::success(0));
+    }
+
+    let expected_nonce = browser_manager.agentation_bridge_nonce();
+    let mut processed = 0usize;
+    for raw in items {
+        if let OutboxOutcome::Ack(ack) =
+            process_outbox_item(&service.store, &tab_id, expected_nonce, raw)
+        {
+            processed += 1;
+            if let Ok(json) = serde_json::to_string(&ack) {
+                if let Err(e) = browser_manager.send_annotation_command(&tab_id, &json) {
+                    log::warn!(
+                        "[BrowserTab] Failed to send outbox ack tab={tab_id}: {e}"
+                    );
+                }
+            }
+        }
+    }
+    Ok(IpcResult::success(processed))
+}

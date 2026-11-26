@@ -156,6 +156,11 @@ export async function browserTabAnnotationCmd(
   return invokeIpc('browser_tab_annotation_cmd', { tabId, command })
 }
 
+export async function browserTabPollAnnotationOutbox(tabId: string): Promise<IpcResult<number>> {
+  if (!isTauriContext()) return notTauriError('Annotation outbox sync')
+  return invokeIpc('browser_tab_poll_annotation_outbox', { tabId })
+}
+
 export async function browserAnnotationsSync(
   action: 'delete' | 'resolve',
   ids: string[]

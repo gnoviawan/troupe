@@ -8,7 +8,7 @@
         "src/renderer/stores/workspace-store/slices/sync.ts": "ad3c4538050c7c608965243b9aed175eb5929b7f",
         "src/renderer/stores/workspace-store/slices/tabs.ts": "790028e4d72b22870fc23a94110202fe4aa74cd2",
         "src/renderer/lib/diff-tab-identity.ts": "0747a66f3e793b31939459bd57f2870ded43dff9",
-        "src/renderer/lib/working-copy.ts": "102cadf8f1824e244619aabe6478289293cb937c"
+        "src/renderer/lib/working-copy.ts": "8082eeb15148d033bd421c2e360de8937438ab4e"
       },
       "vectors": [
         "split_nested_each_side",

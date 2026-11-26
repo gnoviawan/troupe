@@ -61,6 +61,7 @@ pub struct BrowserTabManager {
     profiles: Result<Arc<AgentProfiles>, String>,
     agentation_endpoint: Arc<Mutex<Option<String>>>,
     agentation_enabled: Arc<Mutex<bool>>,
+    agentation_bridge_nonce: String,
     #[cfg(windows)]
     saved_grants: crate::browser_tab_saved_grants::ClearOnce,
 }
@@ -75,9 +76,15 @@ impl BrowserTabManager {
 
             agentation_endpoint: Arc::new(Mutex::new(None)),
             agentation_enabled: Arc::new(Mutex::new(true)),
+            agentation_bridge_nonce: uuid::Uuid::new_v4().simple().to_string(),
             #[cfg(windows)]
             saved_grants: crate::browser_tab_saved_grants::ClearOnce::default(),
         }
+    }
+
+    /// Per-run secret authenticating DOM outbox payloads from user tabs. Never log.
+    pub fn agentation_bridge_nonce(&self) -> &str {
+        &self.agentation_bridge_nonce
     }
 
     fn get_window(&self) -> Result<tauri::Window, String> {
@@ -171,12 +178,19 @@ impl BrowserTabManager {
         };
         if enabled && crate::host_perimeter::agentation_allowed(&tab_id) {
             if let Some(endpoint_url) = &endpoint {
+                let encoded_endpoint =
+                    serde_json::to_string(endpoint_url).unwrap_or_else(|_| "\"\"".into());
                 let encoded_tab = serde_json::to_string(&tab_id).unwrap_or_else(|_| "\"\"".into());
+                let encoded_nonce = serde_json::to_string(&self.agentation_bridge_nonce)
+                    .unwrap_or_else(|_| "\"\"".into());
                 let init_script = format!(
                     r#"
-                    window.__TERMUL_AGENTATION_ENDPOINT__ = "{endpoint_url}";
-                    window.__TERMUL_TAB_ID__ = {encoded_tab};
-                    window.__TERMUL_ANNOTATION_MODE__ = true;
+                    if (window.top === window) {{
+                      window.__TERMUL_AGENTATION_ENDPOINT__ = {encoded_endpoint};
+                      window.__TERMUL_TAB_ID__ = {encoded_tab};
+                      window.__TERMUL_AGENTATION_NONCE__ = {encoded_nonce};
+                      window.__TERMUL_ANNOTATION_MODE__ = true;
+                    }}
                     "#
                 );
                 builder = builder.initialization_script(&init_script);
@@ -480,8 +494,24 @@ impl BrowserTabManager {
         }
         let webview = self.get_webview(tab_id)?;
 
+        let endpoint = self
+            .agentation_endpoint
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
         let encoded_tab = serde_json::to_string(tab_id).unwrap_or_else(|_| "\"\"".into());
-        let _ = webview.eval(format!("window.__TERMUL_TAB_ID__ = {encoded_tab};"));
+        let encoded_nonce =
+            serde_json::to_string(&self.agentation_bridge_nonce).unwrap_or_else(|_| "\"\"".into());
+        let mut globals_script = format!(
+            "window.__TERMUL_TAB_ID__ = {encoded_tab}; window.__TERMUL_AGENTATION_NONCE__ = {encoded_nonce}; window.__TERMUL_ANNOTATION_MODE__ = true;"
+        );
+        if let Some(ep) = endpoint {
+            let encoded_ep = serde_json::to_string(&ep).unwrap_or_else(|_| "\"\"".into());
+            globals_script.push_str(&format!(
+                " window.__TERMUL_AGENTATION_ENDPOINT__ = {encoded_ep};"
+            ));
+        }
+        let _ = webview.eval(&globals_script);
 
         // Inject the agentation toolbar bundle (bundled IIFE).
         // The bundle self-checks __TERMUL_AGENTATION_HOST__ to avoid double-mount.
