@@ -62,6 +62,8 @@ mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
+mod project_settings;
+mod project_settings_view;
 mod rail_view;
 mod settings;
 mod settings_pages;
@@ -176,6 +178,8 @@ pub struct State {
     pub settings: model::settings::State,
     /// The Settings window: which one is open, its page and its own fields.
     pub settings_ui: settings_view::SettingsUi,
+    /// The project settings window's draft and its own fields.
+    pub project_ui: project_settings::ProjectSettingsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -233,6 +237,7 @@ impl Default for State {
             history: git_history::HistoryUi::default(),
             settings: model::settings::State::default(),
             settings_ui: settings_view::SettingsUi::default(),
+            project_ui: project_settings::ProjectSettingsUi::default(),
             sync: sync::Sync::default(),
         }
     }

@@ -500,6 +500,7 @@ impl State {
             "new-terminal" => self.new_terminal(None),
             "new-project" => self.overlays.open(crate::rail::NEW_PROJECT),
             "open-app-preferences" => self.open_settings(None),
+            "open-project-settings" => self.open_project_settings(None, None),
             "open-command-history" => self.open_command_history(),
             "change-color-theme" => self.open_theme_picker(),
             "open-shortcut-menu" => self.overlays.open(crate::keys::MENU),

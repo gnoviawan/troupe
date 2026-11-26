@@ -323,6 +323,8 @@ impl State {
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
                 crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
                 crate::host::Fetch::Shells => self.shells_listed(result),
+                crate::host::Fetch::ProjectEnv { request, project, root } => self.env_read((request, project, root), result),
+                crate::host::Fetch::Gitignore { project, why } => self.gitignore_parsed(&project, why, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
@@ -624,6 +626,7 @@ impl State {
         let out = projects::step(&mut self.projects, event, &mut Uuid);
         self.run(out.effects);
         self.show_active_project();
+        self.project_settings_check_target();
     }
 
     /// Bring the selected project's tree on screen: its parked tree at once, else after its

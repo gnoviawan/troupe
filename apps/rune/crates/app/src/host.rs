@@ -35,6 +35,10 @@ pub enum Fetch {
     Settings(crate::settings::IdleFetch),
     /// `/shells`: the shells the host found.
     Shells,
+    /// `/fs/read` of a project's `.env` for the project settings import, with what makes it stale.
+    ProjectEnv { request: u64, project: String, root: String },
+    /// `/worktree/parse-gitignore` for a project's worktree symlinks.
+    Gitignore { project: String, why: crate::project_settings::GitignoreRead },
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

@@ -99,6 +99,27 @@ pub fn setting(t: &Tokens, key: &str, label: &str, description: &str, control: O
     r
 }
 
+/// `SettingsRow` in a narrow column (below 35rem): the label and help, then the control on its
+/// own full-width line, 10 px under.
+pub fn setting_stacked(t: &Tokens, key: &str, label: &str, description: &str, control: El) -> El {
+    let c = &t.colors;
+    let mut words = col().key("words").w_full().gap(2.0).child(text(label).font(sans(12.0, 500.0, 16.0)).color(c.foreground));
+    if !description.is_empty() {
+        words = words.child(text(description).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).wrap());
+    }
+    col()
+        .key(key.to_owned())
+        .role("group")
+        .label(label.to_owned())
+        .w_full()
+        .px(16.0)
+        .py(12.0)
+        .gap(10.0)
+        .items_stretch()
+        .child(words)
+        .child(row().key("control").w_full().gap(8.0).items_center().child(control))
+}
+
 /// `SettingsSwitchRow`: a setting whose control is a switch named by its label. The caller adds
 /// `on_press` to the switch through `wire`.
 pub fn switch_row(t: &Tokens, key: &str, label: &str, description: &str, checked: bool, wire: impl FnOnce(El) -> El) -> El {
@@ -185,18 +206,38 @@ pub fn stepper(t: &Tokens, s: Stepper<'_>, wire: impl Fn(&str, El) -> El) -> El 
 
 /// `SettingsNotice` (info): a bordered note with its icon.
 pub fn notice(t: &Tokens, key: &str, body: &str) -> El {
+    toned_notice(t, key, Tone::Info, body)
+}
+
+/// A notice's tone (`NoticeTone`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tone {
+    Info,
+    Warning,
+    Danger,
+}
+
+/// `SettingsNotice` in `tone`: the tone's edge, wash and glyph.
+pub fn toned_notice(t: &Tokens, key: &str, tone: Tone, body: &str) -> El {
     let c = &t.colors;
-    let info = theme::icons::named("Info").expect("bundled icon");
+    let (glyph, ink, edge, wash) = match tone {
+        Tone::Info => ("Info", c.muted_foreground, c.border, c.foreground.alpha(0.03)),
+        Tone::Warning => ("AlertTriangle", c.warning, c.warning.alpha(0.2), c.warning.alpha(0.1)),
+        Tone::Danger => ("AlertCircle", c.destructive, c.destructive.alpha(0.2), c.destructive.alpha(0.1)),
+    };
+    let g = theme::icons::named(glyph).expect("bundled icon");
     row()
         .key(key.to_owned())
+        .role(if tone == Tone::Danger { "alert" } else { "status" })
         .w_full()
         .gap(10.0)
         .px(12.0)
         .py(10.0)
         .radius(8.0)
-        .border(1.0, c.border)
+        .border(1.0, edge)
+        .fill(wash)
         .items_start()
-        .child(icon(info, 14.0).color(c.muted_foreground).a11y_hidden())
+        .child(icon(g, 14.0).color(ink).mt(2.0).a11y_hidden())
         .child(
             text(body)
                 .font(sans(12.0, 400.0, 19.5))

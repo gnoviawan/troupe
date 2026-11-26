@@ -48,13 +48,7 @@ pub struct SkillsUi {
 }
 
 /// A detected shell (`ShellInfo`).
-#[derive(Clone, Debug, PartialEq, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ShellInfo {
-    pub path: String,
-    #[serde(default)]
-    pub display_name: String,
-}
+pub type ShellInfo = model::settings::project::Shell;
 
 impl State {
     fn profiles(&self) -> Vec<Profile> {

@@ -135,7 +135,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Settings",
         "Basic project identification and location.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "shell",
@@ -143,7 +143,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Terminal",
         "The shell new terminals in this project open with.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "env-vars",
@@ -151,7 +151,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Braces",
         "Secrets and config injected into your shell session. Secret values are cleared on app restart until secure storage is added.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "symlinks",
@@ -159,7 +159,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Link2",
         "Directories to symlink from the project root into worktrees, so shared dependencies such as node_modules work without reinstalling.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "provider",

@@ -79,6 +79,10 @@ impl State {
 
     /// Closes the top overlay: what Escape and a back press do. False when none was open.
     pub fn close_top(&mut self) -> bool {
+        if self.overlays.top() == Some(crate::project_settings::PROJECT) && self.project_dirty() {
+            self.overlays.open(crate::project_settings::LEAVE);
+            return true;
+        }
         let Some(top) = self.overlays.pop() else {
             return false;
         };
@@ -111,6 +115,7 @@ impl State {
             crate::theme_picker::KEY => self.picker_closed(),
             crate::keys::MENU | crate::settings_view::APP => self.keys.recording = None,
             crate::settings_view::SELECT => self.settings_ui.select = None,
+            crate::project_settings::PROJECT => self.project_ui.import_request += 1,
             crate::phone::MORE | crate::phone::PROJECTS | crate::phone::RECENTS => {
                 self.phone.drag = ui::overlay::SheetDrag::default();
                 if key == crate::phone::RECENTS {
