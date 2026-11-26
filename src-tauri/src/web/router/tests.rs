@@ -755,8 +755,18 @@ fn requires_token_covers_api_prefixes_and_public_paths() {
         "/canvas/disk-changed",
         "/canvas/resolve-conflict",
         "/canvas/crashed",
+        "/html-preview/open",
+        "/html-preview/update",
+        "/html-preview/close",
     ] {
         assert!(requires_token(gated), "{gated} must require the token");
+    }
+    // The preview pages carry their session token in the path instead.
+    for preview in ["/preview/0123/", "/preview/0123/index.html"] {
+        assert!(
+            !requires_token(preview),
+            "{preview} is session-token authed, not bearer gated"
+        );
     }
     // …but the `/canvas/<id>/<token>/*` bundle paths (the canvas token) are
     // exempt from the bearer gate (browser iframes cannot send Authorization

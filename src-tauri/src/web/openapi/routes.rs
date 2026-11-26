@@ -25,6 +25,7 @@ use crate::commands::search::{
 };
 use crate::diagnostics::{BugReportContext, BugReportSubmitRequest, BugReportSubmitResult};
 use crate::github::*;
+use crate::html_preview::PreviewOpenInfo;
 use crate::mcp_catalog::{
     CancelRequest, CommitRequest, CommitResult, FormReply, FormRequest, McpCatalogPage,
     McpCatalogSearchRequest, McpCatalogStatus, PlanReply, PlanRequest,
@@ -54,6 +55,9 @@ use crate::web::git_api::{
 };
 use crate::web::git_history_api::{GitCommitDetailRequest, GitCommitFileDiffRequest};
 use crate::web::git_hunk_api::GitHunkRequest;
+use crate::web::html_preview_api::{
+    HtmlPreviewCloseRequest, HtmlPreviewOpenRequest, HtmlPreviewUpdateRequest,
+};
 use crate::web::log_api::FrontendErrorRequest;
 use crate::web::mcp_catalog_api::{SetMcpCatalogSyncRequest, WithClient};
 use crate::web::mcp_oauth_api::{
@@ -496,6 +500,22 @@ pub static ROUTES: &[ApiRoute] = &[
     ApiRoute::get("/canvas/{id}/{*rest}", Tag::Canvas, "The canvas editor bundle")
         .reply(Reply::Bytes(ANY_CONTENT))
         .describe("`rest` starts with the canvas session token from `POST /canvas/open`, which authorizes the request instead of the bearer token: a missing or wrong token answers 401, and the bare token without a trailing `/` answers 308 to the slashed form. Only `GET` and `HEAD` are served."),
+    // HTML preview
+    ApiRoute::post("/html-preview/open", Tag::Fs, "Open a live preview of an HTML file")
+        .json::<HtmlPreviewOpenRequest>()
+        .ipc::<PreviewOpenInfo>()
+        .describe("Load the page from `{baseUrl}/preview/{token}/{entry}`."),
+    ApiRoute::post("/html-preview/update", Tag::Fs, "Serve unsaved text as a preview's page")
+        .json::<HtmlPreviewUpdateRequest>()
+        .describe("The text replaces the file's contents in the preview until the session closes. At most 5 MiB."),
+    ApiRoute::post("/html-preview/close", Tag::Fs, "Close an HTML preview")
+        .json::<HtmlPreviewCloseRequest>(),
+    ApiRoute::get("/preview/{token}/", Tag::Fs, "An HTML preview's page")
+        .reply(Reply::Bytes(ANY_CONTENT))
+        .describe("Redirects to the page. The session token in the path authorizes the request instead of the bearer token; an unknown token answers 404."),
+    ApiRoute::get("/preview/{token}/{*rest}", Tag::Fs, "An HTML preview's page and the files beside it")
+        .reply(Reply::Bytes(ANY_CONTENT))
+        .describe("The session token in the path authorizes the request instead of the bearer token; an unknown token answers 404. Only files in the page's folder are served, of web page types, each under a sandbox `Content-Security-Policy`. Only `GET` and `HEAD` are served."),
     // Diagnostics
     ApiRoute::post("/log/frontend-error", Tag::Diagnostics, "Forward a frontend error to the host log")
         .json::<FrontendErrorRequest>(),

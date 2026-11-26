@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { EditorViewMode } from '@/lib/editor-file-kind'
 import { useEditorStore } from '@/stores/editor-store'
 import { EditorToolbar } from './EditorToolbar'
 
@@ -28,14 +29,17 @@ vi.mock('@/stores/toc-settings-store', () => ({
 const FILE_PATH = '/docs/spec.md'
 
 const renderToolbar = (
-  viewMode: 'code' | 'preview',
-  onToggleViewMode = vi.fn()
-): { container: HTMLElement; onToggleViewMode: ReturnType<typeof vi.fn> } => {
+  viewMode: EditorViewMode,
+  filePath = FILE_PATH
+): { container: HTMLElement; onViewModeChange: ReturnType<typeof vi.fn> } => {
+  const onViewModeChange = vi.fn()
   const { container } = render(
-    <EditorToolbar viewMode={viewMode} onToggleViewMode={onToggleViewMode} filePath={FILE_PATH} />
+    <EditorToolbar viewMode={viewMode} onViewModeChange={onViewModeChange} filePath={filePath} />
   )
-  return { container, onToggleViewMode }
+  return { container, onViewModeChange }
 }
+const segmentLabels = (): string[] =>
+  screen.getAllByRole('radio').map((radio) => radio.getAttribute('aria-label') ?? '')
 const findOutlineButton = (): HTMLButtonElement =>
   screen.getByRole('button', { name: 'Outline' }) as HTMLButtonElement
 
@@ -65,13 +69,20 @@ describe('EditorToolbar mobile control sizing', () => {
   })
 
   it('outline and view-mode controls still function on mobile', () => {
-    const { onToggleViewMode } = renderToolbar('preview')
+    const { onViewModeChange } = renderToolbar('preview')
 
     fireEvent.click(findOutlineButton())
     expect(mocks.toggleVisibility).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('radio', { name: 'Source' }))
-    expect(onToggleViewMode).toHaveBeenCalledTimes(1)
+    expect(onViewModeChange).toHaveBeenCalledWith('code')
+  })
+
+  it('offers Preview and Source for html, and shows split as its preview', () => {
+    renderToolbar('split', '/site/index.html')
+
+    expect(segmentLabels()).toEqual(['Preview', 'Source'])
+    expect(screen.getByRole('radio', { name: 'Preview' })).toHaveAttribute('aria-checked', 'true')
   })
 })
 
@@ -104,7 +115,7 @@ describe('EditorToolbar desktop chrome', () => {
   })
 
   it('raises the current mode in the Preview | Source track', () => {
-    const { onToggleViewMode } = renderToolbar('preview')
+    const { onViewModeChange } = renderToolbar('preview')
 
     const preview = screen.getByRole('radio', { name: 'Preview' })
     const source = screen.getByRole('radio', { name: 'Source' })
@@ -113,11 +124,25 @@ describe('EditorToolbar desktop chrome', () => {
     expect(source).toHaveAttribute('aria-checked', 'false')
     expect(source).not.toHaveClass('keycap')
 
-    // Clicking the current mode is a no-op; the other mode toggles.
+    // Clicking the current mode is a no-op; another mode is chosen.
     fireEvent.click(preview)
-    expect(onToggleViewMode).not.toHaveBeenCalled()
+    expect(onViewModeChange).not.toHaveBeenCalled()
     fireEvent.click(source)
-    expect(onToggleViewMode).toHaveBeenCalledTimes(1)
+    expect(onViewModeChange).toHaveBeenCalledWith('code')
+  })
+
+  it('offers Preview, Split and Source for html and picks split', () => {
+    const { onViewModeChange } = renderToolbar('preview', '/site/index.html')
+
+    expect(segmentLabels()).toEqual(['Preview', 'Split', 'Source'])
+    fireEvent.click(screen.getByRole('radio', { name: 'Split' }))
+    expect(onViewModeChange).toHaveBeenCalledWith('split')
+  })
+
+  it('offers only Preview and Source for markdown', () => {
+    renderToolbar('preview')
+
+    expect(segmentLabels()).toEqual(['Preview', 'Source'])
   })
 
   it('marks the outline toggle pressed without an accent fill', () => {
