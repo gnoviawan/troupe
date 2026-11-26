@@ -46,6 +46,9 @@ pub struct Shown {
     pub lit: usize,
 }
 
+/// A session's id, nonce and prompt generation: what tells one prompt from the next.
+type Prompt = (Option<String>, Option<String>, Option<u64>);
+
 #[derive(Default)]
 pub struct EditorUi {
     pub sessions: Store,
@@ -69,7 +72,7 @@ pub struct EditorUi {
     /// An editor that mounted since the last frame; it takes focus when its terminal had it.
     focus: Option<String>,
     /// What each session showed last, to tell a new prompt from the same one.
-    seen: BTreeMap<String, (Option<String>, Option<String>, Option<u64>)>,
+    seen: BTreeMap<String, Prompt>,
 }
 
 /// A rune key as one of the editor keymap's keys (`editorKeymap`).
