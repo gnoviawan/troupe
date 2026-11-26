@@ -132,6 +132,7 @@ mod imp {
         /// [`Host::media_fetched`].
         pub fn fetch_bytes(&mut self, path: String) {
             let (config, wake, done) = (self.config.clone(), self.wake.clone(), self.media.0.clone());
+            let asked = path.clone();
             let spawned = thread::Builder::new().name("troupe-media".into()).spawn(move || {
                 let result = client::native::http_get_bytes(&config, &raw_path(&path));
                 if done.send((path, result)).is_ok() {
@@ -140,6 +141,8 @@ mod imp {
             });
             if let Err(e) = spawned {
                 log::warn!("[app] could not start a media read: {e}");
+                let _ = self.media.0.send((asked, Err(HttpError::Network(format!("could not start the read: {e}")))));
+                (self.wake)();
             }
         }
 

@@ -23,13 +23,11 @@ impl State {
         }
     }
 
-    /// Hands the bytes the host read to their viewers; true when one arrived.
+    /// Hands the bytes the host read to their viewers, and takes in what opened off the UI
+    /// thread; true when the view changed.
     pub(crate) fn pump_viewers(&mut self) -> bool {
-        let Some(host) = &mut self.host else {
-            return false;
-        };
-        let read = host.media_fetched();
-        let changed = !read.is_empty();
+        let read = self.host.as_mut().map(crate::host::Host::media_fetched).unwrap_or_default();
+        let mut changed = !read.is_empty();
         for (path, result) in read {
             let result = result.map_err(|e| match e {
                 client::http::HttpError::Refused { code, message, .. } => (code, message),
@@ -38,6 +36,7 @@ impl State {
             });
             self.viewers.loaded(&path, result);
         }
+        changed |= self.viewers.pump();
         self.run_viewer_effects();
         changed || self.viewers.playing()
     }

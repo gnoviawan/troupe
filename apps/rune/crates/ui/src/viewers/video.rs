@@ -22,14 +22,16 @@ pub fn format_duration(seconds: f64) -> String {
 }
 
 pub use imp::Player;
+#[cfg(all(test, not(target_arch = "wasm32")))]
+pub(crate) use imp::stage;
 
 #[cfg(not(target_arch = "wasm32"))]
 mod imp {
-    use std::io::Read;
-    use std::path::PathBuf;
+    use std::io::{Read, Write};
+    use std::path::Path;
     use std::process::{Child, Command, Stdio};
     use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-    use std::sync::{Arc, Mutex};
+    use std::sync::{Arc, Mutex, PoisonError};
     use std::time::{Duration, Instant};
 
     use rune::native_surface::{ByteFrame, ColorInfo, Format, Matrix, Transfer};
@@ -37,9 +39,17 @@ mod imp {
 
     use super::Meta;
 
+    /// The longest side, and the most pixels, of a clip the viewer plays: 8K. A frame of it is
+    /// 50 MB of NV12.
+    const MAX_SIDE: u32 = 8192;
+    const MAX_PIXELS: u64 = 7680 * 4320;
+
     struct Shared {
-        file: PathBuf,
+        /// The staged clip: a private temporary file, removed when the player goes.
+        file: tempfile::TempPath,
         meta: Meta,
+        /// Bytes in one NV12 frame.
+        frame_len: usize,
         fps: f64,
         surface: NativeSurface,
         /// Seconds into the clip the last pushed frame shows.
@@ -52,7 +62,17 @@ mod imp {
 
     pub struct Player(Arc<Shared>);
 
-    fn probe(file: &PathBuf) -> Result<(Meta, f64), String> {
+    fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+        m.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Ends `child` and reaps it.
+    fn end(mut child: Child) {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+
+    fn probe(file: &Path) -> Result<(Meta, f64), String> {
         let out = Command::new("ffprobe")
             .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,r_frame_rate:format=duration", "-of", "default=nw=1"])
             .arg(file)
@@ -74,7 +94,25 @@ mod imp {
             .unwrap_or(30.0);
         let duration = field("duration").and_then(|v| v.parse().ok());
         // NV12 needs even sides; ffmpeg scales to them below.
-        Ok((Meta { width: width & !1, height: height & !1, duration }, fps))
+        let (even_w, even_h) = (width & !1, height & !1);
+        if even_w == 0 || even_h == 0 || even_w > MAX_SIDE || even_h > MAX_SIDE || u64::from(even_w) * u64::from(even_h) > MAX_PIXELS {
+            return Err(format!("the video is {width} × {height}, outside what the viewer plays"));
+        }
+        Ok((Meta { width: even_w, height: even_h, duration }, fps))
+    }
+
+    /// Bytes in one NV12 frame of `meta`'s size, when it fits in memory's arithmetic.
+    fn frame_len(meta: Meta) -> Option<usize> {
+        (meta.width as usize).checked_mul(meta.height as usize)?.checked_mul(3).map(|n| n / 2)
+    }
+
+    /// `bytes` in a new temporary file only this user can read, named for the clip's type.
+    pub(crate) fn stage(path: &str, bytes: &[u8]) -> std::io::Result<tempfile::TempPath> {
+        let ext = path.rsplit_once('.').map(|(_, e)| e).filter(|e| !e.is_empty() && e.len() <= 8 && e.bytes().all(|b| b.is_ascii_alphanumeric())).unwrap_or("bin");
+        let mut file = tempfile::Builder::new().prefix("troupe-video-").suffix(&format!(".{ext}")).tempfile()?;
+        file.write_all(bytes)?;
+        file.flush()?;
+        Ok(file.into_temp_path())
     }
 
     fn decoder(shared: &Shared, from: f64, frames: Option<u32>) -> Result<Child, String> {
@@ -89,7 +127,7 @@ mod imp {
     }
 
     fn frame(meta: Meta, mut planes: Vec<u8>) -> ByteFrame {
-        let uv = planes.split_off((meta.width * meta.height) as usize);
+        let uv = planes.split_off(meta.width as usize * meta.height as usize);
         ByteFrame {
             width: meta.width,
             height: meta.height,
@@ -99,18 +137,14 @@ mod imp {
         }
     }
 
-    fn frame_len(meta: Meta) -> usize {
-        (meta.width * meta.height * 3 / 2) as usize
-    }
-
     impl Player {
         /// Writes the clip to a temporary file, reads its size and length, and shows its
-        /// first frame.
+        /// first frame. It takes seconds on a long clip: call it off the UI thread.
         pub fn open(path: &str, bytes: Vec<u8>, wake: Option<Waker>) -> Result<Self, String> {
-            let ext = path.rsplit('.').next().unwrap_or("mp4");
-            let file = std::env::temp_dir().join(format!("troupe-video-{}-{:x}.{ext}", std::process::id(), seahash(&bytes)));
-            std::fs::write(&file, &bytes).map_err(|e| format!("could not stage the clip: {e}"))?;
+            let file = stage(path, &bytes).map_err(|e| format!("could not stage the clip: {e}"))?;
+            drop(bytes);
             let (meta, fps) = probe(&file)?;
+            let frame_len = frame_len(meta).ok_or("the video's frames do not fit in memory")?;
             let surface = NativeSurface::new();
             if let Some(wake) = wake {
                 surface.set_waker(wake);
@@ -118,6 +152,7 @@ mod imp {
             let shared = Arc::new(Shared {
                 file,
                 meta,
+                frame_len,
                 fps,
                 surface,
                 position: Mutex::new(0.0),
@@ -126,12 +161,13 @@ mod imp {
                 child: Mutex::new(None),
             });
             let mut first = decoder(&shared, 0.0, Some(1))?;
-            let mut buf = vec![0; frame_len(meta)];
+            let mut buf = vec![0; frame_len];
             let read = first.stdout.take().map(|mut out| out.read_exact(&mut buf));
-            let _ = first.wait();
-            if matches!(read, Some(Ok(()))) {
-                let _ = shared.surface.push_bytes(frame(meta, buf), 0);
+            end(first);
+            if !matches!(read, Some(Ok(()))) {
+                return Err("ffmpeg could not decode the first frame".to_owned());
             }
+            let _ = shared.surface.push_bytes(frame(meta, buf), 0);
             log::info!("[viewer] video {}x{} {:.1} fps {:?} s", meta.width, meta.height, fps, meta.duration);
             Ok(Self(shared))
         }
@@ -149,7 +185,7 @@ mod imp {
         /// Seconds into the clip.
         #[must_use]
         pub fn position(&self) -> f64 {
-            *self.0.position.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+            *lock(&self.0.position)
         }
 
         /// Play from where it stopped (from the start once it ended), or pause.
@@ -171,14 +207,17 @@ mod imp {
                     return;
                 }
             };
-            let Some(mut out) = child.stdout.take() else { return };
-            *shared.child.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(child);
+            let Some(mut out) = child.stdout.take() else {
+                end(child);
+                return;
+            };
+            *lock(&shared.child) = Some(child);
             shared.playing.store(true, Ordering::Relaxed);
             let spawned = std::thread::Builder::new().name("troupe-video".into()).spawn(move || {
                 let started = Instant::now();
                 let mut n: u64 = 0;
                 loop {
-                    let mut buf = vec![0; frame_len(shared.meta)];
+                    let mut buf = vec![0; shared.frame_len];
                     if out.read_exact(&mut buf).is_err() || shared.run.load(Ordering::Relaxed) != run {
                         break;
                     }
@@ -188,11 +227,14 @@ mod imp {
                         std::thread::sleep(wait);
                     }
                     let _ = shared.surface.push_bytes(frame(shared.meta, buf), run << 32 | n);
-                    *shared.position.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = from + n as f64 / shared.fps;
+                    *lock(&shared.position) = from + n as f64 / shared.fps;
                     n += 1;
                 }
                 if shared.run.load(Ordering::Relaxed) == run {
                     shared.playing.store(false, Ordering::Relaxed);
+                    if let Some(child) = lock(&shared.child).take() {
+                        end(child);
+                    }
                     log::info!("[viewer] video ended after {n} frames");
                 }
             });
@@ -206,9 +248,8 @@ mod imp {
         pub fn stop(&self) {
             self.0.run.fetch_add(1, Ordering::Relaxed);
             self.0.playing.store(false, Ordering::Relaxed);
-            if let Some(mut child) = self.0.child.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
-                let _ = child.kill();
-                let _ = child.wait();
+            if let Some(child) = lock(&self.0.child).take() {
+                end(child);
             }
         }
 
@@ -218,15 +259,13 @@ mod imp {
         }
     }
 
+    /// The decoder ends before `file` drops and removes the clip.
     impl Drop for Shared {
         fn drop(&mut self) {
-            let _ = std::fs::remove_file(&self.file);
+            if let Some(child) = lock(&self.child).take() {
+                end(child);
+            }
         }
-    }
-
-    /// A content hash for the staged file's name, so two tabs of one clip share nothing stale.
-    fn seahash(bytes: &[u8]) -> u64 {
-        bytes.iter().fold(0xcbf2_9ce4_8422_2325u64, |h, b| (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3))
     }
 }
 

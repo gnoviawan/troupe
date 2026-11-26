@@ -4364,6 +4364,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha1",
+ "tempfile",
  "theme",
  "troupe-editor",
  "troupe-term",

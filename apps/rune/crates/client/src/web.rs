@@ -172,7 +172,6 @@ impl<M: Machine> WebDriver<M> {
 /// One request, body included, may take this long, as on native.
 const HTTP_BUDGET_MS: u32 = 30_000;
 
-/// Send one HTTP request with `fetch` and read the Troupe body.
 /// `GET path` for a raw body (`/fs/raw`): the bytes on success, else the Troupe refusal.
 pub async fn http_get_bytes(config: &Config, path: &str) -> Result<Vec<u8>, HttpError> {
     let js = |e: JsValue| HttpError::Network(format!("{e:?}"));
@@ -197,6 +196,7 @@ pub async fn http_get_bytes(config: &Config, path: &str) -> Result<Vec<u8>, Http
     parse_body(status, &bytes).and(Err(HttpError::Network(format!("HTTP {status}"))))
 }
 
+/// Send one HTTP request with `fetch` and read the Troupe body.
 pub async fn http_send(config: &Config, request: &HttpRequest) -> Result<Value, HttpError> {
     let js = |e: JsValue| HttpError::Network(format!("{e:?}"));
     let url = format!("{}{}", config.base_url.trim_end_matches('/'), request.path);

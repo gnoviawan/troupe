@@ -18,6 +18,10 @@ log = "0.4"
 # PDF pages rasterised on the CPU, the same on native and wasm (`docs/rune/decisions.md`, "PDF engine").
 hayro = { version = "0.9", default-features = false, features = ["embed-fonts"] }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# The video viewer stages a clip for ffmpeg in a private temporary file.
+tempfile = "3"
+
 [dev-dependencies]
 sha1 = "0.10"
 
