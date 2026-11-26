@@ -49,7 +49,7 @@ async fn text(response: Response) -> String {
     String::from_utf8(bytes.to_vec()).expect("utf-8 body")
 }
 
-fn header_of<'a>(response: &'a Response, name: header::HeaderName) -> &'a str {
+fn header_of(response: &Response, name: header::HeaderName) -> &str {
     response
         .headers()
         .get(name)
