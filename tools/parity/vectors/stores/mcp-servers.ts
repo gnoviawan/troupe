@@ -1,13 +1,16 @@
 import {
+  initialInstallValues,
+  splitInstallValues
+} from '../../../../src/renderer/components/settings/McpInstallForm'
+import {
   mcpServerStatus,
   mcpServerTarget,
   mcpToolCount
 } from '../../../../src/renderer/components/settings/mcp-server-view'
 import {
-  initialInstallValues,
-  splitInstallValues
-} from '../../../../src/renderer/components/settings/McpInstallForm'
-import { canStartOver, type McpInstallFailure } from '../../../../src/renderer/hooks/use-mcp-catalog-install'
+  canStartOver,
+  type McpInstallFailure
+} from '../../../../src/renderer/hooks/use-mcp-catalog-install'
 import {
   normalizeMcpRegistry,
   type StoredMcpServer,
@@ -22,6 +25,7 @@ import {
   mcpCatalogSyncText,
   mcpCatalogUpdatedText
 } from '../../../../src/renderer/lib/mcp-catalog-copy'
+import { parseMcpJsonImport } from '../../../../src/renderer/lib/mcp-json-import'
 import {
   blankRow,
   draftFromServer,
@@ -37,13 +41,12 @@ import {
   withAuth,
   withUrl
 } from '../../../../src/renderer/lib/mcp-server-draft'
-import { parseMcpJsonImport } from '../../../../src/renderer/lib/mcp-json-import'
-import type { McpInstallField } from '../../../../src/shared/types/mcp-install.types'
 import type {
   McpCatalogReason,
   McpCatalogState,
   McpCatalogStatus
 } from '../../../../src/shared/types/mcp-catalog.types'
+import type { McpInstallField } from '../../../../src/shared/types/mcp-install.types'
 import type { Scenario, StoreRecorder, VectorEvent } from '../record'
 
 type Row = { name: string; value: string }
@@ -444,9 +447,18 @@ export const mcpServersScenarios: Scenario[] = [
   {
     name: 'pasted_json_imports_like_the_dialog',
     steps: [
-      read('jsonImport', '{"mcpServers": {"b": {"command": " npx ", "args": [" -y ", "pkg"], "env": {"TOKEN": "x", "N": 3, "F": false}}, "1": {"url": " https://mcp.example.com/mcp "}}}'),
-      read('jsonImport', '{"mcpServers": {"ok": {"command": "x"}, "bad": {"env": 3}, "h": {"headers": [{"name": "A"}], "url": "https://h.dev"}, "noname": {"type": "sse"}, "list": [], "acp": {"type": "acp", "url": "https://a.dev/sse"}, "argz": {"command": "x", "args": [1]}}}'),
-      read('jsonImport', '{"name": "solo", "type": "sse", "url": "https://s.dev/sse", "headers": [{"name": "Authorization", "value": "Bearer t", "extra": 1}], "alwaysAllow": []}'),
+      read(
+        'jsonImport',
+        '{"mcpServers": {"b": {"command": " npx ", "args": [" -y ", "pkg"], "env": {"TOKEN": "x", "N": 3, "F": false}}, "1": {"url": " https://mcp.example.com/mcp "}}}'
+      ),
+      read(
+        'jsonImport',
+        '{"mcpServers": {"ok": {"command": "x"}, "bad": {"env": 3}, "h": {"headers": [{"name": "A"}], "url": "https://h.dev"}, "noname": {"type": "sse"}, "list": [], "acp": {"type": "acp", "url": "https://a.dev/sse"}, "argz": {"command": "x", "args": [1]}}}'
+      ),
+      read(
+        'jsonImport',
+        '{"name": "solo", "type": "sse", "url": "https://s.dev/sse", "headers": [{"name": "Authorization", "value": "Bearer t", "extra": 1}], "alwaysAllow": []}'
+      ),
       read('jsonImport', '{"command": "x"}'),
       read('jsonImport', '[1]'),
       read('jsonImport', '{"mcpServers": 1}'),
