@@ -11,6 +11,13 @@ Troupe ships with a built-in list of agents. The list comes from the public agen
 
 Troupe also checks the online registry for newer versions when it starts, and again every 24 hours. That check only compares versions. Nothing changes until you choose to update an agent. When you do, Troupe switches to the online registry, so the list also shows agents that were added after your version of Troupe was released.
 
+Troupe adds a few agents that are not in the public registry. They are in the list too:
+
+- **Oh My Pi**, started with `omp acp`.
+- **Hermes Agent** from Nous Research, started with `hermes acp`.
+
+Troupe does not download these agents. Install them from the vendor first. See [Set up Hermes Agent](#set-up-hermes-agent).
+
 ## See which agents are ready
 
 1. Open Settings with `Ctrl+,` (`Cmd+,` on macOS).
@@ -83,6 +90,18 @@ Claude Agent needs three things on the computer that runs Troupe:
 - A Claude Code login. Run `claude auth login` in a terminal once.
 
 When those are in place, pick **Claude Agent** in a new chat and click **Install**. Troupe installs a fixed version of Anthropic's Claude Agent package in its own folder. To use more than one Claude account, see [Claude accounts](/docs/agent-setup/claude-accounts).
+
+## Set up Hermes Agent
+
+Hermes Agent runs on macOS and Linux (Intel and ARM) and on Windows (x64). Troupe starts it with `hermes acp`, so the `hermes` command must be on your `PATH`.
+
+1. Install Hermes Agent with the [Hermes installation guide](https://hermes-agent.nousresearch.com/docs/getting-started/installation). Its installer puts `hermes` in `~/.local/bin`, or in `%LOCALAPPDATA%\hermes\bin` on Windows.
+2. Reopen **Settings** > **Agents**. When Troupe finds `hermes`, **Hermes Agent** shows **Available**. If it still shows **Manual install**, restart Troupe, or [point Troupe at the program](#point-troupe-at-an-agent-you-installed).
+3. Pick **Hermes Agent** in a new chat.
+
+Hermes Agent lists its models in the model menu, and you can switch between them there like with any other agent. See [Pick an agent and a model](/docs/agents/start-a-chat#pick-an-agent-and-a-model).
+
+If you added Hermes Agent as a [custom agent](/docs/agent-setup/custom-agents) before, you can keep it or remove it and use the built-in one.
 
 ## Update an agent
 
