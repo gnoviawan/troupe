@@ -113,7 +113,7 @@ The **About** page is different in the desktop app and in the browser version.
 <Callout type="info">The **Connect another device** and **Server** groups show only when Troupe is served by `troupe-server`.</Callout>
 
 - The first row shows `termul-server` and the server's version. The browser version updates together with the server. Reload the page after the server updates.
-- **Connect another device** shows a QR code that opens this server on a phone or tablet, with **Copy link** under it. The QR code and the link contain the access token. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
+- **Connect another device** shows a QR code that opens this server on a phone or tablet, with **Copy link** under it. When the server has an access token, the QR code and the link contain it. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
 - **Server** changes how the server itself runs: its bind host and port, sessions directory, projects file, whether other devices can make changes, and its update channel. It is the same form as the setup wizard shown on a fresh install. Applying saves the settings to `server-config.json` in the server's state folder and restarts the server. If the address changes, your browser follows the server to the new address by itself. See [Install and start troupe-server](/docs/remote/server#set-it-up-in-the-browser).
 - **Logs and bug reports** and **Reset all settings** are the same as in the desktop app, with fewer log buttons.
 

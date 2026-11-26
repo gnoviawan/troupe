@@ -208,7 +208,7 @@ troupe-server qr
 
 The command prints a QR code, then the address it opens, such as `Scan to open: http://<server-address>:8080/`. It reads the host and port from `server-config.json`. When the host is `0.0.0.0`, it uses the machine's network address. When the host is `127.0.0.1`, it stops with a message, because other devices can't reach the server.
 
-The QR code includes the access token. The command takes it from `--web-auth-token`, then `TROUPE_WEB_AUTH_TOKEN`, then the `web-auth-token` file in the state folder. With a token, the command prints only to an interactive terminal. It refuses when you send its output to a file, a pipe or a log. Add `--no-token` to get a QR code without the token. The phone then asks for the token when it opens Troupe.
+When the server has an access token, the QR code includes it. The command takes it from `--web-auth-token`, then `TROUPE_WEB_AUTH_TOKEN`, then the `web-auth-token` file in the state folder. With a token, the command prints only to an interactive terminal. It refuses when you send its output to a file, a pipe or a log. Add `--no-token` to get a QR code without the token. The phone then asks for the token when it opens Troupe.
 
 | Option | What it does |
 | --- | --- |
