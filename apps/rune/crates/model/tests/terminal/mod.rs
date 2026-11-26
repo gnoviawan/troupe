@@ -14,6 +14,8 @@ use serde_json::{Map, Value, json};
 
 use crate::common::{diff, out_dir, parse, read_json, source_hash, to_value};
 
+mod keys;
+
 fn vectors() -> Value {
     read_json(&out_dir().join("terminal/terminal.json"))
 }

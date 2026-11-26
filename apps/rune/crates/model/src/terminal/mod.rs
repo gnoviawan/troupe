@@ -7,13 +7,15 @@
 //!
 //! The command editor's state is in the submodules: [`session`] and [`store`] the shell session
 //! the host's lifecycle frames drive and the draft, [`completion`] when completions are asked
-//! for, [`words`] how a candidate is spelled, [`routes`] the `/terminal/ws` session calls, and
-//! [`history`] the commands sent. `tools/parity/vectors/terminal.ts` records their vectors.
+//! for, [`words`] how a candidate is spelled, [`routes`] the `/terminal/ws` session calls,
+//! [`history`] the commands sent, and [`line`] the editor's text and keys.
+//! `tools/parity/vectors/` records their vectors.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 pub mod completion;
 pub mod history;
+pub mod line;
 pub mod routes;
 pub mod session;
 pub mod store;
