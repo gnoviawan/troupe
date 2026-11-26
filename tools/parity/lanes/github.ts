@@ -16,7 +16,7 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { type Browser, chromium, type Page } from 'playwright'
 import { REFERENCE_ARGS } from '../drivers/chromium'
-import { runeWebArgs } from '../drivers/rune-web'
+import { mirrorPoint, runeWebArgs } from '../drivers/rune-web'
 import { REPO_DIR } from '../server'
 import { createWorld } from '../world'
 import { type Client, inReact, inRune, type LaneOptions, shot, writePairs } from './kit'
@@ -183,7 +183,7 @@ function fixture() {
             data = { comment: posted }
           } else data = { number: 7 }
         }
-        await route.fulfill({ json: data })
+        await route.fulfill({ json: { success: true, data } })
       })
     }
   }
@@ -239,7 +239,10 @@ async function run(client: Client): Promise<Seen> {
   await act('comment', async () => {
     if (client.name === 'react') await client.fill('Add a comment', COMMENT)
     else {
-      await client.click('Add a comment')
+      // An unfocused Rune text field has no mirror node: the box sits above its Comment button.
+      const button = await mirrorPoint(client.page, 'Comment', true)
+      if (!button) throw new Error('no Comment button')
+      await client.page.mouse.click(button.x - 200, button.y - 60)
       await client.page.keyboard.type(COMMENT, { delay: 15 })
     }
   })
@@ -247,7 +250,12 @@ async function run(client: Client): Promise<Seen> {
   await settle(1500)
   await step('commented', () => client.sees(COMMENT, 15_000))
   if (!options.phone) {
-    await act('merge', () => client.click('Merge'))
+    await act('merge', async () => {
+      // React's "Merge" heading comes before its button.
+      if (client.name === 'react')
+        await client.page.getByRole('button', { name: 'Merge', exact: true }).click()
+      else await client.click('Merge')
+    })
     await settle(800)
     await step('merge-confirm', () => client.sees('Merge pull request #7?', 10_000))
     await act('cancel', () => client.click('Cancel'))

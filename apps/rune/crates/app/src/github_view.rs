@@ -323,6 +323,7 @@ fn filters(s: &State, t: &'static Tokens, cwd: &str, filter: &ListFilter, refres
         .label("Search issues and pull requests".to_owned())
         .w_full()
         .h(if touch { 44.0 } else { 32.0 })
+        .py(if touch { 10.0 } else { 8.0 })
         .pl(32.0)
         .on_edit(|s: &mut State| {
             s.github_search_edited();

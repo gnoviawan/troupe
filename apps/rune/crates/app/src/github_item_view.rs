@@ -723,7 +723,8 @@ fn threads(t: &'static Tokens, at: &ItemRef, threads: &[ReviewThread], ui_state:
                 Some(draft) => composer(t, at, Some(&thread.id), draft, false, "Reply to this thread", "Reply", "Write a reply"),
                 None => {
                     let (at, id) = (at.clone(), thread.id.clone());
-                    row().child(Button::new("Reply").variant(ButtonVariant::Ghost).size(if phone { ButtonSize::Touch } else { ButtonSize::Xs }).build(t).key(format!("github-reply-{}", thread.id))
+                    row().w_full().child(Button::new("Reply").variant(ButtonVariant::Ghost).size(if phone { ButtonSize::Touch } else { ButtonSize::Xs }).build(t).key(format!("github-reply-{}", thread.id))
+                        .grow(1.0)
                         .on_press(move |s: &mut State| {
                             s.github_item_ui(&at).replies.insert(id.clone(), crate::github::Draft::default());
                         }))
