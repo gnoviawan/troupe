@@ -406,6 +406,12 @@ macro_rules! with_slice {
     };
 }
 
+/// Where a reply's data broke its shape, without serde's text, which can quote the data
+/// (a comment body).
+fn shape_error(e: &serde_json::Error) -> String {
+    format!("{:?} error at line {} column {}", e.classify(), e.line(), e.column())
+}
+
 /// Stores a reply in one resource: the data on success, else the failure over the last data.
 /// `Err` names a reply whose data is not `T`.
 fn settle_resource<T: DeserializeOwned>(
@@ -420,7 +426,7 @@ fn settle_resource<T: DeserializeOwned>(
                 *resource = Resource { data: Some(data), status: Status::Idle, error_code: None, error: None };
                 return Ok(());
             }
-            Err(e) => Failure { code: BAD_REPLY.into(), error: e.to_string() },
+            Err(e) => Failure { code: BAD_REPLY.into(), error: shape_error(&e) },
         },
         Err(failure) => failure.clone(),
     };
