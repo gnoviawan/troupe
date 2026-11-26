@@ -37,7 +37,7 @@ const options: LaneOptions = {
   dist: path.resolve(values.dist as string),
   device: 'settings-r9c'
 }
-const STEPS = 12
+const STEPS = options.phone ? 9 : 12
 
 async function read<T>(world: World, key: string): Promise<T | undefined> {
   const reply = await world.ws.request<{ value?: { data?: T } }>('store_read', { key })
@@ -147,7 +147,12 @@ async function run(client: Client, world: World): Promise<{ seen: string[]; stat
   }
 
   await client.sees('What should we do in alpha?', 30_000)
-  await act('open settings', () => button('Settings'))
+  // A phone opens Settings from the menu drawer's footer.
+  if (options.phone) await act('open the menu', () => client.click('Open menu', false))
+  await settle(400)
+  await act('open settings', () =>
+    options.phone && !react ? client.click('Settings') : button('Settings')
+  )
   await settle()
   await act('profiles page', () => nav('Profiles'))
   await step('profiles', () => client.sees('No terminal profiles', 10_000))
@@ -186,6 +191,9 @@ async function run(client: Client, world: World): Promise<{ seen: string[]; stat
       (await client.sees('Deleted docs', 5_000)) &&
       JSON.parse(await hostState(world)).mcp.length === 0
   )
+  // The phone run covers the App Preferences pages; the project window opens from other
+  // menus there.
+  if (options.phone) return { seen, state: await hostState(world) }
   // The Undo toast stays until it is closed, over the project window's Save.
   await act('close the undo toast', () => button('Close toast'))
   await client.page.keyboard.press('Escape')

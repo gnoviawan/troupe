@@ -256,3 +256,12 @@ fn an_empty_registry_offers_add_server() {
     assert!(present(&rt, "mcp-empty"));
     assert!(present(&rt, "add-server"));
 }
+
+#[test]
+fn the_phone_drawer_opens_preferences() {
+    let mut rt = runtime_at((390.0, 844.0));
+    edit(&mut rt, |s| s.overlays.open(crate::DRAWER));
+    tap(&mut rt, "drawer-settings");
+    assert!(rt.state.overlays.is_open(crate::settings_view::APP));
+    assert!(!rt.state.overlays.is_open(crate::DRAWER));
+}

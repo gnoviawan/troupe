@@ -445,7 +445,7 @@ fn local_fields(t: &'static Tokens, d: &ServerDialog, errors: &[(Field, String)]
         .build(t)
         .key("command-input")
         .on_edit(|s: &mut State| &mut s.mcp_ui.dialog.as_mut().expect("the dialog is open").command);
-    let mut starters = row().key("starters").w_full().gap(8.0).items_center().child(hint(t, "Common:"));
+    let mut starters = row().key("starters").w_full().flex_wrap().gap(8.0).items_center().child(hint(t, "Common:"));
     for starter in COMMAND_STARTERS {
         starters = starters.child(
             Button::new(format!("{starter} …")).variant(ButtonVariant::Outline).size(ButtonSize::Xs).build(t).key(format!("starter-{starter}")).on_press(move |s: &mut State| {
