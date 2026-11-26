@@ -481,7 +481,11 @@ fn local_fields(t: &'static Tokens, d: &ServerDialog, errors: &[(Field, String)]
 }
 
 /// The Add or Edit dialog, in its form view.
-pub fn server_dialog(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
+/// What the dialog's header, footer and padding take: the form scrolls in the rest of 90% of
+/// the window (`max-h-[90dvh] overflow-y-auto`).
+const DIALOG_CHROME: f32 = 190.0;
+
+pub fn server_dialog(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mut Vec<El>) {
     let Some(d) = &s.mcp_ui.dialog else { return };
     let errors = if d.show_errors { rules::draft_to_config(&d.draft()).err().unwrap_or_default() } else { Vec::new() };
     let mut menus = Vec::new();
@@ -519,7 +523,7 @@ pub fn server_dialog(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec
     Dialog::new("mcp-server-dialog", if adding { "Add MCP server" } else { "Edit MCP server" })
         .description(if adding { "Where does this server run? The setup page or README usually tells you." } else { "Change how Troupe reaches this server." })
         .width(576.0)
-        .child(body)
+        .child(col().key("mcp-form-scroll").w_full().max_h((height * 0.9 - DIALOG_CHROME).max(160.0)).child(body).scroll(rune::ScrollSpec { stick_bottom: false }))
         .footer(cancel)
         .footer(save)
         .open(true)

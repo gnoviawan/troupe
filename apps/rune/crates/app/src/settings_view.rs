@@ -376,7 +376,7 @@ fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, layer: &mut 
     )
 }
 
-pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
+pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mut Vec<El>) {
     let Some(w) = s.settings_window() else {
         return;
     };
@@ -414,7 +414,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
         return;
     }
     crate::settings_profiles::editor(s, t, layer);
-    crate::settings_mcp_dialog::server_dialog(s, t, phone, layer);
+    crate::settings_mcp_dialog::server_dialog(s, t, phone, height, layer);
     crate::settings_mcp_dialog::paste_dialog(s, t, layer);
     ConfirmDialog::new(
         RESET_ALL,
