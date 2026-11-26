@@ -20,6 +20,10 @@ mod answers;
 mod automation_canvas;
 mod automation_editor;
 mod automation_editor_view;
+mod automation_fields;
+mod automation_inspector;
+mod automation_policy;
+mod automation_run_view;
 mod automations;
 #[cfg(test)]
 mod automations_tests;
