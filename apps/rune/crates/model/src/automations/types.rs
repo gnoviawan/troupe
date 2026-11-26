@@ -19,9 +19,18 @@ pub enum Isolation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Schedule {
-    Cron { expr: String, timezone: String },
-    Every { every_ms: f64, anchor_ms: f64 },
-    At { at: f64 },
+    Cron {
+        expr: String,
+        timezone: String,
+    },
+    /// Integers on the wire: the host's `every_ms: u64, anchor_ms: i64`.
+    Every {
+        every_ms: u64,
+        anchor_ms: i64,
+    },
+    At {
+        at: i64,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
