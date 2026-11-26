@@ -123,6 +123,9 @@ pub use worktree::*;
 
 /// Get available shells
 #[cfg(test)]
+mod browser_tests;
+
+#[cfg(test)]
 mod notification_tests;
 
 #[cfg(test)]

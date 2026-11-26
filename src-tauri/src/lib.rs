@@ -2237,6 +2237,7 @@ pub fn run() {
             commands::browser_tab_set_zoom,
             commands::browser_tab_screenshot,
             commands::browser_tab_annotation_cmd,
+            commands::browser_tab_poll_annotation_outbox,
             commands::browser_annotations_sync,
             commands::browser_save_annotation_crop,
             commands::browser_list_local_servers,

@@ -6,13 +6,16 @@ import {
   browserSaveAnnotationCrop,
   browserTabAnnotationCmd,
   browserTabInjectAgentation,
+  browserTabPollAnnotationOutbox,
   browserTabScreenshot,
   onAgentationActionRequested,
   onAgentationAnnotationCreated,
   onAgentationAnnotationUpdated
 } from '@/lib/browser-api'
-import { cropBase64Png } from '@/lib/browser-screenshot'
+import { copyBase64PngToClipboard, cropBase64Png } from '@/lib/browser-screenshot'
 import { displayHost } from '@/lib/browser-url'
+import { logFrontendError } from '@/lib/log-api'
+import { isTauriContext } from '@/lib/tauri-runtime'
 import { openTerminalAtCwd } from '@/lib/terminal-spawn'
 import { cn } from '@/lib/utils'
 import { resolveViewportDimensions, useBrowserSessionStore } from '@/stores/browser-session-store'
@@ -56,7 +59,9 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   const setCustomViewportWidth = useBrowserSessionStore((s) => s.setCustomViewportWidth)
   const addPendingAnnotation = useBrowserSessionStore((s) => s.addPendingAnnotation)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
+  const setAnnotateMode = useBrowserSessionStore((s) => s.setAnnotateMode)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
+  const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
 
   const activeProject = useProjectStore((s) =>
     s.activeProjectId ? s.projects.find((p) => p.id === s.activeProjectId) : undefined
@@ -73,7 +78,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   const stopGeneration = tab?.stopGeneration ?? 0
   const layoutKey = `${viewportPreset}-${orientation}-${customWidth ?? 'preset'}`
 
-  const { containerRef } = useBrowserWebview(browserTabId, isVisible, url, {
+  const { containerRef, occlusionPreviewUrl } = useBrowserWebview(browserTabId, isVisible, url, {
     hasError: Boolean(loadError),
     zoomFactor,
     layoutKey,
@@ -130,6 +135,36 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     })
     return () => subUpdated.unlisten()
   }, [browserTabId, removePendingAnnotation])
+
+  // Drain overlay annotations/actions via the CSP- and mixed-content-proof host
+  // bridge while annotation mode is active on desktop.
+  useEffect(() => {
+    if (!isVisible || !annotateMode || !isTauriContext()) return
+    let active = true
+    let inFlight = false
+    const poll = () => {
+      if (!active || inFlight) return
+      inFlight = true
+      void browserTabPollAnnotationOutbox(browserTabId)
+        .catch((err) => {
+          void logFrontendError({
+            level: 'warn',
+            source: 'BrowserPanel',
+            message: `browserTabPollAnnotationOutbox failed: ${
+              err instanceof Error ? err.message : String(err)
+            }`
+          })
+        })
+        .finally(() => {
+          inFlight = false
+        })
+    }
+    const timer = window.setInterval(poll, 120)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [annotateMode, browserTabId, isVisible])
 
   // Bridge overlay annotations (comment, rectangle, ruler guide) into the host batch queue,
   // auto-crop via native screenshot, and persist the crop PNG to disk + SQLite/MCP.
@@ -211,40 +246,61 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
           viewportWidth?: number
         }
         if (parsed.tabId && parsed.tabId !== browserTabId) return
+
+        const finishAreaCapture = () => {
+          const latestTab = useBrowserSessionStore.getState().getTab(browserTabId)
+          if (latestTab?.standaloneScreenshotArea) {
+            setStandaloneScreenshotArea(browserTabId, false)
+            setAnnotateMode(browserTabId, false)
+            void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: false })
+          } else {
+            setAnnotateTool(browserTabId, 'comment')
+            void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
+          }
+        }
+
+        if (parsed.kind === 'screenshot_area_cancelled') {
+          finishAreaCapture()
+          return
+        }
         if (parsed.kind !== 'screenshot_area' || !parsed.rect) return
         const rect = parsed.rect
         void (async () => {
-          const shot = await browserTabScreenshot(browserTabId)
-          if (!shot.success) {
-            toast.error(shot.error || 'Could not capture area screenshot.')
-            return
+          try {
+            const shot = await browserTabScreenshot(browserTabId)
+            if (!shot.success) {
+              toast.error(shot.error || 'Could not capture area screenshot.')
+              void logFrontendError({
+                level: 'warn',
+                source: 'BrowserPanel',
+                message: `screenshot_area capture failed: ${shot.error ?? shot.code ?? 'unknown'}`
+              })
+              return
+            }
+            const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
+            const cropped = await cropBase64Png(shot.data.base64, {
+              ...rect,
+              viewportWidth: parsed.viewportWidth,
+              dpr: parsed.dpr ?? (window.devicePixelRatio || 1) * tabZoom
+            })
+            if (!cropped) {
+              toast.error('Could not crop selected area.')
+              void logFrontendError({
+                level: 'warn',
+                source: 'BrowserPanel',
+                message: 'screenshot_area crop failed'
+              })
+              return
+            }
+            const copied = await copyBase64PngToClipboard(cropped.base64)
+            if (copied.ok) {
+              toast.success('Screenshot copied to clipboard')
+            } else {
+              toast.error(copied.error)
+            }
+          } finally {
+            finishAreaCapture()
           }
-          const tabZoom = useBrowserSessionStore.getState().getTab(browserTabId)?.zoomFactor ?? 1
-          const cropped = await cropBase64Png(shot.data.base64, {
-            ...rect,
-            viewportWidth: parsed.viewportWidth,
-            dpr: parsed.dpr ?? (window.devicePixelRatio || 1) * tabZoom
-          })
-          if (!cropped) {
-            toast.error('Could not crop selected area.')
-            return
-          }
-          const id = `shot-${Date.now()}`
-          const saved = await browserSaveAnnotationCrop(id, cropped.base64)
-          addPendingAnnotation(browserTabId, {
-            id,
-            kind: 'rectangle',
-            element: 'Area screenshot',
-            elementPath: `${rect.width}×${rect.height}px area`,
-            comment: `Captured ${rect.width}×${rect.height}px area screenshot.`,
-            meta: `${rect.width}×${rect.height}px`,
-            cropBase64: cropped.base64,
-            cropDataUrl: cropped.dataUrl,
-            cropPath: saved.success ? saved.data : undefined
-          })
-          setAnnotateTool(browserTabId, 'comment')
-          void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
-          toast.success('Captured area screenshot into batch.')
         })()
       } catch {
         // Non-JSON action output
@@ -255,7 +311,16 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       subCreated.unlisten()
       subAction.unlisten()
     }
-  }, [addPendingAnnotation, annotateMode, browserTabId, isVisible, setAnnotateTool, url])
+  }, [
+    addPendingAnnotation,
+    annotateMode,
+    browserTabId,
+    isVisible,
+    setAnnotateMode,
+    setAnnotateTool,
+    setStandaloneScreenshotArea,
+    url
+  ])
 
   // Track current tab/URL/error identity so late probes never clear a newer error
   const errorKey = loadError
@@ -431,6 +496,15 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
                   : 'h-full flex-1'
               )}
             >
+              {occlusionPreviewUrl && (
+                <img
+                  data-testid="browser-occlusion-preview"
+                  src={occlusionPreviewUrl}
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-full object-fill select-none"
+                />
+              )}
               {loading && (
                 <div
                   data-testid="browser-loading-pill"

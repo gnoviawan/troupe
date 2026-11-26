@@ -123,3 +123,16 @@ fn only_agent_tabs_get_the_overlay_script() {
         .expect("overlay hook");
     assert!(overlay > user_return, "the overlay is installed after the user-tab return");
 }
+
+#[test]
+fn drain_annotation_outbox_helper_reads_host_attr_without_touching_globals() {
+    let script = drain_annotation_outbox("termul-agentation-host", "data-troupe-outbox");
+    assert_eq!(script.helper, DRAIN_ANNOTATION_OUTBOX);
+    assert_eq!(
+        script.params,
+        json!({ "hostId": "termul-agentation-host", "attr": "data-troupe-outbox" })
+    );
+    for global in ["window.__", "globalThis", "localStorage", "sessionStorage", ".focus("] {
+        assert!(!DRAIN_ANNOTATION_OUTBOX.body.contains(global));
+    }
+}
