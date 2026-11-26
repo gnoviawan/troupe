@@ -211,3 +211,26 @@ pub fn replay_palette(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays the Profiles page's reads: each step's `result` is what the TypeScript lib returned.
+pub fn replay_terminal_profiles(vector: &Value) -> Result<usize, String> {
+    use model::settings::profiles::{Draft, Profile};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "parse" => match parse::<Draft>(&args[0])?.parse(args[1].as_str().unwrap_or_default()) {
+                Ok(profile) => json!({ "ok": true, "profile": profile }),
+                Err(errors) => json!({ "ok": false, "errors": errors }),
+            },
+            "toDraft" => to_value(&Draft::of(&parse::<Profile>(&args[0])?)),
+            "commandLine" => json!(parse::<Profile>(&args[0])?.command_line()),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}

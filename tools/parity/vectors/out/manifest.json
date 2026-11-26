@@ -213,6 +213,15 @@
         "pins_toggle_in_order",
         "command_scores"
       ]
+    },
+    "terminal-profiles": {
+      "sources": {
+        "src/renderer/lib/terminal-profiles.ts": "1cec5dfe62d3e4be0c3c7174ff19b98559567799"
+      },
+      "vectors": [
+        "drafts_parse_or_name_each_bad_field",
+        "profiles_read_back_and_show_their_command"
+      ]
     }
   }
 }

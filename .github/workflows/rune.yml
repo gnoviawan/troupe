@@ -35,6 +35,7 @@ on:
       - 'src/renderer/lib/path-basename.ts'
       - 'src/renderer/lib/skill-tokens.ts'
       - 'src/renderer/lib/skills-prompt.ts'
+      - 'src/renderer/lib/terminal-profiles.ts'
       - 'src/renderer/components/chat/chat-input-bar-config.ts'
       - 'src/renderer/components/chat/handoff-summary.ts'
       - 'src/renderer/components/chat/subagent-strip.ts'

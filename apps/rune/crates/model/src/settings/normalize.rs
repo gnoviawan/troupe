@@ -167,7 +167,7 @@ fn terminal_profiles(value: Option<&Value>, effects: &mut Vec<Effect>) -> Vec<Va
 }
 
 /// `ENV_KEY`: `^[A-Za-z_][A-Za-z0-9_]*$`.
-fn env_key(key: &str) -> bool {
+pub(crate) fn env_key(key: &str) -> bool {
     let mut chars = key.chars();
     chars
         .next()
