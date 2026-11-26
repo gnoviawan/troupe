@@ -210,3 +210,73 @@ fn small_words_match_the_web_client() {
     assert_eq!(relative_ago("2026-11-20T10:04:30Z", now), "just now");
     assert_eq!(relative_ago("bad", now), "earlier");
 }
+
+fn issue(number: u64) -> ItemRef {
+    ItemRef { cwd: "/w/alpha".into(), repo: RepoSlot::Origin, kind: ItemKind::Issue, number }
+}
+
+#[test]
+fn an_item_overlay_opens_for_its_own_tab_only() {
+    let mut s = on_alpha();
+    let (left, right) = (issue(5), issue(9));
+    for overlay in [MERGE_CONFIRM, ITEM_MENU, STATE_BUTTON_MENU, MERGE_METHOD] {
+        s.github_open_for(overlay, &left);
+        assert!(s.github_is_open_for(overlay, &left), "{overlay} is open for #5");
+        assert!(!s.github_is_open_for(overlay, &right), "#9's pane must not draw {overlay}");
+        s.close(overlay);
+    }
+}
+
+#[test]
+fn a_created_label_joins_only_the_picker_it_was_created_in() {
+    let mut s = on_alpha();
+    s.github_open_picker(PickerFor::Labels(issue(1)), Vec::new());
+    s.github.picker.as_mut().unwrap().create = Some((rune::TextEdit::new("foo"), "b60205", rune::TextEdit::default()));
+    s.github.unsent.clear();
+    s.github_create_label();
+    let (task, _) = s.github.unsent.remove(0);
+    s.github_close_picker();
+    s.github_open_picker(PickerFor::Labels(issue(2)), vec!["bug".into()]);
+    s.github.unsent.clear();
+    s.github_replied(task, Ok(json!({ "label": { "name": "foo", "color": "b60205", "description": null } })));
+    let picker = s.github.picker.as_ref().unwrap();
+    assert_eq!(picker.selected, ["bug"]);
+    assert_eq!(picker.of, PickerFor::Labels(issue(2)));
+}
+
+#[test]
+fn an_older_pickers_refused_edit_leaves_the_open_picker_alone() {
+    let mut s = on_alpha();
+    s.github_open_picker(PickerFor::Assignees(issue(1)), Vec::new());
+    s.github_toggle_pick("ann");
+    s.github.unsent.clear();
+    s.github_apply_picker();
+    let (task, _) = s.github.unsent.remove(0);
+    s.github_close_picker();
+    s.github_open_picker(PickerFor::Assignees(issue(2)), Vec::new());
+    s.github.picker.as_mut().unwrap().applying = true;
+    s.github.unsent.clear();
+    s.github_replied(task, Err(client::http::HttpError::Refused { code: "GH_FAILED".into(), message: "no".into(), status: 502 }));
+    assert!(s.github.picker.as_ref().unwrap().applying, "the newer picker's own apply is still out");
+}
+
+#[test]
+fn a_posted_comment_clears_only_the_text_that_was_sent() {
+    let mut s = on_alpha();
+    s.github_item_ui(&pr()).comment.body = rune::TextEdit::new("first");
+    s.github_post_comment(&pr(), None);
+    s.github_item_ui(&pr()).comment.body = rune::TextEdit::new("first and more");
+    let (task, _) = s.github.unsent.remove(0);
+    s.github_replied(task, Ok(host("/github/comment")));
+    let draft = &s.github_item_ui(&pr()).comment;
+    assert_eq!((draft.body.text.as_str(), draft.posting), ("first and more", false));
+}
+
+#[test]
+fn picker_fields_survive_a_picker_closed_under_them() {
+    let mut s = on_alpha();
+    assert!(s.github.picker.is_none());
+    *crate::github_view::picker_query(&mut s) = rune::TextEdit::new("x");
+    crate::github_view::create_name(&mut s);
+    crate::github_view::create_description(&mut s);
+}

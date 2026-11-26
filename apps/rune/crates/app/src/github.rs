@@ -124,18 +124,22 @@ pub struct Picker {
     /// The create-label form, when open: its name, colour and description.
     pub create: Option<(TextEdit, &'static str, TextEdit)>,
     pub creating: bool,
+    /// Which opening this is: a reply for an earlier session never lands in this one.
+    pub session: u64,
 }
 
 /// What to do when a write's task settles.
 #[derive(Clone, Debug)]
 enum Then {
     Merge { key: String, action: MergeAction },
-    Comment { key: String, thread: Option<String> },
-    /// A picker's Done: close the picker on success, else toast `what`.
-    Edit { key: String, what: &'static str },
+    /// A comment or reply: `sent` is the text that went out.
+    Comment { key: String, thread: Option<String>, sent: String },
+    /// A picker's Done: close that picker session on success, else toast `what`.
+    Edit { session: u64, what: &'static str },
     /// A close, reopen or self-assign.
     Busy { key: String, what: String },
-    CreateLabel,
+    /// A label created from that picker session: it joins the selection there only.
+    CreateLabel { session: u64 },
 }
 
 #[derive(Default)]
@@ -155,6 +159,13 @@ pub struct GithubUi {
     search_edited: Option<f64>,
     pub items: HashMap<String, ItemUi>,
     pub picker: Option<Picker>,
+    /// The item whose menu, merge method list or merge confirm is open. Two item tabs in split
+    /// panes draw the same overlay ids, so only this item's tab draws them and acts.
+    owner: Option<String>,
+    /// What a picker text field edits after a reply closed the picker before the next frame.
+    pub(crate) scratch: TextEdit,
+    /// Picker sessions opened so far.
+    sessions: u64,
 }
 
 fn failure(error: HttpError) -> Failure {
@@ -234,14 +245,18 @@ impl State {
                     }
                 }
             }
-            Then::Comment { key, thread } => {
+            Then::Comment { key, thread, sent } => {
                 let Some(item) = self.github.items.get_mut(&key) else {
                     return;
                 };
                 match thread {
                     Some(thread) => match reply {
                         Ok(_) => {
-                            item.replies.remove(&thread);
+                            if item.replies.get(&thread).is_some_and(|d| d.body.text == sent) {
+                                item.replies.remove(&thread);
+                            } else if let Some(draft) = item.replies.get_mut(&thread) {
+                                draft.posting = false;
+                            }
                         }
                         Err(f) => {
                             if let Some(draft) = item.replies.get_mut(&thread) {
@@ -253,14 +268,16 @@ impl State {
                     None => {
                         item.comment.posting = false;
                         match reply {
-                            Ok(_) => item.comment.body = TextEdit::default(),
+                            // The box is read-only while posting; text that differs anyway stays.
+                            Ok(_) if item.comment.body.text == sent => item.comment.body = TextEdit::default(),
+                            Ok(_) => {}
                             Err(f) => item.comment.error = Some(refusal(&f)),
                         }
                     }
                 }
             }
-            Then::Edit { key, what } => {
-                let still_open = self.github.picker.as_ref().is_some_and(|p| picker_key(&p.of) == key);
+            Then::Edit { session, what } => {
+                let still_open = self.github.picker.as_ref().is_some_and(|p| p.session == session);
                 match reply {
                     Ok(_) if still_open => {
                         self.github.picker = None;
@@ -268,7 +285,7 @@ impl State {
                     }
                     Ok(_) => {}
                     Err(f) => {
-                        if let Some(picker) = self.github.picker.as_mut() {
+                        if let Some(picker) = self.github.picker.as_mut().filter(|p| p.session == session) {
                             picker.applying = false;
                         }
                         self.report_write_failure(what, &f);
@@ -283,8 +300,11 @@ impl State {
                     self.report_write_failure(&what, &f);
                 }
             }
-            Then::CreateLabel => {
-                let Some(picker) = self.github.picker.as_mut() else {
+            Then::CreateLabel { session } => {
+                let Some(picker) = self.github.picker.as_mut().filter(|p| p.session == session) else {
+                    if let Err(f) = reply {
+                        self.report_write_failure("create the label", &f);
+                    }
                     return;
                 };
                 picker.creating = false;
@@ -512,6 +532,17 @@ impl State {
         self.overlays.close(GITHUB_SHEET);
     }
 
+    /// Opens one of an item tab's overlays for that item only.
+    pub fn github_open_for(&mut self, overlay: &'static str, at: &ItemRef) {
+        self.github.owner = Some(github::item_key(&at.cwd, at.repo, at.number));
+        self.overlays.open(overlay);
+    }
+
+    /// Whether `overlay` is open for this item, not another tab's.
+    pub fn github_is_open_for(&self, overlay: &str, at: &ItemRef) -> bool {
+        self.overlays.is_open(overlay) && self.github.owner.as_deref() == Some(github::item_key(&at.cwd, at.repo, at.number).as_str())
+    }
+
     /// The item tab's Refresh: the item, its checks and the repository meta, past the cache.
     pub fn github_refresh_item(&mut self, at: &ItemRef) {
         let refresh = Some(LoadOptions { refresh: Some(true) });
@@ -554,7 +585,8 @@ impl State {
             Some(id) => model::github::CommentTarget::ReviewThread { thread_id: id.clone() },
             None => model::github::CommentTarget::Conversation,
         };
-        self.github_write(Event::Comment(at.clone(), target, body), Then::Comment { key, thread });
+        let sent = body.clone();
+        self.github_write(Event::Comment(at.clone(), target, body), Then::Comment { key, thread, sent });
     }
 
     /// Close or reopen; the store re-reads the item and the list after it.
@@ -595,7 +627,9 @@ impl State {
             self.github_step(Event::LoadRepoMeta(cwd, repo, None));
         }
         self.overlays.close(ITEM_MENU);
+        self.github.sessions += 1;
         self.github.picker = Some(Picker {
+            session: self.github.sessions,
             of,
             opened: initial.clone(),
             selected: initial,
@@ -648,7 +682,8 @@ impl State {
                     return;
                 }
                 picker.applying = true;
-                self.github_write(Event::EditItem(at, edit), Then::Edit { key: picker_key(&of), what });
+                let session = picker.session;
+                self.github_write(Event::EditItem(at, edit), Then::Edit { session, what });
             }
         }
     }
@@ -664,15 +699,9 @@ impl State {
         let description = description.text.trim();
         let label = model::github::NewLabel { name, color: (*color).to_owned(), description: (!description.is_empty()).then(|| description.to_owned()) };
         picker.creating = true;
+        let session = picker.session;
         let event = Event::CreateLabel(at.cwd.clone(), at.repo, label);
-        self.github_write(event, Then::CreateLabel);
-    }
-}
-
-fn picker_key(of: &PickerFor) -> String {
-    match of {
-        PickerFor::LabelFilter(cwd) => cwd.clone(),
-        PickerFor::Labels(at) | PickerFor::Assignees(at) => github::item_key(&at.cwd, at.repo, at.number),
+        self.github_write(event, Then::CreateLabel { session });
     }
 }
 

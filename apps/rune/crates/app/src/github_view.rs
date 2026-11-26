@@ -574,7 +574,7 @@ fn picker_body(s: &State, t: &'static Tokens, touch: bool) -> El {
                 .w_full()
                 .h(if touch { 44.0 } else { 32.0 })
                 .autofocus()
-                .on_edit(|s: &mut State| &mut s.github.picker.as_mut().expect("picker open").query),
+                .on_edit(picker_query),
         ),
     );
     if let PickerFor::LabelFilter(_) = picker.of {
@@ -756,14 +756,19 @@ fn create_form(s: &State, t: &'static Tokens, touch: bool) -> El {
     .child(row().w_full().justify_end().gap(8.0).child(back).child(create))
 }
 
-fn create_form_of(s: &mut State) -> &mut (rune::TextEdit, &'static str, rune::TextEdit) {
-    s.github.picker.as_mut().and_then(|p| p.create.as_mut()).expect("create form open")
+/// The open picker's search text, or a scratch field when a reply closed the picker before
+/// the next frame: typing then lands nowhere instead of panicking.
+pub(crate) fn picker_query(s: &mut State) -> &mut rune::TextEdit {
+    let crate::github::GithubUi { picker, scratch, .. } = &mut s.github;
+    picker.as_mut().map_or(scratch, |p| &mut p.query)
 }
 
-fn create_name(s: &mut State) -> &mut rune::TextEdit {
-    &mut create_form_of(s).0
+pub(crate) fn create_name(s: &mut State) -> &mut rune::TextEdit {
+    let crate::github::GithubUi { picker, scratch, .. } = &mut s.github;
+    picker.as_mut().and_then(|p| p.create.as_mut()).map_or(scratch, |f| &mut f.0)
 }
 
-fn create_description(s: &mut State) -> &mut rune::TextEdit {
-    &mut create_form_of(s).2
+pub(crate) fn create_description(s: &mut State) -> &mut rune::TextEdit {
+    let crate::github::GithubUi { picker, scratch, .. } = &mut s.github;
+    picker.as_mut().and_then(|p| p.create.as_mut()).map_or(scratch, |f| &mut f.2)
 }

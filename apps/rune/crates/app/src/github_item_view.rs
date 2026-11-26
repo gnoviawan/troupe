@@ -205,8 +205,11 @@ fn state_button(t: &'static Tokens, at: &ItemRef, data: &ItemDetail, ui_state: &
             .on_press(move |s: &mut State| s.github_set_state(&at, first.action, first.label));
     }
     let trigger = Button::new(format!("{label} \u{25be}")).variant(ButtonVariant::Outline).size(ButtonSize::Xs).icon(glyph(first.icon)).disabled(ui_state.busy).build(t).key("github-state-button")
-        .on_press(|s: &mut State| s.overlays.open(STATE_BUTTON_MENU));
-    let mut menu = Menu::new(STATE_BUTTON_MENU).width(208.0).placement(Placement::BottomEnd).open(s.overlays.is_open(STATE_BUTTON_MENU)).on_close(|s: &mut State| s.close(STATE_BUTTON_MENU));
+        .on_press({
+            let at = at.clone();
+            move |s: &mut State| s.github_open_for(STATE_BUTTON_MENU, &at)
+        });
+    let mut menu = Menu::new(STATE_BUTTON_MENU).width(208.0).placement(Placement::BottomEnd).open(s.github_is_open_for(STATE_BUTTON_MENU, at)).on_close(|s: &mut State| s.close(STATE_BUTTON_MENU));
     for choice in choices {
         let at = at.clone();
         let label = match choice.detail {
@@ -240,7 +243,10 @@ fn item_menu(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, ui_
         .key("github-item-menu-button")
         .w(if phone { 44.0 } else { 28.0 })
         .h(if phone { 44.0 } else { 28.0 })
-        .on_press(|s: &mut State| s.overlays.open(ITEM_MENU));
+        .on_press({
+            let at = at.clone();
+            move |s: &mut State| s.github_open_for(ITEM_MENU, &at)
+        });
     if phone {
         return trigger;
     }
@@ -251,7 +257,7 @@ fn item_menu(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, ui_
         .name(format!("{noun} #{}", data.item.number))
         .width(208.0)
         .placement(Placement::BottomEnd)
-        .open(s.overlays.is_open(ITEM_MENU))
+        .open(s.github_is_open_for(ITEM_MENU, at))
         .on_close(|s: &mut State| s.close(ITEM_MENU))
         .item(MenuItem::new("Edit labels").icon(glyph("Tag")).on_select(move |s: &mut State| s.github_open_picker(PickerFor::Labels(labels_at.clone()), labels.clone())));
     if let Some((viewer, assigned, loading)) = self_action(s, at, data) {
@@ -476,8 +482,11 @@ fn merge_box(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, pr:
         .opacity(if busy { 0.5 } else { 1.0 })
         .child(text(method_label).font(sans(12.0, 400.0, 16.0)).color(c.foreground))
         .child(icon(glyph("ChevronDown"), 14.0).color(c.muted_foreground));
-    let trigger = if busy { trigger } else { trigger.on_press(|s: &mut State| s.overlays.open(MERGE_METHOD)) };
-    let mut methods = Menu::new(MERGE_METHOD).width(176.0).placement(Placement::BottomStart).open(s.overlays.is_open(MERGE_METHOD)).on_close(|s: &mut State| s.close(MERGE_METHOD));
+    let trigger = if busy { trigger } else { trigger.on_press({
+            let at = at.clone();
+            move |s: &mut State| s.github_open_for(MERGE_METHOD, &at)
+        }) };
+    let mut methods = Menu::new(MERGE_METHOD).width(176.0).placement(Placement::BottomStart).open(s.github_is_open_for(MERGE_METHOD, at)).on_close(|s: &mut State| s.close(MERGE_METHOD));
     for method in [MergeMethod::Merge, MergeMethod::Squash, MergeMethod::Rebase] {
         let at = at.clone();
         methods = methods.item(MenuItem::new(logic::method_words(method).0).checked(method == ui_state.method).on_select(move |s: &mut State| {
@@ -486,7 +495,10 @@ fn merge_box(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, pr:
         }));
     }
     let merge = Button::new(verb).size(ButtonSize::Sm).disabled(busy || !rules.can_merge).build(t).key("github-merge")
-        .on_press(|s: &mut State| s.overlays.open(MERGE_CONFIRM));
+        .on_press({
+            let at = at.clone();
+            move |s: &mut State| s.github_open_for(MERGE_CONFIRM, &at)
+        });
     let mut controls = row().gap(8.0).items_center().wrap().child(methods.build(t, layer, trigger)).child(merge);
     if let Some(action) = rules.auto_merge {
         let label = if action == MergeAction::DisableAutoMerge { "Disable auto-merge" } else { "Enable auto-merge" };
@@ -502,7 +514,7 @@ fn merge_box(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, pr:
     if pr.auto_merge_enabled {
         section = section.child(text("Auto-merge is on: GitHub merges this when its requirements pass.").font(sans(12.0, 400.0, 16.0)).color(c.foreground).wrap());
     }
-    if s.overlays.is_open(MERGE_CONFIRM) {
+    if s.github_is_open_for(MERGE_CONFIRM, at) {
         let (at, method) = (at.clone(), ui_state.method);
         ConfirmDialog::new(MERGE_CONFIRM, format!("{verb} pull request #{}?", data.item.number), format!("{verb} {} into {} on GitHub.", pr.head_ref_name, pr.base_ref_name))
             .confirm_label(verb)
@@ -535,15 +547,21 @@ fn composer(t: &Tokens, at: &ItemRef, thread: Option<&str>, draft: &crate::githu
         .py(8.0)
         .radius(if pinned { 22.0 } else { 6.0 })
         .border(1.0, c.input)
-        .focus_ring(2.0, -1.0, c.focus_ring)
-        .on_edit(move |s: &mut State| {
+        .focus_ring(2.0, -1.0, c.focus_ring);
+    // Read-only while posting, as React's `readOnly={posting}`: text typed then would be
+    // cleared with the sent text.
+    let field = if draft.posting {
+        field
+    } else {
+        field.on_edit(move |s: &mut State| {
             let item = s.github_item_ui(&edit_at);
             let draft = match &edit_thread {
                 Some(id) => item.replies.entry(id.clone()).or_default(),
                 None => &mut item.comment,
             };
             &mut draft.body
-        });
+        })
+    };
     let post_at = at.clone();
     let post_thread = thread.map(str::to_owned);
     let post = move |s: &mut State| s.github_post_comment(&post_at, post_thread.clone());
@@ -743,7 +761,7 @@ fn threads(t: &'static Tokens, at: &ItemRef, threads: &[ReviewThread], ui_state:
 /// The phone's item actions sheet (`GithubItemMenu`'s `MobileSheetContent`): the same rows as
 /// the desktop menu, the close and reopen choices in their own group.
 pub fn item_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec<El>) {
-    let Some(at) = s.github_visible_item() else { return };
+    let Some(at) = s.github_visible_item().filter(|at| s.github_is_open_for(ITEM_MENU, at)) else { return };
     let Some(data) = s.github.cache.item(&at).and_then(|r| r.data.clone()) else { return };
     let busy = s.github.items.get(&model::github::item_key(&at.cwd, at.repo, at.number)).is_some_and(|i| i.busy);
     let row_of = |name: &str, label: &str| ui::mobile::sheet_row(t, glyph(name), label, false);
