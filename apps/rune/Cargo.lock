@@ -1868,6 +1868,7 @@ dependencies = [
  "sha1",
  "sha2",
  "troupe-editor",
+ "troupe-flow",
 ]
 
 [[package]]
