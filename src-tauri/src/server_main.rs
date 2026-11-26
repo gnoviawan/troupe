@@ -93,7 +93,7 @@ fn main() -> ExitCode {
         return ExitCode::from(termul_manager_lib::host_mcp::child::run() as u8);
     }
 
-    // Hidden `openapi`: prints the API spec. Needs no state dir or config, so
+    // `openapi`: prints the API spec. Needs no state dir or config, so
     // it runs before the server parser and before tracing starts.
     if raw_args.first().is_some_and(|arg| arg == "openapi") {
         return termul_manager_lib::web::openapi::cli::run(&raw_args[1..]);
@@ -972,6 +972,7 @@ USAGE:
     troupe-server [OPTIONS]
     troupe-server onboard          Guided setup + background launch
     troupe-server qr [OPTIONS]     Show a scannable QR code for connecting a phone
+    troupe-server openapi          Print the OpenAPI spec to stdout
     troupe-server --check-update   One-shot self-update
 
 OPTIONS:
@@ -1136,6 +1137,10 @@ OPTIONS:
                                   Embeds #token=... when auth is active (TTY
                                   only; pass --no-token for non-TTY output).
                                   Run `troupe-server qr --help` for options.
+    openapi [OPTIONS]             Print the OpenAPI 3.1 spec to stdout.
+                                  Default yaml; `--format json` for JSON.
+                                  Needs no running server.
+                                  Run `troupe-server openapi --help` for options.
 
     -h, --help                    Show this help
     -V, --version                 Show the version
@@ -1181,6 +1186,9 @@ EXAMPLES:
 
     # Show a scannable QR code in an interactive terminal
     troupe-server qr
+
+    # Print the OpenAPI spec of this binary
+    troupe-server openapi
 
     # One-shot self-update check
     troupe-server --check-update
