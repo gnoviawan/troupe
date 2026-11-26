@@ -286,15 +286,6 @@ export const shots: Shot[] = [
     }
   },
   {
-    id: 'terminals-behavior-settings',
-    run: async (page) => {
-      await openTerminalsApp(page)
-      // Links live on Preferences in the desktop app only, so the web
-      // capture cannot show the group this shot was for.
-      return await openSettings(page, 'Preferences')
-    }
-  },
-  {
     id: 'terminals-snapshot-create',
     run: async (page) => {
       await openTerminalsApp(page)
