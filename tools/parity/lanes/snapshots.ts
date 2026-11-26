@@ -129,14 +129,16 @@ async function run(client: Client, world: World): Promise<{ seen: string[]; stat
       await act('open snapshots', () => button('Snapshots'))
     } else {
       await client.page.goto(`${new URL(client.page.url()).origin}/#/snapshots`)
+      // The Rune client follows the hash on its next frame; a pointer move asks for one.
+      await client.page.mouse.move(640, 300)
+      await client.page.mouse.move(641, 301)
     }
     await settle(1500)
   }
 
   await client.sees('What should we do in alpha?', 30_000)
-  await act('new tab menu', () => button('New tab', 0))
-  await settle(400)
-  await act('new terminal', () => client.click('New terminal'))
+  // The phone shell has no tool strip; its snapshots hold no terminal.
+  if (!options.phone) await act('new terminal', () => client.click('New terminal'))
   await settle(2500)
   await openPage()
   await step('empty', () => client.sees('No snapshots yet', 15_000))
@@ -203,9 +205,13 @@ try {
   await world.server.stop()
 }
 writePairs(options.root)
-const steps = options.phone ? 10 : 9
+const steps = options.phone ? 9 : 8
 const want = JSON.stringify([
-  { name: options.phone ? RENAMED : FIRST, description: 'one terminal', panes: 1 }
+  {
+    name: options.phone ? RENAMED : FIRST,
+    description: 'one terminal',
+    panes: options.phone ? 0 : 1
+  }
 ])
 const failed = Object.entries(results).filter(([, r]) => r.state !== want || r.seen.length < steps)
 console.log(

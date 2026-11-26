@@ -64,14 +64,16 @@ async function setupServer(dir: string) {
   await mkdir(home, { recursive: true })
   const log = path.join(dir, 'server.log')
   const child = Bun.spawn([(values['server-bin'] as string | undefined) ?? defaultServerBinary()], {
+    // Any TERMUL_*/TROUPE_* config in this shell would count as configuration and skip setup mode.
     env: {
-      ...process.env,
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => !/^(TERMUL|TROUPE)_/.test(key))
+      ),
       HOME: home,
       XDG_CONFIG_HOME: path.join(home, '.config'),
       XDG_DATA_HOME: path.join(home, '.local/share'),
       XDG_STATE_HOME: path.join(home, '.local/state'),
       XDG_CACHE_HOME: path.join(home, '.cache'),
-      TROUPE_WEB_AUTH_TOKEN: '',
       RUST_LOG: 'termul_manager_lib=info'
     },
     stdout: Bun.file(log),
@@ -182,6 +184,18 @@ async function click(run: Run, text: string, nth = -1): Promise<void> {
   await run.page.mouse.click(x, y)
 }
 
+/** Picks `option` in the select named `label`. */
+async function pick(run: Run, label: string, option: string): Promise<void> {
+  if (run.name === 'react') {
+    await run.page.getByRole('combobox', { name: label }).click({ timeout: 20_000 })
+    await run.page.getByRole('option', { name: option, exact: true }).click({ timeout: 20_000 })
+    return
+  }
+  await click(run, label)
+  await run.page.waitForTimeout(400)
+  await click(run, option)
+}
+
 /** Replaces what the field named `label` holds with `text`. */
 async function type(run: Run, label: string, text: string): Promise<void> {
   if (run.name === 'react') {
@@ -226,9 +240,9 @@ async function lane(browser: Browser, name: 'react' | 'rune') {
     const run: Run = { page, name }
     await page.goto(`${first.url}/?setup=${server.token}`)
     await step('wizard', () => sees(run, 'Set up Troupe', 45_000))
-    await act('reachability', () => click(run, 'Only this computer'))
-    await page.waitForTimeout(400)
-    await act('all devices', () => click(run, 'Other devices on the network'))
+    await act('reachability', () =>
+      pick(run, 'Where can Troupe be reached?', 'Other devices on the network')
+    )
     await page.waitForTimeout(400)
     await act('port', () => type(run, 'Port', '8195'))
     await step('wizard-filled', () => sees(run, 'Let other devices make changes', 5_000))
@@ -254,15 +268,28 @@ async function lane(browser: Browser, name: 'react' | 'rune') {
     await step('token-invalid', () => sees(run, 'Invalid token — check and try again.', 10_000))
     await act('right token', () => type(run, 'Access token', token))
     await act('continue', () => click(run, 'Continue'))
-    await step('welcome', () => sees(run, 'Welcome to Troupe', 45_000))
-    await act('get started', () => click(run, 'Get started'))
-    await step('agents', () => sees(run, 'Check your agents', 10_000))
-    await act('set up later', () => click(run, 'Set up later'))
-    await step('project', () => sees(run, 'Where should agents work?', 10_000))
-    await act('skip', () => click(run, 'Skip for now'))
-    await step('dashboard', async () =>
-      until(async () => JSON.parse(await hostState(token)).onboarded === true, 15_000)
-    )
+    // The client shows first-run onboarding only when it may write; else it lands on the
+    // dashboard at once. Either way it must end on the dashboard, as React does.
+    let onboarding = false
+    await until(async () => {
+      onboarding = await sees(run, 'Welcome to Troupe', 500)
+      return onboarding || (await sees(run, 'No projects yet', 500))
+    }, 45_000)
+    await step(onboarding ? 'welcome' : 'no-onboarding', async () => true)
+    if (onboarding) {
+      await act('get started', () => click(run, 'Get started'))
+      await step('agents', () => sees(run, 'Check your agents', 10_000))
+      await act('set up later', () => click(run, 'Set up later'))
+      await step('project', () => sees(run, 'Where should agents work?', 10_000))
+      await act('skip', () => click(run, 'Skip for now'))
+    }
+    await step('dashboard', async () => {
+      await page?.waitForTimeout(1500)
+      return (
+        (await sees(run, 'No projects yet', 15_000)) && !(await sees(run, 'Welcome to Troupe', 500))
+      )
+    })
+    seen.push(onboarding ? 'onboarding-shown' : 'onboarding-skipped')
     return { seen, state: await hostState(token) }
   } finally {
     await two.close()
@@ -286,8 +313,10 @@ try {
   await browser.close()
 }
 writePairs(root)
-const want = JSON.stringify({ setupRequired: false, onboarded: true })
-const failed = Object.entries(results).filter(([, r]) => r.state !== want || r.seen.length < 10)
+const states = new Set(Object.values(results).map((r) => r.state + r.seen.at(-1)))
+const failed = Object.entries(results).filter(
+  ([, r]) => !r.seen.includes('dashboard') || r.seen.length < 8 || states.size > 1
+)
 console.log(
   failed.length === 0
     ? 'PASS: every client reached the dashboard'

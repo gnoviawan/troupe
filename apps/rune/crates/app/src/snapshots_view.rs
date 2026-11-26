@@ -88,6 +88,8 @@ pub fn page(s: &State, t: &'static Tokens, phone: bool) -> El {
         .h_full()
         .min_w(0.0)
         .border_sides([0.0, 0.0, 0.0, if phone { 0.0 } else { 1.0 }], c.border)
+        // The desktop shell keeps its top row over the page, with no tabs.
+        .children((!phone).then(|| ui::shell::top_row(t, Vec::new(), Vec::new())))
         .child(header)
         .child(
             col()

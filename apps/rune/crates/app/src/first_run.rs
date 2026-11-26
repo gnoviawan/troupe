@@ -95,6 +95,8 @@ pub struct FirstRun {
     retry_at: Option<f64>,
     /// This boot's one-time setup token (`?setup=`), for `/setup/*` only.
     setup_token: Option<String>,
+    /// The URL hash the route last followed.
+    hash: Option<String>,
     /// A submitted token waiting for its check.
     pending_token: Option<String>,
     config: Option<Config>,
@@ -196,7 +198,38 @@ impl State {
             self.first_run.auth = AuthGate::Unauthorized;
         }
         self.onboarding_latch();
+        self.follow_hash();
         [self.first_run.retry_at, self.first_run.wizard.poll_at].into_iter().flatten().reduce(f64::min)
+    }
+
+    /// The web client's hash router, both ways: a `#/…` the user changed moves the route, and a
+    /// route the app changed (a restore returns to the workspace) writes its hash, as React's
+    /// `navigate` does.
+    fn follow_hash(&mut self) {
+        if self.first_run.gate == Gate::Off {
+            return;
+        }
+        let hash = page::hash();
+        let last = self.first_run.hash.replace(hash.clone());
+        if last.is_some() && last.as_deref() != Some(hash.as_str()) {
+            let route = crate::Route::from_hash(&hash);
+            log::info!("[app] the hash moved the route to {route:?}");
+            if route == crate::Route::Snapshots {
+                self.open_snapshots();
+            } else {
+                self.route = route;
+            }
+            return;
+        }
+        let wanted = match &self.route {
+            crate::Route::Workspace => "#/".to_owned(),
+            crate::Route::Snapshots => "#/snapshots".to_owned(),
+            crate::Route::NotFound(path) => format!("#{path}"),
+        };
+        if crate::Route::from_hash(&hash) != self.route {
+            page::set_hash(&wanted);
+            self.first_run.hash = Some(wanted);
+        }
     }
 
     pub(crate) fn first_run_replied(&mut self, ask: Ask, result: Result<Value, HttpError>) {
@@ -573,6 +606,16 @@ mod page {
         window().and_then(|w| w.location().hostname().ok()).unwrap_or_default()
     }
 
+    pub fn hash() -> String {
+        window().and_then(|w| w.location().hash().ok()).unwrap_or_default()
+    }
+
+    pub fn set_hash(hash: &str) {
+        if let Some(w) = window() {
+            let _ = w.location().set_hash(hash);
+        }
+    }
+
     pub fn path() -> String {
         window().and_then(|w| w.location().pathname().ok()).unwrap_or_else(|| "/".into())
     }
@@ -639,6 +682,12 @@ mod page {
     pub fn host() -> String {
         String::new()
     }
+
+    pub fn hash() -> String {
+        String::new()
+    }
+
+    pub fn set_hash(_: &str) {}
 
     pub fn path() -> String {
         "/".into()
