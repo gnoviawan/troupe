@@ -215,7 +215,7 @@ async function run(client: Client): Promise<Seen> {
   const settle = (ms = 1200) => client.page.waitForTimeout(ms)
   await client.sees('What should we do in alpha?', 30_000)
   if (options.phone) {
-    await act('drawer', () => client.click('Open projects and chats', false))
+    await act('drawer', () => client.click('Open menu'))
     await settle(800)
   }
   await act('open GitHub', () => client.click('GitHub'))
@@ -245,7 +245,8 @@ async function run(client: Client): Promise<Seen> {
       await client.page.waitForTimeout(600)
       const button = await mirrorPoint(client.page, 'Comment', true)
       if (!button) throw new Error('no Comment button')
-      await client.page.mouse.click(button.x - 200, button.y - 60)
+      // The phone's send button sits beside its field; the desktop's under it.
+      await client.page.mouse.click(button.x - 200, options.phone ? button.y : button.y - 60)
       await client.page.keyboard.type(COMMENT, { delay: 15 })
     }
   })

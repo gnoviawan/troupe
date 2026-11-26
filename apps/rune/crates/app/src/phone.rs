@@ -407,7 +407,9 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
                     .child(col().w_full().h((window.1 * 0.9 - 72.0).max(320.0)).child(crate::github_view::panel(s, t, true, layer)))
                     .build(t, window, layer);
             }
-            crate::github::PICKER => crate::github_view::picker_sheet(s, t, window, layer),
+            // The desktop draws these two as a popover and a menu.
+            crate::github::PICKER if window.0 <= ui::shell::PHONE_MAX_WIDTH => crate::github_view::picker_sheet(s, t, window, layer),
+            crate::github::ITEM_MENU if window.0 <= ui::shell::PHONE_MAX_WIDTH => crate::github_item_view::item_sheet(s, t, window, layer),
             crate::git::GIT_SHEET => {
                 sheet(crate::git::GIT_SHEET, "Git changes".to_owned(), s)
                     .child(crate::git_view::phone_panel(s, t, window, layer))

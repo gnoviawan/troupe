@@ -241,6 +241,9 @@ fn item_menu(s: &State, t: &'static Tokens, at: &ItemRef, data: &ItemDetail, ui_
         .w(if phone { 44.0 } else { 28.0 })
         .h(if phone { 44.0 } else { 28.0 })
         .on_press(|s: &mut State| s.overlays.open(ITEM_MENU));
+    if phone {
+        return trigger;
+    }
     let labels: Vec<String> = data.item.labels.iter().map(|l| l.name.clone()).collect();
     let (labels_at, assignees_at) = (at.clone(), at.clone());
     let assignees = data.item.assignees.clone();
@@ -735,4 +738,50 @@ fn threads(t: &'static Tokens, at: &ItemRef, threads: &[ReviewThread], ui_state:
         out = out.child(card);
     }
     out
+}
+
+/// The phone's item actions sheet (`GithubItemMenu`'s `MobileSheetContent`): the same rows as
+/// the desktop menu, the close and reopen choices in their own group.
+pub fn item_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec<El>) {
+    let Some(at) = s.github_visible_item() else { return };
+    let Some(data) = s.github.cache.item(&at).and_then(|r| r.data.clone()) else { return };
+    let busy = s.github.items.get(&model::github::item_key(&at.cwd, at.repo, at.number)).is_some_and(|i| i.busy);
+    let row_of = |name: &str, label: &str| ui::mobile::sheet_row(t, glyph(name), label, false);
+    let labels: Vec<String> = data.item.labels.iter().map(|l| l.name.clone()).collect();
+    let assignees = data.item.assignees.clone();
+    let (labels_at, assignees_at) = (at.clone(), at.clone());
+    let mut rows = vec![
+        ui::mobile::sheet_subtitle(t, &data.repo.full_name()),
+        row_of("Tag", "Edit labels").key("github-sheet-labels").on_press(move |s: &mut State| s.github_open_picker(PickerFor::Labels(labels_at.clone()), labels.clone())),
+    ];
+    if let Some((viewer, assigned, loading)) = self_action(s, &at, &data) {
+        let at = at.clone();
+        let label = if assigned { "Unassign me" } else { "Assign to me" };
+        let r = row_of("User", label).key("github-sheet-self").opacity(if busy || loading { 0.5 } else { 1.0 });
+        rows.push(if busy || loading { r } else { r.on_press(move |s: &mut State| s.github_toggle_self(&at, &viewer, assigned)) });
+    }
+    let (url, copy) = (data.item.url.clone(), data.item.url.clone());
+    rows.push(row_of("User", "Edit assignees").key("github-sheet-assignees").on_press(move |s: &mut State| s.github_open_picker(PickerFor::Assignees(assignees_at.clone()), assignees.clone())));
+    rows.push(row_of("ExternalLink", "Open on GitHub").on_press(move |s: &mut State| {
+        s.close(ITEM_MENU);
+        s.request_link_open(&url);
+    }));
+    rows.push(row_of("Copy", "Copy link").on_press_tx(move |s: &mut State, tx: &mut Tx| {
+        s.close(ITEM_MENU);
+        tx.copy(copy.clone());
+        s.toasts.push(s.now, ui::overlay::ToastKind::Success, "Link copied", None);
+    }));
+    let mut sheet = crate::phone::sheet(ITEM_MENU, format!("{} #{}", ui::github::kind_noun(data.item.kind), data.item.number), s)
+        .child(col().w_full().items_stretch().children(rows));
+    let choices = logic::state_actions(data.item.kind, data.item.state);
+    if !choices.is_empty() {
+        let mut group = col().w_full().items_stretch();
+        for choice in choices {
+            let at = at.clone();
+            let r = row_of(choice.icon, choice.label).opacity(if busy { 0.5 } else { 1.0 });
+            group = group.child(if busy { r } else { r.on_press(move |s: &mut State| s.github_set_state(&at, choice.action, choice.label)) });
+        }
+        sheet = sheet.child(group);
+    }
+    sheet.build(t, window, layer);
 }
