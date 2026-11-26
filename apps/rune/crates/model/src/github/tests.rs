@@ -60,3 +60,14 @@ fn a_bad_reply_is_an_error_not_a_crash() {
     assert_eq!(state.context("/r").error_code.as_deref(), Some(BAD_REPLY));
     assert!(matches!(done.effects[0], Effect::Log { .. }));
 }
+
+#[test]
+fn a_bad_reply_logs_where_it_broke_never_the_data() {
+    let mut state = State::default();
+    let id = calls(&step(&mut state, Event::LoadContext("/r".into())))[0].0;
+    let done = step(&mut state, Event::Reply(id, Ok(json!({ "auth": "secret body text" }))));
+    let Effect::Log { message } = &done.effects[0] else { panic!("want a log") };
+    assert!(!message.contains("secret"), "{message}");
+    assert!(message.contains("Data error"), "{message}");
+    assert!(!state.context("/r").error.unwrap_or_default().contains("secret"));
+}
