@@ -173,8 +173,37 @@ describe('startMcpOAuth refusal of an unsafe sign-in link', () => {
         await vi.advanceTimersByTimeAsync(301_000)
 
         const error = await settled
+        expect(error).toBeInstanceOf(McpOAuthError)
+        expect((error as McpOAuthError).code).toBe('OAUTH_TIMEOUT')
         expect(String(error)).toContain('timed out')
         expect(popup.close).toHaveBeenCalledTimes(1)
+      })
+
+      it('waits for tokenGeneration to advance when a stale token already exists on disk', async () => {
+        vi.mocked(webServerMcpOAuth.start).mockResolvedValue({
+          success: true,
+          data: { authUrl, redirectUri, tokenGeneration: 2 }
+        })
+        vi.mocked(webServerMcpOAuth.status).mockResolvedValue({
+          success: true,
+          data: { hasToken: true, tokenGeneration: 2 }
+        })
+
+        let done = false
+        const flow = startMcpOAuth('proj-1', 'https://mcp.example.com').then(() => {
+          done = true
+        })
+
+        await vi.advanceTimersByTimeAsync(3000)
+        expect(done).toBe(false)
+
+        vi.mocked(webServerMcpOAuth.status).mockResolvedValue({
+          success: true,
+          data: { hasToken: true, tokenGeneration: 3 }
+        })
+        await vi.advanceTimersByTimeAsync(1000)
+        await flow
+        expect(done).toBe(true)
       })
 
       it('keeps the flow going when the popup is blocked, so the dialog can open the link', async () => {

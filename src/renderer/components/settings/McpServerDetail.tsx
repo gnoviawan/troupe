@@ -144,7 +144,7 @@ export function McpServerDetail({
           </>
         }
       >
-        {enabled && probeStatus === 'authRequired' && !oauthConnected && (
+        {enabled && probeStatus === 'authRequired' && (
           <SettingsNotice
             tone="warning"
             action={
@@ -213,10 +213,12 @@ export function McpServerDetail({
                 ) : null
               }
             >
-              {oauthConnected
-                ? 'OAuth · signed in'
-                : probeStatus === 'authRequired'
-                  ? 'OAuth · not signed in'
+              {probeStatus === 'authRequired'
+                ? oauthConnected
+                  ? 'OAuth · sign-in expired'
+                  : 'OAuth · not signed in'
+                : oauthConnected
+                  ? 'OAuth · signed in'
                   : 'None needed'}
             </DetailRow>
           )}
