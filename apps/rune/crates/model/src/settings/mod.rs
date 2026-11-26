@@ -10,6 +10,7 @@
 
 mod normalize;
 pub mod mcp;
+pub mod mcp_catalog;
 pub mod palette;
 pub mod profiles;
 pub mod project;

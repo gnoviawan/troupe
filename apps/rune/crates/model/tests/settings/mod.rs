@@ -323,6 +323,12 @@ pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
             "status" => to_value(&mcp::status(args[0].as_bool().unwrap_or_default(), args[1].as_bool().unwrap_or_default(), args[2].as_str())),
             "target" => json!(mcp::target(&object(0)?)),
             "toolCount" => json!(mcp::tool_count(args[0].as_u64().unwrap_or_default() as usize)),
+            "reasonText" => json!(model::settings::mcp_catalog::reason_text(&args[0])),
+            "stateLabel" => json!(model::settings::mcp_catalog::state_label(text(0))),
+            "sampleText" => json!(model::settings::mcp_catalog::sample_text(&args[0])),
+            "syncText" => json!(model::settings::mcp_catalog::sync_text(&args[0], "")),
+            "syncErrorText" => json!(model::settings::mcp_catalog::sync_error_text(text(0))),
+            "updatedText" => json!(model::settings::mcp_catalog::updated_text(None, "")),
             other => return Err(format!("step {index}: no read {other}")),
         };
         if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
