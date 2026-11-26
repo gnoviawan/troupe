@@ -353,7 +353,9 @@ fn migration_backup_is_owner_only() {
     let file = dir.join("projects.json");
     fs::write(&file, br#"{"schemaVersion":1,"projects":[]}"#).unwrap();
     fs::set_permissions(&file, fs::Permissions::from_mode(0o644)).unwrap();
-    FileProjectRegistry::empty().save_atomic(&file).expect("save");
+    FileProjectRegistry::empty()
+        .save_atomic(&file)
+        .expect("save");
     let backups = pre_migration_backups(&dir);
     assert_eq!(backups.len(), 1);
     let mode = fs::metadata(&backups[0]).unwrap().permissions().mode() & 0o777;
@@ -372,7 +374,10 @@ fn save_atomic_refuses_to_overwrite_a_newer_schema_file() {
         .save_atomic(&file)
         .expect_err("newer schema must not be overwritten");
     assert!(
-        matches!(err, ProjectRegistryError::BadSchemaVersion { found: 99, .. }),
+        matches!(
+            err,
+            ProjectRegistryError::BadSchemaVersion { found: 99, .. }
+        ),
         "got {err:?}"
     );
     assert_eq!(fs::read(&file).unwrap(), newer, "file untouched");
@@ -572,5 +577,32 @@ fn lenient_load_repairs_a_verbatim_root() {
     let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
     assert_eq!(reg.roots()[0].path, PathBuf::from(r"C:\work\app"));
     assert_eq!(reg.roots()[1].path, PathBuf::from(r"\\server\share\app"));
+    cleanup(&dir);
+}
+
+/// Volume GUID roots and names that Windows would trim are left verbatim
+/// on a lenient load, so the stored path is not rewritten into a relative
+/// or sibling folder.
+#[test]
+fn lenient_load_keeps_volume_guid_and_trailing_dot_or_space_roots() {
+    const VOLUME: &str = r"\\?\Volume{26a21bda-a627-11d7-9931-806e6f6e6963}\repo";
+    let dir = tempdir_like("lenient-verbatim-guards");
+    let file = dir.join("projects.json");
+    write_json(
+        &file,
+        &serde_json::json!({
+            "schemaVersion": 4,
+            "projects": [
+                { "id": "volume", "name": "Volume", "path": VOLUME, "color": "blue", "isArchived": false },
+                { "id": "dot", "name": "Dot", "path": r"\\?\E:\app.", "color": "blue", "isArchived": false },
+                { "id": "space", "name": "Space", "path": r"\\?\C:\work\repo ", "color": "blue", "isArchived": false }
+            ]
+        })
+        .to_string(),
+    );
+    let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
+    assert_eq!(reg.roots()[0].path, PathBuf::from(VOLUME));
+    assert_eq!(reg.roots()[1].path, PathBuf::from(r"\\?\E:\app."));
+    assert_eq!(reg.roots()[2].path, PathBuf::from(r"\\?\C:\work\repo "));
     cleanup(&dir);
 }
