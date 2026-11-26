@@ -134,6 +134,9 @@ pub struct Doc {
     /// The disk file starts with a byte order mark, which the buffer leaves out and a write
     /// puts back.
     pub bom: bool,
+    /// Reads that replaced the buffer: a new buffer restarts its revision at 0, so caches key
+    /// on this and the revision together ([`Doc::version`]).
+    loads: u64,
     /// A draft to reconcile once the read lands.
     pending_draft: Option<Draft>,
 }
@@ -153,6 +156,7 @@ impl Doc {
             external_conflict: false,
             crlf: false,
             bom: false,
+            loads: 0,
             pending_draft: draft,
         }
     }
@@ -172,6 +176,12 @@ impl Doc {
     #[must_use]
     pub fn read_only(&self) -> bool {
         self.draft_conflict.is_some() || self.load != Load::Ready
+    }
+
+    /// Changes whenever the buffer's text may have: the read count and the edit revision.
+    #[must_use]
+    pub fn version(&self) -> (u64, u64) {
+        (self.loads, self.editor.revision())
     }
 
     /// The buffer as the disk holds it: with the file's own line breaks.
@@ -359,6 +369,7 @@ fn load(doc: &mut Doc, read: Read) -> Vec<Effect> {
     let caret = doc.editor.selection();
     doc.bom = read.content.starts_with(BOM);
     doc.editor = Editor::new(read.content.strip_prefix(BOM).unwrap_or(&read.content));
+    doc.loads += 1;
     doc.crlf = only_crlf(&read.content);
     if reloading {
         doc.editor.apply(troupe_editor::Command::Select(caret), 0.0);
@@ -401,7 +412,10 @@ const UNCERTAIN: [&str; 3] = ["NETWORK_ERROR", "OUTCOME_UNKNOWN", "COMMAND_IN_PR
 fn written(doc: &mut Doc, content: &str, now: f64) -> Vec<Effect> {
     doc.saving = None;
     doc.hash = Some(sha256_hex(content));
-    doc.saved = Editor::new(content.strip_prefix(BOM).unwrap_or(content)).rope().clone();
+    // Only the byte order mark this file was read with is set aside; a U+FEFF typed at the
+    // start of a file without one is text.
+    let text = if doc.bom { content.strip_prefix(BOM).unwrap_or(content) } else { content };
+    doc.saved = Editor::new(text).rope().clone();
     doc.modified_at = now;
     doc.external_conflict = false;
     let mut fx = vec![log(Level::Info, format!("editor save succeeded {} {} bytes", name(&doc.path), content.len()))];
