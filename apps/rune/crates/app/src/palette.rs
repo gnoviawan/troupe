@@ -4,7 +4,7 @@
 //! a row's pin toggles it in the shared pinned list. Up and Down move the highlight, Return
 //! runs it, Escape or a press outside closes the palette.
 
-use model::settings::palette::{self, Category, Commands, Event, Heading, Row};
+use model::settings::palette::{self, Category, ChatCard, Commands, Event, Heading, QuickChat, Row};
 use model::shortcuts::format_key_for_display;
 use rune::{El, Key, KeyEvent, TextEdit, Tx, col, el, icon, row, text, text_input};
 use serde_json::Value;
@@ -129,13 +129,78 @@ pub(crate) fn rows(s: &State, phone: bool) -> Vec<Row> {
     out
 }
 
-/// The rows in the order the list shows them, with the group each sits in.
+/// The rows in the order the list shows them, with the group each sits in: the chat groups
+/// above the commands, as the palette renders them.
 fn shown(s: &State) -> Vec<(Heading, Row)> {
     let rows = rows(s, s.palette.phone);
-    palette::groups(&rows, &s.palette.query.text, &s.palette.lists)
-        .into_iter()
-        .flat_map(|(heading, rows)| rows.into_iter().map(move |r| (heading, r.clone())))
-        .collect()
+    let mut out = chat_rows(s);
+    out.extend(
+        palette::groups(&rows, &s.palette.query.text, &s.palette.lists)
+            .into_iter()
+            .flat_map(|(heading, rows)| rows.into_iter().map(move |r| (heading, r.clone()))),
+    );
+    out
+}
+
+/// `UNTITLED_HOST_TITLE`: what a chat the host has not named is called.
+const UNTITLED: &str = "Untitled Chat";
+/// A chat row's id prefix: `chat:` opens a project chat, `quick-chat:` a quick chat.
+const CHAT: &str = "chat:";
+const QUICK_CHAT: &str = "quick-chat:";
+
+/// The project whose chats the Chats group searches (`chatsProject`): the active one, never on
+/// the phone shell.
+fn chats_project(s: &State) -> Option<&model::projects::Project> {
+    (!s.palette.phone).then(|| s.active_project()).flatten()
+}
+
+/// The Chats and Quick chats rows for the query (`CommandPaletteChats`,
+/// `CommandPaletteQuickChats`); the description is the meta line under the title.
+fn chat_rows(s: &State) -> Vec<(Heading, Row)> {
+    let query = &s.palette.query.text;
+    let cards: Vec<ChatCard> = chats_project(s)
+        .map(|p| {
+            let git = p.client.is_git_repo != Some(false);
+            s.chats
+                .of_project(&p.id)
+                .filter(|c| !c.discovered)
+                .map(|c| ChatCard {
+                    id: c.session_id.clone(),
+                    title: if c.title.is_empty() { UNTITLED.to_owned() } else { c.title.clone() },
+                    agent_name: None,
+                    index_model: c.model_name.clone().filter(|m| !m.is_empty()).or_else(|| c.model_id.clone()),
+                    branch: match (git, &c.worktree_path) {
+                        (false, _) => String::new(),
+                        (true, Some(_)) => c.worktree_branch.clone().unwrap_or_default(),
+                        (true, None) => p.client.git_branch.clone().unwrap_or_default(),
+                    },
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let quick: Vec<QuickChat> = s
+        .chats
+        .list
+        .iter()
+        .filter(|c| c.kind.as_deref() == Some("quick"))
+        .map(|c| QuickChat {
+            id: c.session_id.clone(),
+            title: if c.title.is_empty() { UNTITLED.to_owned() } else { c.title.clone() },
+            created_at: c.created_at,
+        })
+        .collect();
+    let (chats, quick) = palette::chat_groups(&cards, &quick, query);
+    let row = |id: String, label: &str, meta: &str| Row {
+        id,
+        category: Category::Workspace,
+        label: label.to_owned(),
+        description: (!meta.is_empty()).then(|| meta.to_owned()),
+        keywords: Vec::new(),
+        shortcut: None,
+    };
+    let mut out: Vec<(Heading, Row)> = chats.into_iter().map(|c| (Heading::Chats, row(format!("{CHAT}{}", c.id), &c.title, &c.branch))).collect();
+    out.extend(quick.into_iter().map(|q| (Heading::QuickChats, row(format!("{QUICK_CHAT}{}", q.id), &q.title, "Quick chat"))));
+    out
 }
 
 fn glyph(id: &str) -> &'static rune::Icon {
@@ -163,6 +228,9 @@ fn item(s: &State, t: &'static Tokens, heading: Heading, r: &Row, index: usize, 
         Some(p) => ui::shell::project_badge(t, &p.name, &p.color),
         None => icon(glyph(&r.id), 16.0).color(if lit { c.foreground } else { c.muted_foreground }),
     };
+    if matches!(heading, Heading::Chats | Heading::QuickChats) {
+        return chat_item(t, r, index, lit);
+    }
     let mut words = col().min_w(0.0).shrink().child(text(r.label.clone()).font(sans(12.0, 500.0, 20.0)).color(c.foreground).truncate());
     if let Some(d) = &r.description {
         words = words.child(text(d.clone()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).truncate());
@@ -200,7 +268,7 @@ fn item(s: &State, t: &'static Tokens, heading: Heading, r: &Row, index: usize, 
     let prefix = match heading {
         Heading::Pinned => "pinned:",
         Heading::Recent => "recent:",
-        Heading::Category(_) => "",
+        Heading::Chats | Heading::QuickChats | Heading::Category(_) => "",
     };
     let mut e = row()
         .key(format!("cmd-{prefix}{}", r.id))
@@ -215,6 +283,41 @@ fn item(s: &State, t: &'static Tokens, heading: Heading, r: &Row, index: usize, 
         .radius(8.0)
         .child(left)
         .child(right)
+        .on_hover_change(move |s: &mut State, on: bool, _tx: &mut Tx| {
+            if on {
+                s.palette.set_lit(index);
+            }
+        })
+        .on_press(move |s: &mut State| s.run_command(&run_id));
+    if lit {
+        e = e.fill(c.foreground.alpha(0.06));
+    }
+    e
+}
+
+/// A chat row: the agent glyph in its box, the title, and the branch or "Quick chat" under it.
+/// Picking it opens the chat; it is not a command, so it has no pin and no recent entry.
+fn chat_item(t: &'static Tokens, r: &Row, index: usize, lit: bool) -> El {
+    let c = &t.colors;
+    let bot = theme::icons::named("Bot").expect("bundled icon");
+    let mut words = col().min_w(0.0).shrink().child(text(r.label.clone()).font(sans(12.0, 500.0, 20.0)).color(c.foreground).truncate());
+    if let Some(d) = &r.description {
+        words = words.child(text(d.clone()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).truncate());
+    }
+    let run_id = r.id.clone();
+    let mut e = row()
+        .key(format!("cmd-{}", r.id))
+        .role("option")
+        .label(r.label.clone())
+        .focus_selected(lit)
+        .w_full()
+        .px(10.0)
+        .py(8.0)
+        .gap(10.0)
+        .items_center()
+        .radius(8.0)
+        .child(row().size(28.0, 28.0).center().radius(6.0).border(1.0, c.border).fill(c.foreground.alpha(0.03)).a11y_hidden().child(icon(bot, 14.0).color(c.muted_foreground)))
+        .child(words)
         .on_hover_change(move |s: &mut State, on: bool, _tx: &mut Tx| {
             if on {
                 s.palette.set_lit(index);
@@ -243,9 +346,11 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, window: (f32, f32), lay
     let shown = shown(s);
     let lit = s.palette.lit(shown.len());
     let search = theme::icons::named("Search").expect("bundled icon");
-    // React's desktop palette also searches the active project's chats and says so; this one
-    // does not search chats yet, so its placeholder leaves them out.
-    let placeholder = "Search commands, projects, settings…";
+    let placeholder = if chats_project(s).is_some() {
+        "Search commands, projects, chats, settings…"
+    } else {
+        "Search commands, projects, settings…"
+    };
     let field = text_input(&s.palette.query, sans(14.0, 400.0, 20.0))
         .single_line()
         .key("palette-input")
@@ -376,6 +481,12 @@ impl State {
 
     /// `executeCommand`: remember it, close the palette, then run it.
     pub(crate) fn run_command(&mut self, id: &str) {
+        if let Some(chat) = id.strip_prefix(CHAT).or_else(|| id.strip_prefix(QUICK_CHAT)) {
+            log::info!("[palette] open chat {chat}");
+            self.close(KEY);
+            self.open_chat(chat);
+            return;
+        }
         log::info!("[palette] run {id}");
         self.palette.lists.step(Event::AddRecentCommand(id.to_owned()));
         if self.palette.recent_ready {

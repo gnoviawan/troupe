@@ -190,14 +190,33 @@ pub fn replay_routes(vector: &Value) -> Result<usize, String> {
 
 /// The palette's lists, and cmdk's score as a read.
 pub fn replay_palette(vector: &Value) -> Result<usize, String> {
-    use model::settings::palette::{Commands, command_score};
+    use model::settings::palette::{ChatCard, Commands, command_score};
+    let text = |v: &Value| v.as_str().map(str::to_owned);
+    let chat_card = |c: &Value| ChatCard {
+        id: text(&c["entry"]["id"]).unwrap_or_default(),
+        title: text(&c["entry"]["title"]).unwrap_or_default(),
+        agent_name: text(&c["agentName"]),
+        index_model: text(&c["indexModel"]),
+        branch: text(&c["branch"]).unwrap_or_default(),
+    };
     let mut state = Commands::default();
     let steps = vector["steps"].as_array().ok_or("no steps")?;
     for (index, step) in steps.iter().enumerate() {
         let event = &step["event"];
+        if event["action"] == "filterChatCards" {
+            let args = &event["args"];
+            let cards: Vec<ChatCard> = args[0].as_array().ok_or("no cards")?.iter().map(chat_card).collect();
+            let query = args[1].as_str().unwrap_or_default();
+            let got: Vec<&str> = cards.iter().filter(|c| c.matches(query)).map(|c| c.id.as_str()).collect();
+            if let Some(problem) = diff(&format!("step {index} chats"), &step["result"], &json!(got)) {
+                return Err(problem);
+            }
+            continue;
+        }
         if step.get("query").is_some() {
             let args = &event["args"];
-            let got = command_score(args[0].as_str().unwrap_or_default(), args[1].as_str().unwrap_or_default(), &[]);
+            let keywords: Vec<String> = args.get(2).and_then(Value::as_array).into_iter().flatten().filter_map(|k| k.as_str().map(str::to_owned)).collect();
+            let got = command_score(args[0].as_str().unwrap_or_default(), args[1].as_str().unwrap_or_default(), &keywords);
             let want = step["result"].as_f64().ok_or("no score")?;
             if (got - want).abs() > 1e-12 {
                 return Err(format!("step {index}: score of {:?} for {:?}: want {want}, got {got}", args[0], args[1]));

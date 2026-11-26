@@ -37,7 +37,7 @@ pub struct ChatUi {
     /// Sessions whose payload is in.
     pub loaded: BTreeSet<String>,
     /// A chat to open once its project's workspace is showing.
-    open_when_shown: Option<(String, String)>,
+    pub(crate) open_when_shown: Option<(String, String)>,
     /// The Markdown of the table the full-window view shows.
     pub zoomed_table: Option<String>,
     /// The link waiting for the user's "Open" (`ExternalLinkConfirm`); only one at a time.
