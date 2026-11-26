@@ -2,7 +2,7 @@ use client::http::HttpError;
 use rune::{Runtime, TextEdit};
 use serde_json::{Value, json};
 
-use super::{CatalogFetch, CatalogStatus};
+use super::{CatalogFetch, CatalogStatus, overflow};
 use crate::State;
 use crate::tests::{present, runtime_at, tap};
 use model::settings::mcp_catalog::Search;
@@ -128,4 +128,46 @@ fn a_refused_sync_change_puts_the_switch_back_and_says_why() {
     answer(&mut rt, CatalogFetch::Sync(2), Err(refused));
     assert!(matches!(rt.state.mcp_ui.catalog.status, CatalogStatus::Ready { requested: None, .. }));
     assert!(rt.state.toasts.visible().iter().any(|t| t.title == "Only the host can change catalog sync."));
+}
+
+#[test]
+fn a_sync_change_in_flight_does_not_wake_every_frame() {
+    let mut rt = opened();
+    answer(&mut rt, CatalogFetch::Status(1), Ok(status()));
+    edit(&mut rt, |s| s.catalog_set_sync(false));
+    let wake = {
+        let s = &mut rt.state;
+        s.now += 120.0;
+        let now = s.now;
+        s.catalog_tick(now)
+    };
+    assert_eq!(wake, None, "a past status read is not a wake while the sync change is out");
+    answer(&mut rt, CatalogFetch::Sync(2), Ok(status()));
+    let now = rt.state.now;
+    rt.state.catalog_tick(now);
+    assert_eq!(sent(&rt, "/mcp-catalog/status").len(), 2, "the status is read once the switch settles");
+    let wake = rt.state.catalog_tick(now).expect("the next poll is due");
+    assert!(wake > now, "the next status read is in the future");
+}
+
+#[test]
+fn the_search_keeps_two_hundred_characters() {
+    let mut rt = opened();
+    edit(&mut rt, |s| {
+        s.mcp_ui.catalog.query = TextEdit::new("x".repeat(199));
+        s.mcp_ui.catalog.query.insert("abc");
+        s.catalog_query_changed();
+    });
+    let text = &rt.state.mcp_ui.catalog.query.text;
+    assert_eq!(text.chars().count(), 200);
+    assert_eq!(text, &format!("{}a", "x".repeat(199)));
+}
+
+#[test]
+fn an_overflow_drops_what_went_in_before_the_caret() {
+    assert_eq!(overflow("abcdef", 4, 4), Some(2..4));
+    assert_eq!(overflow("abcd", 4, 4), None);
+    assert_eq!(overflow("éé€", 7, 2), Some(4..7));
+    assert_eq!(overflow("éé€", 4, 2), Some(2..4));
+    assert_eq!(overflow("abcdef", 0, 4), Some(4..6));
 }

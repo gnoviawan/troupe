@@ -195,7 +195,18 @@ impl State {
             self.catalog_status();
         }
         let c = &self.mcp_ui.catalog;
-        [c.due, c.next_status].into_iter().flatten().reduce(f64::min)
+        let status = if c.toggling { None } else { c.next_status };
+        [c.due, status].into_iter().flatten().reduce(f64::min)
+    }
+
+    /// `maxLength`: what typing or a paste adds past `MAX_QUERY_CHARS` is dropped.
+    pub(crate) fn catalog_query_changed(&mut self) {
+        let query = &mut self.mcp_ui.catalog.query;
+        let (_, caret) = query.range();
+        if let Some(over) = overflow(&query.text, caret, rules::MAX_QUERY_CHARS) {
+            query.set_selection(over.start, over.end);
+            query.insert("");
+        }
     }
 
     fn mcp_catalog_visible(&self) -> bool {
@@ -298,6 +309,18 @@ impl State {
             None
         }
     }
+}
+
+/// The bytes to drop so `text` keeps `max` characters: the ones just before the caret, where
+/// the new text went in, else the end.
+fn overflow(text: &str, caret: usize, max: usize) -> Option<std::ops::Range<usize>> {
+    let extra = text.chars().count().checked_sub(max).filter(|&n| n > 0)?;
+    let before: Vec<usize> = text[..caret].char_indices().map(|(i, _)| i).collect();
+    if before.len() >= extra {
+        return Some(before[before.len() - extra]..caret);
+    }
+    let keep = text.char_indices().nth(max).map_or(text.len(), |(i, _)| i);
+    Some(keep..text.len())
 }
 
 fn search_path(query: &str, cursor: Option<&str>) -> String {
@@ -446,7 +469,7 @@ pub fn browser(s: &State, t: &'static Tokens, phone: bool) -> El {
         "Search the MCP catalog",
         "Search the MCP catalog",
         phone,
-        |e| e.on_edit(|s: &mut State| &mut s.mcp_ui.catalog.query),
+        |e| e.on_edit(|s: &mut State| &mut s.mcp_ui.catalog.query).on_input_change(|s: &mut State, _| s.catalog_query_changed()),
         |e| e.on_press(|s: &mut State| s.mcp_ui.catalog.query = TextEdit::new("")),
     )
     .w_full();
