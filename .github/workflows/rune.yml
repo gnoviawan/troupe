@@ -123,6 +123,12 @@ on:
       - 'src/renderer/types/settings.ts'
       - 'src/shared/types/antigravity-accounts.types.ts'
       - 'src/shared/types/web-protocol.types.ts'
+      - 'src/renderer/components/terminal/command-editor/editor-keys.ts'
+      - 'src/renderer/hooks/use-command-history.ts'
+      - 'src/renderer/lib/command-editor-transport.ts'
+      - 'src/renderer/lib/command-lifecycle/**'
+      - 'src/renderer/lib/persistence-trim.ts'
+      - 'src/renderer/stores/command-history-store.ts'
   # Runs on dev save the Rust cache (`save-if` below) that PR runs restore.
   push:
     branches: [dev]

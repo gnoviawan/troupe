@@ -4,8 +4,22 @@
 //! A session outlives navigation. Switching projects hides a project's terminal tabs but keeps
 //! their sessions here, attached and fed, so switching back shows the same process; only a
 //! close or the PTY's own exit ends one. The cells live in the app beside each session.
+//!
+//! The command editor's state is in the submodules: [`session`] and [`store`] the shell session
+//! the host's lifecycle frames drive and the draft, [`completion`] when completions are asked
+//! for, [`words`] how a candidate is spelled, [`routes`] the `/terminal/ws` session calls,
+//! [`history`] the commands sent, and [`line`] the editor's text and keys.
+//! `tools/parity/vectors/` records their vectors.
 
 use std::collections::{BTreeMap, BTreeSet};
+
+pub mod completion;
+pub mod history;
+pub mod line;
+pub mod routes;
+pub mod session;
+pub mod store;
+pub mod words;
 
 /// Where a terminal stands.
 #[derive(Clone, Debug, PartialEq, Eq)]

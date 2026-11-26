@@ -1,0 +1,918 @@
+{
+ "sources": {
+  "src/renderer/components/terminal/command-editor/editor-keys.ts": "cc5a3f6df485ae48e35297e398e8124fb6660fca"
+ },
+ "cases": [
+  {
+   "name": "multi_line_command",
+   "doc": "",
+   "history": [],
+   "steps": [
+    {
+     "type": "echo \"a",
+     "handled": null,
+     "doc": "echo \"a",
+     "anchor": 7,
+     "head": 7,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Shift-Enter",
+     "handled": true,
+     "doc": "echo \"a\n",
+     "anchor": 8,
+     "head": 8,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "type": "b\"",
+     "handled": null,
+     "doc": "echo \"a\nb\"",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Shift-Enter",
+     "handled": true,
+     "doc": "echo \"a\nb\"\n",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "type": "&& ls",
+     "handled": null,
+     "doc": "echo \"a\nb\"\n&& ls",
+     "anchor": 16,
+     "head": 16,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Enter",
+     "handled": true,
+     "doc": "echo \"a\nb\"\n&& ls",
+     "anchor": 16,
+     "head": 16,
+     "submitted": [
+      "echo \"a\nb\"\n&& ls"
+     ],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "recall_walks_back_and_forward",
+   "doc": "",
+   "history": [
+    "ls",
+    "git status",
+    "git stash",
+    "echo hi"
+   ],
+   "steps": [
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "echo hi",
+     "anchor": 7,
+     "head": 7,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git stash",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git status",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "ls",
+     "anchor": 2,
+     "head": 2,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "ls",
+     "anchor": 2,
+     "head": 2,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "ls",
+     "anchor": 2,
+     "head": 2,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "git status",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "git stash",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "echo hi",
+     "anchor": 7,
+     "head": 7,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "recall_by_prefix_keeps_the_draft",
+   "doc": "git",
+   "history": [
+    "ls",
+    "git status",
+    "git stash",
+    "echo hi"
+   ],
+   "steps": [
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git stash",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git status",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git status",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "git stash",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "git",
+     "anchor": 3,
+     "head": 3,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "git",
+     "anchor": 3,
+     "head": 3,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "an_edit_ends_the_recall",
+   "doc": "",
+   "history": [
+    "ls",
+    "git status",
+    "git stash",
+    "echo hi"
+   ],
+   "steps": [
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "echo hi",
+     "anchor": 7,
+     "head": 7,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git stash",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "type": " -u",
+     "handled": null,
+     "doc": "git stash -u",
+     "anchor": 12,
+     "head": 12,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "git stash -u",
+     "anchor": 12,
+     "head": 12,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "git stash -u",
+     "anchor": 12,
+     "head": 12,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Enter",
+     "handled": true,
+     "doc": "git stash -u",
+     "anchor": 12,
+     "head": 12,
+     "submitted": [
+      "git stash -u"
+     ],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "recall_of_a_multi_line_entry",
+   "doc": "",
+   "history": [
+    "ls",
+    "echo \"a\nb\""
+   ],
+   "steps": [
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "echo \"a\nb\"",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "select": [
+      3,
+      3
+     ],
+     "handled": null,
+     "doc": "echo \"a\nb\"",
+     "anchor": 3,
+     "head": 3,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowUp",
+     "handled": true,
+     "doc": "ls",
+     "anchor": 2,
+     "head": 2,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "echo \"a\nb\"",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "ArrowDown",
+     "handled": false,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "readline_keys",
+   "doc": "git commit -m \"msg here\"",
+   "history": [],
+   "steps": [
+    {
+     "select": [
+      10,
+      10
+     ],
+     "handled": null,
+     "doc": "git commit -m \"msg here\"",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-a",
+     "handled": true,
+     "doc": "git commit -m \"msg here\"",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-e",
+     "handled": true,
+     "doc": "git commit -m \"msg here\"",
+     "anchor": 24,
+     "head": 24,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "select": [
+      14,
+      14
+     ],
+     "handled": null,
+     "doc": "git commit -m \"msg here\"",
+     "anchor": 14,
+     "head": 14,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-k",
+     "handled": true,
+     "doc": "git commit -m ",
+     "anchor": 14,
+     "head": 14,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-w",
+     "handled": true,
+     "doc": "git commit -",
+     "anchor": 12,
+     "head": 12,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-w",
+     "handled": true,
+     "doc": "git commit ",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-u",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "type": "echo one\ntwo three",
+     "handled": null,
+     "doc": "echo one\ntwo three",
+     "anchor": 18,
+     "head": 18,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "select": [
+      9,
+      9
+     ],
+     "handled": null,
+     "doc": "echo one\ntwo three",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-u",
+     "handled": true,
+     "doc": "echo onetwo three",
+     "anchor": 8,
+     "head": 8,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-u",
+     "handled": true,
+     "doc": "two three",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-e",
+     "handled": true,
+     "doc": "two three",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-k",
+     "handled": false,
+     "doc": "two three",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-k",
+     "handled": false,
+     "doc": "two three",
+     "anchor": 9,
+     "head": 9,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "ctrl_c_copies_a_selection_else_clears",
+   "doc": "echo secret",
+   "history": [],
+   "steps": [
+    {
+     "select": [
+      5,
+      11
+     ],
+     "handled": null,
+     "doc": "echo secret",
+     "anchor": 5,
+     "head": 11,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-c",
+     "handled": true,
+     "doc": "echo secret",
+     "anchor": 5,
+     "head": 11,
+     "submitted": [],
+     "copied": [
+      "secret"
+     ],
+     "eof": 0
+    },
+    {
+     "select": [
+      11,
+      11
+     ],
+     "handled": null,
+     "doc": "echo secret",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [
+      "secret"
+     ],
+     "eof": 0
+    },
+    {
+     "selection": "terminal text",
+     "handled": null,
+     "doc": "echo secret",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [
+      "secret"
+     ],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-c",
+     "handled": true,
+     "doc": "echo secret",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [
+      "secret",
+      "terminal text"
+     ],
+     "eof": 0
+    },
+    {
+     "selection": "",
+     "handled": null,
+     "doc": "echo secret",
+     "anchor": 11,
+     "head": 11,
+     "submitted": [],
+     "copied": [
+      "secret",
+      "terminal text"
+     ],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-c",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [
+      "secret",
+      "terminal text"
+     ],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-c",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [
+      "secret",
+      "terminal text"
+     ],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "ctrl_d_is_eof_on_an_empty_line",
+   "doc": "",
+   "history": [],
+   "steps": [
+    {
+     "key": "Ctrl-d",
+     "handled": true,
+     "doc": "",
+     "anchor": 0,
+     "head": 0,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "type": "abc",
+     "handled": null,
+     "doc": "abc",
+     "anchor": 3,
+     "head": 3,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "key": "Ctrl-d",
+     "handled": true,
+     "doc": "abc",
+     "anchor": 3,
+     "head": 3,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "select": [
+      1,
+      1
+     ],
+     "handled": null,
+     "doc": "abc",
+     "anchor": 1,
+     "head": 1,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "key": "Ctrl-d",
+     "handled": true,
+     "doc": "ac",
+     "anchor": 1,
+     "head": 1,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "key": "Ctrl-d",
+     "handled": true,
+     "doc": "a",
+     "anchor": 1,
+     "head": 1,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    },
+    {
+     "key": "Ctrl-d",
+     "handled": true,
+     "doc": "a",
+     "anchor": 1,
+     "head": 1,
+     "submitted": [],
+     "copied": [],
+     "eof": 1
+    }
+   ]
+  },
+  {
+   "name": "paste_is_cleaned",
+   "doc": "before old after",
+   "history": [],
+   "steps": [
+    {
+     "select": [
+      7,
+      10
+     ],
+     "handled": null,
+     "doc": "before old after",
+     "anchor": 7,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "paste": "\u001b[200~echo\u001b hi\u0000\u0001\n\tthere\r\nnext\rlast\u001b[201~",
+     "handled": null,
+     "doc": "before echo hi\n\tthere\nnext\nlast after",
+     "anchor": 31,
+     "head": 31,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "paste": "safe‮ café‍",
+     "handled": null,
+     "doc": "before echo hi\n\tthere\nnext\nlastsafe café‍ after",
+     "anchor": 41,
+     "head": 41,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Enter",
+     "handled": true,
+     "doc": "before echo hi\n\tthere\nnext\nlastsafe café‍ after",
+     "anchor": 41,
+     "head": 41,
+     "submitted": [
+      "before echo hi\n\tthere\nnext\nlastsafe café‍ after"
+     ],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  },
+  {
+   "name": "unicode_words",
+   "doc": "echo café 😀 naïve",
+   "history": [],
+   "steps": [
+    {
+     "key": "Ctrl-w",
+     "handled": true,
+     "doc": "echo café 😀 ",
+     "anchor": 13,
+     "head": 13,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-w",
+     "handled": true,
+     "doc": "echo café ",
+     "anchor": 10,
+     "head": 10,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-w",
+     "handled": true,
+     "doc": "echo ",
+     "anchor": 5,
+     "head": 5,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "select": [
+      5,
+      5
+     ],
+     "handled": null,
+     "doc": "echo ",
+     "anchor": 5,
+     "head": 5,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Ctrl-k",
+     "handled": false,
+     "doc": "echo ",
+     "anchor": 5,
+     "head": 5,
+     "submitted": [],
+     "copied": [],
+     "eof": 0
+    },
+    {
+     "key": "Enter",
+     "handled": true,
+     "doc": "echo ",
+     "anchor": 5,
+     "head": 5,
+     "submitted": [
+      "echo "
+     ],
+     "copied": [],
+     "eof": 0
+    }
+   ]
+  }
+ ]
+}
