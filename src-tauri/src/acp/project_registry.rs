@@ -27,6 +27,7 @@
 //! therefore duplicated here as a std-only leaf (see `validate_root_path`)
 //! rather than reaching back into `web::config::resolve_and_validate_project_root`.
 
+use std::borrow::Cow;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -35,6 +36,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use agent_client_protocol::schema::v1::McpServer;
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
+
+use crate::path_validation::strip_verbatim_prefix;
 
 /// Current on-disk JSON schema version. Bump when the [`RegistryFile`] shape
 /// changes; [`FileProjectRegistry::load`] routes any other version through
@@ -240,8 +243,10 @@ impl FileProjectRegistry {
     ///   original, AD-18); a newer version is refused.
     /// - **Invalid root**: with [`RootCheck::Strict`] → `Err(InvalidRoot)`
     ///   (canonicalize + must be a directory, fail-first). With
-    ///   [`RootCheck::Lenient`] the root is kept exactly as stored (it is
-    ///   not canonicalized, so the display path the user chose stays stable).
+    ///   [`RootCheck::Lenient`] the root is kept as stored (it is not
+    ///   canonicalized, so the display path the user chose stays stable).
+    /// - **Verbatim roots**: either way, a Windows `\\?\` prefix saved by an
+    ///   older build is dropped ([`strip_verbatim_root`], #2132).
     pub fn load_with(path: &Path, check: RootCheck) -> Result<Self, ProjectRegistryError> {
         let bytes = match fs::read(path) {
             Ok(b) => b,
@@ -283,6 +288,8 @@ impl FileProjectRegistry {
 
         let mut roots = Vec::with_capacity(file.projects.len());
         for mut root in file.projects {
+            // Repair a root an older build saved in the verbatim spelling.
+            root.path = strip_verbatim_root(root.path);
             match check {
                 // Fail-first on a bad root: canonicalize + must-be-a-directory
                 // so the boundary check is stable and a misconfigured VPS
@@ -453,7 +460,8 @@ fn migrate(from: u32, mut file: RegistryFile) -> Result<RegistryFile, ProjectReg
 /// a directory. Mirrors `web::config::resolve_and_validate_project_root` but is
 /// duplicated here as a std-only leaf so this module never imports `web::*`
 /// (the `web -> acp -> web` cycle invariant). Returns the canonical absolute
-/// path on success, or an operator-facing message on failure.
+/// path, without a Windows verbatim prefix ([`strip_verbatim_root`]), on
+/// success, or an operator-facing message on failure.
 pub fn validate_root_path(raw: &Path) -> Result<PathBuf, String> {
     let canonical = raw
         .canonicalize()
@@ -464,7 +472,23 @@ pub fn validate_root_path(raw: &Path) -> Result<PathBuf, String> {
             canonical.display()
         ));
     }
-    Ok(canonical)
+    Ok(strip_verbatim_root(canonical))
+}
+
+/// Drop the Windows verbatim prefix `canonicalize` adds (`\\?\C:\…` →
+/// `C:\…`, `\\?\UNC\server\share\…` → `\\server\share\…`) from a project
+/// root. The root becomes the cwd of every chat and silent model read, and
+/// some ACP agents (Antigravity) reject a verbatim cwd (#2132). A path with
+/// no prefix, or one that is not UTF-8, is returned unchanged.
+#[must_use]
+pub fn strip_verbatim_root(path: PathBuf) -> PathBuf {
+    let plain = path
+        .to_str()
+        .and_then(|raw| match strip_verbatim_prefix(raw) {
+            Cow::Owned(plain) => Some(plain),
+            Cow::Borrowed(_) => None,
+        });
+    plain.map_or(path, PathBuf::from)
 }
 
 /// Best-effort backup of a corrupt registry file before `load` errors out.

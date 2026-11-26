@@ -10,7 +10,7 @@ use crate::web::sink::WsRelaySink;
 fn project_dir(root: &Path, name: &str) -> PathBuf {
     let dir = root.join(name);
     std::fs::create_dir_all(&dir).unwrap();
-    std::fs::canonicalize(dir).unwrap()
+    crate::acp::project_registry::strip_verbatim_root(std::fs::canonicalize(dir).unwrap())
 }
 
 fn summary(id: &str, dir: &Path) -> ProjectSummary {

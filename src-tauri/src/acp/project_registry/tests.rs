@@ -71,7 +71,10 @@ fn load_reads_vfs_roots() {
     // The loaded path is the canonical absolute form of root_a.
     let resolved = &reg.roots()[0].path;
     assert!(resolved.is_absolute());
-    assert_eq!(resolved, &root_a.canonicalize().unwrap());
+    assert_eq!(
+        resolved,
+        &strip_verbatim_root(root_a.canonicalize().unwrap())
+    );
     cleanup(&dir);
 }
 
@@ -157,8 +160,8 @@ fn save_atomic_round_trips_and_is_atomic() {
     // Canonicalize so the round-trip deep-equals: load() canonicalizes
     // each root's path, so the saved registry must already hold canonical
     // paths for save -> reload to compare equal (Windows adds the `\\?\`
-    // verbatim prefix on canonicalize).
-    let root_a = root_a.canonicalize().expect("canonicalize root-a");
+    // verbatim prefix on canonicalize, which load() drops).
+    let root_a = strip_verbatim_root(root_a.canonicalize().expect("canonicalize root-a"));
     let file = dir.join("projects.json");
 
     // A stale existing file must be replaced.
@@ -532,5 +535,94 @@ fn lenient_load_keeps_unresolvable_and_pathless_roots() {
     let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
     assert_eq!(reg.roots().len(), 2);
     assert!(reg.roots()[1].path.as_os_str().is_empty());
+    cleanup(&dir);
+}
+
+/// #2132: a verbatim root becomes the plain spelling (drive and UNC forms);
+/// a plain root is left alone. Pure path rewriting, so it runs on every OS.
+#[test]
+fn strip_verbatim_root_drops_drive_and_unc_prefixes() {
+    let cases = [
+        (r"\\?\C:\work\app", r"C:\work\app"),
+        (r"\\?\UNC\server\share\app", r"\\server\share\app"),
+        (r"C:\work\app", r"C:\work\app"),
+        (r"\\server\share\app", r"\\server\share\app"),
+        ("/home/user/app", "/home/user/app"),
+        ("", ""),
+    ];
+    for (stored, expected) in cases {
+        assert_eq!(
+            strip_verbatim_root(PathBuf::from(stored)),
+            PathBuf::from(expected),
+            "{stored}"
+        );
+    }
+}
+
+/// #2132: roots an older build saved as `\\?\…` are repaired on load, so the
+/// renderer never hands a verbatim cwd to an ACP agent.
+#[test]
+fn lenient_load_repairs_verbatim_roots_saved_by_older_builds() {
+    let dir = tempdir_like("verbatim-load");
+    let file = dir.join("projects.json");
+    write_json(
+        &file,
+        &serde_json::json!({
+            "schemaVersion": 4,
+            "defaultProjectId": "drive",
+            "projects": [
+                { "id": "drive", "name": "Drive", "path": r"\\?\E:\work\app", "color": "blue", "isArchived": false },
+                { "id": "unc", "name": "Unc", "path": r"\\?\UNC\server\share\app", "color": "blue", "isArchived": false }
+            ]
+        })
+        .to_string(),
+    );
+    let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
+    assert_eq!(reg.roots()[0].path, PathBuf::from(r"E:\work\app"));
+    assert_eq!(reg.roots()[1].path, PathBuf::from(r"\\server\share\app"));
+    assert_eq!(reg.default_project_id(), Some("drive"));
+    cleanup(&dir);
+}
+
+/// #2132: a root validated for `add`/`update` (and a strict load) is stored
+/// without the verbatim prefix Windows `canonicalize` adds.
+#[test]
+fn validate_root_path_never_returns_a_verbatim_path() {
+    let dir = tempdir_like("verbatim-validate");
+    let project = real_dir(&dir, "project");
+    let validated = validate_root_path(&project).expect("valid root");
+    assert!(
+        !validated.to_string_lossy().starts_with(r"\\?\"),
+        "{}",
+        validated.display()
+    );
+    assert!(validated.is_absolute());
+    assert!(validated.is_dir());
+    cleanup(&dir);
+}
+
+/// #2132 on Windows: a strict load of a real directory saved as `\\?\…`
+/// resolves it and drops the prefix.
+#[cfg(windows)]
+#[test]
+fn strict_load_repairs_a_verbatim_root_on_windows() {
+    let dir = tempdir_like("verbatim-strict");
+    let project = real_dir(&dir, "project");
+    let canonical = project.canonicalize().expect("canonicalize");
+    assert!(canonical.to_string_lossy().starts_with(r"\\?\"));
+    let file = dir.join("projects.json");
+    write_json(
+        &file,
+        &serde_json::json!({
+            "schemaVersion": 4,
+            "projects": [
+                { "id": "p-1", "name": "One", "path": canonical, "color": "blue", "isArchived": false }
+            ]
+        })
+        .to_string(),
+    );
+    let reg = FileProjectRegistry::load(&file).expect("strict");
+    assert_eq!(reg.roots()[0].path, strip_verbatim_root(canonical));
+    assert!(!reg.roots()[0].path.to_string_lossy().starts_with(r"\\?\"));
     cleanup(&dir);
 }
