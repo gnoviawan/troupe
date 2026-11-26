@@ -240,6 +240,9 @@ async function run(client: Client): Promise<Seen> {
     if (client.name === 'react') await client.fill('Add a comment', COMMENT)
     else {
       // An unfocused Rune text field has no mirror node: the box sits above its Comment button.
+      await client.page.mouse.move(560, 500)
+      await client.page.mouse.wheel(0, 2000)
+      await client.page.waitForTimeout(600)
       const button = await mirrorPoint(client.page, 'Comment', true)
       if (!button) throw new Error('no Comment button')
       await client.page.mouse.click(button.x - 200, button.y - 60)
@@ -260,6 +263,11 @@ async function run(client: Client): Promise<Seen> {
     await step('merge-confirm', () => client.sees('Merge pull request #7?', 10_000))
     await act('cancel', () => client.click('Cancel'))
     await settle(800)
+  }
+  if (client.name === 'rune') {
+    await client.page.mouse.move(560, 400)
+    await client.page.mouse.wheel(0, -3000)
+    await settle(600)
   }
   await act('menu', () => client.click('Pull request actions'))
   await settle(800)
