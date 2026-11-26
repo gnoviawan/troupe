@@ -29,6 +29,7 @@ pub mod settings;
 pub mod shell;
 pub mod terminal;
 pub mod type_;
+pub mod viewers;
 pub mod workspace;
 pub mod zoom;
 

@@ -42,8 +42,8 @@ fn advance() -> f32 {
     })
 }
 
-type Get<S> = fn(&S) -> &Editors;
-type Lens<S> = fn(&mut S) -> &mut Editors;
+pub(super) type Get<S> = fn(&S) -> &Editors;
+pub(super) type Lens<S> = fn(&mut S) -> &mut Editors;
 
 /// The key of `path`'s text surface, which takes the keyboard.
 #[must_use]
@@ -79,31 +79,14 @@ pub fn view<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, p
         model::editor::Load::Unavailable(why) => return Some(body.child(unavailable::<S>(t, path, why))),
         model::editor::Load::Ready => {}
     }
+    if pane.markdown {
+        body = body.child(super::markdown::toolbar(t, lens, path, pane.preview));
+    }
+    let preview = pane.preview;
     let lines = doc.editor.len_lines();
     let gutter = gutter_width(lines);
-    let chunks = lines.div_ceil(CHUNK);
     let (keyed, measured, dragged_path) = (path.to_owned(), path.to_owned(), path.to_owned());
-    let rows_path = path.to_owned();
-    let text_rows = col()
-        .key(format!("editor-lines-{path}"))
-        .w_full()
-        .pt(PAD_TOP)
-        .pb(PAD_TOP)
-        .growth(GrowthSpec::default())
-        .virtual_rows_version(0u8)
-        .virtual_rows(
-            chunks,
-            CHUNK as f32 * LINE,
-            |_s: &S, i| i.to_string().into(),
-            move |s: &S, i| chunk(s, get, lens, t, &rows_path, i, gutter),
-        );
-    let viewport = col()
-        .key(format!("editor-viewport-{path}"))
-        .w_full()
-        .grow(1.0)
-        .min_h(0.0)
-        .scroll(ScrollSpec { stick_bottom: false })
-        .child(text_rows);
+    let viewport = if preview { super::markdown::preview(s, get, lens, t, path) } else { code_viewport(get, lens, t, path, lines, gutter) };
     let mut surface = col()
         .key(surface_key(path))
         .role("textbox")
@@ -116,7 +99,8 @@ pub fn view<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, p
         .cursor(Cursor::Text)
         .on_key(move |s: &mut S, key, tx| on_key(s, lens, &keyed, key, tx))
         .on_layout_tx(move |s: &mut S, [_, _, w, h], _tx| {
-            let columns = (((w - gutter - PAD_LEFT - 2.0) / advance()).floor() as usize).max(1);
+            let text_w = if preview { w.min(super::markdown::MEASURE) - 2.0 * super::markdown::PAD_X } else { w - gutter };
+            let columns = (((text_w - PAD_LEFT - 2.0) / advance()).floor() as usize).max(1);
             let editors = lens(s);
             if let Some(pane) = editors.panes.get_mut(&measured) {
                 pane.columns = columns;
@@ -139,6 +123,32 @@ pub fn view<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, p
         surface = surface.child(super::view_find::goto(t, lens, path, field));
     }
     Some(body.child(surface))
+}
+
+/// The code view's scroll viewport: the text in 32-line virtual rows beside the gutter.
+fn code_viewport<S: 'static>(get: Get<S>, lens: Lens<S>, t: &'static Tokens, path: &str, lines: usize, gutter: f32) -> El {
+    let chunks = lines.div_ceil(CHUNK);
+    let rows_path = path.to_owned();
+    let text_rows = col()
+        .key(format!("editor-lines-{path}"))
+        .w_full()
+        .pt(PAD_TOP)
+        .pb(PAD_TOP)
+        .growth(GrowthSpec::default())
+        .virtual_rows_version(0u8)
+        .virtual_rows(
+            chunks,
+            CHUNK as f32 * LINE,
+            |_s: &S, i| i.to_string().into(),
+            move |s: &S, i| chunk(s, get, lens, t, &rows_path, i, gutter),
+        );
+    col()
+        .key(format!("editor-viewport-{path}"))
+        .w_full()
+        .grow(1.0)
+        .min_h(0.0)
+        .scroll(ScrollSpec { stick_bottom: false })
+        .child(text_rows)
 }
 
 fn on_key<S: 'static>(s: &mut S, lens: Lens<S>, path: &str, key: &rune::KeyEvent, tx: &mut Tx) -> bool {
@@ -210,121 +220,151 @@ fn tag_span(t: &Tokens, tag: Tag, range: Range<usize>) -> Span {
 
 /// One 32-line chunk: each line's gutter number beside its wrapped rows.
 fn chunk<S: 'static>(s: &S, get: Get<S>, lens: Lens<S>, t: &'static Tokens, path: &str, index: usize, gutter: f32) -> El {
-    let editors = get(s);
-    let (Some(doc), Some(pane)) = (editors.docs.docs.get(path), editors.panes.get(path)) else {
+    let first = index * CHUNK;
+    let Some(lines) = Lines::read(get(s), path, first..first + CHUNK) else {
         return el();
     };
+    let mut out = col().key(chunk_key(path, index)).w_full();
+    for line in lines.range.clone() {
+        out = out.child(line_row(&lines, lens, t, path, line, Some(gutter)));
+    }
+    out
+}
+
+/// What drawing a run of lines reads once: their colours, the selection, the find matches.
+pub(super) struct Lines<'a> {
+    editors: &'a Editors,
+    pane: &'a super::Pane,
+    doc: &'a model::editor::Doc,
+    range: Range<usize>,
+    spans: Vec<troupe_editor::highlight::LineSpans>,
+    matches: Vec<Range<usize>>,
+}
+
+impl<'a> Lines<'a> {
+    /// Lines `range` of `path` (clamped to the file), or None while the app holds no such file.
+    pub(super) fn read(editors: &'a Editors, path: &str, range: Range<usize>) -> Option<Self> {
+        let (doc, pane) = (editors.docs.docs.get(path)?, editors.panes.get(path)?);
+        let rope = doc.editor.rope();
+        let range = range.start..range.end.min(rope.len_lines());
+        let spans = pane.highlights.borrow_mut().chunk(rope, range.clone()).to_vec();
+        let matches = pane.find.as_ref().map(|bar| bar.matches(doc).ranges).unwrap_or_default();
+        Some(Self { editors, pane, doc, range, spans, matches })
+    }
+}
+
+/// One line's wrapped rows, beside its gutter number when `gutter` is set: the match and
+/// selection washes, the coloured text, the caret and the input method's composition.
+pub(super) fn line_row<S: 'static>(lines: &Lines, lens: Lens<S>, t: &'static Tokens, path: &str, line: usize, gutter: Option<f32>) -> El {
+    let (doc, pane) = (lines.doc, lines.pane);
     let rope = doc.editor.rope();
-    let first = index * CHUNK;
-    let last = (first + CHUNK).min(rope.len_lines());
-    let spans = pane.highlights.borrow_mut().chunk(rope, first..last).to_vec();
     let sel = doc.editor.selection();
     let caret_line = rope.char_to_line(sel.head);
-    let focused = editors.focused.as_deref() == Some(path);
-    let matches = pane.find.as_ref().map(|bar| bar.matches(doc).ranges).unwrap_or_default();
+    let focused = lines.editors.focused.as_deref() == Some(path);
     let c = &t.colors;
-    let mut out = col().key(chunk_key(path, index)).w_full();
-    for line in first..last {
-        let line_start = rope.line_to_char(line);
-        let len = line_len(rope, line);
-        let content: String = rope.slice(line_start..line_start + len).to_string();
-        let starts = if pane.columns > 0 { wrap::rows(content.chars(), pane.columns) } else { vec![0] };
-        let height = starts.len() as f32 * LINE;
-        let active = line == caret_line;
+    let line_start = rope.line_to_char(line);
+    let len = line_len(rope, line);
+    let content: String = rope.slice(line_start..line_start + len).to_string();
+    let starts = if pane.columns > 0 { wrap::rows(content.chars(), pane.columns) } else { vec![0] };
+    let height = starts.len() as f32 * LINE;
+    let active = line == caret_line;
+    let mut body = el().key(caret_key(path, line)).grow(1.0).h(height).min_w(0.0);
+    if active && gutter.is_some() {
+        body = body.fill(c.foreground.alpha(0.03));
+    }
+    let line_spans = lines.spans.get(line - lines.range.start).cloned().unwrap_or_default();
+    let x_of = |col: usize, row: usize| PAD_LEFT + (col - starts[row]) as f32 * advance();
+    let row_of = |col: usize| starts.iter().rposition(|s| *s <= col).unwrap_or(0);
+    // Match washes, then the selection, then the text, then the caret.
+    let char_range = line_start..line_start + len;
+    let mut washes: Vec<(Range<usize>, Color)> = Vec::new();
+    for m in &lines.matches {
+        let selected = m.start == sel.range().start && m.end == sel.range().end;
+        washes.push((m.clone(), if selected { c.warning.alpha(0.4) } else { c.warning.alpha(0.15) }));
+    }
+    if !sel.is_empty() {
+        washes.push((sel.range(), c.foreground.alpha(0.14)));
+    }
+    for (range, colour) in washes {
+        if range.end < char_range.start || range.start > char_range.end {
+            continue;
+        }
+        let from = range.start.max(char_range.start) - line_start;
+        let to = range.end.min(char_range.end) - line_start;
+        let past_end = range.end > char_range.end && range.start <= char_range.end;
+        if from > to || (from == to && !past_end) {
+            continue;
+        }
+        let (r0, r1) = (row_of(from), row_of(to));
+        for r in r0..=r1 {
+            let a = if r == r0 { from } else { starts[r] };
+            let b = if r == r1 { to } else { starts.get(r + 1).copied().unwrap_or(len) };
+            let extra = if r == r1 && past_end { advance() } else { 0.0 };
+            let w = (b - a) as f32 * advance() + extra;
+            if w > 0.0 {
+                body = body.child(el().absolute(x_of(a, r), r as f32 * LINE).size(w, LINE).fill(colour));
+            }
+        }
+    }
+    // One pass over the line: each row's byte range, and the spans walked in order, so a
+    // long line costs its length, not its length times its rows.
+    let bytes = row_bytes(&content, &starts);
+    let mut first_span = 0;
+    for (r, pair) in bytes.windows(2).enumerate() {
+        let (byte_start, byte_end) = (pair[0], pair[1]);
+        let piece = &content[byte_start..byte_end];
+        while line_spans.get(first_span).is_some_and(|(range, _)| range.end <= byte_start) {
+            first_span += 1;
+        }
+        let row_spans: Vec<Span> = line_spans[first_span..]
+            .iter()
+            .take_while(|(range, _)| range.start < byte_end)
+            .filter(|(range, _)| range.end > byte_start)
+            .map(|(range, tag)| tag_span(t, *tag, range.start.max(byte_start) - byte_start..range.end.min(byte_end) - byte_start))
+            .collect();
+        body = body.child(
+            text(piece.to_owned())
+                .font(FONT)
+                .color(c.foreground)
+                .spans(row_spans)
+                .absolute(PAD_LEFT, r as f32 * LINE),
+        );
+    }
+    if active && focused {
+        let col_in = sel.head - line_start;
+        let r = row_of(col_in);
+        let x = x_of(col_in, r);
+        body = body.child(el().absolute(x, r as f32 * LINE + 1.0).size(2.0, LINE - 2.0).fill(c.primary).ime_cursor());
+        if let Some(preedit) = &pane.preedit {
+            body = body.child(
+                text(preedit.clone())
+                    .font(FONT)
+                    .color(c.foreground)
+                    .spans(vec![Span { underline: Some(c.foreground), ..Span::new(0, preedit.len()) }])
+                    .fill(c.background)
+                    .absolute(x, r as f32 * LINE),
+            );
+        }
+    }
+    let pressed = path.to_owned();
+    let rows = starts.clone();
+    body = body.on_drag(move |s: &mut S, d: &mut Drag, _tx| press(s, lens, &pressed, line, &rows, d));
+    let mut out = row().w_full().h(height);
+    if let Some(gutter) = gutter {
         let number = text((line + 1).to_string())
             .font(FONT)
             .color(if active { c.foreground } else { c.muted_foreground });
-        let gutter_cell = row()
-            .w(gutter)
-            .h(height)
-            .fill(c.card)
-            .border_sides([0.0, 1.0, 0.0, 0.0], c.border)
-            .items_start()
-            .child(row().w(gutter - 14.0 - 3.0).justify_end().child(number));
-        let mut body = el().key(caret_key(path, line)).grow(1.0).h(height).min_w(0.0);
-        if active {
-            body = body.fill(c.foreground.alpha(0.03));
-        }
-        let line_spans = spans.get(line - first).cloned().unwrap_or_default();
-        let x_of = |col: usize, row: usize| PAD_LEFT + (col - starts[row]) as f32 * advance();
-        let row_of = |col: usize| starts.iter().rposition(|s| *s <= col).unwrap_or(0);
-        // Match washes, then the selection, then the text, then the caret.
-        let char_range = line_start..line_start + len;
-        let mut washes: Vec<(Range<usize>, Color)> = Vec::new();
-        for m in &matches {
-            let selected = m.start == sel.range().start && m.end == sel.range().end;
-            washes.push((m.clone(), if selected { c.warning.alpha(0.4) } else { c.warning.alpha(0.15) }));
-        }
-        if !sel.is_empty() {
-            washes.push((sel.range(), c.foreground.alpha(0.14)));
-        }
-        for (range, colour) in washes {
-            if range.end < char_range.start || range.start > char_range.end {
-                continue;
-            }
-            let from = range.start.max(char_range.start) - line_start;
-            let to = range.end.min(char_range.end) - line_start;
-            let past_end = range.end > char_range.end && range.start <= char_range.end;
-            if from > to || (from == to && !past_end) {
-                continue;
-            }
-            let (r0, r1) = (row_of(from), row_of(to));
-            for r in r0..=r1 {
-                let a = if r == r0 { from } else { starts[r] };
-                let b = if r == r1 { to } else { starts.get(r + 1).copied().unwrap_or(len) };
-                let extra = if r == r1 && past_end { advance() } else { 0.0 };
-                let w = (b - a) as f32 * advance() + extra;
-                if w > 0.0 {
-                    body = body.child(el().absolute(x_of(a, r), r as f32 * LINE).size(w, LINE).fill(colour));
-                }
-            }
-        }
-        // One pass over the line: each row's byte range, and the spans walked in order, so a
-        // long line costs its length, not its length times its rows.
-        let bytes = row_bytes(&content, &starts);
-        let mut first_span = 0;
-        for (r, pair) in bytes.windows(2).enumerate() {
-            let (byte_start, byte_end) = (pair[0], pair[1]);
-            let piece = &content[byte_start..byte_end];
-            while line_spans.get(first_span).is_some_and(|(range, _)| range.end <= byte_start) {
-                first_span += 1;
-            }
-            let row_spans: Vec<Span> = line_spans[first_span..]
-                .iter()
-                .take_while(|(range, _)| range.start < byte_end)
-                .filter(|(range, _)| range.end > byte_start)
-                .map(|(range, tag)| tag_span(t, *tag, range.start.max(byte_start) - byte_start..range.end.min(byte_end) - byte_start))
-                .collect();
-            body = body.child(
-                text(piece.to_owned())
-                    .font(FONT)
-                    .color(c.foreground)
-                    .spans(row_spans)
-                    .absolute(PAD_LEFT, r as f32 * LINE),
-            );
-        }
-        if active && focused {
-            let col_in = sel.head - line_start;
-            let r = row_of(col_in);
-            let x = x_of(col_in, r);
-            body = body.child(el().absolute(x, r as f32 * LINE + 1.0).size(2.0, LINE - 2.0).fill(c.primary).ime_cursor());
-            if let Some(preedit) = &pane.preedit {
-                body = body.child(
-                    text(preedit.clone())
-                        .font(FONT)
-                        .color(c.foreground)
-                        .spans(vec![Span { underline: Some(c.foreground), ..Span::new(0, preedit.len()) }])
-                        .fill(c.background)
-                        .absolute(x, r as f32 * LINE),
-                );
-            }
-        }
-        let pressed = path.to_owned();
-        let rows = starts.clone();
-        body = body.on_drag(move |s: &mut S, d: &mut Drag, _tx| press(s, lens, &pressed, line, &rows, d));
-        out = out.child(row().w_full().h(height).child(gutter_cell).child(body));
+        out = out.child(
+            row()
+                .w(gutter)
+                .h(height)
+                .fill(c.card)
+                .border_sides([0.0, 1.0, 0.0, 0.0], c.border)
+                .items_start()
+                .child(row().w(gutter - 14.0 - 3.0).justify_end().child(number)),
+        );
     }
-    out
+    out.child(body)
 }
 
 /// The byte offset of each row start in `content`, then its length: `starts` are char offsets
@@ -385,7 +425,7 @@ fn row_starts(editors: &Editors, path: &str, line: usize) -> Vec<usize> {
 }
 
 /// `UnsupportedFileView`: the file's name, why it shows no text, and Copy Path.
-fn unavailable<S: 'static>(t: &'static Tokens, path: &str, why: &model::editor::Unavailable) -> El {
+pub(crate) fn unavailable<S: 'static>(t: &'static Tokens, path: &str, why: &model::editor::Unavailable) -> El {
     let c = &t.colors;
     let name = path.rsplit(['/', '\\']).next().unwrap_or(path).to_owned();
     let mut lines = col()

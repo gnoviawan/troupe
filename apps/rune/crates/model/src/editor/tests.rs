@@ -212,3 +212,51 @@ fn a_rename_moves_the_unsaved_buffer_to_the_new_path() {
     assert_eq!((doc.path.as_str(), doc.editor.text().as_str(), doc.is_dirty()), ("/p/src/lib.rs", "ab", true));
     assert!(!docs.docs.contains_key(PATH));
 }
+
+#[test]
+fn a_crlf_file_is_written_back_with_crlf_and_reads_clean_after() {
+    let mut docs = Docs::default();
+    let disk = "# A\r\nb\r\n";
+    open(&mut docs, None, read(disk, 1.0));
+    assert_eq!(docs.docs[PATH].disk_text(), disk, "an unedited file is the disk bytes");
+    type_text(&mut docs, "c\n");
+    let content = "# A\r\nb\r\nc\r\n".to_owned();
+    let fx = step(&mut docs, Event::Save { path: PATH.into() }, 5.0);
+    assert_eq!(fx, [Effect::Write { path: PATH.into(), content: content.clone(), expected: Some(sha256_hex(disk)) }]);
+    let fx = step(&mut docs, Event::Written { path: PATH.into(), content: content.clone(), result: Ok(()) }, 9.0);
+    assert!(fx.contains(&Effect::Saved { path: PATH.into(), clean: true }));
+    assert!(!docs.docs[PATH].is_dirty());
+    assert_eq!(docs.docs[PATH].hash.as_deref(), Some(sha256_hex(&content).as_str()));
+}
+
+#[test]
+fn a_file_with_mixed_line_breaks_is_written_with_lf() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a\r\nb\n", 1.0));
+    assert!(!docs.docs[PATH].crlf);
+}
+
+#[test]
+fn a_typed_byte_order_mark_in_a_file_without_one_saves_clean() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("a\n", 1.0));
+    let doc = docs.docs.get_mut(PATH).unwrap();
+    doc.editor.apply(Command::Move { motion: troupe_editor::Motion::DocStart, extend: false }, 0.0);
+    doc.editor.apply(Command::Insert("\u{feff}".into()), 0.0);
+    let content = "\u{feff}a\n".to_owned();
+    let fx = step(&mut docs, Event::Save { path: PATH.into() }, 5.0);
+    assert_eq!(fx, [Effect::Write { path: PATH.into(), content: content.clone(), expected: Some(sha256_hex("a\n")) }]);
+    step(&mut docs, Event::Written { path: PATH.into(), content, result: Ok(()) }, 9.0);
+    assert!(!docs.docs[PATH].is_dirty(), "the typed U+FEFF is text, and the disk holds it");
+}
+
+#[test]
+fn a_reload_changes_the_version_even_though_the_revision_restarts() {
+    let mut docs = Docs::default();
+    open(&mut docs, None, read("one\n", 1.0));
+    let before = docs.docs[PATH].version();
+    step(&mut docs, Event::Reload { path: PATH.into() }, 2.0);
+    step(&mut docs, Event::Loaded { path: PATH.into(), result: Ok(read("two\n", 3.0)) }, 3.0);
+    assert_eq!(docs.docs[PATH].editor.revision(), before.1);
+    assert_ne!(docs.docs[PATH].version(), before);
+}
