@@ -7,7 +7,7 @@ import type { Scenario, StoreRecorder, VectorEvent } from '../record'
  * `Call::ledger` against each one.
  */
 
-type Api = Record<string, (...args: unknown[]) => unknown>
+export type Api = Record<string, (...args: unknown[]) => unknown>
 
 let captured: Array<Record<string, unknown>> = []
 
@@ -35,14 +35,11 @@ async function capture(api: Api, op: string, args: unknown[]): Promise<void> {
   }
 }
 
-export function gitRoutesRecorder(api: Api): StoreRecorder {
+/** A recorder of the request each `api` call sends, under `store`. */
+export function routesRecorder(store: string, sources: string[], api: Api): StoreRecorder {
   return {
-    store: 'git-routes',
-    sources: [
-      'src/renderer/lib/git-api.ts',
-      'src/renderer/lib/web-server-api.ts',
-      'src/renderer/lib/ipc/http.ts'
-    ],
+    store,
+    sources,
     reset() {
       captured = []
     },
@@ -52,11 +49,23 @@ export function gitRoutesRecorder(api: Api): StoreRecorder {
       captured = []
       await capture(api, action, args)
       const [request] = captured
-      if (!request) throw new Error(`gitApi.${action} sent no request`)
+      if (!request) throw new Error(`${store}: ${action} sent no request`)
       // The effects are what the step reports; the recorder's sink only sees `emit`.
       return request
     }
   }
+}
+
+export function gitRoutesRecorder(api: Api): StoreRecorder {
+  return routesRecorder(
+    'git-routes',
+    [
+      'src/renderer/lib/git-api.ts',
+      'src/renderer/lib/web-server-api.ts',
+      'src/renderer/lib/ipc/http.ts'
+    ],
+    api
+  )
 }
 
 const ev = (action: string, ...args: unknown[]): VectorEvent => ({ action, args })

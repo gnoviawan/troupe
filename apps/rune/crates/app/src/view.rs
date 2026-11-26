@@ -38,11 +38,13 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::rail_forms::build(s, t, &mut layer);
     crate::phone::sheets(s, t, window, &mut layer);
     crate::theme_picker::build(s, t, phone, &mut layer);
+    crate::palette::build(s, t, phone, window, &mut layer);
     crate::chat_view::layer(s, t, &mut layer);
     crate::keys::build(s, t, window.1, &mut layer);
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
     crate::git_view::dialogs(s, t, &mut layer);
+    crate::settings_view::build(s, t, phone, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")

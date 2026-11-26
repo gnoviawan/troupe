@@ -16,6 +16,7 @@ pub mod overlay;
 pub mod persistence;
 pub mod prefs;
 pub mod projects;
+pub mod settings;
 pub mod shell_layout;
 pub mod shortcuts;
 pub mod terminal;

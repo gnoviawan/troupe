@@ -364,6 +364,11 @@ export function runeWebClient(opts: { browser: Browser }): ClientLauncher {
       } finally {
         await session.close()
       }
+    },
+    async close() {
+      const server = served
+      served = null
+      await (await server)?.close()
     }
   }
 }

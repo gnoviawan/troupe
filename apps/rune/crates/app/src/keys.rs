@@ -175,7 +175,7 @@ impl State {
         self.save_shortcuts();
     }
 
-    fn save_shortcuts(&mut self) {
+    pub(crate) fn save_shortcuts(&mut self) {
         let data = serde_json::to_value(&self.shortcuts.shortcuts).unwrap_or(Value::Null);
         self.write_shared(Shared::Shortcuts, data);
     }
@@ -210,7 +210,9 @@ impl State {
                 let visible = self.layout.record.side_panel_visible;
                 self.layout_step(Layout::SetSidePanelVisible(json!(!visible)));
             }
+            "commandPalette" | "commandPaletteAlt" => self.open_palette(false),
             "colorThemePicker" => self.open_theme_picker(),
+            "settings" => self.open_settings(None),
             "commandHistory" => self.open_command_history(),
             "terminalSearch" => {
                 if !self.open_terminal_find(tx) {
@@ -233,12 +235,9 @@ impl State {
 
     fn set_zoom(&mut self, zoom: ui::Zoom) {
         self.zoom = zoom;
-        let settings = &mut self.sync.app_settings;
         // Two decimals as the web client stores them, not the f32's widened digits.
         let level = (f64::from(zoom.factor()) * 100.0).round() / 100.0;
-        settings.insert("uiZoomLevel".into(), json!(level));
-        let data = Value::Object(settings.clone());
-        self.write_shared(Shared::AppSettings, data);
+        self.set_setting("uiZoomLevel", json!(level));
     }
 }
 

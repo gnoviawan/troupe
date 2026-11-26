@@ -42,6 +42,11 @@ this device or this window:
   signature that skips a write when nothing changed.
 - `shortcuts`. The key bindings and their user overrides, with the pure key
   matching helpers.
+- `settings`. The shared `settings/app` record: the boot read and its
+  migrations, a change synced from another device, edits, the reset and the
+  agent idle-window pushes (`app-settings-store.ts`, `use-app-settings.ts`).
+  The server owns the key; the client keeps the copy it edits and writes the
+  whole record back, as the React client does.
 - `overlay`. The stack of open overlays, for back and Esc. The model holds the
   ids. Each overlay's close is the owner's, so `step` returns a `close` effect
   and the owner runs it.

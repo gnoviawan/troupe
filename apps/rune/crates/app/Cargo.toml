@@ -23,4 +23,4 @@ ui = { path = "../ui" }
 js-sys = "0.3"
 wasm-bindgen-futures = "0.4"
 wasm-bindgen = { workspace = true }
-web-sys = { version = "0.3", features = ["Window"] }
+web-sys = { version = "0.3", features = ["MediaQueryList", "Window"] }

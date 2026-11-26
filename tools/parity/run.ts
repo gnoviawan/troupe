@@ -414,10 +414,15 @@ async function main(): Promise<void> {
   console.error(`[parity] seeding server on ${port} under ${root}`)
   const world = await createWorld({ port, root, binary: values['server-bin'] })
   let browser: Browser | null = null
+  let runeWeb: ClientLauncher | null = null
   const started = performance.now()
   try {
     browser = await chromium.launch({ args: runeWebArgs(REFERENCE_ARGS) })
     const shared = browser
+    // One launcher for the whole run: it serves every session from one proxy, and a fresh
+    // one per surface left a port in 8190-8199 taken each time until none was free.
+    runeWeb = runeWebClient({ browser: shared })
+    const runeWebLauncher = runeWeb
     const launchers: Record<Client, (role: Role) => ClientLauncher> = {
       react: (role) =>
         reactClient({
@@ -425,7 +430,7 @@ async function main(): Promise<void> {
           dist: values[role === 'reference' ? 'against-dist' : 'client-dist'] as string
         }),
       tauri: () => tauriClient(),
-      'rune-web': () => runeWebClient({ browser: shared }),
+      'rune-web': () => runeWebLauncher,
       'rune-desktop': () => runeDesktopClient()
     }
     const launcher = (client: Client, role: Role) => launchers[client](role)
@@ -436,6 +441,7 @@ async function main(): Promise<void> {
       console.log(summaryLine(result))
     }
   } finally {
+    await runeWeb?.close?.()
     await browser?.close()
     world.ws.close()
     await world.server.stop()
