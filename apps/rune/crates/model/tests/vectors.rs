@@ -3,9 +3,12 @@
 //! with the recorded ones after every step. A second test fails when a
 //! store's TypeScript source changed after its vectors were recorded.
 
+mod bug_report;
 mod common;
 mod git;
 mod settings;
+mod setup;
+mod snapshots;
 mod terminal;
 
 use common::{Replay, call, diff, out_dir, parse, read_json, source_hash, to_value};
@@ -330,6 +333,9 @@ fn replays_every_vector() {
                 "terminal-profiles" => settings::replay_terminal_profiles(vector),
                 "project-settings" => settings::replay_project_settings(vector),
                 "mcp-servers" => settings::replay_mcp_servers(vector),
+                "snapshots" => snapshots::replay(vector),
+                "setup" => setup::replay(vector),
+                "bug-report" => bug_report::replay(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

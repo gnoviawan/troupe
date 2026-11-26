@@ -106,6 +106,7 @@ pub(crate) enum Pending {
     McpSave(Box<model::acp::Effect>, Option<crate::settings_mcp::Action>),
     /// The empty list the history's Clear wrote for a project.
     ClearHistory(String),
+    Snapshots(crate::snapshots::Call),
 }
 
 /// A device read: not answered yet, or answered (`None` when the key is empty).
@@ -334,6 +335,7 @@ impl State {
                 crate::host::Fetch::Gitignore { project, why } => self.gitignore_parsed(&project, why, result),
                 crate::host::Fetch::Mcp(effect) => self.mcp_fetched(*effect, result),
                 crate::host::Fetch::McpPoll(url) => self.mcp_polled(&url, result),
+                crate::host::Fetch::BugReport(step) => self.bug_report_fetched(step, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
@@ -517,6 +519,7 @@ impl State {
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ReadHistory(project) => self.history_read(project, result),
             Pending::ClearHistory(project) => self.history_cleared(project, result),
+            Pending::Snapshots(call) => self.snapshots_replied(call, result),
             Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
             Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),
             Pending::ListChats => {

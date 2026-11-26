@@ -19,6 +19,7 @@ import {
   type Vector,
   writeOut
 } from './record'
+import { snapshotMock, writeSnapshots } from './stores/snapshot-mock'
 
 const lib = '../../../src/renderer/lib'
 
@@ -107,6 +108,7 @@ vi.mock(`${lib}/api`, async (importOriginal) => {
 })
 
 function writeRecord(key: string, record: Record<string, unknown>, immediate: boolean) {
+  if (snapshotMock.active && key.startsWith('snapshots/')) return writeSnapshots(key, record)
   if (key === 'settings/app') {
     emit({ kind: 'writeSettings', record, immediate })
     return { success: true, data: undefined }
@@ -203,11 +205,16 @@ vi.mock(`${lib}/worktree-reconciler`, async (importOriginal) => ({
 vi.mock('sonner', async (importOriginal) => {
   const actual = await importOriginal<typeof import('sonner')>()
   const { gitMock } = await import('./stores/git-mock')
+  const { snapshotMock } = await import('./stores/snapshot-mock')
   const error = (message: unknown) =>
     gitMock.active
       ? emit({ kind: 'toast', level: 'error', message })
       : actual.toast.error(String(message))
-  return { ...actual, toast: Object.assign(actual.toast, { error }) }
+  const warning = (message: unknown) =>
+    snapshotMock.active
+      ? emit({ kind: 'toast', level: 'warning', message })
+      : actual.toast.warning(String(message))
+  return { ...actual, toast: Object.assign(actual.toast, { error, warning }) }
 })
 
 const { workspaceRecorder, workspaceScenarios } = await import('./stores/workspace')
@@ -229,6 +236,9 @@ const { projectSettingsRecorder, projectSettingsScenarios } = await import(
   './stores/project-settings'
 )
 const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
+const { snapshotsRecorder, snapshotsScenarios } = await import('./stores/snapshots')
+const { setupRecorder, setupScenarios } = await import('./stores/setup')
+const { bugReportRecorder, bugReportScenarios } = await import('./stores/bug-report')
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -247,7 +257,10 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [paletteRecorder, paletteScenarios],
   [terminalProfilesRecorder, terminalProfilesScenarios],
   [projectSettingsRecorder, projectSettingsScenarios],
-  [mcpServersRecorder, mcpServersScenarios]
+  [mcpServersRecorder, mcpServersScenarios],
+  [snapshotsRecorder, snapshotsScenarios],
+  [setupRecorder, setupScenarios],
+  [bugReportRecorder, bugReportScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'
@@ -261,6 +274,7 @@ describe('test vectors', () => {
       const recorded: Vector[] = []
       for (const scenario of scenarios) recorded.push(await recordVector(recorder, scenario))
       gitMock.active = false
+      snapshotMock.active = false
       for (const file of ['parity-vectors.yml', 'rune.yml'] as const) {
         expect(sourcesOutsideWorkflow(recorder.sources, file), `${file} paths`).toEqual([])
       }

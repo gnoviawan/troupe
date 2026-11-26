@@ -8,6 +8,7 @@
 //! stays on the client and which the server already owns.
 
 pub mod acp;
+pub mod bug_report;
 pub mod chats;
 pub mod editor;
 pub mod explorer;
@@ -17,8 +18,10 @@ pub mod persistence;
 pub mod prefs;
 pub mod projects;
 pub mod settings;
+pub mod setup;
 pub mod shell_layout;
 pub mod shortcuts;
+pub mod snapshots;
 pub mod terminal;
 pub mod workspace;
 
@@ -103,7 +106,7 @@ impl Effect {
 
 /// `String.prototype.trim`: JavaScript's whitespace includes U+FEFF and
 /// excludes U+0085, unlike Rust's `str::trim`.
-fn js_trim(text: &str) -> &str {
+pub fn js_trim(text: &str) -> &str {
     text.trim_matches(|c: char| c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}'))
 }
 

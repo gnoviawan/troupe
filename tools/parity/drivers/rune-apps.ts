@@ -66,7 +66,8 @@ export type RuneAppName = keyof typeof RUNE_APPS
  * The surfaces the Rune shell draws today: the frame, the rail's projects and
  * the side panel frame (R5a), the tab bar's `+` menu (R5b), and the rail's
  * overlays, the theme picker, the shortcut menu and the phone shell (R5c),
- * the chat transcript (R6b), and the git Changes panel, diff tab, history, commit diff and their overlays (R9a).
+ * the chat transcript (R6b), the git Changes panel, diff tab, history, commit diff and their overlays (R9a),
+ * and the snapshots page with its three dialogs (R9f).
  * `chat.table-zoom` waits: its click is a CSS selector, which
  * the Rune drivers act on at React's recorded point, after React scrolled the table into view.
  * Every other surface waits on the unit that ports its content, named by its
@@ -116,7 +117,11 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'settings.app-ai-agents',
   'settings.app-shortcuts',
   'settings.app-about',
-  'phone.journey-mobile-header-palette-parity'
+  'phone.journey-mobile-header-palette-parity',
+  'snapshots.page',
+  'snapshots.create',
+  'snapshots.delete',
+  'snapshots.restore'
 ])
 
 const RUNE_UNIT_BY_AREA: Record<AreaId, string> = {
