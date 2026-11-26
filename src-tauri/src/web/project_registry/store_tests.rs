@@ -10,7 +10,7 @@ use crate::web::sink::WsRelaySink;
 fn project_dir(root: &Path, name: &str) -> PathBuf {
     let dir = root.join(name);
     std::fs::create_dir_all(&dir).unwrap();
-    std::fs::canonicalize(dir).unwrap()
+    crate::acp::project_registry::validate_root_path(&dir).unwrap()
 }
 
 fn summary(id: &str, dir: &Path) -> ProjectSummary {
@@ -208,7 +208,7 @@ fn a_failed_write_changes_nothing_in_memory() {
 
     assert_eq!(registry.snapshot(), before, "rollback is never swapping");
     assert!(
-        registry.is_within_any_registered_root(&dir),
+        registry.is_within_any_registered_root(&std::fs::canonicalize(&dir).unwrap()),
         "the boundary is unchanged too"
     );
 }
