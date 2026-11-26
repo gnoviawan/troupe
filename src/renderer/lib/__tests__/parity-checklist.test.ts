@@ -1474,6 +1474,50 @@ describe('Parity Checklist Automation', () => {
     })
   })
 
+  describe('HTML preview parity (live .html view)', () => {
+    const SrcTauri = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+    const read = (...parts: string[]): string => readFileSync(join(SrcTauri, ...parts), 'utf-8')
+    const FACADE = {
+      open: { command: 'html_preview_open', route: '/html-preview/open' },
+      update: { command: 'html_preview_update', route: '/html-preview/update' },
+      close: { command: 'html_preview_close', route: '/html-preview/close' }
+    } as const
+
+    it('html-preview-api.ts sends every method to the command on desktop and the route on the web', () => {
+      const content = readFileSync(join(LIB_DIR, 'html-preview-api.ts'), 'utf-8')
+      expect(content).toMatch(/isTauriContext\(\)/)
+      for (const { command, route } of Object.values(FACADE)) {
+        expect(content).toContain(`'${command}'`)
+        expect(content).toContain(`'${route}'`)
+      }
+    })
+
+    it('both transports wrap the one shared registry', () => {
+      const web = read('web', 'html_preview_api.rs')
+      const commands = read('commands', 'html_preview.rs')
+      for (const { command, route } of Object.values(FACADE)) {
+        expect(web).toContain(`"${route}"`)
+        expect(commands).toContain(`pub async fn ${command}(`)
+        expect(read('lib.rs')).toContain(`commands::${command},`)
+      }
+      for (const transport of [web, commands]) {
+        expect(transport).toMatch(/registry\(\)\.open\(/)
+        expect(transport).toMatch(/registry\(\)\.update\(/)
+        expect(transport).toMatch(/registry\(\)\.close\(/)
+      }
+    })
+
+    it('every listener serves the preview pages: the desktop loopback and both web routers', () => {
+      const loopback = read('canvas', 'static_server.rs')
+      expect(loopback).toContain('get(crate::html_preview::serve_session_root)')
+      expect(loopback).toContain('get(crate::html_preview::serve_session_file)')
+      const router = read('web', 'router', 'mod.rs')
+      const merges = router.match(/html_preview_api::html_preview_router\(\)/g) ?? []
+      expect(merges, 'router() and router_with_static() both merge the routes').toHaveLength(2)
+      expect(read('web', 'router', 'gate.rs')).toContain('"/html-preview/",')
+    })
+  })
+
   // Global right-click context menu + production devtools block. Pins that:
   //   - GlobalContextMenu wraps BOTH roots (TauriApp.tsx + App.tsx) for parity.
   //   - The devtools-shortcut blocker is desktop-only + PROD-gated (TauriApp, not App).

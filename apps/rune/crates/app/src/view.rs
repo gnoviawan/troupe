@@ -71,7 +71,8 @@ fn editor_body(s: &State, t: &'static Tokens, tab: &model::workspace::Tab) -> Op
     let model::workspace::Tab::Editor { file_path, .. } = tab else {
         return None;
     };
-    ui::editor::view(s, editors, editors_mut, t, file_path)
+    ui::viewers::view(s, |s: &State| &s.viewers, |s: &mut State| &mut s.viewers, t, file_path)
+        .or_else(|| ui::editor::view(s, editors, editors_mut, t, file_path))
 }
 
 fn desktop_frame(

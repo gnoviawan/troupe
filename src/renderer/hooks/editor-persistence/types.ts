@@ -7,7 +7,7 @@ export interface PersistedEditorFile {
   filePath: string
   cursorPosition: { line: number; col: number }
   scrollTop: number
-  viewMode: 'code' | 'preview' | 'markdown'
+  viewMode: 'code' | 'preview' | 'split' | 'markdown'
   isDirty: boolean
   draftContent?: string
   lastModified: number

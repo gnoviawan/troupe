@@ -3,7 +3,9 @@ import { basename } from './path-basename'
 
 export type EditorFileKind = 'text' | MediaKind
 
-export type EditorViewMode = 'code' | 'preview'
+export type EditorViewMode = 'code' | 'preview' | 'split'
+
+export type TextPreviewKind = 'markdown' | 'svg' | 'html'
 
 function extensionOf(filePath: string): string {
   const name = basename(filePath)
@@ -46,13 +48,42 @@ export function detectLanguage(filePath: string): string {
   return Object.hasOwn(LANGUAGE_BY_EXTENSION, ext) ? LANGUAGE_BY_EXTENSION[ext] : ''
 }
 
-export function textPreviewForPath(filePath: string): 'markdown' | 'svg' | null {
+const PREVIEW_BY_EXTENSION: Readonly<Record<string, TextPreviewKind>> = {
+  md: 'markdown',
+  svg: 'svg',
+  html: 'html',
+  htm: 'html'
+}
+
+/** The view modes each previewable kind offers, in toolbar order. */
+export const VIEW_MODES_BY_PREVIEW: Readonly<Record<TextPreviewKind, readonly EditorViewMode[]>> = {
+  markdown: ['preview', 'code'],
+  svg: ['preview', 'code'],
+  html: ['preview', 'split', 'code']
+}
+
+const DEFAULT_VIEW_MODE: Readonly<Record<TextPreviewKind, EditorViewMode>> = {
+  markdown: 'preview',
+  svg: 'preview',
+  html: 'split'
+}
+
+export function textPreviewForPath(filePath: string): TextPreviewKind | null {
   const ext = extensionOf(filePath)
-  if (ext === 'md') return 'markdown'
-  if (ext === 'svg') return 'svg'
-  return null
+  return Object.hasOwn(PREVIEW_BY_EXTENSION, ext) ? PREVIEW_BY_EXTENSION[ext] : null
+}
+
+export function viewModesForPath(filePath: string): readonly EditorViewMode[] {
+  const preview = textPreviewForPath(filePath)
+  return preview ? VIEW_MODES_BY_PREVIEW[preview] : ['code']
 }
 
 export function getDefaultViewMode(filePath: string): EditorViewMode {
-  return textPreviewForPath(filePath) ? 'preview' : 'code'
+  const preview = textPreviewForPath(filePath)
+  return preview ? DEFAULT_VIEW_MODE[preview] : 'code'
+}
+
+/** `mode` when `filePath` offers it (a rename can change the kind), else the path's default. */
+export function normalizeViewMode(filePath: string, mode: EditorViewMode): EditorViewMode {
+  return viewModesForPath(filePath).includes(mode) ? mode : getDefaultViewMode(filePath)
 }

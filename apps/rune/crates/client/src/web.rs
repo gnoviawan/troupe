@@ -172,6 +172,30 @@ impl<M: Machine> WebDriver<M> {
 /// One request, body included, may take this long, as on native.
 const HTTP_BUDGET_MS: u32 = 30_000;
 
+/// `GET path` for a raw body (`/fs/raw`): the bytes on success, else the Troupe refusal.
+pub async fn http_get_bytes(config: &Config, path: &str) -> Result<Vec<u8>, HttpError> {
+    let js = |e: JsValue| HttpError::Network(format!("{e:?}"));
+    let url = format!("{}{}", config.base_url.trim_end_matches('/'), path);
+    let headers = Headers::new().map_err(js)?;
+    if let Some(token) = &config.token {
+        headers.set("Authorization", &format!("Bearer {token}")).map_err(js)?;
+    }
+    let init = RequestInit::new();
+    init.set_method("GET");
+    init.set_headers(&headers);
+    init.set_signal(Some(&AbortSignal::timeout_with_u32(4 * HTTP_BUDGET_MS)));
+    let req = Request::new_with_str_and_init(&url, &init).map_err(js)?;
+    let window = web_sys::window().ok_or_else(|| HttpError::Network("no window".into()))?;
+    let response: Response = JsFuture::from(window.fetch_with_request(&req)).await.map_err(js)?.dyn_into().map_err(js)?;
+    let status = response.status();
+    let buffer = JsFuture::from(response.array_buffer().map_err(js)?).await.map_err(js)?;
+    let bytes = js_sys::Uint8Array::new(&buffer).to_vec();
+    if (200..300).contains(&status) {
+        return Ok(bytes);
+    }
+    parse_body(status, &bytes).and(Err(HttpError::Network(format!("HTTP {status}"))))
+}
+
 /// Send one HTTP request with `fetch` and read the Troupe body.
 pub async fn http_send(config: &Config, request: &HttpRequest) -> Result<Value, HttpError> {
     let js = |e: JsValue| HttpError::Network(format!("{e:?}"));

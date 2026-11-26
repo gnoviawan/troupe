@@ -259,7 +259,8 @@ export async function prepareDevice(world: World, deviceId: string): Promise<voi
 export async function seedEditorTab(
   world: World,
   deviceId: string,
-  filePath: string
+  filePath: string,
+  viewMode: 'code' | 'preview' = 'code'
 ): Promise<void> {
   const tabId = `edit-${filePath}`
   await writeDevice(world, deviceId, `workspace/${PROJECTS.alpha.id}`, {
@@ -268,7 +269,7 @@ export async function seedEditorTab(
         filePath,
         cursorPosition: { line: 1, col: 1 },
         scrollTop: 0,
-        viewMode: 'code',
+        viewMode,
         isDirty: false,
         lastModified: 0
       }
