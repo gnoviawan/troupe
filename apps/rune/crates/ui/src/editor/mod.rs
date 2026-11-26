@@ -43,7 +43,7 @@ pub struct FindBar {
     /// The query the selection last followed (find as you type).
     followed: Query,
     /// The matches and the buffer version and query they were read for.
-    matches: RefCell<Option<((u64, u64), Query, Matches)>>,
+    matches: RefCell<Option<(Version, Query, Matches)>>,
 }
 
 impl FindBar {
@@ -87,8 +87,11 @@ impl FindBar {
     }
 }
 
+/// A buffer's text version: [`store::Doc::version`].
+type Version = (u64, u64);
+
 /// Markdown blocks keyed by the buffer version they were split at.
-type BlockCache = RefCell<Option<((u64, u64), Vec<model::editor::markdown::Block>)>>;
+type BlockCache = RefCell<Option<(Version, Vec<model::editor::markdown::Block>)>>;
 
 /// One editor tab's view state.
 pub struct Pane {
