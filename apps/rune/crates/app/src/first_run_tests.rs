@@ -123,8 +123,11 @@ fn the_token_screen_and_the_wizard_draw_in_place_of_the_shell() {
     rt.frame(0.0);
     assert!(crate::tests::present(&rt, "setup-start"));
     assert!(!crate::tests::present(&rt, "shell-rail"));
-    rt.state.first_run.gate = Gate::Ok;
-    rt.state.first_run.auth = AuthGate::Unauthorized;
-    rt.frame(0.016);
+    let mut s = web();
+    s.first_run.gate = Gate::Ok;
+    s.first_run.auth = AuthGate::Unauthorized;
+    let mut rt = Runtime::new(s, view, (1280.0, 800.0), Env::new(true, 1.0));
+    rt.frame(0.0);
     assert!(crate::tests::present(&rt, "token-continue"));
+    assert!(!crate::tests::present(&rt, "shell-rail"));
 }
