@@ -334,6 +334,7 @@ impl State {
                 crate::host::Fetch::Gitignore { project, why } => self.gitignore_parsed(&project, why, result),
                 crate::host::Fetch::Mcp(effect) => self.mcp_fetched(*effect, result),
                 crate::host::Fetch::McpPoll(url) => self.mcp_polled(&url, result),
+                crate::host::Fetch::Catalog(tag) => self.catalog_fetched(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }

@@ -10,6 +10,14 @@ import {
   validateMcpServer
 } from '../../../../src/renderer/lib/acp-mcp-persistence'
 import {
+  MCP_CATALOG_STATE_LABEL,
+  mcpCatalogReasonText,
+  mcpCatalogSampleText,
+  mcpCatalogSyncErrorText,
+  mcpCatalogSyncText,
+  mcpCatalogUpdatedText
+} from '../../../../src/renderer/lib/mcp-catalog-copy'
+import {
   blankRow,
   draftFromServer,
   draftToConfig,
@@ -24,6 +32,11 @@ import {
   withAuth,
   withUrl
 } from '../../../../src/renderer/lib/mcp-server-draft'
+import type {
+  McpCatalogReason,
+  McpCatalogState,
+  McpCatalogStatus
+} from '../../../../src/shared/types/mcp-catalog.types'
 import type { Scenario, StoreRecorder, VectorEvent } from '../record'
 
 type Row = { name: string; value: string }
@@ -56,7 +69,8 @@ export const mcpServersRecorder: StoreRecorder = {
   sources: [
     'src/renderer/lib/acp-mcp-persistence.ts',
     'src/renderer/lib/mcp-server-draft.ts',
-    'src/renderer/components/settings/mcp-server-view.ts'
+    'src/renderer/components/settings/mcp-server-view.ts',
+    'src/renderer/lib/mcp-catalog-copy.ts'
   ],
   reset() {},
   seed() {},
@@ -107,6 +121,18 @@ export const mcpServersRecorder: StoreRecorder = {
         return mcpServerTarget(args[0] as StoredMcpServer)
       case 'toolCount':
         return mcpToolCount(Array.from({ length: args[0] as number }))
+      case 'reasonText':
+        return mcpCatalogReasonText(args[0] as McpCatalogReason)
+      case 'stateLabel':
+        return MCP_CATALOG_STATE_LABEL[args[0] as McpCatalogState]
+      case 'sampleText':
+        return mcpCatalogSampleText(args[0] as McpCatalogStatus)
+      case 'syncText':
+        return mcpCatalogSyncText(args[0] as McpCatalogStatus)
+      case 'syncErrorText':
+        return mcpCatalogSyncErrorText(args[0] as string)
+      case 'updatedText':
+        return mcpCatalogUpdatedText(null)
       default:
         throw new Error(`mcp-servers has no action ${action}`)
     }
@@ -311,6 +337,68 @@ export const mcpServersScenarios: Scenario[] = [
       read('toolCount', 0),
       read('toolCount', 1),
       read('toolCount', 12)
+    ]
+  },
+  {
+    name: 'catalog_rows_and_sync_say_what_react_says',
+    steps: [
+      ...[
+        { code: 'needs-runtime', runtime: 'npx' },
+        { code: 'needs-runtime', runtime: 'dotnet' },
+        { code: 'no-install-options' },
+        { code: 'unparseable' },
+        { code: 'insecure-url' },
+        { code: 'local-network-url' },
+        { code: 'invalid-url' },
+        { code: 'unknown-remote-transport', transport: 'ws' },
+        { code: 'secret-in-url' },
+        { code: 'secret-in-arguments' },
+        { code: 'runtime-arguments' },
+        { code: 'runtime-hint-mismatch', runtimeHint: 'bunx' },
+        { code: 'denied-env', name: 'LD_PRELOAD' },
+        { code: 'invalid-env-name', name: '1X' },
+        { code: 'unsupported-registry-type', registryType: 'cargo' },
+        { code: 'non-stdio-transport', transport: 'sse' },
+        { code: 'unpinned-version' },
+        { code: 'invalid-package' },
+        { code: 'unsupported-registry', registry: 'example.com' },
+        { code: 'invalid-command' },
+        { code: 'invalid-header-name', name: 'a b' },
+        { code: 'control-character', field: 'description' },
+        { code: 'duplicate-name', name: 'API_KEY' },
+        { code: 'cmd-metacharacter', field: 'argument' },
+        { code: 'unsupported-launch-argument', command: 'npx', argument: '--package' },
+        { code: 'unsupported-runner', command: 'bunx' }
+      ].map((reason) => read('reasonText', reason)),
+      ...['installable', 'needs-runtime', 'unsupported', 'source-only'].map((state) =>
+        read('stateLabel', state)
+      ),
+      read('sampleText', { sample: false, updatedAt: null, servers: 0, sync: { state: 'idle' } }),
+      read('sampleText', {
+        sample: true,
+        updatedAt: null,
+        servers: 0,
+        sync: { state: 'disabled' }
+      }),
+      read('sampleText', { sample: true, updatedAt: null, servers: 0, sync: { state: 'idle' } }),
+      read('syncText', { sample: false, updatedAt: null, servers: 0, sync: { state: 'disabled' } }),
+      read('syncText', { sample: false, updatedAt: null, servers: 0, sync: { state: 'idle' } }),
+      read('syncText', { sample: true, updatedAt: null, servers: 0, sync: { state: 'idle' } }),
+      read('syncText', {
+        sample: false,
+        updatedAt: null,
+        servers: 0,
+        sync: { state: 'syncing', full: true, fetched: 12345 }
+      }),
+      read('syncText', {
+        sample: false,
+        updatedAt: null,
+        servers: 0,
+        sync: { state: 'syncing', full: false, fetched: 0 }
+      }),
+      read('syncErrorText', 'FORBIDDEN'),
+      read('syncErrorText', 'NETWORK_ERROR'),
+      read('updatedText')
     ]
   }
 ]

@@ -244,7 +244,8 @@
       "sources": {
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
         "src/renderer/lib/mcp-server-draft.ts": "2aa122699a92f39b69b4823481d8972177d7f6ce",
-        "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9"
+        "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9",
+        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35"
       },
       "vectors": [
         "the_registry_keeps_valid_entries",
@@ -253,7 +254,8 @@
         "drafts_become_servers_or_name_their_errors",
         "servers_open_as_drafts",
         "url_and_sign_in_edits",
-        "cards_show_status_target_and_tools"
+        "cards_show_status_target_and_tools",
+        "catalog_rows_and_sync_say_what_react_says"
       ]
     }
   }

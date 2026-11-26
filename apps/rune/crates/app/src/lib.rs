@@ -64,6 +64,7 @@ mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
+mod mcp_catalog;
 mod mcp_host;
 mod project_settings;
 mod project_settings_view;
@@ -345,6 +346,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_explorer();
     let next_git = state.git_tick();
     let next_mcp = state.mcp_tick(now);
+    let next_catalog = state.catalog_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
@@ -357,6 +359,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_draft_sync(),
         next_git,
         next_mcp,
+        next_catalog,
         next_completion,
     ];
     for due in waits.into_iter().flatten() {

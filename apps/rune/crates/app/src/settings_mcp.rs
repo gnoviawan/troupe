@@ -10,7 +10,7 @@ use model::settings::mcp::{self as rules, Object, Tone};
 use rune::{El, TextEdit, col, row, text};
 use serde_json::{Value, json};
 use theme::Tokens;
-use ui::settings::{StatusTone, card, empty_state, filter, group, group_with_meta, letter_tile, notice, status_word, toned_notice};
+use ui::settings::{StatusTone, card, empty_state, filter, group, group_with_meta, letter_tile, status_word, toned_notice};
 use ui::type_::{mono, sans};
 use ui::{Button, ButtonSize, ButtonVariant, Switch};
 
@@ -67,6 +67,8 @@ pub struct McpUi {
     pub polls: Vec<Poll>,
     pub dialog: Option<crate::settings_mcp_dialog::ServerDialog>,
     pub paste: crate::settings_mcp_dialog::PasteUi,
+    /// The catalog under the added servers.
+    pub catalog: crate::mcp_catalog::CatalogUi,
     /// Every POST this client sent, for the tests (a test state has no host).
     #[cfg(test)]
     pub posted: Vec<(String, Value)>,
@@ -129,6 +131,11 @@ impl State {
         if !self.chat.acp.mcp_servers_loaded {
             log::info!("[settings.McpServersSettings] reading the MCP registry");
             self.acp_step(Event::LoadMcpServers(Vec::new()));
+        }
+        if self.mcp_ui.catalog.active {
+            self.catalog_refresh();
+        } else {
+            self.catalog_opened();
         }
         self.mcp_settle();
     }
@@ -243,7 +250,7 @@ pub fn page(s: &State, t: &'static Tokens, phone: bool) -> Vec<El> {
             .key("add-server")
             .on_press(|s: &mut State| s.open_mcp_add())
     };
-    let later = notice(t, "mcp-catalog-later", "The MCP catalog comes to this client in a later update. Add a server by hand for now.");
+    let later = crate::mcp_catalog::browser(s, t, phone);
     if servers.is_empty() {
         let empty = empty_state(
             t,
