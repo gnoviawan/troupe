@@ -18,6 +18,8 @@ mod agent_switch;
 mod agent_switch_tests;
 mod answers;
 mod automation_canvas;
+mod automation_editor;
+mod automation_editor_view;
 mod automations;
 #[cfg(test)]
 mod automations_tests;
@@ -343,6 +345,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let next_automation = state.automations_tick(now);
+    let next_preview = state.automation_editor_tick(now);
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -354,6 +357,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_git,
         next_completion,
         next_automation,
+        next_preview,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

@@ -216,3 +216,141 @@ fn the_screens_draw_the_list_the_detail_and_a_run() {
         assert!(crate::tests::present(&rt, key), "{key} draws");
     }
 }
+
+/// The host for the editor: `apply_ops` and `set_layout` answer with the automation they made.
+fn editor_host(method: &str, path: &str) -> Value {
+    match (method, path) {
+        ("POST", "/api/automations/a1/ops") => {
+            let mut a = automation("a1", "Digest");
+            a["revision"] = json!(a["revision"].as_u64().unwrap_or(0) + 1);
+            json!({ "automation": a, "issues": [] })
+        }
+        ("POST", "/api/automations/a1/ops/preview") => detail(&automation("a1", "Digest")),
+        ("POST", "/api/automations/a1/layout") => automation("a1", "Digest"),
+        _ => host(method, path),
+    }
+}
+
+#[test]
+fn the_editor_adds_two_steps_connects_them_and_saves_one_batch() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    // Add a wait after the trigger-less selection (below the cards), then a fail after it.
+    s.automation_add(model::automations::NodeKind::Wait);
+    s.automation_add(model::automations::NodeKind::Fail);
+    let editor = s.automations.editor.as_ref().expect("editor");
+    let ids: Vec<&str> = editor
+        .draft
+        .doc
+        .graph
+        .nodes
+        .iter()
+        .map(|n| n.id.as_str())
+        .collect();
+    assert!(ids.ends_with(&["wait", "fail"]), "{ids:?}");
+    assert!(
+        editor
+            .draft
+            .doc
+            .graph
+            .edges
+            .iter()
+            .any(|e| e.from == "wait" && e.to == "fail"),
+        "the second step chains after the selected first one"
+    );
+    // A connect the host would flag is refused at the gesture.
+    s.automation_flow_event(troupe_flow::canvas::FlowEvent::Connect {
+        from: "fail".into(),
+        port: "out".into(),
+        to: "wait".into(),
+    });
+    assert_eq!(
+        s.automations.editor.as_ref().unwrap().draft.pending.len(),
+        2
+    );
+    s.automation_flow_event(troupe_flow::canvas::FlowEvent::Connect {
+        from: "post".into(),
+        port: "out".into(),
+        to: "wait".into(),
+    });
+    assert_eq!(
+        s.automations.editor.as_ref().unwrap().draft.pending.len(),
+        3
+    );
+    s.automation_save();
+    let calls = answer_all(&mut s, &editor_host);
+    assert_eq!(calls[0], "POST /api/automations/a1/ops");
+    assert!(
+        calls.contains(&"POST /api/automations/a1/layout".to_owned()),
+        "{calls:?}"
+    );
+    let editor = s.automations.editor.as_ref().expect("editor");
+    assert!(!editor.draft.dirty() && !editor.saving);
+}
+
+#[test]
+fn closing_a_dirty_editor_asks_first() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    s.automation_add(model::automations::NodeKind::Merge);
+    s.automation_close_editor();
+    assert!(
+        s.overlays
+            .is_open(crate::automation_editor::DISCARD_CONFIRM)
+    );
+    assert!(s.automations.editor.is_some());
+    s.automation_discard_and_close();
+    assert!(s.automations.editor.is_none());
+}
+
+#[test]
+fn deleting_a_step_needs_no_confirm_and_undo_brings_it_back() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    s.automation_flow_event(troupe_flow::canvas::FlowEvent::Select(Some(
+        troupe_flow::canvas::Selection::Card("check".into()),
+    )));
+    s.automations.editor.as_mut().unwrap().flow.selection =
+        Some(troupe_flow::canvas::Selection::Card("check".into()));
+    s.automation_delete_selected();
+    assert!(
+        s.automations
+            .editor
+            .as_ref()
+            .unwrap()
+            .draft
+            .doc
+            .graph
+            .node("check")
+            .is_none()
+    );
+    s.automation_undo();
+    let editor = s.automations.editor.as_ref().unwrap();
+    assert!(editor.draft.doc.graph.node("check").is_some());
+    assert!(
+        !editor.draft.dirty(),
+        "undoing the only gesture leaves a clean draft"
+    );
+}
+
+#[test]
+fn the_inspector_writes_a_steps_fields_as_one_update() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    s.automation_inspect(Some("alert".into()));
+    let editor = s.automations.editor.as_mut().unwrap();
+    editor.fields.a = rune::TextEdit::new("Something broke");
+    editor.fields.label = rune::TextEdit::new("Alarm");
+    s.automation_commit_fields();
+    let draft = &s.automations.editor.as_ref().unwrap().draft;
+    let node = draft.doc.graph.node("alert").unwrap();
+    assert_eq!(node.label, "Alarm");
+    assert!(
+        matches!(&node.spec, model::automations::NodeSpec::Fail { message } if message == "Something broke")
+    );
+    assert_eq!(draft.pending_ops().len(), 1);
+}

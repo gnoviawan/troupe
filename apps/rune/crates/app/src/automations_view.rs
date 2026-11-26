@@ -63,6 +63,13 @@ fn message(t: &Tokens, words: &str) -> El {
 fn panel(s: &State, t: &'static Tokens, phone: bool) -> El {
     let ui = &s.automations;
     let c = &t.colors;
+    if let Some(editor) = ui
+        .editor
+        .as_ref()
+        .filter(|e| ui.selected() == Some(e.draft.base.id.as_str()))
+    {
+        return crate::automation_editor_view::editor(s, t, editor, phone);
+    }
     if let Some(run) = ui.open_run() {
         return run_view(s, t, run, phone);
     }
@@ -447,13 +454,27 @@ fn detail_body(s: &State, t: &'static Tokens, detail: &Detail, phone: bool) -> E
     body
 }
 
-/// The diagram's heading; the editor's Edit button joins it with the editor.
+/// The diagram's heading with its Edit button.
 fn diagram_header(t: &Tokens, _phone: bool) -> El {
-    row().w_full().h(32.0).items_center().child(
-        text("Diagram")
-            .font(sans(12.0, 500.0, 16.0))
-            .color(t.colors.muted_foreground),
-    )
+    row()
+        .w_full()
+        .h(32.0)
+        .items_center()
+        .child(
+            text("Diagram")
+                .font(sans(12.0, 500.0, 16.0))
+                .color(t.colors.muted_foreground)
+                .grow(1.0),
+        )
+        .child(
+            Button::new("Edit")
+                .variant(ButtonVariant::Outline)
+                .size(ButtonSize::Sm)
+                .icon(glyph("Edit"))
+                .build(t)
+                .key("automation-edit")
+                .on_press(|s: &mut State| s.automation_edit()),
+        )
 }
 
 fn issues(t: &Tokens, detail: &Detail) -> El {

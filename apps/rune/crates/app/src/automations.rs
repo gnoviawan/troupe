@@ -27,11 +27,25 @@ const RUNNING_POLL: f64 = 2.0;
 /// What a reply is for. Reads carry the request they answer, so a superseded reply is dropped.
 #[derive(Clone, Debug, PartialEq)]
 pub enum AutoFetch {
-    List { project: String, request: u64 },
-    Detail { id: String, request: u64 },
-    Runs { id: String, request: u64 },
-    Steps { run_id: String, request: u64 },
+    List {
+        project: String,
+        request: u64,
+    },
+    Detail {
+        id: String,
+        request: u64,
+    },
+    Runs {
+        id: String,
+        request: u64,
+    },
+    Steps {
+        run_id: String,
+        request: u64,
+    },
     Act(Act),
+    /// A draft's dry run, save, head read or position write (`automation_editor`).
+    Edit(crate::automation_editor::EditFetch),
 }
 
 /// A button's call, as `AutomationDetail`'s `act` names it.
@@ -138,6 +152,9 @@ pub struct AutomationsUi {
     pub steps_closed: bool,
     /// Loop iterations the run view shows, by for_each id.
     pub picks: BTreeMap<String, u64>,
+    /// The automation the editor is open on, and its draft.
+    pub editing: Option<String>,
+    pub editor: Option<crate::automation_editor::EditorUi>,
     /// The detail whose unseen failures were last marked seen, with the count.
     seen: Option<(String, u64)>,
     next_poll: f64,
@@ -298,6 +315,8 @@ impl State {
             ui.project = project.clone();
             ui.chosen = None;
             ui.run_id = None;
+            ui.editing = None;
+            ui.editor = None;
             ui.list = Query::default();
             ui.detail = Query::default();
             ui.runs = Query::default();
@@ -312,6 +331,8 @@ impl State {
         let selected = self.automations.selected().map(str::to_owned);
         if selected != self.automations.detail.key {
             self.automations.run_id = None;
+            self.automations.editing = None;
+            self.automations.editor = None;
             self.automations.diagram = FlowState::default();
             match &selected {
                 Some(id) => self.load_detail(id),
@@ -354,7 +375,7 @@ impl State {
     /// The runs list is on screen: its failures count as seen.
     fn mark_seen(&mut self) {
         let ui = &self.automations;
-        if ui.run_id.is_some() {
+        if ui.run_id.is_some() || ui.editing.is_some() {
             return;
         }
         let Some(detail) = ui.detail.data.as_ref() else {
@@ -384,6 +405,11 @@ impl State {
         if project_hit && let Some(project) = ui.project.clone() {
             self.load_list(&project);
         }
+        if let (Some(change), Some(editor)) = (&change, &mut self.automations.editor)
+            && change.automation_id.as_deref() == Some(editor.draft.base.id.as_str())
+        {
+            editor.by = change.proposed_by.clone();
+        }
         if detail_hit && let Some(id) = self.automations.detail.key.clone() {
             self.load_detail(&id);
             if let Some(run_id) = self.automations.run_id.clone() {
@@ -402,8 +428,15 @@ impl State {
                 }
             }
             AutoFetch::Detail { id, request } => {
-                if ui.detail.key.as_deref() == Some(&id) {
-                    ui.detail.land(request, decode("get", result));
+                if ui.detail.key.as_deref() == Some(&id)
+                    && ui.detail.land(request, decode("get", result))
+                {
+                    let detail = ui.detail.data.clone();
+                    if let (Some(detail), Some(editor)) = (detail, ui.editor.as_mut())
+                        && editor.draft.base.id == id
+                    {
+                        editor.head(detail);
+                    }
                 }
             }
             AutoFetch::Runs { id, request } => {
@@ -417,6 +450,7 @@ impl State {
                 }
             }
             AutoFetch::Act(act) => self.automation_acted(act, result),
+            AutoFetch::Edit(edit) => self.automation_edit_replied(edit, result),
         }
     }
 
