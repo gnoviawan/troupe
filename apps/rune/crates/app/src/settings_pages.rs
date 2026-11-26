@@ -19,6 +19,7 @@ pub fn page(s: &State, t: &'static Tokens, id: &str, phone: bool, layer: &mut Ve
     match id {
         "terminal-profiles" => crate::settings_profiles::profiles_page(s, t),
         "skills" => crate::settings_profiles::skills_page(s, t, phone),
+        crate::settings_mcp::PAGE => crate::settings_mcp::page(s, t, phone),
         "preferences" => preferences(s, t, layer),
         "terminal" => terminal(s, t, layer),
         "ai-agents" => agents(s, t, layer),

@@ -39,6 +39,10 @@ pub enum Fetch {
     ProjectEnv { request: u64, project: String, root: String },
     /// `/worktree/parse-gitignore` for a project's worktree symlinks.
     Gitignore { project: String, why: crate::project_settings::GitignoreRead },
+    /// An MCP effect of the acp model on its `/mcp-servers/*` route.
+    Mcp(Box<model::acp::Effect>),
+    /// A web sign-in's token poll (`/mcp-servers/oauth/status`), by server URL.
+    McpPoll(String),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

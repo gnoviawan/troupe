@@ -315,6 +315,7 @@ impl State {
                     json!({ "agentId": agent_id, "sessionId": session_id }),
                     Pending::Host("Could not stop the turn"),
                 ),
+                Effect::ActionRejected { message } if self.mcp_rejected(&message) => {}
                 Effect::ActionRejected { message } => {
                     self.composer.rejected = true;
                     self.toast_error("Could not send your message", &message);
@@ -332,6 +333,7 @@ impl State {
                         .run_control(other)
                         .and_then(|other| self.run_agent_command(other))
                         .and_then(|other| self.run_history_effect(other))
+                        .and_then(|other| self.run_mcp_effect(other))
                     {
                         log::info!("[chat] effect not wired in the Rune client yet: {other:?}");
                     }

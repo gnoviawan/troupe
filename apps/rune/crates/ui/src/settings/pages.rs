@@ -107,7 +107,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "Network",
         "Servers that new agent chats can use. Each enabled server is offered when a chat starts.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "browser",

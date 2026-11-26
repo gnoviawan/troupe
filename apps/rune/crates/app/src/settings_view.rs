@@ -120,6 +120,9 @@ impl State {
 
     /// Reads what the shown page lists, once per window.
     pub(crate) fn settings_page_opened(&mut self) {
+        if self.settings_page().id == crate::settings_mcp::PAGE {
+            self.mcp_page_opened();
+        }
         if self.settings_page().id == "skills" {
             let root = self.active_project().and_then(|p| p.path.clone()).unwrap_or_default();
             self.fetch_skills_for(root);
@@ -344,8 +347,11 @@ fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, layer: &mut 
         .label(page.label)
         .w_full()
         .max_w(COLUMN)
-        .items_stretch()
-        .child(ui::settings::header(t, page.label, page.description));
+        .items_stretch();
+    // A server's detail page has its own title (`SettingsSection` `subpage`).
+    if !(page.id == crate::settings_mcp::PAGE && s.mcp_ui.detail.is_some()) {
+        column = column.child(ui::settings::header(t, page.label, page.description));
+    }
     let groups = match page.owner {
         Owner::Here if w == Window::Project => crate::project_settings_view::page(s, t, page.id, phone, layer),
         Owner::Here => crate::settings_pages::page(s, t, page.id, phone, layer),
@@ -408,6 +414,8 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
         return;
     }
     crate::settings_profiles::editor(s, t, layer);
+    crate::settings_mcp_dialog::server_dialog(s, t, phone, layer);
+    crate::settings_mcp_dialog::paste_dialog(s, t, layer);
     ConfirmDialog::new(
         RESET_ALL,
         "Reset all settings?",

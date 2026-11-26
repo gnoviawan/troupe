@@ -159,6 +159,7 @@ impl State {
                     log::info!("[TerminalProfilesSection.undoDelete] Terminal profile restored by undo");
                 }
             }
+            Undo::McpServer(server) => self.restore_mcp_server(server),
         }
     }
 }
@@ -167,6 +168,8 @@ impl State {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Undo {
     Profile { profile: Profile, index: usize },
+    /// A removed MCP server, saved back as it was.
+    McpServer(model::settings::mcp::Object),
 }
 
 fn glyph(name: &str) -> &'static rune::Icon {

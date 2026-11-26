@@ -116,6 +116,13 @@ impl State {
             crate::keys::MENU | crate::settings_view::APP => self.keys.recording = None,
             crate::settings_view::SELECT => self.settings_ui.select = None,
             crate::project_settings::PROJECT => self.project_ui.import_request += 1,
+            crate::settings_mcp_dialog::DIALOG => self.mcp_ui.dialog = None,
+            crate::settings_mcp_dialog::PASTE => {
+                if let Some(id) = self.mcp_ui.paste.flow.as_ref().map(|(id, _)| id.clone()) {
+                    self.acp_step(model::acp::Event::CancelMcpOAuth(id));
+                }
+                self.mcp_ui.paste = crate::settings_mcp_dialog::PasteUi::default();
+            }
             crate::phone::MORE | crate::phone::PROJECTS | crate::phone::RECENTS => {
                 self.phone.drag = ui::overlay::SheetDrag::default();
                 if key == crate::phone::RECENTS {

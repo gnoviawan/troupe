@@ -103,7 +103,7 @@ fn parse_url(text: &str) -> Option<Parsed> {
     }
     let scheme = scheme.to_ascii_lowercase();
     let rest = &text[colon + 1..];
-    let cut = |s: &str| s.find(['?', '#']).map_or(s.len(), |i| i);
+    let cut = |s: &str| s.find(['?', '#']).unwrap_or(s.len());
     if scheme == "file" {
         let path = rest.trim_start_matches(['/', '\\']);
         let path = &path[..cut(path)];

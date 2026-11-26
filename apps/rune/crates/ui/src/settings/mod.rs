@@ -31,10 +31,19 @@ pub fn header(t: &Tokens, title: &str, description: &str) -> El {
 
 /// `SettingsGroup`: a 14/20 heading, its actions at the right, then 12 px, then `content`.
 pub fn group(t: &Tokens, key: &str, title: &str, actions: Vec<El>, content: Vec<El>) -> El {
+    group_with_meta(t, key, title, "", actions, content)
+}
+
+/// `SettingsGroup` with its `meta`: a 12 px note after the heading, such as a count.
+pub fn group_with_meta(t: &Tokens, key: &str, title: &str, meta: &str, actions: Vec<El>, content: Vec<El>) -> El {
     let c = &t.colors;
     let mut head = row().key("head").w_full().min_h(28.0).items_center().justify_between().gap(12.0);
     if !title.is_empty() {
-        head = head.child(text(title).font(sans(14.0, 500.0, 20.0)).color(c.foreground).role("heading"));
+        let mut words = row().key("title").min_w(0.0).gap(8.0).items_center().child(text(title).font(sans(14.0, 500.0, 20.0)).color(c.foreground).role("heading"));
+        if !meta.is_empty() {
+            words = words.child(text(meta).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).single_line().truncate());
+        }
+        head = head.child(words);
     }
     if !actions.is_empty() {
         head = head.child(row().key("actions").gap(8.0).items_center().children(actions));
@@ -366,4 +375,52 @@ pub fn segmented(t: &Tokens, key: &str, label: &str, options: &[(&str, Option<us
         out = out.child(wire(i, b));
     }
     out
+}
+
+/// `StatusWord`'s tone.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StatusTone {
+    Success,
+    Warning,
+    Danger,
+    Muted,
+}
+
+/// `StatusWord`: a 6 px dot (a spinner while `pending`) and the word, 12 px.
+pub fn status_word(t: &Tokens, key: &str, tone: StatusTone, label: &str, pending: bool) -> El {
+    let c = &t.colors;
+    let (dot, ink) = match tone {
+        StatusTone::Success => (c.success, c.muted_foreground),
+        StatusTone::Warning => (c.warning, c.warning),
+        StatusTone::Danger => (c.destructive, c.destructive),
+        StatusTone::Muted => (c.muted_foreground.alpha(0.6), c.muted_foreground),
+    };
+    let mark = if pending {
+        crate::Spinner::new().size(12.0).decorative().build(ink, false).key("spinner")
+    } else {
+        el().key("dot").size(6.0, 6.0).radius(3.0).fill(dot).a11y_hidden()
+    };
+    row()
+        .key(key.to_owned())
+        .role("status")
+        .label(label.to_owned())
+        .gap(6.0)
+        .items_center()
+        .child(mark)
+        .child(text(label).font(sans(12.0, 400.0, 16.0)).color(ink).single_line())
+}
+
+/// `McpCatalogIcon`'s placeholder: the name's first letter on a 32 or 40 px tile.
+pub fn letter_tile(t: &Tokens, name: &str, side: f32) -> El {
+    let c = &t.colors;
+    let letter = name.trim().chars().next().map_or_else(|| "?".to_owned(), |ch| ch.to_uppercase().collect());
+    let size = if side >= 40.0 { 16.0 } else { 14.0 };
+    row()
+        .key("tile")
+        .size(side, side)
+        .center()
+        .radius(6.0)
+        .fill(c.foreground.alpha(0.06))
+        .a11y_hidden()
+        .child(text(letter).font(sans(size, 500.0, size + 8.0)).color(c.secondary_foreground))
 }
