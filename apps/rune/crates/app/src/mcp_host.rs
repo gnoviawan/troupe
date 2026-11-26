@@ -239,6 +239,7 @@ impl State {
     /// Hands an answer to the model, with the toast, dialog close or Undo the page waits for.
     fn mcp_answer(&mut self, effect: Effect, outcome: Result<Value, McpError>, action: Option<Action>) {
         let on_reject = match (&effect, &outcome) {
+            (Effect::SaveMcpServers { .. }, _) if matches!(action, Some(Action::Install)) => OnReject::Quiet,
             (Effect::SaveMcpServers { .. }, _) => OnReject::Toast(action.as_ref().map_or("Could not save the MCP servers.", Action::failure).to_owned()),
             (Effect::StartMcpOAuth { .. }, Err(e)) => OnReject::Toast(oauth_failure_message(e.code.as_deref()).to_owned()),
             (Effect::DisconnectMcpOAuth { .. }, _) => OnReject::Toast("Could not disconnect OAuth. Try again.".into()),
@@ -271,6 +272,7 @@ impl State {
         match action {
             Some(action) if ok => self.mcp_action_landed(action),
             Some(Action::Add(_) | Action::Edit) => self.mcp_dialog_settled(),
+            Some(Action::Install) => self.install_saved(false),
             _ => {}
         }
         self.mcp_after();
@@ -280,6 +282,7 @@ impl State {
     fn mcp_after(&mut self) {
         self.paste_sync();
         self.mcp_settle();
+        self.install_follow();
     }
 
     pub(crate) fn mcp_flag(&self, map: &std::collections::BTreeMap<String, Value>, id: &str) -> bool {

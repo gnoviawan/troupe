@@ -245,7 +245,10 @@
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
         "src/renderer/lib/mcp-server-draft.ts": "2aa122699a92f39b69b4823481d8972177d7f6ce",
         "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9",
-        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35"
+        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35",
+        "src/renderer/lib/mcp-json-import.ts": "56003bee079e54465084e2d799cac3df38c6b075",
+        "src/renderer/components/settings/McpInstallForm.tsx": "88478a57885ef71bd11f0b7322b86cc70e066c11",
+        "src/renderer/hooks/use-mcp-catalog-install.ts": "7eb3c6c4c97999e5d566edd0cfc56d2753b6850d"
       },
       "vectors": [
         "the_registry_keeps_valid_entries",
@@ -255,7 +258,9 @@
         "servers_open_as_drafts",
         "url_and_sign_in_edits",
         "cards_show_status_target_and_tools",
-        "catalog_rows_and_sync_say_what_react_says"
+        "catalog_rows_and_sync_say_what_react_says",
+        "pasted_json_imports_like_the_dialog",
+        "install_form_values_and_retry"
       ]
     }
   }

@@ -416,6 +416,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mu
     crate::settings_profiles::editor(s, t, layer);
     crate::settings_mcp_dialog::server_dialog(s, t, phone, height, layer);
     crate::settings_mcp_dialog::paste_dialog(s, t, layer);
+    crate::mcp_install_view::install_dialog(s, t, phone, height, layer);
     ConfirmDialog::new(
         RESET_ALL,
         "Reset all settings?",

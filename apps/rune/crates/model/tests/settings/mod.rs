@@ -329,6 +329,25 @@ pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
             "syncText" => json!(model::settings::mcp_catalog::sync_text(&args[0], "")),
             "syncErrorText" => json!(model::settings::mcp_catalog::sync_error_text(text(0))),
             "updatedText" => json!(model::settings::mcp_catalog::updated_text(None, "")),
+            "jsonImport" => {
+                let out = model::settings::mcp_json::parse_import(text(0));
+                json!({ "servers": out.servers, "errors": out.errors })
+            }
+            "installInitial" => to_value(&model::settings::mcp_install::initial_values(&parse::<Vec<model::settings::mcp_install::Field>>(&args[0])?)),
+            "installSplit" => {
+                let fields: Vec<model::settings::mcp_install::Field> = parse(&args[0])?;
+                let values: std::collections::BTreeMap<String, String> = parse(&args[1])?;
+                let (inputs, secrets) = model::settings::mcp_install::split_values(&fields, &values);
+                json!({ "inputs": inputs, "secretValues": secrets })
+            }
+            "canStartOver" => {
+                let failure = match (args[0]["kind"].as_str(), args[0]["code"].as_str()) {
+                    (Some("host"), Some(code)) => model::settings::mcp_install::Failure::Host(code.into()),
+                    (Some("unsupported"), _) => model::settings::mcp_install::Failure::Unsupported(args[0]["reason"].clone()),
+                    _ => model::settings::mcp_install::Failure::Save,
+                };
+                json!(failure.can_start_over())
+            }
             other => return Err(format!("step {index}: no read {other}")),
         };
         if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {

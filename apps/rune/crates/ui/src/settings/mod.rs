@@ -224,6 +224,7 @@ pub enum Tone {
     Info,
     Warning,
     Danger,
+    Success,
 }
 
 /// `SettingsNotice` in `tone`: the tone's edge, wash and glyph.
@@ -233,6 +234,7 @@ pub fn toned_notice(t: &Tokens, key: &str, tone: Tone, body: &str) -> El {
         Tone::Info => ("Info", c.muted_foreground, c.border, c.foreground.alpha(0.03)),
         Tone::Warning => ("AlertTriangle", c.warning, c.warning.alpha(0.2), c.warning.alpha(0.1)),
         Tone::Danger => ("AlertCircle", c.destructive, c.destructive.alpha(0.2), c.destructive.alpha(0.1)),
+        Tone::Success => ("CheckCircle2", c.success, c.success.alpha(0.2), c.success.alpha(0.1)),
     };
     let g = theme::icons::named(glyph).expect("bundled icon");
     row()

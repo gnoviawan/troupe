@@ -34,6 +34,8 @@ pub enum Action {
     /// The dialog's Add, with how many servers it adds.
     Add(usize),
     Edit,
+    /// A catalog install's commit, saved into the registry.
+    Install,
 }
 
 impl Action {
@@ -45,6 +47,7 @@ impl Action {
             Action::Toggle => "Could not update the MCP server. Your previous setting was restored.",
             Action::Add(_) => "Could not save the MCP servers. Your previous settings were restored.",
             Action::Edit => "Could not save the MCP server. Your previous settings were restored.",
+            Action::Install => "Troupe couldn't save the server after you approved it. Start over to try again.",
         }
     }
 }
@@ -69,6 +72,7 @@ pub struct McpUi {
     pub paste: crate::settings_mcp_dialog::PasteUi,
     /// The catalog under the added servers.
     pub catalog: crate::mcp_catalog::CatalogUi,
+    pub install: crate::mcp_install::InstallUi,
     /// Every POST this client sent, for the tests (a test state has no host).
     #[cfg(test)]
     pub posted: Vec<(String, Value)>,
@@ -193,6 +197,7 @@ impl State {
                 self.toasts.push(self.now, ui::overlay::ToastKind::Success, "MCP server updated", None);
                 self.close_mcp_dialog();
             }
+            Action::Install => self.install_saved(true),
         }
         self.mcp_settle();
     }

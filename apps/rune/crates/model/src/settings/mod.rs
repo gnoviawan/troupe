@@ -11,6 +11,8 @@
 mod normalize;
 pub mod mcp;
 pub mod mcp_catalog;
+pub mod mcp_install;
+pub mod mcp_json;
 pub mod palette;
 pub mod profiles;
 pub mod project;

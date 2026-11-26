@@ -4,6 +4,11 @@ import {
   mcpToolCount
 } from '../../../../src/renderer/components/settings/mcp-server-view'
 import {
+  initialInstallValues,
+  splitInstallValues
+} from '../../../../src/renderer/components/settings/McpInstallForm'
+import { canStartOver, type McpInstallFailure } from '../../../../src/renderer/hooks/use-mcp-catalog-install'
+import {
   normalizeMcpRegistry,
   type StoredMcpServer,
   sameLaunch,
@@ -32,6 +37,8 @@ import {
   withAuth,
   withUrl
 } from '../../../../src/renderer/lib/mcp-server-draft'
+import { parseMcpJsonImport } from '../../../../src/renderer/lib/mcp-json-import'
+import type { McpInstallField } from '../../../../src/shared/types/mcp-install.types'
 import type {
   McpCatalogReason,
   McpCatalogState,
@@ -70,7 +77,10 @@ export const mcpServersRecorder: StoreRecorder = {
     'src/renderer/lib/acp-mcp-persistence.ts',
     'src/renderer/lib/mcp-server-draft.ts',
     'src/renderer/components/settings/mcp-server-view.ts',
-    'src/renderer/lib/mcp-catalog-copy.ts'
+    'src/renderer/lib/mcp-catalog-copy.ts',
+    'src/renderer/lib/mcp-json-import.ts',
+    'src/renderer/components/settings/McpInstallForm.tsx',
+    'src/renderer/hooks/use-mcp-catalog-install.ts'
   ],
   reset() {},
   seed() {},
@@ -133,6 +143,14 @@ export const mcpServersRecorder: StoreRecorder = {
         return mcpCatalogSyncErrorText(args[0] as string)
       case 'updatedText':
         return mcpCatalogUpdatedText(null)
+      case 'jsonImport':
+        return parseMcpJsonImport(args[0] as string)
+      case 'installInitial':
+        return initialInstallValues(args[0] as McpInstallField[])
+      case 'installSplit':
+        return splitInstallValues(args[0] as McpInstallField[], args[1] as Record<string, string>)
+      case 'canStartOver':
+        return canStartOver(args[0] as McpInstallFailure)
       default:
         throw new Error(`mcp-servers has no action ${action}`)
     }
@@ -190,6 +208,28 @@ const catalog = {
   repositoryId: null,
   launchDigest: 'abc'
 }
+
+const field = (id: string, over: Partial<McpInstallField>): McpInstallField => ({
+  id,
+  label: id,
+  target: { kind: 'env', name: id.toUpperCase() },
+  variable: null,
+  isRequired: false,
+  isSecret: false,
+  format: 'string',
+  choices: null,
+  default: null,
+  placeholder: null,
+  description: null,
+  ...over
+})
+const installFields: McpInstallField[] = [
+  field('key', { isSecret: true, isRequired: true }),
+  field('dir', { format: 'filepath', default: '/tmp' }),
+  field('flag', { format: 'boolean', default: ' TRUE ' }),
+  field('off', { format: 'boolean', default: null }),
+  field('n', { format: 'number', default: '3' })
+]
 
 export const mcpServersScenarios: Scenario[] = [
   {
@@ -399,6 +439,29 @@ export const mcpServersScenarios: Scenario[] = [
       read('syncErrorText', 'FORBIDDEN'),
       read('syncErrorText', 'NETWORK_ERROR'),
       read('updatedText')
+    ]
+  },
+  {
+    name: 'pasted_json_imports_like_the_dialog',
+    steps: [
+      read('jsonImport', '{"mcpServers": {"b": {"command": " npx ", "args": [" -y ", "pkg"], "env": {"TOKEN": "x", "N": 3, "F": false}}, "1": {"url": " https://mcp.example.com/mcp "}}}'),
+      read('jsonImport', '{"mcpServers": {"ok": {"command": "x"}, "bad": {"env": 3}, "h": {"headers": [{"name": "A"}], "url": "https://h.dev"}, "noname": {"type": "sse"}, "list": [], "acp": {"type": "acp", "url": "https://a.dev/sse"}, "argz": {"command": "x", "args": [1]}}}'),
+      read('jsonImport', '{"name": "solo", "type": "sse", "url": "https://s.dev/sse", "headers": [{"name": "Authorization", "value": "Bearer t", "extra": 1}], "alwaysAllow": []}'),
+      read('jsonImport', '{"command": "x"}'),
+      read('jsonImport', '[1]'),
+      read('jsonImport', '{"mcpServers": 1}'),
+      read('jsonImport', '{"mcpServers": {"u": {"url": 5}}}')
+    ]
+  },
+  {
+    name: 'install_form_values_and_retry',
+    steps: [
+      read('installInitial', installFields),
+      read('installSplit', installFields, { key: 's3cret', dir: '/w', flag: 'true' }),
+      read('installSplit', installFields, {}),
+      read('canStartOver', { kind: 'host', code: 'MCP_CATALOG_NOT_FOUND' }),
+      read('canStartOver', { kind: 'host', code: 'MCP_PLAN_EXPIRED' }),
+      read('canStartOver', { kind: 'save' })
     ]
   }
 ]
