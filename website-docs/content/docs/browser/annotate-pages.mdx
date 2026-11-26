@@ -15,8 +15,8 @@ The address bar changes into the annotation toolbar. From left to right it has:
 
 - **Done**, which ends annotation and brings the address bar back. Your notes stay.
 - The tools: **Comment**, **Rectangle**, and **Ruler**.
-- **Area** and **Visible**, which take screenshots.
-- **Pause animations**, **Hide pins**, and **Copy feedback**.
+- **Area** and **Visible**, which copy a screenshot to the clipboard.
+- **Pause animations**, **Hide annotations & guides** (the eye), and **Copy feedback**.
 - The number of notes, and **Send to chat**.
 
 ## Add notes to a page
@@ -27,31 +27,31 @@ Pick a tool, then use it on the page:
 - **Rectangle** (`R`): drag a box around a part of the page.
 - **Ruler** (`M`): see [Mark alignment and spacing with the ruler](#mark-alignment-and-spacing-with-the-ruler).
 
-A box opens next to what you picked. Type your note in it, then click **Add comment** or press `Ctrl+Enter` (`Cmd+Enter` on macOS). Press `Esc` or click **Cancel** to close the box without a note.
+A box opens next to what you picked. The part you picked stays outlined while the box is open. Type your note in it, then click **Add comment** or press `Ctrl+Enter` (`Cmd+Enter` on macOS). Press `Esc` or click **Cancel** to close the box without a note.
 
 Each note gets a numbered pin on the page. Troupe saves a cropped screenshot of the part you marked with each note.
 
 ## Mark alignment and spacing with the ruler
 
-With **Ruler** on, point at an element to see its size and its distance from the top and left of the page.
+With **Ruler** on, a dashed guide line follows your pointer, so you can see where a guide will go before you click. Its label shows the position, such as `V · x 240px`, and the distance to the nearest guide that runs the same way. Hold `Shift` to switch the line from vertical to horizontal.
 
 - Click to place a red vertical guide line. `Shift`+click places a horizontal one. After you click in the page, you can also press `V` or `H` to add a vertical or horizontal guide.
-- Each guide shows its position, such as `x 240px`. When a guide is a few pixels off from the edge of a nearby element, it also shows how far off it is, such as `+3px off`.
-- When you place a guide or click one, a box opens where you can describe the change. Click **Remove guide** to take the guide away. If you clicked on an element, **Save spacing** saves the distance as a measurement instead.
-- `Alt`+click an element to save its spacing as a measurement right away.
+- Each guide shows its position, such as `x 240px`. When a guide is a few pixels off from the edge of a nearby element, it also shows how far off it is, such as `+3px off`. Labels of guides that are close together don't cover each other.
+- To move a guide, drag its line or the handle on it. The box for the guide hides while you drag and opens again 2 seconds after you let go.
+- When you place a guide or click one, a box opens where you can describe the change. Click **Remove guide** to take the guide away. When there is another guide that runs the same way, **Save spacing** saves the distance between the two guides as a measurement instead.
 
 Guides and measurements go into your notes like other notes.
 
 ## Take a screenshot
 
-You can add a screenshot to your notes:
+You can copy a screenshot of the page to the clipboard:
 
-- **Area** (`Ctrl+Shift+A`, `Cmd+Shift+A` on macOS): drag a box around the part you want.
+- **Area** (`Ctrl+Shift+A`, `Cmd+Shift+A` on macOS): drag a box around the part you want. Press `Esc` to stop without a screenshot.
 - **Visible** (`Ctrl+Shift+S`, `Cmd+Shift+S` on macOS): take the part of the page you can see.
 
 The **Screenshot** button (the camera) next to the address bar has the same two options, **Screenshot area** and **Screenshot visible**, so you don't have to start annotating first.
 
-Screenshots go into your list of notes, like other notes. When you have notes, the **Annotate page** button shows how many.
+Troupe copies the image to the clipboard and shows **Screenshot copied to clipboard**. Screenshots don't go into your list of notes. To give one to an agent, paste it into the chat's message box with `Ctrl+V` (`Cmd+V` on macOS).
 
 ## Check your notes
 
@@ -75,6 +75,6 @@ Troupe also keeps a copy of your notes in a local database on your computer. Age
 ## Other toolbar buttons
 
 - **Pause animations** (`P`) freezes animations and videos, so you can mark an element that moves. Click **Paused** to start them again.
-- **Hide pins** (`H`) hides the note pins. Click it again to show them.
+- **Hide annotations & guides** (the eye, `H`) hides the note pins, rectangle boxes, and ruler guides with their labels. Click **Show annotations & guides** to show them again.
 
 The keys `C`, `R`, `M`, `P`, and `H` work when the keyboard focus is on Troupe's toolbar, not inside the page. If a key does nothing, click the button in the toolbar instead.
