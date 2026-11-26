@@ -18,6 +18,8 @@ mod agent_switch;
 mod agent_switch_tests;
 mod answers;
 mod automation_canvas;
+mod automation_policy;
+mod automation_run_view;
 mod automations;
 #[cfg(test)]
 mod automations_tests;
