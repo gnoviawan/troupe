@@ -79,6 +79,7 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 | **Code Editor**      | Built-in code editor with syntax highlighting, file buffers, dirty-state tracking, and save/reload                         |
 | **Markdown Editor**  | Rich markdown editing powered by BlockNote with a preview and source toggle and an outline for heading navigation          |
 | **Mermaid Diagrams** | Render Mermaid diagrams inline in the markdown preview                                                                     |
+| **HTML Preview**     | Live preview of HTML files next to the source (Preview / Split / Source), with unsaved edits and the page's console output |
 | **File Explorer**    | Full file tree with create, rename, delete, clipboard operations, drag-and-drop, and context menus                         |
 | **Project Search**   | Search file names and file contents from the file explorer with a bundled ripgrep. Results stream in as ripgrep finds them |
 | **File Watching**    | Live file watching for real-time updates as files change on disk                                                           |
