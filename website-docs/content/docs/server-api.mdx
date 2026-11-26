@@ -18,8 +18,10 @@ curl http://127.0.0.1:8080/health
 ```
 
 ```json
-{"status":"ok","allowRemoteWrites":true,"caseInsensitivePaths":false,"setupRequired":false}
+{"status":"ok","allowRemoteWrites":true,"caseInsensitivePaths":false,"setupRequired":false,"standaloneServer":true}
 ```
+
+`standaloneServer` is `true` on `troupe-server` and `false` on a desktop app that shares itself.
 
 Every other API route needs the access token when the server has one. Send it in the `Authorization` header:
 
