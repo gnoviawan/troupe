@@ -3,12 +3,18 @@ import { ChevronDown } from '@/components/icons'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { FOCUS_RING_CLASS } from '@/components/ui/panel-styles'
 import { cn } from '@/lib/utils'
-import { SETTINGS_CARD_CLASS } from './SettingsGroup'
+import {
+  SETTINGS_CARD_CLASS,
+  SETTINGS_SPLIT_GROUP_CLASS,
+  type SettingsGroupLayout
+} from './SettingsGroup'
 import { SETTINGS_REVEAL_EVENT } from './SettingsLayout'
 
 interface SettingsDisclosureProps {
   /** Card title, e.g. "Advanced". */
   title: string
+  /** Concise helper copy rendered in the left column on wide settings pages. */
+  description?: React.ReactNode
   /** One line that sums up the hidden rows while closed. */
   summary?: React.ReactNode
   /** Rows shown when open. */
@@ -17,6 +23,11 @@ interface SettingsDisclosureProps {
   /** Controlled open state (a search jump opens it). */
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  /**
+   * `'split'` (default) aligns with split settings groups on wide pages;
+   * `'stacked'` keeps a single full-width card (e.g. inside another group).
+   */
+  layout?: SettingsGroupLayout
   id?: string
 }
 
@@ -27,11 +38,13 @@ interface SettingsDisclosureProps {
  */
 export function SettingsDisclosure({
   title,
+  description,
   summary,
   children,
   defaultOpen = false,
   open: openProp,
   onOpenChange,
+  layout = 'split',
   id
 }: SettingsDisclosureProps): React.JSX.Element {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
@@ -56,13 +69,15 @@ export function SettingsDisclosure({
     return () => root.removeEventListener(SETTINGS_REVEAL_EVENT, reveal)
   }, [setOpen])
 
-  return (
+  const isSplit = layout === 'split'
+
+  const collapsible = (
     <Collapsible
       ref={rootRef}
       open={open}
       onOpenChange={setOpen}
-      id={id}
-      className={cn('@container flex flex-col overflow-hidden', SETTINGS_CARD_CLASS)}
+      id={isSplit ? undefined : id}
+      className={cn('@container flex min-w-0 flex-col overflow-hidden', SETTINGS_CARD_CLASS)}
     >
       <CollapsibleTrigger
         aria-controls={contentId}
@@ -72,12 +87,34 @@ export function SettingsDisclosure({
         )}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-medium leading-4 text-foreground">{title}</span>
-          {summary && !open && (
-            <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
-              {summary}
+          <span
+            className={cn(
+              'block text-xs font-medium leading-4 text-foreground',
+              isSplit && '@[52rem]/settings:sr-only'
+            )}
+          >
+            {title}
+          </span>
+          {!open ? (
+            summary ? (
+              <span
+                className={cn(
+                  'mt-0.5 block truncate text-xs leading-4 text-muted-foreground',
+                  isSplit && '@[52rem]/settings:mt-0'
+                )}
+              >
+                {summary}
+              </span>
+            ) : isSplit ? (
+              <span className="hidden text-xs leading-4 text-muted-foreground @[52rem]/settings:block">
+                Show options
+              </span>
+            ) : null
+          ) : isSplit ? (
+            <span className="hidden text-xs font-medium leading-4 text-muted-foreground @[52rem]/settings:block">
+              Hide options
             </span>
-          )}
+          ) : null}
         </span>
         <ChevronDown
           size={14}
@@ -97,5 +134,22 @@ export function SettingsDisclosure({
         {children}
       </CollapsibleContent>
     </Collapsible>
+  )
+
+  if (!isSplit) return collapsible
+
+  return (
+    <div id={id} className={SETTINGS_SPLIT_GROUP_CLASS}>
+      <div
+        aria-hidden="true"
+        className="hidden @[52rem]/settings:flex @[52rem]/settings:flex-col @[52rem]/settings:gap-1.5 @[52rem]/settings:pt-1"
+      >
+        <span className="text-sm font-medium text-foreground">{title}</span>
+        {description && (
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {collapsible}
+    </div>
   )
 }

@@ -84,7 +84,7 @@ function EditorShell({
   children
 }: EditorShellProps): React.JSX.Element {
   return (
-    <SettingsGroup id={id} title={label} footnote={description} className="scroll-mt-4">
+    <SettingsGroup id={id} title={label} description={description} className="scroll-mt-4">
       <SettingsCard>{children}</SettingsCard>
       {error && (
         <SettingsNotice tone="danger" role="alert">

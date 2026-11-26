@@ -45,7 +45,7 @@ interface McpServersSettingsProps {
 }
 
 /**
- * The servers you added: a grid of cards (two per row), or one server's
+ * The servers you added: a grid of cards (up to three per row), or one server's
  * detail page. Each enabled server is checked once when Settings opens;
  * Test connection on the detail page checks it again.
  */
@@ -195,6 +195,7 @@ export function McpServersSettings({
     <>
       <SettingsGroup
         title="Added"
+        layout="stacked"
         meta={
           servers.length > 0
             ? `${servers.length} server${servers.length === 1 ? '' : 's'} · ${enabledCount} on`
@@ -228,7 +229,7 @@ export function McpServersSettings({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 @container sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 @container sm:grid-cols-2 @[56rem]/settings:grid-cols-3">
             {servers.map((server) => {
               const probeStatus = mcpProbeStatus[server.id]
               const enabled = server.enabled !== false
