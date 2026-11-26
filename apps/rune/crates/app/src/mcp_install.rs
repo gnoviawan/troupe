@@ -206,7 +206,7 @@ impl State {
     pub(crate) fn install_sign_in(&mut self) {
         let Flow::Done { server, .. } = &self.mcp_ui.install.flow else { return };
         let id = server["id"].as_str().unwrap_or_default().to_owned();
-        let project = self.active_project().map(|p| p.id.clone());
+        let project = self.mcp_project();
         self.acp_step(Event::ConnectMcpOAuth(project, id));
     }
 

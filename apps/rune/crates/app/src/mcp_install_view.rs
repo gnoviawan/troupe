@@ -112,7 +112,7 @@ fn review(t: &'static Tokens, view: &Value, digest: &str) -> El {
         let plain = |words: String| text(words).font(sans(12.0, 400.0, 16.0)).color(t.colors.foreground).wrap();
         let mut facts = col().key("facts").w_full().gap(4.0).items_stretch().child(fact("publisher", "Publisher", plain(rules::namespace_label(&p["namespace"]))));
         if let Some(url) = p.get("repositoryUrl").and_then(Value::as_str).map(str::to_owned) {
-            let link = text(url.clone()).font(sans(12.0, 400.0, 16.0)).color(t.colors.foreground).underline().wrap().role("link").focusable(true).on_press_tx(move |s: &mut State, tx: &mut Tx| {
+            let link = text(url.clone()).font(sans(12.0, 400.0, 16.0)).color(t.colors.foreground).wrap().role("link").focusable(true).on_press_tx(move |s: &mut State, tx: &mut Tx| {
                 if tx.open_url(&url).is_err() {
                     s.toasts.push(s.now, ui::overlay::ToastKind::Error, "Couldn't open the repository link.", None);
                 }

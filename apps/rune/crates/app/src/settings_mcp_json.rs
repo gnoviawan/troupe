@@ -51,13 +51,14 @@ impl State {
     /// `showForm`: the JSON back into the form when it holds exactly one valid server.
     pub(crate) fn mcp_show_form(&mut self) {
         let Some(d) = &mut self.mcp_ui.dialog else { return };
-        let Some(view) = &mut d.json else { return };
-        let text = view.text.text.clone();
+        let Some(text) = d.json.as_ref().map(|v| v.text.text.clone()) else { return };
         let mut draft = d.draft();
         if !text.trim().is_empty() {
             let parsed = json_rules::parse_import(&text);
             if !parsed.errors.is_empty() || parsed.servers.len() != 1 {
-                view.errors = vec![json_rules::FORM_NEEDS_ONE_SERVER.into()];
+                if let Some(view) = &mut d.json {
+                    view.errors = vec![json_rules::FORM_NEEDS_ONE_SERVER.into()];
+                }
                 return;
             }
             draft = rules::draft_from_server(&parsed.servers[0]);

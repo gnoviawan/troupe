@@ -121,7 +121,7 @@ impl State {
         rules::status(enabled(server), self.mcp_flag(&self.chat.acp.mcp_probing, id), self.probe_status(id))
     }
 
-    fn mcp_project(&self) -> String {
+    pub(crate) fn mcp_project(&self) -> String {
         self.active_project().map(|p| p.id.clone()).unwrap_or_default()
     }
 
