@@ -358,6 +358,18 @@ impl State {
             Shared::PinnedCommands => self.pinned_commands_loaded(value),
         }
     }
+
+    /// A shared key holds something this client did not write: another device's fields the
+    /// host merged into ours.
+    pub(crate) fn shared_changed(&mut self, shared: Shared, value: Value) {
+        match shared {
+            Shared::AppSettings => self.settings_step(model::settings::Event::SharedChange {
+                data: Some(value),
+                system_dark: crate::settings::system_dark(),
+            }),
+            Shared::Shortcuts => self.shortcuts_loaded(Some(value)),
+        }
+    }
 }
 
 #[cfg(test)]

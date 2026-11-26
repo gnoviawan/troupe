@@ -128,13 +128,13 @@ fn message(error: &HttpError) -> String {
 
 /// The OS appearance a stored `system` resolves to (`getSystemAppearance`).
 #[cfg(target_arch = "wasm32")]
-fn system_dark() -> bool {
+pub(crate) fn system_dark() -> bool {
     web_sys::window()
         .and_then(|w| w.match_media("(prefers-color-scheme: dark)").ok().flatten())
         .is_none_or(|m| m.matches())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn system_dark() -> bool {
+pub(crate) fn system_dark() -> bool {
     true
 }

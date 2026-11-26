@@ -56,6 +56,7 @@ fn a_page_switch_and_a_switch_row_write_their_setting() {
     open(&mut rt);
     tap(&mut rt, "notify-terminal-idle-switch");
     assert_eq!(written(&rt).last().expect("a write")["notifyOnTerminalIdle"], json!(false));
+    write_reply(&mut rt, json!({ "revision": 4, "merged": false }));
     tap(&mut rt, "page-terminal");
     assert!(present(&rt, "settings-page-terminal"));
     tap(&mut rt, "terminal-font-size-inc");
@@ -71,6 +72,7 @@ fn reset_waits_for_the_confirm_and_keeps_the_profiles() {
         ));
         true
     });
+    write_reply(&mut rt, json!({ "revision": 4, "merged": false }));
     open(&mut rt);
     tap(&mut rt, "page-about");
     let before = written(&rt).len();
@@ -93,4 +95,69 @@ fn an_idle_window_pick_posts_to_the_host_route() {
     });
     assert_eq!(rt.state.settings.get("agentIdleWindowSecs"), &json!(3600));
     assert_eq!(written(&rt).last().expect("a write")["agentIdleWindowSecs"], json!(3600));
+}
+
+/// The `baseRevision` of each `settings/app` write, oldest first.
+fn bases(rt: &Runtime<State>) -> Vec<Value> {
+    rt.state
+        .sync
+        .sent
+        .iter()
+        .filter_map(|c| match c {
+            Command::Call { kind: WsRequestType::StoreWrite, payload, .. } if payload["key"] == "shared/lww/settings/app" => {
+                Some(payload["baseRevision"].clone())
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Answers the newest `settings/app` write with `reply`.
+fn write_reply(rt: &mut Runtime<State>, reply: Value) {
+    let call = rt
+        .state
+        .sync
+        .sent
+        .iter()
+        .rev()
+        .find_map(|c| match c {
+            Command::Call { call, kind: WsRequestType::StoreWrite, payload, .. } if payload["key"] == "shared/lww/settings/app" => Some(*call),
+            _ => None,
+        })
+        .expect("a settings write");
+    rt.update_if(move |s, _| {
+        s.apply(client::ws::Output::Reply { call, result: Ok(Some(reply.clone())) });
+        true
+    });
+    rt.frame(0.016);
+}
+
+#[test]
+fn quick_edits_write_one_at_a_time_and_the_last_one_lands() {
+    let mut rt = desktop();
+    open(&mut rt);
+    tap(&mut rt, "page-terminal");
+    tap(&mut rt, "terminal-font-size-inc");
+    tap(&mut rt, "terminal-font-size-inc");
+    tap(&mut rt, "terminal-font-size-inc");
+    assert_eq!(written(&rt).len(), 1, "the later edits wait for the first write's reply");
+    write_reply(&mut rt, json!({ "revision": 4, "merged": false, "value": { "_version": 1, "data": {} } }));
+    let records = written(&rt);
+    assert_eq!(records.len(), 2, "the two waiting edits go as one write");
+    assert_eq!(records[1]["terminalFontSize"], json!(17.0));
+    assert_eq!(bases(&rt)[1], json!(4), "over the revision the first write made");
+    assert_eq!(rt.state.settings.get("terminalFontSize"), &json!(17.0));
+}
+
+#[test]
+fn a_merged_reply_shows_what_the_host_kept() {
+    let mut rt = desktop();
+    open(&mut rt);
+    tap(&mut rt, "ui-zoom-inc");
+    let mut kept = written(&rt).last().cloned().expect("a write");
+    kept["colorTheme"] = json!("nord");
+    write_reply(&mut rt, json!({ "revision": 9, "merged": true, "value": { "_version": 1, "data": kept } }));
+    assert_eq!(rt.state.settings.get("colorTheme"), &json!("nord"), "another device's theme");
+    assert_eq!(rt.state.settings.get("uiZoomLevel"), &json!(1.1), "our zoom");
+    assert_eq!(written(&rt).len(), 1, "adopting the merge writes nothing back");
 }
