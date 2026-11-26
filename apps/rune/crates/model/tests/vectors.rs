@@ -327,6 +327,7 @@ fn replays_every_vector() {
                 "settings-routes" => settings::replay_routes(vector),
                 "palette" => settings::replay_palette(vector),
                 "terminal-profiles" => settings::replay_terminal_profiles(vector),
+                "project-settings" => settings::replay_project_settings(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

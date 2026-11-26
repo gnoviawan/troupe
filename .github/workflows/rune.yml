@@ -75,6 +75,8 @@ on:
       - 'src/renderer/components/CommandPaletteChats.tsx'
       - 'src/renderer/components/CommandPaletteQuickChats.tsx'
       - 'src/renderer/components/shell/chat-cards.ts'
+      - 'src/renderer/lib/env-parser.ts'
+      - 'src/renderer/components/settings/shell-options.ts'
       - 'src/renderer/stores/acp-reuse-keys.ts'
       - 'src/renderer/stores/acp-store/agent-roster-watch.ts'
       - 'src/renderer/stores/acp-store/browser-agent-tabs.ts'

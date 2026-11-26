@@ -227,6 +227,18 @@
         "drafts_parse_or_name_each_bad_field",
         "profiles_read_back_and_show_their_command"
       ]
+    },
+    "project-settings": {
+      "sources": {
+        "src/renderer/lib/env-parser.ts": "22f02e7cd11210b5c1065f38d37a9cd1f5434d75",
+        "src/renderer/components/settings/shell-options.ts": "4e83c57facf33ca61c92accc92b9fcd0062fa845"
+      },
+      "vectors": [
+        "env_path_keeps_the_roots_separator",
+        "env_files_parse_line_by_line",
+        "imports_merge_over_the_list",
+        "the_shell_select"
+      ]
     }
   }
 }

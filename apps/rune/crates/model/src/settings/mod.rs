@@ -11,6 +11,7 @@
 mod normalize;
 pub mod palette;
 pub mod profiles;
+pub mod project;
 pub mod routes;
 
 use serde::{Deserialize, Serialize};

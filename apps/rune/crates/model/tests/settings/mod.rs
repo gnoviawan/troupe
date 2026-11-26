@@ -253,3 +253,31 @@ pub fn replay_terminal_profiles(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays the project settings window's reads: the `.env` import and the shell select.
+pub fn replay_project_settings(vector: &Value) -> Result<usize, String> {
+    use model::prefs::EnvVar;
+    use model::settings::project::{self, Shell};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let shells = |i: usize| -> Result<Vec<Shell>, String> {
+            if args[i].is_null() { Ok(Vec::new()) } else { parse::<Vec<Shell>>(&args[i]["available"]) }
+        };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "envPath" => json!(project::env_path(text(0))),
+            "parseEnv" => to_value(&project::parse_env(text(0))),
+            "mergeEnv" => to_value(&project::merge_env(&parse::<Vec<EnvVar>>(&args[0])?, &parse::<Vec<EnvVar>>(&args[1])?)),
+            "shellValue" => json!(project::shell_value(text(0), &shells(1)?)),
+            "shellOptions" => to_value(&project::shell_options(text(0), &shells(1)?, text(2))),
+            "shellFromValue" => json!(project::shell_from_value(text(0))),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
