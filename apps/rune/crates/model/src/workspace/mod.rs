@@ -8,6 +8,8 @@
 //! rewrites it as `{action: args}`, `{action: arg}` or `"action"` first.
 
 pub(crate) mod ids;
+#[cfg(test)]
+mod ids_tests;
 mod pane;
 mod sync;
 mod tabs;
