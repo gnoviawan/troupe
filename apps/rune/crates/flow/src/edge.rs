@@ -44,16 +44,28 @@ pub fn flatten(c: &Curve) -> Vec<[f32; 2]> {
         .collect()
 }
 
+/// The most dash steps one line takes. A line far from the origin (a card at x = 1e9) loses
+/// the precision to step at all; past this the rest of the line is not drawn.
+const MAX_DASH_STEPS: usize = 4096;
+
 /// The pieces of `line` a dash pattern of `on` then `off` points draws.
 pub fn dashes(line: &[[f32; 2]], on: f32, off: f32) -> Vec<Vec<[f32; 2]>> {
     let mut out: Vec<Vec<[f32; 2]>> = Vec::new();
     let mut current: Vec<[f32; 2]> = Vec::new();
     let mut drawing = true;
     let mut left = on;
+    let mut steps = 0;
+    if !(on > 0.0 && off >= 0.0) {
+        return out;
+    }
     for pair in line.windows(2) {
         let (mut a, b) = (pair[0], pair[1]);
         let mut length = ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2)).sqrt();
-        while length > 0.0 {
+        while length > 0.0 && length.is_finite() {
+            steps += 1;
+            if steps > MAX_DASH_STEPS {
+                return out;
+            }
             let step = left.min(length);
             let t = step / length;
             let next = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
