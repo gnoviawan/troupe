@@ -64,9 +64,15 @@ mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
+mod mcp_host;
+mod project_settings;
+mod project_settings_view;
 mod rail_view;
 mod settings;
+mod settings_mcp;
+mod settings_mcp_dialog;
 mod settings_pages;
+mod settings_profiles;
 mod settings_shortcuts;
 #[cfg(test)]
 mod settings_tests;
@@ -177,6 +183,10 @@ pub struct State {
     pub settings: model::settings::State,
     /// The Settings window: which one is open, its page and its own fields.
     pub settings_ui: settings_view::SettingsUi,
+    /// The project settings window's draft and its own fields.
+    pub project_ui: project_settings::ProjectSettingsUi,
+    /// The MCP servers page, its dialogs and the host side of the registry.
+    pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -234,6 +244,8 @@ impl Default for State {
             history: git_history::HistoryUi::default(),
             settings: model::settings::State::default(),
             settings_ui: settings_view::SettingsUi::default(),
+            project_ui: project_settings::ProjectSettingsUi::default(),
+            mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -332,6 +344,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_editors();
     state.sync_explorer();
     let next_git = state.git_tick();
+    let next_mcp = state.mcp_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
@@ -343,6 +356,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_find_refresh(),
         state.next_draft_sync(),
         next_git,
+        next_mcp,
         next_completion,
     ];
     for due in waits.into_iter().flatten() {

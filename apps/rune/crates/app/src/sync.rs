@@ -100,6 +100,10 @@ pub(crate) enum Pending {
     LaunchSession(String),
     /// A project's saved commands, for the command history modal.
     ReadHistory(String),
+    /// The acp model's MCP registry read.
+    Mcp(Box<model::acp::Effect>),
+    /// Its registry write, with what the Settings page does once it lands.
+    McpSave(Box<model::acp::Effect>, Option<crate::settings_mcp::Action>),
     /// The empty list the history's Clear wrote for a project.
     ClearHistory(String),
 }
@@ -207,6 +211,9 @@ impl State {
     /// A watched store key changed (`StoreWatchState`: `exists` and the stored `value`). While
     /// this client's own write to the key is out, its reply settles the value instead.
     fn store_watched(&mut self, scope: &str, state: &Value) {
+        if scope == model::settings::mcp::KEY {
+            return self.mcp_watched(state);
+        }
         let shared = Shared::PinnedCommands;
         if scope != shared.host_key() || self.sync.writing.contains(&shared) {
             return;
@@ -322,6 +329,11 @@ impl State {
                 crate::host::Fetch::Git(task) => self.git_replied(task, result),
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
                 crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
+                crate::host::Fetch::Shells => self.shells_listed(result),
+                crate::host::Fetch::ProjectEnv { request, project, root } => self.env_read((request, project, root), result),
+                crate::host::Fetch::Gitignore { project, why } => self.gitignore_parsed(&project, why, result),
+                crate::host::Fetch::Mcp(effect) => self.mcp_fetched(*effect, result),
+                crate::host::Fetch::McpPoll(url) => self.mcp_polled(&url, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
@@ -505,6 +517,8 @@ impl State {
             Pending::LaunchSession(agent_id) => self.launch_created(agent_id, result),
             Pending::ReadHistory(project) => self.history_read(project, result),
             Pending::ClearHistory(project) => self.history_cleared(project, result),
+            Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
+            Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),
             Pending::ListChats => {
                 match result.map(|r| r.map(serde_json::from_value::<Vec<Chat>>)) {
                     Ok(Some(Ok(list))) => self.chats.replace(list),
@@ -623,6 +637,7 @@ impl State {
         let out = projects::step(&mut self.projects, event, &mut Uuid);
         self.run(out.effects);
         self.show_active_project();
+        self.project_settings_check_target();
     }
 
     /// Bring the selected project's tree on screen: its parked tree at once, else after its

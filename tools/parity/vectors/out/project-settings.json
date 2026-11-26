@@ -1,0 +1,703 @@
+[
+ {
+  "store": "project-settings",
+  "name": "env_path_keeps_the_roots_separator",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "/w/app"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/w/app/.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "/w/app///"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/w/app/.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "/"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "C:\\w\\app\\"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "C:\\w\\app\\.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "C:/w/app/"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "C:/w/app/.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "C:\\"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "C:\\.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "\\\\srv\\share\\"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "\\\\srv\\share\\.env",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "envPath",
+     "args": [
+      "rel/dir"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "rel/dir/.env",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "project-settings",
+  "name": "env_files_parse_line_by_line",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "parseEnv",
+     "args": [
+      "A=1\r\nB = two words \n# note\n\n  C=\"quoted\"\nD='single'\nE=\"\nF=a=b=c"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "vars": [
+      {
+       "key": "A",
+       "value": "1"
+      },
+      {
+       "key": "B",
+       "value": " two words"
+      },
+      {
+       "key": "C",
+       "value": "quoted"
+      },
+      {
+       "key": "D",
+       "value": "single"
+      },
+      {
+       "key": "E",
+       "value": ""
+      },
+      {
+       "key": "F",
+       "value": "a=b=c"
+      }
+     ],
+     "invalidLines": []
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parseEnv",
+     "args": [
+      "NOEQUALS\n=v\n1BAD=x\nok_2=\n  spaced key=1\nG=\"half\nH='mixed\""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "vars": [
+      {
+       "key": "ok_2",
+       "value": ""
+      },
+      {
+       "key": "G",
+       "value": "\"half"
+      },
+      {
+       "key": "H",
+       "value": "'mixed\""
+      }
+     ],
+     "invalidLines": [
+      {
+       "line": 1,
+       "content": "NOEQUALS"
+      },
+      {
+       "line": 2,
+       "content": "=v"
+      },
+      {
+       "line": 3,
+       "content": "1BAD=x"
+      },
+      {
+       "line": 5,
+       "content": "  spaced key=1"
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parseEnv",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "vars": [],
+     "invalidLines": []
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parseEnv",
+     "args": [
+      "   \n# only\n\t#tabbed"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "vars": [],
+     "invalidLines": []
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "project-settings",
+  "name": "imports_merge_over_the_list",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "mergeEnv",
+     "args": [
+      [
+       {
+        "key": "A",
+        "value": "1"
+       },
+       {
+        "key": "B",
+        "value": "2",
+        "isSecret": true
+       }
+      ],
+      [
+       {
+        "key": "B",
+        "value": "new"
+       },
+       {
+        "key": "C",
+        "value": "3"
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "key": "A",
+      "value": "1"
+     },
+     {
+      "key": "B",
+      "value": "new"
+     },
+     {
+      "key": "C",
+      "value": "3"
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "mergeEnv",
+     "args": [
+      [
+       {
+        "key": "A",
+        "value": "1"
+       },
+       {
+        "key": "A",
+        "value": "2"
+       }
+      ],
+      []
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "key": "A",
+      "value": "2"
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "mergeEnv",
+     "args": [
+      [],
+      [
+       {
+        "key": "X",
+        "value": "1"
+       },
+       {
+        "key": "X",
+        "value": "2"
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "key": "X",
+      "value": "2"
+     }
+    ],
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "project-settings",
+  "name": "the_shell_select",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "__system_default__",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "zsh",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/usr/bin/zsh",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "pwsh.exe",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "fish",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "fish",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "/opt/fish",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/opt/fish",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellValue",
+     "args": [
+      "bash",
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "bash",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellOptions",
+     "args": [
+      "__system_default__",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      },
+      "App default"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "value": "__system_default__",
+      "label": "App default"
+     },
+     {
+      "value": "/bin/bash",
+      "label": "Bash"
+     },
+     {
+      "value": "/usr/bin/zsh",
+      "label": "Zsh"
+     },
+     {
+      "value": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "label": "PowerShell 7"
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellOptions",
+     "args": [
+      "/opt/fish",
+      {
+       "default": null,
+       "available": [
+        {
+         "name": "bash",
+         "path": "/bin/bash",
+         "displayName": "Bash"
+        },
+        {
+         "name": "zsh",
+         "path": "/usr/bin/zsh",
+         "displayName": "Zsh"
+        },
+        {
+         "name": "pwsh",
+         "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+         "displayName": "PowerShell 7"
+        }
+       ]
+      },
+      "App default"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "value": "__system_default__",
+      "label": "App default"
+     },
+     {
+      "value": "/bin/bash",
+      "label": "Bash"
+     },
+     {
+      "value": "/usr/bin/zsh",
+      "label": "Zsh"
+     },
+     {
+      "value": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "label": "PowerShell 7"
+     },
+     {
+      "value": "/opt/fish",
+      "label": "/opt/fish"
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellOptions",
+     "args": [
+      "fish",
+      null,
+      "System default"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "value": "__system_default__",
+      "label": "System default"
+     },
+     {
+      "value": "fish",
+      "label": "fish"
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellFromValue",
+     "args": [
+      "__system_default__"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shellFromValue",
+     "args": [
+      "/bin/bash"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/bin/bash",
+    "state": null
+   }
+  ]
+ }
+]

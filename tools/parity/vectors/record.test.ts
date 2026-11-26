@@ -237,6 +237,13 @@ const { githubRecorder, githubScenarios, githubRoutesRecorder, githubRoutesScena
 const { realGithubApi } = (await import(`${lib}/github-api`)) as unknown as {
   realGithubApi: Record<string, (...args: unknown[]) => unknown>
 }
+const { terminalProfilesRecorder, terminalProfilesScenarios } = await import(
+  './stores/terminal-profiles'
+)
+const { projectSettingsRecorder, projectSettingsScenarios } = await import(
+  './stores/project-settings'
+)
+const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -253,6 +260,9 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [appSettingsRecorder, appSettingsScenarios],
   [settingsRoutesRecorder(), settingsRoutesScenarios],
   [paletteRecorder, paletteScenarios],
+  [terminalProfilesRecorder, terminalProfilesScenarios],
+  [projectSettingsRecorder, projectSettingsScenarios],
+  [mcpServersRecorder, mcpServersScenarios],
   [githubRecorder, githubScenarios],
   [githubRoutesRecorder(realGithubApi), githubRoutesScenarios]
 ]
