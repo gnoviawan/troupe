@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-/** The square icon beside an account dialog title (Claude and Codex). */
+/** The square icon beside an account dialog title (Claude, Codex and Antigravity). */
 export function AccountGlyph({
   tone,
   children

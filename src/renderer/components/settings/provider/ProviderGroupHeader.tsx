@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { RefreshCw } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { findBundledIconByKey } from '@/lib/agents/agent-icon-catalog'
+import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
 import { formatUsageChecked } from '@/lib/claude-usage-format'
 
@@ -31,13 +31,14 @@ export function ProviderGroupHeader({
   onRefresh,
   action
 }: ProviderGroupHeaderProps): React.JSX.Element {
+  const catalog = useAgentIconCatalog()
   const svg = useMemo(() => {
-    const entry = findBundledIconByKey(iconKey)
+    const entry = catalog.byKey(iconKey)
     return entry ? sanitizeInlineAgentSvg(entry.svg) : null
-  }, [iconKey])
+  }, [catalog, iconKey])
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border/60 pb-3">
+    <div className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-2">
       {svg && (
         <span
           aria-hidden="true"
@@ -46,8 +47,8 @@ export function ProviderGroupHeader({
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       )}
-      <h3 className="text-sm font-semibold leading-none text-foreground">{name}</h3>
-      {count && <span className="text-2xs text-muted-foreground">{count}</span>}
+      <h3 className="text-sm font-medium leading-5 text-foreground">{name}</h3>
+      {count && <span className="text-xs tabular-nums text-muted-foreground">{count}</span>}
       <span
         className="ml-auto flex items-center gap-1.5 text-2xs text-muted-foreground"
         aria-live="polite"

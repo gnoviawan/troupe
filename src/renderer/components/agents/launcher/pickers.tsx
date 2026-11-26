@@ -20,10 +20,9 @@ import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import type { AuthMethod } from '@/lib/acp-api'
 import type { PrepareChatError } from '@/lib/agents/acp-spawn-errors'
 import {
-  agentBrandColor,
   agentBrandProps,
   brandGradientId,
-  findBundledIconByKey,
+  useAgentIconCatalog,
   withBrandGradient
 } from '@/lib/agents/agent-icon-catalog'
 import { sanitizeInlineAgentSvg } from '@/lib/agents/sanitize-agent-icon'
@@ -421,6 +420,7 @@ export const EntryGlyph = memo(function EntryGlyph({
   /** Colour of a glyph with no brand colour (a brand colour always wins). */
   colorClassName?: string
 }): React.JSX.Element {
+  const catalog = useAgentIconCatalog()
   const normalized = useMemo(() => {
     // Prefer a persisted custom icon (bundled or uploaded) over the catalog.
     if (config?.icon) {
@@ -429,12 +429,14 @@ export const EntryGlyph = memo(function EntryGlyph({
     }
     const key = config?.templateId ?? templateId
     if (!key) return null
-    const icon = findBundledIconByKey(`acp:${key}`)?.svg
+    const icon = catalog.byKey(`acp:${key}`)?.svg
     return icon ? sanitizeInlineAgentSvg(icon) : null
-  }, [config?.icon, config?.templateId, templateId])
+  }, [catalog, config?.icon, config?.templateId, templateId])
   const className = 'h-4 w-4 rounded-sm text-4xs'
   const gradientId = brandGradientId(useId())
-  const brand = normalized ? agentBrandColor(config?.icon, config?.templateId ?? templateId) : null
+  const brand = normalized
+    ? catalog.brandColor(config?.icon, config?.templateId ?? templateId)
+    : null
   const brandProps = brand ? agentBrandProps(brand, gradientId) : null
 
   if (normalized) {

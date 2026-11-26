@@ -37,7 +37,7 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 
 | Feature                | Description                                                                                                                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent Chat**         | Chat with ACP agents such as Claude Agent, Codex, Gemini CLI, Cursor, and OpenCode in any pane, with a model picker, slash commands, `@` mentions of files and other chats, permission prompts, and a plan view |
+| **Agent Chat**         | Chat with ACP agents such as Claude Agent, Codex, Gemini CLI, Cursor, OpenCode, and Hermes Agent in any pane, with a model picker, slash commands, `@` mentions of files and other chats, permission prompts, and a plan view |
 | **Saved Chats**        | Troupe saves chats per project and lists them in the sidebar. Reopen a chat when its agent can reload a past session                                                                        |
 | **Agent Launcher**     | Start a chat from a prompt in the active pane (`Ctrl+T`), pick the agent and model, and optionally isolate the chat in a new Git worktree                                                   |
 | **Custom ACP Agents**  | Add your own ACP agents in Settings, or paste a Zed-style `agent_servers` config                                                                                                            |
@@ -79,16 +79,19 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 | **Code Editor**      | Built-in code editor with syntax highlighting, file buffers, dirty-state tracking, and save/reload                         |
 | **Markdown Editor**  | Rich markdown editing powered by BlockNote with a preview and source toggle and an outline for heading navigation          |
 | **Mermaid Diagrams** | Render Mermaid diagrams inline in the markdown preview                                                                     |
+| **HTML Preview**     | Live preview of HTML files next to the source (Preview / Split / Source), with unsaved edits and the page's console output |
 | **File Explorer**    | Full file tree with create, rename, delete, clipboard operations, drag-and-drop, and context menus                         |
 | **Project Search**   | Search file names and file contents from the file explorer with a bundled ripgrep. Results stream in as ripgrep finds them |
 | **File Watching**    | Live file watching for real-time updates as files change on disk                                                           |
 
 ### 🌐 Browser & Annotation
 
-| Feature                   | Description                                                                                        |
-| ------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Embedded Browser Tabs** | Browse the web inside your workspace in child webview tabs, with no app switching                  |
-| **Page Annotations**      | The Agentation toolbar loads into each browser tab. Click elements, text, or areas to attach notes |
+| Feature                      | Description                                                                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Embedded Browser Tabs**    | Browse the web inside your workspace in child webview tabs, with no app switching                                                  |
+| **Start Page**               | New browser tabs list running local dev servers and recent pages                                                                   |
+| **Page Zoom & Device Sizes** | Zoom each browser tab from 50% to 200%, and preview pages at tablet and phone sizes                                                |
+| **Page Annotations**         | Click **Annotate page** in a browser tab to comment on elements, mark areas, place ruler guides for an agent, and copy screenshots to the clipboard |
 
 ### ⚡ Power User Tools
 

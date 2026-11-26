@@ -1,0 +1,4226 @@
+[
+ {
+  "store": "projects",
+  "name": "first_list_uses_saved_layout_and_selection",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadProjectPrefs",
+     "args": [
+      {
+       "projects": {
+        "b": {
+         "defaultShell": "zsh",
+         "gitBranch": "dev",
+         "isGitRepo": true,
+         "worktrees": [
+          {
+           "id": "w1",
+           "name": "w1",
+           "branch": "feat/w1",
+           "path": "/work/a/.termul/worktrees/w1",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ]
+        },
+        "gone": {
+         "symlinkDirs": [
+          "node_modules"
+         ]
+        }
+       },
+       "groups": [
+        {
+         "id": "g1",
+         "name": "Work",
+         "projectIds": [
+          "b",
+          "c"
+         ],
+         "isCollapsed": true,
+         "color": "red"
+        }
+       ],
+       "order": [
+        "c",
+        "gone",
+        "b"
+       ],
+       "updatedAt": "2026-11-01T00:00:00.000Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "addGroup",
+     "args": [
+      "Early"
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "result": "id-1",
+    "state": {
+     "projects": [],
+     "groups": [
+      {
+       "id": "id-1",
+       "name": "Early",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "b",
+         "name": "Project b",
+         "color": "blue",
+         "path": "/work/b",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "c",
+         "name": "Project c",
+         "color": "blue",
+         "path": "/work/c",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "d",
+         "name": "Project d",
+         "color": "blue",
+         "path": "/work/d",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": "a"
+      },
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "b",
+    "state": {
+     "projects": [
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "d",
+       "name": "Project d",
+       "color": "blue",
+       "path": "/work/d",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      },
+      {
+       "id": "id-1",
+       "name": "Early",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "b",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Renamed",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "c",
+         "name": "Project c",
+         "color": "blue",
+         "path": "/work/c",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "e",
+         "name": "Project e",
+         "color": "blue",
+         "path": "/work/e",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": "a"
+      },
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "result": "a",
+    "state": {
+     "projects": [
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "a",
+       "name": "Renamed",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "e",
+       "name": "Project e",
+       "color": "blue",
+       "path": "/work/e",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      },
+      {
+       "id": "id-1",
+       "name": "Early",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "c",
+         "name": "Project c",
+         "color": "blue",
+         "path": "/work/c",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "e",
+         "name": "Project e",
+         "color": "blue",
+         "path": "/work/e",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": "e"
+      },
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "result": "e",
+    "state": {
+     "projects": [
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "e",
+       "name": "Project e",
+       "color": "blue",
+       "path": "/work/e",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      },
+      {
+       "id": "id-1",
+       "name": "Early",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "e",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "saved_selection_archived_falls_back",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadProjectPrefs",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": true,
+         "isDefault": false
+        },
+        {
+         "id": "b",
+         "name": "Project b",
+         "color": "blue",
+         "path": "/work/b",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": "zz"
+      },
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "b",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": true,
+       "isDefault": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "b",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [],
+       "defaultProjectId": null
+      },
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "result": "",
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "host_default_when_nothing_saved",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadProjectPrefs",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "b",
+         "name": "Project b",
+         "color": "blue",
+         "path": "/work/b",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "c",
+         "name": "Project c",
+         "color": "blue",
+         "path": null,
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": "c"
+      },
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "c",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "c",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "select_project",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "a",
+        "name": "Project a",
+        "color": "blue",
+        "path": "/work/a"
+       },
+       {
+        "id": "b",
+        "name": "Project b",
+        "color": "blue",
+        "path": "/work/b"
+       },
+       {
+        "id": "c",
+        "name": "Project c",
+        "color": "blue",
+        "path": "/work/c",
+        "isArchived": true
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": true
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "selectProject",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveActiveProject",
+      "projectId": "b"
+     },
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isActive": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isActive": true
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": true,
+       "isActive": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "b",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "selectProject",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isActive": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isActive": true
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": true,
+       "isActive": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "b",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "selectProject",
+     "args": [
+      "zz"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveActiveProject",
+      "projectId": "zz"
+     },
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isActive": false
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isActive": false
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c",
+       "isArchived": true,
+       "isActive": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "zz",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "update_project_splits_host_and_device_fields",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "a",
+        "name": "Project a",
+        "color": "blue",
+        "path": "/work/a"
+       },
+       {
+        "id": "b",
+        "name": "Project b",
+        "color": "blue",
+        "path": "/work/b"
+       }
+      ],
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "a",
+      {
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "a",
+      {
+       "name": "Alpha",
+       "color": "blue",
+       "path": "  /work/a "
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "updateProjectOnHost",
+      "projectId": "a",
+      "patch": {
+       "name": "Alpha"
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "a",
+      {
+       "path": "﻿/work/a"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "a",
+      {
+       "path": "/work/a"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "updateProjectOnHost",
+      "projectId": "a",
+      "patch": {
+       "path": "/work/a"
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "b",
+      {
+       "color": "green",
+       "path": "  /elsewhere  ",
+       "symlinkDirs": [
+        "x"
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "updateProjectOnHost",
+      "projectId": "b",
+      "patch": {
+       "color": "green",
+       "path": "/elsewhere"
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "symlinkDirs": [
+        "x"
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "b",
+      {
+       "path": "   "
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "symlinkDirs": [
+        "x"
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "missing",
+      {
+       "name": "Ghost"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "updateProjectOnHost",
+      "projectId": "missing",
+      "patch": {
+       "name": "Ghost"
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "defaultShell": "/bin/zsh",
+       "gitBranch": "main"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "symlinkDirs": [
+        "x"
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "reorder_projects_keeps_unlisted_and_archived",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "a",
+        "name": "Project a",
+        "color": "blue",
+        "path": "/work/a"
+       },
+       {
+        "id": "x",
+        "name": "Project x",
+        "color": "blue",
+        "path": "/work/x",
+        "isArchived": true
+       },
+       {
+        "id": "b",
+        "name": "Project b",
+        "color": "blue",
+        "path": "/work/b"
+       },
+       {
+        "id": "c",
+        "name": "Project c",
+        "color": "blue",
+        "path": "/work/c"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "x",
+       "name": "Project x",
+       "color": "blue",
+       "path": "/work/x",
+       "isArchived": true
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "reorderProjects",
+     "args": [
+      [
+       "c",
+       "x",
+       "ghost",
+       "a"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "x",
+       "name": "Project x",
+       "color": "blue",
+       "path": "/work/x",
+       "isArchived": true
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "reorderProjects",
+     "args": [
+      []
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "x",
+       "name": "Project x",
+       "color": "blue",
+       "path": "/work/x",
+       "isArchived": true
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "worktrees_and_lock",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "a",
+        "name": "Project a",
+        "color": "blue",
+        "path": "/work/a"
+       },
+       {
+        "id": "b",
+        "name": "Project b",
+        "color": "blue",
+        "path": "/work/b",
+        "worktrees": [
+         {
+          "id": "w0",
+          "name": "w0",
+          "branch": "feat/w0",
+          "path": "/work/a/.termul/worktrees/w0",
+          "createdAt": "2026-11-01T00:00:00.000Z"
+         }
+        ]
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w0",
+         "name": "w0",
+         "branch": "feat/w0",
+         "path": "/work/a/.termul/worktrees/w0",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "addWorktree",
+     "args": [
+      "a",
+      {
+       "id": "w1",
+       "name": "w1",
+       "branch": "feat/w1",
+       "path": "/work/a/.termul/worktrees/w1",
+       "createdAt": "2026-11-01T00:00:00.000Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w0",
+         "name": "w0",
+         "branch": "feat/w0",
+         "path": "/work/a/.termul/worktrees/w0",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "addWorktree",
+     "args": [
+      "b",
+      {
+       "id": "w2",
+       "name": "w2",
+       "branch": "feat/w2",
+       "path": "/work/a/.termul/worktrees/w2",
+       "createdAt": "2026-11-01T00:00:00.000Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w0",
+         "name": "w0",
+         "branch": "feat/w0",
+         "path": "/work/a/.termul/worktrees/w0",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        },
+        {
+         "id": "w2",
+         "name": "w2",
+         "branch": "feat/w2",
+         "path": "/work/a/.termul/worktrees/w2",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeWorktree",
+     "args": [
+      "b",
+      "w0"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w2",
+         "name": "w2",
+         "branch": "feat/w2",
+         "path": "/work/a/.termul/worktrees/w2",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeWorktree",
+     "args": [
+      "a",
+      "nope"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w2",
+         "name": "w2",
+         "branch": "feat/w2",
+         "path": "/work/a/.termul/worktrees/w2",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreeOperationLock",
+     "args": [
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w2",
+         "name": "w2",
+         "branch": "feat/w2",
+         "path": "/work/a/.termul/worktrees/w2",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": true,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setWorktreeOperationLock",
+     "args": [
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "worktrees": [
+        {
+         "id": "w2",
+         "name": "w2",
+         "branch": "feat/w2",
+         "path": "/work/a/.termul/worktrees/w2",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "groups",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setProjects",
+     "args": [
+      [
+       {
+        "id": "a",
+        "name": "Project a",
+        "color": "blue",
+        "path": "/work/a"
+       },
+       {
+        "id": "b",
+        "name": "Project b",
+        "color": "blue",
+        "path": "/work/b"
+       },
+       {
+        "id": "c",
+        "name": "Project c",
+        "color": "blue",
+        "path": "/work/c"
+       }
+      ],
+      "a",
+      [
+       {
+        "id": "g0",
+        "name": "Zero",
+        "projectIds": [
+         "c"
+        ]
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": [
+        "c"
+       ]
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "addGroup",
+     "args": [
+      "One"
+     ]
+    },
+    "ids": [
+     "id-1"
+    ],
+    "effects": [],
+    "result": "id-1",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": [
+        "c"
+       ]
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "addGroup",
+     "args": [
+      "Two"
+     ]
+    },
+    "ids": [
+     "id-2"
+    ],
+    "effects": [],
+    "result": "id-2",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": [
+        "c"
+       ]
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [],
+       "isCollapsed": false
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveProjectToGroup",
+     "args": [
+      "a",
+      "id-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": [
+        "c"
+       ]
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": false
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveProjectToGroup",
+     "args": [
+      "b",
+      "id-1",
+      0
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": [
+        "c"
+       ]
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "b",
+        "a"
+       ],
+       "isCollapsed": false
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveProjectToGroup",
+     "args": [
+      "c",
+      "id-1",
+      9
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "b",
+        "a",
+        "c"
+       ],
+       "isCollapsed": false
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "toggleGroupCollapse",
+     "args": [
+      "id-1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "b",
+        "a",
+        "c"
+       ],
+       "isCollapsed": true
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveProjectToGroup",
+     "args": [
+      "a",
+      "id-2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "moveProjectToGroup",
+     "args": [
+      "b",
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c"
+       ],
+       "isCollapsed": true
+      },
+      {
+       "id": "id-2",
+       "name": "Two",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "renameGroup",
+     "args": [
+      "id-2",
+      "Second"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c"
+       ],
+       "isCollapsed": true
+      },
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": false
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateGroup",
+     "args": [
+      "id-2",
+      {
+       "color": "purple",
+       "isCollapsed": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c"
+       ],
+       "isCollapsed": true
+      },
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "reorderGroups",
+     "args": [
+      [
+       "id-2",
+       "nope",
+       "g0"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      },
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c"
+       ],
+       "isCollapsed": true
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "reorderProjectInGroup",
+     "args": [
+      "id-1",
+      [
+       "c",
+       "zz"
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      },
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c",
+        "zz"
+       ],
+       "isCollapsed": true
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeGroup",
+     "args": [
+      "nope",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      },
+      {
+       "id": "g0",
+       "name": "Zero",
+       "projectIds": []
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c",
+        "zz"
+       ],
+       "isCollapsed": true
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeGroup",
+     "args": [
+      "g0",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      },
+      {
+       "id": "id-1",
+       "name": "One",
+       "projectIds": [
+        "c",
+        "zz"
+       ],
+       "isCollapsed": true
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "removeGroup",
+     "args": [
+      "id-1",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "deleteProject",
+      "projectId": "c"
+     },
+     {
+      "kind": "deleteProject",
+      "projectId": "zz"
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a"
+      },
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b"
+      },
+      {
+       "id": "c",
+       "name": "Project c",
+       "color": "blue",
+       "path": "/work/c"
+      }
+     ],
+     "groups": [
+      {
+       "id": "id-2",
+       "name": "Second",
+       "projectIds": [
+        "a"
+       ],
+       "isCollapsed": true,
+       "color": "purple"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "persist_prefs_skips_unchanged_record",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadProjectPrefs",
+     "args": [
+      {
+       "projects": {
+        "b": {
+         "defaultShell": "zsh",
+         "gitBranch": "dev",
+         "isGitRepo": true,
+         "worktrees": [
+          {
+           "id": "w1",
+           "name": "w1",
+           "branch": "feat/w1",
+           "path": "/work/a/.termul/worktrees/w1",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ]
+        },
+        "gone": {
+         "symlinkDirs": [
+          "node_modules"
+         ]
+        }
+       },
+       "groups": [
+        {
+         "id": "g1",
+         "name": "Work",
+         "projectIds": [
+          "b",
+          "c"
+         ],
+         "isCollapsed": true,
+         "color": "red"
+        }
+       ],
+       "order": [
+        "c",
+        "gone",
+        "b"
+       ],
+       "updatedAt": "2026-11-01T00:00:00.000Z"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "b",
+         "name": "Project b",
+         "color": "blue",
+         "path": "/work/b",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": null
+      },
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "a",
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "c",
+       "gone",
+       "b"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "persistProjectPrefs",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writePrefs",
+      "record": {
+       "projects": {
+        "b": {
+         "gitBranch": "dev",
+         "defaultShell": "zsh",
+         "worktrees": [
+          {
+           "id": "w1",
+           "name": "w1",
+           "branch": "feat/w1",
+           "path": "/work/a/.termul/worktrees/w1",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ],
+         "isGitRepo": true
+        },
+        "gone": {
+         "symlinkDirs": [
+          "node_modules"
+         ]
+        },
+        "a": {}
+       },
+       "groups": [
+        {
+         "id": "g1",
+         "name": "Work",
+         "projectIds": [
+          "b",
+          "c"
+         ],
+         "isCollapsed": true,
+         "color": "red"
+        }
+       ],
+       "order": [
+        "b",
+        "a",
+        "c",
+        "gone"
+       ]
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "b",
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "persistProjectPrefs",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "b",
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "updateProject",
+     "args": [
+      "a",
+      {
+       "defaultShell": "fish",
+       "envVars": [
+        {
+         "key": "TOKEN",
+         "value": "x",
+         "isSecret": true
+        }
+       ],
+       "worktrees": [
+        {
+         "id": "w9",
+         "name": "w9",
+         "branch": "feat/w9",
+         "path": "/work/a/.termul/worktrees/w9",
+         "createdAt": "2026-11-01T00:00:00.000Z",
+         "outsideProjectRoot": true
+        }
+       ],
+       "icon": {
+        "dataUri": "data:image/png;base64,AA==",
+        "fetchedAt": 1
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "fish",
+       "envVars": [
+        {
+         "key": "TOKEN",
+         "value": "x",
+         "isSecret": true
+        }
+       ],
+       "worktrees": [
+        {
+         "id": "w9",
+         "name": "w9",
+         "branch": "feat/w9",
+         "path": "/work/a/.termul/worktrees/w9",
+         "createdAt": "2026-11-01T00:00:00.000Z",
+         "outsideProjectRoot": true
+        }
+       ],
+       "icon": {
+        "dataUri": "data:image/png;base64,AA==",
+        "fetchedAt": 1
+       }
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "b",
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "persistProjectPrefs",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writePrefs",
+      "record": {
+       "projects": {
+        "b": {
+         "gitBranch": "dev",
+         "defaultShell": "zsh",
+         "worktrees": [
+          {
+           "id": "w1",
+           "name": "w1",
+           "branch": "feat/w1",
+           "path": "/work/a/.termul/worktrees/w1",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ],
+         "isGitRepo": true
+        },
+        "gone": {
+         "symlinkDirs": [
+          "node_modules"
+         ]
+        },
+        "a": {
+         "defaultShell": "fish",
+         "worktrees": [
+          {
+           "id": "w9",
+           "name": "w9",
+           "branch": "feat/w9",
+           "path": "/work/a/.termul/worktrees/w9",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ],
+         "icon": {
+          "dataUri": "data:image/png;base64,AA==",
+          "fetchedAt": 1
+         }
+        }
+       },
+       "groups": [
+        {
+         "id": "g1",
+         "name": "Work",
+         "projectIds": [
+          "b",
+          "c"
+         ],
+         "isCollapsed": true,
+         "color": "red"
+        }
+       ],
+       "order": [
+        "b",
+        "a",
+        "c",
+        "gone"
+       ]
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "fish",
+       "envVars": [
+        {
+         "key": "TOKEN",
+         "value": "x",
+         "isSecret": true
+        }
+       ],
+       "worktrees": [
+        {
+         "id": "w9",
+         "name": "w9",
+         "branch": "feat/w9",
+         "path": "/work/a/.termul/worktrees/w9",
+         "createdAt": "2026-11-01T00:00:00.000Z",
+         "outsideProjectRoot": true
+        }
+       ],
+       "icon": {
+        "dataUri": "data:image/png;base64,AA==",
+        "fetchedAt": 1
+       }
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "b",
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "forgetProjectPrefs",
+     "args": [
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "fish",
+       "envVars": [
+        {
+         "key": "TOKEN",
+         "value": "x",
+         "isSecret": true
+        }
+       ],
+       "worktrees": [
+        {
+         "id": "w9",
+         "name": "w9",
+         "branch": "feat/w9",
+         "path": "/work/a/.termul/worktrees/w9",
+         "createdAt": "2026-11-01T00:00:00.000Z",
+         "outsideProjectRoot": true
+        }
+       ],
+       "icon": {
+        "dataUri": "data:image/png;base64,AA==",
+        "fetchedAt": 1
+       }
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "persistProjectPrefs",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writePrefs",
+      "record": {
+       "projects": {
+        "gone": {
+         "symlinkDirs": [
+          "node_modules"
+         ]
+        },
+        "a": {
+         "defaultShell": "fish",
+         "worktrees": [
+          {
+           "id": "w9",
+           "name": "w9",
+           "branch": "feat/w9",
+           "path": "/work/a/.termul/worktrees/w9",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ],
+         "icon": {
+          "dataUri": "data:image/png;base64,AA==",
+          "fetchedAt": 1
+         }
+        },
+        "b": {
+         "gitBranch": "dev",
+         "defaultShell": "zsh",
+         "worktrees": [
+          {
+           "id": "w1",
+           "name": "w1",
+           "branch": "feat/w1",
+           "path": "/work/a/.termul/worktrees/w1",
+           "createdAt": "2026-11-01T00:00:00.000Z"
+          }
+         ],
+         "isGitRepo": true
+        }
+       },
+       "groups": [
+        {
+         "id": "g1",
+         "name": "Work",
+         "projectIds": [
+          "b",
+          "c"
+         ],
+         "isCollapsed": true,
+         "color": "red"
+        }
+       ],
+       "order": [
+        "b",
+        "a",
+        "c",
+        "gone"
+       ]
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "b",
+       "name": "Project b",
+       "color": "blue",
+       "path": "/work/b",
+       "isArchived": false,
+       "isDefault": false,
+       "gitBranch": "dev",
+       "defaultShell": "zsh",
+       "worktrees": [
+        {
+         "id": "w1",
+         "name": "w1",
+         "branch": "feat/w1",
+         "path": "/work/a/.termul/worktrees/w1",
+         "createdAt": "2026-11-01T00:00:00.000Z"
+        }
+       ],
+       "isGitRepo": true
+      },
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "fish",
+       "envVars": [
+        {
+         "key": "TOKEN",
+         "value": "x",
+         "isSecret": true
+        }
+       ],
+       "worktrees": [
+        {
+         "id": "w9",
+         "name": "w9",
+         "branch": "feat/w9",
+         "path": "/work/a/.termul/worktrees/w9",
+         "createdAt": "2026-11-01T00:00:00.000Z",
+         "outsideProjectRoot": true
+        }
+       ],
+       "icon": {
+        "dataUri": "data:image/png;base64,AA==",
+        "fetchedAt": 1
+       }
+      }
+     ],
+     "groups": [
+      {
+       "id": "g1",
+       "name": "Work",
+       "projectIds": [
+        "b",
+        "c"
+       ],
+       "isCollapsed": true,
+       "color": "red"
+      }
+     ],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [
+       {
+        "id": "g1",
+        "name": "Work",
+        "projectIds": [
+         "b",
+         "c"
+        ],
+        "isCollapsed": true,
+        "color": "red"
+       }
+      ],
+      "order": [
+       "b",
+       "a",
+       "c",
+       "gone"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "projects",
+  "name": "remembered_prefs_reach_a_new_project",
+  "initial": {
+   "projects": [],
+   "groups": [],
+   "activeProjectId": "",
+   "isLoaded": false,
+   "isWorktreeOperationLocked": false,
+   "layout": {
+    "groups": [],
+    "order": []
+   }
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadProjectPrefs",
+     "args": [
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": {
+     "projects": [],
+     "groups": [],
+     "activeProjectId": "",
+     "isLoaded": false,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": null
+      },
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "a",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "rememberProjectPrefs",
+     "args": [
+      "n",
+      {
+       "defaultShell": "bash",
+       "envVars": [
+        {
+         "key": "A",
+         "value": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "applyRegistryList",
+     "args": [
+      {
+       "projects": [
+        {
+         "id": "a",
+         "name": "Project a",
+         "color": "blue",
+         "path": "/work/a",
+         "isArchived": false,
+         "isDefault": false
+        },
+        {
+         "id": "n",
+         "name": "Project n",
+         "color": "blue",
+         "path": "/work/n",
+         "isArchived": false,
+         "isDefault": false
+        }
+       ],
+       "defaultProjectId": null
+      },
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": "a",
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false
+      },
+      {
+       "id": "n",
+       "name": "Project n",
+       "color": "blue",
+       "path": "/work/n",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "bash",
+       "envVars": [
+        {
+         "key": "A",
+         "value": "1"
+        }
+       ]
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "a",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "selectProject",
+     "args": [
+      "n"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "saveActiveProject",
+      "projectId": "n"
+     },
+     {
+      "kind": "clearChatRoute"
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "isActive": false
+      },
+      {
+       "id": "n",
+       "name": "Project n",
+       "color": "blue",
+       "path": "/work/n",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "bash",
+       "envVars": [
+        {
+         "key": "A",
+         "value": "1"
+        }
+       ],
+       "isActive": true
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "n",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": []
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "persistProjectPrefs",
+     "args": []
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writePrefs",
+      "record": {
+       "projects": {
+        "n": {
+         "defaultShell": "bash"
+        },
+        "a": {}
+       },
+       "groups": [],
+       "order": [
+        "a",
+        "n"
+       ]
+      }
+     }
+    ],
+    "state": {
+     "projects": [
+      {
+       "id": "a",
+       "name": "Project a",
+       "color": "blue",
+       "path": "/work/a",
+       "isArchived": false,
+       "isDefault": false,
+       "isActive": false
+      },
+      {
+       "id": "n",
+       "name": "Project n",
+       "color": "blue",
+       "path": "/work/n",
+       "isArchived": false,
+       "isDefault": false,
+       "defaultShell": "bash",
+       "envVars": [
+        {
+         "key": "A",
+         "value": "1"
+        }
+       ],
+       "isActive": true
+      }
+     ],
+     "groups": [],
+     "activeProjectId": "n",
+     "isLoaded": true,
+     "isWorktreeOperationLocked": false,
+     "layout": {
+      "groups": [],
+      "order": [
+       "a",
+       "n"
+      ]
+     }
+    }
+   }
+  ]
+ }
+]

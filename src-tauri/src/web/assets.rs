@@ -444,21 +444,36 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn read_bundle_file(path: &str) -> Option<BundleFile> {
-    use sha2::Digest as _;
-    if path
+/// Whether `path` (relative, `/`-separated, as it came off the URL) stays
+/// inside the bundle root. A backslash or `:` is refused because a Windows
+/// path join reads them as a separator or a drive.
+fn is_contained_bundle_path(path: &str) -> bool {
+    !path
         .split('/')
         .any(|part| matches!(part, ".." | "." | "") || part.contains(['\\', ':']))
-    {
+}
+
+/// `path` under `dir`, read from disk. `None` for a path that escapes the
+/// root or names no readable file.
+fn read_dir_file(dir: &Path, path: &str) -> Option<BundleFile> {
+    use sha2::Digest as _;
+    if !is_contained_bundle_path(path) {
+        return None;
+    }
+    let data = std::fs::read(dir.join(path)).ok()?;
+    Some(BundleFile {
+        mime: bundle_mime(path),
+        opaque: hex(&sha2::Sha256::digest(&data)),
+        data: Cow::Owned(data),
+    })
+}
+
+fn read_bundle_file(path: &str) -> Option<BundleFile> {
+    if !is_contained_bundle_path(path) {
         return None;
     }
     if let Some(dir) = bundle_dir_override() {
-        let data = std::fs::read(dir.join(path)).ok()?;
-        return Some(BundleFile {
-            mime: bundle_mime(path),
-            opaque: hex(&sha2::Sha256::digest(&data)),
-            data: Cow::Owned(data),
-        });
+        return read_dir_file(&dir, path);
     }
     let file = CanvasBundle::get(path)?;
     Some(BundleFile {
@@ -498,11 +513,22 @@ pub fn canvas_bundle_missing_response() -> Response {
 /// same length as GET (RFC 9110 §9.3.2). An empty body here would make
 /// that `Content-Length: 0` (#1728).
 pub fn canvas_bundle_response(method: &Method, path: &str, request: &HeaderMap) -> Response {
+    bundle_response(method, path, request, read_bundle_file)
+}
+
+/// The response policy [`canvas_bundle_response`] documents, over any
+/// bundle source.
+fn bundle_response(
+    method: &Method,
+    path: &str,
+    request: &HeaderMap,
+    read: impl FnOnce(&str) -> Option<BundleFile>,
+) -> Response {
     if !matches!(*method, Method::GET | Method::HEAD) {
         return StatusCode::METHOD_NOT_ALLOWED.into_response();
     }
     let path = if path.is_empty() { INDEX_HTML } else { path };
-    let Some(file) = read_bundle_file(path) else {
+    let Some(file) = read(path) else {
         return (StatusCode::NOT_FOUND, "404 Not Found").into_response();
     };
     let opaque = format!("\"{}\"", file.opaque);
@@ -529,6 +555,8 @@ pub fn canvas_bundle_response(method: &Method, path: &str, request: &HeaderMap) 
     }
     response
 }
+
+pub mod rune;
 
 #[cfg(test)]
 mod tests;

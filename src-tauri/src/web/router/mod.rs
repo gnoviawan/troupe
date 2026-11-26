@@ -164,6 +164,10 @@ impl AppState {
 /// (gh-1105): it registers the `/server/config` reconfigure routes and turns
 /// the `/health` `setupRequired` flag into a real probe. `None` (the desktop
 /// shared-live host and the in-process channel state) keeps both off.
+///
+/// `rune_web_dir` is the experimental Rune web client's bundle directory
+/// ([`ServerConfig::rune_web_dir`](crate::web::config::ServerConfig::rune_web_dir));
+/// `None` answers `/rune/*` with 404 (see [`assets::rune`]).
 #[allow(clippy::too_many_arguments)]
 pub fn router(
     acp: Arc<AcpManager>,
@@ -186,6 +190,7 @@ pub fn router(
     host_allow: HostAllowList,
     connections: ConnectionRuntime,
     server_admin: Option<ServerAdminContext>,
+    rune_web_dir: Option<std::path::PathBuf>,
 ) -> Router {
     let r = Router::new()
         .route("/health", get(health_check))
@@ -410,6 +415,9 @@ pub fn router(
                 },
             },
         ))
+        // HTML preview: open/update/close are bearer-gated ("/html-preview/");
+        // /preview/<token>/* is authorized by the session token in the path.
+        .merge(crate::web::html_preview_api::html_preview_router())
         // Canvas web routes: open/close/persistence (IpcBody) and the
         // same-origin /canvas/<id>/* bundle. Merged BEFORE the static fallback
         // so the SPA mount cannot shadow them. The API routes are bearer-gated
@@ -447,6 +455,9 @@ pub fn router(
     } else {
         r = r.fallback(assets::serve_embedded);
     }
+    // Plan R5: the experimental Rune web client answers `/rune/*` (and
+    // `/?ui=rune`) before the React fallback can.
+    r = assets::rune::layer(r, rune_web_dir);
     // PWA: the disk ServeDir sets no Cache-Control, so shell/PWA files would
     // fall under heuristic caching and stall service-worker updates. The
     // layer marks them `no-cache, must-revalidate`; on the embedded path it
@@ -625,6 +636,7 @@ pub fn router_with_static(
     // Canvas routes parity (test/dev variant): the boundary is wired so
     // open's doc-path validation behavior matches production.
     let mut r = r
+        .merge(crate::web::html_preview_api::html_preview_router())
         .merge(crate::web::browser_policy_api::browser_policy_router(
             crate::web::browser_policy_api::PolicyRouteState {
                 service: crate::acp::browser_policy::installed(),

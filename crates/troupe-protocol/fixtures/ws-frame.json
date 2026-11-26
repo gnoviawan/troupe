@@ -1,0 +1,165 @@
+{
+  "events": {
+    "type": "events",
+    "events": [
+      {
+        "sid": "sess-b9ac9edb",
+        "seq": 5,
+        "type": "plan_update",
+        "payload": {
+          "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "sessionId": "sess-b9ac9edb",
+          "plan": {
+            "entries": [
+              {
+                "content": "Read the auth module",
+                "priority": "high",
+                "status": "completed"
+              },
+              {
+                "content": "Add the token store",
+                "priority": "high",
+                "status": "completed"
+              },
+              {
+                "content": "Wire the session refresh",
+                "priority": "medium",
+                "status": "completed"
+              },
+              {
+                "content": "Cover login with tests",
+                "priority": "medium",
+                "status": "in_progress"
+              },
+              {
+                "content": "Update the changelog",
+                "priority": "low",
+                "status": "pending"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "sid": "sess-b9ac9edb",
+        "seq": 6,
+        "type": "tool_call",
+        "payload": {
+          "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "sessionId": "sess-b9ac9edb",
+          "toolCall": {
+            "toolCallId": "fake-edit-1",
+            "title": "Edit src/auth.ts",
+            "kind": "edit",
+            "status": "completed",
+            "content": [
+              {
+                "type": "diff",
+                "path": "src/auth.ts",
+                "newText": "auth1\nauth2\nauth3\nauth4\nauth5\nauth6\nauth7\nauth8\nauth9\nauth10"
+              }
+            ],
+            "locations": [
+              {
+                "path": "src/auth.ts"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "sid": "sess-b9ac9edb",
+        "seq": 7,
+        "type": "tool_call",
+        "payload": {
+          "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "sessionId": "sess-b9ac9edb",
+          "toolCall": {
+            "toolCallId": "fake-edit-2",
+            "title": "Edit src/session.ts",
+            "kind": "edit",
+            "status": "completed",
+            "content": [
+              {
+                "type": "diff",
+                "path": "src/session.ts",
+                "oldText": "a\nb",
+                "newText": "a\nb\nz1\nz2\nz3\nz4"
+              }
+            ],
+            "locations": [
+              {
+                "path": "src/session.ts"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "sid": "sess-b9ac9edb",
+        "seq": 8,
+        "type": "tool_call",
+        "payload": {
+          "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "sessionId": "sess-b9ac9edb",
+          "toolCall": {
+            "toolCallId": "fake-edit-3",
+            "title": "Edit src/token.ts",
+            "kind": "edit",
+            "status": "completed",
+            "content": [
+              {
+                "type": "diff",
+                "path": "src/token.ts",
+                "oldText": "keep\nold1\nold2\nend",
+                "newText": "keep\nnew1\nnew2\nnew3\nend"
+              }
+            ],
+            "locations": [
+              {
+                "path": "src/token.ts"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "sid": "sess-b9ac9edb",
+        "seq": 9,
+        "type": "permission_request",
+        "payload": {
+          "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "sessionId": "sess-b9ac9edb",
+          "requestId": "perm-e3d0cb63-aea4-4e90-bedb-e8bd71d48dc7",
+          "toolCall": {
+            "toolCallId": "fake-perm-fake-ask-1",
+            "kind": "execute",
+            "status": "pending",
+            "title": "npm test -- auth"
+          },
+          "options": [
+            {
+              "optionId": "reject-once",
+              "name": "Reject",
+              "kind": "reject_once"
+            },
+            {
+              "optionId": "allow-always",
+              "name": "Always allow",
+              "kind": "allow_always"
+            },
+            {
+              "optionId": "allow-once",
+              "name": "Allow once",
+              "kind": "allow_once"
+            }
+          ],
+          "turnId": "fixture-turn-1"
+        }
+      }
+    ]
+  },
+  "heartbeat": {
+    "type": "heartbeat"
+  }
+}

@@ -10,7 +10,7 @@ import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import type { AuthenticateInput, AuthMethod } from '@/lib/acp-api'
 import { resolveAgentEnv } from '@/lib/agent-launch'
 import { agentPolicy } from '@/lib/agents/acp-registry'
-import { resolveEnvForSpawn } from '@/lib/env-parser'
+import { passThroughProjectEnv } from '@/lib/env-parser'
 import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, useAcpStore } from '@/stores/acp-store'
 import {
@@ -122,8 +122,16 @@ export function useAgentSignIn({
   // ordinary extra tab — never killed or recreated.
   const runTerminalAuth = useCallback(
     async (method: AuthMethod) => {
-      if (!liveAgentId || !config || !cwd || !projectId) {
+      if (!liveAgentId || !config || !cwd) {
         toast.error('Agent is not connected. Use Retry to reconnect, then sign in again.')
+        return
+      }
+      // A login terminal is a tab in a project's pane, run in its folder. A
+      // quick chat's agent has neither.
+      if (!projectId) {
+        toast.error(
+          `${config.name} signs in from a terminal, which needs a project. Sign in from a chat in a project first.`
+        )
         return
       }
       // The store's per-agent record (set synchronously here) guards a fast
@@ -141,7 +149,7 @@ export function useAgentSignIn({
         // Merge project env → agent-config env → method env (same layering
         // as launchAgentInPane; method env wins — it is the auth flow's own
         // contract).
-        const { env: projectEnv } = resolveEnvForSpawn(projectEnvVars, {})
+        const { env: projectEnv } = passThroughProjectEnv(projectEnvVars)
         const mergedEnv = {
           ...projectEnv,
           ...resolveAgentEnv(config.env, projectEnv),

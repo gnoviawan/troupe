@@ -48,9 +48,12 @@ use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
 
 use crate::acp::atomic_file::{self, NewerSchema};
+use crate::acp::troupe_overlay::{AgentOverlayPresentation, TroupeOverlayService};
 use crate::acp_registry_snapshot::{
     self, AcpRegistrySnapshot, ResolvedSnapshot, SnapshotFetchOutcome,
 };
+
+mod overlay;
 
 // ---------------------------------------------------------------------------
 // Wire types (camelCase serde, byte-identical to the TS shapes)
@@ -115,13 +118,16 @@ pub struct PlatformTarget {
     pub arch: String,
 }
 
-/// Whether a catalog entry came from the trusted bundled baseline or the
-/// explicitly-approved CDN registry augmentation.
+/// Whether a catalog entry came from the trusted bundled baseline, the
+/// explicitly-approved CDN registry augmentation, or Troupe's own registry
+/// overlay (`troupe_overlay`), which only adds ids neither of the others has
+/// (its remote copy's agents only under the same CDN opt-in).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum CatalogSource {
     Bundled,
     Registry,
+    Troupe,
 }
 
 /// Resolved installed-binary info for a host-installed agent. Populated by
@@ -330,6 +336,7 @@ pub struct AcpCatalogService {
     /// every call.
     opencode_probe: Mutex<Option<(Instant, Option<PathBuf>)>>,
     forced_snapshot_fetch: ForcedSnapshotFetch,
+    overlay: TroupeOverlayService,
 }
 
 impl AcpCatalogService {
@@ -369,6 +376,7 @@ impl AcpCatalogService {
         }
         log::info!("[acp-catalog] service ready root={}", root.display());
         Ok(Arc::new(Self {
+            overlay: TroupeOverlayService::open(&root),
             root,
             cache: RwLock::new(None),
             snapshot_fetch: snapshot_fetcher(production_snapshot_delegate),
@@ -411,6 +419,7 @@ impl AcpCatalogService {
             }
         }
         // Slow path: re-probe + re-compute + re-cache.
+        self.spawn_overlay_refresh();
         let catalog = self.resolve_catalog(refresh).await?;
         let mut cache = self.cache.write();
         *cache = Some(CachedCatalog {
@@ -418,6 +427,29 @@ impl AcpCatalogService {
             computed_at: Instant::now(),
         });
         Ok(catalog)
+    }
+
+    /// Refresh the Troupe overlay off the caller's path. A new copy drops the
+    /// resolved catalog so the next `list_catalog` merges it.
+    fn spawn_overlay_refresh(self: &Arc<Self>) {
+        if !self.overlay.wants_refresh() {
+            return;
+        }
+        let service = Arc::clone(self);
+        tokio::spawn(async move {
+            if service.overlay.refresh_if_stale().await {
+                *service.cache.write() = None;
+            }
+        });
+    }
+
+    /// The overlay presentation (names, logos, brand colours) for the
+    /// renderer. Waits for a due refresh, which the failure gate bounds.
+    pub async fn agent_overlay(&self) -> AgentOverlayPresentation {
+        if self.overlay.refresh_if_stale().await {
+            *self.cache.write() = None;
+        }
+        self.overlay.current().presentation()
     }
 
     /// When OpenCode has no Troupe-managed install, attach a v2 binary found
@@ -714,7 +746,8 @@ impl AcpCatalogService {
             .collect();
 
         let bundled_count = agents.len();
-        if self.is_opt_in() {
+        let opt_in = self.is_opt_in();
+        if opt_in {
             let snapshot = if !force_snapshot_refresh && self.snapshot_fetch_gated() {
                 // A non-forced fetch failed within the retry interval — skip
                 // the fetch (no 15s stall loop on an offline host) and serve
@@ -821,6 +854,14 @@ impl AcpCatalogService {
                 bundled_count
             );
         }
+
+        overlay::apply_troupe_overlay(
+            &mut agents,
+            &self.overlay.launchable_agents(opt_in),
+            &self.overlay.current().overlay.overrides,
+            &host,
+            &platform_arch,
+        );
 
         // Sort by name for stable display order (mirrors the renderer's
         // `buildSupportedAcpAgents` sort).

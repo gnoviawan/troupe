@@ -1,0 +1,60 @@
+# Rune decisions
+
+Answers to the open questions in plan section R0, one entry per spike. Each
+entry gives the answer, its key numbers and the report it came from. Unless an
+entry says otherwise, every number was measured on a loaded shared host with
+no GPU: 8 cores, load average 14 to 47, Mesa lavapipe for Vulkan, debug builds
+with dependencies at `opt-level=2`. Read these numbers as a floor, not as what
+a user sees.
+
+Reports live in `~/.claude/orchestrate/troupe-rune/reports/` and images in
+`/root/rune-research/evidence/` on the spike host, unless the entry names
+another path.
+
+## Live driver
+
+**Answer.** An in-app control socket. A `Compositor` gets the window's live
+`Runtime` every frame, so it can read the element tree and the accessibility
+tree, inject pointer and key input, and draw the frame again into an
+`Offscreen` for a screenshot. This uses only Rune's public API at the pin and
+needs no Rune patch. AT-SPI and `--realtime` were not tried: the socket passed
+first, and neither alternative can wait on a condition and capture a frame on
+all three operating systems.
+
+**Where it lives.** `apps/rune/crates/automation`, behind its `tooling`
+feature. `RUNE_DRIVE_SOCK=<path>` turns it on. `scripts/rune/drive.mjs` is the
+client, and the `Rune` workflow drives a real `hello` window with it on Linux.
+
+**Numbers (spike, 50 launches).**
+
+| Metric | p50 | p95 | max |
+|---|---|---|---|
+| `find` round trip | 1.05 ms | 26.7 ms | 171 ms |
+| `click` to `wait` seeing the new label | 39.7 ms | 338 ms | 1,023 ms |
+| Flake | 50 of 50 passed | | |
+
+The driver's `snap` matched an X11 grab of the same window exactly (PSNR
+infinite). The R0b run of `apps/rune/crates/automation` on `hello` under Xvfb
+repeated both results once: `click` 39 ms, `wait` for "Pressed 1" 37 ms,
+`snap` 170 ms, PSNR infinite against `ffmpeg x11grab`.
+
+**Limit.** Injected input enters after the OS message path. It does not test
+winit's pointer and DPI translation or IME from the OS, so lanes that need
+those still need a platform-level check.
+
+**Source.** `R0-live.md`, `R0b.md`. Images: `r0-live-driver.png`,
+`r0-live-insnap.png`, `r0-live-x11grab.png`, and
+`~/.claude/orchestrate/troupe-rune/media/r0b/r0b-live-driver.png`.
+
+## State port
+
+**Answer.** Porting state logic costs about one Rust line per TypeScript line,
+and it is not the program's bottleneck. The parity vector corpus is.
+
+**Numbers.** The spike ported the pure reducer core of the `acp-store`
+transcript slice: 872 of the slice's 1,937 TypeScript lines, as 883 Rust lines
+(ratio 1.01). It replayed 38 of 38 recorded vectors. The time from start to
+the first green replay was 39 min 30 s. Extrapolated to all 135,117 logic
+lines, the port is about 100 to 250 agent-hours (a guess that assumes this
+slice is typical). That excludes the vectors for 11,761 test cases, which
+must be recorded and reviewed.

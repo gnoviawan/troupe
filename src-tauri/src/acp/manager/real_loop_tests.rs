@@ -144,6 +144,22 @@ for line in sys.stdin:
             send({"jsonrpc": "2.0", "id": rid, "error": {
                 "code": -32603, "message": "Codex reached its usage limit",
                 "data": {"errorKind": "rate_limited"}}})
+        elif text.startswith("antigravitylimit"):
+            # Antigravity at its quota: the limit message as agent text, then
+            # a normal end of turn.
+            body = "Usage Limit Reached\n\nYou have reached your current quota for this period."
+            reset = text[len("antigravitylimit"):].strip()
+            if reset:
+                body += " Your limit will reset in " + reset + "."
+            chunk(body, msg["params"]["sessionId"])
+            send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
+        elif text.startswith("Troupe moved this chat from Antigravity") or (
+            text.startswith("Troupe continued this chat because the") and "Antigravity account" in text):
+            chunk("antigravity_home=" + os.environ.get("GEMINI_HOME", ""), msg["params"]["sessionId"])
+            if os.environ.get("MOCK_NOTICE_HANG") == "1":
+                hung = rid
+            else:
+                send({"jsonrpc": "2.0", "id": rid, "result": {"stopReason": "end_turn"}})
         elif text.startswith("Troupe moved this chat from Codex") or (
             text.startswith("Troupe continued this chat because the") and "Codex account" in text):
             chunk("codex_home=" + os.environ.get("CODEX_HOME", ""), msg["params"]["sessionId"])

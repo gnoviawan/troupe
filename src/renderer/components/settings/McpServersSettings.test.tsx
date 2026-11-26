@@ -70,13 +70,15 @@ function typeJson(value: string): void {
   fireEvent.change(screen.getByLabelText('MCP JSON'), { target: { value } })
 }
 
-/** Open a server's row menu (Radix opens on pointerdown) and choose an item. */
-function chooseRowAction(server: string, item: string): void {
-  fireEvent.pointerDown(screen.getByRole('button', { name: `Actions for ${server}` }), {
-    button: 0,
-    ctrlKey: false
-  })
-  fireEvent.click(screen.getByRole('menuitem', { name: item }))
+/**
+ * Open a server's detail page from its card (the name is the button) and use
+ * one of its actions. Delete is the page's Remove button.
+ */
+function chooseRowAction(server: string, item: 'Edit' | 'Test connection' | 'Delete'): void {
+  if (!screen.queryByTestId('mcp-server-detail')) {
+    fireEvent.click(screen.getByRole('button', { name: server }))
+  }
+  fireEvent.click(screen.getByRole('button', { name: item === 'Delete' ? 'Remove' : item }))
 }
 
 /** Parse the current JSON editor content (edit dialog pre-fill assertions). */
@@ -90,14 +92,12 @@ describe('McpServersSettings', () => {
     seedStore()
   })
 
-  it('does not claim to retain the experimental acp capability (issue #362)', () => {
+  it('makes no MCP-over-ACP claim (issue #362)', () => {
     // The Rust schema is built without `unstable_mcp_over_acp`, so an agent's
-    // `mcpCapabilities.acp` is dropped on parse (pinned in the Rust events
-    // tests). The notice must say Troupe does not read it.
+    // `mcpCapabilities.acp` is dropped on parse. The page no longer mentions
+    // the capability at all, so it cannot claim Troupe keeps it.
     render(<McpServersSettings />)
-    const notice = screen.getByText(/MCP-over-ACP/).closest('p')
-    expect(notice).toHaveTextContent('does not read it')
-    expect(notice).not.toHaveTextContent('retains')
+    expect(screen.queryByText(/MCP-over-ACP/)).not.toBeInTheDocument()
   })
 
   it('adds a bare server object through the JSON editor with a fresh id', async () => {
@@ -522,9 +522,9 @@ describe('McpServersSettings', () => {
     })
     render(<McpServersSettings />)
     expect(screen.getByText('Unreachable')).toBeInTheDocument()
-    // The error detail lives behind the tools disclosure; expand via the
-    // disconnected-specific trigger, then assert the redacted reason.
-    fireEvent.click(screen.getByText(/show error/i))
+    // The card offers Try again; the detail page shows the notice and the error.
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Remote' }))
     expect(screen.getByText(/could not reach this server/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.getByText('initialize failed: connection refused')).toBeInTheDocument()
@@ -564,23 +564,101 @@ describe('McpServersSettings', () => {
           'OAuth flow failed. Check your browser for the authorization page.'
         )
       )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Discovery failed', 'OAUTH_DISCOVERY_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Could not discover OAuth settings for this MCP server. Check the server URL and try again.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Registration failed', 'OAUTH_REGISTRATION_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'This MCP server rejected OAuth client registration or does not support dynamic client registration.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(new McpOAuthError('Denied', 'OAUTH_DENIED'))
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Sign-in was cancelled or denied by the authorization server.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(
+        new McpOAuthError('Exchange failed', 'OAUTH_EXCHANGE_FAILED')
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Authorization completed, but exchanging the token failed. Try connecting again.'
+        )
+      )
+
+      connectMcpOAuth.mockRejectedValueOnce(new McpOAuthError('Timed out', 'OAUTH_TIMEOUT'))
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }))
+      await waitFor(() =>
+        expect(toastError).toHaveBeenLastCalledWith(
+          'Sign-in timed out before authorization completed. Try connecting again.'
+        )
+      )
     } finally {
       useAcpStore.setState({ connectMcpOAuth: realConnect, checkMcpOAuthStatus: realCheck })
     }
   })
 
-  it('renders the tool list (read-only) inside the collapsible on expand', () => {
+  it('keeps Connect visible when probe reports authRequired even if a stale token is stored', () => {
+    const { checkMcpOAuthStatus: realCheck } = useAcpStore.getState()
+    useAcpStore.setState({
+      mcpServers: [
+        {
+          id: 's-stale',
+          type: 'http',
+          name: 'Craftwork',
+          url: 'https://craftwork.design/api/mcp',
+          enabled: true
+        }
+      ],
+      mcpProbeStatus: { 's-stale': 'authRequired' },
+      mcpOAuthConnected: { 's-stale': true },
+      checkMcpOAuthStatus: vi.fn(async () => {})
+    })
+    try {
+      render(<McpServersSettings />)
+      expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Craftwork' }))
+      expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
+      expect(screen.getByText('OAuth · sign-in expired')).toBeInTheDocument()
+    } finally {
+      useAcpStore.setState({ checkMcpOAuthStatus: realCheck, mcpOAuthConnected: {} })
+    }
+  })
+
+  it('lists the tools (read-only) on the detail page', () => {
     useAcpStore.setState({
       mcpServers: [{ id: 's3', type: 'stdio', name: 'Probe', command: 'node', enabled: true }],
       mcpTools: { s3: [{ name: 'search', description: 'search files' }] },
-      mcpToolsLoaded: { s3: true }
+      mcpToolsLoaded: { s3: true },
+      mcpProbeStatus: { s3: 'connected' }
     })
     render(<McpServersSettings />)
-    // Tools are pre-seeded -> the trigger shows the count ("1 tool").
-    fireEvent.click(screen.getByText(/1 tool/i))
+    // Connected with tools known: the card counts them.
+    expect(screen.getByText(/1 tool/i)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Probe' }))
     expect(screen.getByText('search')).toBeInTheDocument()
     // Per-tool toggle UI must NOT be present (deferred — read-only).
     expect(screen.queryByRole('switch', { name: /search/i })).not.toBeInTheDocument()
+    // Back returns to the grid.
+    fireEvent.click(screen.getByRole('button', { name: 'MCP servers' }))
+    expect(screen.getByTestId('mcp-server-card-s3')).toBeInTheDocument()
   })
 
   it('fires the Test button to re-probe a server', async () => {
@@ -593,7 +671,7 @@ describe('McpServersSettings', () => {
     await waitFor(() => expect(probeMcpServer).toHaveBeenCalledWith('s4'))
   })
 
-  it('renders one compact row per server — detail inline, no form fields', () => {
+  it('renders one card per server with its command or URL, and no form fields', () => {
     useAcpStore.setState({
       mcpServers: [
         { id: 'c1', type: 'stdio', name: 'Files', command: 'node server.js', enabled: true },
@@ -601,19 +679,30 @@ describe('McpServersSettings', () => {
       ]
     })
     render(<McpServersSettings />)
-    // Command/URL detail is visible straight from the collapsed row.
+    expect(screen.getByTestId('mcp-server-card-c1')).toBeInTheDocument()
+    expect(screen.getByTestId('mcp-server-card-c2')).toBeInTheDocument()
     expect(screen.getByText('node server.js')).toBeInTheDocument()
     expect(screen.getByText('https://remote.test/mcp')).toBeInTheDocument()
+    expect(screen.getByText('2 servers · 2 on')).toBeInTheDocument()
     // No remnants of the old form inputs or the Form/Import tab bar.
     expect(screen.queryByLabelText(/arguments \(one per line\)/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/environment \(name=value/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: /import json/i })).not.toBeInTheDocument()
-    // All row controls stay accessible from the single line.
     expect(screen.getByRole('switch', { name: /disable files/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Actions for Files' })).toBeInTheDocument()
-    // Preserved surfaces: storage warning + experimental MCP-over-ACP card.
+    // The secrets warning lives in the Add and Edit dialog now, not on the page.
+    expect(screen.queryByText('$VARIABLE')).not.toBeInTheDocument()
+    openAddForm()
     expect(screen.getByText('$VARIABLE')).toBeInTheDocument()
-    expect(screen.getByText(/mcp-over-acp/i)).toBeInTheDocument()
+  })
+
+  it('opens the detail page from anywhere on a card that is not a control', () => {
+    useAcpStore.setState({
+      mcpServers: [{ id: 'c1', type: 'stdio', name: 'Files', command: 'node a.js', enabled: true }]
+    })
+    render(<McpServersSettings />)
+    fireEvent.click(screen.getByText('node a.js'))
+    expect(screen.getByTestId('mcp-server-detail')).toBeInTheDocument()
+    expect(screen.getByText('Command')).toBeInTheDocument()
   })
 
   describe('guided form', () => {

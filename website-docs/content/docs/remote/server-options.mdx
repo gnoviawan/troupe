@@ -22,6 +22,8 @@ This page lists the `troupe-server` settings you are most likely to change. Run 
 | `--max-terminals-per-project <N>` | `TROUPE_MAX_TERMINALS_PER_PROJECT` | `10` | The most terminals one project can have open. The whole server allows 30. |
 | `--check-update` | | | Check for a new server version once, then exit. See [Update the server](#update-the-server). |
 
+`troupe-server qr` shows a QR code for connecting a phone, and `troupe-server onboard` runs the setup in the terminal. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device) and [Set it up in the terminal instead](/docs/remote/server#set-it-up-in-the-terminal-instead).
+
 When you set both a flag and its environment variable, the flag wins. The older `TERMUL_*` name of each variable still works. If you set both, the `TROUPE_*` name wins unless it is blank (empty or only spaces). A `server-config.json` in the state folder — written by the setup page or by `troupe-server onboard` — wins over both for the settings it holds: host, port, sessions directory, projects file, remote writes, and updates.
 
 The state folder is `$XDG_STATE_HOME/termul` when `XDG_STATE_HOME` is set. Otherwise it is `~/.local/state/termul`.
@@ -46,6 +48,8 @@ To open Troupe with the token, add it to the address after `#token=`:
 ```text
 http://<server-address>:8080/#token=<token>
 ```
+
+To open Troupe on a phone without typing the token, scan a QR code that has it. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
 
 The part after `#` stays in your browser and is not sent to the server as part of the address. The browser saves the token, removes it from the address bar, and uses it on later visits. If you open the server without the token, Troupe asks for it. See [Enter the token](/docs/remote/web-browser#enter-the-token).
 
@@ -102,11 +106,12 @@ troupe-server --host 127.0.0.1 --port 8080 --allowed-origins https://troupe.exam
 
 The server can update itself from the GitHub releases. Each download is checked against a signature before the server uses it. Builds you compile yourself can't self-update.
 
-There are three update channels:
+There are two update channels:
 
 - `stable`: tested releases.
-- `insider`: releases before they reach stable.
 - `nightly`: a new build each night.
+
+A server set to the old `insider` channel now uses `stable`.
 
 To update once, run:
 
@@ -123,7 +128,7 @@ To check for updates in the background, set these environment variables before y
 | Variable | Value |
 | --- | --- |
 | `TROUPE_SERVER_UPDATE_ENABLED` | `true` |
-| `TROUPE_SERVER_UPDATE_CHANNEL` | `stable`, `insider` or `nightly`. Required. |
+| `TROUPE_SERVER_UPDATE_CHANNEL` | `stable` or `nightly`. Required. |
 | `TROUPE_SERVER_UPDATE_INTERVAL_SECS` | How often to check. The default is `21600` (6 hours). |
 
 When the server finds a new version in the background, it installs it and restarts itself. Picking an update channel during setup — in the browser or with `troupe-server onboard` — turns background checks on for you.

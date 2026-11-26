@@ -1,0 +1,266 @@
+{
+  "agents.delta.agent_disconnected": {
+    "type": "watch",
+    "watch": "agents",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 3
+    },
+    "delta": {
+      "event": "agent_disconnected",
+      "payload": {
+        "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "reason": "killed"
+      }
+    }
+  },
+  "agents.delta.agent_spawned": {
+    "type": "watch",
+    "watch": "agents",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "event": "agent_spawned",
+      "payload": {
+        "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "capabilities": {
+          "loadSession": true,
+          "promptCapabilities": {
+            "image": false,
+            "audio": false,
+            "embeddedContext": false
+          },
+          "mcpCapabilities": {
+            "http": false,
+            "sse": false
+          },
+          "sessionCapabilities": {},
+          "auth": {}
+        },
+        "authMethods": [],
+        "hostAuthReady": false
+      }
+    }
+  },
+  "agents.state": {
+    "type": "watch",
+    "watch": "agents",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": []
+  },
+  "chat_activity.delta": {
+    "type": "watch",
+    "watch": "chat_activity",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "busy": true,
+      "needsYou": false,
+      "unread": false,
+      "turnEnd": null,
+      "projectId": "fixture-proj-a",
+      "sessionId": "sess-b9ac9edb"
+    }
+  },
+  "chat_activity.state": {
+    "type": "watch",
+    "watch": "chat_activity",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": {
+      "sessions": {}
+    }
+  },
+  "chat_history.delta": {
+    "type": "watch",
+    "watch": "chat_history",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "changed": ["sess-b9ac9edb"]
+    }
+  },
+  "chat_history.state": {
+    "type": "watch",
+    "watch": "chat_history",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": []
+  },
+  "fs.delta": {
+    "type": "watch",
+    "watch": "fs",
+    "scope": "fixture-proj-a",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "root": "/fixture/work/proj-a",
+      "paths": ["/fixture/work/proj-a/touched.txt"]
+    }
+  },
+  "fs.state": {
+    "type": "watch",
+    "watch": "fs",
+    "scope": "fixture-proj-a",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": {
+      "root": "/fixture/work/proj-a"
+    }
+  },
+  "projects.delta": {
+    "type": "watch",
+    "watch": "projects",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "projects": [
+        {
+          "id": "fixture-proj-a",
+          "name": "proj-a",
+          "color": "blue",
+          "path": "/fixture/work/proj-a",
+          "isArchived": false,
+          "isDefault": false
+        },
+        {
+          "id": "fixture-proj-c",
+          "name": "composer",
+          "color": "blue",
+          "path": "/fixture/work/composer-row-e2e",
+          "isArchived": false,
+          "isDefault": false
+        },
+        {
+          "id": "fixture-proj-b",
+          "name": "proj-b",
+          "color": "green",
+          "path": "/fixture/work/proj-w",
+          "isArchived": false,
+          "isDefault": false
+        }
+      ]
+    }
+  },
+  "projects.state": {
+    "type": "watch",
+    "watch": "projects",
+    "scope": "",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": {
+      "projects": [
+        {
+          "id": "fixture-proj-a",
+          "name": "proj-a",
+          "color": "blue",
+          "path": "/fixture/work/proj-a",
+          "isArchived": false,
+          "isDefault": false
+        },
+        {
+          "id": "fixture-proj-c",
+          "name": "composer",
+          "color": "blue",
+          "path": "/fixture/work/composer-row-e2e",
+          "isArchived": false,
+          "isDefault": false
+        }
+      ]
+    }
+  },
+  "store.delta": {
+    "type": "watch",
+    "watch": "store",
+    "scope": "device/fixture-device/fixture/key",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "exists": true,
+      "value": {
+        "theme": "dark"
+      }
+    }
+  },
+  "store.state": {
+    "type": "watch",
+    "watch": "store",
+    "scope": "device/fixture-device/fixture/key",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": {
+      "exists": false
+    }
+  },
+  "terminals.delta": {
+    "type": "watch",
+    "watch": "terminals",
+    "scope": "fixture-proj-a",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 2
+    },
+    "delta": {
+      "terminals": [
+        {
+          "terminalId": "terminal-1795449248103-0",
+          "projectId": "fixture-proj-a",
+          "cwd": "/fixture/work/proj-w",
+          "attached": false
+        }
+      ]
+    }
+  },
+  "terminals.state": {
+    "type": "watch",
+    "watch": "terminals",
+    "scope": "fixture-proj-a",
+    "revision": {
+      "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+      "n": 1
+    },
+    "reset": true,
+    "state": {
+      "terminals": []
+    }
+  }
+}

@@ -43,6 +43,7 @@
  * whole token + padding block + trailing space in one backspace.
  */
 
+import { CANVAS_TOKEN_END, replaceCanvasTokensInline } from './composer/canvas-tokens'
 import { replaceToolTokensInline, TOOL_TOKEN_END } from './composer/tool-tokens'
 
 export const SKILL_TOKEN_START = '\uE000'
@@ -457,9 +458,11 @@ export function replaceCommandTokensInline(value: string): string {
 }
 
 export function sanitizeDisplayText(value: string): string {
-  return replaceToolTokensInline(
-    replaceConversationTokensInline(
-      replaceFileTokensInline(replaceSkillTokensInline(replaceCommandTokensInline(value)))
+  return replaceCanvasTokensInline(
+    replaceToolTokensInline(
+      replaceConversationTokensInline(
+        replaceFileTokensInline(replaceSkillTokensInline(replaceCommandTokensInline(value)))
+      )
     )
   )
 }
@@ -551,7 +554,8 @@ export function isComposerTriggerBoundary(value: string, index: number): boolean
     prev === FILE_TOKEN_END ||
     prev === CONTEXT_TOKEN_END ||
     prev === CONV_TOKEN_END ||
-    prev === TOOL_TOKEN_END
+    prev === TOOL_TOKEN_END ||
+    prev === CANVAS_TOKEN_END
   )
 }
 

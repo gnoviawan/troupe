@@ -2,6 +2,7 @@ import { buildConversationContext, capContextFragment } from '@/components/chat/
 import type { ContentBlock, ToolCall } from '@/lib/acp-api'
 import { acpHistoryApi } from '@/lib/acp-history-api'
 import { getAcpTransport } from '@/lib/acp-transport'
+import type { CanvasGap } from '@/lib/composer/canvas-tokens'
 import { conversationEnvelope, type TranscriptGap } from '@/lib/conversation-envelope'
 import { logFrontendError } from '@/lib/log-api'
 import { projectScopedMembers } from '@/lib/session-chain'
@@ -133,6 +134,8 @@ function agentNameOf(sessionId: string): string | null {
 export interface ConversationContexts {
   blocks: ContentBlock[]
   gaps: ReadonlyMap<string, TranscriptGap>
+  /** Set when the send mentions canvas layers: why a ref (keyed by its ids) has no details. */
+  canvasGaps?: ReadonlyMap<string, CanvasGap>
 }
 
 export async function resolveConversationContexts(

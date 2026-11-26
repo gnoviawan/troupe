@@ -1,0 +1,21 @@
+{
+  "children": [
+    {
+      "name": "You · 09:12",
+      "role": "label"
+    },
+    {
+      "name": "Add a health check.",
+      "role": "label"
+    },
+    {
+      "name": "FI",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

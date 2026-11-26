@@ -6,7 +6,9 @@
 //!   (pure transitions).
 //! - [`engine`] owns the ledger and every side effect: spawn, announce,
 //!   supervise, settle, stop.
-//! - [`settings`] is the host-side truth for the feature gates.
+//! - [`settings`] is the host-side truth for the feature gates and the
+//!   sub-agent profiles; [`profiles`] resolves and applies the profiles,
+//!   and [`agents`] lists the launchable agents.
 //! - [`sinks`] holds the child's filter and watcher sinks.
 //! - [`worktree`] snapshots the parent's state and manages the per-run
 //!   worktree.
@@ -15,8 +17,10 @@
 //! (the automation-service pattern), installed at startup by BOTH binaries
 //! where the `AcpManager` is built.
 
+mod agents;
 mod engine;
 mod lifecycle;
+mod profiles;
 mod run;
 mod settings;
 mod sinks;
@@ -30,6 +34,8 @@ pub use run::{
     AgentListing, CallerRef, RunId, RunLookupError, RunState, RunSummary, StartError, StartRequest,
     StopError, StopOutcome, WaitOutcome,
 };
+#[allow(unused_imports)]
+pub use profiles::{Launchable, ResolvedProfile, SubagentApprovals, SubagentProfile};
 #[allow(unused_imports)]
 pub use settings::{OrchestratorSettings, SettingsInput};
 

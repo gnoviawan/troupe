@@ -513,6 +513,8 @@ impl RemoteServerState {
             // provenance flags only drive the standalone setup-mode gate.
             explicit_config: true,
             host_explicit: true,
+            // The Rune web client preview is a `troupe-server` setting only.
+            rune_web_dir: None,
         };
 
         let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();

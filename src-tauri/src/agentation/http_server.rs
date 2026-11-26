@@ -230,6 +230,7 @@ async fn request_action(
         annotations: pending,
         output,
         timestamp: chrono::Utc::now().to_rfc3339(),
+        tab_id: body.tab_id,
     };
     let _ev = state.store.event_bus().emit(
         AFSEventType::ActionRequested,
@@ -243,8 +244,11 @@ async fn request_action(
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ActionBody {
     pub output: Option<String>,
+    #[serde(default)]
+    pub tab_id: Option<String>,
 }
 
 /// POST /annotations/:id/thread — add thread message.
@@ -319,6 +323,24 @@ async fn global_sse(
 // Router
 // ---------------------------------------------------------------------------
 
+async fn allow_private_network(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let wants_pna = request
+        .headers()
+        .get("access-control-request-private-network")
+        .is_some();
+    let mut response = next.run(request).await;
+    if wants_pna {
+        response.headers_mut().insert(
+            axum::http::HeaderName::from_static("access-control-allow-private-network"),
+            axum::http::HeaderValue::from_static("true"),
+        );
+    }
+    response
+}
+
 /// The routes, served under `/{secret}`.
 pub fn router(state: AppState, secret: &str) -> Router {
     let cors = CorsLayer::new()
@@ -350,7 +372,8 @@ pub fn router(state: AppState, secret: &str) -> Router {
         .route("/events", get(global_sse));
     let router = Router::new()
         .nest(&format!("/{secret}"), router)
-        .layer(cors);
+        .layer(cors)
+        .layer(axum::middleware::from_fn(allow_private_network));
     crate::web::host_allow::layer(router, crate::web::host_allow::HostAllowList::loopback())
         .with_state(state)
 }

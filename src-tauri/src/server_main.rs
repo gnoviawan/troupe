@@ -75,6 +75,13 @@ fn main() -> ExitCode {
         init_tracing();
         return termul_manager_lib::onboard::run();
     }
+    // `qr`: display a scannable terminal QR code for connecting a phone or
+    // tablet to this standalone server. Handled before `ServerConfig::from_args`
+    // (same pre-bind path as `onboard`); refuses tokenized output on non-TTY.
+    if raw_args.first().is_some_and(|arg| arg == "qr") {
+        init_tracing();
+        return termul_manager_lib::server_qr::run(&raw_args[1..]);
+    }
     // `--internal-mcp-plan-server`: self-spawned child of the host-injected
     // `plan` MCP tool. The agent spawns `current_exe()` with this flag
     // (the injected `McpServer::Stdio`); the child runs an rmcp MCP server over
@@ -106,6 +113,13 @@ fn main() -> ExitCode {
     if raw_args.first().is_some_and(|arg| arg == "codex") {
         init_tracing();
         return termul_manager_lib::codex_admin::run(&raw_args[1..]);
+    }
+
+    // Local-only Antigravity Account commands (`troupe-server antigravity
+    // account ...`). Same pre-bind path. Google sign-in runs in the Troupe UI.
+    if raw_args.first().is_some_and(|arg| arg == "antigravity") {
+        init_tracing();
+        return termul_manager_lib::antigravity_admin::run(&raw_args[1..]);
     }
 
     // Parse CLI BEFORE any tokio / app setup (AC2).
@@ -387,6 +401,9 @@ fn main() -> ExitCode {
         let codex_agent = Arc::new(termul_manager_lib::CodexAgentService::system(
             acp_install_dir.clone(),
         ));
+        let antigravity_agent = Arc::new(termul_manager_lib::AntigravityAgentService::system(
+            acp_install_dir.clone(),
+        ));
         let acp_install = match AcpInstallService::open(
             acp_install_dir,
             std::sync::Arc::clone(acp_catalog.as_ref().expect("catalog opened above")),
@@ -409,12 +426,22 @@ fn main() -> ExitCode {
             termul_manager_lib::claude_limit::ClaudeLimitHandle::channel();
         let (codex_limit, codex_limit_inbox) =
             termul_manager_lib::codex_limit::CodexLimitHandle::channel();
-        let acp = Arc::new(AcpManager::with_persistence_and_host_agents(
-            vec![ws_relay.clone(), claude_limit.sink(), codex_limit.sink()],
-            persistence,
-            claude_agent,
-            codex_agent,
-        ));
+        let (antigravity_limit, antigravity_limit_inbox) =
+            termul_manager_lib::antigravity_limit::AntigravityLimitHandle::channel();
+        let acp = Arc::new(
+            AcpManager::with_persistence_and_host_agents(
+                vec![
+                    ws_relay.clone(),
+                    claude_limit.sink(),
+                    codex_limit.sink(),
+                    antigravity_limit.sink(),
+                ],
+                persistence,
+                claude_agent,
+                codex_agent,
+            )
+            .with_antigravity_agent(antigravity_agent),
+        );
         termul_manager_lib::claude_limit::start(
             &acp,
             &ws_relay,
@@ -427,6 +454,13 @@ fn main() -> ExitCode {
             &ws_relay,
             codex_limit,
             codex_limit_inbox,
+            &tokio::runtime::Handle::current(),
+        );
+        termul_manager_lib::antigravity_limit::start(
+            &acp,
+            &ws_relay,
+            antigravity_limit,
+            antigravity_limit_inbox,
             &tokio::runtime::Handle::current(),
         );
         termul_manager_lib::worker_chats::install(
@@ -667,6 +701,22 @@ fn run_setup_mode(
          Open this one-time URL to configure the server (valid for this boot only):\n\
          \n    {setup_url}{host_hint}\n"
     );
+    // Render a scannable terminal QR ONLY on an interactive TTY when a
+    // reachable LAN IPv4 address is detected (never print QR art into daemon
+    // logs, and never draw an unscannable 0.0.0.0 / 127.0.0.1 QR).
+    if bind_mode == BindMode::All && std::io::IsTerminal::is_terminal(&std::io::stdout()) {
+        if let Some(lan_ip) = termul_manager_lib::server_qr::detect_lan_ipv4() {
+            let lan_setup_url = format!("http://{lan_ip}:{}/?setup={setup_token}", cfg.port);
+            let color = termul_manager_lib::server_qr::terminal_color_enabled(false);
+            if let Ok(qr) = termul_manager_lib::server_qr::render_terminal_qr(&lan_setup_url, color)
+            {
+                println!(
+                    "Or scan from a phone on the same network (http://{lan_ip}:{}/):\n\n{qr}\n",
+                    cfg.port
+                );
+            }
+        }
+    }
     info!("troupe-server: setup mode — configure the server at {setup_url}");
 
     let state = setup::SetupState::new(
@@ -719,9 +769,7 @@ fn build_update_options(default_channel: Option<UpdateChannel>) -> Result<Update
     let channel = match channel {
         Some(c) => c,
         None => {
-            return Err(
-                "TROUPE_SERVER_UPDATE_CHANNEL is unset or not stable/insider/nightly".to_owned(),
-            )
+            return Err("TROUPE_SERVER_UPDATE_CHANNEL is unset or not stable/nightly".to_owned())
         }
     };
     update_options_for_channel(channel)
@@ -923,6 +971,7 @@ fn usage() -> &'static str {
 USAGE:
     troupe-server [OPTIONS]
     troupe-server onboard          Guided setup + background launch
+    troupe-server qr [OPTIONS]     Show a scannable QR code for connecting a phone
     troupe-server --check-update   One-shot self-update
 
 OPTIONS:
@@ -1020,6 +1069,16 @@ OPTIONS:
                                   commands keep starting, but ignored (a
                                   warning is logged at startup).
 
+  Experimental:
+    --experimental-rune-client    Serve the Rune web client preview at /rune/
+                                  and redirect /?ui=rune there. Needs
+                                  --rune-web-dir; off by default, when /rune/
+                                  answers 404 and /?ui=rune is the React client.
+                                  [env: TROUPE_EXPERIMENTAL_RUNE_CLIENT=true|1]
+    --rune-web-dir <DIR>          The built Rune web bundle (index.html, *.js,
+                                  *_bg.wasm, fonts) to serve at /rune/.
+                                  [env: TROUPE_RUNE_WEB_DIR]
+
   Security & updates:
     --allow-remote-writes         Admit non-loopback peers on all guarded write
                                   routes. /fs/* writes reject only .. traversal
@@ -1072,6 +1131,11 @@ OPTIONS:
                                   logout. Non-TTY stdin prints the resolved
                                   default command + mechanism tip and exits 0
                                   without launching.
+    qr [OPTIONS]                  Display a scannable terminal QR code for
+                                  opening this server on a phone or tablet.
+                                  Embeds #token=... when auth is active (TTY
+                                  only; pass --no-token for non-TTY output).
+                                  Run `troupe-server qr --help` for options.
 
     -h, --help                    Show this help
     -V, --version                 Show the version
@@ -1090,8 +1154,10 @@ ENVIRONMENT:
     TROUPE_SERVER_ALLOW_REMOTE_WRITES  true|1 enables --allow-remote-writes
     TROUPE_WEB_AUTH_TOKEN         Fallback for --web-auth-token
     TROUPE_ALLOWED_ORIGINS        Fallback for --allowed-origins (comma-separated)
+    TROUPE_EXPERIMENTAL_RUNE_CLIENT  true|1 enables --experimental-rune-client
+    TROUPE_RUNE_WEB_DIR           Fallback for --rune-web-dir
     TROUPE_SERVER_UPDATE_ENABLED  true gates the periodic self-update loop
-    TROUPE_SERVER_UPDATE_CHANNEL  stable|insider|nightly (required for periodic loop)
+    TROUPE_SERVER_UPDATE_CHANNEL  stable|nightly (required for periodic loop)
     TROUPE_SERVER_UPDATE_INTERVAL_SECS  periodic loop interval [default: 21600]
     Every TROUPE_* variable above also accepts its old TERMUL_* name;
     a TROUPE_* value that is not blank wins when both are set.
@@ -1112,6 +1178,9 @@ EXAMPLES:
 
     # Guided setup (auto-detects systemd or setsid, survives SSH logout)
     troupe-server onboard
+
+    # Show a scannable QR code in an interactive terminal
+    troupe-server qr
 
     # One-shot self-update check
     troupe-server --check-update

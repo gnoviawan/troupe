@@ -366,3 +366,39 @@ export function splitFastModeOption(
   const fromModel = extractFastModeOption(modelConfig)
   return { fastMode: fromModel.fastMode, modelConfig: fromModel.rest, rest: generic }
 }
+
+/** The model selector's controls for an agent's advertised options. */
+export interface ComposerOptionControls {
+  modelOption: SessionConfigOption | null
+  modelSource: ResolvedModelOption['source']
+  thoughtLevel: SessionConfigOption | null
+  fastMode: SessionConfigOption | null
+  /** Model settings other than Fast (`model_config`). */
+  modelConfig: SessionConfigOption[]
+  /** Everything else, minus Fast and any mode option the native modes cover. */
+  genericOptions: SessionConfigOption[]
+}
+
+/** Sort an agent's models, modes and config options into the model selector's controls. */
+export function composerOptionControls(input: {
+  models: SessionModelState | null
+  modes: SessionModeState | null
+  configOptions: SessionConfigOption[]
+}): ComposerOptionControls {
+  const { model, thoughtLevel, modelConfig, rest } = partitionConfigOptions(
+    input.configOptions.filter(isUsableConfigOption)
+  )
+  const { option: modelOption, source: modelSource } = resolveModelOption(model, input.models)
+  const split = splitFastModeOption(
+    modelConfig,
+    filterDuplicateModeConfigOptions(rest, input.modes)
+  )
+  return {
+    modelOption,
+    modelSource,
+    thoughtLevel,
+    fastMode: split.fastMode,
+    modelConfig: split.modelConfig,
+    genericOptions: split.rest
+  }
+}

@@ -8,15 +8,18 @@ use serde_json::json;
 use super::*;
 
 const TS_PROTOCOL: &str = include_str!("../../../../src/shared/types/web-protocol.types.ts");
+const TS_GENERATED: &str = include_str!("../../../../src/shared/types/generated/protocol.ts");
 const DISPATCH: &str = include_str!("../ws/dispatch.rs");
 
-/// The quoted names inside `export const WS_REQUEST_TYPES = [ ... ] as const`.
+/// The quoted names inside the generated
+/// `export const WsRequestTypeValues = [ ... ] as const`, which
+/// `WS_REQUEST_TYPES` re-exports.
 fn ts_request_types() -> BTreeSet<String> {
-    let body = TS_PROTOCOL
-        .split("export const WS_REQUEST_TYPES = [")
+    let body = TS_GENERATED
+        .split("export const WsRequestTypeValues = [")
         .nth(1)
         .and_then(|rest| rest.split("] as const").next())
-        .expect("WS_REQUEST_TYPES block");
+        .expect("WsRequestTypeValues block");
     body.lines()
         .filter(|line| !line.trim_start().starts_with("//"))
         .flat_map(|line| line.split('\'').skip(1).step_by(2))
@@ -151,6 +154,9 @@ fn only_creates_and_non_prompt_commands_enter_the_ledger() {
             "finish_claude_link_login",
             "add_codex_account",
             "start_codex_account_login",
+            "add_antigravity_account",
+            "start_antigravity_account_login",
+            "check_antigravity_usage",
         ])
     );
     assert!(

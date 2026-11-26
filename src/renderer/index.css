@@ -27,7 +27,18 @@
   /* Status rail "new changes" dot: pops once when it mounts (--ease-bounce,
      250ms). Reduced motion: motion-reduce:animate-none, it just shows. */
   --animate-mark-pop: mark-pop 250ms cubic-bezier(0.34, 1.36, 0.64, 1) both;
+  /* Indeterminate progress bar: a sliver crosses the track. Reduced motion:
+     motion-reduce:animate-none, it stays still in the middle. */
+  --animate-progress-sliver: progress-sliver 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 
+  @keyframes progress-sliver {
+    from {
+      translate: -100% 0;
+    }
+    to {
+      translate: 500% 0;
+    }
+  }
   @keyframes accordion-down {
     from {
       height: 0;
@@ -2010,6 +2021,17 @@
   font-weight: 600;
 }
 
+.markdown-editor .markdown-inline-image {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.markdown-editor [data-content-type="table"] .markdown-inline-image {
+  max-width: 12rem;
+  max-height: 12rem;
+}
+
 @container markdown-editor (max-width: 560px) {
   .markdown-editor {
     --markdown-document-gutter: 1rem;
@@ -2111,6 +2133,53 @@
   @media (prefers-reduced-motion: reduce) {
     .termul-marquee {
       animation: none;
+    }
+  }
+
+  /* Browser chrome micro-transitions: icon swap and grid-rows accordion.
+     Layered here so app :root curves (--ease-out, --ease-in-out) stay untouched. */
+  .t-icon-swap {
+    display: inline-grid;
+    place-items: center;
+  }
+  .t-icon-swap .t-icon {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      opacity var(--duration-fast, 250ms) var(--ease-in-out),
+      filter var(--duration-fast, 250ms) var(--ease-in-out),
+      transform var(--duration-fast, 250ms) var(--ease-in-out);
+  }
+  .t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+  .t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  .t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+  .t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+    opacity: 0;
+    filter: blur(2px);
+    transform: scale(0.25);
+    pointer-events: none;
+  }
+  .t-acc-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--duration-fast, 250ms) var(--ease-out);
+  }
+  .t-acc-panel[data-open="true"] {
+    grid-template-rows: 1fr;
+  }
+  .t-acc-panel-inner {
+    overflow: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .t-icon-swap .t-icon,
+    .t-acc-panel {
+      transition: none;
     }
   }
 }

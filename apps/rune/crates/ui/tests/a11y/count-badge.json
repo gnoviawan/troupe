@@ -1,0 +1,13 @@
+{
+  "children": [
+    {
+      "name": "99+",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

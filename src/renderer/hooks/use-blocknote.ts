@@ -4,13 +4,28 @@ import {
   BlockNoteSchema,
   createCodeBlockSpec,
   createExtension,
-  defaultBlockSpecs
+  defaultBlockSpecs,
+  defaultInlineContentSpecs
 } from '@blocknote/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createEditorFileUrlResolver } from '@/components/editor/editor-file-url'
 import { createExternalLinkClickExtension } from '@/components/editor/external-link-click-extension'
+import { inlineImageSpec } from '@/components/editor/inline-image-spec'
 import { mermaidBlockSpec } from '@/components/editor/mermaid-block-spec'
 import { areTocHeadingsEqual, type TocHeading } from '@/hooks/use-toc-headings'
 import { requestSaveEditorFile } from '@/lib/editor-save'
+
+export const markdownEditorSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    codeBlock: createCodeBlockSpec(codeBlockOptions),
+    mermaid: mermaidBlockSpec()
+  },
+  inlineContentSpecs: {
+    ...defaultInlineContentSpecs,
+    inlineImage: inlineImageSpec
+  }
+})
 
 function convertMermaidBlocks(
   blocks: Array<Record<string, unknown>>
@@ -111,19 +126,18 @@ export function useBlockNote(options: UseBlockNoteOptions): UseBlockNoteResult {
     []
   )
 
-  const editor = useMemo(() => {
-    const schema = BlockNoteSchema.create({
-      blockSpecs: {
-        ...defaultBlockSpecs,
-        codeBlock: createCodeBlockSpec(codeBlockOptions),
-        mermaid: mermaidBlockSpec()
-      }
-    })
-    return BlockNoteEditor.create({
-      schema,
-      extensions: [saveShortcutExtension]
-    })
-  }, [saveShortcutExtension])
+  const fileUrlResolver = useMemo(() => createEditorFileUrlResolver(() => filePathRef.current), [])
+  useEffect(() => fileUrlResolver.dispose, [fileUrlResolver])
+
+  const editor = useMemo(
+    () =>
+      BlockNoteEditor.create({
+        schema: markdownEditorSchema,
+        extensions: [saveShortcutExtension],
+        resolveFileUrl: fileUrlResolver.resolveFileUrl
+      }),
+    [saveShortcutExtension, fileUrlResolver]
+  )
 
   const [headings, setHeadings] = useState<TocHeading[]>([])
   const refreshHeadings = useCallback((): void => {

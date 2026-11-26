@@ -89,6 +89,20 @@ pub trait BrowserHost: Send + Sync {
     fn destroy_tab<'a>(&'a self, _label: &'a str) -> HostFuture<'a, ()> {
         Box::pin(async {})
     }
+    /// Native PNG screenshot of a browser tab's visible viewport.
+    fn capture_tab_screenshot<'a>(
+        &'a self,
+        _label: &'a str,
+    ) -> HostFuture<'a, Result<Vec<u8>, String>> {
+        Box::pin(async { Err("browser host is not available".to_string()) })
+    }
+    /// Drain queued annotation/action messages from the injected overlay's DOM outbox.
+    fn drain_annotation_outbox<'a>(
+        &'a self,
+        _label: &'a str,
+    ) -> HostFuture<'a, Result<Vec<Value>, String>> {
+        Box::pin(async { Ok(Vec::new()) })
+    }
     /// Stop: latch the session until the user's next prompt turn. Returns
     /// false when it was already stopped. Hosts that drive no tabs have
     /// nothing to stop.
@@ -191,6 +205,22 @@ pub async fn create_tab(
 pub async fn destroy_tab(label: &str) {
     if let Some(host) = browser_host() {
         host.destroy_tab(label).await;
+    }
+}
+
+/// Capture a native PNG screenshot of a browser tab's visible viewport.
+pub async fn capture_tab_screenshot(label: &str) -> Result<Vec<u8>, String> {
+    match browser_host() {
+        Some(host) => host.capture_tab_screenshot(label).await,
+        None => Err("browser host is not available".to_string()),
+    }
+}
+
+/// Drain queued annotation/action items written by the overlay's DOM outbox bridge.
+pub async fn drain_annotation_outbox(label: &str) -> Result<Vec<Value>, String> {
+    match browser_host() {
+        Some(host) => host.drain_annotation_outbox(label).await,
+        None => Ok(Vec::new()),
     }
 }
 

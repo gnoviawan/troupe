@@ -1,5 +1,4 @@
 import { UNASSIGNED_PROJECT_ID } from '@shared/types/web-projects.types'
-import { toast } from 'sonner'
 import {
   emptyPendingLauncherOptions,
   hasPendingLauncherOptions,
@@ -18,9 +17,9 @@ import { focusComposerWhenReady } from '@/lib/focus-composer'
 import { logFrontendError } from '@/lib/log-api'
 import {
   adoptQuickChat,
-  focusQuickChatComposer,
+  focusQuickLauncherComposer,
   leaveQuickChatView,
-  showNoProjectChat
+  showQuickChatLauncher
 } from '@/lib/no-project-chat'
 import { committedPaneProject } from '@/lib/pane-target'
 import { whenProjectSwitchSettled } from '@/lib/project-switch/status-store'
@@ -39,7 +38,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { chatNotStarted } from './chat-not-started'
-import { rememberNewChatAgent, resolveNewChatAgent } from './new-chat-agent'
+import { rememberNewChatAgent } from './new-chat-agent'
 
 const SOURCE = 'chat.openNewChat'
 
@@ -68,13 +67,8 @@ export interface OpenNewChatRequest {
 }
 
 export type OpenNewChatResult =
-  /** The quick chat view already showed an empty quick chat; it is focused. */
-  | { kind: 'focused'; sessionId: SessionId }
-  /** A new empty quick chat opened (its id is the launch placeholder's). */
-  | { kind: 'opened'; sessionId: SessionId }
-  /** The launcher opened in the project's pane. */
-  | { kind: 'launcher' }
-  | { kind: 'skipped' }
+  /** The launcher opened (or got focus) in the project's pane or the quick chat view. */
+  { kind: 'launcher' } | { kind: 'skipped' }
 
 function log(level: 'info' | 'warn' | 'error', message: string): void {
   void logFrontendError({ level, source: SOURCE, message })
@@ -167,90 +161,25 @@ export function newChatPlaceholderOptions(
   return overlayPendingLauncherOptions({ ...cached, configOptions, pending: picks })
 }
 
-let quickStart: Promise<OpenNewChatResult> | null = null
-
 /**
- * A new quick chat: an empty chat on the last picked agent and its saved
- * model, persisted as a quick chat. The host owns the folder. This path does
- * not open the agent launcher. The Quick chats `+` and the palette call it
- * directly; New chat calls it only when no project exists.
+ * A new quick chat: the agent launcher in the quick chat view, its composer
+ * focused, with no session. Send starts the chat with its first message on
+ * the picked agent (the same launch as a project New chat). The Quick chats
+ * `+` and the palette call it directly; New chat calls it only when no
+ * project exists. A launcher already on screen keeps its draft and gets focus.
  */
-export function openNewQuickChat(reason: NewChatReason): Promise<OpenNewChatResult> {
-  const view = useQuickChatStore.getState().view
-  if (view.mode === 'chat' && !view.readOnly && isEmptyStartChat(view.sessionId)) {
-    const session = useAcpStore.getState().sessions[view.sessionId]
-    if (session?.kind === 'quick') {
-      log('info', `New chat (reason=${reason}) focused the empty quick chat ${view.sessionId}`)
-      focusQuickChatComposer()
-      return Promise.resolve({ kind: 'focused', sessionId: view.sessionId })
-    }
+export function openNewQuickChat(reason: NewChatReason): OpenNewChatResult {
+  if (useQuickChatStore.getState().view.mode === 'launcher') {
+    log('info', `New chat (reason=${reason}) focused the quick chat launcher`)
+  } else {
+    showQuickChatLauncher(SOURCE)
+    log('info', `New chat (reason=${reason}) opened the quick chat launcher`)
   }
-  quickStart ??= startQuick(reason).finally(() => {
-    quickStart = null
-  })
-  return quickStart
-}
-
-async function startQuick(reason: NewChatReason): Promise<OpenNewChatResult> {
-  const agent = await resolveNewChatAgent()
-  if (agent.kind === 'none') {
-    toast.error('No agent is ready to start a chat')
-    log('warn', `Quick chat (reason=${reason}) skipped: ${agent.reason}`)
-    return { kind: 'skipped' }
-  }
-  if (agent.configToSave) {
-    try {
-      await useAcpStore.getState().saveAgentConfig(agent.configToSave)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      toast.error(`Could not set up ${agent.name}: ${message}`)
-      log('warn', `Quick chat (reason=${reason}) could not save ${agent.configId}: ${message}`)
-      return { kind: 'skipped' }
-    }
-  }
-  rememberNewChatAgent(agent.configId)
-  const picks = await savedPicks(agent.configId)
-  const cache = useAcpStore.getState().agentOptionsCache[agent.configId]
-  const shown = newChatPlaceholderOptions(cache, picks)
-  const store = useAcpStore.getState()
-  const placeholderId = store.createLaunchPlaceholder({
-    configId: agent.configId,
-    cwd: '',
-    projectId: UNASSIGNED_PROJECT_ID,
-    models: shown.models,
-    modes: shown.modes,
-    configOptions: shown.configOptions,
-    kind: 'quick'
-  })
-  showNoProjectChat(placeholderId, 'quick', SOURCE)
-  focusQuickChatComposer()
+  // A project launcher overlay stays hidden under the quick view; drop it.
   const workspace = useWorkspaceStore.getState()
   if (workspace.agentLauncherPaneId) workspace.hideAgentLauncher()
-  log(
-    'info',
-    `Quick chat ${placeholderId} (reason=${reason}) opened on ${agent.configId} with no project`
-  )
-  void store
-    .finalizeChatLaunch({
-      placeholderId,
-      configId: agent.configId,
-      cwd: '',
-      projectId: UNASSIGNED_PROJECT_ID,
-      pending: hasPendingLauncherOptions(picks) ? picks : null,
-      initialText: null,
-      initialBlocks: null,
-      adoptSession: (from, to) => adoptQuickChat(from, to, SOURCE)
-    })
-    .then((sessionId) => log('info', `Quick chat ${placeholderId} started as ${sessionId}`))
-    .catch((err: unknown) => {
-      if (err instanceof ChatLaunchCancelledError) return
-      // The empty chat shows the error and Retry. This path does not open the launcher.
-      log(
-        'warn',
-        `Quick chat ${placeholderId} did not start: ${err instanceof Error ? err.message : String(err)}`
-      )
-    })
-  return { kind: 'opened', sessionId: placeholderId }
+  focusQuickLauncherComposer()
+  return { kind: 'launcher' }
 }
 
 /**
@@ -321,7 +250,7 @@ export async function replaceEmptyChat(
   }
   const shown = newChatPlaceholderOptions(cache, picks)
   const quick = old.kind === 'quick'
-  // A quick chat's folder belongs to the host (the `startQuick` rule).
+  // A quick chat's folder belongs to the host (`startQuickChat`).
   const cwd = quick ? '' : old.cwd
   const projectId = quick ? UNASSIGNED_PROJECT_ID : old.projectId
   const placeholderId = store.createLaunchPlaceholder({

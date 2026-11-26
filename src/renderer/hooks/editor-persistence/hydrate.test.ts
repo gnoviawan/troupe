@@ -148,6 +148,26 @@ describe('hydrateProject', () => {
     })
   })
 
+  it('restores the split view of an html file, and a markdown file saved in split as preview', async () => {
+    const openFile = (filePath: string): Record<string, unknown> =>
+      persistedFile({ filePath, viewMode: 'split', isDirty: false, draftContent: undefined })
+    mockRead.mockResolvedValue({
+      success: true,
+      data: {
+        openFiles: [openFile('/p/index.html'), openFile('/p/notes.md')],
+        activeFilePath: '/p/index.html',
+        expandedDirs: [],
+        activeTabId: null
+      }
+    })
+    mockReadFile.mockResolvedValue({ success: true, data: { content: '<p>hi</p>', modifiedAt: 1 } })
+
+    const staged = await hydrateProject('p1', () => true)
+
+    expect(staged.editorFiles.get('/p/index.html')).toMatchObject({ viewMode: 'split' })
+    expect(staged.editorFiles.get('/p/notes.md')).toMatchObject({ viewMode: 'preview' })
+  })
+
   it('withTree:false stages editor state only and no tree', async () => {
     mockRead.mockResolvedValue(persistedState(persistedFile()))
     mockReadFile.mockResolvedValue({ success: true, data: { content: 'disk', modifiedAt: 1 } })

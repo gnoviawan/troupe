@@ -34,7 +34,7 @@ export const SETUP_API_PATHS = {
   serverConfig: '/server/config'
 } as const
 
-export type ServerUpdateChannel = 'stable' | 'insider' | 'nightly'
+export type ServerUpdateChannel = 'stable' | 'nightly'
 
 /** The wizard answers — same fields as `server-config.json`. */
 export interface ServerSetupAnswers {
@@ -110,4 +110,6 @@ export type SetupApplyReply = SetupApplyResponse | SetupApplyRejected
 /** `GET /server/config` — current effective answers for the reconfigure form. */
 export interface ServerConfigResponse {
   config: ServerSetupAnswers
+  /** Detected primary LAN IPv4 when bound to `0.0.0.0`; omitted on loopback or when undetectable. */
+  lanHost?: string
 }

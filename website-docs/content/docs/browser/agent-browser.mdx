@@ -61,7 +61,7 @@ Submitting a password doesn't ask by default, so the agent can sign in to sites 
 
 ## Stop the agent
 
-Select **Stop** on the bar in the chat, or the stop button on the agent's browser tab. The agent's next browser action is refused, and any wait it is running ends. The bar then reads "Browsing stopped until your next message." When you send the agent a new message, it can use the browser again, but sites you allowed only for the session need your approval again.
+Select **Stop** on the bar in the chat, the stop button on the agent's browser tab, or **Stop** in that tab's toolbar, which reads **Agent driving** while the agent uses it. The agent's next browser action is refused, and any wait it is running ends. The bar then reads "Browsing stopped until your next message." When you send the agent a new message, it can use the browser again, but sites you allowed only for the session need your approval again.
 
 You can also close the agent's browser tab. The agent loses control of that tab, but it can open a new one. When the agent session ends, Troupe closes the agent's browser tabs.
 
@@ -80,13 +80,17 @@ On macOS, the shared agent profile needs macOS 14 or later. On older versions, a
 
 There are two places to set what agents may do in the browser. Changes in both save as you make them.
 
-In **Application Preferences**, open the **Browser** tab. It applies to every project:
+In app settings, open the **Browser** page. It applies to every project. Under **Ask first**:
 
-- **Shared agent profile** turns the shared agent profile on or off. Off: agents always browse logged out.
 - **Ask before opening new sites**. Off by default: agents open public sites and devices on your local network without asking.
 - **Ask before an agent submits a password**.
-- **Clear agent profile** deletes the agent's logins and site data.
-- **Pre-approved actions in every project** lists actions the agent may take on a site without asking, when it uses the shared profile.
+
+Below **Ask first**, **Pre-approved actions in every project** lists actions the agent may take on a site without asking, when it uses the shared profile.
+
+Under **Logins**:
+
+- **Shared agent profile** turns the shared agent profile on or off. Off: agents always browse logged out.
+- **Logins and site data** has the **Clear agent profile** button. It deletes the agent's logins and site data.
 
 In a project's settings, open the **Browser** tab. It applies to that project only:
 

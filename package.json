@@ -1,7 +1,7 @@
 {
   "name": "termul-manager",
   "productName": "Troupe",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Project-aware terminal that treats workspaces as first-class citizens",
   "author": "gnoviawan",
   "contributors": [
@@ -86,6 +86,8 @@
     "landing:preview": "bun run --cwd landing preview",
     "build:agentation": "node scripts/build-agentation.mjs",
     "perf": "node tools/perf/cli.ts",
+    "parity": "bun tools/parity/pair.ts",
+    "parity:matrix": "bun tools/parity/run.ts",
     "docs:dev": "bun run --cwd website-docs dev",
     "docs:build": "bun run --cwd website-docs build",
     "docs:lint": "bun run --cwd website-docs lint",
@@ -225,6 +227,7 @@
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "@webgpu/types": "^0.1.74",
+    "@xterm/headless": "6.1.0-beta.287",
     "agentation": "3.0.2",
     "autoprefixer": "^10.4.21",
     "bats": "^1.13.0",

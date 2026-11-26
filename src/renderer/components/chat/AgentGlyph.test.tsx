@@ -1,7 +1,9 @@
-import { render } from '@testing-library/react'
+import { act, render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import bundledOverlay from '@/assets/agent-icons/acp/troupe.json'
 import { EntryGlyph } from '@/components/agents/launcher/pickers'
-import { findBundledIconByKey } from '@/lib/agents/agent-icon-catalog'
+import { getAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
+import { setAgentOverlay } from '@/lib/agents/agent-overlay'
 import { AgentGlyph } from './AgentGlyph'
 
 const glyph = (container: HTMLElement): HTMLElement =>
@@ -37,8 +39,28 @@ describe('AgentGlyph brand colour', () => {
     expect(glyph(container)).toHaveClass('text-foreground/80')
   })
 
+  it('redraws with the host overlay once it arrives, keeping a full-colour logo’s own fills', () => {
+    const { container } = render(<AgentGlyph templateId="claude-acp" />)
+    expect(glyph(container)).toHaveAttribute('data-agent-brand')
+    const colour = '<svg viewBox="0 0 24 24"><path fill="#FF7A00" d="M0 0h24v24H0z"></path></svg>'
+    act(() =>
+      setAgentOverlay([
+        { id: 'claude-acp', icon: colour, brandColor: { light: '#000000', dark: '#FFFFFF' } }
+      ])
+    )
+    try {
+      const el = glyph(container)
+      expect(el.querySelector('path')?.getAttribute('fill')).toBe('#FF7A00')
+      expect(el).not.toHaveAttribute('data-agent-brand')
+      expect(el.style.getPropertyValue('--agent-brand-light')).toBe('')
+    } finally {
+      act(() => setAgentOverlay(bundledOverlay.overrides))
+    }
+    expect(glyph(container)).toHaveAttribute('data-agent-brand')
+  })
+
   it('colours the bundled icon when it is the persisted one', () => {
-    const svg = findBundledIconByKey('acp:claude-acp')?.svg ?? ''
+    const svg = getAgentIconCatalog().byKey('acp:claude-acp')?.svg ?? ''
     const { container } = render(<AgentGlyph icon={svg} />)
     expect(glyph(container)).toHaveAttribute('data-agent-brand')
   })

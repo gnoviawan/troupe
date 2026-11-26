@@ -174,7 +174,7 @@ impl OnboardAnswers {
         let update_channel: Option<UpdateChannel> = prompt_validated(
             stdin,
             stdout,
-            "Update channel (stable/insider/nightly/none)",
+            "Update channel (stable/nightly/none)",
             "none",
             |s| {
                 let t = s.trim().to_ascii_lowercase();
@@ -182,7 +182,7 @@ impl OnboardAnswers {
                     return Ok(None);
                 }
                 UpdateChannel::parse(&t).map(Some).ok_or_else(|| {
-                    format!("invalid channel '{s}': use stable/insider/nightly/none")
+                    format!("invalid channel '{s}': use stable/nightly/none")
                 })
             },
         );
@@ -255,6 +255,7 @@ impl OnboardAnswers {
             // answers must never enter setup mode.
             explicit_config: true,
             host_explicit: true,
+            rune_web_dir: None,
         }
     }
 
@@ -333,7 +334,6 @@ impl OnboardAnswers {
 fn channel_name(channel: UpdateChannel) -> &'static str {
     match channel {
         UpdateChannel::Stable => "stable",
-        UpdateChannel::Insider => "insider",
         UpdateChannel::Nightly => "nightly",
     }
 }
@@ -670,6 +670,21 @@ fn build_systemd_unit_text(
     s
 }
 
+/// Quote a path for a POSIX shell command shown to the operator.
+/// Single quotes keep spaces intact. An embedded single quote becomes `'\''`.
+fn shell_single_quote(value: &str) -> String {
+    let mut quoted = String::from("'");
+    for ch in value.chars() {
+        if ch == '\'' {
+            quoted.push_str("'\\''");
+        } else {
+            quoted.push(ch);
+        }
+    }
+    quoted.push('\'');
+    quoted
+}
+
 /// Print the access info: URL, management tip per mechanism, future-run
 /// foreground command, update channel line, and a security note when remote
 /// writes is enabled.
@@ -686,6 +701,10 @@ fn write_access_info<W: Write>(
     args: &[String],
 ) {
     let bind_all = BindMode::parse(host) == Some(BindMode::All);
+    let exe_name = exe
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("troupe-server");
     writeln!(
         stdout,
         "Troupe server is starting in the background on http://localhost:{port}"
@@ -707,6 +726,14 @@ fn write_access_info<W: Write>(
             "Web auth: this server requires a token. Read it from the \
              owner-protected file {} (never printed or logged).",
             token_path.display()
+        )
+        .ok();
+        // Use the resolved executable path. A launch from a directory that
+        // is not on PATH still prints a command the operator can run.
+        let quoted_exe = shell_single_quote(&exe.display().to_string());
+        writeln!(
+            stdout,
+            "Connect from a phone: run {quoted_exe} qr in a terminal to show a scannable QR code."
         )
         .ok();
     }
@@ -747,10 +774,6 @@ fn write_access_info<W: Write>(
         )
         .ok();
     }
-    let exe_name = exe
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("troupe-server");
     writeln!(
         stdout,
         "For a foreground run: {exe_name} {}",

@@ -1,0 +1,13 @@
+{
+  "children": [
+    {
+      "name": "Ctrl+K",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

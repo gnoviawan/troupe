@@ -1,9 +1,11 @@
+import type { AntigravityAccountView } from '@shared/types/antigravity-accounts.types'
 import type { ClaudeAccountView } from '@shared/types/claude-accounts.types'
 import type { CodexAccountView } from '@shared/types/codex-accounts.types'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AgentGlyph } from '@/components/chat/AgentGlyph'
 import { Check, ExternalLink } from '@/components/icons'
+import { AntigravitySignInDialog } from '@/components/settings/provider/AntigravitySignInDialog'
 import { CodexSignInDialog } from '@/components/settings/provider/CodexSignInDialog'
 import { LinkSignInDialog } from '@/components/settings/provider/LinkSignInDialog'
 import { type StatusTone, StatusWord } from '@/components/settings/StatusWord'
@@ -119,6 +121,7 @@ export function AgentSetupRow({
   const [showGuide, setShowGuide] = useState(false)
   const [linkAccount, setLinkAccount] = useState<ClaudeAccountView | null>(null)
   const [codexAccount, setCodexAccount] = useState<CodexAccountView | null>(null)
+  const [antigravityAccount, setAntigravityAccount] = useState<AntigravityAccountView | null>(null)
   const selectable = status.kind === 'ready'
   const word = busy ? { label: busy, tone: 'muted' as const, pending: true } : statusWord(status)
 
@@ -143,11 +146,12 @@ export function AgentSetupRow({
 
   const signIn = async (): Promise<void> => {
     if (!signInProvider) return
-    if (signInProvider.kind === 'codex') {
+    if (signInProvider.kind === 'codex' || signInProvider.kind === 'antigravity') {
       try {
-        // Codex signs in through its saved launch config.
+        // Codex and Antigravity sign in through their saved launch config.
         await saveSupportedAgentConfig(entry)
-        setCodexAccount(signInProvider.account)
+        if (signInProvider.kind === 'codex') setCodexAccount(signInProvider.account)
+        else setAntigravityAccount(signInProvider.account)
       } catch (err) {
         log('warn', `Saving ${entry.id} before sign-in failed`)
         toast.error(`Could not start sign-in: ${String(err)}`)
@@ -283,6 +287,14 @@ export function AgentSetupRow({
         onClose={() => setCodexAccount(null)}
         onSignedIn={async () => {
           setCodexAccount(null)
+          await signedIn()
+        }}
+      />
+      <AntigravitySignInDialog
+        account={antigravityAccount}
+        onClose={() => setAntigravityAccount(null)}
+        onSignedIn={async () => {
+          setAntigravityAccount(null)
           await signedIn()
         }}
       />

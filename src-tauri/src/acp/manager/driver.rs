@@ -336,6 +336,18 @@ pub(super) async fn handle_session_notification(
             return Ok(());
         }
     }
+    // Antigravity reports a used-up quota as turn text. Mark the session so
+    // the turn's end becomes a plan-limit error (`command_loop`).
+    if state
+        .lock()
+        .quota_hits()
+        .note(&session_id, &notification.update)
+    {
+        log::info!(
+            "[acp-antigravity] session {} reported its usage limit",
+            crate::logging::redact_session_id(&session_id)
+        );
+    }
     let paths = |locations: &[agent_client_protocol::schema::v1::ToolCallLocation]| {
         locations.iter().map(|l| l.path.clone()).collect::<Vec<_>>()
     };
@@ -548,6 +560,10 @@ pub(super) async fn drive_connection(
         crate::acp::browser_shim::ShimWatcher::spawn(agent_id.clone(), dir.clone(), sinks.clone())
     });
 
+    if config.config_id.as_deref() == Some(crate::acp::antigravity_agent::ANTIGRAVITY_ACP_CONFIG_ID)
+    {
+        driver_state.lock().quota_hits().enable();
+    }
     let debug_agent_id = agent_id.clone();
     let redact_output = profile.redact_output;
     let trace_raw = !redact_output
@@ -711,6 +727,18 @@ pub(super) async fn drive_connection(
                     options,
                     ..
                 } = request;
+                let approved = perm_state
+                    .lock()
+                    .auto_approval(session_id.0.as_ref(), &tool_call, &options);
+                if let Some(outcome) = approved {
+                    log::info!(
+                        "[acp] {perm_agent_id} sub-agent session {}: tool call {} allowed once by its profile",
+                        crate::logging::redact_session_id(session_id.0.as_ref()),
+                        tool_call.tool_call_id.0
+                    );
+                    let _ = responder.respond(RequestPermissionResponse::new(outcome));
+                    return Ok(());
+                }
                 let session_string = perm_state.lock().chat_session_for(session_id.0.as_ref());
                 if perm_state.lock().is_ephemeral(&session_string) {
                     let decision =

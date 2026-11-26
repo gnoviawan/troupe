@@ -1,0 +1,151 @@
+{
+  "attach": {
+    "id": "req-3",
+    "type": "attach",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "claim": "cde64440e88078d54a1efadd1152d4336b7d4c093a05a499eeaaa5b8bf9e97f4",
+      "lastSeq": 0
+    }
+  },
+  "authenticate": {
+    "id": "req-1",
+    "type": "authenticate",
+    "payload": {
+      "token": "fixture-token",
+      "protocolVersion": 7,
+      "deviceId": "fixture-device",
+      "clientInstanceId": "fixture-tab"
+    }
+  },
+  "command_editor_cancel_completion": {
+    "id": "req-14",
+    "type": "command_editor_cancel_completion",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "requestId": "fixture-completion"
+    }
+  },
+  "command_editor_request_completion": {
+    "id": "req-13",
+    "type": "command_editor_request_completion",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "requestId": "fixture-completion",
+      "draft": "ech"
+    }
+  },
+  "command_editor_restore_prompt": {
+    "id": "req-11",
+    "type": "command_editor_restore_prompt",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "command_editor_submit": {
+    "id": "req-12",
+    "type": "command_editor_submit",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "draft": "echo editor"
+    }
+  },
+  "detach": {
+    "id": "req-15",
+    "type": "detach",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "get_cwd": {
+    "id": "req-7",
+    "type": "get_cwd",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "get_exit_code": {
+    "id": "req-10",
+    "type": "get_exit_code",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "get_git_branch": {
+    "id": "req-8",
+    "type": "get_git_branch",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "get_git_status": {
+    "id": "req-9",
+    "type": "get_git_status",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0"
+    }
+  },
+  "kill": {
+    "id": "req-21",
+    "type": "kill",
+    "payload": {
+      "terminalId": "terminal-1795449249948-1"
+    },
+    "commandId": "fixture-term-kill"
+  },
+  "list_preserved": {
+    "id": "req-18",
+    "type": "list_preserved",
+    "payload": {
+      "projectId": "fixture-proj-a"
+    }
+  },
+  "resize": {
+    "id": "req-5",
+    "type": "resize",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "cols": 100,
+      "rows": 30
+    }
+  },
+  "revoke_claim": {
+    "id": "req-22",
+    "type": "revoke_claim",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "claim": "228186f340a8bbc6f0c6a3e73d07fb90e636f2c084664cb38b1736342c7258a1"
+    },
+    "commandId": "fixture-term-revoke"
+  },
+  "rotate_claim": {
+    "id": "req-17",
+    "type": "rotate_claim",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "claim": "cde64440e88078d54a1efadd1152d4336b7d4c093a05a499eeaaa5b8bf9e97f4"
+    },
+    "commandId": "fixture-term-rotate"
+  },
+  "spawn": {
+    "id": "req-2",
+    "type": "spawn",
+    "payload": {
+      "shell": "/bin/bash",
+      "cwd": "/fixture/work/proj-w",
+      "cols": 80,
+      "rows": 24,
+      "projectId": "fixture-proj-a"
+    },
+    "commandId": "fixture-term-spawn"
+  },
+  "write": {
+    "id": "req-4",
+    "type": "write",
+    "payload": {
+      "terminalId": "terminal-1795449248103-0",
+      "data": "echo ok\r"
+    },
+    "commandId": "fixture-term-write"
+  }
+}

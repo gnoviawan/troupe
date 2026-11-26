@@ -173,10 +173,15 @@ import { forgetHostReports } from './host-session-reports'
 import { flushNextQueuedPrompt } from './slices/prompt'
 import { deferred, FRESH, flushTurnEnd, seedSession } from './testkit'
 
-// GitHub links and host reports live outside the acp store, so FRESH does not clear them.
+// GitHub links, host reports, busy-queue retries and turn-end tracking live
+// outside the acp store, so FRESH does not clear them. Reset them before every
+// test of every describe: a busy retry armed on `s1` by one test otherwise
+// holds the next test's sends in the queue, whatever order the seed picks.
 beforeEach(() => {
   _resetGithubChatLinksForTesting()
   forgetHostReports('s1')
+  _resetBusyQueueRetriesForTesting()
+  _resetPromptReconcileForTesting()
 })
 
 /** Deliver the durable `prompt_complete` of the turn the last send dispatched. */

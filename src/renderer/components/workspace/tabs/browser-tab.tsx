@@ -57,14 +57,18 @@ export function BrowserTabInline({
         label={label}
         after={
           browserTab?.agentControlled ? (
-            <span className="flex shrink-0 items-center gap-0.5">
+            <span className="flex shrink-0 items-center gap-1">
               <span
                 title="This tab is being driven by the agent — closing it revokes control"
-                className="flex h-4 shrink-0 items-center rounded bg-primary/15 px-1 text-4xs font-semibold uppercase leading-none tracking-wide text-primary"
+                className="inline-flex h-5 shrink-0 items-center rounded-full bg-primary/15 px-1.5 text-xs font-medium leading-none text-primary"
               >
                 Agent
               </span>
               {agentSession ? <BrowserAgentTabStop sessionId={agentSession} /> : null}
+            </span>
+          ) : browserTab?.annotateMode ? (
+            <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-primary/15 px-1.5 text-xs font-medium leading-none text-primary">
+              Annotating
             </span>
           ) : undefined
         }

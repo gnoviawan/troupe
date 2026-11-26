@@ -7,7 +7,7 @@ An MCP server is a small program or web service that gives an agent extra tools,
 
 ## Add an MCP server
 
-1. Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **MCP Servers**.
+1. Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **MCP servers**.
 2. Click **Add server**.
 3. Pick where the server runs: **On the internet** or **On this computer**. The server's setup page or README usually tells you.
 4. Enter a **Name**. Troupe shows it in the server list and in chat tool calls.
@@ -95,9 +95,13 @@ Use the other buttons on the row to manage the server:
 
 Some HTTP and SSE servers need you to sign in with your account on that service. Their dot turns yellow, and the row gets a **Connect** button.
 
-1. Click **Connect**.
+1. Click **Connect**. The button reads **Connecting…** until the sign-in ends.
 2. Sign in on the page that opens in your browser, and allow access.
-3. Go back to Troupe. The button changes to **Disconnect**, and Troupe tests the server again.
+3. When the page says **Authorization complete**, close the tab and go back to Troupe. Troupe tests the server again, and the **Connect** button goes away.
+
+If you cancel or deny access, the page says **Authorization cancelled**, and Troupe tells you at once that the sign-in was cancelled or denied. Click **Connect** to try again. If the sign-in fails, Troupe's message says which step failed, for example reading the server's sign-in settings, registering Troupe with the server, or getting the token after you allowed access. When it fails after you allowed access, the page says **Authorization failed**.
+
+Click a server to open its page. Its **Sign-in** row shows **OAuth · signed in**, **OAuth · not signed in**, or **OAuth · sign-in expired**. Expired means Troupe still has a saved sign-in, but the server no longer accepts it. Whenever the server asks you to sign in, **Connect** shows on the row and on the server's page, even if a sign-in is saved. Click it to sign in again.
 
 In the browser version, the sign-in page opens in a new window, and a **Finish signing in to** dialog shows the sign-in link. If nothing opens, click **Open**, or click **Copy** and open the link yourself. You have five minutes to finish signing in.
 
@@ -106,7 +110,7 @@ In the browser version, the sign-in page opens in a new window, and a **Finish s
 
 If the dialog says the address does not belong to this sign-in, paste the full address that starts with the one it shows. To stop, click **Dismiss**, then click **Connect** to start again.
 
-To remove the sign-in, click **Disconnect**.
+To remove the sign-in, open the server and click **Disconnect** in its **Sign-in** row.
 
 ## Browse the MCP catalog
 
@@ -170,11 +174,11 @@ Choose **Install** to save the server, or **Decline** to save nothing. Nothing i
 
 After you install, the card and the agent tell you what to do next:
 
-- Sign in, when the server asks for it. The card has a **Sign in** button.
+- Sign in, when the server asks for it. The card has a **Sign in** button. It reads **Signing in…** while you sign in, and the card shows **Signed in** when you are done. If the sign-in fails, the message says which step failed. In the browser version, the sign-in needs an open project. If none is open, Troupe asks you to select a project or sign in from Settings.
 - Install a missing program, such as `npx`, `uvx`, `docker`, or `dotnet`, when the server needs it.
 - Start a new chat so the agent can use the new tools. The chat you are in keeps the tools it started with.
 
-The server then appears in **Settings > MCP Servers**, the same as a server you add there. If the server is already in the list, Troupe does not add it again.
+The server then appears in **Settings > MCP servers**, the same as a server you add there. If the server is already in the list, Troupe does not add it again.
 
 ## One list for every project
 

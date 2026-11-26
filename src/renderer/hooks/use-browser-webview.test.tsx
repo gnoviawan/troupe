@@ -1,4 +1,5 @@
 import { act, render, waitFor } from '@testing-library/react'
+import { useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
   browserTabHide,
   browserTabNavigate,
   browserTabResize,
+  browserTabScreenshot,
   browserTabShow,
   onBrowserTabUpdated
 } from '@/lib/browser-api'
@@ -40,25 +42,39 @@ vi.mock('@/lib/browser-api', () => ({
   browserTabHide: vi.fn(),
   browserTabNavigate: vi.fn(),
   browserTabResize: vi.fn(),
+  browserTabScreenshot: vi.fn(),
   browserTabShow: vi.fn(),
   onBrowserTabUpdated: vi.fn(() => ({ unlisten: vi.fn() }))
 }))
 
 let resizeCallback: ResizeObserverCallback | null = null
+let observedElements: Element[] = []
 
 class ResizeObserverMock {
   constructor(callback: ResizeObserverCallback) {
     resizeCallback = callback
   }
 
-  observe(): void {}
+  observe(el: Element): void {
+    observedElements.push(el)
+  }
   disconnect(): void {}
   unobserve(): void {}
 }
 
 function BrowserWebviewHarness({ visible = true }: { visible?: boolean }): JSX.Element {
-  const { containerRef } = useBrowserWebview('browser-1', visible, 'https://example.com')
-  return <div ref={containerRef} />
+  const { containerRef, occlusionPreviewUrl } = useBrowserWebview(
+    'browser-1',
+    visible,
+    'https://example.com'
+  )
+  return (
+    <div ref={containerRef}>
+      {occlusionPreviewUrl && (
+        <img data-testid="occlusion-preview" src={occlusionPreviewUrl} alt="" />
+      )}
+    </div>
+  )
 }
 
 /** A fixed logical-px rect (the contract: bounds stay in CSS/DIP units). */
@@ -78,6 +94,7 @@ describe('useBrowserWebview bounds updates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resizeCallback = null
+    observedElements = []
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(LOGICAL_RECT)
     vi.mocked(browserTabCreate).mockResolvedValue({
@@ -86,6 +103,10 @@ describe('useBrowserWebview bounds updates', () => {
     })
     vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
     vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
     useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
@@ -271,11 +292,14 @@ describe('useBrowserWebview bounds updates', () => {
     vi.mocked(browserTabHide).mockClear()
 
     const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(browserTabScreenshot).toHaveBeenCalledWith('browser-1'))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeTruthy())
     await waitFor(() => expect(browserTabHide).toHaveBeenCalledWith('browser-1'))
     expect(browserTabShow).not.toHaveBeenCalled()
 
     occluder.rerender(<OccluderHarness open={false} />)
     await waitFor(() => expect(browserTabShow).toHaveBeenCalledWith('browser-1'))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeNull())
 
     occluder.unmount()
     visible.unmount()
@@ -330,6 +354,39 @@ describe('useBrowserWebview bounds updates', () => {
     view.unmount()
     resetNativeWebviewOcclusionForTests()
   })
+
+  it('drops an in-flight occlusion snapshot if the dropdown closes before capture resolves', async () => {
+    let resolveShot:
+      | ((val: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveShot = resolve
+        })
+    )
+    const OccluderHarness = ({ open }: { open: boolean }): null => {
+      useNativeWebviewOcclusion(open)
+      return null
+    }
+    const visible = render(<BrowserWebviewHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalled())
+
+    const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(browserTabScreenshot).toHaveBeenCalledWith('browser-1'))
+
+    // Close dropdown before screenshot resolves
+    occluder.rerender(<OccluderHarness open={false} />)
+    await act(async () => {
+      resolveShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+    })
+
+    expect(visible.queryByTestId('occlusion-preview')).toBeNull()
+    occluder.unmount()
+    visible.unmount()
+    resetNativeWebviewOcclusionForTests()
+  })
 })
 
 describe('useBrowserWebview agent control', () => {
@@ -339,6 +396,10 @@ describe('useBrowserWebview agent control', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(LOGICAL_RECT)
     vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
     vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
     useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
@@ -475,6 +536,204 @@ describe('useBrowserWebview refused agent tab', () => {
       expect(useBrowserSessionStore.getState().getTab('browser-1')).toBeUndefined()
     )
     expect(JSON.stringify(useWorkspaceStore.getState().root)).not.toContain('browser-browser-1')
+    view.unmount()
+  })
+})
+
+function StageHarness({ layoutKey = 'mobile-portrait-preset' }: { layoutKey?: string }) {
+  const stageRef = useRef<HTMLDivElement>(null)
+  const { containerRef } = useBrowserWebview('browser-1', true, 'https://example.com', {
+    layoutKey,
+    stageRef
+  })
+  return (
+    <div data-testid="panel-root">
+      <div ref={stageRef} data-testid="stage-root">
+        <div ref={containerRef} data-testid="container-root" />
+      </div>
+    </div>
+  )
+}
+
+describe('useBrowserWebview responsive stage bounds resync', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resizeCallback = null
+    observedElements = []
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
+    vi.mocked(browserTabCreate).mockResolvedValue({
+      success: true,
+      data: { id: 'browser-1', url: 'https://example.com', title: '', agentControlled: false }
+    })
+    vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
+    vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
+    useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
+  })
+
+  afterEach(async () => {
+    delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
+    useBrowserSessionStore.getState().removeTab('browser-1')
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('observes stageRef and parent panel, and resyncs on window resize and accordion transitionend even when container size is fixed', async () => {
+    let rect = {
+      x: 400,
+      y: 80,
+      width: 390,
+      height: 844,
+      top: 80,
+      right: 790,
+      bottom: 924,
+      left: 400,
+      toJSON: () => ({})
+    }
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => rect)
+
+    const view = render(<StageHarness />)
+    await waitFor(() => expect(browserTabCreate).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+
+    // Both containerRef and stageRef (plus panel wrapper) are observed
+    expect(observedElements).toContain(view.getByTestId('container-root'))
+    expect(observedElements).toContain(view.getByTestId('stage-root'))
+    expect(observedElements).toContain(view.getByTestId('panel-root'))
+
+    vi.mocked(browserTabResize).mockClear()
+
+    // Simulate sidebar toggle shifting x from 400 -> 260 while width/height stay 390x844
+    rect = { ...rect, x: 260, left: 260, right: 650 }
+    act(() => {
+      resizeCallback?.([], {} as ResizeObserver)
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 260,
+        y: 80,
+        width: 390,
+        height: 844
+      })
+    )
+
+    // Simulate window resize shifting x from 260 -> 310
+    rect = { ...rect, x: 310, left: 310, right: 700 }
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 310,
+        y: 80,
+        width: 390,
+        height: 844
+      })
+    )
+
+    // Simulate ResponsiveViewportBar accordion transitionend shifting y from 80 -> 118
+    rect = { ...rect, y: 118, top: 118, bottom: 962 }
+    act(() => {
+      const ev = new Event('transitionend', { bubbles: true }) as TransitionEvent
+      Object.defineProperty(ev, 'propertyName', { value: 'grid-template-rows' })
+      view.getByTestId('panel-root').dispatchEvent(ev)
+    })
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 310,
+        y: 118,
+        width: 390,
+        height: 844
+      })
+    )
+
+    view.unmount()
+  })
+
+  it('resyncs logical bounds when whole-UI zoom changes even without ResizeObserver firing', async () => {
+    ;(window as unknown as { __TAURI_INTERNALS__?: Record<string, unknown> }).__TAURI_INTERNALS__ =
+      {}
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 200,
+      y: 100,
+      width: 390,
+      height: 844,
+      top: 100,
+      right: 590,
+      bottom: 944,
+      left: 200,
+      toJSON: () => ({})
+    })
+
+    const view = render(<StageHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+    vi.mocked(browserTabResize).mockClear()
+
+    await act(async () => {
+      await applyUiZoom(1.25)
+    })
+
+    await waitFor(() =>
+      expect(browserTabResize).toHaveBeenLastCalledWith('browser-1', {
+        x: 250,
+        y: 125,
+        width: 487.5,
+        height: 1055
+      })
+    )
+
+    await act(async () => {
+      await applyUiZoom(1)
+    })
+    view.unmount()
+  })
+
+  it('navigates native webview to the latest requested URL if URL changed while create was pending', async () => {
+    let resolveCreate:
+      | ((val: {
+          success: true
+          data: { id: string; url: string; title: string; agentControlled: boolean }
+        }) => void)
+      | null = null
+    vi.mocked(browserTabCreate).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreate = resolve
+        })
+    )
+    vi.mocked(browserTabNavigate).mockResolvedValue({ success: true, data: undefined })
+
+    function DynamicUrlHarness({ url }: { url: string }) {
+      const { containerRef } = useBrowserWebview('browser-1', true, url)
+      return <div ref={containerRef} />
+    }
+
+    const view = render(<DynamicUrlHarness url="https://first.example" />)
+    await waitFor(() => expect(browserTabCreate).toHaveBeenCalledTimes(1))
+
+    // User requests a newer URL while browserTabCreate is still in flight
+    view.rerender(<DynamicUrlHarness url="https://second.example" />)
+
+    await act(async () => {
+      resolveCreate?.({
+        success: true,
+        data: {
+          id: 'browser-1',
+          url: 'https://first.example',
+          title: '',
+          agentControlled: false
+        }
+      })
+    })
+
+    await waitFor(() =>
+      expect(browserTabNavigate).toHaveBeenCalledWith('browser-1', 'https://second.example')
+    )
     view.unmount()
   })
 })

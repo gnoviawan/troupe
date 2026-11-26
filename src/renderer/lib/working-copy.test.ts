@@ -56,6 +56,14 @@ describe('normalizePath', () => {
     expect(normalizePath('//srv/share/../../x')).toBe('//srv/share/x')
   })
 
+  it('keeps relative paths relative when resolving dot segments', () => {
+    expect(normalizePath('./x')).toBe('x')
+    expect(normalizePath('a/../b')).toBe('b')
+    expect(normalizePath('../x')).toBe('../x')
+    expect(normalizePath('a/./b')).toBe('a/b')
+    expect(normalizePath('./a/b/../c')).toBe('a/c')
+  })
+
   it('keeps trailing slash only on roots', () => {
     expect(normalizePath('/')).toBe('/')
     expect(normalizePath('C:/')).toBe('c:/')

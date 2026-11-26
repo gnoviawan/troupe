@@ -8,13 +8,13 @@ Pick one shell. Do not stack a second overlay library.
 | `Sheet` | `ui/sheet.tsx` | Slide-over. `side`: `top` \| `bottom` \| `left` \| `right` (default `right`). Overlay `bg-overlay/80`. Mobile bottom sheets use `side="bottom"`. |
 | `ConfirmDialog` | `ConfirmDialog.tsx` | Desktop yes/no. Variants: `default` \| `danger` (not `destructive`). 400px, `bg-card`. Overlay `bg-overlay/60` with `backdrop-blur-sm`. |
 | `AlertDialog` | `ui/alert-dialog.tsx` | Confirm already inside chat/mobile Radix trees (`ChatMessage`, `MobileFileExplorer`). `max-w-lg`. Overlay `bg-overlay/80`. The confirm is `AlertDialogAction` (primary chrome), Cancel is the outline secondary. |
-| `SettingsModal` | `settings/SettingsModal.tsx` | Wide settings shell only. Do not replace with `Dialog`. Overlay `bg-overlay/60`. |
+| `SettingsWindow` | `settings/SettingsWindow.tsx` | The settings shell only: a full-window `fixed inset-0` surface with no scrim. It covers the native webviews, keeps the traffic lights, and traps Tab. Esc closes it unless a shortcut recorder is recording. Do not replace with `Dialog`. |
 | `Popover` | `ui/popover.tsx` | Non-blocking extra UI (`RemoteAccessPopover`, the Rail worktree switcher). |
 | `AnimatedMenuContent` | `ui/animated-menu-content.tsx` | A popover that opens and closes with the menu motion. `surface="panel"` for the V2 panel (model picker, mode menu): see [menus.md](menus.md). |
 
 `Drawer` (`ui/drawer.tsx`, vaul) has no product call site. Do not add a second bottom-sheet stack — use `Sheet` `side="bottom"`.
 
-New preference groups mount in `SettingsSection` inside `SettingsModal` (`AppPreferences`, `ProjectSettings`). Do not open a standalone `Dialog` as a settings page.
+New preference groups mount in `SettingsSection` inside `SettingsWindow` (`AppPreferences`, `ProjectSettings`). Do not open a standalone `Dialog` as a settings page.
 
 Hand-rolled `fixed inset-0` scrims must use `bg-overlay/{40–90}`, never `bg-black`. Command palette / shortcut overlay uses `/40`. Default new centered modal: `Dialog`, not a custom motion card.
 
@@ -28,7 +28,7 @@ Is it a confirm (yes/no, hard to undo)?
 Is it a slide-over?
  └── Sheet
 Is it the app settings window?
- └── SettingsModal
+ └── SettingsWindow
 Default → Dialog
 ```
 

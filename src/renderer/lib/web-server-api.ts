@@ -748,7 +748,7 @@ export const webServerMcpOAuth = {
   async start(
     projectId: string,
     serverUrl: string
-  ): Promise<IpcResult<{ authUrl: string; redirectUri: string }>> {
+  ): Promise<IpcResult<{ authUrl: string; redirectUri: string; tokenGeneration?: number }>> {
     return postJson('/mcp-servers/oauth/start', { projectId, serverUrl })
   },
 
@@ -766,7 +766,7 @@ export const webServerMcpOAuth = {
     projectId: string,
     serverUrl: string,
     signal?: AbortSignal
-  ): Promise<IpcResult<{ hasToken: boolean }>> {
+  ): Promise<IpcResult<{ hasToken: boolean; tokenGeneration?: number }>> {
     return postJson('/mcp-servers/oauth/status', { projectId, serverUrl }, signal)
   },
 

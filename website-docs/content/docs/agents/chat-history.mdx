@@ -35,7 +35,7 @@ A chat that sits idle stops after a while. Its history stays. To pick it up agai
 
 If Troupe cannot resume the chat on its own, a notice at the top of the message box says "This chat stopped." and why, if Troupe knows. Click **Resume chat** to try again, or **New chat** to start a new chat in the same pane. Until you resume it, the message box says "Resume the chat to send a message". If the chat's Claude account is not signed in, the notice also has an **Open Accounts** button, which opens the account list in Settings.
 
-To change how long an idle chat stays open, go to **Settings** > **Agent chats** > **Close idle chats after**. The default is 30 minutes. A chat that is working or waiting for your answer stays open.
+To change how long an idle chat stays open, go to **Settings** > **Agents** > **Close idle chats after**. The default is 30 minutes. A chat that is working or waiting for your answer stays open.
 
 Some agents cannot reload an old conversation. With those agents you can read the chat, but you cannot continue it. Start a new chat instead.
 
@@ -81,7 +81,7 @@ To copy only the ID, choose **Copy chat ID** instead. On a phone, long-press a c
 
 ## Let an agent start worker chats
 
-An agent can hand parts of a task to new chats with the `start_chat` tool. Each new chat works in the same project and folder. When the agent runs on one of your Claude accounts and automatic account switching is on, Troupe starts each new chat on the signed-in account with the most room, so parallel work does not use up one account. With switching off, the new chats use the project's account. The new chats appear in the sidebar as soon as they start. Hover over one to see which chat started it, for example "Started by Fix the cart". On a phone and in the command palette, the row says the same. Open one to watch it or talk to it.
+An agent can hand parts of a task to new chats with the `start_chat` tool. Each new chat works in the same project and folder. When the agent runs on one of your Claude, Codex or Antigravity accounts and automatic account switching is on for that provider, Troupe starts each new chat on the provider's signed-in account with the most room. Automatic switching is off by default, and it carries a risk. Each provider's page explains it: [Claude](/docs/agent-setup/claude-accounts#risks-of-switching-accounts), [Codex](/docs/agent-setup/codex-accounts#risks-of-switching-accounts) and [Antigravity](/docs/agent-setup/antigravity-accounts#risks-of-switching-accounts). With switching off, the new chats use the project's account. The new chats appear in the sidebar as soon as they start. Hover over one to see which chat started it, for example "Started by Fix the cart". On a phone and in the command palette, the row says the same. Open one to watch it or talk to it.
 
 The agent that started them lists them with `list_started_chats`, follows them with `read_chat`, and sends more work with `send_to_chat`. A chat started this way cannot start chats of its own, and one chat can have six running at a time.
 

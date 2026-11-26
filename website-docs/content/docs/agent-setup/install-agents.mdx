@@ -11,13 +11,20 @@ Troupe ships with a built-in list of agents. The list comes from the public agen
 
 Troupe also checks the online registry for newer versions when it starts, and again every 24 hours. That check only compares versions. Nothing changes until you choose to update an agent. When you do, Troupe switches to the online registry, so the list also shows agents that were added after your version of Troupe was released.
 
+Troupe adds a few agents that are not in the public registry. They are in the list too:
+
+- **Oh My Pi**, started with `omp acp`.
+- **Hermes Agent** from Nous Research, started with `hermes acp`.
+
+Troupe does not download these agents. Install them from the vendor first. See [Set up Hermes Agent](#set-up-hermes-agent).
+
 ## See which agents are ready
 
 1. Open Settings with `Ctrl+,` (`Cmd+,` on macOS).
-2. Click **Agent chats**.
-3. Scroll to the agent list. Type in **Filter agents…** to find one by name.
+2. Click **Agents**. The agent list is at the top of the page.
+3. To find an agent by name, type in **Filter agents**.
 
-![The agent list in Settings. Agoragentic shows Available and Latest. Amp shows Install from Agent Chat.](/screenshots/agent-setup-agents-list.png)
+![The agent list in Settings. Agoragentic shows Latest and Available. Amp shows Needs install.](/screenshots/agent-setup-agents-list.png)
 
 Each agent has a status badge. The badge tells you what to do next.
 
@@ -25,7 +32,7 @@ Each agent has a status badge. The badge tells you what to do next.
 | --- | --- | --- |
 | **Available** | The agent can start now. | Start a chat with it. |
 | **Warming…**, **Warm**, **Session ready** | Troupe already started the agent in the background, so your next chat opens faster. | Nothing. |
-| **Install from Agent Chat** | Troupe can download the agent for you. | Install it from a new chat. See [Install an agent from a chat](#install-an-agent-from-a-chat). |
+| **Needs install** | Troupe can download the agent for you. | Install it from a new chat. See [Install an agent from a chat](#install-an-agent-from-a-chat). |
 | **Needs Node.js** | The agent runs through `npx`, which comes with Node.js. | Install Node.js, then reopen Settings. If the badge stays, restart Troupe. |
 | **Needs uv** | The agent runs through `uvx`, which comes with uv. | Install uv, then reopen Settings. If the badge stays, restart Troupe. |
 | **Manual install** | Troupe cannot download this agent. | Install it from the vendor, then tell Troupe where it is. See [Point Troupe at an agent you installed](#point-troupe-at-an-agent-you-installed). |
@@ -51,7 +58,7 @@ If you already have the agent on your computer, click **Custom path** instead of
 
 ![The agent menu with More open. Amp and Claude Agent show Install. Cline, Codebuddy Code and Codex show Update.](/screenshots/agent-setup-agent-picker.png)
 
-Some agents ask you to sign in the first time you use them. The chat shows the sign-in choices the agent offers. For Claude, see [Claude accounts](/docs/agent-setup/claude-accounts). For Codex, see [Codex accounts](/docs/agent-setup/codex-accounts).
+Some agents ask you to sign in the first time you use them. The chat shows the sign-in choices the agent offers. For Claude, see [Claude accounts](/docs/agent-setup/claude-accounts). For Codex, see [Codex accounts](/docs/agent-setup/codex-accounts). For Google Antigravity, see [Antigravity accounts](/docs/agent-setup/antigravity-accounts).
 
 ### Sign in to an agent
 
@@ -72,7 +79,7 @@ Agents marked **Manual install** must come from the vendor. The agent's row in S
 3. In the **Manual install** bar, type the path to the agent's program, or click the folder button to find it.
 4. Click **Save**.
 
-After you save a path, the agent's row in **Settings** > **Agent chats** has a path box. To change the path, edit it and click **Save path**. To go back to the default, click **Clear saved path**.
+After you save a path, the agent's row in **Settings** > **Agents** has a path box. To change the path, edit it and click **Save path**. To go back to the default, click **Clear saved path**.
 
 ## Set up Claude Agent
 
@@ -84,9 +91,21 @@ Claude Agent needs three things on the computer that runs Troupe:
 
 When those are in place, pick **Claude Agent** in a new chat and click **Install**. Troupe installs a fixed version of Anthropic's Claude Agent package in its own folder. To use more than one Claude account, see [Claude accounts](/docs/agent-setup/claude-accounts).
 
+## Set up Hermes Agent
+
+Hermes Agent runs on macOS and Linux (Intel and ARM) and on Windows (x64). Troupe starts it with `hermes acp`, so the `hermes` command must be on your `PATH`.
+
+1. Install Hermes Agent with the [Hermes installation guide](https://hermes-agent.nousresearch.com/docs/getting-started/installation). Its installer puts `hermes` in `~/.local/bin`, or in `%LOCALAPPDATA%\hermes\bin` on Windows.
+2. Reopen **Settings** > **Agents**. When Troupe finds `hermes`, **Hermes Agent** shows **Available**. If it still shows **Manual install**, restart Troupe, or [point Troupe at the program](#point-troupe-at-an-agent-you-installed).
+3. Pick **Hermes Agent** in a new chat.
+
+Hermes Agent lists its models in the model menu, and you can switch between them there like with any other agent. See [Pick an agent and a model](/docs/agents/start-a-chat#pick-an-agent-and-a-model).
+
+If you added Hermes Agent as a [custom agent](/docs/agent-setup/custom-agents) before, you can keep it or remove it and use the built-in one.
+
 ## Update an agent
 
-Troupe compares your agents with the online registry when it starts and every 24 hours. To check right now, click **Check for updates** in **Settings** > **Agent chats**. The line under the button says how many updates exist and when Troupe last checked.
+Troupe compares your agents with the online registry when it starts and every 24 hours. To check right now, click **Check for updates** in **Settings** > **Agents**. The line under the button says how many updates exist and when Troupe last checked.
 
 1. Find the agent in the list. An agent with an update shows its current and new version, for example `0.9.0 → 0.10.0`.
 2. Click **Update to** followed by the version number.

@@ -17,7 +17,7 @@ Use the link that has the token in it. It looks like this:
 https://troupe.example.com/#token=<token>
 ```
 
-You get this link from the QR code or **Copy link** when you [share your desktop app](/docs/remote/share-desktop), or you build it from the server's token file when you [run troupe-server](/docs/remote/server-options#the-access-token).
+You get this link from the QR code or **Copy link** when you [share your desktop app](/docs/remote/share-desktop). For `troupe-server`, you get it from the server's QR code or **Copy link** (see [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device)), or you build it from the server's token file (see [The access token](/docs/remote/server-options#the-access-token)).
 
 The browser saves the token, so later you can open the address without `#token=`. The token is saved per browser. A second browser, a private window, or a phone each need the token once.
 
@@ -63,7 +63,7 @@ Browsers keep some `Ctrl` shortcuts for themselves, such as `Ctrl+T` for a new b
 | Settings | `Ctrl+,` | `Alt+,` |
 | Command history | `Ctrl+R` | No shortcut, because `Ctrl+R` reloads the page |
 
-Other shortcuts, such as `Ctrl+K` for the command palette, are the same in both. You can change any shortcut in **Settings** under **Keyboard Shortcuts**.
+Other shortcuts, such as `Ctrl+K` for the command palette, are the same in both. You can change any shortcut in **Settings** under **Keyboard shortcuts**.
 
 ## What the browser version can't do
 
@@ -72,8 +72,8 @@ Some features need the desktop app. In the browser they are missing:
 - The built-in web browser tabs. See [Browser](/docs/browser).
 - SSH hosts and SSH sessions in the sidebar. See [SSH](/docs/ssh).
 - **Open with External App** and **Show in File Manager** in the file tree.
-- The **Updates** settings. A server updates in its own way. See [Update the server](/docs/remote/server-options#update-the-server).
-- Sharing with a QR code. The browser can't share itself again.
+- The update controls on the **About** page of Settings. A server updates in its own way. See [Update the server](/docs/remote/server-options#update-the-server).
+- Sharing with the monitor icon. The browser can't share itself again. A browser that uses `troupe-server` has **Connect device** instead, which shows a QR code for the server. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
 
 Some things work differently:
 

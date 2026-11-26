@@ -44,11 +44,13 @@ import { getAcpTransport } from '@/lib/acp-transport'
 import { agentConfigIdentityKey } from '@/lib/agents/acp-config-identity'
 import { type AgentAuthPolicy, agentPolicyForConfigId } from '@/lib/agents/acp-registry'
 import {
+  antigravityAccountSignedOutMessage,
   classifySetupError,
   claudeAccountSignedOutMessage,
   codexAccountSignedOutMessage,
   describeProviderFailure,
   isAgentAuthRequiredError,
+  isAntigravityAccountSignedOutError,
   isClaudeAccountSignedOutError,
   isCodexAccountSignedOutError
 } from '@/lib/agents/acp-spawn-errors'
@@ -610,7 +612,9 @@ export function withSessionResumeError(
             ? claudeAccountSignedOutMessage(err)
             : isCodexAccountSignedOutError(err)
               ? codexAccountSignedOutMessage(err)
-              : String(err)
+              : isAntigravityAccountSignedOutError(err)
+                ? antigravityAccountSignedOutMessage(err)
+                : String(err)
         }`
       )
     }
@@ -1586,16 +1590,8 @@ export function mergeAgentConfigOptions(
 }
 
 export function cacheOptionsFromSession(set: AcpSet, get: AcpGet, sessionId: SessionId): void {
-  const state = get()
-  const session = state.sessions[sessionId]
-  if (!session) return
-  const configId = configIdForAgentId(state, session.agentId)
+  const configId = writeOptionsCacheFromSession(set, get, sessionId)
   if (!configId) return
-  writeAgentOptionsCache(set, configId, {
-    models: session.models ?? null,
-    modes: session.modes ?? null,
-    configOptions: session.configOptions ?? []
-  })
   // #1486/#1479: advertised options landing on a live session (fresh
   // session/new after a branch-checkout re-prepare, or the first
   // config_option_update after an idle reopen) is exactly the moment a
@@ -1603,6 +1599,29 @@ export function cacheOptionsFromSession(set: AcpSet, get: AcpGet, sessionId: Ses
   // Idempotent: values equal to the session's current ones are no-ops, and
   // picks no longer advertised are dropped.
   void reapplyPersistedComposerOptions(get, sessionId, configId)
+}
+
+/**
+ * Write a live session's controls to its agent's options cache, without the
+ * persisted-pick heal `cacheOptionsFromSession` runs after it. Returns the
+ * agent's config id, or `null` when the session or its config is unknown.
+ */
+export function writeOptionsCacheFromSession(
+  set: AcpSet,
+  get: AcpGet,
+  sessionId: SessionId
+): string | null {
+  const state = get()
+  const session = state.sessions[sessionId]
+  if (!session) return null
+  const configId = configIdForAgentId(state, session.agentId)
+  if (!configId) return null
+  writeAgentOptionsCache(set, configId, {
+    models: session.models ?? null,
+    modes: session.modes ?? null,
+    configOptions: session.configOptions ?? []
+  })
+  return configId
 }
 
 /** Sessions with a reapply currently in flight (dedupes event storms). */

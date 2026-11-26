@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { leaveQuickChatView } from '@/lib/no-project-chat'
 import { returnToWorkspaceRoute } from '@/lib/workspace-route'
 import { closeWorkspaceTab } from '@/lib/workspace-tab-close'
 import { getAllLeafPanes, useWorkspaceStore, type WorkspaceTab } from '@/stores/workspace-store'
@@ -26,7 +27,10 @@ export interface MobileTabActionsOptions {
 export interface MobileTabActions {
   /** Every pane tab across every leaf, in tree order. */
   paneTabs: PaneTabEntry[]
-  /** Activate a pane tab (leaves fullscreen and returns to the workspace route as needed). */
+  /**
+   * Activate a pane tab (closes the quick view, leaves fullscreen and returns
+   * to the workspace route as needed).
+   */
   selectTab: (paneId: string, tabId: string) => void
   /**
    * Close a tab through its guarded path. Returns `true` only when the close
@@ -78,6 +82,9 @@ export function useMobileTabActions({
         if (current.fullscreenPaneId && current.fullscreenPaneId !== paneId) {
           current.clearFullscreenPane()
         }
+        // An open quick chat or its launcher covers the panes. The launcher
+        // sits on `/`, so no route change would close it: close it here.
+        leaveQuickChatView('useMobileTabActions.selectTab')
         current.setActiveTab(paneId, tabId)
         if (!isChatRow) returnToWorkspaceRoute(pathname, navigate)
       }

@@ -1,0 +1,423 @@
+[
+  {
+    "file": "ws-event.json",
+    "name": "agent_error",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs AgentErrorEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "agent_error",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "message": "Upstream quota reached",
+        "code": -32000,
+        "providerCode": "provider_quota_exceeded"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "session_info_update",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs SessionInfoUpdateEvent::title_only",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "session_info_update",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "title": "Fix the login redirect"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "commands_update",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs CommandsUpdateEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "commands_update",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "availableCommands": [
+          {
+            "name": "review",
+            "description": "Review the current diff",
+            "input": null
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "local_title_generated",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/manager/history.rs record_host_event",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "local_title_generated",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "title": "Fix the login redirect"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "background_commands",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs BackgroundCommandsEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "background_commands",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "revision": 3,
+        "commands": [
+          {
+            "toolCallId": "toolu_fixture",
+            "title": "Run the dev server",
+            "command": "bun run dev",
+            "startedAtMs": 1763884800000,
+            "state": "running"
+          },
+          {
+            "toolCallId": "toolu_fixture_2",
+            "title": "Watch tests",
+            "command": null,
+            "startedAtMs": 1763884800000,
+            "state": "ended",
+            "endedAtMs": 1763884860000
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "question_cancelled",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs QuestionCancelledEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "question_cancelled",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "questionId": "question-fixture"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "models_update",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/events.rs ModelsUpdateEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "models_update",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "models": {
+          "currentModelId": "openrouter:openai/gpt-5",
+          "availableModels": [
+            {
+              "modelId": "openrouter:anthropic/claude-sonnet-4",
+              "name": "anthropic/claude-sonnet-4"
+            },
+            {
+              "modelId": "openrouter:openai/gpt-5",
+              "name": "openai/gpt-5"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "mcp_install_request",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_mcp/parent/mcp_install/mod.rs Card",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "mcp_install_request",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "requestId": "mcp-install-fixture",
+        "name": "fixture-server",
+        "title": "Fixture server",
+        "transport": "stdio",
+        "form": {
+          "source": {
+            "kind": "catalog",
+            "name": "io.example/fixture"
+          },
+          "choice": null,
+          "title": "Fixture server",
+          "fields": []
+        },
+        "consent": null,
+        "planId": "plan-fixture",
+        "launchDigest": "sha256-fixture"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "mcp_install_resolved",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_mcp/parent/mcp_install/mod.rs Resolved",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "mcp_install_resolved",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "requestId": "mcp-install-fixture",
+        "outcome": "installed",
+        "name": "fixture-server",
+        "serverId": "fixture-server",
+        "nextSteps": [],
+        "oauth": false
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "mcp_registry_changed",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_mcp/parent/mcp_install/mod.rs registry change",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "mcp_registry_changed",
+      "payload": {
+        "agentId": "agent-fixture",
+        "sessionId": "sess-fixture",
+        "serverId": "fixture-server",
+        "name": "fixture-server"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "browser_ticket_closed",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_ticket.rs emit_closed",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "browser_ticket_closed",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "requestId": "host-ticket-fixture",
+        "outcome": "withdrawn"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "claude_limit_action",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/claude_limit/mod.rs ClaudeLimitActionEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "claude_limit_action",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "projectId": "fixture-proj-a",
+        "action": "resume_scheduled",
+        "at": 1763888400000
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "codex_limit_action",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/codex_limit/mod.rs CodexLimitActionEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "codex_limit_action",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "projectId": "fixture-proj-a",
+        "action": "switched",
+        "from": {
+          "id": "default",
+          "name": "Default"
+        },
+        "to": {
+          "id": "codex-2",
+          "name": "Work"
+        },
+        "fromAgentId": "agent-fixture",
+        "newAgentId": "agent-fixture-2"
+      }
+    }
+  },
+  {
+    "file": "ws-event.json",
+    "name": "antigravity_limit_action",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/antigravity_limit/mod.rs AntigravityLimitActionEvent",
+    "frame": {
+      "sid": "sess-fixture",
+      "seq": 7,
+      "type": "antigravity_limit_action",
+      "payload": {
+        "sessionId": "sess-fixture",
+        "projectId": "fixture-proj-a",
+        "action": "switched",
+        "from": {
+          "id": "default",
+          "name": "Default"
+        },
+        "to": {
+          "id": "antigravity-2",
+          "name": "Work"
+        },
+        "fromAgentId": "agent-fixture",
+        "newAgentId": "agent-fixture-2"
+      }
+    }
+  },
+  {
+    "file": "ws-frame.json",
+    "name": "gap",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/relay/writer.rs Outbound::Gap",
+    "frame": {
+      "type": "gap",
+      "sid": "sess-fixture"
+    }
+  },
+  {
+    "file": "ws-frame.json",
+    "name": "canvas_call",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_mcp/canvas.rs CanvasCallFrame",
+    "frame": {
+      "type": "canvas_call",
+      "callId": 4,
+      "projectId": "fixture-proj-a",
+      "mountSeq": 1,
+      "method": "inspect_document",
+      "params": "{}",
+      "timeoutMs": 30000
+    }
+  },
+  {
+    "file": "ws-frame.json",
+    "name": "canvas_lease_lost",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/host_mcp/canvas.rs CanvasLeaseLostFrame",
+    "frame": {
+      "type": "canvas_lease_lost",
+      "projectId": "fixture-proj-a",
+      "mountSeq": 1,
+      "reason": "takenOver"
+    }
+  },
+  {
+    "file": "terminal-frame.json",
+    "name": "gap",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/terminal_ws.rs lagged forwarder",
+    "frame": {
+      "type": "gap",
+      "terminalId": "term-fixture",
+      "lastSeq": 41
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "list_persisted_sessions.quick_chat",
+    "_handwritten": true,
+    "source": "src-tauri/src/acp/session_persistence/types.rs SessionIndexEntry",
+    "frame": {
+      "id": "req-38",
+      "ok": true,
+      "payload": [
+        {
+          "storageKey": "5b0f6d1e-3c2a-4f7e-9a41-0c8d2e7f1a90",
+          "sessionId": "sess-quick",
+          "stableAgentNamespace": "config:fake-longrun",
+          "runtimeAgentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+          "projectId": "fixture-proj-a",
+          "cwd": "/fixture/home/.troupe/quick-chats/qc-fixture",
+          "title": "Quick question",
+          "titleSource": "derived_first_message",
+          "createdAt": 1795449252177,
+          "lastActivityAt": 1795449259976,
+          "status": "active",
+          "messageCount": 2,
+          "toolCount": 0,
+          "lastSeq": 8,
+          "discovered": false,
+          "resumeEligible": true,
+          "kind": "quick",
+          "quickChatId": "qc-fixture"
+        }
+      ]
+    }
+  },
+  {
+    "file": "ws-request.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "type": "get_acp_agent_overlay",
+      "payload": {}
+    }
+  },
+  {
+    "file": "ws-reply.json",
+    "name": "get_acp_agent_overlay",
+    "_handwritten": true,
+    "source": "src-tauri/src/web/ws/agents.rs handle_get_acp_agent_overlay",
+    "frame": {
+      "id": "req-overlay",
+      "ok": true,
+      "payload": {
+        "overrides": [
+          {
+            "id": "claude-acp",
+            "brandColor": {
+              "light": "#C15F3C",
+              "dark": "#D97757"
+            }
+          },
+          {
+            "id": "gemini",
+            "name": "Gemini CLI",
+            "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#4796E3\" d=\"M0 0h24v24H0z\"/></svg>"
+          }
+        ],
+        "source": "network",
+        "fetchedAt": "2026-11-24T08:00:00+00:00"
+      }
+    }
+  }
+]

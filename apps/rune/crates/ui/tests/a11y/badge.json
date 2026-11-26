@@ -1,0 +1,17 @@
+{
+  "children": [
+    {
+      "name": "default",
+      "role": "label"
+    },
+    {
+      "name": "outline",
+      "role": "label"
+    },
+    {
+      "role": "status",
+      "states": ["live-polite"]
+    }
+  ],
+  "role": "window"
+}

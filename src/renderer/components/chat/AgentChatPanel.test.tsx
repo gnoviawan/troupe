@@ -1699,6 +1699,13 @@ describe('AgentChatPanel failed-launch retry (story 5)', () => {
 describe('AgentChatPanel changed files', () => {
   beforeEach(() => {
     changedFilesArgsRef.current = []
+    // Earlier tests (e.g. the seamless-resume ones) can leave `s1` marked as
+    // opening/restoring; a restoring chat renders the preload instead of the
+    // status chips, so the changed-files read never runs.
+    openingRef.current = {}
+    restoringRef.current = {}
+    launchingRef.current = {}
+    toolCallsRef.current = {}
   })
 
   it('reads the changed files of the session cwd and tool calls', () => {
@@ -1736,6 +1743,16 @@ describe('AgentChatPanel changed files', () => {
 describe('AgentChatPanel filePathContext parity', () => {
   beforeEach(() => {
     chatMessageListPropsRef.current = null
+    // Bun shuffles describe blocks (randomize = true). Other blocks leave the
+    // session index, live sessions and restore marks set for 's1', which put
+    // it behind the "Restoring chat" preload so the message list never mounts.
+    // Start from the same clean store as the rehydration block.
+    sessionsMapRef.current = {}
+    indexRef.current = []
+    openingRef.current = {}
+    restoringRef.current = {}
+    launchingRef.current = {}
+    discoveredContextRef.current = {}
     // An empty chat shows the start hero instead of the message list.
     messagesRef.current = [{ id: 'm1', role: 'user', blocks: [{ type: 'text', text: 'hello' }] }]
   })

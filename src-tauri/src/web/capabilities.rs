@@ -237,6 +237,7 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
         | "list_agents"
         | "list_acp_catalog"
         | "fetch_acp_registry_snapshot"
+        | "get_acp_agent_overlay"
         | "search_mcp_catalog"
         | "describe_mcp_install"
         | "get_mcp_catalog_status"
@@ -245,6 +246,8 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
         | "list_claude_usage"
         | "list_codex_accounts"
         | "list_codex_usage"
+        | "list_antigravity_accounts"
+        | "list_antigravity_usage"
         | "subagent_settings_get"
         | "store_read"
         | "mark_chat_read" => Requirement::View,

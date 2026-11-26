@@ -14,6 +14,7 @@ import { READ_ONLY_SERVER_REASON } from '@/lib/write-gate'
 import { applyRemovedCodexAccount } from '@/stores/codex-account-switch'
 import { useProjectStore } from '@/stores/project-store'
 import type { ProjectColor } from '@/types/project'
+import { SETTINGS_CARD_CLASS } from '../SettingsGroup'
 import { AccountGroupFooter } from './AccountGroupFooter'
 import { AccountNameDialog } from './AccountNameDialog'
 import { toastAccountChoiceError } from './account-choice-error'
@@ -114,7 +115,7 @@ export function CodexProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="mt-8 flex flex-col gap-1" data-testid="codex-provider-settings">
+    <div className="flex flex-col gap-3" data-testid="codex-provider-settings">
       <ProviderGroupHeader
         iconKey="acp:codex-acp"
         name="Codex"
@@ -163,7 +164,7 @@ export function CodexProviderSettings(): React.JSX.Element {
       )}
 
       {!loading && !failed && snapshot && (
-        <div>
+        <div className={cn(SETTINGS_CARD_CLASS, 'px-4')}>
           {accounts.map((account) => {
             const read = usage[account.id]
             const readiness = codexAccountReadiness(account, read)
@@ -221,7 +222,7 @@ export function CodexProviderSettings(): React.JSX.Element {
 
       {!loading && !failed && snapshot && (
         <AccountGroupFooter
-          id="codex"
+          provider="codex"
           accountCount={accounts.length}
           canManage={canManage}
           autoSwitch={snapshot.autoSwitch}
@@ -248,6 +249,9 @@ export function CodexProviderSettings(): React.JSX.Element {
             onOpenChange={setAddOpen}
             existingNames={accounts.map((a) => a.name)}
             defaultAccountName={defaultAccount?.name ?? null}
+            hasSignedInAccount={accounts.some(
+              (a) => codexAccountReadiness(a, usage[a.id]) === 'ready'
+            )}
             usage={usage}
             onChanged={reload}
             onSignedIn={() => refreshUsage(true)}

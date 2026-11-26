@@ -89,6 +89,8 @@ fn operations_carry_bearer_auth_exactly_where_the_gate_applies() {
     assert_eq!(doc["paths"]["/health"]["get"]["security"], json!([]));
     assert_eq!(doc["paths"]["/ws"]["get"]["security"], json!([]));
     assert_eq!(doc["paths"]["/canvas/{id}/{rest}"]["get"]["security"], json!([]));
+    assert_eq!(doc["paths"]["/preview/{token}/{rest}"]["get"]["security"], json!([]));
+    assert_eq!(doc["paths"]["/html-preview/open"]["post"]["security"], bearer);
     assert_eq!(
         doc["paths"]["/projects"]["get"]["responses"]["401"]["$ref"],
         "#/components/responses/Unauthorized"
@@ -153,6 +155,7 @@ fn gated_production_router() -> axum::Router {
         crate::web::origin::OriginPolicy::default(),
         crate::web::host_allow::HostAllowList::loopback(),
         crate::web::connection_runtime::ConnectionRuntime::default(),
+        None,
         None,
     )
 }

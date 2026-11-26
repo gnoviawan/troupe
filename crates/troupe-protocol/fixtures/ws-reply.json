@@ -1,0 +1,1442 @@
+{
+  "acp_deliver_auth_redirect": {
+    "id": "req-75",
+    "ok": false,
+    "err": {
+      "code": "AUTH_REDIRECT_FAILED",
+      "message": "refused: auth redirect URL must be http(s) on a loopback host (localhost, *.localhost, 127.0.0.0/8, [::1])"
+    }
+  },
+  "add_antigravity_account": {
+    "id": "req-ag-93",
+    "ok": true,
+    "payload": {
+      "id": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture",
+      "createdAt": 1795449272014
+    }
+  },
+  "add_claude_account": {
+    "id": "req-80",
+    "ok": true,
+    "payload": {
+      "id": "7ae793aa15df4d6e908339762260506c",
+      "name": "Fixture",
+      "createdAt": 1795449268721
+    }
+  },
+  "add_codex_account": {
+    "id": "req-93",
+    "ok": true,
+    "payload": {
+      "id": "d95059abc8e346f0ada31c2e109f7a29",
+      "name": "Fixture",
+      "createdAt": 1795449272014
+    }
+  },
+  "add_project": {
+    "id": "req-14",
+    "ok": true,
+    "payload": {
+      "project": {
+        "id": "fixture-proj-b",
+        "name": "proj-b",
+        "color": "green",
+        "path": "/fixture/work/proj-w",
+        "isArchived": false,
+        "isDefault": false
+      }
+    }
+  },
+  "answer_mcp_install": {
+    "id": "req-70",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "sessionId is required"
+    }
+  },
+  "answer_question": {
+    "id": "req-25",
+    "ok": false,
+    "err": {
+      "code": "already_resolved",
+      "message": "this question was already answered (first-response-wins)"
+    }
+  },
+  "authenticate": {
+    "id": "req-1",
+    "ok": true,
+    "payload": {
+      "historyMode": "server",
+      "runtimePolicy": {
+        "turnTimeoutMs": 0,
+        "promptInactivityTimeoutMs": 0,
+        "pingIntervalMs": 20000,
+        "pongTimeoutMs": 75000
+      },
+      "protocolVersion": 7
+    }
+  },
+  "authenticate_agent": {
+    "id": "req-59",
+    "ok": true,
+    "payload": {}
+  },
+  "browser_stop": {
+    "id": "req-48",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "browser automation runs only on the desktop app"
+    }
+  },
+  "cancel_claude_login": {
+    "id": "req-89",
+    "ok": true,
+    "payload": {
+      "cancelled": false
+    }
+  },
+  "cancel_mcp_install": {
+    "id": "req-68",
+    "ok": true,
+    "payload": {}
+  },
+  "cancel_prompt": {
+    "id": "req-28",
+    "ok": true,
+    "payload": {},
+    "visible_at": 63
+  },
+  "canvas_mount": {
+    "id": "req-102",
+    "ok": true,
+    "payload": {
+      "attached": false,
+      "heldElsewhere": false
+    }
+  },
+  "canvas_reply": {
+    "id": "req-103",
+    "ok": true,
+    "payload": {
+      "resolved": false
+    }
+  },
+  "canvas_unmount": {
+    "id": "req-104",
+    "ok": true,
+    "payload": {
+      "unmounted": false
+    }
+  },
+  "check_antigravity_usage": {
+    "id": "req-ag-102",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "Usage checks run only on the Antigravity agent"
+    }
+  },
+  "close_session": {
+    "id": "req-106",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "agent does not support session/close"
+    }
+  },
+  "commit_mcp_install": {
+    "id": "req-67",
+    "ok": false,
+    "err": {
+      "code": "VALIDATION_ERROR",
+      "message": "invalid commit_mcp_install request: missing field `launchDigest`"
+    }
+  },
+  "create_session": {
+    "id": "req-19",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb"
+    },
+    "visible_at": 1
+  },
+  "delete_agent_session": {
+    "id": "req-61",
+    "ok": false,
+    "err": {
+      "code": "DELETE_SESSION_FAILED",
+      "message": "agent does not support session/delete"
+    }
+  },
+  "delete_session": {
+    "id": "req-105",
+    "ok": true,
+    "payload": {
+      "deleted": true
+    }
+  },
+  "describe_mcp_install": {
+    "id": "req-65",
+    "ok": false,
+    "err": {
+      "code": "VALIDATION_ERROR",
+      "message": "invalid describe_mcp_install request: missing field `source`"
+    }
+  },
+  "dispose_ephemeral_session": {
+    "id": "req-54",
+    "ok": true,
+    "payload": {}
+  },
+  "fetch_acp_registry_snapshot": {
+    "id": "req-73",
+    "ok": true,
+    "payload": {
+      "agents": [
+        {
+          "id": "agoragentic-acp",
+          "name": "Agoragentic",
+          "version": "1.3.0",
+          "description": "Agent marketplace with 174+ AI capabilities. Browse, invoke, and pay for agent services settled in USDC on Base L2.",
+          "distribution": {
+            "npx": {
+              "package": "agoragentic-mcp@1.3.0",
+              "args": ["--acp"]
+            }
+          }
+        },
+        {
+          "id": "amp-acp",
+          "name": "Amp",
+          "version": "0.13.0",
+          "description": "ACP wrapper for Amp - the frontier coding agent",
+          "distribution": {
+            "binary": {
+              "darwin-aarch64": {
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.13.0/amp-acp-darwin-aarch64.tar.gz",
+                "cmd": "./amp-acp",
+                "sha256": "ca3315e3e54ea85c7e5db09d19a1908cd2ea149c8e83a728cefb814c7a490edf"
+              },
+              "darwin-x86_64": {
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.13.0/amp-acp-darwin-x86_64.tar.gz",
+                "cmd": "./amp-acp",
+                "sha256": "75aeeb10a346276151fb38812a8aafd95d108765e794da0e1ff30b0aebfc6752"
+              },
+              "linux-aarch64": {
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.13.0/amp-acp-linux-aarch64.tar.gz",
+                "cmd": "./amp-acp",
+                "sha256": "ad7e1c23ec29bf47f757d656fc4c9a957dd60533da034213a6bc7d33d1813d32"
+              },
+              "linux-x86_64": {
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.13.0/amp-acp-linux-x86_64.tar.gz",
+                "cmd": "./amp-acp",
+                "sha256": "205c819383b6fd389b408120ebea9cdde5c2957530b5ce4ebc912998d4118f8b"
+              },
+              "windows-x86_64": {
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.13.0/amp-acp-windows-x86_64.zip",
+                "cmd": "amp-acp.exe",
+                "sha256": "5bb7aad1f40f6a1c41a81dbb566bf550a00a627da41508b035cca8765a1422dd"
+              }
+            }
+          }
+        },
+        {
+          "id": "antigravity-acp",
+          "name": "Google Antigravity",
+          "version": "1.5.2",
+          "description": "Google’s AI coding agent",
+          "distribution": {
+            "binary": {
+              "darwin-aarch64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/macos/agy-acp-server-1.5.2-darwin-arm64.zip",
+                "cmd": "./agy_acp_server.par",
+                "sha256": "123a16d5c40a8ac99e20f01a62b68dd860fd96b1c528dfb8eaa37ca8733d4845"
+              },
+              "darwin-x86_64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/macos/agy-acp-server-1.5.2-darwin-x86_64.zip",
+                "cmd": "./agy_acp_server.par",
+                "sha256": "92addb5580577b5356d35484d72d1a113d9c5312ad766bcb304983aa8e3fbb06"
+              },
+              "linux-x86_64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/linux/agy-acp-server-1.5.2-linux-x86_64.zip",
+                "cmd": "./agy_acp_server.par",
+                "args": ["--uid="],
+                "sha256": "99dd8612450805011619d7b8447ce374c289e00549d8557f36790e1dd6256852"
+              },
+              "linux-aarch64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/linux/agy-acp-server-1.5.2-linux-arm64.zip",
+                "cmd": "./agy_acp_server.par",
+                "args": ["--uid="],
+                "sha256": "e729e05ef54ef0763e48900032466b47fa7c9939cde257f93ba49410ab577acb"
+              },
+              "windows-x86_64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/windows/agy-acp-server-1.5.2-windows-x86_64.zip",
+                "cmd": "./agy_acp_server.exe",
+                "sha256": "5cbadd4f4df698572473d8890fc26ec2dc1724501f06e3a963941daec2bd21d6"
+              },
+              "windows-aarch64": {
+                "archive": "https://dl.google.com/agy-extensions/releases/windows/agy-acp-server-1.5.2-windows-arm64.zip",
+                "cmd": "./agy_acp_server.exe",
+                "sha256": "8a4b2ea8df2ffefae33309348752e9119d21a6d36090c0eb48631c2e8f5781ab"
+              }
+            }
+          }
+        }
+      ],
+      "source": "network",
+      "fetchedAt": "2026-11-23T15:54:27.968056289+00:00"
+    }
+  },
+  "finish_claude_link_login": {
+    "id": "req-88",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "No sign-in is waiting for a code. Start the sign-in again."
+    }
+  },
+  "get_mcp_catalog_icon": {
+    "id": "req-69",
+    "ok": false,
+    "err": {
+      "code": "VALIDATION_ERROR",
+      "message": "invalid mcp catalog icon request: unknown field `serverId`, expected `name`"
+    }
+  },
+  "get_mcp_catalog_status": {
+    "id": "req-63",
+    "ok": true,
+    "payload": {
+      "updatedAt": "2026-10-31T10:35:51.229Z",
+      "sample": true,
+      "servers": 24,
+      "sync": {
+        "state": "disabled"
+      }
+    }
+  },
+  "get_session_cursor": {
+    "id": "req-21",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "watermark": 1,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+      "headSeq": 1
+    }
+  },
+  "get_session_payload": {
+    "id": "req-39",
+    "ok": true,
+    "payload": {
+      "metadata": {
+        "id": "sess-b9ac9edb",
+        "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "agentConfigId": "fake-longrun",
+        "title": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] rec…",
+        "cwd": "/fixture/work/proj-a",
+        "projectId": "fixture-proj-a",
+        "createdAt": 1795449252177,
+        "lastActivityAt": 1795449259976,
+        "messageCount": 9,
+        "lastSeq": 62,
+        "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+        "status": "active",
+        "turnActive": false
+      },
+      "messages": [
+        {
+          "id": "turn:fixture-turn-1",
+          "role": "user",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] record fixtures"
+            }
+          ],
+          "streaming": false,
+          "timestamp": 1795449252414,
+          "seq": 2
+        },
+        {
+          "id": "snapshot:agent:10",
+          "role": "agent",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 chunk-1 t=0schunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 chunk-2 t=0schunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 chunk-3 t=1schunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 chunk-4 t=1schunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 chunk-5 t=1schunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 chunk-6 t=1schunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 t=1schunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 t=2schunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 t=2schunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 t=2schunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 chunk-11 t=2schunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 chunk-12 t=2schunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 chunk-13 t=3schunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 chunk-14 t=3schunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 chunk-15 t=3s[DONE after 15 chunks over 3s]"
+            }
+          ],
+          "streaming": false,
+          "timestamp": 1795449252523,
+          "seq": 10
+        },
+        {
+          "id": "snapshot:agent:28",
+          "role": "agent",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "[ANSWERED permission cancelled]"
+            }
+          ],
+          "streaming": false,
+          "timestamp": 1795449255525,
+          "seq": 28
+        }
+      ],
+      "switches": [],
+      "toolCalls": [
+        {
+          "toolCallId": "fake-edit-1",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/auth.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 10,
+            "removed": 0
+          },
+          "seq": 6,
+          "timestamp": 1795449252418,
+          "restoredSummary": true
+        },
+        {
+          "toolCallId": "fake-edit-2",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/session.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 4,
+            "removed": 0
+          },
+          "seq": 7,
+          "timestamp": 1795449252418,
+          "restoredSummary": true
+        },
+        {
+          "toolCallId": "fake-edit-3",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/token.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 3,
+            "removed": 2
+          },
+          "seq": 8,
+          "timestamp": 1795449252419,
+          "restoredSummary": true
+        }
+      ]
+    }
+  },
+  "get_session_payload_tail": {
+    "id": "req-40",
+    "ok": true,
+    "payload": {
+      "metadata": {
+        "id": "sess-b9ac9edb",
+        "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "agentConfigId": "fake-longrun",
+        "title": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] rec…",
+        "cwd": "/fixture/work/proj-a",
+        "projectId": "fixture-proj-a",
+        "createdAt": 1795449252177,
+        "lastActivityAt": 1795449259976,
+        "messageCount": 2,
+        "lastSeq": 62,
+        "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+        "status": "active",
+        "turnActive": false
+      },
+      "messages": [
+        {
+          "id": "snapshot:agent:55",
+          "role": "agent",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 chunk-7 t=1schunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 chunk-8 t=2schunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 chunk-9 t=2schunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 chunk-10 t=2s[DONE after 10 chunks over 2s]"
+            }
+          ],
+          "streaming": false,
+          "timestamp": 1795449259126,
+          "seq": 55
+        },
+        {
+          "id": "snapshot:agent:62",
+          "role": "agent",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "[ANSWERED elicitation cancel]"
+            }
+          ],
+          "streaming": false,
+          "timestamp": 1795449259976,
+          "seq": 62
+        }
+      ],
+      "switches": [],
+      "toolCalls": [
+        {
+          "toolCallId": "fake-edit-1",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/auth.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 10,
+            "removed": 0
+          },
+          "seq": 6,
+          "timestamp": 1795449252418,
+          "restoredSummary": true
+        },
+        {
+          "toolCallId": "fake-edit-2",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/session.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 4,
+            "removed": 0
+          },
+          "seq": 7,
+          "timestamp": 1795449252418,
+          "restoredSummary": true
+        },
+        {
+          "toolCallId": "fake-edit-3",
+          "kind": "edit",
+          "status": "completed",
+          "locations": [
+            {
+              "path": "src/token.ts"
+            }
+          ],
+          "diffStat": {
+            "added": 3,
+            "removed": 2
+          },
+          "seq": 8,
+          "timestamp": 1795449252419,
+          "restoredSummary": true
+        }
+      ]
+    }
+  },
+  "import_agent_session": {
+    "id": "req-58",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "the agent returned no history for this session"
+    }
+  },
+  "install_acp_agent": {
+    "id": "req-74",
+    "ok": false,
+    "err": {
+      "code": "CATALOG_AGENT_NOT_FOUND",
+      "message": "agent 'missing-agent' not in catalog"
+    }
+  },
+  "kill_agent": {
+    "id": "req-107",
+    "ok": true,
+    "payload": {}
+  },
+  "list_acp_catalog": {
+    "id": "req-72",
+    "ok": true,
+    "payload": {
+      "host": {
+        "os": "linux",
+        "arch": "x86_64",
+        "runtimes": {
+          "npx": true,
+          "uvx": true,
+          "node": true,
+          "bun": true,
+          "python3": true,
+          "npm": true,
+          "nodeMajor": 22,
+          "claudeCli": true
+        }
+      },
+      "agents": [
+        {
+          "id": "agoragentic-acp",
+          "name": "Agoragentic",
+          "version": "1.3.0",
+          "description": "Agent marketplace with 174+ AI capabilities. Browse, invoke, and pay for agent services settled in USDC on Base L2.",
+          "source": "bundled",
+          "distribution": {
+            "npx": {
+              "package": "agoragentic-mcp@1.3.0",
+              "args": ["--acp"]
+            }
+          },
+          "runtimeRequirements": ["npx"],
+          "status": "ready",
+          "platformTargets": []
+        },
+        {
+          "id": "amp-acp",
+          "name": "Amp",
+          "version": "0.9.0",
+          "description": "ACP wrapper for Amp - the frontier coding agent",
+          "source": "bundled",
+          "distribution": {
+            "binary": {
+              "darwin-aarch64": {
+                "cmd": "./amp-acp",
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.9.0/amp-acp-darwin-aarch64.tar.gz"
+              },
+              "darwin-x86_64": {
+                "cmd": "./amp-acp",
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.9.0/amp-acp-darwin-x86_64.tar.gz"
+              },
+              "linux-aarch64": {
+                "cmd": "./amp-acp",
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.9.0/amp-acp-linux-aarch64.tar.gz"
+              },
+              "linux-x86_64": {
+                "cmd": "./amp-acp",
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.9.0/amp-acp-linux-x86_64.tar.gz"
+              },
+              "windows-x86_64": {
+                "cmd": "amp-acp.exe",
+                "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.9.0/amp-acp-windows-x86_64.zip"
+              }
+            }
+          },
+          "runtimeRequirements": [],
+          "status": "install-required",
+          "platformTargets": [
+            {
+              "os": "darwin",
+              "arch": "aarch64"
+            },
+            {
+              "os": "darwin",
+              "arch": "x86_64"
+            },
+            {
+              "os": "linux",
+              "arch": "aarch64"
+            }
+          ]
+        },
+        {
+          "id": "auggie",
+          "name": "Auggie CLI",
+          "version": "0.36.0",
+          "description": "Augment Code's powerful software agent, backed by industry-leading context engine",
+          "source": "bundled",
+          "distribution": {
+            "npx": {
+              "package": "@augmentcode/auggie@0.36.0",
+              "args": ["--acp"],
+              "env": {
+                "AUGMENT_DISABLE_AUTO_UPDATE": "1"
+              }
+            }
+          },
+          "runtimeRequirements": ["npx"],
+          "status": "ready",
+          "platformTargets": []
+        }
+      ]
+    }
+  },
+  "list_agents": {
+    "id": "req-18",
+    "ok": true,
+    "payload": [
+      {
+        "id": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "name": "Fake Longrun",
+        "configId": "fake-longrun",
+        "namespace": "config:fake-longrun",
+        "capabilities": {
+          "loadSession": true,
+          "promptCapabilities": {
+            "image": false,
+            "audio": false,
+            "embeddedContext": false
+          },
+          "mcpCapabilities": {
+            "http": false,
+            "sse": false
+          },
+          "sessionCapabilities": {},
+          "auth": {}
+        },
+        "ownsSession": [],
+        "workingSessions": [],
+        "backgroundCommands": {
+          "revision": 0,
+          "sessions": {}
+        }
+      }
+    ]
+  },
+  "list_antigravity_accounts": {
+    "id": "req-ag-91",
+    "ok": true,
+    "payload": {
+      "accounts": [
+        {
+          "id": "default",
+          "name": "Default",
+          "builtin": true,
+          "signedIn": false
+        }
+      ],
+      "defaultAccountId": "default",
+      "projectAccounts": {},
+      "chatAccounts": {},
+      "autoSwitch": true
+    }
+  },
+  "list_antigravity_usage": {
+    "id": "req-ag-92",
+    "ok": true,
+    "payload": {
+      "usage": [
+        {
+          "accountId": "default",
+          "status": "signed_out",
+          "planType": null,
+          "windows": [],
+          "checkedAt": 1795449271365,
+          "message": null
+        }
+      ]
+    }
+  },
+  "list_claude_accounts": {
+    "id": "req-78",
+    "ok": true,
+    "payload": {
+      "accounts": [
+        {
+          "id": "default",
+          "name": "Default",
+          "builtin": true,
+          "signedIn": true
+        }
+      ],
+      "defaultAccountId": "default",
+      "projectAccounts": {},
+      "chatAccounts": {},
+      "autoSwitch": true
+    }
+  },
+  "list_claude_usage": {
+    "id": "req-79",
+    "ok": true,
+    "payload": {
+      "usage": [
+        {
+          "accountId": "default",
+          "status": "error",
+          "subscriptionType": null,
+          "windows": [],
+          "checkedAt": 1795449268720,
+          "message": "Install Claude Agent ACP to read usage"
+        }
+      ]
+    }
+  },
+  "list_codex_accounts": {
+    "id": "req-91",
+    "ok": true,
+    "payload": {
+      "accounts": [
+        {
+          "id": "default",
+          "name": "Default",
+          "builtin": true,
+          "signedIn": false
+        }
+      ],
+      "defaultAccountId": "default",
+      "projectAccounts": {},
+      "chatAccounts": {},
+      "autoSwitch": true
+    }
+  },
+  "list_codex_usage": {
+    "id": "req-92",
+    "ok": true,
+    "payload": {
+      "usage": [
+        {
+          "accountId": "default",
+          "status": "signed_out",
+          "planType": null,
+          "windows": [],
+          "checkedAt": 1795449271365,
+          "message": null
+        }
+      ]
+    }
+  },
+  "list_persisted_sessions": {
+    "id": "req-38",
+    "ok": true,
+    "payload": [
+      {
+        "storageKey": "40310ca0-6974-4f8f-85a4-b51a4a034736",
+        "sessionId": "sess-da8ce08a",
+        "stableAgentNamespace": "config:fake-longrun",
+        "runtimeAgentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "projectId": "fixture-proj-c",
+        "cwd": "/fixture/work/composer-row-e2e",
+        "title": "[SUBAGENTS:3] [BG_TAIL:1] subagents",
+        "titleSource": "derived_first_message",
+        "createdAt": 1795449260233,
+        "lastActivityAt": 1795449264505,
+        "status": "active",
+        "messageCount": 3,
+        "toolCount": 6,
+        "lastSeq": 16,
+        "discovered": false,
+        "resumeEligible": true,
+        "modelId": "opus-5-5",
+        "modelName": "Opus 5.5",
+        "logEpoch": "612fea2d-fd15-4de1-8b7e-b2113355e2ea"
+      },
+      {
+        "storageKey": "2c97a1b0-9914-4051-b04d-90d8005f724b",
+        "sessionId": "sess-b9ac9edb",
+        "stableAgentNamespace": "config:fake-longrun",
+        "runtimeAgentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+        "projectId": "fixture-proj-a",
+        "cwd": "/fixture/work/proj-a",
+        "title": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] rec…",
+        "titleSource": "derived_first_message",
+        "createdAt": 1795449252177,
+        "lastActivityAt": 1795449259976,
+        "status": "active",
+        "messageCount": 9,
+        "toolCount": 3,
+        "lastSeq": 62,
+        "discovered": false,
+        "resumeEligible": true,
+        "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2"
+      }
+    ]
+  },
+  "list_sessions": {
+    "id": "req-43",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "agent does not support session/list (sessionCapabilities.list)"
+    }
+  },
+  "load_session": {
+    "id": "req-55",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
+  "logout_agent": {
+    "id": "req-60",
+    "ok": false,
+    "err": {
+      "code": "LOGOUT_FAILED",
+      "message": "agent does not support logout"
+    }
+  },
+  "mark_chat_read": {
+    "id": "req-37",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "seq": 62,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2"
+    },
+    "visible_at": 63
+  },
+  "open_persisted_session": {
+    "id": "req-42",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "replayed": 63,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+      "headSeq": 63,
+      "pendingPermissions": [],
+      "pendingQuestions": [],
+      "pendingElicitations": [],
+      "pendingMcpInstalls": []
+    }
+  },
+  "ping": {
+    "id": "req-2",
+    "ok": true,
+    "payload": {}
+  },
+  "plan_mcp_install": {
+    "id": "req-66",
+    "ok": false,
+    "err": {
+      "code": "VALIDATION_ERROR",
+      "message": "invalid plan_mcp_install request: missing field `source`"
+    }
+  },
+  "promote_session": {
+    "id": "req-52",
+    "ok": true,
+    "payload": {},
+    "visible_at": 2
+  },
+  "record_agent_switch": {
+    "id": "req-50",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
+  "recover_session_snapshot": {
+    "id": "req-41",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "watermark": 63,
+      "headSeq": 63,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+      "events": [
+        {
+          "sid": "sess-b9ac9edb",
+          "seq": 1,
+          "type": "session_created",
+          "payload": {
+            "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+            "sessionId": "sess-b9ac9edb"
+          }
+        },
+        {
+          "sid": "sess-b9ac9edb",
+          "seq": 2,
+          "type": "user_prompt",
+          "payload": {
+            "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+            "sessionId": "sess-b9ac9edb",
+            "turnId": "fixture-turn-1",
+            "content": [
+              {
+                "type": "text",
+                "text": "[DOCK] [USAGE] [ASK:permission] [DURATION:3] record fixtures"
+              }
+            ]
+          }
+        },
+        {
+          "sid": "sess-b9ac9edb",
+          "seq": 3,
+          "type": "usage_update",
+          "payload": {
+            "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+            "sessionId": "sess-b9ac9edb",
+            "used": 20000,
+            "size": 200000
+          }
+        }
+      ],
+      "pendingPermissions": [],
+      "pendingQuestions": [],
+      "pendingElicitations": [],
+      "pendingMcpInstalls": []
+    }
+  },
+  "register_discovered_session": {
+    "id": "req-57",
+    "ok": true,
+    "payload": {
+      "storageKey": "6d3a2354-d760-418e-a24a-8b930bfd194b",
+      "sessionId": "discovered-session",
+      "stableAgentNamespace": "config:fake-longrun",
+      "runtimeAgentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "projectId": "__unassigned__",
+      "cwd": "/fixture/work/proj-a",
+      "title": "Discovered",
+      "titleSource": "agent_supplied",
+      "createdAt": 1795449265444,
+      "lastActivityAt": 1795449265444,
+      "status": "active",
+      "messageCount": 0,
+      "toolCount": 0,
+      "lastSeq": 0,
+      "discovered": true,
+      "resumeEligible": true,
+      "logEpoch": "5d67d261-9c53-48ff-b1ad-9b36b0839eaf"
+    }
+  },
+  "remove_antigravity_account": {
+    "id": "req-ag-101",
+    "ok": true,
+    "payload": {
+      "movedProjectIds": [],
+      "movedChatIds": []
+    }
+  },
+  "remove_claude_account": {
+    "id": "req-90",
+    "ok": true,
+    "payload": {
+      "movedProjectIds": [],
+      "movedChatIds": []
+    }
+  },
+  "remove_codex_account": {
+    "id": "req-101",
+    "ok": true,
+    "payload": {
+      "movedProjectIds": [],
+      "movedChatIds": []
+    }
+  },
+  "remove_project": {
+    "id": "req-108",
+    "ok": true,
+    "payload": {}
+  },
+  "rename_antigravity_account": {
+    "id": "req-ag-94",
+    "ok": true,
+    "payload": {}
+  },
+  "rename_claude_account": {
+    "id": "req-81",
+    "ok": true,
+    "payload": {}
+  },
+  "rename_codex_account": {
+    "id": "req-94",
+    "ok": true,
+    "payload": {}
+  },
+  "rename_session": {
+    "id": "req-47",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-79c4aab6",
+      "title": "Quick fixture chat"
+    },
+    "visible_at": 1
+  },
+  "respond_elicitation": {
+    "id": "req-27",
+    "ok": true,
+    "payload": {}
+  },
+  "respond_permission": {
+    "id": "req-23",
+    "ok": false,
+    "err": {
+      "code": "already_resolved",
+      "message": "this permission was already resolved (first-response-wins)"
+    }
+  },
+  "resume_session": {
+    "id": "req-56",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "agent does not support session/resume"
+    }
+  },
+  "search_mcp_catalog": {
+    "id": "req-64",
+    "ok": true,
+    "payload": {
+      "items": [],
+      "nextCursor": null,
+      "total": 0,
+      "updatedAt": "2026-10-31T10:35:51.229Z",
+      "sample": true
+    }
+  },
+  "send_prompt": {
+    "id": "req-22",
+    "ok": true,
+    "payload": "end_turn"
+  },
+  "set_antigravity_auto_switch": {
+    "id": "req-ag-98",
+    "ok": true,
+    "payload": {}
+  },
+  "set_antigravity_resume": {
+    "id": "req-ag-99",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
+  "set_catalog_opt_in": {
+    "id": "req-71",
+    "ok": true,
+    "payload": {}
+  },
+  "set_chat_antigravity_account": {
+    "id": "req-ag-97",
+    "ok": false,
+    "err": {
+      "code": "antigravity_account_signed_out",
+      "message": "The project's Antigravity account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
+  },
+  "set_chat_claude_account": {
+    "id": "req-84",
+    "ok": true,
+    "payload": {
+      "applied": true
+    },
+    "visible_at": 64
+  },
+  "set_chat_codex_account": {
+    "id": "req-97",
+    "ok": false,
+    "err": {
+      "code": "codex_account_signed_out",
+      "message": "The project's Codex account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
+  },
+  "set_claude_auto_switch": {
+    "id": "req-85",
+    "ok": true,
+    "payload": {}
+  },
+  "set_claude_resume": {
+    "id": "req-86",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
+  "set_codex_auto_switch": {
+    "id": "req-98",
+    "ok": true,
+    "payload": {}
+  },
+  "set_codex_resume": {
+    "id": "req-99",
+    "ok": true,
+    "payload": {},
+    "visible_at": 64
+  },
+  "set_config_option": {
+    "id": "req-33",
+    "ok": true,
+    "payload": [
+      {
+        "id": "model",
+        "name": "Model",
+        "category": "model",
+        "type": "select",
+        "currentValue": "opus-5-5",
+        "options": [
+          {
+            "value": "opus-5-5",
+            "name": "Opus 5.5"
+          },
+          {
+            "value": "sonnet-5-5",
+            "name": "Sonnet 5.5"
+          }
+        ]
+      },
+      {
+        "id": "thought_level",
+        "name": "Thinking",
+        "category": "thought_level",
+        "type": "select",
+        "currentValue": "high",
+        "options": [
+          {
+            "value": "low",
+            "name": "Low"
+          },
+          {
+            "value": "medium",
+            "name": "Medium"
+          },
+          {
+            "value": "high",
+            "name": "High"
+          }
+        ]
+      }
+    ],
+    "visible_at": 4
+  },
+  "set_default_antigravity_account": {
+    "id": "req-ag-95",
+    "ok": false,
+    "err": {
+      "code": "not_found",
+      "message": "That Antigravity account does not exist"
+    }
+  },
+  "set_default_claude_account": {
+    "id": "req-82",
+    "ok": false,
+    "err": {
+      "code": "not_found",
+      "message": "That Claude account does not exist"
+    }
+  },
+  "set_default_codex_account": {
+    "id": "req-95",
+    "ok": false,
+    "err": {
+      "code": "not_found",
+      "message": "That Codex account does not exist"
+    }
+  },
+  "set_default_project": {
+    "id": "req-16",
+    "ok": true,
+    "payload": {}
+  },
+  "set_mcp_catalog_sync": {
+    "id": "req-62",
+    "ok": true,
+    "payload": {
+      "updatedAt": "2026-10-31T10:35:51.229Z",
+      "sample": true,
+      "servers": 24,
+      "sync": {
+        "state": "disabled"
+      }
+    }
+  },
+  "set_mode": {
+    "id": "req-31",
+    "ok": true,
+    "payload": {},
+    "visible_at": 2
+  },
+  "set_model": {
+    "id": "req-32",
+    "ok": true,
+    "payload": {},
+    "visible_at": 3
+  },
+  "set_project_antigravity_account": {
+    "id": "req-ag-96",
+    "ok": false,
+    "err": {
+      "code": "antigravity_account_signed_out",
+      "message": "The default Antigravity account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
+  },
+  "set_project_claude_account": {
+    "id": "req-83",
+    "ok": true,
+    "payload": {
+      "applied": true
+    }
+  },
+  "set_project_codex_account": {
+    "id": "req-96",
+    "ok": false,
+    "err": {
+      "code": "codex_account_signed_out",
+      "message": "The default Codex account \"Default\" is not signed in. Sign in to it in Settings → Provider, then choose it again."
+    }
+  },
+  "spawn_agent": {
+    "id": "req-17",
+    "ok": true,
+    "payload": {
+      "agentId": "e57cf051-ca37-42f1-ba67-7be8bfeb93c0",
+      "capabilities": {
+        "loadSession": true,
+        "promptCapabilities": {
+          "image": false,
+          "audio": false,
+          "embeddedContext": false
+        },
+        "mcpCapabilities": {
+          "http": false,
+          "sse": false
+        },
+        "sessionCapabilities": {},
+        "auth": {}
+      },
+      "authMethods": [],
+      "hostAuthReady": false,
+      "stableNamespace": "config:fake-longrun"
+    }
+  },
+  "start_antigravity_account_login": {
+    "id": "req-ag-100",
+    "ok": false,
+    "err": {
+      "code": "not_implemented",
+      "message": "Sign-in is only available for the Antigravity agent"
+    }
+  },
+  "start_claude_link_login": {
+    "id": "req-87",
+    "ok": false,
+    "err": {
+      "code": "unsupported",
+      "message": "That Claude account does not exist"
+    }
+  },
+  "start_codex_account_login": {
+    "id": "req-100",
+    "ok": false,
+    "err": {
+      "code": "not_implemented",
+      "message": "Sign-in is only available for the Codex agent"
+    }
+  },
+  "stop_subagent": {
+    "id": "req-35",
+    "ok": false,
+    "err": {
+      "code": "not_found",
+      "message": "This chat has no such subagent"
+    }
+  },
+  "store_delete": {
+    "id": "req-13",
+    "ok": true,
+    "payload": {
+      "existed": true
+    }
+  },
+  "store_read": {
+    "id": "req-11",
+    "ok": true,
+    "payload": {
+      "value": {
+        "theme": "dark"
+      },
+      "revision": 1,
+      "clientInstanceId": "fixture-tab"
+    }
+  },
+  "store_write": {
+    "id": "req-10",
+    "ok": true,
+    "payload": {
+      "revision": 1
+    }
+  },
+  "subagent_settings_get": {
+    "id": "req-76",
+    "ok": true,
+    "payload": {
+      "enabled": true,
+      "maxRunning": 4,
+      "maxDepth": 2,
+      "agents": [],
+      "profiles": [
+        {
+          "id": "fake-longrun",
+          "agentId": "fake-longrun",
+          "enabled": true,
+          "model": null,
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null,
+          "agentName": "Fake Longrun",
+          "implicit": true
+        }
+      ]
+    }
+  },
+  "subagent_settings_set": {
+    "id": "req-77",
+    "ok": true,
+    "payload": {
+      "enabled": true,
+      "maxRunning": 2,
+      "maxDepth": 2,
+      "agents": [],
+      "profiles": [
+        {
+          "id": "fake-longrun",
+          "agentId": "fake-longrun",
+          "enabled": true,
+          "model": null,
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null,
+          "agentName": "Fake Longrun",
+          "implicit": true
+        }
+      ]
+    }
+  },
+  "subscribe": {
+    "id": "req-20",
+    "ok": true,
+    "payload": {
+      "sessionId": "sess-b9ac9edb",
+      "replayed": 0,
+      "logEpoch": "e07754a6-7529-42cf-9d37-1f82a4298cc2",
+      "headSeq": 1,
+      "pendingPermissions": [],
+      "pendingQuestions": [],
+      "pendingElicitations": [],
+      "pendingMcpInstalls": []
+    }
+  },
+  "unwatch": {
+    "id": "req-109",
+    "ok": true,
+    "payload": {
+      "watch": "store",
+      "scope": "device/fixture-device/fixture/key"
+    }
+  },
+  "update_project": {
+    "id": "req-15",
+    "ok": true,
+    "payload": {}
+  },
+  "watch": {
+    "id": "req-3",
+    "ok": true,
+    "payload": {
+      "watch": "projects",
+      "scope": "",
+      "revision": {
+        "hostEpoch": "b1c572ea-d855-41f1-99b8-bf68415f970d",
+        "n": 1
+      }
+    }
+  }
+}

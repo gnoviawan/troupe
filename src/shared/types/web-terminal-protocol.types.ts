@@ -1,31 +1,32 @@
 import type {
-  GitStatus,
+  WebTerminalDataFrame,
+  WebTerminalEventFrame,
+  WebTerminalEventPayload,
+  WebTerminalGapFrame,
+  WebTerminalReplayFrame,
+  WebTerminalRequestType
+} from './generated/protocol'
+import type {
   RotatedClaim,
   SpawnedTerminal,
   TerminalAttachResult,
-  TerminalSpawnOptions,
-  TerminalStateSnapshot
+  TerminalSpawnOptions
 } from './ipc.types'
 
-export type WebTerminalRequestType =
-  | 'authenticate'
-  | 'spawn'
-  | 'write'
-  | 'command_editor_submit'
-  | 'command_editor_request_completion'
-  | 'command_editor_cancel_completion'
-  | 'command_editor_restore_prompt'
-  | 'resize'
-  | 'kill'
-  | 'attach'
-  | 'detach'
-  | 'rotate_claim'
-  | 'revoke_claim'
-  | 'get_cwd'
-  | 'get_git_branch'
-  | 'get_git_status'
-  | 'get_exit_code'
-  | 'list_preserved'
+export type {
+  WebTerminalDataFrame,
+  WebTerminalEventFrame,
+  WebTerminalEventPayload,
+  WebTerminalGapFrame,
+  WebTerminalReplayFrame,
+  WebTerminalRequestType
+} from './generated/protocol'
+
+/** The `session_lifecycle` event payload. */
+export type SessionLifecyclePayload = Extract<
+  WebTerminalEventPayload,
+  { type: 'session_lifecycle' }
+>
 
 /**
  * Machine codes the `/terminal/ws` handshake adds to the reply `code` string
@@ -81,60 +82,6 @@ export interface WebTerminalRequest {
 export type WebTerminalReply<T = unknown> =
   | { id: string; success: true; data: T }
   | { id: string; success: false; error: string; code: string }
-
-/** A single sequenced output chunk (live data frame). */
-export interface WebTerminalDataFrame {
-  type: 'data'
-  terminalId: string
-  seq: number
-  data: number[]
-}
-
-/** Sequenced replay frame: unseen chunks sent on attach/reconnect. */
-export interface WebTerminalReplayFrame {
-  type: 'replay'
-  terminalId: string
-  chunks: Array<{ seq: number; data: number[] }>
-  gap: boolean
-  /** Cursor from another epoch / ahead of the head: discard rendered output first. */
-  reset: boolean
-  logEpoch: string
-  latestSeq: number
-  snapshot: TerminalStateSnapshot
-}
-
-/** Gap marker frame: broadcast receiver lagged, some output was lost. */
-export interface WebTerminalGapFrame {
-  type: 'gap'
-  terminalId: string
-  lastSeq: number
-}
-
-export interface SessionLifecyclePayload {
-  type: 'session_lifecycle'
-  terminal_id: string
-  session_id: string
-  kind: string
-  nonce: string | null
-  prompt_suppressed: boolean
-  line_empty: boolean
-  exit_code: number | null
-  prompt_generation: number | null
-  cwd: string | null
-}
-
-export type WebTerminalEventPayload =
-  | SessionLifecyclePayload
-  | { type: 'exit'; terminal_id: string; exit_code: number | null; signal: number | null }
-  | { type: 'cwd_changed'; terminal_id: string; cwd: string }
-  | { type: 'git_branch_changed'; terminal_id: string; branch: string | null }
-  | { type: 'git_status_changed'; terminal_id: string; status: GitStatus | null }
-  | { type: 'exit_code_changed'; terminal_id: string; exit_code: number }
-
-export interface WebTerminalEventFrame {
-  type: 'event'
-  payload: WebTerminalEventPayload
-}
 
 export type WebTerminalFrame<T = unknown> =
   | WebTerminalReply<T>

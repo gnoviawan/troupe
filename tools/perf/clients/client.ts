@@ -1,0 +1,91 @@
+import type { RuneAppName } from '../../parity/drivers/rune-apps.ts'
+import type { PageMetrics } from '../types.ts'
+
+/**
+ * The client kinds the Linux lane can launch. `chromium` is the reference
+ * client (the React web client in Playwright Chromium). `rune-web` is a Rune
+ * wasm build in Chromium and `rune-desktop` a native Rune window
+ * (`clients/rune.ts`).
+ */
+export type ClientKind = 'chromium' | 'rune-web' | 'rune-desktop'
+
+export interface ClientLaunchOptions {
+  /** Origin the client loads or connects to (the byte proxy, not the server). */
+  url: string
+  display: string
+  width: number
+  height: number
+  /** Built web client served in place of the server's compiled-in assets. */
+  distWeb: string
+  /** Software rasterizer. lavapipe is the Vulkan driver on this host. */
+  gl: 'lavapipe' | 'swiftshader' | 'cpu'
+  /** Skip the in-page observers, whose rAF loop keeps an idle page drawing. */
+  noPageMetrics?: boolean
+  /** The Rune app the Rune clients open, until Rune has a Troupe screen. */
+  runeApp: RuneAppName
+}
+
+export interface ChatStartPart {
+  typeMs: number
+  openMs: number
+}
+
+/**
+ * What one client frame built, read off the client's own automation tree
+ * when it has one (the Rune clients). Chromium reports no census.
+ */
+export interface ClientTreeCensus {
+  /** Elements reachable from the root. */
+  reachable: number
+  /** Elements with a painted box in the last frame. */
+  painted: number
+  /** Elements built but never drawn. */
+  hidden: number
+}
+
+/** What every client lane must expose to the scenarios. */
+export interface ClientHandle {
+  kind: ClientKind
+  /** Root of the client's process tree; the proc sampler walks from here. */
+  rootPid: number
+  /** Wall ms from launch() call until the process tree existed. */
+  launchedMs: number
+  version: string
+  /** Free-form facts about the rendering backend, recorded with the run. */
+  backend: string
+  close(): Promise<void>
+}
+
+/**
+ * User-level actions a scenario drives. A Rune lane implements the same
+ * methods through its own automation driver; nothing here reaches into the
+ * web client's internals.
+ */
+export interface ClientDriver {
+  handle: ClientHandle
+  /** Resolves once the sidebar lists the seeded project. */
+  waitForProjectList(): Promise<void>
+  /** Resolves once the empty-pane agent launcher accepts input. */
+  waitForLauncher(): Promise<void>
+  startChat(prompt: string): Promise<void>
+  chatCount(): Promise<number>
+  switchToChat(index: number): Promise<void>
+  /** Opens one terminal tab with the default shell and focuses it. */
+  openTerminal(): Promise<void>
+  /** Types a command into the focused terminal and presses Enter. */
+  runInTerminal(command: string): Promise<void>
+  /** Resolves when `marker` is visible in the focused terminal's screen. */
+  waitForTerminalText(marker: string, timeoutMs: number): Promise<void>
+  /**
+   * Per chat start: ms spent typing the prompt, and ms from the Start click
+   * until the chat tab existed and the launcher closed.
+   */
+  chatStartParts(): ChatStartPart[]
+  /** The client's own crash report, when it replaced its UI with one; else null. */
+  crashed(): Promise<string | null>
+  /** In-page metrics, when the client is a web page; null otherwise. */
+  beginPhase(name: string): Promise<void>
+  endPhase(name: string): Promise<PageMetrics | null>
+  /** What the client's last frame built, when the client can tell (Rune). */
+  census?(): Promise<ClientTreeCensus>
+}

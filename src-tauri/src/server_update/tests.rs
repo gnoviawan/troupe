@@ -209,15 +209,24 @@ fn is_newer_decides_offers() {
 fn channel_parse_recognizes_known_values() {
     assert_eq!(UpdateChannel::parse("stable"), Some(UpdateChannel::Stable));
     assert_eq!(
-        UpdateChannel::parse("Insider"),
-        Some(UpdateChannel::Insider)
-    );
-    assert_eq!(
         UpdateChannel::parse("NIGHTLY"),
         Some(UpdateChannel::Nightly)
     );
     assert_eq!(UpdateChannel::parse("bogus"), None);
     assert_eq!(UpdateChannel::parse(""), None);
+}
+
+#[test]
+fn removed_insider_channel_loads_as_stable() {
+    assert_eq!(UpdateChannel::parse("Insider"), Some(UpdateChannel::Stable));
+    assert_eq!(
+        serde_json::from_str::<UpdateChannel>("\"insider\"").unwrap(),
+        UpdateChannel::Stable
+    );
+    assert_eq!(
+        serde_json::to_string(&UpdateChannel::Stable).unwrap(),
+        "\"stable\""
+    );
 }
 
 #[test]
@@ -227,12 +236,8 @@ fn channel_manifest_urls_match_hosting_scheme() {
         "https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json"
     );
     assert_eq!(
-        UpdateChannel::Insider.manifest_url(),
-        "https://github.com/gnoviawan/troupe/releases/download/insider/latest-insider.json"
-    );
-    assert_eq!(
         UpdateChannel::Nightly.manifest_url(),
-        "https://github.com/gnoviawan/troupe/releases/download/nightly/latest-nightly.json"
+        "https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json"
     );
 }
 
