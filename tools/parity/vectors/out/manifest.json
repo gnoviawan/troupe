@@ -213,6 +213,29 @@
         "pins_toggle_in_order",
         "command_scores"
       ]
+    },
+    "github": {
+      "sources": {
+        "src/renderer/stores/github-store.ts": "54ff83e5eef923c52ffc7371c34782bb8c984eab"
+      },
+      "vectors": [
+        "context, filter and list",
+        "every filter field keys its own list",
+        "a slower older read never overwrites a newer one",
+        "item, checks, log and repository meta",
+        "merge re-reads checks, list and item",
+        "comments show before the re-read",
+        "label create, edit and state writes"
+      ]
+    },
+    "github-routes": {
+      "sources": {
+        "src/renderer/lib/github-api.ts": "a934ceba3f6af82012c9703725e84bfb5d401bd7"
+      },
+      "vectors": [
+        "reads",
+        "writes"
+      ]
     }
   }
 }

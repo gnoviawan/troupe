@@ -1,0 +1,366 @@
+[
+ {
+  "store": "github-routes",
+  "name": "reads",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "getContext",
+     "args": [
+      "C:\\Users\\a b\\repo"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/context",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "listItems",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "filter": {
+        "repo": "origin",
+        "kind": "all",
+        "state": "open",
+        "search": "",
+        "labels": [],
+        "labelMode": "any",
+        "assignee": {
+         "kind": "anyone"
+        },
+        "reviewRequested": false,
+        "sort": "updated"
+       },
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/items",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "filter": {
+       "repo": "origin",
+       "kind": "all",
+       "state": "open",
+       "search": "",
+       "labels": [],
+       "labelMode": "any",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      },
+      "refresh": true
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getItem",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "kind": "pr",
+       "number": 12,
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/item",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "kind": "pr",
+      "number": 12,
+      "refresh": true
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getChecks",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "number": 12
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/checks",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "number": 12
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getCheckLog",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "origin",
+       "jobId": 99
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/check-log",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "origin",
+      "jobId": 99
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "getRepoMeta",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "origin"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/repo-meta",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "origin"
+     },
+     "commandId": false
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "github-routes",
+  "name": "writes",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "merge",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "number": 12,
+       "action": {
+        "kind": "disable_auto_merge"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/merge",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "number": 12,
+      "action": {
+       "kind": "disable_auto_merge"
+      }
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "comment",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "kind": "pr",
+       "number": 12,
+       "target": {
+        "kind": "review_thread",
+        "threadId": "T1"
+       },
+       "body": "ok"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/comment",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "kind": "pr",
+      "number": 12,
+      "target": {
+       "kind": "review_thread",
+       "threadId": "T1"
+      },
+      "body": "ok"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "createLabel",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "origin",
+       "name": "p1",
+       "color": "b60205",
+       "description": null
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/create-label",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "origin",
+      "name": "p1",
+      "color": "b60205",
+      "description": null
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "editItem",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "kind": "pr",
+       "number": 12,
+       "addLabels": [
+        "x"
+       ],
+       "removeAssignees": [
+        "y"
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/edit-item",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "kind": "pr",
+      "number": 12,
+      "addLabels": [
+       "x"
+      ],
+      "removeAssignees": [
+       "y"
+      ]
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "setItemState",
+     "args": [
+      {
+       "cwd": "C:\\Users\\a b\\repo",
+       "repo": "upstream",
+       "kind": "pr",
+       "number": 12,
+       "action": {
+        "kind": "reopen"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/github/item-state",
+     "body": {
+      "cwd": "C:\\Users\\a b\\repo",
+      "repo": "upstream",
+      "kind": "pr",
+      "number": 12,
+      "action": {
+       "kind": "reopen"
+      }
+     },
+     "commandId": false
+    },
+    "state": null
+   }
+  ]
+ }
+]
