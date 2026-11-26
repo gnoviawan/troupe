@@ -56,7 +56,8 @@ pub fn body(
                 collapsed,
                 !has_project,
             )
-            .key("rail-automations"),
+            .key("rail-automations")
+            .on_press(|s: &mut State| s.open_automations()),
         );
 
     let mut projects = col()

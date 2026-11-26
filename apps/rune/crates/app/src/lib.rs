@@ -17,6 +17,11 @@ mod agent_switch;
 #[cfg(test)]
 mod agent_switch_tests;
 mod answers;
+mod automation_canvas;
+mod automations;
+#[cfg(test)]
+mod automations_tests;
+mod automations_view;
 #[cfg(test)]
 mod answers_tests;
 #[cfg(test)]
@@ -178,6 +183,8 @@ pub struct State {
     /// The Settings window: which one is open, its page and its own fields.
     pub settings_ui: settings_view::SettingsUi,
     pub(crate) sync: sync::Sync,
+    /// The Automations tab's reads, selection and canvases.
+    pub automations: automations::AutomationsUi,
 }
 
 /// A resizable edge of the shell.
@@ -235,6 +242,7 @@ impl Default for State {
             settings: model::settings::State::default(),
             settings_ui: settings_view::SettingsUi::default(),
             sync: sync::Sync::default(),
+            automations: automations::AutomationsUi::default(),
         }
     }
 }
@@ -334,6 +342,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_git = state.git_tick();
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
+    let next_automation = state.automations_tick(now);
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -344,6 +353,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_draft_sync(),
         next_git,
         next_completion,
+        next_automation,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

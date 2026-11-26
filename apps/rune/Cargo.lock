@@ -4260,6 +4260,7 @@ dependencies = [
  "serde_json",
  "theme",
  "troupe-editor",
+ "troupe-flow",
  "troupe-protocol",
  "troupe-term",
  "ui",

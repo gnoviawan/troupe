@@ -33,6 +33,8 @@ pub enum Fetch {
     History(crate::git_history::HistoryFetch),
     /// A settings route (`/host/agent-idle-window`).
     Settings(crate::settings::IdleFetch),
+    /// An `/api/automations` route.
+    Automation(crate::automations::AutoFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

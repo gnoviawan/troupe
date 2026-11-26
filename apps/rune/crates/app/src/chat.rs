@@ -324,6 +324,11 @@ impl State {
                 }
                 Effect::Answer(answer) => self.send_answer(answer),
                 Effect::PersistComposerOptions { config_id, patch } => self.save_picks(config_id, patch),
+                Effect::PublishAutomationChange { payload } => match serde_json::from_value(payload) {
+                    Ok(change) => self.automation_changed(Some(change)),
+                    Err(e) => log::warn!("[automations] ignored an automation_changed event with an unexpected shape: {e}"),
+                },
+                Effect::RequestAutomationResync => self.automation_changed(None),
                 Effect::PersistModelCatalog { config_id, .. } => {
                     log::info!("[chat] model list of {config_id} not saved: the Rune client has no catalog store yet");
                 }

@@ -322,6 +322,7 @@ impl State {
                 crate::host::Fetch::Git(task) => self.git_replied(task, result),
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
                 crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
+                crate::host::Fetch::Automation(tag) => self.automation_replied(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
