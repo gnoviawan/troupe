@@ -17,6 +17,9 @@ const { api, tauriRef } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/tauri-runtime', () => ({ isTauriContext: () => tauriRef.current }))
+vi.mock('@/hooks/use-server-admits-remote-writes', () => ({
+  useServerAdmitsRemoteWrites: () => true
+}))
 vi.mock('@/lib/web-setup-api', () => ({ webSetupApi: api }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: vi.fn(() => Promise.resolve()) }))
 

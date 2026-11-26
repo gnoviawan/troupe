@@ -48,6 +48,31 @@ describe('deriveAgentConfig', () => {
     }
   })
 
+  it('lists Hermes Agent as a bundled agent that runs `hermes acp` from PATH', () => {
+    // Hermes Agent (Nous Research) is not in the ACP registry, so it ships in
+    // the bundled Troupe overlay (troupe.json); its installer puts `hermes` on
+    // PATH, and `hermes acp` serves ACP over stdio.
+    const hermes = REGISTRY_AGENTS.find((entry) => entry.id === 'hermes')
+    expect(hermes?.name).toBe('Hermes Agent')
+    for (const target of ['darwin-aarch64', 'linux-x86_64', 'windows-x86_64']) {
+      const result = deriveAgentConfig(hermes!, target)
+      expect(result).toEqual({
+        kind: 'needs-install',
+        cmd: 'hermes',
+        args: ['acp'],
+        env: {},
+        archiveUrl: undefined
+      })
+    }
+  })
+
+  it('bundles a Hermes Agent icon that inherits the text color', async () => {
+    const { getAgentIconCatalog } = await import('@/lib/agents/agent-icon-catalog')
+    const icon = getAgentIconCatalog().byKey('acp:hermes')
+    expect(icon?.label).toBe('Hermes Agent')
+    expect(icon?.svg).toContain('fill="currentColor"')
+  })
+
   it('starts Factory Droid with documented ACP output instead of the legacy daemon mode', () => {
     const factory = REGISTRY_AGENTS.find((entry) => entry.id === 'factory-droid')
     expect(factory).toBeDefined()

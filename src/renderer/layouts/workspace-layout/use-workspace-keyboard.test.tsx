@@ -83,13 +83,13 @@ describe('useWorkspaceKeyboard panel toggles (shell-layout store)', () => {
   it('keeps the shortcut ids, with Ctrl+B on the Rail and Ctrl+Alt+B on the Side panel', () => {
     expect(DEFAULT_KEYBOARD_SHORTCUTS.sidebarToggle).toMatchObject({
       id: 'sidebarToggle',
-      label: 'Toggle Projects',
+      label: 'Show or hide projects',
       description: 'Expand or collapse the projects sidebar',
       defaultKey: 'ctrl+b'
     })
     expect(DEFAULT_KEYBOARD_SHORTCUTS.toggleFileExplorer).toMatchObject({
       id: 'toggleFileExplorer',
-      label: 'Toggle Side Panel',
+      label: 'Show or hide side panel',
       description: 'Show or hide the side panel at the right edge',
       defaultKey: 'ctrl+alt+b'
     })

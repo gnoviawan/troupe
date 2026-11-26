@@ -12,6 +12,10 @@
 
 #![forbid(unsafe_code)]
 
+mod agent_host;
+mod agent_switch;
+#[cfg(test)]
+mod agent_switch_tests;
 mod answers;
 #[cfg(test)]
 mod answers_tests;
@@ -20,23 +24,58 @@ mod cards_tests;
 mod chat;
 mod chat_images;
 mod chat_view;
+mod command_history;
 mod composer;
 mod composer_agents;
 mod composer_sheet;
 mod composer_view;
 mod controls;
+mod editor_host;
+mod explorer_host;
+mod phone_files;
+#[cfg(test)]
+mod explorer_host_tests;
+#[cfg(test)]
+mod editor_host_tests;
+mod git;
+mod git_diff;
+mod git_history;
+mod git_history_view;
+#[cfg(test)]
+mod git_history_tests;
+#[cfg(test)]
+mod git_tests;
+mod git_view;
 #[cfg(test)]
 mod controls_tests;
+mod history_host;
 mod host;
 mod ids;
 mod keys;
 mod launch;
+mod model_sheet;
+#[cfg(test)]
+mod model_sheet_tests;
+mod palette;
 mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
 mod rail_view;
+mod settings;
+mod settings_pages;
+mod settings_shortcuts;
+#[cfg(test)]
+mod settings_tests;
+mod settings_view;
 mod sync;
+mod term_host;
+mod term_input;
+mod term_keys;
+mod term_menu;
+mod term_select;
+mod terminal;
+mod terminal_view;
 mod theme_picker;
 mod view;
 
@@ -108,6 +147,7 @@ pub struct State {
     pub now: f64,
     pub rail: rail::RailUi,
     pub picker: theme_picker::Picker,
+    pub palette: palette::PaletteUi,
     pub keys: keys::KeysUi,
     pub phone: phone::PhoneUi,
     /// `settings/app` `uiZoomLevel`.
@@ -118,6 +158,21 @@ pub struct State {
     pub chat: chat::ChatUi,
     /// The composers' drafts and what their menus list.
     pub composer: composer::ComposerUi,
+    /// The terminals: their link, sessions and cells.
+    pub terms: terminal::TerminalUi,
+    /// The open text files and their editor tabs.
+    pub editors: ui::editor::Editors,
+    pub(crate) editor_host: editor_host::EditorHost,
+    pub explorer: ui::explorer::Explorer,
+    pub(crate) explorer_host: explorer_host::ExplorerHost,
+    /// The git cache and the Changes panel's own state.
+    pub git: git::GitUi,
+    /// The git history reads and the History tab's own state.
+    pub history: git_history::HistoryUi,
+    /// The shared `settings/app` record.
+    pub settings: model::settings::State,
+    /// The Settings window: which one is open, its page and its own fields.
+    pub settings_ui: settings_view::SettingsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -158,12 +213,22 @@ impl Default for State {
             now: 0.0,
             rail: rail::RailUi::default(),
             picker: theme_picker::Picker::default(),
+            palette: palette::PaletteUi::default(),
             keys: keys::KeysUi::default(),
             phone: phone::PhoneUi::default(),
             zoom: ui::Zoom::DEFAULT,
             workspace: Workspace::new(Box::new(Uuids::new(seed()))),
             chat: chat::ChatUi::default(),
             composer: composer::ComposerUi::default(),
+            terms: terminal::TerminalUi::default(),
+            editors: ui::editor::Editors::default(),
+            editor_host: editor_host::EditorHost::default(),
+            explorer: ui::explorer::Explorer::default(),
+            explorer_host: explorer_host::ExplorerHost::default(),
+            git: git::GitUi::default(),
+            history: git_history::HistoryUi::default(),
+            settings: model::settings::State::default(),
+            settings_ui: settings_view::SettingsUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -233,6 +298,7 @@ fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
+        state.terms.host = Some(term_host::TermHost::connect(config.clone(), wake.clone()));
         state.connect(Host::connect(config, wake));
     }
 }
@@ -244,13 +310,32 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         changed |= state.close_top();
     }
     changed |= state.pump(now);
+    changed |= state.pump_terminals(now);
+    changed |= state.blink_flipped();
     state.sync_chats();
     state.read_agents();
     changed |= state.flush_chat();
     let (retried, next_retry) = state.fire_retries(now);
     let (waited, next_wait) = state.fire_readvertise_waits(now);
-    changed |= retried | waited;
-    for due in [state.toasts.next_expiry(), next_retry, next_wait].into_iter().flatten() {
+    let (gave_up, next_arm) = state.expire_pending_arms(now);
+    changed |= retried | waited | gave_up;
+    state.editors.now = editor_host::epoch_ms();
+    state.sync_drafts(now);
+    state.sync_editors();
+    state.sync_explorer();
+    let next_git = state.git_tick();
+    state.history_tick();
+    let waits = [
+        state.toasts.next_expiry(),
+        next_retry,
+        next_wait,
+        next_arm,
+        state.next_blink(),
+        state.next_find_refresh(),
+        state.next_draft_sync(),
+        next_git,
+    ];
+    for due in waits.into_iter().flatten() {
         tx.wake_at(due);
     }
     state.persist_workspace();
@@ -277,7 +362,7 @@ pub fn app(launch: Launch) -> rune::App<State> {
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
     };
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
-    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu)
+    rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }
 
 #[cfg(test)]

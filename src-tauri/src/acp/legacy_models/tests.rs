@@ -243,3 +243,12 @@ async fn raw_session_new_without_models_still_succeeds() {
         })
         .await;
 }
+
+#[test]
+fn legacy_set_model_params_use_the_pre_1_3_wire_names() {
+    assert_eq!(LEGACY_SET_MODEL_METHOD, "session/set_model");
+    assert_eq!(
+        legacy_set_model_params("sess-1", "openrouter:openai/gpt-5"),
+        json!({ "sessionId": "sess-1", "modelId": "openrouter:openai/gpt-5" })
+    );
+}

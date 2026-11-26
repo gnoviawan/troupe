@@ -4,9 +4,9 @@ import type {
 } from '@shared/types/antigravity-accounts.types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { subscribeAntigravityAccountList } from '@/lib/antigravity-account-list'
+import { antigravityLaunchConfig } from '@/lib/antigravity-account-sign-in'
 import { antigravityAccountsApi } from '@/lib/antigravity-accounts-api'
 
-/** The host caches usage for 5 minutes, so polling faster gains nothing. */
 export const ANTIGRAVITY_USAGE_POLL_MS = 5 * 60 * 1000
 
 export interface AntigravityAccountsState {
@@ -17,16 +17,18 @@ export interface AntigravityAccountsState {
   /** Why the Account list could not be read. */
   error: string | null
   refreshingUsage: boolean
+  checkingAccountIds: ReadonlySet<string>
   reload: () => Promise<void>
   refreshUsage: (force?: boolean) => Promise<void>
+  checkUsage: (accountId: string) => Promise<void>
 }
 
 const message = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 /**
- * The Antigravity Account list, read on mount. `usage: true` also reads model quotas
- * every 5 minutes. `enabled: false` reads nothing (a closed modal that stays
- * mounted, or a chat that is not an Antigravity chat).
+ * The Antigravity Account list, read on mount. `usage: true` also re-reads the
+ * last usage checks every 5 minutes. `enabled: false` reads nothing (a closed
+ * modal that stays mounted, or a chat that is not an Antigravity chat).
  */
 export function useAntigravityAccounts(
   options: { enabled?: boolean; usage?: boolean } = {}
@@ -38,6 +40,7 @@ export function useAntigravityAccounts(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshingUsage, setRefreshingUsage] = useState(false)
+  const [checkingAccountIds, setCheckingAccountIds] = useState<ReadonlySet<string>>(() => new Set())
   const mounted = useRef(true)
 
   const reloadGeneration = useRef(0)
@@ -69,6 +72,22 @@ export function useAntigravityAccounts(
     }
   }, [])
 
+  const checkUsage = useCallback(async (accountId: string) => {
+    setCheckingAccountIds((ids) => new Set(ids).add(accountId))
+    try {
+      const read = await antigravityAccountsApi.checkUsage(accountId, antigravityLaunchConfig())
+      if (mounted.current) setUsage((reads) => ({ ...reads, [accountId]: read }))
+    } finally {
+      if (mounted.current) {
+        setCheckingAccountIds((ids) => {
+          const next = new Set(ids)
+          next.delete(accountId)
+          return next
+        })
+      }
+    }
+  }, [])
+
   useEffect(() => {
     mounted.current = true
     if (!enabled) {
@@ -95,5 +114,15 @@ export function useAntigravityAccounts(
     }
   }, [reload, refreshUsage, withUsage, enabled])
 
-  return { snapshot, usage, loading, error, refreshingUsage, reload, refreshUsage }
+  return {
+    snapshot,
+    usage,
+    loading,
+    error,
+    refreshingUsage,
+    checkingAccountIds,
+    reload,
+    refreshUsage,
+    checkUsage
+  }
 }

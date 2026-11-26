@@ -1,0 +1,60 @@
+name: Rune
+
+# Builds and tests the apps/rune workspace and renders the `hello` window
+# headless on Linux, macOS and Windows, uploading each `hello --snap` PNG as an
+# artifact. On Linux it also opens `hello` under Xvfb and drives the real
+# window through the live driver (scripts/rune/drive-hello.sh), and snapshots one
+# scene of the design-system gallery. A wasm job builds hello and the gallery for
+# wasm32-unknown-unknown, and the Troupe shell (troupe-dev natively, troupe-web
+# as a web bundle).
+# check-pin keeps the `rune` dependency and the six [patch.crates-io] revs in
+# apps/rune/Cargo.toml equal to apps/rune/rune.pin. Linux draws through Mesa's
+# lavapipe Vulkan driver, Windows through WARP and macOS through a virtual
+# Metal adapter — the runners have no GPU.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop, dev, "rune/r4b-fix-*", "rune/r4c-overlays*", "rune/r6a-acp-model-*", "rune/r6a2-acp-model-*", "rune/r7a-terminal-*", "rune/r7b-terminal-*"]
+    paths:
+      - '.github/workflows/rune.yml'
+      - 'apps/rune/**'
+      - 'scripts/rune/**'
+      - 'tools/parity/vectors/**'
+      # The TypeScript sources the store vectors pin (both manifests in
+      # tools/parity/vectors/out/). A change to one runs the model's
+      # staleness test on its own PR; record.ts checks this list is complete.
+      - 'src/renderer/components/chat/agent-model-selector/selector-model.ts'
+      - 'src/renderer/components/chat/background-commands.ts'
+      - 'src/renderer/components/chat/chat-attachments.ts'
+      - 'src/renderer/components/chat/composer-send-blocks.ts'
+      - 'src/renderer/components/chat/use-chat-composer.ts'
+      - 'src/renderer/lib/composer/**'
+      - 'src/renderer/lib/conversation-envelope.ts'
+      - 'src/renderer/lib/media-kind.ts'
+      - 'src/renderer/lib/path-basename.ts'
+      - 'src/renderer/lib/skill-tokens.ts'
+      - 'src/renderer/lib/skills-prompt.ts'
+      - 'src/renderer/components/chat/chat-input-bar-config.ts'
+      - 'src/renderer/components/chat/handoff-summary.ts'
+      - 'src/renderer/components/chat/subagent-strip.ts'
+      - 'src/renderer/components/chat/terminal-output.ts'
+      - 'src/renderer/components/chat/tool-call-summary.ts'
+      - 'src/renderer/hooks/editor-persistence/pane-tree.ts'
+      - 'src/renderer/lib/acp-api.ts'
+      - 'src/renderer/lib/acp-history-persistence.ts'
+      - 'src/renderer/lib/acp-mcp-persistence.ts'
+      - 'src/renderer/lib/agent-chat-notify.ts'
+      - 'src/renderer/lib/agents/acp-spawn-errors.ts'
+      - 'src/renderer/lib/browser-consent-api.ts'
+      - 'src/renderer/lib/command-engine.ts'
+      - 'src/renderer/lib/diff-tab-identity.ts'
+      - 'src/renderer/lib/github-handoff/read-only-guard.ts'
+      - 'src/renderer/lib/log-point.ts'
+      - 'src/renderer/lib/mcp-install-request.ts'
+      - 'src/renderer/lib/plan-session.ts'
+      - 'src/renderer/lib/platform.ts'
+      - 'src/renderer/lib/project-prefs.ts'
+      - 'src/renderer/lib/shell-layout-migration.ts'
+      - 'src/renderer/lib/shell-layout-record.ts'
+      - 'src/renderer/lib/working-copy.ts'

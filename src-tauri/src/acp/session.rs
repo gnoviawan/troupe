@@ -25,6 +25,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{oneshot, watch};
 
+use crate::acp::events::SessionModelState;
 use crate::acp::session_persistence::SessionRegistration;
 
 mod activity;
@@ -139,9 +140,9 @@ pub(crate) struct DriverState {
     /// agent's actual model selector id instead of hardcoding `"model"`.
     model_config_ids: HashMap<String, String>,
     /// Sessions whose model list came only from the legacy `models` field
-    /// (issue #822). Such lists are read-only: `set_model` has no protocol path
-    /// for them, so it fails fast instead of sending a bogus config-option call.
-    legacy_model_sessions: HashSet<String>,
+    /// (issue #822), with that list. `set_model` switches them with the legacy
+    /// `session/set_model` request and publishes the updated list.
+    legacy_models: HashMap<String, SessionModelState>,
     /// Per-session replay windows for in-flight `session/load` /
     /// `session/resume` requests (story 3: replay contract). While a window is
     /// open, agent-replayed history arrives as `session/update` notifications
@@ -556,6 +557,24 @@ impl DriverState {
         self.tool_policies.set(session_id, allowlist);
     }
 
+    /// Answer the orchestrated child session's own permission requests with
+    /// their allow-once option, until the session closes.
+    pub(crate) fn auto_approve(&mut self, session_id: String) {
+        self.tool_policies.auto_approve(session_id);
+    }
+
+    /// The host's allow-once answer for an auto-approved session, or `None`
+    /// when the request goes to the user.
+    pub(crate) fn auto_approval(
+        &self,
+        session_id: &str,
+        tool_call: &agent_client_protocol::schema::v1::ToolCallUpdate,
+        options: &[agent_client_protocol::schema::v1::PermissionOption],
+    ) -> Option<agent_client_protocol::schema::v1::RequestPermissionOutcome> {
+        self.tool_policies
+            .auto_approval(session_id, tool_call, options)
+    }
+
     /// Remember a tool call's kind and paths for a later permission request
     /// that omits them.
     pub(crate) fn note_tool_call(
@@ -565,6 +584,8 @@ impl DriverState {
         kind: Option<agent_client_protocol::schema::v1::ToolKind>,
         paths: Option<Vec<PathBuf>>,
     ) {
+        self.tool_policies
+            .note_auto_call(session_id, tool_call_id, kind);
         let root = self.subagents.root_of(session_id).to_string();
         self.tool_policies
             .note_call(&root, tool_call_id, kind, paths);
@@ -631,7 +652,7 @@ impl DriverState {
         self.session_roots.remove(session_id);
         self.ephemeral_sessions.remove(session_id);
         self.model_config_ids.remove(session_id);
-        self.legacy_model_sessions.remove(session_id);
+        self.legacy_models.remove(session_id);
         self.promotable_sessions.remove(session_id);
         self.tool_policies.forget(session_id);
         self.last_commands.forget(session_id);
@@ -662,19 +683,34 @@ impl DriverState {
         self.model_config_ids.insert(session_id, config_id);
     }
 
-    /// Mark a session whose models came only from the legacy `models` field.
-    pub(crate) fn mark_legacy_models(&mut self, session_id: String) {
-        self.legacy_model_sessions.insert(session_id);
+    /// Mark a session whose models came only from the legacy `models` field,
+    /// keeping its list.
+    pub(crate) fn mark_legacy_models(&mut self, session_id: String, models: SessionModelState) {
+        self.legacy_models.insert(session_id, models);
     }
 
     /// Clear the legacy marker (the session now resolves to config-option models).
     pub(crate) fn clear_legacy_models(&mut self, session_id: &str) {
-        self.legacy_model_sessions.remove(session_id);
+        self.legacy_models.remove(session_id);
     }
 
-    /// Whether the session's model list is legacy-only (read-only).
+    /// Whether the session's model list is legacy-only (switched with the
+    /// legacy `session/set_model` request).
     pub(crate) fn is_legacy_models(&self, session_id: &str) -> bool {
-        self.legacy_model_sessions.contains(session_id)
+        self.legacy_models.contains_key(session_id)
+    }
+
+    /// Make `model_id` the current model of a legacy-only session after the
+    /// agent accepted the switch, and return the updated list to publish.
+    /// `None` when the session is not legacy-only.
+    pub(crate) fn switch_legacy_model(
+        &mut self,
+        session_id: &str,
+        model_id: &str,
+    ) -> Option<SessionModelState> {
+        let models = self.legacy_models.get_mut(session_id)?;
+        models.current_model_id = model_id.to_string();
+        Some(models.clone())
     }
 
     /// The cached Model-selector configId for a session, if one was advertised.

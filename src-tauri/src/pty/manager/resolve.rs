@@ -810,14 +810,36 @@ impl PtyManager {
             .as_ref()
             .is_some_and(|custom| custom.keys().any(|key| key.eq_ignore_ascii_case("path")));
 
+        // A project value that references PATH (`PATH=$HOME/bin:$PATH`,
+        // `FOO=$PATH`) must expand against the refreshed PATH, or
+        // directories added after launch are lost. Only a literal PATH
+        // override skips the refresh probe, which is cached, so it costs
+        // at most one login-shell spawn per process.
+        let custom_refs_path = custom_env.as_ref().is_some_and(|custom| {
+            custom.values().any(|value| {
+                crate::pty::env_expand::value_references_var(
+                    value,
+                    "PATH",
+                    cfg!(target_os = "windows"),
+                )
+            })
+        });
+        let skip_fresh_path = custom_sets_path && !custom_refs_path;
+
         #[cfg(target_os = "windows")]
         {
             let mut env_map = merge_windows_environment_map(env::vars(), None);
-            if !custom_sets_path {
+            if !skip_fresh_path {
                 crate::pty::env_refresh::apply_fresh_path(&mut env_map);
             }
             if let Some(custom) = custom_env {
-                for (key, value) in custom {
+                // Project env values arrive unexpanded (the renderer has no
+                // process env): expand `$VAR`/`${VAR}`/`%VAR%` against the
+                // base map before upserting, so e.g. `PATH=$HOME/bin:$PATH`
+                // keeps the real inherited PATH instead of going empty.
+                let expanded =
+                    crate::pty::env_expand::expand_custom_env(custom, &env_map, true);
+                for (key, value) in expanded {
                     upsert_windows_env_var(&mut env_map, &key, value);
                 }
             }
@@ -843,12 +865,16 @@ impl PtyManager {
             }
             crate::process_util::remove_launcher_preload(&mut env);
 
-            if !custom_sets_path {
+            if !skip_fresh_path {
                 crate::pty::env_refresh::apply_fresh_path(&mut env);
             }
 
             if let Some(custom) = custom_env {
-                for (key, value) in custom {
+                // See the Windows branch: expand references against the
+                // base process env before merging.
+                let expanded =
+                    crate::pty::env_expand::expand_custom_env(custom, &env, false);
+                for (key, value) in expanded {
                     env.insert(key, value);
                 }
             }

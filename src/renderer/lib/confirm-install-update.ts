@@ -18,7 +18,7 @@ export async function confirmInstallAndRestart(version: string | null): Promise<
       {
         title: 'Install update',
         kind: 'warning',
-        okLabel: 'Install & Restart',
+        okLabel: 'Install and restart',
         cancelLabel: 'Not now'
       }
     )

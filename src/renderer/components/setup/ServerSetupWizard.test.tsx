@@ -27,6 +27,37 @@ const { api, logError } = vi.hoisted(() => ({
 vi.mock('@/lib/web-setup-api', () => ({ webSetupApi: api }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: logError }))
 
+// The reconfigure form uses SettingsSelect, which renders Radix items
+// directly; stand it in with a native select, like the ui/select mock below.
+vi.mock('@/components/settings/SettingsSelect', () => ({
+  SettingsSelect: ({
+    options,
+    value,
+    onValueChange,
+    disabled,
+    ...props
+  }: {
+    options: readonly { value: string; label: string }[]
+    value?: string
+    onValueChange?: (v: string) => void
+    disabled?: boolean
+    [k: string]: unknown
+  }) => (
+    <select
+      {...props}
+      disabled={disabled}
+      value={value ?? ''}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+}))
+
 vi.mock('@/components/ui/select', async () => {
   const { createContext, useContext, Children, isValidElement } = await import('react')
   type Item = { value: string; label: React.ReactNode }

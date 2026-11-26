@@ -2455,6 +2455,7 @@ describe('Antigravity Accounts parity', () => {
   const REQUESTS = [
     'list_antigravity_accounts',
     'list_antigravity_usage',
+    'check_antigravity_usage',
     'set_default_antigravity_account',
     'set_project_antigravity_account',
     'set_chat_antigravity_account',
@@ -2486,6 +2487,40 @@ describe('Antigravity Accounts parity', () => {
       expect(invokeTransport).toContain(`'antigravity_accounts_${suffix}'`)
       expect(lib).toContain(`acp::commands::antigravity_accounts_${suffix}`)
     }
+  })
+
+  it('only the Check usage button of an account row starts a usage check', () => {
+    const RENDERER = join(LIB_DIR, '..')
+    const sources = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) return entry.name === '__tests__' ? [] : sources(path)
+        return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [path] : []
+      })
+    const callers = sources(RENDERER)
+      .filter((file) => /\b(checkUsage|checkAntigravityUsage)\b/.test(readFileSync(file, 'utf-8')))
+      .map((file) => file.slice(RENDERER.length + 1))
+      .sort()
+    expect(callers).toEqual([
+      'components/settings/provider/AntigravityProviderSettings.tsx',
+      'hooks/use-antigravity-accounts.ts',
+      'lib/acp-transport/types.ts',
+      'lib/acp-transport/ws-transport.ts',
+      'lib/antigravity-accounts-api.ts',
+      'lib/test-utils/invoke-acp-transport.ts'
+    ])
+  })
+
+  it('the Antigravity host code never calls Google itself', () => {
+    const files = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const path = join(dir, entry.name)
+        return entry.isDirectory() ? files(path) : entry.name.endsWith('.rs') ? [path] : []
+      })
+    const offenders = files(join(SRC_TAURI, 'acp'))
+      .filter((file) => file.includes('antigravity'))
+      .filter((file) => /googleapis\.com|cloudcode-pa/.test(readFileSync(file, 'utf-8')))
+    expect(offenders).toEqual([])
   })
 
   it('a signed-out refusal reads the same on the /ws code and the desktop invoke prefix', () => {

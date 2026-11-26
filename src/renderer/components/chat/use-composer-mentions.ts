@@ -3,6 +3,7 @@ import type { SearchFileHit } from '@shared/types/ipc.types'
 import type { RefObject } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { filesystemApi } from '@/lib/api'
+import { insertCanvasToken } from '@/lib/composer/canvas-tokens'
 import { logFrontendError } from '@/lib/log-api'
 import { basename } from '@/lib/path-basename'
 import { insertConversationToken, insertFileToken } from '@/lib/skill-tokens'
@@ -15,6 +16,8 @@ import {
 import {
   activeMentionToken,
   buildMentionSections,
+  CANVAS_EMPTY_LABEL,
+  CANVAS_NO_MATCH_LABEL,
   CONVERSATIONS_EMPTY_LABEL,
   CONVERSATIONS_NO_MATCH_LABEL,
   type DirListing,
@@ -30,6 +33,7 @@ import {
   mentionPanelHeader,
   relativeDir
 } from './mention-menu-model'
+import { useMentionCanvas } from './use-mention-canvas'
 import { useMentionConversations } from './use-mention-conversations'
 
 const MAX_RESULTS = 100
@@ -139,6 +143,9 @@ function mentionEmptyLabel(panel: MentionPanel, filter: string, loading: boolean
   if (panel.kind === 'conversations') {
     return filter.trim() === '' ? CONVERSATIONS_EMPTY_LABEL : CONVERSATIONS_NO_MATCH_LABEL
   }
+  if (panel.kind === 'canvas') {
+    return filter.trim() === '' ? CANVAS_EMPTY_LABEL : CANVAS_NO_MATCH_LABEL
+  }
   return loading ? MENTION_SEARCHING_LABEL : MENTION_EMPTY_LABEL
 }
 
@@ -209,7 +216,8 @@ export function useComposerMentions(opts: UseComposerMentionsOptions): ComposerM
   const root = normalizeRoot(rootPath)
   const depth = panels.stack.length
   const panel = panels.stack[depth - 1] ?? ROOT_STACK.stack[0]
-  const searchesFiles = panel.kind !== 'conversations'
+  const searchesFiles = panel.kind !== 'conversations' && panel.kind !== 'canvas'
+  const canvas = useMentionCanvas(disabled ? null : projectId, menuOpen && panel.kind === 'canvas')
   const onStageRef = useRef(onStageFileRef)
   onStageRef.current = onStageFileRef
 
@@ -435,7 +443,11 @@ export function useComposerMentions(opts: UseComposerMentionsOptions): ComposerM
       if (!token) return null
       if (row.kind === 'category') {
         push(
-          row.target === 'explorer' ? { kind: 'explorer', dir: root } : { kind: 'conversations' }
+          row.target === 'explorer'
+            ? { kind: 'explorer', dir: root }
+            : row.target === 'canvas'
+              ? { kind: 'canvas' }
+              : { kind: 'conversations' }
         )
         return clearQuery(value, token)
       }
@@ -453,6 +465,15 @@ export function useComposerMentions(opts: UseComposerMentionsOptions): ComposerM
           row.conversation.sessionId,
           token.end - token.at
         )
+      }
+      if (row.kind === 'canvas-layer') {
+        logFrontendError({
+          level: 'info',
+          message: `composer mention picked canvas ${row.selection ? 'selection' : 'layer'} (${row.ref.ids.length} id(s))`,
+          source: 'useComposerMentions'
+        })
+        close()
+        return insertCanvasToken(value, token.end, row.ref, token.end - token.at)
       }
       if (row.kind === 'dir') {
         push({ kind: 'explorer', dir: folderDir(row.match) })
@@ -489,7 +510,9 @@ export function useComposerMentions(opts: UseComposerMentionsOptions): ComposerM
     matches,
     recents,
     conversations,
-    listing: panel.kind === 'explorer' ? listings[panel.dir] : undefined
+    listing: panel.kind === 'explorer' ? listings[panel.dir] : undefined,
+    canvasAvailable: canvas.available,
+    canvas: canvas.listing
   })
   const view: MentionMenuView = {
     panelKey: panelKey(depth, panel),

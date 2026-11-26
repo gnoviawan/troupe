@@ -77,31 +77,36 @@ export interface RemovedAntigravityAccount {
   movedChatIds: string[]
 }
 
-/** The quota of one model on an Account. */
+/** One quota bucket the agent's `/usage` reported with a percent. */
 export interface AntigravityUsageWindow {
   kind: 'model'
-  /** Model display name, e.g. "Gemini 3 Pro". */
+  /** Group and bucket, e.g. "Gemini Models · Weekly Limit Remaining". */
   label: string
   modelId: string
   /** Percent used, 0–100. */
   percent: number
-  /** ISO-8601 reset time; `null` when Antigravity did not send one. */
+  /** ISO-8601 reset time; `null` when the reply named none in its usual format. */
   resetsAt: string | null
 }
 
-export type AntigravityUsageStatus = 'ok' | 'unavailable' | 'signed_out' | 'error'
+/**
+ * `ok`: the agent's `/usage` reported meters. `unavailable`: it reported none
+ * (`message` holds its lines). `not_checked`: nobody asked since the host
+ * started.
+ */
+export type AntigravityUsageStatus = 'ok' | 'unavailable' | 'signed_out' | 'error' | 'not_checked'
 
-/** The usage of one Account at `checkedAt`. */
+/** The last usage check of one Account. */
 export interface AntigravityAccountUsage {
   accountId: string
   status: AntigravityUsageStatus
-  /** Plan / tier name when Antigravity sent one. Never an email. */
+  /** The plan tier the agent named, e.g. "Google AI Pro". Never an email. */
   planType: string | null
-  /** One window per model with a quota, most used first. */
+  /** One window per quota bucket, most used first. */
   windows: AntigravityUsageWindow[]
-  /** Unix epoch milliseconds of the read. */
+  /** Unix epoch milliseconds of the check; `0` when `not_checked`. */
   checkedAt: number
-  /** Reason for `error` or `unavailable`. Never holds login details. */
+  /** The agent's lines the meters cannot show, or why the check failed. */
   message: string | null
 }
 

@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useIsStandaloneServer } from '@/hooks/use-is-standalone-server'
 import { useServerAdmitsRemoteWrites } from '@/hooks/use-server-admits-remote-writes'
 import { logFrontendError } from '@/lib/log-api'
+import { shareLinkAllowsWrites } from '@/lib/server-qr-url'
 import { isTauriContext } from '@/lib/tauri-runtime'
 import { webSetupApi } from '@/lib/web-setup-api'
 
@@ -73,7 +74,12 @@ function ServerQrPopoverInner(): React.JSX.Element {
     }
   }, [open, attempt])
 
-  const allowWrites = config ? config.allowRemoteWrites : admitsWrites
+  const allowWrites = shareLinkAllowsWrites({
+    origin: typeof window !== 'undefined' ? window.location.origin : '',
+    hostname: typeof window !== 'undefined' ? window.location.hostname : '',
+    admitsWrites,
+    allowRemoteWrites: config?.allowRemoteWrites ?? false
+  })
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

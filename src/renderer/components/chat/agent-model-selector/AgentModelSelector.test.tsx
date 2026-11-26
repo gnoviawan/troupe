@@ -1066,6 +1066,23 @@ describe('AgentModelSelector agent tabs (switch logic moved from AgentSwitchPick
     expect(mockArmAgentSwitch).not.toHaveBeenCalled()
   })
 
+  it('tells onOpenChange when the panel closes itself', async () => {
+    seed([readyEntry(CLAUDE)], { activeTurn: true, openTurnId: 'turn-1' })
+    acpStateRef.current.agentOptionsCache = { [CLAUDE.id]: CLAUDE_MODELS }
+    const onOpenChange = vi.fn()
+    renderSelector({ onOpenChange })
+    open()
+    expect(onOpenChange).toHaveBeenLastCalledWith(true)
+    fireEvent.click(screen.getByRole('tab', { name: 'Claude Agent' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Claude Haiku' }))
+    fireEvent.click(within(screen.getByTestId('agent-switch-busy')).getByText('Wait'))
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('agent-model-selector-panel')).not.toBeInTheDocument()
+    })
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
+  })
+
   it.each([
     ['queued prompts', { promptQueues: { 'session-1': [{ id: 'q1' }] } }, {}],
     ['a launching chat', { launchingSessionIds: { 'session-1': true } }, {}],

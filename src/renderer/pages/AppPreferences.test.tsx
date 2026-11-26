@@ -19,6 +19,13 @@ const mockWrite = vi.fn().mockResolvedValue({ success: true, data: undefined })
 const mockLogFrontendError = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/api', () => ({
+  // The settings window draws the Windows and Linux window controls on desktop.
+  windowApi: {
+    onMaximizeChange: vi.fn(() => () => undefined),
+    minimize: vi.fn(),
+    toggleMaximize: vi.fn(),
+    close: vi.fn()
+  },
   acpApi: {
     setTurnTimeout: vi.fn().mockResolvedValue({ success: true }),
     setTurnIdleTimeout: vi.fn().mockResolvedValue({ success: true }),
@@ -28,7 +35,7 @@ vi.mock('@/lib/api', () => ({
     getAgentIdleWindow: vi.fn().mockResolvedValue({ secs: 1800, source: 'default' }),
     getSubagentSettings: vi
       .fn()
-      .mockResolvedValue({ enabled: true, maxRunning: 4, maxDepth: 2, agents: [] }),
+      .mockResolvedValue({ enabled: true, maxRunning: 4, maxDepth: 2, profiles: [] }),
     setSubagentSettings: vi.fn()
   },
   logApi: {
@@ -232,42 +239,34 @@ describe('AppPreferences editor auto-save controls (GH-539)', () => {
     useAppSettingsStore.setState({ settings: { ...DEFAULT_APP_SETTINGS }, isLoaded: true })
   })
 
-  it('toggling the auto-save switch writes editorAutoSave (with correct negation)', async () => {
+  it('is one select: a delay turns auto save on, Off turns it off', async () => {
     renderPage()
-    goTo('Editor')
+    goTo('Preferences')
 
-    const toggle = await screen.findByRole('switch', { name: 'Auto save' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    const select = await screen.findByLabelText('Auto save')
+    expect(select).toHaveValue('off')
 
-    fireEvent.click(toggle)
+    fireEvent.change(select, { target: { value: '2000' } })
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.editorAutoSave).toBe(true)
+      expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
     })
     expect(mockWriteDebounced).toHaveBeenCalled()
 
-    fireEvent.click(toggle)
+    fireEvent.change(screen.getByLabelText('Auto save'), { target: { value: 'off' } })
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.editorAutoSave).toBe(false)
     })
+    // Off keeps the chosen delay for the next time auto save is on.
+    expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
   })
 
-  it('changing the delay select writes editorAutoSaveDelayMs and is disabled while off', async () => {
+  it('has no second delay row', async () => {
     renderPage()
-    goTo('Editor')
+    goTo('Preferences')
 
-    const select = await screen.findByLabelText('Auto save delay')
-    expect(select).toBeDisabled()
-    expect(screen.getByText('Turn on auto save to choose a delay.')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Auto save' }))
-    await waitFor(() => {
-      expect(screen.getByLabelText('Auto save delay')).toBeEnabled()
-    })
-
-    fireEvent.change(screen.getByLabelText('Auto save delay'), { target: { value: '2000' } })
-    await waitFor(() => {
-      expect(useAppSettingsStore.getState().settings.editorAutoSaveDelayMs).toBe(2000)
-    })
+    await screen.findByLabelText('Auto save')
+    expect(screen.queryByLabelText('Auto save delay')).not.toBeInTheDocument()
   })
 })
 
@@ -280,7 +279,7 @@ describe('AppPreferences idle chat window', () => {
 
   it('saves Keep idle chats and pushes the window to the host', async () => {
     renderPage()
-    goTo('Agent chats')
+    goTo('Agents')
     fireEvent.change(await screen.findByLabelText('Close idle chats after'), {
       target: { value: '7200' }
     })
@@ -305,7 +304,7 @@ describe('AppPreferences Sub-agents page', () => {
   it.each([
     ['desktop', true],
     ['web', false]
-  ])('lists Sub-agents right after Agent chats on %s', (_runtime, isTauri) => {
+  ])('lists Sub-agents right after Agents on %s', (_runtime, isTauri) => {
     tauriRef.current = isTauri
     renderPage()
 
@@ -313,8 +312,8 @@ describe('AppPreferences Sub-agents page', () => {
     const pages = within(nav)
       .getAllByRole('button')
       .map((button) => button.textContent)
-    expect(pages.slice(pages.indexOf('Agent chats'), pages.indexOf('Agent chats') + 2)).toEqual([
-      'Agent chats',
+    expect(pages.slice(pages.indexOf('Agents'), pages.indexOf('Agents') + 2)).toEqual([
+      'Agents',
       'Sub-agents'
     ])
   })
@@ -334,7 +333,7 @@ describe('AppPreferences Sub-agents page', () => {
   it('no longer shows the sub-agent settings on Agent chats', async () => {
     tauriRef.current = true
     renderPage()
-    goTo('Agent chats')
+    goTo('Agents')
 
     expect(
       await screen.findByRole('combobox', { name: 'Close idle chats after' })
@@ -371,7 +370,7 @@ describe('AppPreferences notification switches (issue #865)', () => {
 
   it('renders the three notification switches and writes each setting', async () => {
     renderPage()
-    goTo('Notifications')
+    goTo('Preferences')
     const terminal = await screen.findByRole('switch', {
       name: 'Notify when a terminal agent finishes'
     })
@@ -412,7 +411,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     renderPage()
   }
 
-  it('hides the whole Updates page on web and shows the server version on Logs', async () => {
+  it('hides the update controls on web and shows the server version on About', async () => {
     renderWeb()
 
     const nav = screen.getByRole('navigation', { name: 'Settings pages' })
@@ -420,8 +419,8 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     expect(screen.queryByText(/Check for updates/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Release channel')).not.toBeInTheDocument()
 
-    goTo('Logs')
-    expect(await screen.findByRole('heading', { name: 'Server version' })).toBeInTheDocument()
+    goTo('About')
+    expect(await screen.findByText(/^termul-server v/)).toBeInTheDocument()
     expect(
       screen.getByText(/web client is served by the termul-server and updates together with it/i)
     ).toBeInTheDocument()
@@ -429,7 +428,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('hides the log folder and file exports on web', async () => {
     renderWeb()
-    goTo('Logs')
+    goTo('About')
 
     await screen.findByRole('button', { name: 'Copy log contents' })
     expect(screen.queryByRole('button', { name: 'Show log folder' })).not.toBeInTheDocument()
@@ -441,7 +440,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('keeps Close idle chats after editable on web and leaves the other timeouts read-only', async () => {
     renderWeb()
-    goTo('Agent chats')
+    goTo('Agents')
     expect(await screen.findByText('Set on the server.')).toBeInTheDocument()
     const keep = screen.getByLabelText('Close idle chats after')
     expect(keep).toBeEnabled()
@@ -467,7 +466,7 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('keeps Copy log enabled on web (works in the browser)', async () => {
     renderWeb()
-    goTo('Logs')
+    goTo('About')
 
     const copy = await screen.findByRole('button', { name: 'Copy log contents' })
     expect(copy).toBeEnabled()
@@ -475,13 +474,13 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
 
   it('offers the update controls ungated on desktop', async () => {
     renderPage()
-    goTo('Updates')
+    goTo('About')
 
     const check = await screen.findByRole('button', { name: /Check for updates/ })
     expect(check).toBeEnabled()
     expect(check).not.toHaveAttribute('title')
 
-    goTo('Logs')
+    goTo('About')
     const reveal = screen.getByRole('button', { name: 'Show log folder' })
     expect(reveal).toBeEnabled()
     expect(reveal).not.toHaveAttribute('title')
@@ -502,7 +501,7 @@ describe.each([
   })
 
   async function findSwitch(): Promise<HTMLElement> {
-    goTo('Appearance')
+    goTo('Terminal')
     return screen.findByRole('switch', { name: 'Screen reader mode' })
   }
 
@@ -521,15 +520,15 @@ describe.each([
     expect(description).toHaveTextContent(/repeat typed characters/i)
   })
 
-  it('sits after the Renderer control and before Preview', async () => {
+  it('sits under New terminals, after Default shell and before the Advanced card', async () => {
     renderPage()
 
     const toggle = await findSwitch()
-    const renderer = screen.getByLabelText('Renderer')
-    const preview = screen.getByRole('heading', { name: 'Preview' })
+    const shell = screen.getByLabelText('Default shell')
+    const advanced = screen.getByRole('button', { name: /Advanced/ })
 
-    expect(renderer.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(toggle.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(shell.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(toggle.compareDocumentPosition(advanced) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('toggles through the label as well as the switch', async () => {
@@ -610,9 +609,13 @@ describe.each([
     const toggle = await findSwitch()
     expect(toggle).toHaveAttribute('aria-checked', 'true')
 
-    goTo('Reset')
-    fireEvent.click(screen.getByRole('button', { name: 'Reset settings…' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Reset settings' }))
+    goTo('About')
+    // The page trigger and the confirm share the label; the confirm is the second.
+    fireEvent.click(screen.getByRole('button', { name: 'Reset settings' }))
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: 'Reset settings' })).toHaveLength(2)
+    )
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reset settings' })[1] as HTMLElement)
 
     await waitFor(() => {
       expect(useAppSettingsStore.getState().settings.terminalScreenReaderMode).toBe(false)

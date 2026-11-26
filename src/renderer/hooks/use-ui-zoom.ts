@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { getCurrentWebview } from '@/lib/tauri-webview'
 import { useAppSettingsLoaded, useUiZoomLevel } from '@/stores/app-settings-store'
 import { UI_ZOOM_MAX, UI_ZOOM_MIN } from '@/types/settings'
@@ -18,6 +18,18 @@ function isTauri(): boolean {
 
 let appliedUiZoom = 1
 let nativeZoomQueue: Promise<void> = Promise.resolve()
+const appliedUiZoomListeners = new Set<() => void>()
+
+function emitAppliedUiZoom(): void {
+  for (const listener of appliedUiZoomListeners) listener()
+}
+
+function subscribeAppliedUiZoom(listener: () => void): () => void {
+  appliedUiZoomListeners.add(listener)
+  return () => {
+    appliedUiZoomListeners.delete(listener)
+  }
+}
 
 /**
  * Under native webview zoom, `getBoundingClientRect` reports zoomed CSS px
@@ -26,6 +38,11 @@ let nativeZoomQueue: Promise<void> = Promise.resolve()
  */
 export function getAppliedUiZoom(): number {
   return appliedUiZoom
+}
+
+/** React hook subscribed to the currently applied whole-UI zoom factor. */
+export function useAppliedUiZoom(): number {
+  return useSyncExternalStore(subscribeAppliedUiZoom, getAppliedUiZoom, getAppliedUiZoom)
 }
 
 /**
@@ -53,8 +70,10 @@ export async function applyUiZoom(level: number): Promise<number> {
       appliedUiZoom = clamped
       try {
         await getCurrentWebview().setZoom(clamped)
+        emitAppliedUiZoom()
       } catch (error) {
         appliedUiZoom = previous
+        emitAppliedUiZoom()
         throw error
       }
     })

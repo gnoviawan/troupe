@@ -95,42 +95,63 @@ beforeEach(() => {
   useAntigravityResumeStore.setState({ at: {}, turns: {}, timers: {} })
 })
 
-describe('AntigravityLimitWarning', () => {
-  it('warns in yellow when the most used model is near 80%', async () => {
-    api.usage.mockResolvedValue([read('default', 82), read('ab12', 10), read('cd34', 40)])
-    render(<AntigravityLimitWarning sessionId="s1" />)
-    const warning = await screen.findByTestId('antigravity-limit-warning')
-    expect(warning).toHaveTextContent('Personal has used 82% of its usage limit')
-    expect(warning).toHaveAttribute('data-composer-dock', 'warning')
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Work' }))
-    await vi.waitFor(() =>
-      expect(switcher.switchChatAntigravityAccount).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionId: 's1', runsOn: 'default' }),
-        'ab12',
-        {}
-      )
-    )
+function reachLimit(resetsAt: number | null = null): void {
+  useAcpStore.getState()._onAgentError({
+    agentId: 'a1',
+    sessionId: 's1',
+    message: 'Antigravity reached its usage limit',
+    code: -32603,
+    data: { errorKind: 'quota_exhausted', agent: 'antigravity', resetsAt }
   })
+}
 
-  it('stays hidden under 80%', async () => {
-    api.usage.mockResolvedValue([read('default', 79)])
+function onlyPersonalSignedIn(): void {
+  api.list.mockResolvedValue({
+    accounts: [
+      { id: 'default', name: 'Personal', builtin: true, signedIn: true },
+      { id: 'ab12', name: 'Work', builtin: false, signedIn: false },
+      { id: 'cd34', name: 'Side', builtin: false, signedIn: false }
+    ],
+    defaultAccountId: 'default',
+    projectAccounts: {},
+    chatAccounts: {},
+    autoSwitch: true
+  })
+}
+
+describe('AntigravityLimitWarning', () => {
+  it('raises no warning from a usage check, even at 82%', async () => {
+    api.usage.mockResolvedValue([read('default', 82), read('ab12', 10), read('cd34', 40)])
     const { container } = render(<AntigravityLimitWarning sessionId="s1" />)
     await vi.waitFor(() => expect(api.usage).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
     expect(container).toBeEmptyDOMElement()
   })
 })
 
 describe('AntigravityLimitNotice', () => {
-  it('offers Switch to the account with the most room and Other account', async () => {
+  it('shows no limit card when only a usage check reads 100%', async () => {
     api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 40)])
+    const { container } = render(<AntigravityLimitNotice sessionId="s1" />)
+    await vi.waitFor(() => expect(api.usage).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('offers the next signed-in account in list order, whatever its last check said', async () => {
+    api.usage.mockResolvedValue([read('default', 40), read('ab12', 90), read('cd34', 4)])
+    reachLimit()
     render(<AntigravityLimitNotice sessionId="s1" />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Personal reached its usage limit')
-    const switchButton = screen.getByRole('button', { name: 'Switch to Work and continue' })
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Personal reached its usage limit')
+    const switchButton = await screen.findByRole('button', { name: 'Switch to Work and continue' })
+    expect(alert).toHaveTextContent('Switch to Work and continue?')
+    expect(alert).not.toHaveTextContent('% used')
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Other account' }), {
       button: 0,
       ctrlKey: false
     })
-    expect(await screen.findByRole('menuitem', { name: /Side/ })).toHaveTextContent('40% used')
+    expect((await screen.findByRole('menuitem', { name: /Side/ })).textContent).toBe('Side')
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
     fireEvent.click(switchButton)
     await vi.waitFor(() =>
@@ -144,7 +165,8 @@ describe('AntigravityLimitNotice', () => {
 
   it('reports a lost compare-and-set instead of a successful switch', async () => {
     switcher.switchChatAntigravityAccount.mockResolvedValue('lost')
-    api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 40)])
+    api.usage.mockResolvedValue([])
+    reachLimit()
     render(<AntigravityLimitNotice sessionId="s1" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Switch to Work and continue' }))
     await vi.waitFor(() =>
@@ -156,12 +178,15 @@ describe('AntigravityLimitNotice', () => {
     expect(toast.success).not.toHaveBeenCalled()
   })
 
-  it('keeps Cancel visible when a resume is scheduled and another account has room', async () => {
-    api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 40)])
+  it('keeps Cancel visible when a resume is scheduled and another account is signed in', async () => {
+    api.usage.mockResolvedValue([])
+    reachLimit()
     useAntigravityResumeStore.getState().schedule('s1', Date.now() + 60_000)
     render(<AntigravityLimitNotice sessionId="s1" />)
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Switch to Work and continue' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Switch to Work and continue' })
+    ).toBeInTheDocument()
     useAntigravityResumeStore.getState().cancel('s1')
   })
 
@@ -177,7 +202,8 @@ describe('AntigravityLimitNotice', () => {
       chatAccounts: { s1: 'default' },
       autoSwitch: true
     })
-    api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 100)])
+    api.usage.mockResolvedValue([])
+    reachLimit()
     render(<AntigravityLimitNotice sessionId="s1" />)
     expect(
       await screen.findByRole('button', { name: 'Switch to Work and continue' })
@@ -185,7 +211,8 @@ describe('AntigravityLimitNotice', () => {
   })
 
   it('tells the host to drop a scheduled continue before switching', async () => {
-    api.usage.mockResolvedValue([read('default', 100), read('ab12', 4), read('cd34', 40)])
+    api.usage.mockResolvedValue([])
+    reachLimit()
     useAntigravityResumeStore.getState().schedule('s1', Date.now() + 60_000)
     render(<AntigravityLimitNotice sessionId="s1" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Switch to Work and continue' }))
@@ -194,13 +221,10 @@ describe('AntigravityLimitNotice', () => {
   })
 
   it('drops a resume the host refused and keeps the wait button', async () => {
+    onlyPersonalSignedIn()
     api.setResume.mockRejectedValue(new Error('offline'))
-    const resetsAt = new Date(Date.now() + 3_600_000).toISOString()
-    api.usage.mockResolvedValue([
-      read('default', 100, resetsAt),
-      read('ab12', 100, resetsAt),
-      read('cd34', 100, resetsAt)
-    ])
+    api.usage.mockResolvedValue([])
+    reachLimit(Date.now() + 3_600_000)
     render(<AntigravityLimitNotice sessionId="s1" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Continue when it resets' }))
     await vi.waitFor(() =>
@@ -211,12 +235,9 @@ describe('AntigravityLimitNotice', () => {
   })
 
   it('keeps the scheduled continue when cancelling it fails', async () => {
-    const resetsAt = new Date(Date.now() + 3_600_000).toISOString()
-    api.usage.mockResolvedValue([
-      read('default', 100, resetsAt),
-      read('ab12', 100, resetsAt),
-      read('cd34', 100, resetsAt)
-    ])
+    onlyPersonalSignedIn()
+    api.usage.mockResolvedValue([])
+    reachLimit(Date.now() + 3_600_000)
     render(<AntigravityLimitNotice sessionId="s1" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Continue when it resets' }))
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeInTheDocument()
@@ -234,13 +255,10 @@ describe('AntigravityLimitNotice', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
   })
 
-  it('offers wait for reset and Add account when no other account has room', async () => {
-    const resetsAt = new Date(Date.now() + 3_600_000).toISOString()
-    api.usage.mockResolvedValue([
-      read('default', 100, resetsAt),
-      read('ab12', 100, resetsAt),
-      read('cd34', 100, resetsAt)
-    ])
+  it('offers wait for reset and Add account when no other account is signed in', async () => {
+    onlyPersonalSignedIn()
+    api.usage.mockResolvedValue([])
+    reachLimit(Date.now() + 3_600_000)
     render(<AntigravityLimitNotice sessionId="s1" />)
     expect(
       await screen.findByRole('button', { name: 'Continue when it resets' })
@@ -250,47 +268,25 @@ describe('AntigravityLimitNotice', () => {
     expect(openApp).toHaveBeenCalledWith('provider')
   })
 
-  it('treats a quota error as at-limit and keeps the last probe reset', async () => {
-    const resetsAt = new Date(Date.now() + 3_600_000).toISOString()
-    api.usage.mockResolvedValue([
-      read('default', 40, resetsAt),
-      read('ab12', 100),
-      read('cd34', 100)
-    ])
-    useAcpStore.getState()._onAgentError({
-      agentId: 'a1',
-      sessionId: 's1',
-      message: 'Antigravity reached its usage limit',
-      code: -32603,
-      data: { errorKind: 'quota_exhausted', agent: 'antigravity', resetsAt: null }
-    })
+  it('never takes a reset time from a usage check', async () => {
+    onlyPersonalSignedIn()
+    const checkedReset = new Date(Date.now() + 3_600_000).toISOString()
+    api.usage.mockResolvedValue([read('default', 100, checkedReset)])
+    reachLimit()
     render(<AntigravityLimitNotice sessionId="s1" />)
     expect(await screen.findByRole('alert')).toHaveTextContent('Personal reached its usage limit')
-    expect(screen.getByRole('button', { name: 'Continue when it resets' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Continue when it resets' }))
-    await vi.waitFor(() =>
-      expect(api.setResume).toHaveBeenCalledWith(
-        's1',
-        Math.floor(Date.parse(resetsAt) / 1000) * 1000
-      )
-    )
+    await vi.waitFor(() => expect(api.usage).toHaveBeenCalled())
+    expect(screen.getByRole('alert')).toHaveTextContent('It resets soon.')
+    expect(
+      screen.queryByRole('button', { name: 'Continue when it resets' })
+    ).not.toBeInTheDocument()
   })
 
-  it('prefers the reset time the quota error names over the probe', async () => {
-    const probeReset = new Date(Date.now() + 3_600_000).toISOString()
+  it('continues at the reset time the quota error names', async () => {
+    onlyPersonalSignedIn()
     const errorReset = Date.now() + 7_200_000
-    api.usage.mockResolvedValue([
-      read('default', 40, probeReset),
-      read('ab12', 100),
-      read('cd34', 100)
-    ])
-    useAcpStore.getState()._onAgentError({
-      agentId: 'a1',
-      sessionId: 's1',
-      message: 'Antigravity reached its usage limit',
-      code: -32603,
-      data: { errorKind: 'quota_exhausted', agent: 'antigravity', resetsAt: errorReset }
-    })
+    api.usage.mockResolvedValue([])
+    reachLimit(errorReset)
     expect(useAcpStore.getState().sessionUsage.s1?.rateLimit?.resetsAt).toBe(
       Math.floor(errorReset / 1000)
     )

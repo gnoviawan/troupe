@@ -26,15 +26,50 @@ export interface BuildServerShareUrlInput {
   token: string | null
 }
 
+/** IPv4 reserves all of 127.0.0.0/8 for loopback, not only 127.0.0.1. */
+function isIpv4Loopback(hostname: string): boolean {
+  const parts = hostname.split('.')
+  if (parts.length !== 4) return false
+  const octets = parts.map((part) => (/^\d{1,3}$/.test(part) ? Number(part) : Number.NaN))
+  if (octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return false
+  return octets[0] === 127
+}
+
 function isLoopbackHostname(hostname: string): boolean {
   const h = hostname.trim().toLowerCase()
   return (
     h === 'localhost' ||
-    h === '127.0.0.1' ||
+    isIpv4Loopback(h) ||
     h === '::1' ||
     h === '[::1]' ||
     h.endsWith('.localhost')
   )
+}
+
+/**
+ * True when {@link buildServerShareUrl} keeps the browser origin.
+ * A loopback browser substitutes `lanHost` instead, so write admission for
+ * that URL is the configured remote-write flag, not the loopback peer's.
+ */
+function shareUrlKeepsBrowserOrigin(origin: string, hostname: string): boolean {
+  const cleanOrigin = origin.replace(/\/+$/, '')
+  return Boolean(hostname && !isLoopbackHostname(hostname) && cleanOrigin)
+}
+
+/**
+ * Write admission for the URL {@link buildServerShareUrl} will encode.
+ * A kept browser origin uses the effective admission of this page (`/health`).
+ * A substituted LAN host uses `allowRemoteWrites` from server config.
+ */
+export function shareLinkAllowsWrites(input: {
+  origin: string
+  hostname: string
+  admitsWrites: boolean
+  allowRemoteWrites: boolean
+}): boolean {
+  return shareUrlKeepsBrowserOrigin(input.origin, input.hostname)
+    ? input.admitsWrites
+    : input.allowRemoteWrites
 }
 
 function isWildcardBind(host: string): boolean {
@@ -47,7 +82,7 @@ function isWildcardBind(host: string): boolean {
  *
  * - Non-loopback browser origin (LAN IP, mDNS hostname, Tailscale, HTTPS proxy):
  *   reuses `origin` directly so the QR preserves TLS / domain / reverse proxy.
- * - Loopback browser origin (`localhost` / `127.0.0.1`):
+ * - Loopback browser origin (`localhost`, `127.0.0.0/8`, `::1`):
  *   - If bound to `0.0.0.0` and `lanHost` was detected, substitutes `http://<lanHost>:<port>`.
  *   - If bound to `127.0.0.1`, returns `loopback-only` (never draws an unscannable `localhost` QR).
  *   - If bound to `0.0.0.0` without a detected `lanHost`, returns `no-lan-address`.

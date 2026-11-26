@@ -4,7 +4,7 @@
 # `rune` dependency and every `[patch.crates-io]` entry below.
 [workspace]
 resolver = "3"
-members = ["crates/app", "crates/automation", "crates/client", "crates/dev", "crates/gallery", "crates/hello", "crates/model", "crates/probe", "crates/theme", "crates/ui", "crates/web"]
+members = ["crates/app", "crates/automation", "crates/client", "crates/dev", "crates/editor", "crates/gallery", "crates/hello", "crates/model", "crates/probe", "crates/term", "crates/theme", "crates/ui", "crates/web"]
 
 [workspace.package]
 edition = "2024"
@@ -15,6 +15,8 @@ rune = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d17
 # `rune::machine` without the UI stack, for crates that must not link a renderer
 # (the client transport). Bump the rev with the `rune` pin above.
 rune-core = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
+# The lexers rune-kit's syntax module wraps, used bare by the editor crate, which links no UI.
+rune-highlights = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227" }
 rune-kit = { git = "https://github.com/anomalyco/rune.git", rev = "9d4b4636f1f7e6d172053a0b6469a334c0bfc227", default-features = false }
 serde_json = "1"
 # Pinned to the wasm-bindgen in Rune's own Cargo.lock at the rev above;

@@ -26,6 +26,7 @@
 //! tree-kill, exactly as before this transport existed.
 
 use std::collections::VecDeque;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -55,6 +56,16 @@ pub(super) fn apply_stdio_env(
     let antigravity_marker = crate::acp::antigravity_agent::STRIP_ANTIGRAVITY_API_CREDENTIALS;
     let strip_codex = marked(codex_marker);
     let strip_antigravity = marked(antigravity_marker);
+    // Project env values arrive unexpanded from the renderer (it has no
+    // process env): expand `$VAR`/`${VAR}`/`%VAR%` against the host process
+    // env, the same expansion the PTY spawn path applies in
+    // `merge_environment`, so an ACP agent does not receive a literal `$HOME`.
+    // Non-Unicode entries are skipped: they cannot be named by a reference.
+    let base: HashMap<String, String> = std::env::vars_os()
+        .filter_map(|(key, value)| {
+            Some((key.to_str()?.to_string(), value.to_str()?.to_string()))
+        })
+        .collect();
     for env_var in env {
         if strip_codex && is_stripped_codex_credential(&env_var.name) {
             continue;
@@ -62,7 +73,12 @@ pub(super) fn apply_stdio_env(
         if strip_antigravity && is_stripped_antigravity_credential(&env_var.name) {
             continue;
         }
-        command.env(&env_var.name, &env_var.value);
+        let value = crate::pty::env_expand::expand_env_references(
+            &env_var.value,
+            &base,
+            cfg!(target_os = "windows"),
+        );
+        command.env(&env_var.name, value);
     }
     if strip_codex {
         command.env_remove(codex_marker);

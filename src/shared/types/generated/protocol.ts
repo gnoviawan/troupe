@@ -963,6 +963,7 @@ export type WsEventType =
   | 'tool_call'
   | 'mode_update'
   | 'config_options_update'
+  | 'models_update'
   | 'session_info_update'
   | 'usage_update'
   | 'permission_request'
@@ -999,6 +1000,7 @@ export const WsEventTypeValues = [
   'tool_call',
   'mode_update',
   'config_options_update',
+  'models_update',
   'session_info_update',
   'usage_update',
   'permission_request',
@@ -1164,6 +1166,7 @@ export type WsRequestType =
   | 'start_codex_account_login'
   | 'list_antigravity_accounts'
   | 'list_antigravity_usage'
+  | 'check_antigravity_usage'
   | 'set_default_antigravity_account'
   | 'set_project_antigravity_account'
   | 'set_chat_antigravity_account'
@@ -1268,6 +1271,7 @@ export const WsRequestTypeValues = [
   'start_codex_account_login',
   'list_antigravity_accounts',
   'list_antigravity_usage',
+  'check_antigravity_usage',
   'set_default_antigravity_account',
   'set_project_antigravity_account',
   'set_chat_antigravity_account',

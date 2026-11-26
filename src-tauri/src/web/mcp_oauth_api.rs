@@ -62,6 +62,7 @@ pub struct OAuthStartRequest {
 pub struct OAuthStartResponse {
     pub auth_url: String,
     pub redirect_uri: String,
+    pub token_generation: u64,
 }
 
 /// Start the OAuth flow: discover metadata, register the client (PKCE), and
@@ -87,8 +88,9 @@ pub async fn oauth_start(
     }
     // Restrict OAuth discovery to a configured MCP server URL so a web
     // client cannot make the host probe an attacker-selected internal
-    // service.
-    if !is_authorized_mcp_server_url(state.store.as_deref(), &request.server_url) {
+    // service. Use the store's own URL and configured headers downstream.
+    let Some(authorized) = authorized_mcp_server(state.store.as_deref(), &request.server_url)
+    else {
         log::warn!(
             "[mcp-oauth] web flow start rejected: server URL not in authorized registry (url redacted)"
         );
@@ -96,12 +98,13 @@ pub async fn oauth_start(
             "server URL is not a configured MCP server".to_string(),
             "UNAUTHORIZED_SERVER_URL".to_string(),
         ));
-    }
+    };
     let redirect_uri = format!(
         "{}/oauth/callback",
         state.oauth_base_url.trim_end_matches('/')
     );
-    match build_web_auth_url(&request.server_url, &redirect_uri).await {
+    let token_generation = mcp_oauth::token_generation(&authorized.url);
+    match build_web_auth_url(&authorized.url, &redirect_uri, &authorized.headers).await {
         Ok((auth_url, csrf_token, session)) => {
             let now = Instant::now();
             let mut flows = state.pending_oauth_flows.write();
@@ -109,7 +112,7 @@ pub async fn oauth_start(
             flows.insert(
                 csrf_token,
                 mcp_oauth::PendingOAuthFlow {
-                    server_url: request.server_url.clone(),
+                    server_url: authorized.url,
                     redirect_uri: session.redirect_uri.clone(),
                     session,
                     created_at: now,
@@ -120,10 +123,14 @@ pub async fn oauth_start(
             Json(IpcBody::ok(OAuthStartResponse {
                 auth_url,
                 redirect_uri,
+                token_generation,
             }))
         }
         Err(e) => {
-            log::warn!("[mcp-oauth] web flow start failed (url redacted): {e}");
+            log::warn!(
+                "[mcp-oauth] web flow start failed (url redacted): {}: {e}",
+                start_error_code(&e)
+            );
             Json(IpcBody::err(
                 e.to_string(),
                 start_error_code(&e).to_string(),
@@ -135,7 +142,7 @@ pub async fn oauth_start(
 fn start_error_code(error: &mcp_oauth::McpOAuthError) -> &'static str {
     match error {
         mcp_oauth::McpOAuthError::UnsafeUrl(_) => MCP_UNSAFE_URL,
-        _ => "OAUTH_START_FAILED",
+        other => other.code(),
     }
 }
 
@@ -416,6 +423,7 @@ pub struct OAuthStatusRequest {
 #[serde(rename_all = "camelCase")]
 pub struct OAuthStatusResponse {
     pub has_token: bool,
+    pub token_generation: u64,
 }
 
 pub async fn oauth_status(
@@ -434,10 +442,16 @@ pub async fn oauth_status(
     if let Err(body) = check_project(&state.registry, &request.project_id) {
         return Json(body);
     }
+    // Read generation before token presence so a concurrent disconnect cannot
+    // pair `hasToken: true` (pre-delete) with the post-delete generation.
+    let token_generation = mcp_oauth::token_generation(&request.server_url);
     let has_token = mcp_oauth::load_stored_token(&request.server_url)
         .map(|t| t.is_some())
         .unwrap_or(false);
-    Json(IpcBody::ok(OAuthStatusResponse { has_token }))
+    Json(IpcBody::ok(OAuthStatusResponse {
+        has_token,
+        token_generation,
+    }))
 }
 
 pub async fn oauth_disconnect(
@@ -471,20 +485,30 @@ pub async fn oauth_disconnect(
     }
 }
 
-/// Whether `server_url` is an enabled HTTP/SSE entry of the host's MCP
-/// server list. A host without a store, or without a list, authorizes none.
-fn is_authorized_mcp_server_url(store: Option<&WebStore>, server_url: &str) -> bool {
-    let Some(Ok(Some(value))) = store.map(|store| store.peek(STORE_KEY)) else {
-        return false;
-    };
+/// An enabled HTTP/SSE MCP server resolved from the host's store.
+pub(crate) struct AuthorizedMcpServer {
+    pub url: String,
+    pub headers: Vec<crate::acp::mcp_probe::McpNameValuePair>,
+}
+
+/// Look up `server_url` in the host's MCP server list and return the stored
+/// URL and configured headers when it matches an enabled HTTP/SSE entry.
+/// A host without a store, or without a matching entry, returns `None`.
+pub(crate) fn authorized_mcp_server(
+    store: Option<&WebStore>,
+    server_url: &str,
+) -> Option<AuthorizedMcpServer> {
+    let value = store.and_then(|store| store.peek(STORE_KEY).ok().flatten())?;
     let normalized = server_url.trim_end_matches('/');
-    parse_registry(&value).iter().any(|entry| {
-        matches!(entry.config.r#type.as_deref(), Some("http" | "sse"))
-            && entry
-                .config
-                .url
-                .as_deref()
-                .is_some_and(|url| url.trim_end_matches('/') == normalized)
+    parse_registry(&value).into_iter().find_map(|entry| {
+        if !matches!(entry.config.r#type.as_deref(), Some("http" | "sse")) {
+            return None;
+        }
+        let stored_url = entry.config.url?;
+        (stored_url.trim_end_matches('/') == normalized).then_some(AuthorizedMcpServer {
+            url: stored_url,
+            headers: entry.config.headers,
+        })
     })
 }
 
@@ -494,20 +518,9 @@ fn is_authorized_mcp_server_url(store: Option<&WebStore>, server_url: &str) -> b
 async fn build_web_auth_url(
     server_url: &str,
     redirect_uri: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Result<(String, String, AuthorizationSession), mcp_oauth::McpOAuthError> {
-    use rmcp::transport::auth::{AuthorizationManager, AuthorizationRequest};
-    let mut manager = AuthorizationManager::new(server_url)
-        .await
-        .map_err(|e| mcp_oauth::McpOAuthError::DiscoveryFailed(e.to_string()))?;
-    let resolution = manager
-        .resolve_metadata()
-        .await
-        .map_err(|e| mcp_oauth::McpOAuthError::DiscoveryFailed(e.to_string()))?;
-    manager.set_metadata(resolution.metadata);
-    let request = AuthorizationRequest::new(redirect_uri).with_client_name("Troupe");
-    let session = AuthorizationSession::new(manager, request)
-        .await
-        .map_err(|(_manager, e)| mcp_oauth::McpOAuthError::RegistrationFailed(e.to_string()))?;
+    let session = mcp_oauth::start_authorization_session(server_url, redirect_uri, headers).await?;
     let (auth_url, csrf_token) = remote_auth_url(session.get_authorization_url())?;
     Ok((auth_url, csrf_token, session))
 }

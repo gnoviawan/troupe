@@ -161,7 +161,7 @@ fn a_chord_another_shortcut_holds_asks_before_it_rebinds() {
         Some((
             "sidebarToggle".to_owned(),
             "f2".to_owned(),
-            "Rename File".to_owned()
+            "Rename file".to_owned()
         ))
     );
     assert!(shortcut_writes(&s).is_empty());

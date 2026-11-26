@@ -38,8 +38,8 @@ mod media_bytes;
 mod migrations;
 mod path_validation;
 // Console-window hiding + Windows kill-on-close Job Objects for spawned processes.
-mod process_util;
 mod link_preview;
+mod process_util;
 mod project_icon;
 mod pty;
 mod remote;
@@ -1541,6 +1541,8 @@ pub fn run() {
                             bt_manager.set_agentation_endpoint(service.endpoint().to_string());
                         }
 
+                        agentation::spawn_event_forwarder(&service, handle.clone());
+
                         app.manage(service);
                         log::info!("[agentation] service started");
                     }
@@ -2234,6 +2236,14 @@ pub fn run() {
             commands::browser_tab_go_back,
             commands::browser_tab_go_forward,
             commands::browser_tab_reload,
+            commands::browser_tab_stop,
+            commands::browser_tab_set_zoom,
+            commands::browser_tab_screenshot,
+            commands::browser_tab_annotation_cmd,
+            commands::browser_annotations_sync,
+            commands::browser_save_annotation_crop,
+            commands::browser_list_local_servers,
+            commands::browser_check_local_port,
             commands::browser_tab_open_devtools,
             // Agentation toolbar injection (on-demand)
             commands::browser_tab_inject_agentation,

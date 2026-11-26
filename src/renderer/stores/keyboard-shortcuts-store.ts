@@ -152,37 +152,82 @@ export function normalizeKeyEvent(e: KeyboardEvent): string {
   return parts.join('+')
 }
 
-// Helper: Format a key combination for display
-export function formatKeyForDisplay(key: string): string {
-  if (!key) return ''
+/** Names for keys whose `KeyboardEvent.key` reads badly in upper case. */
+const NAMED_KEYS: Record<string, string> = {
+  tab: 'Tab',
+  esc: 'Esc',
+  space: 'Space',
+  enter: 'Enter',
+  pageup: 'PageUp',
+  pagedown: 'PageDown',
+  home: 'Home',
+  end: 'End',
+  delete: 'Delete',
+  backspace: 'Backspace',
+  insert: 'Insert',
+  arrowup: '↑',
+  arrowdown: '↓',
+  arrowleft: '←',
+  arrowright: '→',
+  uparrow: '↑',
+  downarrow: '↓',
+  leftarrow: '←',
+  rightarrow: '→'
+}
 
-  return key
-    .split('+')
-    .map((part) => {
-      switch (part) {
-        case 'ctrl':
-          return isMac ? '⌃' : 'Ctrl'
-        case 'cmd':
-          return isMac ? '⌘' : 'Meta'
-        case 'alt':
-          return isMac ? '⌥' : 'Alt'
-        case 'shift':
-          return isMac ? '⇧' : 'Shift'
-        case 'tab':
-          return 'Tab'
-        case 'esc':
-          return 'Esc'
-        case 'space':
-          return 'Space'
-        case 'pageup':
-          return 'PageUp'
-        case 'pagedown':
-          return 'PageDown'
-        default:
-          return part.toUpperCase()
-      }
-    })
-    .join(isMac ? '' : '+')
+const MODIFIERS = new Set(['ctrl', 'cmd', 'shift', 'alt'])
+
+/** Apple's order: ⌃ ⌥ ⇧ ⌘. */
+const MAC_MODIFIERS: ReadonlyArray<[string, string]> = [
+  ['ctrl', '⌃'],
+  ['alt', '⌥'],
+  ['shift', '⇧'],
+  ['cmd', '⌘']
+]
+const OTHER_MODIFIERS: ReadonlyArray<[string, string]> = [
+  ['ctrl', 'Ctrl'],
+  ['cmd', 'Meta'],
+  ['shift', 'Shift'],
+  ['alt', 'Alt']
+]
+
+function keyName(key: string): string {
+  const named = NAMED_KEYS[key]
+  if (named) return named
+  if (/^f\d{1,2}$/.test(key) || key.length === 1) return key.toUpperCase()
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+/**
+ * The keys of a combination in display order, one per keycap. Display only:
+ * stored keys and matching do not change.
+ *
+ * On macOS a lone `ctrl` shows as ⌘, because ⌘ triggers it there and Ctrl
+ * alone never does (see `matchesShortcut`); `ctrl+cmd` shows as ⌃⌘. The
+ * modifiers follow Apple's order (⌃ ⌥ ⇧ ⌘). Arrows show as ↑ ↓ ← →.
+ */
+export function formatKeyParts(key: string): string[] {
+  if (!key) return []
+  const parts = key.split('+').filter(Boolean)
+  const last = parts[parts.length - 1]
+  if (last === undefined) return []
+  const modifiers = new Set(parts.slice(0, -1).filter((part) => MODIFIERS.has(part)))
+  // A combination of modifiers only (a recorder mid-press) has no main key.
+  const mainKey = MODIFIERS.has(last) && parts.length > 1 ? null : last
+  if (mainKey === null) modifiers.add(last)
+
+  if (isMac && modifiers.has('ctrl') && !modifiers.has('cmd')) {
+    modifiers.delete('ctrl')
+    modifiers.add('cmd')
+  }
+  const order = isMac ? MAC_MODIFIERS : OTHER_MODIFIERS
+  const shown = order.filter(([name]) => modifiers.has(name)).map(([, label]) => label)
+  return mainKey === null ? shown : [...shown, keyName(mainKey)]
+}
+
+/** A key combination as one label: "⇧⌘P" on macOS, "Ctrl+Shift+P" elsewhere. */
+export function formatKeyForDisplay(key: string): string {
+  return formatKeyParts(key).join(isMac ? '' : '+')
 }
 
 // Helper: Check if a keyboard event matches a shortcut key.

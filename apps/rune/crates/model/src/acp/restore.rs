@@ -30,7 +30,7 @@ type Values = Map<String, Value>;
 type Baseline = BTreeMap<String, Option<Value>>;
 
 /// How long a native model switch may take to re-advertise the options.
-const READVERTISE_WAIT_MS: f64 = 1000.0;
+pub(super) const READVERTISE_WAIT_MS: f64 = 1000.0;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Run {
@@ -117,7 +117,7 @@ fn baseline(session: Option<&Session>) -> Baseline {
 }
 
 /// `nonModelOptionsKey`: the non-model options as data.
-fn options_key(session: Option<&Session>) -> String {
+pub(super) fn options_key(session: Option<&Session>) -> String {
     let options: Vec<&Value> = session
         .map(config_options)
         .unwrap_or_default()
@@ -141,7 +141,7 @@ fn usable(option: &Value) -> bool {
 }
 
 /// `wireConfigValue`: a stored boolean back to the type the agent expects.
-fn wire_value(option: &Value, stored: &Value) -> Option<Value> {
+pub(super) fn wire_value(option: &Value, stored: &Value) -> Option<Value> {
     if option.get("type").and_then(Value::as_str) != Some("boolean") {
         return Some(stored.clone());
     }
@@ -323,6 +323,9 @@ impl State {
         failure: Option<String>,
         fx: &mut Vec<Effect>,
     ) {
+        if self.book.launchers.contains_key(&run) {
+            return self.on_launcher_command(run, failure, fx);
+        }
         let Some(entry) = self.book.runs.get(&run) else {
             return;
         };
@@ -393,6 +396,7 @@ impl State {
     /// The re-advertise wait ran out (`expired`), or an event may have
     /// re-advertised the options a waiting run compares against.
     pub(crate) fn poll_readvertise(&mut self, expired: Option<RunId>, fx: &mut Vec<Effect>) {
+        self.poll_launcher_readvertise(expired, fx);
         let ready: Vec<RunId> = self
             .book
             .runs

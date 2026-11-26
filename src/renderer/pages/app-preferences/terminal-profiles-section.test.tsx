@@ -24,21 +24,21 @@ describe('TerminalProfilesSection', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Add profile/ }))
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Node dev' } })
-    fireEvent.change(screen.getByLabelText('Start folder'), { target: { value: '/work/app' } })
-    fireEvent.change(screen.getByLabelText('Environment variables'), {
+    fireEvent.change(screen.getByLabelText(/^Start folder/), { target: { value: '/work/app' } })
+    fireEvent.change(screen.getByLabelText(/^Environment variables/), {
       target: { value: 'BAD-KEY=1' }
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save profile' }))
 
     expect(screen.getByRole('alert').textContent).toBe(
       'Line 1: write KEY=value. A key starts with a letter or _ and holds only letters, digits and _.'
     )
     expect(writeDebounced).not.toHaveBeenCalled()
 
-    fireEvent.change(screen.getByLabelText('Environment variables'), {
+    fireEvent.change(screen.getByLabelText(/^Environment variables/), {
       target: { value: 'NODE_ENV=development' }
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save profile' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     const [saved] = useAppSettingsStore.getState().settings.terminalProfiles
@@ -67,7 +67,7 @@ describe('TerminalProfilesSection', () => {
     fireEvent.change(screen.getByLabelText('Shell path or name'), {
       target: { value: 'C:\\tools\\nu.exe' }
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save profile' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(useAppSettingsStore.getState().settings.terminalProfiles).toEqual([

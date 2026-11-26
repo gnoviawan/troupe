@@ -129,6 +129,16 @@ export const heldReplies: Array<() => void> = []
 /** Sessions a chat tab shows; a vector's `context.openChatTabs`. */
 export const openChatTabs = new Set<string>()
 
+/**
+ * What the mocked `acpApi.getAgentIdleWindow` answers, oldest first; a
+ * `{ failPush }` entry fails the next `setAgentIdleWindow` instead. A
+ * vector's `context.idleWindow`.
+ */
+export const idleWindowReplies: unknown[] = []
+
+/** The shared `settings/app` watch, once the settings loader started it. */
+export const settingsWatch: { apply: ((change: unknown) => void) | null } = { apply: null }
+
 /** The error code a mocked read fails with, keyed by the read. Wins over `reads`. */
 export const readFailures = new Map<string, string>()
 

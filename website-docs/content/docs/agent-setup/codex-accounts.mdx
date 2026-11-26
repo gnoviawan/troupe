@@ -14,17 +14,17 @@ Every Codex account is a ChatGPT login. Troupe does not offer API key accounts f
 Before a Codex chat starts, Troupe checks that the project's account is signed in. If it is not, the chat does not start and Troupe says which login is missing:
 
 - **Default** account: run `codex login` on the computer that runs Troupe, then try again.
-- Any other account: sign it in from **Settings** > **Provider**, as shown below.
+- Any other account: sign it in from **Settings** > **Accounts**, as shown below.
 
 ## See your accounts
 
-Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **Provider**. The **Codex** group lists every account, whether it is signed in, which projects use it, and how much of its limits it has used.
+Open Settings with `Ctrl+,` (`Cmd+,` on macOS) and click **Accounts**. The **Codex** group lists every account, whether it is signed in, which projects use it, and how much of its limits it has used.
 
 The first account is called **Default**. It is the Codex login on this computer, the one you made with `codex login`. It uses the Codex folder in your home folder (`~/.codex`), or the folder set by `CODEX_HOME`. Troupe shows a name you choose for each account, never its email address.
 
 ## Add an account and sign in
 
-1. In **Settings** > **Provider**, find the **Codex** group and click **Add account**.
+1. In **Settings** > **Accounts**, find the **Codex** group and click **Add account**.
 2. Type a short name, such as `Work`, and click **Add account**. The account starts signed out.
 3. Troupe asks how to sign in. Pick one:
    - **Sign in with ChatGPT** opens the ChatGPT sign-in page in your browser.
@@ -60,7 +60,7 @@ New Codex chats in the project use the account you pick. Open chats that follow 
 1. In a Codex chat, click the account button in the chat box.
 2. The menu is called **Account for this chat**. Pick an account, or pick **Follow project** to use the project's account again.
 
-The button shows a pin when the chat has its own account. Picking the account the chat already uses changes nothing. New chats start on the project's account. **Manage accounts** opens **Settings** > **Provider**.
+The button shows a pin when the chat has its own account. Picking the account the chat already uses changes nothing. New chats start on the project's account. **Manage accounts** opens **Settings** > **Accounts**.
 
 Before a chat starts, the account button in the agent launcher is **Account for this project**. Its first row is **Follow default**.
 
@@ -68,7 +68,7 @@ If the project's environment variables set an absolute `CODEX_HOME`, Codex uses 
 
 ## Watch your usage and limits
 
-ChatGPT plans have a 5-hour limit and a weekly limit for Codex. In **Settings** > **Provider**, each Codex account shows a bar for each limit, how much of it is used, and when it resets.
+ChatGPT plans have a 5-hour limit and a weekly limit for Codex. In **Settings** > **Accounts**, each Codex account shows a bar for each limit, how much of it is used, and when it resets.
 
 In a Codex chat, the account button in the chat box shows how much of the 5-hour limit the account has used, for example `5h 42%`. When the weekly limit reaches 80% or more, the button also shows it, for example `5h 42% · Wk 86%`. The number turns yellow at 80% and red at 100%. Open the button to see each account's plan with its 5-hour and weekly use.
 
@@ -90,7 +90,7 @@ In the notice at the limit, you can:
 
 ### Switch automatically
 
-**Switch accounts automatically** shows in the **Codex** group of **Settings** > **Provider** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
+**Switch accounts automatically** shows in the **Codex** group of **Settings** > **Accounts** when you have two or more accounts. It is off by default. If you turned it on in an earlier version of Troupe, it is off after you update, until you turn it on again. When you turn it on, Troupe first shows what the provider's terms say. Click **Turn on anyway** to turn it on, or **Cancel** to leave it off. Read [Risks of switching accounts](#risks-of-switching-accounts) first.
 
 When a chat reaches its account's limit, Troupe moves only that chat to the signed-in account with the most room and continues it with a short message, for example "Troupe moved this chat from Codex account Work to Spare because Work reached its 5-hour limit. Continue the task you were working on." Troupe does this on the computer that runs it, so it also works when no window has the chat open. Your last message is not sent again.
 

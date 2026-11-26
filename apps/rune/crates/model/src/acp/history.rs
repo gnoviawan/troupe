@@ -19,6 +19,7 @@ use super::ensure::{Caller, EnsureOptions, Holder};
 use super::history_install::{Installed, resume_misses_session};
 use super::host_error::{HostError, SIGNED_OUT};
 use super::import::RequestId;
+use super::session::RESUME_FAILED_PREFIX;
 use super::types::{Replaying, SessionStatus};
 use super::window::PayloadRead;
 use super::{Effect, State, js};
@@ -27,7 +28,6 @@ use super::{Effect, State, js};
 pub type OpenId = u64;
 
 const SOURCE: &str = "acp.openHistorySession";
-const RESUME_FAILED_PREFIX: &str = "Resume failed: ";
 
 /// `OpenHistoryOptions`.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -59,23 +59,25 @@ enum Strategy {
 
 /// Who waits on an open.
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum OpenWaiter {
+pub(crate) enum OpenWaiter {
     /// The user's action, by the app's request id.
     Action(RequestId),
     /// A `createSession` the host answered from its records.
     Create(super::create::CreateId),
+    /// A switched chat's reopen, redirected to the session it continues in.
+    Redirect(OpenId),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Open {
-    session_id: String,
+    pub(crate) session_id: String,
     generation: u64,
     options: OpenHistoryOptions,
     waiters: Vec<OpenWaiter>,
     /// The index held the chat when the open began, so its row going away
     /// meanwhile is a delete.
     was_indexed: bool,
-    payload: Value,
+    pub(crate) payload: Value,
     turn_live: bool,
     keep_error: bool,
     owner_connected: bool,
@@ -101,6 +103,11 @@ pub(crate) struct HistoryBook {
     pub(crate) flush: Vec<String>,
     /// Creates whose looked-up session opened, answered once the step ends.
     pub(crate) created: Vec<(super::create::CreateId, String)>,
+    /// Per open, the switch marker chain its reopen walks.
+    pub(crate) walks: BTreeMap<OpenId, super::reopen_switch::Walk>,
+    /// Opens redirected to their continuation, answered once its queue
+    /// flushed.
+    pub(crate) redirected: Vec<OpenId>,
 }
 
 impl HistoryBook {
@@ -146,7 +153,7 @@ impl State {
     }
 
     /// The open still owns its session: not superseded and not deleted.
-    fn open_current(&self, open: &Open) -> bool {
+    pub(crate) fn open_current(&self, open: &Open) -> bool {
         let indexed = || {
             self.session_index
                 .iter()
@@ -156,7 +163,7 @@ impl State {
             && (!open.was_indexed || indexed())
     }
 
-    fn open_of(&self, id: OpenId) -> Option<&Open> {
+    pub(crate) fn open_of(&self, id: OpenId) -> Option<&Open> {
         self.book.history.opens.get(&id)
     }
 
@@ -195,7 +202,7 @@ impl State {
         self.open_history_for(session_id, None, OpenWaiter::Create(create), fx);
     }
 
-    fn open_history_for(
+    pub(crate) fn open_history_for(
         &mut self,
         session_id: String,
         options: Option<OpenHistoryOptions>,
@@ -247,7 +254,12 @@ impl State {
 
     /// The open is over: its callers get the outcome, and a prompt queued
     /// meanwhile goes out.
-    fn finish_open(&mut self, id: OpenId, error: Option<HostError>, fx: &mut Vec<Effect>) {
+    pub(crate) fn finish_open(
+        &mut self,
+        id: OpenId,
+        error: Option<HostError>,
+        fx: &mut Vec<Effect>,
+    ) {
         let book = &mut self.book.history;
         let Some(open) = book.opens.remove(&id) else {
             return;
@@ -270,6 +282,7 @@ impl State {
                 (OpenWaiter::Create(create), Some(error)) => {
                     self.on_create_failed(create, error.clone(), fx);
                 }
+                (OpenWaiter::Redirect(open), error) => self.on_redirect_opened(open, error, fx),
             }
         }
     }
@@ -328,19 +341,19 @@ impl State {
         let Installed {
             turn_live,
             keep_error,
-            ..
+            band,
         } = installed;
         if let Some(open) = self.book.history.opens.get_mut(&id) {
             open.payload = payload;
             open.turn_live = turn_live;
             open.keep_error = keep_error;
         }
-        self.find_history_agent(id, fx);
+        self.redirect_switched_reopen(id, band, fx);
     }
 
     /// Resolve the agent the chat reopens on: the persisted one when it
     /// still runs the turn, else whatever `ensureLiveAgent` gives.
-    fn find_history_agent(&mut self, id: OpenId, fx: &mut Vec<Effect>) {
+    pub(crate) fn find_history_agent(&mut self, id: OpenId, fx: &mut Vec<Effect>) {
         let Some(open) = self.open_of(id).cloned() else {
             return;
         };

@@ -45,6 +45,8 @@ pub enum Killer {
     Evict(CreateId),
     /// A cleanup whose failure nobody sees.
     Quiet,
+    /// The rollback of a switch whose session failed to open.
+    Switch(super::switch_run::SwitchId),
 }
 
 impl State {
@@ -283,6 +285,7 @@ impl State {
                     Killer::User | Killer::Quiet => {}
                     Killer::Ensure(ensure) => self.finish_spawn(ensure, Ok(None), fx),
                     Killer::Evict(create) => self.on_create_evicted(create, fx),
+                    Killer::Switch(id) => self.on_switch_kill(id, None, fx),
                 }
             }
             Effect::Authenticate {
@@ -309,6 +312,9 @@ impl State {
             Effect::Logout { agent_id } => {
                 self.book.authenticated_agents.remove(&agent_id);
             }
+            Effect::AnswerBrowserConsent { .. } => {
+                self.on_browser_consent_answered(command, Some(&reply), fx);
+            }
             _ => {}
         }
     }
@@ -325,6 +331,9 @@ impl State {
         let mut waiters = 0;
         let mut message = message;
         match command {
+            Effect::AnswerBrowserConsent { .. } => {
+                return self.on_browser_consent_answered(command, None, fx);
+            }
             Effect::ListSessions { .. }
             | Effect::ImportAgentSession { .. }
             | Effect::NewSession { .. }
@@ -351,6 +360,10 @@ impl State {
             Effect::KillAgent {
                 by: Killer::Quiet, ..
             } => return,
+            Effect::KillAgent {
+                by: Killer::Switch(id),
+                ..
+            } => return self.on_switch_kill(id, Some(message), fx),
             Effect::Authenticate {
                 agent_id,
                 method_id,

@@ -38,9 +38,12 @@ const LOOPBACK_CONFIG: ServerSetupAnswers = {
 
 describe('ServerQrPanel', () => {
   const writeTextMock = vi.fn(() => Promise.resolve())
+  const originalExecCommand = document.execCommand
 
   beforeEach(() => {
     vi.clearAllMocks()
+    writeTextMock.mockImplementation(() => Promise.resolve())
+    document.execCommand = originalExecCommand
     mockToken.mockReturnValue(null)
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -49,6 +52,7 @@ describe('ServerQrPanel', () => {
   })
 
   afterEach(() => {
+    document.execCommand = originalExecCommand
     vi.restoreAllMocks()
   })
 
@@ -100,5 +104,37 @@ describe('ServerQrPanel', () => {
     expect(screen.getByText('Could not load.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('copies through the HTTP fallback when the Clipboard API is missing', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
+    const exec = vi.fn(() => true)
+    document.execCommand = exec
+    render(<ServerQrPanel config={PUBLIC_CONFIG} lanHost="10.0.0.5" allowWrites={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy server link' }))
+
+    await waitFor(() => expect(exec).toHaveBeenCalledWith('copy'))
+    expect(screen.getByText('Copied')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('shows an error when the Clipboard API and the HTTP fallback both fail', async () => {
+    writeTextMock.mockRejectedValue(new Error('denied'))
+    document.execCommand = vi.fn(() => false)
+    render(<ServerQrPanel config={PUBLIC_CONFIG} lanHost="10.0.0.5" allowWrites={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy server link' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Could not copy the link.')
+    )
+    expect(mockLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'warn',
+        source: 'ServerQrPanel',
+        message: 'copy server connect link failed'
+      })
+    )
   })
 })

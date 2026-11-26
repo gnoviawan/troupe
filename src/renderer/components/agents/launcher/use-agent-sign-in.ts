@@ -10,7 +10,7 @@ import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import type { AuthenticateInput, AuthMethod } from '@/lib/acp-api'
 import { resolveAgentEnv } from '@/lib/agent-launch'
 import { agentPolicy } from '@/lib/agents/acp-registry'
-import { resolveEnvForSpawn } from '@/lib/env-parser'
+import { passThroughProjectEnv } from '@/lib/env-parser'
 import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, useAcpStore } from '@/stores/acp-store'
 import {
@@ -149,7 +149,7 @@ export function useAgentSignIn({
         // Merge project env → agent-config env → method env (same layering
         // as launchAgentInPane; method env wins — it is the auth flow's own
         // contract).
-        const { env: projectEnv } = resolveEnvForSpawn(projectEnvVars, {})
+        const { env: projectEnv } = passThroughProjectEnv(projectEnvVars)
         const mergedEnv = {
           ...projectEnv,
           ...resolveAgentEnv(config.env, projectEnv),

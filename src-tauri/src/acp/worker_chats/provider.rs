@@ -59,6 +59,7 @@ impl Provider {
     }
 
     /// The Accounts, with a fresh usage read when automatic switching is on.
+    /// Antigravity reads none, since its usage checks are for display only.
     pub(super) async fn accounts(self, acp: &AcpManager) -> Result<Accounts, String> {
         match self {
             Self::Claude => {
@@ -100,11 +101,6 @@ impl Provider {
             Self::Antigravity => {
                 let agent = acp.antigravity_agent();
                 let snapshot = agent.profile_list().await?;
-                let usage = if snapshot.auto_switch {
-                    self.usage_or_empty(agent.accounts_usage())
-                } else {
-                    Vec::new()
-                };
                 Ok(Accounts {
                     profiles: snapshot
                         .profiles
@@ -112,7 +108,7 @@ impl Provider {
                         .map(|account| named(&account.id, &account.name))
                         .collect(),
                     auto_switch: snapshot.auto_switch,
-                    candidates: antigravity_limit::decide::candidates(&snapshot, &usage, None),
+                    candidates: antigravity_limit::decide::candidates(&snapshot, None),
                 })
             }
         }

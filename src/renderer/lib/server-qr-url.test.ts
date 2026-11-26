@@ -1,6 +1,6 @@
 import type { ServerSetupAnswers } from '@shared/types/server-setup.types'
 import { describe, expect, it } from 'vitest'
-import { buildServerShareUrl } from './server-qr-url'
+import { buildServerShareUrl, shareLinkAllowsWrites } from './server-qr-url'
 
 const PUBLIC_CONFIG: ServerSetupAnswers = {
   host: '0.0.0.0',
@@ -83,6 +83,39 @@ describe('buildServerShareUrl', () => {
     expect(result.status).toBe('loopback-only')
   })
 
+  it('treats every address in 127.0.0.0/8 as loopback and uses the LAN host', () => {
+    const result = buildServerShareUrl({
+      origin: 'http://127.0.0.2:8080',
+      hostname: '127.0.0.2',
+      config: PUBLIC_CONFIG,
+      lanHost: '192.168.1.42',
+      token: null
+    })
+
+    expect(result).toEqual({
+      status: 'ready',
+      displayOrigin: 'http://192.168.1.42:8080',
+      shareUrl: 'http://192.168.1.42:8080/',
+      hasToken: false,
+      isPlaintextRemote: true
+    })
+  })
+
+  it('keeps an HTTPS origin when the host is not loopback', () => {
+    const result = buildServerShareUrl({
+      origin: 'https://127.example.com',
+      hostname: '127.example.com',
+      config: PUBLIC_CONFIG,
+      lanHost: '192.168.1.42',
+      token: null
+    })
+
+    expect(result).toMatchObject({
+      status: 'ready',
+      displayOrigin: 'https://127.example.com'
+    })
+  })
+
   it('returns no-lan-address when on localhost, bound 0.0.0.0, and lanHost is missing', () => {
     const result = buildServerShareUrl({
       origin: 'http://localhost:8080',
@@ -93,5 +126,29 @@ describe('buildServerShareUrl', () => {
     })
 
     expect(result.status).toBe('no-lan-address')
+  })
+})
+
+describe('shareLinkAllowsWrites', () => {
+  it('uses effective admission when the share URL keeps the browser origin', () => {
+    expect(
+      shareLinkAllowsWrites({
+        origin: 'https://troupe.example.com',
+        hostname: 'troupe.example.com',
+        admitsWrites: true,
+        allowRemoteWrites: false
+      })
+    ).toBe(true)
+  })
+
+  it('uses the configured flag when the share URL substitutes a LAN host', () => {
+    expect(
+      shareLinkAllowsWrites({
+        origin: 'http://127.0.0.2:8080',
+        hostname: '127.0.0.2',
+        admitsWrites: true,
+        allowRemoteWrites: false
+      })
+    ).toBe(false)
   })
 })

@@ -45,7 +45,7 @@ pub fn body(
         .child(
             shell::nav_row(t, &i::SEARCH_LIST, "Search", collapsed, false)
                 .key("rail-search")
-                .on_press(|s: &mut State| s.toast_later("Search")),
+                .on_press(|s: &mut State| s.open_palette(false)),
         )
         .child(shell::nav_row(t, &i::CANVAS, "Canvas", collapsed, !can_canvas).key("rail-canvas"))
         .child(
@@ -161,7 +161,7 @@ pub fn body(
     let footer_items = [
         shell::rail_button(t, &i::SLIDERS, "Settings", 28.0, 14.0, false)
             .key("rail-settings")
-            .on_press(|s: &mut State| s.toast_later("Settings")),
+            .on_press(|s: &mut State| s.open_settings(None)),
         shell::rail_button(t, &i::BUG, "Report a bug", 28.0, 14.0, false)
             .key("rail-report-bug")
             .on_press(|s: &mut State| s.toast_later("Report a bug")),

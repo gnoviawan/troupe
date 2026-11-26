@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { McpServerForm } from '@/components/settings/McpServerForm'
+import { SettingsNotice } from '@/components/settings/SettingsNotice'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -42,6 +43,14 @@ const trustNote = (
     Only add servers from developers you trust. A server's tools can read and change things on your
     behalf, and Troupe can't check what they do.
   </p>
+)
+
+// Next to the env and header fields it is about (it used to sit on the page).
+const secretsNote = (
+  <SettingsNotice tone="warning">
+    Environment values and headers are saved in app data. Use <code>$VARIABLE</code> references
+    instead of real secrets.
+  </SettingsNotice>
 )
 
 function targetOf(state: McpDialogState): McpDialogTarget {
@@ -328,6 +337,7 @@ export function useMcpServerDialog(): {
                 onChange={setDraft}
                 onSubmit={() => void saveForm(dialog)}
               />
+              {secretsNote}
               {dialog.mode === 'add' ? trustNote : null}
               <DialogFooter className="gap-2 sm:items-center sm:space-x-0">
                 <Button
@@ -388,6 +398,7 @@ export function useMcpServerDialog(): {
                   </ul>
                 )}
               </div>
+              {secretsNote}
               {dialog.mode === 'add' ? trustNote : null}
               <DialogFooter className="gap-2 sm:items-center sm:space-x-0">
                 <Button

@@ -92,4 +92,18 @@ describe('ServerQrPopover', () => {
       'http://192.168.1.42:8080/#token=tok-abc'
     )
   })
+
+  it('warns for view access when a loopback browser substitutes a LAN host', async () => {
+    getServerConfigMock.mockResolvedValue({
+      success: true,
+      data: { config: { ...CONFIG, allowRemoteWrites: false }, lanHost: '192.168.1.42' }
+    })
+    renderPopover()
+    fireEvent.click(screen.getByRole('button', { name: 'Show server QR code' }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/view sessions on this server/)).toBeInTheDocument()
+    )
+    expect(screen.queryByText(/prompt agents, run commands, and edit files/)).toBeNull()
+  })
 })

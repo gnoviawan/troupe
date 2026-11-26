@@ -77,7 +77,10 @@ fn parse_qr_args_accepts_all_supported_flags() {
     assert_eq!(parsed.url.as_deref(), Some("https://troupe.example.com"));
     assert_eq!(parsed.host.as_deref(), Some("192.168.1.50"));
     assert_eq!(parsed.port, Some(9090));
-    assert_eq!(parsed.state_dir.as_deref(), Some(Path::new("/var/lib/troupe")));
+    assert_eq!(
+        parsed.state_dir.as_deref(),
+        Some(Path::new("/var/lib/troupe"))
+    );
     assert_eq!(
         parsed.web_auth_token.as_ref().map(WebAuthToken::as_str),
         Some("secret123")
@@ -186,7 +189,66 @@ fn resolve_qr_target_rejects_wildcard_host_and_non_http_url() {
     .err()
     .expect("must reject ftp");
     assert!(scheme_err.contains("http or https"), "got: {scheme_err}");
+    assert!(
+        !scheme_err.contains("ftp://example.com"),
+        "scheme error must not echo the raw url: {scheme_err}"
+    );
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn run_with_io_url_errors_omit_the_supplied_url_and_fragment_token() {
+    let secret = "fragment-token-SECRET";
+    let cases = [
+        format!("https://example.com:bad/#token={secret}"),
+        format!("ftp://example.com/#token={secret}"),
+        format!("http:///#token={secret}"),
+    ];
+    for raw in cases {
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        let code = run_with_io(
+            &strings(&["--url", raw.as_str()]),
+            true,
+            None,
+            None,
+            &mut out,
+            &mut err,
+        );
+        assert_eq!(code, ExitCode::from(1));
+        let err_str = String::from_utf8(err).expect("stderr utf8");
+        let out_str = String::from_utf8(out).expect("stdout utf8");
+        assert!(
+            err_str.contains("invalid --url"),
+            "diagnostic must name --url, got: {err_str}"
+        );
+        assert!(
+            !err_str.contains(secret),
+            "stderr leaked the fragment token: {err_str}"
+        );
+        assert!(
+            !out_str.contains(secret),
+            "stdout leaked the fragment token: {out_str}"
+        );
+        assert!(
+            !err_str.contains(&raw),
+            "stderr echoed the raw url: {err_str}"
+        );
+    }
+}
+
+#[test]
+fn render_terminal_qr_reserves_a_four_module_quiet_zone() {
+    let payload = "hi";
+    let plain = render_terminal_qr(payload, false).expect("render");
+    let code = qrcode::QrCode::with_error_correction_level(payload.as_bytes(), qrcode::EcLevel::M)
+        .expect("encode");
+    let width = code.width() + 8;
+    let line = plain.lines().next().expect("row");
+    assert_eq!(line.chars().count(), width);
+    assert_eq!(plain.lines().count(), width.div_ceil(2));
+    assert!(line.starts_with("████"));
+    assert!(line.ends_with("████"));
 }
 
 #[test]

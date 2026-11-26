@@ -237,8 +237,12 @@ wire_enum! {
         // Accounts with `AntigravityAccountsSnapshot` and `AntigravityAccountUsage`
         // (one `model` window per quota bucket). `list` → the snapshot.
         ListAntigravityAccounts = "list_antigravity_accounts",
-        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`.
+        // `{ force? }` → `{ usage: AntigravityAccountUsage[] }`: the last check of
+        // each Account. Never starts a check.
         ListAntigravityUsage = "list_antigravity_usage",
+        // `{ accountId, config }` → `{ usage: AntigravityAccountUsage }`: runs the
+        // agent's own `/usage` for that Account, or joins the check running now.
+        CheckAntigravityUsage = "check_antigravity_usage",
         SetDefaultAntigravityAccount = "set_default_antigravity_account",
         SetProjectAntigravityAccount = "set_project_antigravity_account",
         // `{ projectId, sessionId, accountId | null, expectedAccountId? }` →
@@ -287,6 +291,7 @@ wire_enum! {
         ToolCall = "tool_call",
         ModeUpdate = "mode_update",
         ConfigOptionsUpdate = "config_options_update",
+        ModelsUpdate = "models_update",
         SessionInfoUpdate = "session_info_update",
         UsageUpdate = "usage_update",
         PermissionRequest = "permission_request",

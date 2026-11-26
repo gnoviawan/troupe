@@ -32,9 +32,9 @@ use crate::web::server_config_file;
 /// Default port when neither CLI nor `server-config.json` specifies one.
 const DEFAULT_PORT: u16 = 8080;
 
-/// Quiet-zone margin in QR modules on each side (2 modules is compact yet
-/// reliably scannable on phone cameras).
-const QUIET_ZONE_MODULES: usize = 2;
+/// Quiet-zone margin in QR modules on each side. ISO/IEC 18004 requires four
+/// light modules on every side so a dark terminal does not eat the symbol.
+const QUIET_ZONE_MODULES: usize = 4;
 
 /// Detect the host's primary outbound non-loopback IPv4 address using a
 /// stdlib UDP routing-table probe (zero packets are transmitted).
@@ -177,9 +177,7 @@ pub(crate) fn parse_qr_args(args: &[String]) -> Result<QrCliArgs, QrCliParseErro
                     .next()
                     .ok_or_else(|| QrCliParseError::Message("missing value for --port".into()))?;
                 let port: u16 = value.trim().parse().map_err(|_| {
-                    QrCliParseError::Message(format!(
-                        "invalid --port '{value}': expected 1-65535"
-                    ))
+                    QrCliParseError::Message(format!("invalid --port '{value}': expected 1-65535"))
                 })?;
                 if port == 0 {
                     return Err(QrCliParseError::Message(
@@ -263,15 +261,16 @@ fn format_http_origin(host: &str, port: u16) -> String {
 /// so `WebAuth::share_url` appends `#token=` cleanly.
 fn normalize_explicit_url(raw: &str) -> Result<String, String> {
     let trimmed = raw.trim();
+    // Diagnostics name `--url` and the parser failure. They never repeat the
+    // supplied URL: a fragment can carry the web auth token, and `run_with_io`
+    // prints this string before the TTY gate.
     let parsed = url::Url::parse(trimmed)
-        .map_err(|e| format!("invalid --url '{trimmed}': {e} (expected http:// or https://)"))?;
+        .map_err(|e| format!("invalid --url: {e} (expected http:// or https://)"))?;
     if !matches!(parsed.scheme(), "http" | "https") {
-        return Err(format!(
-            "invalid --url '{trimmed}': scheme must be http or https"
-        ));
+        return Err("invalid --url: scheme must be http or https".into());
     }
     if parsed.host_str().is_none() {
-        return Err(format!("invalid --url '{trimmed}': missing host"));
+        return Err("invalid --url: missing host".into());
     }
     let mut clean = parsed;
     clean.set_fragment(None);
@@ -325,7 +324,10 @@ pub(crate) fn resolve_qr_target(
                  Pass your machine's LAN IP/hostname via --host <ip> or a full --url <https://...>."
             ));
         }
-        (format_http_origin(trimmed, resolved_port), TargetSource::Host)
+        (
+            format_http_origin(trimmed, resolved_port),
+            TargetSource::Host,
+        )
     } else {
         let configured_host = saved_config
             .as_ref()

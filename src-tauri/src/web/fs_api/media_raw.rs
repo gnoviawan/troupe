@@ -9,6 +9,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use futures::StreamExt;
 use serde::Serialize;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
@@ -147,7 +148,9 @@ fn body_holding(slot: SlotGuard, bytes: Vec<u8>) -> Body {
         let chunk = rest.split_to(rest.len().min(CHUNK_BYTES));
         Some((Ok::<_, std::convert::Infallible>(chunk), (rest, slot)))
     });
-    Body::from_stream(stream)
+    // Fuse the stream: the HTTP stack polls once more after the stream
+    // returns `None`, and an unfused `unfold` panics on that poll.
+    Body::from_stream(stream.fuse())
 }
 
 /// The `IpcBody` failure shape plus the `FILE_TOO_LARGE` size and limit.

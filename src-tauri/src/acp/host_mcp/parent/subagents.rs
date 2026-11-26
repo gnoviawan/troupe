@@ -46,7 +46,7 @@ fn parse<T: DeserializeOwned>(input: Option<Value>) -> Result<T, String> {
 fn start_refusal(error: &StartError) -> FrameReply {
     let code = match error {
         StartError::Disabled => "disabled",
-        StartError::UnknownAgent(_) => "unknown_agent",
+        StartError::UnknownAgent { .. } => "unknown_agent",
         StartError::AgentNotAllowed(_) => "agent_not_allowed",
         StartError::Capacity { .. } => "capacity",
         StartError::Depth { .. } => "depth",
@@ -173,6 +173,7 @@ fn list_agents(engine: &OrchestratorEngine) -> FrameReply {
             json!({
                 "agentId": agent.agent_id,
                 "name": agent.name,
+                "agent": agent.agent,
                 "allowed": agent.allowed,
                 "defaultModel": agent.default_model,
                 "description": agent.description,

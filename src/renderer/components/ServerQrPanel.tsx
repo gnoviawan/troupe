@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { AlertCircle, Check, Copy, ShieldAlert } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { copyText } from '@/lib/copy-text'
 import { logFrontendError } from '@/lib/log-api'
 import { buildServerShareUrl } from '@/lib/server-qr-url'
 import { getWebAuthToken } from '@/lib/web-auth-token'
@@ -25,7 +26,7 @@ export interface ServerQrPanelProps {
 
 /**
  * Shared QR panel for standalone `troupe-server` — mounted inside both
- * `ServerQrPopover` (tool strip) and `ServerSection` (Settings → Server,
+ * `ServerQrPopover` (tool strip) and `ServerSection` (Settings → About,
  * reachable on desktop-width and phone web shells).
  *
  * Security posture mirrors `RemoteAccessPopover`: the `#token=` fragment rides
@@ -41,6 +42,7 @@ export function ServerQrPanel({
   allowWrites
 }: ServerQrPanelProps): React.JSX.Element {
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [copyError, setCopyError] = useState(false)
 
   const shareResult = useMemo(() => {
     const origin = typeof window !== 'undefined' && window.location ? window.location.origin : ''
@@ -89,18 +91,27 @@ export function ServerQrPanel({
   }
 
   const handleCopyLink = async (): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(shareResult.shareUrl)
-      setCopiedUrl(true)
-      setTimeout(() => setCopiedUrl(false), 1500)
+    // Clipboard API needs a secure context. `copyText` keeps that path and
+    // falls back to a hidden textarea for plain HTTP LAN origins.
+    const copied = await copyText(shareResult.shareUrl)
+    if (!copied) {
+      setCopiedUrl(false)
+      setCopyError(true)
       void logFrontendError({
-        level: 'info',
+        level: 'warn',
         source: 'ServerQrPanel',
-        message: `copied server connect link (hasToken=${shareResult.hasToken})`
+        message: 'copy server connect link failed'
       })
-    } catch {
-      // Clipboard unavailable; ignore.
+      return
     }
+    setCopyError(false)
+    setCopiedUrl(true)
+    setTimeout(() => setCopiedUrl(false), 1500)
+    void logFrontendError({
+      level: 'info',
+      source: 'ServerQrPanel',
+      message: `copied server connect link (hasToken=${shareResult.hasToken})`
+    })
   }
 
   return (
@@ -135,6 +146,11 @@ export function ServerQrPanel({
         {copiedUrl ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
         {copiedUrl ? 'Copied' : 'Copy link'}
       </Button>
+      {copyError && (
+        <p role="alert" className="text-xs text-destructive">
+          Could not copy the link.
+        </p>
+      )}
     </div>
   )
 }

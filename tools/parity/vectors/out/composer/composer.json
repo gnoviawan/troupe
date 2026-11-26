@@ -1,18 +1,18 @@
 {
  "sources": {
   "src/renderer/components/chat/chat-attachments.ts": "73c209ccc477fe3277aa4947c4a87c8480ba2e8a",
-  "src/renderer/components/chat/composer-send-blocks.ts": "d770fad76299e3291856ab8db04f56b3565b3838",
-  "src/renderer/components/chat/use-chat-composer.ts": "5aa9af7e638cb6aff4c3fd950b71ec0d5622e4bb",
-  "src/renderer/lib/composer/doc-to-prompt.ts": "5ea8c476731c49ff7de58e9854a27e0956e31ec4",
-  "src/renderer/lib/composer/retry-wire.ts": "d0183e079743378cbff4255c177eeb5160fe5948",
-  "src/renderer/lib/composer/selection-context.ts": "7964520ef6aafd360721e71fd92bb36fe7df1c32",
+  "src/renderer/components/chat/composer-send-blocks.ts": "9273fad4482bcac25c820a9128dc646a9dd057c1",
+  "src/renderer/components/chat/use-chat-composer.ts": "db1559071b037a9141f774c43f3d413c81ac7696",
+  "src/renderer/lib/composer/doc-to-prompt.ts": "f1c21d0bc4e0ac297b3c219b3e3a730f85ec5824",
+  "src/renderer/lib/composer/retry-wire.ts": "a7d58ea890618b7dec1a190085c15820af89d506",
+  "src/renderer/lib/composer/selection-context.ts": "8c43d52356b1a282ee3351e172868082d2abc821",
   "src/renderer/lib/composer/termul-tools.ts": "b85342c5e94a7b678b9d69e2c61a2b0943dc9a8e",
   "src/renderer/lib/composer/tool-tokens.ts": "3119ea47b97e5b4e04825622d4de84d694bdfdf3",
-  "src/renderer/lib/composer/wire-text.ts": "1168e5cd133cc708c5f6c9dd5805209309af222d",
+  "src/renderer/lib/composer/wire-text.ts": "0984d7b72fc98d3dd18d4b4295e4805baa25a0a1",
   "src/renderer/lib/conversation-envelope.ts": "c48e28de37038dd70e06ab44f3660fafd4c4e472",
   "src/renderer/lib/media-kind.ts": "a200e169ac0e964cd29dee3d7254595b1a6127eb",
   "src/renderer/lib/path-basename.ts": "c608df8af3b4281bd9c21724bbbf5eaccdcc593e",
-  "src/renderer/lib/skill-tokens.ts": "1585268e05484febaec238dbf4475822b1a2fe05",
+  "src/renderer/lib/skill-tokens.ts": "a1f7ea95a1e710db2561342fd3cd3027f8c5377a",
   "src/renderer/lib/skills-prompt.ts": "d2a198c473b229bd309c5c8755170ae4308ac1e3"
  },
  "documents": [

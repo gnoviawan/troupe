@@ -71,7 +71,7 @@ pub enum ControlAct {
 pub type OnControl<S> = Rc<dyn Fn(&mut S, ControlAct)>;
 
 /// `modeChipLabel`.
-fn chip_label(id: &str, name: &str) -> String {
+pub fn chip_label(id: &str, name: &str) -> String {
     if id == "default" { "Ask first".into() } else { name.to_owned() }
 }
 
