@@ -15,8 +15,11 @@ use crate::{State, settings_shortcuts};
 
 type Pick = fn(&mut State, usize);
 
-pub fn page(s: &State, t: &'static Tokens, id: &str, layer: &mut Vec<El>) -> Vec<El> {
+pub fn page(s: &State, t: &'static Tokens, id: &str, phone: bool, layer: &mut Vec<El>) -> Vec<El> {
     match id {
+        "terminal-profiles" => crate::settings_profiles::profiles_page(s, t),
+        "skills" => crate::settings_profiles::skills_page(s, t, phone),
+        crate::settings_mcp::PAGE => crate::settings_mcp::page(s, t, phone),
         "preferences" => preferences(s, t, layer),
         "terminal" => terminal(s, t, layer),
         "ai-agents" => agents(s, t, layer),
@@ -27,7 +30,7 @@ pub fn page(s: &State, t: &'static Tokens, id: &str, layer: &mut Vec<El>) -> Vec
 }
 
 /// `SettingsSelect`: a menu of `options`, its trigger 240 wide.
-fn select(
+pub(crate) fn select(
     s: &State,
     t: &'static Tokens,
     layer: &mut Vec<El>,
@@ -200,7 +203,7 @@ fn preferences(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
             )],
         )],
     );
-    let colours = swatches(t, s.settings.str("defaultProjectColor"));
+    let colours = swatches(t, "Default project color", s.settings.str("defaultProjectColor"), |s, colour| s.set_setting("defaultProjectColor", json!(colour)));
     let new_projects = group(
         t,
         "new-projects",
@@ -223,13 +226,13 @@ fn preferences(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
 
 const COLOURS: [&str; 9] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "cyan", "gray"];
 
-/// `ColorSwatchGroup`: 24 px dots, the chosen one checked.
-fn swatches(t: &Tokens, chosen: &str) -> El {
+/// `ColorSwatchGroup`: 24 px dots, the chosen one checked; `pick` stores a press.
+pub(crate) fn swatches(t: &Tokens, label: &str, chosen: &str, pick: fn(&mut State, &'static str)) -> El {
     let check = theme::icons::named("Check").expect("bundled icon");
     let mut group = row()
         .key("swatches")
         .role("radiogroup")
-        .label("Default project color")
+        .label(label.to_owned())
         .gap(8.0)
         .items_center();
     for colour in COLOURS {
@@ -246,7 +249,7 @@ fn swatches(t: &Tokens, chosen: &str) -> El {
             .justify_center()
             .focusable(true)
             .fill(ui::shell::project_color(t, colour))
-            .on_press(move |s: &mut State| s.set_setting("defaultProjectColor", json!(colour)));
+            .on_press(move |s: &mut State| pick(s, colour));
         if colour == chosen {
             dot = dot.child(icon(check, 12.0).color(t.colors.background).a11y_hidden());
         }

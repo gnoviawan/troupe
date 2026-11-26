@@ -1,0 +1,315 @@
+[
+ {
+  "store": "terminal-profiles",
+  "name": "drafts_parse_or_name_each_bad_field",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": " Node dev ",
+       "shell": "zsh",
+       "args": "-l\r\n\n-i",
+       "cwd": " /w ",
+       "env": "# note\nNODE_ENV=development\n A = b=c "
+      },
+      "p1"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": true,
+     "profile": {
+      "id": "p1",
+      "name": "Node dev",
+      "shell": "zsh",
+      "args": [
+       "-l",
+       "-i"
+      ],
+      "cwd": "/w",
+      "env": {
+       "NODE_ENV": "development",
+       "A": " b=c "
+      }
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": "Plain",
+       "shell": "",
+       "args": "",
+       "cwd": "",
+       "env": ""
+      },
+      "p2"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": true,
+     "profile": {
+      "id": "p2",
+      "name": "Plain",
+      "shell": "",
+      "args": [],
+      "cwd": "",
+      "env": {}
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": "  ",
+       "shell": "",
+       "args": "-l",
+       "cwd": "",
+       "env": "ok=1\n1BAD=x"
+      },
+      "p3"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": false,
+     "errors": {
+      "name": "Name is required.",
+      "args": "Choose a shell to pass arguments to.",
+      "env": "Line 2: write KEY=value. A key starts with a letter or _ and holds only letters, digits and _."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": "x",
+       "shell": "bash",
+       "args": "",
+       "cwd": "",
+       "env": "NOEQUALS"
+      },
+      "p4"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": false,
+     "errors": {
+      "env": "Line 1: write KEY=value. A key starts with a letter or _ and holds only letters, digits and _."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": "x",
+       "shell": "bash",
+       "args": "",
+       "cwd": "",
+       "env": "\n\n=v"
+      },
+      "p5"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": false,
+     "errors": {
+      "env": "Line 3: write KEY=value. A key starts with a letter or _ and holds only letters, digits and _."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "parse",
+     "args": [
+      {
+       "name": "x",
+       "shell": "pwsh",
+       "args": "-NoProfile",
+       "cwd": "",
+       "env": "  # spaced comment\r\nA_1=\r\n_b=two words"
+      },
+      "p6"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": true,
+     "profile": {
+      "id": "p6",
+      "name": "x",
+      "shell": "pwsh",
+      "args": [
+       "-NoProfile"
+      ],
+      "cwd": "",
+      "env": {
+       "A_1": "",
+       "_b": "two words"
+      }
+     }
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "terminal-profiles",
+  "name": "profiles_read_back_and_show_their_command",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "toDraft",
+     "args": [
+      {
+       "id": "p1",
+       "name": "Node dev",
+       "shell": "bash",
+       "args": [
+        "-c",
+        "echo hi"
+       ],
+       "cwd": "/w",
+       "env": {
+        "A": "1",
+        "B": "2"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "name": "Node dev",
+     "shell": "bash",
+     "args": "-c\necho hi",
+     "cwd": "/w",
+     "env": "A=1\nB=2"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toDraft",
+     "args": [
+      {
+       "id": "p1",
+       "name": "Node dev",
+       "shell": "",
+       "args": [],
+       "cwd": "/w",
+       "env": {}
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "name": "Node dev",
+     "shell": "",
+     "args": "",
+     "cwd": "/w",
+     "env": ""
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "commandLine",
+     "args": [
+      {
+       "id": "p1",
+       "name": "Node dev",
+       "shell": "",
+       "args": [],
+       "cwd": "/w",
+       "env": {}
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Default shell",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "commandLine",
+     "args": [
+      {
+       "id": "p1",
+       "name": "Node dev",
+       "shell": "/bin/zsh",
+       "args": [
+        "-l",
+        "-i"
+       ],
+       "cwd": "/w",
+       "env": {}
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "/bin/zsh -l -i",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "commandLine",
+     "args": [
+      {
+       "id": "p1",
+       "name": "Node dev",
+       "shell": "nu",
+       "args": [],
+       "cwd": "/w",
+       "env": {}
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "nu",
+    "state": null
+   }
+  ]
+ }
+]

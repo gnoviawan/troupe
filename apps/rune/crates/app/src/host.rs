@@ -35,6 +35,16 @@ pub enum Fetch {
     Github(model::github::TaskId),
     /// A settings route (`/host/agent-idle-window`).
     Settings(crate::settings::IdleFetch),
+    /// `/shells`: the shells the host found.
+    Shells,
+    /// `/fs/read` of a project's `.env` for the project settings import, with what makes it stale.
+    ProjectEnv { request: u64, project: String, root: String },
+    /// `/worktree/parse-gitignore` for a project's worktree symlinks.
+    Gitignore { project: String, why: crate::project_settings::GitignoreRead },
+    /// An MCP effect of the acp model on its `/mcp-servers/*` route.
+    Mcp(Box<model::acp::Effect>),
+    /// A web sign-in's token poll (`/mcp-servers/oauth/status`), by server URL.
+    McpPoll(String),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);
