@@ -20,15 +20,28 @@ const MAX_TEXT = 2000
  */
 const BRIDGE_SCRIPT = `<script>(()=>{const S=${JSON.stringify(BRIDGE_SOURCE)};const fmt=(a)=>a.map((v)=>{if(typeof v==='string')return v;if(v instanceof Error)return v.stack||String(v);try{return JSON.stringify(v)}catch{return String(v)}}).join(' ');const post=(level,text)=>{try{parent.postMessage({source:S,level,text:String(text).slice(0,${MAX_TEXT})},'*')}catch{}};for(const level of ${JSON.stringify(CONSOLE_LEVELS)}){const orig=console[level];console[level]=(...a)=>{post(level,fmt(a));return orig.apply(console,a)}}addEventListener('error',(e)=>post('error',e.message||'Script error'));addEventListener('unhandledrejection',(e)=>post('error','Unhandled rejection: '+fmt([e.reason])))})()</script>`
 
-const HEAD_OPEN = /<head(?:\s[^>]*)?>/i
+/**
+ * Comments and raw-text elements are matched whole, so a `<head>` written
+ * inside a script string or a comment is never taken for the real one.
+ */
+const HEAD_SCAN =
+  /<!--[\s\S]*?-->|<(script|style|textarea|title|template|noscript|xmp)\b[\s\S]*?<\/\1\s*>|<head(?:\s[^>]*)?>/gi
 const DOCTYPE = /^\s*<!doctype[^>]*>/i
+
+function findHeadOpen(html: string): RegExpExecArray | null {
+  HEAD_SCAN.lastIndex = 0
+  for (let match = HEAD_SCAN.exec(html); match; match = HEAD_SCAN.exec(html)) {
+    if (/^<head/i.test(match[0])) return match
+  }
+  return null
+}
 
 /**
  * `html` with the console bridge right after `<head>`. Without a head it goes
  * after the doctype, so the page keeps standards mode, or else at the start.
  */
 export function injectConsoleBridge(html: string): string {
-  const anchor = HEAD_OPEN.exec(html) ?? DOCTYPE.exec(html)
+  const anchor = findHeadOpen(html) ?? DOCTYPE.exec(html)
   if (!anchor) return BRIDGE_SCRIPT + html
   const end = anchor.index + anchor[0].length
   return html.slice(0, end) + BRIDGE_SCRIPT + html.slice(end)

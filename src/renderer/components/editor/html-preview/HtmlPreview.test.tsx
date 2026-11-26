@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
@@ -70,6 +70,63 @@ describe('HtmlPreview', () => {
     const toggle = screen.getByRole('button', { name: 'Show console, 1 error' })
     expect(toggle).toHaveTextContent('1 error')
     expect(toggle).toHaveClass('text-destructive')
+  })
+
+  it('resends a buffer the host refused when Reload is pressed', async () => {
+    api.update.mockResolvedValueOnce({ success: false, error: 'disk full', code: 'READ_ERROR' })
+    renderPreview()
+    await screen.findByTitle('Preview of my page.html')
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reload preview' }))
+
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(3))
+    expect(api.update.mock.calls[2][1].endsWith('</script><p>hi</p>')).toBe(true)
+    await waitFor(() =>
+      expect(screen.getByTitle('Preview of my page.html').getAttribute('src')).toBe(
+        'http://127.0.0.1:4100/preview/tok1/my%20page.html?r=2'
+      )
+    )
+  })
+
+  it('opens a new session when Reload finds the host forgot the old one', async () => {
+    renderPreview()
+    await screen.findByTitle('Preview of my page.html')
+    api.update.mockResolvedValueOnce({
+      success: false,
+      error: 'the preview session is closed',
+      code: 'SESSION_NOT_FOUND'
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reload preview' }))
+
+    await waitFor(() => expect(api.open).toHaveBeenCalledTimes(2))
+  })
+
+  it('sends one buffer at a time, so an older one cannot land after a newer one', async () => {
+    let finishFirst: (value: unknown) => void = () => {}
+    const { rerender } = renderPreview('<p>a</p>')
+    await screen.findByTitle('Preview of my page.html')
+    api.update.mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+
+    rerender(
+      <TooltipProvider>
+        <HtmlPreview filePath="/site/my page.html" content="<p>b</p>" />
+      </TooltipProvider>
+    )
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2))
+    rerender(
+      <TooltipProvider>
+        <HtmlPreview filePath="/site/my page.html" content="<p>c</p>" />
+      </TooltipProvider>
+    )
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    expect(api.update).toHaveBeenCalledTimes(2)
+
+    finishFirst({ success: true, data: null })
+
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(3))
+    expect(api.update.mock.calls[2][1].endsWith('</script><p>c</p>')).toBe(true)
   })
 
   it('closes the session when it unmounts', async () => {

@@ -29,7 +29,8 @@ function logFailure(source: string, filePath: string, code: string): void {
  * A host preview session for `filePath` that serves `content` (the editor
  * buffer) as the page. Opens on mount and on path change, closes on unmount;
  * each buffer change is sent after a short pause and reloads the frame.
- * `reload` reloads the frame, or retries the open after a failure.
+ * `reload` resends the buffer and reloads the frame, reopens a session the
+ * host forgot, or retries the open after a failure.
  */
 export function useHtmlPreviewSession(
   filePath: string,
@@ -42,7 +43,32 @@ export function useHtmlPreviewSession(
   const [generation, setGeneration] = useState(0)
   const contentRef = useRef(content)
   contentRef.current = content
+  /** The last buffer the host accepted. */
   const sentRef = useRef<string | null>(null)
+  // Updates go out one at a time: the host keeps whichever arrives last.
+  const queueRef = useRef<Promise<unknown>>(Promise.resolve())
+
+  const send = useCallback(
+    (token: string, text: string): Promise<boolean> => {
+      const result = queueRef.current.then(() =>
+        htmlPreviewApi.update(token, injectConsoleBridge(text))
+      )
+      queueRef.current = result.catch(() => undefined)
+      return result.then(
+        (sent) => {
+          if (sent.success) {
+            sentRef.current = text
+            return true
+          }
+          logFailure('htmlPreview.update', filePath, sent.code)
+          if (sent.code === 'SESSION_NOT_FOUND') setGeneration((count) => count + 1)
+          return false
+        },
+        () => false
+      )
+    },
+    [filePath]
+  )
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `generation` reopens on purpose
   useEffect(() => {
@@ -50,6 +76,7 @@ export function useHtmlPreviewSession(
     let token: string | null = null
     setSession(null)
     setFailed(false)
+    sentRef.current = null
     void (async () => {
       const opened = await htmlPreviewApi.open(filePath)
       if (!opened.success) {
@@ -62,12 +89,8 @@ export function useHtmlPreviewSession(
         void htmlPreviewApi.close(token)
         return
       }
-      const first = contentRef.current
-      const sent = await htmlPreviewApi.update(token, injectConsoleBridge(first))
-      if (!sent.success) logFailure('htmlPreview.update', filePath, sent.code)
-      if (!live) return
-      sentRef.current = first
-      setSession(opened.data)
+      await send(token, contentRef.current)
+      if (live) setSession(opened.data)
     })()
     return () => {
       live = false
@@ -78,23 +101,20 @@ export function useHtmlPreviewSession(
   useEffect(() => {
     if (!session || content === sentRef.current) return
     const timer = setTimeout(() => {
-      sentRef.current = content
-      void htmlPreviewApi.update(session.token, injectConsoleBridge(content)).then((sent) => {
-        if (sent.success) {
-          setReloads((count) => count + 1)
-          return
-        }
-        logFailure('htmlPreview.update', filePath, sent.code)
-        if (sent.code === 'SESSION_NOT_FOUND') setGeneration((count) => count + 1)
+      void send(session.token, content).then((ok) => {
+        if (ok) setReloads((count) => count + 1)
       })
     }, UPDATE_DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [content, session, filePath])
+  }, [content, session, send])
 
   const reload = useCallback(() => {
-    if (failed) setGeneration((count) => count + 1)
-    else setReloads((count) => count + 1)
-  }, [failed])
+    if (failed || !session) {
+      setGeneration((count) => count + 1)
+      return
+    }
+    void send(session.token, contentRef.current).then(() => setReloads((count) => count + 1))
+  }, [failed, session, send])
 
   const state: PreviewSessionState = failed
     ? { status: 'failed' }

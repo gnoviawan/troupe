@@ -18,6 +18,14 @@ describe('injectConsoleBridge', () => {
     expect(bridgeAt(html)).toBe('<!DOCTYPE html>'.length)
   })
 
+  it('does not take a head tag written inside a script, style or comment', () => {
+    const inScript = "<!doctype html><script>const t = '<head></head>'</script>"
+    const inComment = '<!doctype html><!-- <head> --><html><head><title>t</title></head></html>'
+
+    expect(bridgeAt(inScript)).toBe('<!doctype html>'.length)
+    expect(bridgeAt(inComment)).toBe(inComment.indexOf('<title>'))
+  })
+
   it('goes after the doctype when there is no head, so the page keeps standards mode', () => {
     expect(bridgeAt('<!doctype html>\n<p>hi</p>')).toBe('<!doctype html>'.length)
   })
