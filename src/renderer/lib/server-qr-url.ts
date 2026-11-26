@@ -35,8 +35,14 @@ function isIpv4Loopback(hostname: string): boolean {
   return octets[0] === 127
 }
 
-function isLoopbackHostname(hostname: string): boolean {
+/** Drop one trailing DNS dot so `localhost.` and `app.localhost.` match loopback. */
+function stripTerminalDnsDot(hostname: string): string {
   const h = hostname.trim().toLowerCase()
+  return h.endsWith('.') ? h.slice(0, -1) : h
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+  const h = stripTerminalDnsDot(hostname)
   return (
     h === 'localhost' ||
     isIpv4Loopback(h) ||

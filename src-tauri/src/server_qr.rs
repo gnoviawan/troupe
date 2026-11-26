@@ -210,10 +210,13 @@ pub(crate) fn parse_qr_args(args: &[String]) -> Result<QrCliArgs, QrCliParseErro
             }
             "--no-token" => parsed.no_token = true,
             "--plain" => parsed.plain = true,
-            other => {
-                return Err(QrCliParseError::Message(format!(
-                    "unknown option '{other}' for 'troupe-server qr'"
-                )));
+            // Do not copy the raw argument into the error. An equals form
+            // such as `--url=https://host/#token=...` can carry the web auth
+            // token, and this message is written to stderr before the TTY check.
+            _ => {
+                return Err(QrCliParseError::Message(
+                    "unknown option for 'troupe-server qr'".into(),
+                ));
             }
         }
     }

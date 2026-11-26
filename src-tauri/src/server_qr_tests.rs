@@ -106,6 +106,41 @@ fn parse_qr_args_rejects_port_zero_and_unknown_flag() {
 }
 
 #[test]
+fn parse_qr_args_unknown_option_omits_the_raw_argument() {
+    let secret = "fragment-token-SECRET";
+    let arg = format!("--url=https://example.com/#token={secret}");
+    let err = parse_qr_args(&[arg.clone()]).expect_err("equals form is unsupported");
+    let QrCliParseError::Message(msg) = err else {
+        panic!("expected a message error");
+    };
+    assert!(msg.contains("unknown option"), "got: {msg}");
+    assert!(!msg.contains(secret), "error leaked the argument: {msg}");
+    assert!(
+        !msg.contains("example.com"),
+        "error leaked the argument: {msg}"
+    );
+
+    let mut out = Vec::new();
+    let mut err_buf = Vec::new();
+    let code = run_with_io(&[arg], false, None, None, &mut out, &mut err_buf);
+    assert_eq!(code, ExitCode::from(2));
+    let err_str = String::from_utf8(err_buf).expect("stderr utf8");
+    let out_str = String::from_utf8(out).expect("stdout utf8");
+    assert!(
+        !err_str.contains(secret),
+        "stderr leaked the argument: {err_str}"
+    );
+    assert!(
+        !out_str.contains(secret),
+        "stdout leaked the argument: {out_str}"
+    );
+    assert!(
+        err_str.contains("unknown option"),
+        "stderr must name the failure, got: {err_str}"
+    );
+}
+
+#[test]
 fn render_terminal_qr_produces_half_block_grid_with_and_without_ansi() {
     let colored = render_terminal_qr("https://troupe.example.com/#token=abc123", true)
         .expect("render colored");

@@ -116,10 +116,11 @@ export function ServerQrPanel({
 
   return (
     <div className="space-y-2.5">
-      {/* White pad so the black QR modules are legible in dark themes. */}
+      {/* White pad so the black QR modules stay readable in dark themes.
+          marginSize is the 4-module quiet zone inside the SVG. */}
       <div className="flex justify-center">
         <div className="rounded-lg bg-primary-foreground p-2">
-          <QRCodeSVG value={shareResult.shareUrl} size={160} level="M" />
+          <QRCodeSVG value={shareResult.shareUrl} size={160} level="M" marginSize={4} />
         </div>
       </div>
       <p className="text-center font-mono text-xs text-muted-foreground break-all">

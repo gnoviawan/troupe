@@ -670,6 +670,21 @@ fn build_systemd_unit_text(
     s
 }
 
+/// Quote a path for a POSIX shell command shown to the operator.
+/// Single quotes keep spaces intact. An embedded single quote becomes `'\''`.
+fn shell_single_quote(value: &str) -> String {
+    let mut quoted = String::from("'");
+    for ch in value.chars() {
+        if ch == '\'' {
+            quoted.push_str("'\\''");
+        } else {
+            quoted.push(ch);
+        }
+    }
+    quoted.push('\'');
+    quoted
+}
+
 /// Print the access info: URL, management tip per mechanism, future-run
 /// foreground command, update channel line, and a security note when remote
 /// writes is enabled.
@@ -686,15 +701,15 @@ fn write_access_info<W: Write>(
     args: &[String],
 ) {
     let bind_all = BindMode::parse(host) == Some(BindMode::All);
+    let exe_name = exe
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("troupe-server");
     writeln!(
         stdout,
         "Troupe server is starting in the background on http://localhost:{port}"
     )
     .ok();
-    let exe_name = exe
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or("troupe-server");
     if bind_all {
         writeln!(
             stdout,
@@ -713,9 +728,12 @@ fn write_access_info<W: Write>(
             token_path.display()
         )
         .ok();
+        // Use the resolved executable path. A launch from a directory that
+        // is not on PATH still prints a command the operator can run.
+        let quoted_exe = shell_single_quote(&exe.display().to_string());
         writeln!(
             stdout,
-            "Connect from a phone: run '{exe_name} qr' in a terminal to show a scannable QR code."
+            "Connect from a phone: run {quoted_exe} qr in a terminal to show a scannable QR code."
         )
         .ok();
     }

@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ServerQrPanel } from './ServerQrPanel'
 
 vi.mock('qrcode.react', () => ({
-  QRCodeSVG: ({ value }: { value: string }) => <div data-testid="server-qr" data-value={value} />
+  QRCodeSVG: ({ value, marginSize }: { value: string; marginSize?: number }) => (
+    <div data-testid="server-qr" data-value={value} data-margin={marginSize} />
+  )
 }))
 
 const { mockToken, mockLog } = vi.hoisted(() => ({
@@ -62,6 +64,7 @@ describe('ServerQrPanel', () => {
 
     const qr = screen.getByTestId('server-qr')
     expect(qr.getAttribute('data-value')).toBe('http://192.168.1.42:8080/#token=secret-tok-99')
+    expect(qr.getAttribute('data-margin')).toBe('4')
     expect(screen.getByText('http://192.168.1.42:8080')).toBeInTheDocument()
     expect(screen.getByText(/prompt agents, run commands, and edit files/)).toBeInTheDocument()
     expect(screen.queryByText(/secret-tok-99/)).toBeNull()

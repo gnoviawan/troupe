@@ -101,6 +101,42 @@ describe('buildServerShareUrl', () => {
     })
   })
 
+  it('substitutes the LAN host for a loopback name with a trailing DNS dot', () => {
+    for (const hostname of ['localhost.', 'app.localhost.', '127.0.0.1.']) {
+      const result = buildServerShareUrl({
+        origin: `http://${hostname}:8080`,
+        hostname,
+        config: PUBLIC_CONFIG,
+        lanHost: '192.168.1.42',
+        token: null
+      })
+
+      expect(result, hostname).toEqual({
+        status: 'ready',
+        displayOrigin: 'http://192.168.1.42:8080',
+        shareUrl: 'http://192.168.1.42:8080/',
+        hasToken: false,
+        isPlaintextRemote: true
+      })
+    }
+  })
+
+  it('keeps a public origin that ends with a DNS dot', () => {
+    const result = buildServerShareUrl({
+      origin: 'https://files.example.com.',
+      hostname: 'files.example.com.',
+      config: PUBLIC_CONFIG,
+      lanHost: '192.168.1.42',
+      token: null
+    })
+
+    expect(result).toMatchObject({
+      status: 'ready',
+      displayOrigin: 'https://files.example.com.',
+      shareUrl: 'https://files.example.com./'
+    })
+  })
+
   it('keeps an HTTPS origin when the host is not loopback', () => {
     const result = buildServerShareUrl({
       origin: 'https://127.example.com',
@@ -146,6 +182,17 @@ describe('shareLinkAllowsWrites', () => {
       shareLinkAllowsWrites({
         origin: 'http://127.0.0.2:8080',
         hostname: '127.0.0.2',
+        admitsWrites: true,
+        allowRemoteWrites: false
+      })
+    ).toBe(false)
+  })
+
+  it('treats a dotted loopback name as a substituted LAN host', () => {
+    expect(
+      shareLinkAllowsWrites({
+        origin: 'http://localhost.:8080',
+        hostname: 'localhost.',
         admitsWrites: true,
         allowRemoteWrites: false
       })
