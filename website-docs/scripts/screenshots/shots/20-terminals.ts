@@ -211,7 +211,7 @@ export const shots: Shot[] = [
       await openTerminalsApp(page)
       await openSettings(page, 'Profiles')
       await page.getByRole('button', { name: 'Add profile' }).click()
-      const dialog = page.getByRole('dialog', { name: 'New terminal profile' })
+      const dialog = page.getByRole('dialog', { name: 'New profile' })
       await dialog.getByPlaceholder('e.g. Node dev').fill('Node dev')
       await dialog.getByPlaceholder('NODE_ENV=development').fill('NODE_ENV=development')
       return dialog
