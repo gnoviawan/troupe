@@ -6,6 +6,7 @@
 mod common;
 mod git;
 mod settings;
+mod terminal;
 
 use common::{Replay, call, diff, out_dir, parse, read_json, source_hash, to_value};
 
