@@ -29,6 +29,7 @@ mod git_remote;
 // and the `/github/*` web routes.
 mod github;
 mod host_perimeter;
+mod html_preview;
 // NTFS directory junctions (worktree symlink fallback, Claude account linker).
 #[cfg(windows)]
 mod junction;
