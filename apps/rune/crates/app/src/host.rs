@@ -31,6 +31,8 @@ pub enum Fetch {
     Git(model::git::TaskId),
     /// A history read (`/git/log`, `/git/commit-detail`, `/git/commit-file-diff`).
     History(crate::git_history::HistoryFetch),
+    /// A `githubApi` call of a `model::github` task.
+    Github(model::github::TaskId),
     /// A settings route (`/host/agent-idle-window`).
     Settings(crate::settings::IdleFetch),
 }

@@ -49,6 +49,12 @@ mod git_history_tests;
 #[cfg(test)]
 mod git_tests;
 mod git_view;
+mod github;
+mod github_item_view;
+mod github_logic;
+#[cfg(test)]
+mod github_tests;
+mod github_view;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;
@@ -173,6 +179,8 @@ pub struct State {
     pub git: git::GitUi,
     /// The git history reads and the History tab's own state.
     pub history: git_history::HistoryUi,
+    /// The GitHub cache and the area's own state.
+    pub github: github::GithubUi,
     /// The shared `settings/app` record.
     pub settings: model::settings::State,
     /// The Settings window: which one is open, its page and its own fields.
@@ -232,6 +240,7 @@ impl Default for State {
             explorer_host: explorer_host::ExplorerHost::default(),
             git: git::GitUi::default(),
             history: git_history::HistoryUi::default(),
+            github: github::GithubUi::default(),
             settings: model::settings::State::default(),
             settings_ui: settings_view::SettingsUi::default(),
             sync: sync::Sync::default(),
@@ -332,6 +341,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_editors();
     state.sync_explorer();
     let next_git = state.git_tick();
+    let next_github = state.github_tick();
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
@@ -343,6 +353,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_find_refresh(),
         state.next_draft_sync(),
         next_git,
+        next_github,
         next_completion,
     ];
     for due in waits.into_iter().flatten() {
