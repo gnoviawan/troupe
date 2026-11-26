@@ -29,6 +29,7 @@ mod git_remote;
 // and the `/github/*` web routes.
 mod github;
 mod host_perimeter;
+mod html_preview;
 // NTFS directory junctions (worktree symlink fallback, Claude account linker).
 #[cfg(windows)]
 mod junction;
@@ -55,6 +56,10 @@ pub mod server_update;
 // standalone binary wiring (server_main.rs `--onboard` branch) is gated by
 // `standalone-server`.
 pub mod onboard;
+// Terminal QR code rendering + `troupe-server qr` CLI + LAN IPv4 detection.
+// Unconditionally compiled so its tests run under default `cargo test`;
+// only the standalone CLI wiring in `server_main.rs` is gated by `standalone-server`.
+pub mod server_qr;
 mod shell_paths;
 mod skills;
 mod ssh;
@@ -2236,6 +2241,7 @@ pub fn run() {
             commands::browser_tab_set_zoom,
             commands::browser_tab_screenshot,
             commands::browser_tab_annotation_cmd,
+            commands::browser_tab_poll_annotation_outbox,
             commands::browser_annotations_sync,
             commands::browser_save_annotation_crop,
             commands::browser_list_local_servers,
@@ -2441,6 +2447,10 @@ pub fn run() {
             commands::canvas_disk_changed,
             commands::canvas_resolve_conflict,
             commands::canvas_crashed,
+            // Live preview of .html files in the editor
+            commands::html_preview_open,
+            commands::html_preview_update,
+            commands::html_preview_close,
         ]))
         .build(app_context())
         .expect("error while building tauri application");

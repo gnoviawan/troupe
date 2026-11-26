@@ -1,6 +1,6 @@
 ---
 title: Edit and save code
-description: Open a file in the editor, view images, videos, and PDFs, save by hand or automatically, and handle changes made outside Troupe.
+description: Open a file in the editor, preview HTML pages, view images, videos, and PDFs, save by hand or automatically, and handle changes made outside Troupe.
 ---
 
 The editor opens your project files in tabs next to your terminals and chats. It colors the code, numbers the lines, and warns you before you lose unsaved work.
@@ -51,6 +51,35 @@ Markdown files open in a different view by default. See [Work with Markdown](/do
 
 SVG files open in **Preview**, which shows the drawing. Click **Source** in the toolbar to edit the SVG as text. Preview shows your unsaved changes.
 
+HTML files (`.html` and `.htm`) open with the source and a live preview side by side. See [Preview HTML pages](#preview-html-pages).
+
+## Preview HTML pages
+
+When you open an HTML file, the editor shows the page next to its source. The preview works in the desktop app and in the browser version, including on a phone.
+
+Use the switch on the right of the toolbar:
+
+- **Preview** shows only the page.
+- **Split** shows the source on the left and the page on the right. HTML files open in **Split**.
+- **Source** shows only the source in the code editor.
+
+On a phone, the switch has only **Preview** and **Source**. A file that is in **Split** shows as **Preview** there.
+
+The preview shows your unsaved changes. About 0.2 seconds after you stop typing, it reloads with the text in the editor. You do not have to save first.
+
+The page can load other files from its own folder and its subfolders: stylesheets, scripts and JavaScript modules, JSON files it fetches, images, fonts, audio, and video. It cannot load files on your computer from outside that folder. The preview runs in a sandbox, separate from Troupe.
+
+The bar above the preview has two buttons:
+
+- The console button shows how many messages the page wrote to its console. Script errors that the page does not catch count as errors too. When the page has errors, the button turns red and shows the number of errors instead, for example "2 errors". Click it (**Show console** or **Hide console**) to show or hide the console under the preview. The console lists each message with its level (`log`, `info`, `warn`, or `error`) and shows "No output" when the page wrote nothing. It starts empty each time the preview reloads.
+- **Reload preview** loads the page again.
+
+If the preview can't be loaded, it says "The preview could not be loaded. Reload to try again." Click **Reload preview** to try again.
+
+Only the HTML file itself shows your unsaved changes. When you change a stylesheet or a script that the page uses, save that file, then click **Reload preview** to see the change. Other pages that you open from a link in the preview show their saved version, and their messages do not show in the console.
+
+The preview fills the width of its side of the pane. It has no buttons to set a phone or tablet width.
+
 ## View images, videos, and PDFs
 
 These files open in a viewer tab. You can look at them but not edit them.
@@ -77,7 +106,7 @@ When a file has unsaved changes, its tab shows a dot instead of the close button
 
 ![cart.ts has a new last line and its tab shows the unsaved dot](/screenshots/files-editor-unsaved.png)
 
-On a phone, Markdown files show a **Save** button in the toolbar above the text.
+On a phone, Markdown, SVG, and HTML files show a **Save** button in the toolbar above the text.
 
 ### Close a file that has unsaved changes
 

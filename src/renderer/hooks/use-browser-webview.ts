@@ -8,6 +8,7 @@ import {
   browserTabHide,
   browserTabNavigate,
   browserTabResize,
+  browserTabScreenshot,
   browserTabSetZoom,
   browserTabShow,
   onBrowserTabUpdated
@@ -36,6 +37,7 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
 }
 
 const ZOOM_EPSILON = 0.001
+const OCCLUSION_SNAPSHOT_TIMEOUT_MS = 220
 
 export function useBrowserWebview(
   browserTabId: string,
@@ -65,6 +67,8 @@ export function useBrowserWebview(
   const containerRef = useRef<HTMLDivElement>(null)
   const createdRef = useRef(false)
   const [createdTick, setCreatedTick] = useState(0)
+  const [occlusionPreviewUrl, setOcclusionPreviewUrl] = useState<string | null>(null)
+  const occlusionTokenRef = useRef(0)
   const mountedRef = useRef(true)
   const mountTokenRef = useRef(0)
   const probeTokenRef = useRef(0)
@@ -320,11 +324,40 @@ export function useBrowserWebview(
     }
   }, [browserTabId, hasDocument, updateBounds])
 
-  // Show / hide on visibility change
+  // Show / hide on visibility change. When hidden due to a shell popover/menu
+  // occluding a visible tab, capture a frozen snapshot first so the page stays
+  // visible behind open dropdowns instead of flashing black, and clear the
+  // snapshot cleanly once the live native webview is shown again.
   useEffect(() => {
     visibilityRef.current = isVisible
+    if (!paneVisible || !hasDocument) {
+      occlusionTokenRef.current += 1
+      setOcclusionPreviewUrl(null)
+    }
     if (!createdRef.current) return
     let cancelled = false
+    const token = ++occlusionTokenRef.current
+
+    const hideNative = () => {
+      browserTabHide(browserTabId)
+        .then((r) => {
+          if (!r.success) {
+            void logFrontendError({
+              message: `browserTabHide failed for tab ${browserTabId}: ${r.error}`,
+              source: 'useBrowserWebview'
+            })
+          }
+        })
+        .catch((err) => {
+          void logFrontendError({
+            message: `browserTabHide rejected for tab ${browserTabId}: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+            source: 'useBrowserWebview'
+          })
+        })
+    }
+
     if (isVisible) {
       void updateBounds().then(() => {
         if (cancelled || !visibilityRef.current || !createdRef.current) return
@@ -345,30 +378,61 @@ export function useBrowserWebview(
               source: 'useBrowserWebview'
             })
           })
+          .finally(() => {
+            if (!cancelled && token === occlusionTokenRef.current) {
+              setOcclusionPreviewUrl(null)
+            }
+          })
       })
-    } else {
-      browserTabHide(browserTabId)
-        .then((r) => {
-          if (!r.success) {
-            void logFrontendError({
-              message: `browserTabHide failed for tab ${browserTabId}: ${r.error}`,
-              source: 'useBrowserWebview'
+    } else if (occluded && paneVisible && hasDocument) {
+      void (async () => {
+        let preview: string | null = null
+        let timerId: number | null = null
+        try {
+          const shot = await Promise.race([
+            browserTabScreenshot(browserTabId),
+            new Promise<null>((resolve) => {
+              timerId = window.setTimeout(() => resolve(null), OCCLUSION_SNAPSHOT_TIMEOUT_MS)
             })
+          ])
+          if (timerId !== null) window.clearTimeout(timerId)
+          if (
+            !cancelled &&
+            token === occlusionTokenRef.current &&
+            !visibilityRef.current &&
+            shot?.success &&
+            shot.data.base64
+          ) {
+            preview = `data:${shot.data.mimeType};base64,${shot.data.base64}`
           }
-        })
-        .catch((err) => {
+        } catch (err) {
+          if (timerId !== null) window.clearTimeout(timerId)
           void logFrontendError({
-            message: `browserTabHide rejected for tab ${browserTabId}: ${
+            level: 'warn',
+            message: `occlusion snapshot failed for tab ${browserTabId}: ${
               err instanceof Error ? err.message : String(err)
             }`,
             source: 'useBrowserWebview'
           })
-        })
+        }
+        if (cancelled || token !== occlusionTokenRef.current || visibilityRef.current) return
+        if (preview) {
+          setOcclusionPreviewUrl(preview)
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve())
+          })
+        }
+        if (cancelled || token !== occlusionTokenRef.current || visibilityRef.current) return
+        hideNative()
+      })()
+    } else {
+      setOcclusionPreviewUrl(null)
+      hideNative()
     }
     return () => {
       cancelled = true
     }
-  }, [isVisible, browserTabId, updateBounds])
+  }, [isVisible, occluded, paneVisible, hasDocument, browserTabId, updateBounds])
 
   // Cancel any pending localhost probe when the user clicks Stop
   useEffect(() => {
@@ -569,5 +633,13 @@ export function useBrowserWebview(
     return () => subscription.unlisten()
   }, [browserTabId])
 
-  return { containerRef }
+  // Clear any stale frozen snapshot if the tab URL navigates while hidden
+  useEffect(() => {
+    if (!url) {
+      occlusionTokenRef.current += 1
+      setOcclusionPreviewUrl(null)
+    }
+  }, [url])
+
+  return { containerRef, occlusionPreviewUrl }
 }

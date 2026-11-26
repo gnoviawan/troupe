@@ -71,6 +71,7 @@ pub const CONSOLE_PULL: Helper = helper!("console_pull");
 pub const SENSITIVITY: Helper = helper!("sensitivity");
 pub const CARD_FIELDS: Helper = helper!("card_fields");
 pub const OVERLAY_VISIBILITY: Helper = helper!("overlay_visibility");
+pub const DRAIN_ANNOTATION_OUTBOX: Helper = helper!("drain_annotation_outbox");
 pub const FRAME_SOURCES: Helper = helper!("frame_sources");
 /// The conformance suite's probe of the agent overlay.
 #[cfg(any(test, feature = "conformance"))]
@@ -132,6 +133,15 @@ pub fn overlay_visibility(visible: bool) -> Script {
     Script::new(
         OVERLAY_VISIBILITY,
         json!({ "visible": visible, "restoreMs": restore_ms }),
+    )
+}
+
+/// Atomically read and clear the DOM outbox attribute used by the injected
+/// annotation overlay to send annotations/actions without page `fetch()`.
+pub fn drain_annotation_outbox(host_id: &str, attr: &str) -> Script {
+    Script::new(
+        DRAIN_ANNOTATION_OUTBOX,
+        json!({ "hostId": host_id, "attr": attr }),
     )
 }
 

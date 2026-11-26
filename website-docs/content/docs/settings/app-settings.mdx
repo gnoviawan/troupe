@@ -11,12 +11,12 @@ Settings fills the whole window. The left side has **Back to app**, **Search set
 
 ## Preferences
 
-![The Preferences page with the Appearance, Notifications, Links, Editor, and New projects groups](/screenshots/settings-behavior.png)
+![The Preferences page with the Appearance, Notifications, Editor, and New projects groups](/screenshots/settings-behavior.png)
 
 ### Appearance
 
 - **Theme** shows the color theme you use. Select **Change theme** to pick another one. See [Themes](/docs/settings/themes).
-- **Interface zoom** makes the whole window bigger or smaller, from 50% to 300%. Select **Reset to 100%** to go back. You can also press `Ctrl+=`, `Ctrl+-`, and `Ctrl+0`. In the browser version these keys belong to the browser, so Troupe uses `Alt+=`, `Alt+-`, and `Alt+0`.
+- **Interface zoom** makes the whole window bigger or smaller, from 50% to 300%. Select **Reset to 100%** to go back. You can also press `Ctrl+=`, `Ctrl+-`, and `Ctrl+0`. In the browser version these keys belong to the browser, so Troupe uses `Alt+=`, `Alt+-`, and `Alt+0`. When a browser tab is the active tab, the keys zoom only that web page instead. See [Zoom a page](/docs/browser/browser-tabs#zoom-a-page).
 - **Translucent sidebar** shows the desktop through the project sidebar, like Finder. Chats, terminals, and editors stay solid. It is off by default. This switch is in the desktop app on macOS only.
 
 ### Notifications
@@ -72,7 +72,7 @@ A terminal profile is a saved way to open a terminal: a shell, its arguments, a 
    - **Shell** is the shell to run. Choose **Other path or name** to type a shell that is not in the list.
    - **Arguments** go to the shell. Put one argument on each line.
    - **Start folder** is where the terminal opens. Empty means the open project or worktree folder.
-   - **Environment variables** are `KEY=value` lines. They replace project variables with the same name.
+   - **Environment variables** are `KEY=value` lines. They replace project variables with the same name. A value can use a variable from Troupe's environment, such as `$HOME`, the same way as [project environment variables](/docs/settings/project-settings#environment-variables).
 3. Select **Save profile**.
 
 To open a terminal from a profile, press `Ctrl+K` and choose **New Terminal:** followed by the profile name. Use the pencil button to edit a profile and the trash button to delete it.
@@ -110,9 +110,10 @@ The **About** page is different in the desktop app and in the browser version.
 
 ### In the browser version
 
-<Callout type="info">The **Server** group shows only when Troupe is served by `troupe-server`.</Callout>
+<Callout type="info">The **Connect another device** and **Server** groups show only when Troupe is served by `troupe-server`.</Callout>
 
 - The first row shows `termul-server` and the server's version. The browser version updates together with the server. Reload the page after the server updates.
+- **Connect another device** shows a QR code that opens this server on a phone or tablet, with **Copy link** under it. When the server has an access token, the QR code and the link contain it. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
 - **Server** changes how the server itself runs: its bind host and port, sessions directory, projects file, whether other devices can make changes, and its update channel. It is the same form as the setup wizard shown on a fresh install. Applying saves the settings to `server-config.json` in the server's state folder and restarts the server. If the address changes, your browser follows the server to the new address by itself. See [Install and start troupe-server](/docs/remote/server#set-it-up-in-the-browser).
 - **Logs and bug reports** and **Reset all settings** are the same as in the desktop app, with fewer log buttons.
 

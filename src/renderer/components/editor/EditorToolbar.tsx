@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ChevronRight, Code2, Eye, PanelRight, Save } from '@/components/icons'
+import { ChevronRight, Code2, Columns2, Eye, PanelRight, Save } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { FOCUS_RING_CLASS, SEGMENTED_TRACK_CLASS, segmentClass } from '@/components/ui/panel-styles'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
-import { type EditorViewMode, textPreviewForPath } from '@/lib/editor-file-kind'
+import { type EditorViewMode, textPreviewForPath, viewModesForPath } from '@/lib/editor-file-kind'
 import { requestSaveEditorFile } from '@/lib/editor-save'
 import { cn } from '@/lib/utils'
 import { useEditorStore } from '@/stores/editor-store'
@@ -12,17 +12,20 @@ import { formatDocumentStats, getDocumentStats } from './outline/document-stats'
 
 interface EditorToolbarProps {
   viewMode: EditorViewMode
-  onToggleViewMode: () => void
+  onViewModeChange: (mode: EditorViewMode) => void
   filePath: string
 }
 
 /** 44px touch target on the mobile web shell: an invisible hit-slop overlay. */
 const TOUCH_TARGET_CLASS = "relative min-h-11 after:absolute after:-inset-1.5 after:content-['']"
 
-const VIEW_MODE_SEGMENTS = [
-  { mode: 'preview', label: 'Preview', title: 'Switch to preview mode', Icon: Eye },
-  { mode: 'code', label: 'Source', title: 'Switch to source mode', Icon: Code2 }
-] as const
+const VIEW_MODE_SEGMENTS: Readonly<
+  Record<EditorViewMode, { label: string; title: string; Icon: typeof Eye }>
+> = {
+  preview: { label: 'Preview', title: 'Switch to preview mode', Icon: Eye },
+  split: { label: 'Split', title: 'Show source and preview side by side', Icon: Columns2 },
+  code: { label: 'Source', title: 'Switch to source mode', Icon: Code2 }
+}
 
 function getParentFolderName(filePath: string): string | null {
   const parts = filePath.split(/[\\/]/).filter(Boolean)
@@ -31,7 +34,7 @@ function getParentFolderName(filePath: string): string | null {
 
 export function EditorToolbar({
   viewMode,
-  onToggleViewMode,
+  onViewModeChange,
   filePath
 }: EditorToolbarProps): React.JSX.Element {
   const fileName = filePath.split(/[\\/]/).pop() || filePath
@@ -42,6 +45,9 @@ export function EditorToolbar({
   // 44px touch floor. Swap them to the `touch` button size (h-11 + hit-slop
   // overlay); desktop keeps the compact h-6 track.
   const isMobileWebShell = useMobileWebShell()
+  // Split does not fit a phone, so the mobile shell shows the split view as its preview.
+  const modes = viewModesForPath(filePath).filter((mode) => !isMobileWebShell || mode !== 'split')
+  const shownMode = isMobileWebShell && viewMode === 'split' ? 'preview' : viewMode
   // Story 4: the mobile editor has no other save path (no Ctrl key, hidden
   // desktop tab strip), so the toolbar exposes an explicit Save affordance.
   // Disabled unless the buffer is dirty; while a save is in flight it stays
@@ -108,8 +114,9 @@ export function EditorToolbar({
           aria-label="View mode"
           className={cn(SEGMENTED_TRACK_CLASS, !isMobileWebShell && 'h-7')}
         >
-          {VIEW_MODE_SEGMENTS.map(({ mode, label, title, Icon }) => {
-            const isActive = viewMode === mode
+          {modes.map((mode) => {
+            const { label, title, Icon } = VIEW_MODE_SEGMENTS[mode]
+            const isActive = shownMode === mode
             return (
               // biome-ignore lint/a11y/useSemanticElements: segmented track, not a native radio input
               <button
@@ -120,7 +127,7 @@ export function EditorToolbar({
                 aria-label={label}
                 title={title}
                 onClick={() => {
-                  if (!isActive) onToggleViewMode()
+                  if (!isActive) onViewModeChange(mode)
                 }}
                 className={cn(
                   segmentClass(isActive),

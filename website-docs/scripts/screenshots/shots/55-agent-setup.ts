@@ -64,10 +64,12 @@ async function writeFixture(path: string, body: string): Promise<void> {
 
 async function openSettings(page: Page, category: string): Promise<Locator> {
   await page.getByRole('button', { name: 'Settings', exact: true }).first().click()
-  const nav = page.getByRole('navigation', { name: 'Settings categories' })
+  const dialog = page.getByRole('dialog', { name: 'Preferences' })
+  await dialog.waitFor()
+  const nav = dialog.getByRole('navigation', { name: 'Settings pages' })
   await nav.getByRole('button', { name: category, exact: true }).click()
   await page.waitForTimeout(800)
-  return page.getByRole('dialog').first()
+  return dialog
 }
 
 async function openNewChat(page: Page): Promise<void> {
@@ -105,7 +107,7 @@ const mcpJson = `{
 async function addMcpServers(page: Page): Promise<void> {
   await writeFixture(mcpServerPath, mcpServerSource)
   await openApp(page)
-  await openSettings(page, 'MCP Servers')
+  await openSettings(page, 'MCP servers')
   await page.getByRole('button', { name: 'Add server' }).click()
   await page.getByRole('button', { name: 'Import JSON instead' }).click()
   const dialog = page.getByRole('dialog', { name: 'Add MCP servers' })
@@ -123,17 +125,22 @@ export const shots: Shot[] = [
     id: 'agent-setup-timeouts',
     run: async (page) => {
       await openApp(page)
-      await openSettings(page, 'AI Agents')
+      const dialog = await openSettings(page, 'Agents')
       await page.waitForTimeout(1500)
+      // A short list leaves room for Chats and the Advanced time-limits summary.
+      await dialog.getByRole('textbox', { name: 'Filter agents' }).fill('Agoragentic')
+      await page.getByRole('heading', { name: 'Chats', exact: true }).scrollIntoViewIfNeeded()
+      await page.waitForTimeout(400)
+      return dialog
     }
   },
   {
     id: 'agent-setup-agents-list',
     run: async (page) => {
       await openApp(page)
-      await openSettings(page, 'AI Agents')
+      const dialog = await openSettings(page, 'Agents')
       await page.waitForTimeout(1500)
-      return page.getByRole('button', { name: 'Check for updates' }).locator('xpath=../..')
+      return dialog
     }
   },
   {
@@ -164,8 +171,8 @@ export const shots: Shot[] = [
     id: 'agent-setup-custom-agent',
     run: async (page) => {
       await openApp(page)
-      await openSettings(page, 'AI Agents')
-      await page.getByRole('button', { name: 'Add Custom Agent' }).click()
+      await openSettings(page, 'Agents')
+      await page.getByRole('button', { name: 'Add custom agent' }).click()
       const dialog = page.getByRole('dialog', { name: 'Add Custom ACP Agent' })
       await dialog.locator('textarea').fill(zedAgentJson)
       return dialog
@@ -175,8 +182,8 @@ export const shots: Shot[] = [
     id: 'agent-setup-custom-agent-confirm',
     run: async (page) => {
       await openApp(page)
-      await openSettings(page, 'AI Agents')
-      await page.getByRole('button', { name: 'Add Custom Agent' }).click()
+      await openSettings(page, 'Agents')
+      await page.getByRole('button', { name: 'Add custom agent' }).click()
       const dialog = page.getByRole('dialog', { name: 'Add Custom ACP Agent' })
       await dialog.locator('textarea').fill(zedAgentJson)
       await dialog.getByRole('button', { name: 'Save Agent' }).click()
@@ -189,9 +196,9 @@ export const shots: Shot[] = [
     id: 'agent-setup-provider',
     run: async (page) => {
       await openApp(page)
-      await openSettings(page, 'Provider')
+      const dialog = await openSettings(page, 'Accounts')
       await page.waitForTimeout(1500)
-      return page.locator('#settings-section-provider')
+      return dialog
     }
   },
   {
@@ -202,10 +209,12 @@ export const shots: Shot[] = [
         .getByRole('button', { name: 'Settings for acme-shop' })
         .first()
         .click({ force: true })
-      const nav = page.getByRole('navigation', { name: 'Settings categories' })
-      await nav.getByRole('button', { name: 'Provider', exact: true }).click()
+      const dialog = page.getByRole('dialog', { name: 'Project settings' })
+      await dialog.waitFor()
+      const nav = dialog.getByRole('navigation', { name: 'Settings pages' })
+      await nav.getByRole('button', { name: 'Accounts', exact: true }).click()
       await page.waitForTimeout(1500)
-      return page.getByRole('dialog').first()
+      return dialog
     }
   },
   {

@@ -1,3 +1,6 @@
+import { writeClipboardImagePng } from '@/lib/composer-attachments-io'
+import { logFrontendError } from '@/lib/log-api'
+import { isTauriContext } from '@/lib/tauri-runtime'
 import type { PendingAnnotationItem } from '@/stores/browser-session-store'
 
 export interface CropRect {
@@ -81,6 +84,78 @@ export async function cropBase64Png(
     img.onerror = () => resolve(null)
     img.src = dataUrl
   })
+}
+
+function decodeBase64Png(base64Png: string): Uint8Array | null {
+  const cleaned = base64Png.trim()
+  if (!cleaned) return null
+  try {
+    const bin = atob(cleaned)
+    const out = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i += 1) {
+      out[i] = bin.charCodeAt(i)
+    }
+    return out.length > 0 ? out : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Copy a base64-encoded PNG screenshot directly to the system clipboard.
+ * Uses Tauri's native image clipboard on desktop and falls back to the Async
+ * Clipboard API (`navigator.clipboard.write`) on web or if native write fails.
+ */
+export async function copyBase64PngToClipboard(
+  base64Png: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const bytes = decodeBase64Png(base64Png)
+  if (!bytes) {
+    const error = 'Screenshot image data is invalid.'
+    void logFrontendError({ level: 'warn', source: 'browser-screenshot', message: error })
+    return { ok: false, error }
+  }
+
+  let nativeErr: string | null = null
+  if (isTauriContext()) {
+    try {
+      await writeClipboardImagePng(bytes)
+      return { ok: true }
+    } catch (e) {
+      nativeErr = e instanceof Error ? e.message : String(e)
+      void logFrontendError({
+        level: 'warn',
+        source: 'browser-screenshot',
+        message: `Native clipboard image write failed, trying web fallback: ${nativeErr}`
+      })
+    }
+  }
+
+  if (
+    typeof ClipboardItem === 'function' &&
+    (typeof ClipboardItem.supports !== 'function' || ClipboardItem.supports('image/png')) &&
+    navigator.clipboard?.write
+  ) {
+    try {
+      const blob = new Blob([bytes as BlobPart], { type: 'image/png' })
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      return { ok: true }
+    } catch (e) {
+      const webErr = e instanceof Error ? e.message : String(e)
+      void logFrontendError({
+        level: 'warn',
+        source: 'browser-screenshot',
+        message: `navigator.clipboard.write failed: ${webErr}`
+      })
+      return { ok: false, error: 'Could not copy screenshot to clipboard.' }
+    }
+  }
+
+  const error = nativeErr
+    ? 'Could not copy screenshot to clipboard.'
+    : 'Image clipboard is unavailable in this environment.'
+  void logFrontendError({ level: 'warn', source: 'browser-screenshot', message: error })
+  return { ok: false, error }
 }
 
 /**

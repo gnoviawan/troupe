@@ -209,7 +209,9 @@ fn resolve_dot_segments(path: &str) -> String {
         }
     }
     let joined = kept.join("/");
-    let slash = if !joined.is_empty() && !root.ends_with('/') {
+    // A UNC server/share root has no trailing slash of its own. A relative
+    // path has no root at all, so it must not gain a leading slash.
+    let slash = if !root.is_empty() && !joined.is_empty() && !root.ends_with('/') {
         "/"
     } else {
         ""

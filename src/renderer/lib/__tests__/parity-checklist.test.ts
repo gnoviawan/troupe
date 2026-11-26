@@ -1474,6 +1474,50 @@ describe('Parity Checklist Automation', () => {
     })
   })
 
+  describe('HTML preview parity (live .html view)', () => {
+    const SrcTauri = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+    const read = (...parts: string[]): string => readFileSync(join(SrcTauri, ...parts), 'utf-8')
+    const FACADE = {
+      open: { command: 'html_preview_open', route: '/html-preview/open' },
+      update: { command: 'html_preview_update', route: '/html-preview/update' },
+      close: { command: 'html_preview_close', route: '/html-preview/close' }
+    } as const
+
+    it('html-preview-api.ts sends every method to the command on desktop and the route on the web', () => {
+      const content = readFileSync(join(LIB_DIR, 'html-preview-api.ts'), 'utf-8')
+      expect(content).toMatch(/isTauriContext\(\)/)
+      for (const { command, route } of Object.values(FACADE)) {
+        expect(content).toContain(`'${command}'`)
+        expect(content).toContain(`'${route}'`)
+      }
+    })
+
+    it('both transports wrap the one shared registry', () => {
+      const web = read('web', 'html_preview_api.rs')
+      const commands = read('commands', 'html_preview.rs')
+      for (const { command, route } of Object.values(FACADE)) {
+        expect(web).toContain(`"${route}"`)
+        expect(commands).toContain(`pub async fn ${command}(`)
+        expect(read('lib.rs')).toContain(`commands::${command},`)
+      }
+      for (const transport of [web, commands]) {
+        expect(transport).toMatch(/registry\(\)\.open\(/)
+        expect(transport).toMatch(/registry\(\)\.update\(/)
+        expect(transport).toMatch(/registry\(\)\.close\(/)
+      }
+    })
+
+    it('every listener serves the preview pages: the desktop loopback and both web routers', () => {
+      const loopback = read('canvas', 'static_server.rs')
+      expect(loopback).toContain('get(crate::html_preview::serve_session_root)')
+      expect(loopback).toContain('get(crate::html_preview::serve_session_file)')
+      const router = read('web', 'router', 'mod.rs')
+      const merges = router.match(/html_preview_api::html_preview_router\(\)/g) ?? []
+      expect(merges, 'router() and router_with_static() both merge the routes').toHaveLength(2)
+      expect(read('web', 'router', 'gate.rs')).toContain('"/html-preview/",')
+    })
+  })
+
   // Global right-click context menu + production devtools block. Pins that:
   //   - GlobalContextMenu wraps BOTH roots (TauriApp.tsx + App.tsx) for parity.
   //   - The devtools-shortcut blocker is desktop-only + PROD-gated (TauriApp, not App).
@@ -3811,5 +3855,33 @@ describe('First-run onboarding parity (desktop, web, shared-live browser, phone)
     expect(onboarding).toBeGreaterThan(tokenScreen)
     expect(onboarding).toBeLessThan(layout.indexOf('<MobileWorkspaceShell'))
     expect(onboarding).toBeLessThan(layout.indexOf('<ShellFrame'))
+  })
+})
+
+describe('Standalone troupe-server QR parity (CLI, Web tool strip, Settings -> Server, desktop gate)', () => {
+  const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+  const components = join(LIB_DIR, '..', 'components')
+  const readRust = (...parts: string[]): string => readFileSync(join(SRC_TAURI, ...parts), 'utf-8')
+  const readUi = (...parts: string[]): string => readFileSync(join(components, ...parts), 'utf-8')
+
+  it('the standalone server exposes standaloneServer on /health, lanHost on /server/config, and the qr CLI', () => {
+    expect(readRust('web', 'router', 'host_routes.rs')).toMatch(
+      /standalone_server:\s*state\.server_admin\.is_some\(\)/
+    )
+    expect(readRust('web', 'router', 'server_config.rs')).toMatch(/lan_host:\s*Option<String>/)
+    expect(readRust('server_main.rs')).toMatch(/server_qr::run\(&raw_args\[1\.\.\]/)
+    expect(readRust('server_qr.rs')).toMatch(/target\.has_token && !is_tty/)
+  })
+
+  it('the Web UI mounts ServerQrPopover in the tool strip (explicitly desktop-gated) and ServerQrPanel in Settings -> Server', () => {
+    const popover = readUi('ServerQrPopover.tsx')
+    expect(popover).toMatch(/if \(isTauriContext\(\) \|\| !isStandalone\) return null/)
+    expect(readUi('shell', 'tool-strip', 'ShellToolStrip.tsx')).toMatch(/<ServerQrPopover \/>/)
+    const serverSection = readFileSync(
+      join(LIB_DIR, '..', 'pages', 'app-preferences', 'server-section.tsx'),
+      'utf-8'
+    )
+    expect(serverSection).toMatch(/if \(isTauriContext\(\)\) return null/)
+    expect(serverSection).toMatch(/<ServerQrPanel/)
   })
 })

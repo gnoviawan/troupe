@@ -41,6 +41,7 @@ pub mod git_history_api;
 pub mod git_hunk_api;
 pub mod github_api;
 pub mod host_allow;
+pub mod html_preview_api;
 pub mod install_api;
 pub mod log_api;
 pub mod mcp_catalog_api;
@@ -48,6 +49,8 @@ pub mod mcp_catalog_api;
 pub(crate) mod log_capture;
 pub mod mcp_oauth_api;
 pub mod link_preview_api;
+#[cfg(test)]
+mod html_preview_api_tests;
 #[cfg(test)]
 mod link_preview_api_tests;
 pub mod mcp_probe_api;

@@ -116,6 +116,14 @@ chmod +x troupe-server
 
 The opt-in self-updater selects its manifest key from the architecture the binary was built for (`linux-x86_64-server` or `linux-aarch64-server`), so each host updates to its own binary and keeps the installed filename.
 
+#### Connect QR
+
+`troupe-server qr` prints a terminal QR code that opens the server on a phone. It resolves the address from `--url`, then `--host`/`--port`, then `server-config.json` (on a `0.0.0.0` bind it uses the detected primary LAN IPv4 address; a loopback bind is refused). The access token comes from `--web-auth-token`, `TROUPE_WEB_AUTH_TOKEN`, or `<state dir>/web-auth-token`, and is embedded as `#token=`. With a token, the command prints only to a TTY; `--no-token` emits a tokenless QR for non-interactive use. Options take a space-separated value (`--url <url>`). `troupe-server qr --help` lists them.
+
+In setup mode on a `0.0.0.0` bind, an interactive terminal also gets a QR code of the setup link with the LAN address. `troupe-server onboard` prints the `qr` command with the quoted executable path when the host is `0.0.0.0`.
+
+The web client shows the same QR (tool strip **Connect device** and the **Connect another device** group on Settings → About) only when `GET /health` reports `standaloneServer: true`, so it stays hidden on the desktop app and its shared-live host. When the browser is on a loopback origin, the client uses the `lanHost` that `GET /server/config` reports on a `0.0.0.0` bind.
+
 #### Upgrading from `termul-server`
 
 Releases before 0.5.0 named the server `termul-server`. An existing install keeps working without changes:
