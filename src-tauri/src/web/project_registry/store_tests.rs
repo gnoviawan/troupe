@@ -484,3 +484,16 @@ fn concurrent_commits_all_land_and_all_persist() {
     expected.sort();
     assert_eq!(ids, expected);
 }
+
+/// A root stored in another spelling of the same folder, given again as its
+/// resolved form, is not a move (a move of a busy project is refused).
+#[test]
+fn a_root_given_again_in_its_resolved_spelling_is_not_a_move() {
+    let tmp = tempfile::tempdir().unwrap();
+    let file = tmp.path().join("projects.json");
+    let registry = open(&file);
+    let typed = project_dir(tmp.path(), "one").join("..").join("one");
+    registry.commit_add(summary("p-1", &typed)).unwrap();
+    let resolved = crate::acp::project_registry::validate_root_path(&typed).unwrap();
+    assert!(!registry.moves_root("p-1", &resolved));
+}

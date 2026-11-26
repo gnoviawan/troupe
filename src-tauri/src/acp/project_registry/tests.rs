@@ -534,3 +534,43 @@ fn lenient_load_keeps_unresolvable_and_pathless_roots() {
     assert!(reg.roots()[1].path.as_os_str().is_empty());
     cleanup(&dir);
 }
+
+/// A root keeps its everyday spelling. Windows `canonicalize` returns
+/// `\\?\C:\…`, and agents take the root as their working folder: Antigravity's
+/// `session/new` fails with "Internal error" on that spelling.
+#[test]
+fn validate_root_path_returns_the_everyday_spelling() {
+    let dir = tempdir_like("everyday-spelling");
+    let resolved = validate_root_path(&dir).expect("valid root");
+    assert!(
+        !resolved.to_string_lossy().starts_with(r"\\?\"),
+        "verbatim root: {}",
+        resolved.display()
+    );
+    assert!(resolved.is_absolute());
+    assert!(resolved.is_dir());
+    cleanup(&dir);
+}
+
+/// A lenient load repairs roots that older builds saved in the verbatim
+/// spelling, so every chat started in them gets a working folder agents accept.
+#[test]
+fn lenient_load_repairs_a_verbatim_root() {
+    let dir = tempdir_like("lenient-verbatim");
+    let file = dir.join("projects.json");
+    write_json(
+        &file,
+        &serde_json::json!({
+            "schemaVersion": 4,
+            "projects": [
+                { "id": "drive", "name": "Drive", "path": r"\\?\C:\work\app", "color": "blue", "isArchived": false },
+                { "id": "share", "name": "Share", "path": r"\\?\UNC\server\share\app", "color": "blue", "isArchived": false }
+            ]
+        })
+        .to_string(),
+    );
+    let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
+    assert_eq!(reg.roots()[0].path, PathBuf::from(r"C:\work\app"));
+    assert_eq!(reg.roots()[1].path, PathBuf::from(r"\\server\share\app"));
+    cleanup(&dir);
+}
