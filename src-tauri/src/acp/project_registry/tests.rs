@@ -539,9 +539,12 @@ fn lenient_load_keeps_unresolvable_and_pathless_roots() {
 }
 
 /// #2132: a verbatim root becomes the plain spelling (drive and UNC forms);
-/// a plain root is left alone. Pure path rewriting, so it runs on every OS.
+/// a plain root is left alone, and a verbatim root with no plain equivalent
+/// (volume GUID, a name Windows would trim) stays verbatim. Pure path
+/// rewriting, so it runs on every OS.
 #[test]
-fn strip_verbatim_root_drops_drive_and_unc_prefixes() {
+fn plain_windows_root_drops_drive_and_unc_prefixes_only_when_safe() {
+    const VOLUME: &str = r"\\?\Volume{26a21bda-a627-11d7-9931-806e6f6e6963}\repo";
     let cases = [
         (r"\\?\C:\work\app", r"C:\work\app"),
         (r"\\?\UNC\server\share\app", r"\\server\share\app"),
@@ -549,12 +552,35 @@ fn strip_verbatim_root_drops_drive_and_unc_prefixes() {
         (r"\\server\share\app", r"\\server\share\app"),
         ("/home/user/app", "/home/user/app"),
         ("", ""),
+        // Stripping would leave a relative path.
+        (VOLUME, VOLUME),
+        // Windows trims a trailing dot or space from a plain path, so the
+        // plain spelling would name the sibling `C:\work\repo`.
+        (r"\\?\C:\work\repo.", r"\\?\C:\work\repo."),
+        (r"\\?\C:\work\repo ", r"\\?\C:\work\repo "),
     ];
     for (stored, expected) in cases {
         assert_eq!(
-            strip_verbatim_root(PathBuf::from(stored)),
+            plain_windows_root(PathBuf::from(stored)),
             PathBuf::from(expected),
             "{stored}"
+        );
+    }
+}
+
+/// On POSIX a backslash is a literal filename character, so a stored root is
+/// never rewritten there.
+#[cfg(not(windows))]
+#[test]
+fn strip_verbatim_root_keeps_posix_paths_unchanged() {
+    for stored in [
+        r"\\?\C:\work\app",
+        r"\\?\UNC\server\share\app",
+        "/home/user/app",
+    ] {
+        assert_eq!(
+            strip_verbatim_root(PathBuf::from(stored)),
+            PathBuf::from(stored)
         );
     }
 }
@@ -578,8 +604,14 @@ fn lenient_load_repairs_verbatim_roots_saved_by_older_builds() {
         .to_string(),
     );
     let reg = FileProjectRegistry::load_with(&file, RootCheck::Lenient).expect("lenient");
-    assert_eq!(reg.roots()[0].path, PathBuf::from(r"E:\work\app"));
-    assert_eq!(reg.roots()[1].path, PathBuf::from(r"\\server\share\app"));
+    // Only Windows rewrites; on POSIX these are literal (relative) names.
+    let (drive, unc) = if cfg!(windows) {
+        (r"E:\work\app", r"\\server\share\app")
+    } else {
+        (r"\\?\E:\work\app", r"\\?\UNC\server\share\app")
+    };
+    assert_eq!(reg.roots()[0].path, PathBuf::from(drive));
+    assert_eq!(reg.roots()[1].path, PathBuf::from(unc));
     assert_eq!(reg.default_project_id(), Some("drive"));
     cleanup(&dir);
 }

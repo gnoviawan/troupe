@@ -37,7 +37,7 @@ use agent_client_protocol::schema::v1::McpServer;
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
-use crate::path_validation::strip_verbatim_prefix;
+use crate::path_validation::windows_git_path;
 
 /// Current on-disk JSON schema version. Bump when the [`RegistryFile`] shape
 /// changes; [`FileProjectRegistry::load`] routes any other version through
@@ -478,16 +478,31 @@ pub fn validate_root_path(raw: &Path) -> Result<PathBuf, String> {
 /// Drop the Windows verbatim prefix `canonicalize` adds (`\\?\C:\…` →
 /// `C:\…`, `\\?\UNC\server\share\…` → `\\server\share\…`) from a project
 /// root. The root becomes the cwd of every chat and silent model read, and
-/// some ACP agents (Antigravity) reject a verbatim cwd (#2132). A path with
-/// no prefix, or one that is not UTF-8, is returned unchanged.
+/// some ACP agents (Antigravity) reject a verbatim cwd (#2132).
+///
+/// Only rewrites on Windows: on POSIX a backslash is a literal filename
+/// character, so `\\?\…` is a real (relative) name and is kept.
 #[must_use]
 pub fn strip_verbatim_root(path: PathBuf) -> PathBuf {
-    let plain = path
-        .to_str()
-        .and_then(|raw| match strip_verbatim_prefix(raw) {
-            Cow::Owned(plain) => Some(plain),
-            Cow::Borrowed(_) => None,
-        });
+    if cfg!(windows) {
+        plain_windows_root(path)
+    } else {
+        path
+    }
+}
+
+/// The Windows half of [`strip_verbatim_root`], platform-independent so it is
+/// testable everywhere. Uses the same rules as git's cwd
+/// ([`windows_git_path`]): only the drive and UNC forms are stripped, and only
+/// when the plain spelling names the same directory (no trailing dot or
+/// space, `.`/`..`, `/` or device name). So a `\\?\Volume{…}\` root is never
+/// turned into a relative path and a root never moves to a sibling folder. A
+/// path that stays verbatim, or is not UTF-8, is returned unchanged.
+fn plain_windows_root(path: PathBuf) -> PathBuf {
+    let plain = path.to_str().and_then(|raw| match windows_git_path(raw) {
+        Cow::Owned(plain) => Some(plain),
+        Cow::Borrowed(_) => None,
+    });
     plain.map_or(path, PathBuf::from)
 }
 
