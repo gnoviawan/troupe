@@ -68,8 +68,9 @@ required-features = ["conformance"]
 tauri-build = { version = "2.7", features = [] }
 
 [dependencies]
-# unstable is required for child/multi-webview support used by BrowserTabManager
-tauri = { version = "2.12.3", features = ["unstable", "devtools", "tray-icon"] }
+# unstable is required for child/multi-webview support used by BrowserTabManager;
+# image-png enables JsImage::Bytes PNG decoding for clipboard-manager writeImage.
+tauri = { version = "2.12.3", features = ["unstable", "devtools", "tray-icon", "image-png"] }
 tauri-plugin-os = "2"
 tauri-plugin-store = "2"
 notify = "8"

@@ -14,6 +14,7 @@ import {
   browserTabHide,
   browserTabNavigate,
   browserTabResize,
+  browserTabScreenshot,
   browserTabShow,
   onBrowserTabUpdated
 } from '@/lib/browser-api'
@@ -41,6 +42,7 @@ vi.mock('@/lib/browser-api', () => ({
   browserTabHide: vi.fn(),
   browserTabNavigate: vi.fn(),
   browserTabResize: vi.fn(),
+  browserTabScreenshot: vi.fn(),
   browserTabShow: vi.fn(),
   onBrowserTabUpdated: vi.fn(() => ({ unlisten: vi.fn() }))
 }))
@@ -61,8 +63,18 @@ class ResizeObserverMock {
 }
 
 function BrowserWebviewHarness({ visible = true }: { visible?: boolean }): JSX.Element {
-  const { containerRef } = useBrowserWebview('browser-1', visible, 'https://example.com')
-  return <div ref={containerRef} />
+  const { containerRef, occlusionPreviewUrl } = useBrowserWebview(
+    'browser-1',
+    visible,
+    'https://example.com'
+  )
+  return (
+    <div ref={containerRef}>
+      {occlusionPreviewUrl && (
+        <img data-testid="occlusion-preview" src={occlusionPreviewUrl} alt="" />
+      )}
+    </div>
+  )
 }
 
 /** A fixed logical-px rect (the contract: bounds stay in CSS/DIP units). */
@@ -91,6 +103,10 @@ describe('useBrowserWebview bounds updates', () => {
     })
     vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
     vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
     useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
@@ -276,11 +292,14 @@ describe('useBrowserWebview bounds updates', () => {
     vi.mocked(browserTabHide).mockClear()
 
     const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(browserTabScreenshot).toHaveBeenCalledWith('browser-1'))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeTruthy())
     await waitFor(() => expect(browserTabHide).toHaveBeenCalledWith('browser-1'))
     expect(browserTabShow).not.toHaveBeenCalled()
 
     occluder.rerender(<OccluderHarness open={false} />)
     await waitFor(() => expect(browserTabShow).toHaveBeenCalledWith('browser-1'))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeNull())
 
     occluder.unmount()
     visible.unmount()
@@ -335,6 +354,39 @@ describe('useBrowserWebview bounds updates', () => {
     view.unmount()
     resetNativeWebviewOcclusionForTests()
   })
+
+  it('drops an in-flight occlusion snapshot if the dropdown closes before capture resolves', async () => {
+    let resolveShot:
+      | ((val: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveShot = resolve
+        })
+    )
+    const OccluderHarness = ({ open }: { open: boolean }): null => {
+      useNativeWebviewOcclusion(open)
+      return null
+    }
+    const visible = render(<BrowserWebviewHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalled())
+
+    const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(browserTabScreenshot).toHaveBeenCalledWith('browser-1'))
+
+    // Close dropdown before screenshot resolves
+    occluder.rerender(<OccluderHarness open={false} />)
+    await act(async () => {
+      resolveShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+    })
+
+    expect(visible.queryByTestId('occlusion-preview')).toBeNull()
+    occluder.unmount()
+    visible.unmount()
+    resetNativeWebviewOcclusionForTests()
+  })
 })
 
 describe('useBrowserWebview agent control', () => {
@@ -344,6 +396,10 @@ describe('useBrowserWebview agent control', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(LOGICAL_RECT)
     vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
     vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
     useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')
@@ -511,6 +567,10 @@ describe('useBrowserWebview responsive stage bounds resync', () => {
     })
     vi.mocked(browserTabDestroy).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabResize).mockResolvedValue({ success: true, data: undefined })
+    vi.mocked(browserTabScreenshot).mockResolvedValue({
+      success: true,
+      data: { base64: 'AA==', mimeType: 'image/png' }
+    })
     vi.mocked(browserTabShow).mockResolvedValue({ success: true, data: undefined })
     vi.mocked(browserTabHide).mockResolvedValue({ success: true, data: undefined })
     useBrowserSessionStore.getState().createTab('browser-1', 'https://example.com')

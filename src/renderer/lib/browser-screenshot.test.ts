@@ -1,5 +1,21 @@
-import { describe, expect, it } from 'vitest'
-import { computeCropSourceRect, formatBatchAnnotationsForChat } from './browser-screenshot'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+let mockIsTauri = true
+const mockWriteClipboardImagePng = vi.fn()
+
+vi.mock('@/lib/tauri-runtime', () => ({
+  isTauriContext: () => mockIsTauri
+}))
+
+vi.mock('@/lib/composer-attachments-io', () => ({
+  writeClipboardImagePng: (...args: unknown[]) => mockWriteClipboardImagePng(...args)
+}))
+
+import {
+  computeCropSourceRect,
+  copyBase64PngToClipboard,
+  formatBatchAnnotationsForChat
+} from './browser-screenshot'
 import { normalizeBrowserInputUrl } from './browser-url'
 
 describe('computeCropSourceRect', () => {
@@ -75,5 +91,54 @@ describe('normalizeBrowserInputUrl', () => {
     expect(normalizeBrowserInputUrl('127.0.0.1:3000?a=1')).toBe('http://127.0.0.1:3000?a=1')
     expect(normalizeBrowserInputUrl(':3000#section')).toBe('http://localhost:3000#section')
     expect(normalizeBrowserInputUrl('localhost.example.com')).toBe('https://localhost.example.com')
+  })
+})
+
+describe('copyBase64PngToClipboard', () => {
+  beforeEach(() => {
+    mockIsTauri = true
+    mockWriteClipboardImagePng.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('writes decoded PNG bytes through native Tauri clipboard on desktop', async () => {
+    mockWriteClipboardImagePng.mockResolvedValueOnce(undefined)
+    const res = await copyBase64PngToClipboard('iVBORw==')
+    expect(res).toEqual({ ok: true })
+    expect(mockWriteClipboardImagePng).toHaveBeenCalledTimes(1)
+    expect(mockWriteClipboardImagePng.mock.calls[0][0]).toBeInstanceOf(Uint8Array)
+  })
+
+  it('uses navigator.clipboard.write on web and falls back when native clipboard fails', async () => {
+    const write = vi.fn().mockResolvedValue(undefined)
+    class FakeClipboardItem {
+      constructor(public items: Record<string, Blob>) {}
+    }
+    vi.stubGlobal('ClipboardItem', FakeClipboardItem)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { write }
+    })
+
+    // Desktop native error -> falls back to web Clipboard API
+    mockWriteClipboardImagePng.mockRejectedValueOnce(new Error('plugin failed'))
+    const desktopFallback = await copyBase64PngToClipboard('iVBORw==')
+    expect(desktopFallback).toEqual({ ok: true })
+    expect(write).toHaveBeenCalledTimes(1)
+
+    // Web mode -> uses navigator.clipboard.write directly
+    mockIsTauri = false
+    const webRes = await copyBase64PngToClipboard('iVBORw==')
+    expect(webRes).toEqual({ ok: true })
+    expect(write).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns clear error on empty/invalid base64 payload', async () => {
+    const res = await copyBase64PngToClipboard('')
+    expect(res.ok).toBe(false)
+    expect(mockWriteClipboardImagePng).not.toHaveBeenCalled()
   })
 })

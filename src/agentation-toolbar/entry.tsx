@@ -6,32 +6,54 @@
  * via `window.__TROUPE_ANNOTATE__.dispatch(cmd)`.
  *
  * Supported tools:
- * - comment: select DOM element + numbered pin + inline comment popover
- * - rectangle: drag bounding-box region + numbered box + inline comment popover
- * - ruler: hover spacing measurements + red H/V symmetry guide lines + click-to-comment
- * - screenshot-area: crosshair marquee drag emitting crop rect for native Rust capture
+ * - comment: select DOM element + persistent outline + numbered pin + inline comment popover
+ * - rectangle: drag bounding-box region + persistent outline + numbered box + inline comment popover
+ * - ruler: live guide line preview + draggable red H/V symmetry guides (16px hit target + handle)
+ * - screenshot-area: crosshair marquee drag emitting crop rect for clipboard capture
  */
 
 import {
+  type CommentPopoverOptions,
+  createCommentPopover,
+  type PopoverGuideRef
+} from './comment-popover'
+import {
   buildElementPath,
   buildShortLabel,
-  type ElementSummary,
   findMisalignedNearGuide,
   inspectElement
 } from './dom-inspect'
 import { OVERLAY_CSS } from './overlay-styles'
+import { type OutboxAckMessage, OverlayTransport } from './overlay-transport'
+import {
+  computeGuideBadgeLayout,
+  findNearestGuideGap,
+  formatGuideBadgeText,
+  type GuideAxis
+} from './ruler-layout'
 
 type AnnotateTool = 'comment' | 'rectangle' | 'ruler' | 'screenshot-area'
-type GuideAxis = 'horizontal' | 'vertical'
 
 interface OverlayCommand {
-  type: 'set_active' | 'set_tool' | 'set_pause' | 'set_pins_hidden' | 'place_guide' | 'clear'
+  type:
+    | 'set_active'
+    | 'set_tool'
+    | 'set_pause'
+    | 'set_pins_hidden'
+    | 'place_guide'
+    | 'clear'
+    | 'outbox_ack'
   active?: boolean
   tool?: AnnotateTool
   paused?: boolean
   hidden?: boolean
   axis?: GuideAxis
   ids?: string[]
+  reqId?: string
+  ok?: boolean
+  id?: string
+  sessionId?: string
+  error?: string
 }
 
 interface PlacedPin {
@@ -45,39 +67,41 @@ interface PlacedPin {
   element: string
 }
 
-interface PlacedGuide {
-  id: string
-  axis: GuideAxis
-  pos: number
-  deltaPx?: number
-  targetSelector?: string
-}
+type PlacedGuide = PopoverGuideRef
 
 const HOST_ID = 'termul-agentation-host'
 const PAUSE_STYLE_ID = 'troupe-annotate-pause-animations'
+export const GUIDE_POPOVER_REOPEN_DELAY_MS = 2000
 
 class TroupeAnnotationOverlay {
   private host: HTMLDivElement
   private shadow: ShadowRoot
   private layer: HTMLDivElement
   private hoverBox: HTMLDivElement
+  private selectedBox: HTMLDivElement
   private dragBox: HTMLDivElement
-  private spacingPill: HTMLDivElement
-  private spacingTopLine: HTMLDivElement
-  private spacingLeftLine: HTMLDivElement
+  private previewGuideLine: HTMLDivElement
+  private previewGuideBadge: HTMLDivElement
   private pinsContainer: HTMLDivElement
   private guidesContainer: HTMLDivElement
   private popoverEl: HTMLDivElement | null = null
+  private popoverGuideId: string | null = null
+  private popoverTextarea: HTMLTextAreaElement | null = null
+  private transport: OverlayTransport
 
   private active = false
   private tool: AnnotateTool = 'comment'
   private pinsHidden = false
   private pins: PlacedPin[] = []
   private guides: PlacedGuide[] = []
-  private sessionId: string | null = null
-  private sessionPromise: Promise<string | null> | null = null
   private dragStart: { x: number; y: number } | null = null
+  private lastPointer: { x: number; y: number } | null = null
+  private shiftHeld = false
+  private draggingGuideId: string | null = null
+  private guideReopenTimer: number | null = null
+  private activeGuideDragCleanup: (() => void) | null = null
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null
+  private onWindowKeyUp: ((e: KeyboardEvent) => void) | null = null
 
   constructor() {
     const existing = document.getElementById(HOST_ID)
@@ -87,6 +111,7 @@ class TroupeAnnotationOverlay {
     this.host.id = HOST_ID
     document.body.appendChild(this.host)
     this.shadow = this.host.attachShadow({ mode: 'open' })
+    this.transport = new OverlayTransport(this.host)
 
     const style = document.createElement('style')
     style.textContent = OVERLAY_CSS
@@ -100,21 +125,21 @@ class TroupeAnnotationOverlay {
     this.hoverBox.className = 'hover-box'
     this.shadow.appendChild(this.hoverBox)
 
+    this.selectedBox = document.createElement('div')
+    this.selectedBox.className = 'selected-box'
+    this.shadow.appendChild(this.selectedBox)
+
     this.dragBox = document.createElement('div')
     this.dragBox.className = 'drag-box'
     this.shadow.appendChild(this.dragBox)
 
-    this.spacingPill = document.createElement('div')
-    this.spacingPill.className = 'spacing-pill'
-    this.shadow.appendChild(this.spacingPill)
+    this.previewGuideLine = document.createElement('div')
+    this.previewGuideLine.className = 'guide-preview vertical'
+    this.shadow.appendChild(this.previewGuideLine)
 
-    this.spacingTopLine = document.createElement('div')
-    this.spacingTopLine.className = 'spacing-line v'
-    this.shadow.appendChild(this.spacingTopLine)
-
-    this.spacingLeftLine = document.createElement('div')
-    this.spacingLeftLine.className = 'spacing-line h'
-    this.shadow.appendChild(this.spacingLeftLine)
+    this.previewGuideBadge = document.createElement('div')
+    this.previewGuideBadge.className = 'guide-preview-badge'
+    this.shadow.appendChild(this.previewGuideBadge)
 
     this.guidesContainer = document.createElement('div')
     this.shadow.appendChild(this.guidesContainer)
@@ -126,117 +151,94 @@ class TroupeAnnotationOverlay {
     this.bindEvents()
   }
 
-  private getEndpoint(): string | undefined {
-    return (window as unknown as { __TERMUL_AGENTATION_ENDPOINT__?: string })
-      .__TERMUL_AGENTATION_ENDPOINT__
-  }
-
-  private getTabId(): string | undefined {
-    return (window as unknown as { __TERMUL_TAB_ID__?: string }).__TERMUL_TAB_ID__
-  }
-
-  private async ensureSession(): Promise<string | null> {
-    if (this.sessionId) return this.sessionId
-    const preset = (window as unknown as { __TERMUL_AGENTATION_SESSION_ID__?: string })
-      .__TERMUL_AGENTATION_SESSION_ID__
-    if (preset) {
-      this.sessionId = preset
-      return preset
-    }
-    const ep = this.getEndpoint()
-    if (!ep) return null
-    if (!this.sessionPromise) {
-      this.sessionPromise = (async () => {
-        try {
-          const res = await fetch(`${ep}/sessions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: window.location.href })
-          })
-          if (!res.ok) return null
-          const json = (await res.json()) as { id?: string }
-          if (json.id) {
-            this.sessionId = json.id
-            return json.id
-          }
-        } catch {
-          // Allow later retries
-        }
-        return null
-      })().finally(() => {
-        if (!this.sessionId) this.sessionPromise = null
-      })
-    }
-    return this.sessionPromise
-  }
-
-  private async postAnnotation(
-    payload: Record<string, unknown>
-  ): Promise<{ ok: boolean; id?: string }> {
-    const ep = this.getEndpoint()
-    if (!ep) return { ok: true }
-    const sid = await this.ensureSession()
-    if (!sid) return { ok: false }
-    try {
-      const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: window.location.href,
-          timestamp: Date.now(),
-          tabId: this.getTabId(),
-          viewportWidth: window.innerWidth,
-          ...payload
-        })
-      })
-      if (!res.ok) return { ok: false }
-      const body = (await res.json().catch(() => null)) as { id?: string } | null
-      return { ok: true, id: body?.id }
-    } catch {
-      return { ok: false }
-    }
-  }
-
-  private async postAction(payload: Record<string, unknown>): Promise<void> {
-    const ep = this.getEndpoint()
-    if (!ep) return
-    const sid = await this.ensureSession()
-    if (!sid) return
-    try {
-      await fetch(`${ep}/sessions/${sid}/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: sid,
-          tabId: this.getTabId(),
-          annotations: [],
-          output: JSON.stringify({
-            viewportWidth: window.innerWidth,
-            ...payload,
-            tabId: this.getTabId()
-          }),
-          timestamp: new Date().toISOString()
-        })
-      })
-    } catch {
-      // Ignore
-    }
-  }
-
   private hideHoverVisuals(): void {
     this.hoverBox.style.display = 'none'
-    this.spacingPill.style.display = 'none'
-    this.spacingTopLine.style.display = 'none'
-    this.spacingLeftLine.style.display = 'none'
+  }
+
+  private hideRulerPreview(): void {
+    this.previewGuideLine.style.display = 'none'
+    this.previewGuideBadge.style.display = 'none'
+  }
+
+  private showSelectedBox(
+    rect: { x: number; y: number; width: number; height: number },
+    isRectangle: boolean
+  ): void {
+    this.selectedBox.className = isRectangle ? 'selected-box rect' : 'selected-box'
+    this.selectedBox.style.left = `${rect.x}px`
+    this.selectedBox.style.top = `${rect.y}px`
+    this.selectedBox.style.width = `${rect.width}px`
+    this.selectedBox.style.height = `${rect.height}px`
+    this.selectedBox.style.display = 'block'
+  }
+
+  private hideSelectedBox(): void {
+    this.selectedBox.style.display = 'none'
+  }
+
+  private clearGuideReopenTimer(): void {
+    if (this.guideReopenTimer !== null) {
+      window.clearTimeout(this.guideReopenTimer)
+      this.guideReopenTimer = null
+    }
+  }
+
+  private updateRulerPreview(clientX: number, clientY: number, shiftKey: boolean): void {
+    if (
+      !this.active ||
+      this.tool !== 'ruler' ||
+      this.popoverEl ||
+      this.draggingGuideId ||
+      this.pinsHidden
+    ) {
+      this.hideRulerPreview()
+      return
+    }
+    const axis: GuideAxis = shiftKey ? 'horizontal' : 'vertical'
+    const pos = axis === 'vertical' ? Math.round(clientX) : Math.round(clientY)
+
+    this.layer.className = axis === 'vertical' ? 'layer ruler-v' : 'layer ruler-h'
+    this.previewGuideLine.className = `guide-preview ${axis}`
+    this.previewGuideLine.style.display = 'block'
+    if (axis === 'vertical') {
+      this.previewGuideLine.style.left = `${pos}px`
+      this.previewGuideLine.style.top = ''
+    } else {
+      this.previewGuideLine.style.top = `${pos}px`
+      this.previewGuideLine.style.left = ''
+    }
+
+    const nearestGap = findNearestGuideGap(this.guides, axis, pos)
+    const axisLabel = axis === 'vertical' ? `V · x ${pos}px` : `H · y ${pos}px`
+    const deltaText = nearestGap !== null ? ` · Δ ${nearestGap}px` : ''
+    const hintText = axis === 'vertical' ? ' · Shift: H' : ' · Release Shift: V'
+    const text = `${axisLabel}${deltaText}${hintText}`
+    this.previewGuideBadge.textContent = text
+    this.previewGuideBadge.style.display = 'block'
+
+    const badgeEstWidth = Math.max(150, Math.ceil(text.length * 6.8 + 18))
+    const left = Math.max(8, Math.min(window.innerWidth - badgeEstWidth - 8, clientX + 14))
+    const top = Math.max(8, Math.min(window.innerHeight - 30, clientY + 14))
+    this.previewGuideBadge.style.left = `${left}px`
+    this.previewGuideBadge.style.top = `${top}px`
   }
 
   public dispatch(cmd: OverlayCommand): void {
     switch (cmd.type) {
+      case 'outbox_ack':
+        this.transport.handleOutboxAck(cmd as OutboxAckMessage)
+        break
       case 'set_active':
+        this.transport.captureBridgeNonce()
         this.active = Boolean(cmd.active)
+        this.clearGuideReopenTimer()
         if (!this.active) {
+          this.activeGuideDragCleanup?.()
           this.closePopover()
           this.hideHoverVisuals()
+          this.hideRulerPreview()
+          this.dragStart = null
+          this.dragBox.style.display = 'none'
           this.host.style.display = 'none'
         } else {
           this.host.style.display = ''
@@ -246,8 +248,12 @@ class TroupeAnnotationOverlay {
         break
       case 'set_tool':
         if (cmd.tool) this.tool = cmd.tool
+        this.clearGuideReopenTimer()
         this.closePopover()
         this.hideHoverVisuals()
+        this.hideRulerPreview()
+        this.dragStart = null
+        this.dragBox.style.display = 'none'
         this.syncLayerMode()
         break
       case 'set_pause':
@@ -255,6 +261,11 @@ class TroupeAnnotationOverlay {
         break
       case 'set_pins_hidden':
         this.pinsHidden = Boolean(cmd.hidden)
+        if (this.pinsHidden) {
+          this.clearGuideReopenTimer()
+          this.hideHoverVisuals()
+          this.hideRulerPreview()
+        }
         this.renderPinsAndGuides()
         break
       case 'place_guide':
@@ -264,6 +275,7 @@ class TroupeAnnotationOverlay {
         }
         break
       case 'clear':
+        this.clearGuideReopenTimer()
         if (cmd.ids && cmd.ids.length > 0) {
           const drop = new Set(cmd.ids)
           this.pins = this.pins
@@ -297,6 +309,8 @@ class TroupeAnnotationOverlay {
     if (!this.active) return
     if (this.tool === 'rectangle' || this.tool === 'screenshot-area') {
       this.layer.classList.add('capture')
+    } else if (this.tool === 'ruler') {
+      this.layer.classList.add(this.shiftHeld ? 'ruler-h' : 'ruler-v')
     } else {
       this.layer.classList.add('comment-mode')
     }
@@ -312,7 +326,10 @@ class TroupeAnnotationOverlay {
 
   private bindEvents(): void {
     this.layer.addEventListener('pointermove', (e) => {
-      if (!this.active || this.popoverEl) return
+      this.lastPointer = { x: e.clientX, y: e.clientY }
+      this.shiftHeld = e.shiftKey
+      if (!this.active || this.popoverEl || this.draggingGuideId) return
+
       if (this.dragStart && (this.tool === 'rectangle' || this.tool === 'screenshot-area')) {
         const left = Math.min(this.dragStart.x, e.clientX)
         const top = Math.min(this.dragStart.y, e.clientY)
@@ -325,6 +342,20 @@ class TroupeAnnotationOverlay {
         this.dragBox.style.height = `${height}px`
         return
       }
+
+      if (this.tool === 'ruler') {
+        this.hideHoverVisuals()
+        this.updateRulerPreview(e.clientX, e.clientY, e.shiftKey)
+        return
+      }
+
+      this.hideRulerPreview()
+
+      if (this.tool === 'screenshot-area' || this.tool === 'rectangle') {
+        this.hideHoverVisuals()
+        return
+      }
+
       const el = this.elementUnderPoint(e.clientX, e.clientY)
       if (!el) {
         this.hideHoverVisuals()
@@ -336,30 +367,11 @@ class TroupeAnnotationOverlay {
       this.hoverBox.style.top = `${rect.top}px`
       this.hoverBox.style.width = `${rect.width}px`
       this.hoverBox.style.height = `${rect.height}px`
+    })
 
-      if (this.tool === 'ruler') {
-        const cx = Math.round(rect.left + rect.width / 2)
-        const cy = Math.round(rect.top + rect.height / 2)
-        const topGap = Math.max(0, Math.round(rect.top))
-        const leftGap = Math.max(0, Math.round(rect.left))
-        this.spacingTopLine.style.display = topGap > 0 ? 'block' : 'none'
-        this.spacingTopLine.style.left = `${cx}px`
-        this.spacingTopLine.style.top = '0px'
-        this.spacingTopLine.style.height = `${topGap}px`
-        this.spacingLeftLine.style.display = leftGap > 0 ? 'block' : 'none'
-        this.spacingLeftLine.style.left = '0px'
-        this.spacingLeftLine.style.top = `${cy}px`
-        this.spacingLeftLine.style.width = `${leftGap}px`
-
-        this.spacingPill.style.display = 'block'
-        this.spacingPill.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}px · ↑${topGap} ←${leftGap} · Alt+click measure`
-        this.spacingPill.style.left = `${Math.min(window.innerWidth - 280, Math.max(8, rect.left))}px`
-        this.spacingPill.style.top = `${Math.max(8, rect.top - 24)}px`
-      } else {
-        this.spacingPill.style.display = 'none'
-        this.spacingTopLine.style.display = 'none'
-        this.spacingLeftLine.style.display = 'none'
-      }
+    this.layer.addEventListener('pointerleave', () => {
+      this.hideHoverVisuals()
+      this.hideRulerPreview()
     })
 
     this.layer.addEventListener('pointerdown', (e) => {
@@ -370,43 +382,12 @@ class TroupeAnnotationOverlay {
         return
       }
       if (this.tool === 'ruler') {
-        const el = this.elementUnderPoint(e.clientX, e.clientY)
-        const spacingCandidate = el
-          ? (() => {
-              const rect = el.getBoundingClientRect()
-              const summary = inspectElement(el)
-              const topGap = Math.max(0, Math.round(rect.top))
-              const leftGap = Math.max(0, Math.round(rect.left))
-              // topGap measures vertical distance (y); leftGap measures horizontal distance (x).
-              const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
-              const gapPx = axis === 'vertical' ? topGap : leftGap
-              return {
-                summary,
-                axis,
-                positionPx: axis === 'vertical' ? Math.round(rect.top) : Math.round(rect.left),
-                gapPx
-              }
-            })()
-          : undefined
-        if (e.altKey && spacingCandidate) {
-          this.openCommentPopover({
-            title: `Spacing · ${spacingCandidate.gapPx}px (${spacingCandidate.summary.element})`,
-            x: e.clientX,
-            y: e.clientY,
-            kind: 'measurement',
-            summary: spacingCandidate.summary,
-            measurement: {
-              axis: spacingCandidate.axis,
-              positionPx: spacingCandidate.positionPx,
-              gapPx: spacingCandidate.gapPx
-            }
-          })
-          return
-        }
+        this.clearGuideReopenTimer()
         const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
         const pos = axis === 'vertical' ? Math.round(e.clientX) : Math.round(e.clientY)
         const guide = this.addGuide(axis, pos)
-        this.openGuidePopover(guide, e.clientX, e.clientY, spacingCandidate)
+        this.hideRulerPreview()
+        this.openGuidePopover(guide, e.clientX, e.clientY)
         return
       }
       if (this.tool === 'comment') {
@@ -441,11 +422,13 @@ class TroupeAnnotationOverlay {
         height: Math.round(height)
       }
       if (this.tool === 'screenshot-area') {
-        void this.postAction({
-          kind: 'screenshot_area',
-          rect,
-          dpr: window.devicePixelRatio || 1,
-          viewportWidth
+        requestAnimationFrame(() => {
+          void this.transport.postAction({
+            kind: 'screenshot_area',
+            rect,
+            dpr: window.devicePixelRatio || 1,
+            viewportWidth
+          })
         })
         return
       }
@@ -461,8 +444,23 @@ class TroupeAnnotationOverlay {
 
     this.onWindowKeyDown = (e: KeyboardEvent) => {
       if (!this.active) return
+      if (e.key === 'Shift' && !this.shiftHeld) {
+        this.shiftHeld = true
+        if (this.tool === 'ruler' && this.lastPointer && !this.popoverEl && !this.draggingGuideId) {
+          this.updateRulerPreview(this.lastPointer.x, this.lastPointer.y, true)
+        }
+      }
       if (e.key === 'Escape') {
-        this.closePopover()
+        this.clearGuideReopenTimer()
+        if (this.popoverEl) {
+          this.closePopover()
+          return
+        }
+        if (this.tool === 'screenshot-area') {
+          this.dragStart = null
+          this.dragBox.style.display = 'none'
+          void this.transport.postAction({ kind: 'screenshot_area_cancelled' })
+        }
         return
       }
       if (this.popoverEl) return
@@ -472,7 +470,24 @@ class TroupeAnnotationOverlay {
         this.addGuide('vertical', 32)
       }
     }
+
+    this.onWindowKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' && this.shiftHeld) {
+        this.shiftHeld = false
+        if (
+          this.active &&
+          this.tool === 'ruler' &&
+          this.lastPointer &&
+          !this.popoverEl &&
+          !this.draggingGuideId
+        ) {
+          this.updateRulerPreview(this.lastPointer.x, this.lastPointer.y, false)
+        }
+      }
+    }
+
     window.addEventListener('keydown', this.onWindowKeyDown)
+    window.addEventListener('keyup', this.onWindowKeyUp)
   }
 
   private addGuide(axis: GuideAxis, pos: number): PlacedGuide {
@@ -489,47 +504,143 @@ class TroupeAnnotationOverlay {
     return guide
   }
 
+  private startGuideDrag(
+    guide: PlacedGuide,
+    hitEl: HTMLDivElement,
+    badgeEl: HTMLDivElement,
+    downEv: PointerEvent
+  ): void {
+    if (downEv.button !== 0) return
+    downEv.stopPropagation()
+    downEv.preventDefault()
+
+    this.activeGuideDragCleanup?.()
+    this.clearGuideReopenTimer()
+
+    const startClient = guide.axis === 'vertical' ? downEv.clientX : downEv.clientY
+    const startPos = guide.pos
+    let moved = false
+
+    const onMove = (ev: PointerEvent) => {
+      const currentClient = guide.axis === 'vertical' ? ev.clientX : ev.clientY
+      const delta = currentClient - startClient
+      if (!moved && Math.abs(delta) < 2) return
+      if (!moved) {
+        moved = true
+        this.draggingGuideId = guide.id
+        this.hideRulerPreview()
+        this.clearGuideReopenTimer()
+        this.closePopover(true)
+        hitEl.classList.add('dragging')
+        badgeEl.classList.add('dragging')
+      }
+      const maxPos = guide.axis === 'vertical' ? window.innerWidth : window.innerHeight
+      const nextPos = Math.max(0, Math.min(maxPos, Math.round(startPos + delta)))
+      guide.pos = nextPos
+      if (guide.axis === 'vertical') {
+        hitEl.style.left = `${nextPos}px`
+        badgeEl.style.left = `${Math.max(8, Math.min(window.innerWidth - 130, nextPos + 8))}px`
+      } else {
+        hitEl.style.top = `${nextPos}px`
+        badgeEl.style.top = `${Math.max(8, Math.min(window.innerHeight - 28, nextPos + 6))}px`
+      }
+      badgeEl.textContent = formatGuideBadgeText({ axis: guide.axis, pos: nextPos })
+    }
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      hitEl.classList.remove('dragging')
+      badgeEl.classList.remove('dragging')
+      if (this.draggingGuideId === guide.id) {
+        this.draggingGuideId = null
+      }
+      if (this.activeGuideDragCleanup === cleanup) {
+        this.activeGuideDragCleanup = null
+      }
+    }
+
+    const onUp = (ev: PointerEvent) => {
+      cleanup()
+      if (!moved) {
+        this.openGuidePopover(guide, ev.clientX, ev.clientY)
+        return
+      }
+      const hit = findMisalignedNearGuide(guide.axis, guide.pos, HOST_ID)
+      guide.deltaPx = hit?.deltaPx
+      guide.targetSelector = hit?.selector
+      this.renderPinsAndGuides()
+
+      this.clearGuideReopenTimer()
+      const reopenX = guide.axis === 'vertical' ? guide.pos : ev.clientX
+      const reopenY = guide.axis === 'horizontal' ? guide.pos : ev.clientY
+      const guideId = guide.id
+      this.guideReopenTimer = window.setTimeout(() => {
+        this.guideReopenTimer = null
+        if (!this.active || this.pinsHidden || this.draggingGuideId) return
+        const latest = this.guides.find((g) => g.id === guideId)
+        if (!latest) return
+        this.openGuidePopover(latest, reopenX, reopenY)
+      }, GUIDE_POPOVER_REOPEN_DELAY_MS)
+    }
+
+    this.activeGuideDragCleanup = cleanup
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
   private renderPinsAndGuides(): void {
     this.pinsContainer.innerHTML = ''
     this.guidesContainer.innerHTML = ''
 
+    if (this.pinsHidden) return
+
+    const badgeLayout = computeGuideBadgeLayout(this.guides, window.innerWidth, window.innerHeight)
+
     for (const guide of this.guides) {
-      const line = document.createElement('div')
-      line.className = `guide ${guide.axis}`
+      const hit = document.createElement('div')
+      hit.className = `guide-hit ${guide.axis}`
+      hit.dataset.guideId = guide.id
       if (guide.axis === 'vertical') {
-        line.style.left = `${guide.pos}px`
+        hit.style.left = `${guide.pos}px`
       } else {
-        line.style.top = `${guide.pos}px`
+        hit.style.top = `${guide.pos}px`
       }
-      line.addEventListener('click', (ev) => {
-        ev.stopPropagation()
-        this.openGuidePopover(guide, ev.clientX, ev.clientY)
-      })
-      this.guidesContainer.appendChild(line)
+
+      const line = document.createElement('div')
+      line.className = 'guide-line'
+      const handle = document.createElement('div')
+      handle.className = 'guide-handle'
+      for (let i = 0; i < 3; i += 1) {
+        const dot = document.createElement('span')
+        dot.className = 'guide-handle-dot'
+        handle.appendChild(dot)
+      }
+      hit.append(line, handle)
 
       const badge = document.createElement('div')
-      badge.className = 'guide-badge'
-      const prefix = guide.axis === 'vertical' ? `x ${guide.pos}px` : `y ${guide.pos}px`
-      const delta =
-        typeof guide.deltaPx === 'number' && guide.deltaPx !== 0
-          ? ` · ${guide.deltaPx > 0 ? `+${guide.deltaPx}` : guide.deltaPx}px off`
-          : ''
-      badge.textContent = `${prefix}${delta}`
-      if (guide.axis === 'vertical') {
-        badge.style.left = `${Math.min(window.innerWidth - 130, guide.pos + 6)}px`
-        badge.style.bottom = '14px'
-      } else {
-        badge.style.top = `${Math.min(window.innerHeight - 28, guide.pos + 6)}px`
-        badge.style.left = '16px'
+      badge.className = `guide-badge ${guide.axis}`
+      badge.dataset.guideId = guide.id
+      const placement = badgeLayout.get(guide.id)
+      badge.textContent = placement?.text ?? formatGuideBadgeText(guide)
+      if (placement) {
+        badge.style.left = `${placement.left}px`
+        if (placement.bottom !== undefined) {
+          badge.style.bottom = `${placement.bottom}px`
+        } else if (placement.top !== undefined) {
+          badge.style.top = `${placement.top}px`
+        }
       }
-      badge.addEventListener('click', (ev) => {
-        ev.stopPropagation()
-        this.openGuidePopover(guide, ev.clientX, ev.clientY)
-      })
-      this.guidesContainer.appendChild(badge)
-    }
 
-    if (this.pinsHidden) return
+      hit.addEventListener('pointerenter', () => this.hideRulerPreview())
+      badge.addEventListener('pointerenter', () => this.hideRulerPreview())
+      hit.addEventListener('pointerdown', (ev) => this.startGuideDrag(guide, hit, badge, ev))
+      badge.addEventListener('pointerdown', (ev) => this.startGuideDrag(guide, hit, badge, ev))
+
+      this.guidesContainer.append(hit, badge)
+    }
 
     for (const pin of this.pins) {
       if (pin.rect) {
@@ -551,229 +662,92 @@ class TroupeAnnotationOverlay {
     }
   }
 
-  private closePopover(): void {
+  private closePopover(preserveDraft = false): void {
+    if (preserveDraft && this.popoverGuideId && this.popoverTextarea) {
+      const guide = this.guides.find((g) => g.id === this.popoverGuideId)
+      if (guide) {
+        guide.draftComment = this.popoverTextarea.value
+      }
+    }
     if (this.popoverEl) {
       this.popoverEl.remove()
       this.popoverEl = null
     }
+    this.popoverGuideId = null
+    this.popoverTextarea = null
+    this.hideSelectedBox()
   }
 
-  private openGuidePopover(
-    guide: PlacedGuide,
-    clickX: number,
-    clickY: number,
-    spacingCandidate?: {
-      summary: ElementSummary
-      axis: GuideAxis
-      positionPx: number
-      gapPx: number
-    }
-  ): void {
+  private openGuidePopover(guide: PlacedGuide, clickX: number, clickY: number): void {
     const label = `${guide.axis === 'vertical' ? 'Vertical' : 'Horizontal'} guide · ${
       guide.axis === 'vertical' ? 'x' : 'y'
     } = ${guide.pos}px`
+    const nearestGap = findNearestGuideGap(this.guides, guide.axis, guide.pos, guide.id)
     this.openCommentPopover({
       title: label,
       x: guide.axis === 'vertical' ? guide.pos : clickX,
       y: guide.axis === 'horizontal' ? guide.pos : clickY,
       kind: 'guide',
       guide,
-      spacingCandidate
+      guideGapPx: nearestGap ?? undefined
     })
   }
 
-  private openCommentPopover(opts: {
-    title: string
-    x: number
-    y: number
-    kind: 'feedback' | 'rectangle' | 'guide' | 'measurement'
-    summary?: ElementSummary
-    rect?: { x: number; y: number; width: number; height: number }
-    viewportWidth?: number
-    guide?: PlacedGuide
-    measurement?: { axis: GuideAxis; positionPx: number; gapPx: number }
-    spacingCandidate?: {
-      summary: ElementSummary
-      axis: GuideAxis
-      positionPx: number
-      gapPx: number
-    }
-  }): void {
+  private openCommentPopover(opts: CommentPopoverOptions): void {
     this.closePopover()
     this.hideHoverVisuals()
-    const pop = document.createElement('div')
-    pop.className = 'popover'
-    const popWidth = Math.min(332, Math.max(240, window.innerWidth - 24))
-    const left = Math.max(12, Math.min(window.innerWidth - popWidth - 12, opts.x + 14))
-    const top = Math.max(12, Math.min(window.innerHeight - 190, opts.y + 14))
-    pop.style.left = `${left}px`
-    pop.style.top = `${top}px`
+    this.hideRulerPreview()
 
-    const head = document.createElement('div')
-    head.className = 'pop-head'
-    const title = document.createElement('span')
-    title.className = 'pop-title'
-    title.textContent = opts.title
-    const pill = document.createElement('span')
-    pill.className = 'pop-pill'
-    pill.textContent = 'Auto-crop on add'
-    head.append(title, pill)
+    const selectionRect = opts.rect ?? opts.summary?.boundingBox
+    if (selectionRect && selectionRect.width > 0 && selectionRect.height > 0) {
+      this.showSelectedBox(selectionRect, opts.kind === 'rectangle')
+    }
 
-    const textarea = document.createElement('textarea')
-    textarea.className = 'pop-input'
-    textarea.placeholder =
-      opts.kind === 'guide'
-        ? `Describe alignment change at ${opts.title}…`
-        : 'What should change on this element…'
-
-    const foot = document.createElement('div')
-    foot.className = 'pop-foot'
-    if (opts.guide) {
-      const links = document.createElement('div')
-      links.className = 'pop-links'
-      const removeBtn = document.createElement('button')
-      removeBtn.type = 'button'
-      removeBtn.className = 'pop-link'
-      removeBtn.textContent = 'Remove guide'
-      removeBtn.addEventListener('click', () => {
-        this.guides = this.guides.filter((g) => g.id !== opts.guide?.id)
+    const { pop, textarea } = createCommentPopover(opts, {
+      onCancel: () => {
+        this.clearGuideReopenTimer()
+        this.closePopover()
+      },
+      onRemoveGuide: (guideId) => {
+        this.clearGuideReopenTimer()
+        this.guides = this.guides.filter((g) => g.id !== guideId)
         this.closePopover()
         this.renderPinsAndGuides()
-      })
-      links.appendChild(removeBtn)
-
-      if (opts.spacingCandidate) {
-        const sc = opts.spacingCandidate
-        const measureBtn = document.createElement('button')
-        measureBtn.type = 'button'
-        measureBtn.className = 'pop-link measure'
-        measureBtn.textContent = `Save spacing (${sc.gapPx}px)`
-        measureBtn.addEventListener('click', () => {
-          this.guides = this.guides.filter((g) => g.id !== opts.guide?.id)
-          this.renderPinsAndGuides()
-          this.openCommentPopover({
-            title: `Spacing · ${sc.gapPx}px (${sc.summary.element})`,
-            x: opts.x,
-            y: opts.y,
-            kind: 'measurement',
-            summary: sc.summary,
-            measurement: { axis: sc.axis, positionPx: sc.positionPx, gapPx: sc.gapPx }
-          })
+      },
+      onSwitchToSpacing: (nextOpts) => this.openCommentPopover(nextOpts),
+      onHideSelectionForCapture: () => {
+        const had = this.selectedBox.style.display !== 'none'
+        this.selectedBox.style.display = 'none'
+        return had
+      },
+      onRestoreSelectionAfterError: (had) => {
+        if (had) this.selectedBox.style.display = 'block'
+      },
+      onSubmit: (payload) => this.transport.postAnnotation(payload),
+      onSaved: (popoverEl, id, comment, pinX, pinY) => {
+        const num = this.pins.length + 1
+        this.pins.push({
+          id: id ?? `pin-${Date.now()}-${num}`,
+          num,
+          kind: opts.kind,
+          x: pinX,
+          y: pinY,
+          rect: opts.rect,
+          comment,
+          element: opts.summary?.element ?? opts.title
         })
-        links.appendChild(measureBtn)
-      }
-      foot.appendChild(links)
-    } else {
-      const hint = document.createElement('span')
-      hint.className = 'pop-hint'
-      const isMacOs = /mac/i.test(navigator.platform || navigator.userAgent)
-      hint.textContent = isMacOs ? '⌘Enter to add' : 'Ctrl+Enter to add'
-      foot.appendChild(hint)
-    }
-
-    const errorEl = document.createElement('div')
-    errorEl.className = 'pop-error'
-    errorEl.style.display = 'none'
-
-    const actions = document.createElement('div')
-    actions.className = 'pop-actions'
-    const cancelBtn = document.createElement('button')
-    cancelBtn.type = 'button'
-    cancelBtn.className = 'btn btn-sec'
-    cancelBtn.textContent = 'Cancel'
-    cancelBtn.addEventListener('click', () => this.closePopover())
-
-    const addBtn = document.createElement('button')
-    addBtn.type = 'button'
-    addBtn.className = 'btn btn-pri'
-    addBtn.textContent = 'Add comment'
-
-    let submitting = false
-    const submit = async () => {
-      if (submitting) return
-      const comment = textarea.value.trim()
-      if (!comment) return
-      submitting = true
-      addBtn.disabled = true
-      addBtn.textContent = 'Saving…'
-      errorEl.style.display = 'none'
-
-      const pinX = Math.round(opts.x)
-      const pinY = Math.round(opts.y)
-      const payload: Record<string, unknown> = {
-        x: pinX,
-        y: pinY,
-        comment,
-        element: opts.summary?.element ?? opts.title,
-        elementPath: opts.summary?.elementPath ?? opts.guide?.targetSelector ?? opts.title,
-        fullPath: opts.summary?.fullPath,
-        cssClasses: opts.summary?.cssClasses,
-        nearbyText: opts.summary?.nearbyText,
-        computedStyles: opts.summary?.computedStyles,
-        reactComponents: opts.summary?.reactComponents,
-        boundingBox: opts.rect ?? opts.summary?.boundingBox,
-        viewportWidth: opts.viewportWidth ?? window.innerWidth,
-        kind: opts.kind
-      }
-      if (opts.guide) {
-        payload.measurement = {
-          axis: opts.guide.axis,
-          positionPx: opts.guide.pos,
-          toSelector: opts.guide.targetSelector,
-          deltaPx: opts.guide.deltaPx
+        if (opts.guide) {
+          opts.guide.draftComment = undefined
         }
-      } else if (opts.measurement) {
-        payload.measurement = {
-          axis: opts.measurement.axis,
-          positionPx: opts.measurement.positionPx,
-          toSelector: opts.summary?.elementPath,
-          gapPx: opts.measurement.gapPx
-        }
-      }
-
-      // Hide the popover before posting so the host's auto-crop screenshot
-      // captures the clean page without this "Saving…" dialog covering it.
-      pop.style.display = 'none'
-      const saved = await this.postAnnotation(payload)
-      submitting = false
-      if (!saved.ok) {
-        pop.style.display = 'flex'
-        addBtn.disabled = false
-        addBtn.textContent = 'Retry'
-        errorEl.textContent = 'Could not save annotation. Try again.'
-        errorEl.style.display = 'block'
-        return
-      }
-
-      const num = this.pins.length + 1
-      const pin: PlacedPin = {
-        id: saved.id ?? `pin-${Date.now()}-${num}`,
-        num,
-        kind: opts.kind,
-        x: pinX,
-        y: pinY,
-        rect: opts.rect,
-        comment,
-        element: opts.summary?.element ?? opts.title
-      }
-      this.pins.push(pin)
-      if (this.popoverEl === pop) this.closePopover()
-      this.renderPinsAndGuides()
-    }
-
-    addBtn.addEventListener('click', () => void submit())
-    textarea.addEventListener('keydown', (ev) => {
-      if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
-        ev.preventDefault()
-        void submit()
+        if (this.popoverEl === popoverEl) this.closePopover()
+        this.renderPinsAndGuides()
       }
     })
 
-    actions.append(cancelBtn, addBtn)
-    foot.appendChild(actions)
-    pop.append(head, textarea, errorEl, foot)
     this.shadow.appendChild(pop)
     this.popoverEl = pop
+    this.popoverGuideId = opts.guide?.id ?? null
+    this.popoverTextarea = textarea
     textarea.focus()
     requestAnimationFrame(() => textarea.focus())
   }
@@ -783,10 +757,17 @@ class TroupeAnnotationOverlay {
   }
 
   public destroy(): void {
+    this.clearGuideReopenTimer()
+    this.activeGuideDragCleanup?.()
+    this.transport.destroy()
     this.setAnimationsPaused(false)
     if (this.onWindowKeyDown) {
       window.removeEventListener('keydown', this.onWindowKeyDown)
       this.onWindowKeyDown = null
+    }
+    if (this.onWindowKeyUp) {
+      window.removeEventListener('keyup', this.onWindowKeyUp)
+      this.onWindowKeyUp = null
     }
     this.host.remove()
     const win = window as unknown as {
@@ -833,6 +814,7 @@ function mountOverlay(): TroupeAnnotationOverlay {
 }
 
 function init(): void {
+  if (typeof document === 'undefined') return
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       mountOverlay()
@@ -844,4 +826,4 @@ function init(): void {
 
 init()
 
-export { buildElementPath, buildShortLabel }
+export { buildElementPath, buildShortLabel, mountOverlay, TroupeAnnotationOverlay }
