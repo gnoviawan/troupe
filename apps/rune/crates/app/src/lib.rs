@@ -24,6 +24,8 @@ mod cards_tests;
 mod chat;
 mod chat_images;
 mod chat_view;
+mod command_editor;
+mod command_editor_view;
 mod command_history;
 mod composer;
 mod composer_agents;
@@ -331,6 +333,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_editors();
     state.sync_explorer();
     let next_git = state.git_tick();
+    let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
         state.toasts.next_expiry(),
@@ -341,6 +344,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_find_refresh(),
         state.next_draft_sync(),
         next_git,
+        next_completion,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

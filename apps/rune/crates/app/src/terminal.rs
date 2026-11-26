@@ -66,6 +66,8 @@ pub struct TerminalUi {
     /// Restarts waiting for their new PTY: the spawn call and the terminal it replaces.
     pub restarts: BTreeMap<CallId, String>,
     pub history: crate::command_history::HistoryUi,
+    /// The command editor's sessions, drafts and completions.
+    pub editor: crate::command_editor::EditorUi,
     /// The phone key bar shows only its toggle and Paste.
     pub keys_hidden: bool,
     /// Whether the focused cursor showed in the last frame, to redraw when it blinks.
@@ -95,6 +97,11 @@ impl TerminalUi {
             Some(host) => host.send(command),
             None => log::warn!("[term] no terminal link; {command:?} dropped"),
         }
+    }
+
+    /// A command editor session call: never ledgered, as the web transport sends them.
+    pub(crate) fn session_request(&mut self, kind: WebTerminalRequestType, payload: Value) -> CallId {
+        self.request(kind, payload, false)
     }
 
     fn request(&mut self, kind: WebTerminalRequestType, payload: Value, ledgered: bool) -> CallId {
@@ -155,6 +162,7 @@ impl State {
                     if self.terms.focused.as_ref() == Some(&id) {
                         self.terms.blink_from = now;
                     }
+                    self.command_editor_screen(&id);
                     redrawn.push(id)
                 }
                 TermEvent::Link(output) => self.terminal_output(output),
@@ -164,6 +172,16 @@ impl State {
     }
 
     pub(crate) fn terminal_output(&mut self, output: Output) {
+        if let Output::Reply { call, result } = &output
+            && self.command_editor_reply(*call, result)
+        {
+            return;
+        }
+        if let Output::Event(event) = &output
+            && self.command_editor_event(event)
+        {
+            return;
+        }
         match output {
             Output::Reply { call, result } if self.terms.sessions.spawning.contains_key(&call) => match result {
                 Ok(data) => match serde_json::from_value::<SpawnedTerminal>(data) {
@@ -281,6 +299,7 @@ impl State {
         }
         self.terms.shown = Some((project, now));
         for id in &closed {
+            self.command_editor_forget(id);
             self.terms.views.remove(id);
             self.terms.names.remove(id);
             if let Some(host) = &mut self.terms.host {
@@ -299,6 +318,11 @@ impl State {
 
     /// A key while terminal `id` has focus: true when the terminal took it.
     pub(crate) fn terminal_key(&mut self, id: &str, key: &KeyEvent, tx: &mut Tx) -> bool {
+        if self.terms.editor.lines.contains_key(id) {
+            // The editor owns input at a trusted prompt; the screen hands keys and focus to it.
+            tx.focus(crate::command_editor::field_key(id), false);
+            return self.command_editor_key(id, key, tx);
+        }
         self.terms.focused = Some(id.to_owned());
         self.terms.blink_from = self.now;
         // The platform modifier (⌘, or Ctrl elsewhere) with C copies a selection and with A
@@ -357,7 +381,19 @@ impl State {
         true
     }
 
+    /// Input for terminal `id`'s PTY, unless the command editor holds it (`canTerminalWriteToPty`):
+    /// nothing while the editor is mounted, only Ctrl+C while a submit is on the wire.
     pub(crate) fn terminal_write(&mut self, id: &str, data: &str) {
+        let session = self.terms.editor.sessions.read(id);
+        if !model::terminal::store::can_write_to_pty(session.mode, session.phase, data) {
+            log::info!("[term] input to {id} held: the command editor owns it ({:?})", session.mode);
+            return;
+        }
+        self.terminal_write_raw(id, data);
+    }
+
+    /// Input for terminal `id`'s PTY past the command editor's guard (its own `^D`).
+    pub(crate) fn terminal_write_raw(&mut self, id: &str, data: &str) {
         let live = self.terms.sessions.get(id).is_some_and(|s| s.status == model::terminal::Status::Live);
         if live {
             self.terms.request(WebTerminalRequestType::Write, json!({ "terminalId": id, "data": data }), true);
