@@ -72,7 +72,7 @@ A terminal profile is a saved way to open a terminal: a shell, its arguments, a 
    - **Shell** is the shell to run. Choose **Other path or name** to type a shell that is not in the list.
    - **Arguments** go to the shell. Put one argument on each line.
    - **Start folder** is where the terminal opens. Empty means the open project or worktree folder.
-   - **Environment variables** are `KEY=value` lines. They replace project variables with the same name.
+   - **Environment variables** are `KEY=value` lines. They replace project variables with the same name. A value can use a variable from Troupe's environment, such as `$HOME`, the same way as [project environment variables](/docs/settings/project-settings#environment-variables).
 3. Select **Save profile**.
 
 To open a terminal from a profile, press `Ctrl+K` and choose **New Terminal:** followed by the profile name. Use the pencil button to edit a profile and the trash button to delete it.
