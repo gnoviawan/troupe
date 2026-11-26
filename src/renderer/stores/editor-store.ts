@@ -11,7 +11,7 @@ import {
 } from '@/lib/editor-auto-save'
 import { flushEditorContent } from '@/lib/editor-content-flush'
 import { fileNeedsAttention } from '@/lib/editor-file-attention'
-import { detectLanguage, type EditorViewMode, getDefaultViewMode } from '@/lib/editor-file-kind'
+import { detectLanguage, type EditorViewMode, normalizeViewMode } from '@/lib/editor-file-kind'
 import { markEditorSelfSave } from '@/lib/editor-self-save'
 import { logFrontendError } from '@/lib/log-api'
 import { scheduleGitStatusRefreshForPath } from '@/lib/schedule-git-status-refresh'
@@ -301,7 +301,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             filePath: toPath,
             language: detectLanguage(toPath),
             operationStatus: 'idle',
-            viewMode: getDefaultViewMode(toPath) === 'preview' ? file.viewMode : 'code'
+            viewMode: normalizeViewMode(toPath, file.viewMode)
           }
         : { ...file, filePath: toPath, operationStatus: 'idle' }
     const newFiles = new Map<string, EditorFileState>()

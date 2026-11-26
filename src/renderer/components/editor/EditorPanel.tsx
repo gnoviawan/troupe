@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
 import { useTocSettings } from '@/hooks/use-toc-settings'
-import { textPreviewForPath } from '@/lib/editor-file-kind'
+import { type EditorViewMode, textPreviewForPath } from '@/lib/editor-file-kind'
 import { basename } from '@/lib/path-basename'
+import { cn } from '@/lib/utils'
 import type { TextFileState } from '@/stores/editor-store'
 import { useEditorStore } from '@/stores/editor-store'
 import { CodeEditor } from './CodeEditor'
 import { EditorDraftConflictBanner } from './EditorDraftConflictBanner'
 import { EditorToolbar } from './EditorToolbar'
+import { HtmlPreview } from './html-preview/HtmlPreview'
 import { MarkdownEditor } from './MarkdownEditor'
 import { ImageViewer } from './media/ImageViewer'
 import { PdfViewer } from './media/PdfViewer'
@@ -84,15 +87,36 @@ function TextFilePanel({
     [filePath, updateScrollTop]
   )
 
-  const handleToggleViewMode = useCallback(() => {
-    setViewMode(filePath, file.viewMode === 'preview' ? 'code' : 'preview')
-  }, [filePath, file.viewMode, setViewMode])
+  const handleViewModeChange = useCallback(
+    (mode: EditorViewMode) => {
+      setViewMode(filePath, mode)
+    },
+    [filePath, setViewMode]
+  )
 
   const preview = textPreviewForPath(filePath)
-  const showPreview = preview !== null && file.viewMode === 'preview'
+  // Split does not fit a phone: the mobile web shell shows its preview half.
+  const isMobileWebShell = useMobileWebShell()
+  const viewMode = isMobileWebShell && file.viewMode === 'split' ? 'preview' : file.viewMode
+  const showPreview = preview !== null && viewMode === 'preview'
   // An unresolved draft conflict holds two stored buffers (disk + draft); no
   // edit may exist outside them, so the editor is locked until resolved.
   const isReadOnly = file.draftConflict !== undefined
+
+  const codeEditor = (
+    <CodeEditor
+      filePath={filePath}
+      content={file.content}
+      language={file.language}
+      readOnly={isReadOnly}
+      isVisible={isVisible}
+      initialCursorPosition={file.cursorPosition}
+      initialScrollTop={file.scrollTop}
+      onChange={handleChange}
+      onCursorChange={handleCursorChange}
+      onScrollChange={handleScrollChange}
+    />
+  )
 
   return (
     <div className="flex h-full w-full flex-col bg-background">
@@ -100,12 +124,28 @@ function TextFilePanel({
       {preview && (
         <EditorToolbar
           viewMode={file.viewMode}
-          onToggleViewMode={handleToggleViewMode}
+          onViewModeChange={handleViewModeChange}
           filePath={filePath}
         />
       )}
       <div className="flex-1 relative overflow-hidden">
-        {showPreview && preview === 'markdown' ? (
+        {preview === 'html' ? (
+          // One row for all three html views keeps the source and the preview
+          // mounted when only the other side toggles.
+          <div className="flex h-full">
+            {viewMode !== 'preview' && <div className="relative min-w-0 flex-1">{codeEditor}</div>}
+            {viewMode !== 'code' && (
+              <div
+                className={cn(
+                  'relative min-w-0 flex-1',
+                  viewMode === 'split' && 'border-l-[0.5px] border-border'
+                )}
+              >
+                <HtmlPreview filePath={filePath} content={file.content} />
+              </div>
+            )}
+          </div>
+        ) : showPreview && preview === 'markdown' ? (
           <MarkdownEditor
             filePath={filePath}
             content={file.content}
@@ -116,18 +156,7 @@ function TextFilePanel({
         ) : showPreview && preview === 'svg' ? (
           <SvgPreview filePath={filePath} content={file.content} />
         ) : (
-          <CodeEditor
-            filePath={filePath}
-            content={file.content}
-            language={file.language}
-            readOnly={isReadOnly}
-            isVisible={isVisible}
-            initialCursorPosition={file.cursorPosition}
-            initialScrollTop={file.scrollTop}
-            onChange={handleChange}
-            onCursorChange={handleCursorChange}
-            onScrollChange={handleScrollChange}
-          />
+          codeEditor
         )}
       </div>
     </div>

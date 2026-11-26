@@ -22,6 +22,8 @@ This page lists the `troupe-server` settings you are most likely to change. Run 
 | `--max-terminals-per-project <N>` | `TROUPE_MAX_TERMINALS_PER_PROJECT` | `10` | The most terminals one project can have open. The whole server allows 30. |
 | `--check-update` | | | Check for a new server version once, then exit. See [Update the server](#update-the-server). |
 
+`troupe-server qr` shows a QR code for connecting a phone, and `troupe-server onboard` runs the setup in the terminal. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device) and [Set it up in the terminal instead](/docs/remote/server#set-it-up-in-the-terminal-instead).
+
 When you set both a flag and its environment variable, the flag wins. The older `TERMUL_*` name of each variable still works. If you set both, the `TROUPE_*` name wins unless it is blank (empty or only spaces). A `server-config.json` in the state folder — written by the setup page or by `troupe-server onboard` — wins over both for the settings it holds: host, port, sessions directory, projects file, remote writes, and updates.
 
 The state folder is `$XDG_STATE_HOME/termul` when `XDG_STATE_HOME` is set. Otherwise it is `~/.local/state/termul`.
@@ -46,6 +48,8 @@ To open Troupe with the token, add it to the address after `#token=`:
 ```text
 http://<server-address>:8080/#token=<token>
 ```
+
+To open Troupe on a phone without typing the token, scan a QR code that has it. See [Connect a phone or another device](/docs/remote/server#connect-a-phone-or-another-device).
 
 The part after `#` stays in your browser and is not sent to the server as part of the address. The browser saves the token, removes it from the address bar, and uses it on later visits. If you open the server without the token, Troupe asks for it. See [Enter the token](/docs/remote/web-browser#enter-the-token).
 

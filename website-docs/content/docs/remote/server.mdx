@@ -107,6 +107,8 @@ http://<server-address>:8080/?setup=<token>
 
 The `?setup=` part is a one-time key for this run. Without it the setup page stays closed, so only someone who can read the server's output can finish the setup.
 
+When you run the server in a terminal and it finds the machine's network address, it also shows a QR code of the setup link with that address, under **Or scan from a phone on the same network**. Scan it with a phone on the same network to do the setup there. The service's journal gets only the link, not the QR code.
+
 </Step>
 <Step>
 
@@ -147,7 +149,7 @@ For the settings it holds, `server-config.json` wins over flags and environment 
 troupe-server onboard
 ```
 
-Press Enter at any question to keep the default shown in brackets. When the wizard finishes, it starts the server and prints its address, how to read the logs, and how to stop it.
+Press Enter at any question to keep the default shown in brackets. When the wizard finishes, it starts the server and prints its address, how to read the logs, and how to stop it. When the host is `0.0.0.0`, it also prints the `qr` command to run, with the full path of the program, to show a QR code for your phone. See [Connect a phone or another device](#connect-a-phone-or-another-device).
 
 The wizard may also offer to write a settings file, `termul-server.env`, in the state folder. Answer `y` so the background server gets the same settings.
 
@@ -176,6 +178,51 @@ Flags such as `--host` and `--port` count as a configuration, so a fresh install
 The first time the server listens on `0.0.0.0` without a token, it creates an access token and prints the path of the file that holds it. Read the token from that file, then open `http://<server-address>:8080/#token=<token>`. See [The access token](/docs/remote/server-options#the-access-token).
 
 Plain `http://` sends the token and everything else unencrypted over the network. Use it only on a network you trust. For anything else, put an HTTPS reverse proxy in front of the server.
+
+## Connect a phone or another device
+
+Instead of typing the address and the token, scan a QR code with your phone's camera. You can show the QR code in the browser or in a terminal on the server.
+
+The QR code and the copied link contain the access token when the server has one. Treat them like a password, and share them only with devices you trust. See [The access token](/docs/remote/server-options#the-access-token).
+
+### In the browser
+
+In a browser that has Troupe open from `troupe-server`, use one of these:
+
+- Click **Connect device** (the QR code icon) at the bottom of the tool strip, next to the connection light. The **Connect another device** popover opens.
+- Open **Settings** (`Alt+,`) and select **About**. The **Connect another device** group is above the **Server** group. On a phone, where the tool strip is hidden, use this one.
+
+Under the QR code you see the server's address, without the token. When the link has a token, a warning says what anyone with the link can do on the server. **Copy link** copies the full link, with the token, so you can send it to another device yourself. If copying doesn't work, Troupe shows **Could not copy the link.**
+
+The QR code uses the address you opened Troupe with, so a page behind an HTTPS reverse proxy gives a QR code for the same `https://` address. If you opened Troupe on the server machine itself, at `localhost` or a `127.x.x.x` address, the QR code uses the machine's network address instead. In that case, if the server listens only on `127.0.0.1`, or Troupe can't find the machine's network address, you see a message instead of a QR code.
+
+The QR code shows only in a browser that uses `troupe-server`. The desktop app shares itself with the monitor icon instead. See [Share your desktop app](/docs/remote/share-desktop).
+
+### In a terminal
+
+Run this in a terminal on the server:
+
+```bash
+troupe-server qr
+```
+
+The command prints a QR code, then the address it opens, such as `Scan to open: http://<server-address>:8080/`. It reads the host and port from `server-config.json`. When the host is `0.0.0.0`, it uses the machine's network address. When the host is `127.0.0.1`, it stops with a message, because other devices can't reach the server.
+
+When the server has an access token, the QR code includes it. The command takes it from `--web-auth-token`, then `TROUPE_WEB_AUTH_TOKEN`, then the `web-auth-token` file in the state folder. With a token, the command prints only to an interactive terminal. It refuses when you send its output to a file, a pipe or a log. Add `--no-token` to get a QR code without the token. The phone then asks for the token when it opens Troupe.
+
+| Option | What it does |
+| --- | --- |
+| `--url <URL>` | Use this `http://` or `https://` address, for example the address of your reverse proxy. |
+| `--host <HOST>` | Use this network address or host name instead of the one Troupe finds. |
+| `--port <PORT>` | Use this port. The default is the port in `server-config.json`, or `8080`. |
+| `--state-dir <PATH>` | The state folder that holds `server-config.json` and the token. |
+| `--web-auth-token <TOKEN>` | Put this token in the QR code. |
+| `--no-token` | Leave the token out of the QR code. |
+| `--plain` | Draw the QR code without colors. Troupe also leaves colors out when `NO_COLOR` is set. |
+
+Write each option and its value with a space between them, such as `--url https://troupe.example.com`. Run `troupe-server qr --help` for the full list.
+
+If you started the server with flags instead of a `server-config.json`, pass the address with `--host` and the port with `--port`. For a plain `http://` address, the command reminds you to use it only on a network you trust.
 
 ## Add your first project
 

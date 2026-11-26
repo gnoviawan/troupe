@@ -65,6 +65,11 @@ export function NativeWebviewOccluder(): null {
   return null
 }
 
+/** True while at least one occluder of either kind is open (synchronous snapshot). */
+export function isNativeWebviewOccluded(): boolean {
+  return isOccluded()
+}
+
 /** True while at least one occluder of either kind is open. */
 export function useNativeWebviewOccluded(): boolean {
   return useSyncExternalStore(subscribe, isOccluded, isOccluded)

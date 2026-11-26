@@ -53,6 +53,7 @@ export interface BrowserTab {
   customViewportWidth?: number
   annotateMode: boolean
   annotateTool: AnnotateTool
+  standaloneScreenshotArea?: boolean
   animationsPaused: boolean
   pinsHidden: boolean
   pendingAnnotations: PendingAnnotationItem[]
@@ -150,6 +151,7 @@ export interface BrowserSessionState {
   setCustomViewportWidth: (id: string, width: number | undefined) => void
   setAnnotateMode: (id: string, active: boolean) => void
   setAnnotateTool: (id: string, tool: AnnotateTool) => void
+  setStandaloneScreenshotArea: (id: string, active: boolean) => void
   toggleAnimationsPaused: (id: string) => boolean
   togglePinsHidden: (id: string) => boolean
   addPendingAnnotation: (id: string, item: Omit<PendingAnnotationItem, 'num'>) => void
@@ -323,12 +325,16 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
       updateTab(state, id, (t) => ({
         ...t,
         annotateMode: active,
-        annotateTool: active ? t.annotateTool : 'comment'
+        annotateTool: active ? t.annotateTool : 'comment',
+        standaloneScreenshotArea: active ? t.standaloneScreenshotArea : false
       }))
     ),
 
   setAnnotateTool: (id, tool) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, annotateTool: tool }))),
+
+  setStandaloneScreenshotArea: (id, active) =>
+    set((state) => updateTab(state, id, (t) => ({ ...t, standaloneScreenshotArea: active }))),
 
   toggleAnimationsPaused: (id) => {
     const next = !(get().tabs.get(id)?.animationsPaused ?? false)

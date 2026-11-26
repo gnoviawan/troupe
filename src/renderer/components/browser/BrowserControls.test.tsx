@@ -4,9 +4,20 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { useBrowserSessionStore } from '@/stores/browser-session-store'
 import { BrowserControls } from './BrowserControls'
 
-const { mockOpenUrlWithSystemBrowser } = vi.hoisted(() => ({
-  mockOpenUrlWithSystemBrowser: vi.fn().mockResolvedValue({ success: true, data: undefined })
+const { mockOpenUrlWithSystemBrowser, mockCopyBase64PngToClipboard } = vi.hoisted(() => ({
+  mockOpenUrlWithSystemBrowser: vi.fn().mockResolvedValue({ success: true, data: undefined }),
+  mockCopyBase64PngToClipboard: vi.fn().mockResolvedValue({ ok: true })
 }))
+
+vi.mock('@/lib/browser-screenshot', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/browser-screenshot')>(
+    '@/lib/browser-screenshot'
+  )
+  return {
+    ...actual,
+    copyBase64PngToClipboard: (...args: unknown[]) => mockCopyBase64PngToClipboard(...args)
+  }
+})
 
 vi.mock('@/lib/tauri-opener-api', () => ({
   openerApi: {
@@ -193,5 +204,38 @@ describe('BrowserControls', () => {
       type: 'set_tool',
       tool: 'ruler'
     })
+  })
+
+  it('copies visible screenshot to clipboard without queuing into pending annotations', async () => {
+    const { browserTabScreenshot } = await import('@/lib/browser-api')
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    fireEvent.click(screen.getByLabelText('Screenshot options'))
+    fireEvent.click(screen.getByText('Screenshot visible'))
+
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(browserTabScreenshot).toHaveBeenCalledWith('tab-1')
+    expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('AA==')
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+  })
+
+  it('gives the Eye toggle explicit annotations & guides labels and sends set_pins_hidden', async () => {
+    const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    const hideBtn = screen.getByLabelText('Hide annotations & guides')
+    fireEvent.click(hideBtn)
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_pins_hidden',
+      hidden: true
+    })
+    expect(screen.getByLabelText('Show annotations & guides')).toBeTruthy()
   })
 })

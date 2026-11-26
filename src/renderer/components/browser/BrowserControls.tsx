@@ -34,9 +34,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Spinner } from '@/components/ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { useInterfaceOverlayOpen } from '@/hooks/use-native-webview-occlusion'
 import {
-  browserSaveAnnotationCrop,
+  isNativeWebviewOccluded,
+  useInterfaceOverlayOpen
+} from '@/hooks/use-native-webview-occlusion'
+import {
   browserTabAnnotationCmd,
   browserTabGoBack,
   browserTabGoForward,
@@ -47,6 +49,7 @@ import {
   browserTabStop
 } from '@/lib/browser-api'
 import { stopBrowserAgent } from '@/lib/browser-consent-api'
+import { copyBase64PngToClipboard } from '@/lib/browser-screenshot'
 import { normalizeBrowserInputUrl, splitDisplayUrl } from '@/lib/browser-url'
 import { logFrontendError } from '@/lib/log-api'
 import { isMac } from '@/lib/platform'
@@ -81,6 +84,23 @@ function logControlError(action: string, error: unknown): void {
   })
 }
 
+/**
+ * Wait briefly for an open toolbar popover occluder to unmount and the native
+ * child webview to reveal again before capturing a native viewport screenshot.
+ */
+async function waitForOcclusionClear(): Promise<void> {
+  if (!isNativeWebviewOccluded()) return
+  const deadline = performance.now() + 240
+  while (isNativeWebviewOccluded() && performance.now() < deadline) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve())
+    })
+  }
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
+}
+
 export function BrowserControls({
   browserTabId,
   isVisible = true,
@@ -101,6 +121,7 @@ export function BrowserControls({
   const cycleViewportPreset = useBrowserSessionStore((s) => s.cycleViewportPreset)
   const setAnnotateMode = useBrowserSessionStore((s) => s.setAnnotateMode)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
+  const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
 
   const [inputUrl, setInputUrl] = useState(tabUrl)
   const [urlFocused, setUrlFocused] = useState(false)
@@ -209,13 +230,15 @@ export function BrowserControls({
   )
 
   const handleEnterAnnotate = useCallback(() => {
+    setStandaloneScreenshotArea(browserTabId, false)
     activateOverlay('comment', 'Could not start annotation mode.')
-  }, [activateOverlay])
+  }, [activateOverlay, browserTabId, setStandaloneScreenshotArea])
 
   const handleQuickScreenshotArea = useCallback(() => {
     setScreenshotOpen(false)
+    setStandaloneScreenshotArea(browserTabId, !annotateMode)
     activateOverlay('screenshot-area', 'Could not start area capture.')
-  }, [activateOverlay])
+  }, [activateOverlay, annotateMode, browserTabId, setStandaloneScreenshotArea])
 
   const handleExitAnnotate = useCallback(() => {
     annotateReqIdRef.current += 1
@@ -255,29 +278,20 @@ export function BrowserControls({
 
   const handleCaptureVisible = useCallback(async () => {
     setScreenshotOpen(false)
+    await waitForOcclusionClear()
     const res = await browserTabScreenshot(browserTabId)
     if (!res.success) {
       toast.error(res.error || 'Could not capture screenshot.')
+      logControlError('browserTabScreenshot', res.error ?? res.code)
       return
     }
-    const id = `visible-${Date.now()}`
-    const dataUrl = `data:${res.data.mimeType};base64,${res.data.base64}`
-    const saved = await browserSaveAnnotationCrop(id, res.data.base64)
-    const cropPath = saved.success ? saved.data : undefined
-    useBrowserSessionStore.getState().addPendingAnnotation(browserTabId, {
-      id,
-      kind: 'rectangle',
-      element: 'Visible viewport',
-      elementPath: tabUrl || 'current page',
-      comment: `Viewport screenshot of ${tabUrl || 'current page'}`,
-      cropBase64: res.data.base64,
-      cropDataUrl: dataUrl,
-      cropPath
-    })
-    toast.success(
-      cropPath ? 'Saved viewport screenshot into batch.' : 'Added viewport screenshot to batch.'
-    )
-  }, [browserTabId, tabUrl])
+    const copied = await copyBase64PngToClipboard(res.data.base64)
+    if (copied.ok) {
+      toast.success('Screenshot copied to clipboard')
+    } else {
+      toast.error(copied.error)
+    }
+  }, [browserTabId])
 
   const handleStopAgent = useCallback(() => {
     if (!agentSessionId || stopPending) return

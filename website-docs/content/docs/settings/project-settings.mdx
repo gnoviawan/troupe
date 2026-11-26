@@ -50,6 +50,14 @@ To add a variable:
 
 To remove a variable, select the **X** at the end of its row.
 
+A value can use a variable from the environment that Troupe runs with. Write the name as `$NAME`, `${NAME}`, or `%NAME%`. All three forms work on every operating system. For example, `PATH=$HOME/bin:$PATH` puts the `bin` folder in your home folder in front of your usual `PATH`. Troupe fills in the values each time a terminal or agent chat starts.
+
+- A name that is not in Troupe's environment becomes empty text.
+- A reference does not read the other variables on this page. `$PATH` is always the `PATH` that Troupe has, even if this page also sets `PATH`.
+- Troupe fills in each value once. If the filled-in text has a `$` in it, that `$` stays as it is.
+- A `$` or `%` that is not followed by a name stays as it is.
+- On Windows, names ignore case, so `$Path` and `$PATH` are the same.
+
 To copy the variables from a `.env` file, select **Import from .env**. Troupe reads the `.env` file in the project's root folder. A variable from the file replaces a variable with the same name. If some lines of the file are not valid, Troupe imports the rest and lists the lines it skipped.
 
 ## Worktree symlinks

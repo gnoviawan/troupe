@@ -22,7 +22,7 @@ use std::time::Duration;
 
 use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode, Uri};
 use axum::response::{IntoResponse, Json, Response};
-use axum::routing::any;
+use axum::routing::{any, get};
 use axum::Router;
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -442,12 +442,21 @@ async fn desktop_bundle_handler(method: Method, uri: Uri, headers: HeaderMap) ->
     }
 }
 
-/// The loopback listener's whole route set.
+/// The loopback listener's whole route set: the canvas bundle and the HTML
+/// previews (`crate::html_preview`), each authorized by the token in its path.
 pub fn bundle_router() -> Router {
     let router = Router::new()
         .route("/canvas/{id}", any(desktop_bundle_handler))
         .route("/canvas/{id}/", any(desktop_bundle_handler))
-        .route("/canvas/{id}/{*rest}", any(desktop_bundle_handler));
+        .route("/canvas/{id}/{*rest}", any(desktop_bundle_handler))
+        .route(
+            "/preview/{token}/",
+            get(crate::html_preview::serve_session_root),
+        )
+        .route(
+            "/preview/{token}/{*rest}",
+            get(crate::html_preview::serve_session_file),
+        );
     crate::web::host_allow::layer(router, crate::web::host_allow::HostAllowList::loopback())
 }
 

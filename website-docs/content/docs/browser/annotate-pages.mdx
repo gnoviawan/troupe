@@ -5,34 +5,76 @@ description: Click parts of a web page, write a note on each, and give the notes
 
 <Callout type="info">This works in the desktop app only.</Callout>
 
-Telling an agent "the blue button in the sidebar is too small" leaves it guessing which code you mean. The Agentation toolbar lets you click the button itself and write your note on it. When you copy the notes, each one carries the element's selector, its position, and nearby text. The agent can search the code for that selector.
+Telling an agent "the blue button in the sidebar is too small" leaves it guessing which code you mean. In a [browser tab](/docs/browser/browser-tabs) you can click the button itself and write your note on it. Each note carries the element's selector, so the agent can search the code for it. Notes on an area also carry a cropped screenshot.
 
-## Find the toolbar
+## Start annotating
 
-Troupe adds the Agentation toolbar to every page you open in a [browser tab](/docs/browser/browser-tabs). It appears in the bottom-right corner of the page after the page loads.
+Open the page in a browser tab and click **Annotate page** (the pen) to the right of the address bar.
 
-If the toolbar is missing, click the pen button (**Agentation Toolbar**) at the right end of the address bar. Troupe adds the toolbar to the current page again.
+The address bar changes into the annotation toolbar. From left to right it has:
+
+- **Done**, which ends annotation and brings the address bar back. Your notes stay.
+- The tools: **Comment**, **Rectangle**, and **Ruler**.
+- **Area** and **Visible**, which take screenshots.
+- **Pause animations**, **Hide pins**, and **Copy feedback**.
+- The number of notes, and **Send to chat**.
 
 ## Add notes to a page
 
-1. Click the toolbar button in the bottom-right corner of the page (**Start feedback mode**).
-2. Click the element you want to comment on. You can also select text, or drag to mark an area of the page.
-3. Type your note in the **What should change?** box, then click **Add**. A marker shows where the note belongs.
-4. Repeat for each thing you want to change.
+Pick a tool, then use it on the page:
+
+- **Comment** (`C`): click an element, such as a button or a heading.
+- **Rectangle** (`R`): drag a box around a part of the page.
+- **Ruler** (`M`): see [Mark alignment and spacing with the ruler](#mark-alignment-and-spacing-with-the-ruler).
+
+A box opens next to what you picked. Type your note in it, then click **Add comment** or press `Ctrl+Enter` (`Cmd+Enter` on macOS). Press `Esc` or click **Cancel** to close the box without a note.
+
+Each note gets a numbered pin on the page. Troupe saves a cropped screenshot of the part you marked with each note.
+
+## Mark alignment and spacing with the ruler
+
+With **Ruler** on, point at an element to see its size and its distance from the top and left of the page.
+
+- Click to place a red vertical guide line. `Shift`+click places a horizontal one. After you click in the page, you can also press `V` or `H` to add a vertical or horizontal guide.
+- Each guide shows its position, such as `x 240px`. When a guide is a few pixels off from the edge of a nearby element, it also shows how far off it is, such as `+3px off`.
+- When you place a guide or click one, a box opens where you can describe the change. Click **Remove guide** to take the guide away. If you clicked on an element, **Save spacing** saves the distance as a measurement instead.
+- `Alt`+click an element to save its spacing as a measurement right away.
+
+Guides and measurements go into your notes like other notes.
+
+## Take a screenshot
+
+You can add a screenshot to your notes:
+
+- **Area** (`Ctrl+Shift+A`, `Cmd+Shift+A` on macOS): drag a box around the part you want.
+- **Visible** (`Ctrl+Shift+S`, `Cmd+Shift+S` on macOS): take the part of the page you can see.
+
+The **Screenshot** button (the camera) next to the address bar has the same two options, **Screenshot area** and **Screenshot visible**, so you don't have to start annotating first.
+
+Screenshots go into your list of notes, like other notes. When you have notes, the **Annotate page** button shows how many.
+
+## Check your notes
+
+Click the number next to **Send to chat** to see the notes you collected. Each one shows its number, your note, the element, and the screenshot if it has one.
+
+- Click the trash button on a note to delete it.
+- **Clear all** deletes every note.
 
 ## Give the notes to an agent
 
-1. Click **Copy feedback** in the toolbar, or press `C`.
+1. Click **Send to chat**. Troupe copies the notes to the clipboard and removes them from the list.
 2. Open the chat with your agent.
 3. Paste the notes into the message box with `Ctrl+V` (`Cmd+V` on macOS), add any instructions, and send.
 
-The agent receives one entry per note, with the element's selector, position, and your comment.
+The agent receives one line per note, with the element's selector or the area, and your comment. When Troupe saved a screenshot for a note, the line also has the path of the image file, so the agent can open it.
 
-Troupe also keeps a copy of your notes in a local file on your computer. Agents don't read that file on their own, so always paste the notes into the chat.
+**Copy feedback** copies the same text but keeps the notes in the list.
+
+Troupe also keeps a copy of your notes in a local database on your computer. Agents don't read it on their own, so always paste the notes into the chat.
 
 ## Other toolbar buttons
 
-- **Pause animations** (`P`) freezes animations and videos, so you can mark an element that moves.
-- **Hide markers** (`H`) hides the note markers. Click it again to show them.
-- **Clear all** (`X`) deletes every note on the page.
-- **Settings** has display options. **Hide Until Restart** hides the toolbar until you open a new tab.
+- **Pause animations** (`P`) freezes animations and videos, so you can mark an element that moves. Click **Paused** to start them again.
+- **Hide pins** (`H`) hides the note pins. Click it again to show them.
+
+The keys `C`, `R`, `M`, `P`, and `H` work when the keyboard focus is on Troupe's toolbar, not inside the page. If a key does nothing, click the button in the toolbar instead.

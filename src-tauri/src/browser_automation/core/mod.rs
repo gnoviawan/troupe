@@ -456,6 +456,29 @@ impl BrowserHost for DesktopBrowserHost {
         })
     }
 
+    fn drain_annotation_outbox<'a>(
+        &'a self,
+        label: &'a str,
+    ) -> HostFuture<'a, Result<Vec<serde_json::Value>, String>> {
+        Box::pin(async move {
+            let value = self
+                .engine
+                .evaluate(
+                    label,
+                    engine::assets::drain_annotation_outbox(
+                        "termul-agentation-host",
+                        "data-troupe-outbox",
+                    ),
+                )
+                .await
+                .map_err(|err| format!("outbox drain failed: {:?}", err.kind))?;
+            Ok(match value {
+                serde_json::Value::Array(items) => items,
+                _ => Vec::new(),
+            })
+        })
+    }
+
     fn stop(&self, session_id: &str) -> bool {
         let first = self.gate.stop(session_id);
         log::info!(

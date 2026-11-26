@@ -13,7 +13,11 @@ const DESKTOP_ONLY_ANCHORS = new Set([
   rowId('auto-update'),
   rowId('release-channel')
 ])
-const WEB_ONLY_ANCHORS = new Set([rowId('server-config'), rowId('server-version')])
+const WEB_ONLY_ANCHORS = new Set([
+  rowId('server-qr'),
+  rowId('server-config'),
+  rowId('server-version')
+])
 
 const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   // Preferences
@@ -343,6 +347,13 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     description: 'Automatically check for updates.',
     keywords: ['automatic', 'version', 'auto-update'],
     anchorId: rowId('auto-update')
+  },
+  {
+    categoryId: 'about',
+    label: 'Connect another device',
+    description: 'Scan a QR code to open this Troupe server on a phone or tablet.',
+    keywords: ['qr', 'qrcode', 'barcode', 'phone', 'mobile', 'tablet', 'scan', 'connect', 'link'],
+    anchorId: rowId('server-qr')
   },
   {
     categoryId: 'about',
