@@ -114,6 +114,11 @@ impl Store {
         }
     }
 
+    /// An accepted or partly written submit (`commandDraftStore.submitAccepted`): the draft goes.
+    pub fn submit_accepted(&mut self, id: &str) {
+        self.drop_draft(id);
+    }
+
     fn drop_draft(&mut self, id: &str) {
         let draft = self.drafts.entry(id.to_owned()).or_default();
         draft.text.clear();

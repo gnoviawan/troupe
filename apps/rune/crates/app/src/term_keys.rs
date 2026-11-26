@@ -74,7 +74,7 @@ pub fn bar(s: &State, t: &'static Tokens, id: &str) -> El {
                 .fill(c.control_fill)
                 .hover(c.control_fill_hover)
                 .child(rune::text(label).font(mono(14.0, 500.0, 20.0)).color(c.foreground))
-                .on_press(move |s: &mut State| s.key_bar_write(&id, bytes));
+                .on_press_tx(move |s: &mut State, tx: &mut Tx| s.key_bar_write(&id, bytes, tx));
             lane = lane.child(ui::paint::shadows(key, &t.shadows.shadow_control));
         }
         group = group.child(el().grow(1.0).min_w(0.0).child(lane).scroll_x());
@@ -91,8 +91,12 @@ pub fn bar(s: &State, t: &'static Tokens, id: &str) -> El {
 }
 
 impl State {
-    /// A key bar key: its bytes go to the PTY.
-    pub(crate) fn key_bar_write(&mut self, id: &str, bytes: &str) {
+    /// A key bar key: its bytes go to the PTY, or its key to the command editor when one is
+    /// mounted (`routeMobileKey`).
+    pub(crate) fn key_bar_write(&mut self, id: &str, bytes: &str, tx: &mut Tx) {
+        if self.key_bar_to_editor(id, bytes, tx) {
+            return;
+        }
         log::info!("[term] key bar sent {bytes:?} to {id}");
         self.terms.blink_from = self.now;
         self.terminal_write(id, bytes);
@@ -103,7 +107,10 @@ impl State {
         let id = id.to_owned();
         tx.read_clipboard(move |s: &mut State, content, _tx| {
             let text = content.text();
-            if !text.is_empty() {
+            if s.terms.editor.lines.contains_key(&id) {
+                log::info!("[foreign-insert] Mobile paste routed to editor");
+                s.command_paste(&id, text);
+            } else if !text.is_empty() {
                 s.terminal_write(&id, text);
             }
         });

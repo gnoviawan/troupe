@@ -88,7 +88,11 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab) -> Option<El> {
         Some(Status::Lost { reason }) => body = body.child(note(format!("Disconnected from this terminal: {reason}"))),
         _ => {}
     }
-    Some(body)
+    // At a trusted prompt the command editor sits under the screen, the full width of the tab.
+    match crate::command_editor_view::strip(s, t, terminal_id) {
+        Some(strip) => Some(col().key(format!("tab-stack-{}", tab.id())).w_full().grow(1.0).min_h(0.0).child(body).child(strip)),
+        None => Some(body),
+    }
 }
 
 type FindAction = dyn Fn(&mut State, &mut rune::Tx);

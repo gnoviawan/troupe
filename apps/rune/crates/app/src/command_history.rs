@@ -93,6 +93,11 @@ pub fn ago(at: f64, now: f64) -> String {
     format!("{month}/{day}/{year}")
 }
 
+/// A stored history list, newest first.
+pub fn parse_list(value: &Value) -> Vec<Entry> {
+    value.as_array().map(|a| a.iter().filter_map(Entry::parse).collect()).unwrap_or_default()
+}
+
 impl State {
     /// The list the modal shows: this project's, or every read project's by time.
     pub(crate) fn history_entries(&self) -> Vec<&Entry> {
@@ -128,9 +133,9 @@ impl State {
     pub(crate) fn history_read(&mut self, project: String, result: Result<Option<Value>, WsError>) {
         match result {
             Ok(reply) => {
-                let list: Vec<Entry> = crate::sync::stored_value(reply)
-                    .and_then(|v| v.as_array().map(|a| a.iter().filter_map(Entry::parse).collect()))
-                    .unwrap_or_default();
+                let value = crate::sync::stored_value(reply).unwrap_or(Value::Null);
+                self.command_history_loaded(&project, &value);
+                let list = parse_list(&value);
                 log::info!("[history] {} commands saved for {project}", list.len());
                 self.terms.history.loaded.insert(project, list);
             }
@@ -166,7 +171,9 @@ impl State {
             return;
         };
         log::info!("[history] inserting a saved command into {id}");
-        self.terminal_write(&id, command);
+        if !self.insert_into_command_editor(&id, command) {
+            self.terminal_write(&id, command);
+        }
     }
 
     /// The confirm's Clear: write the empty list, then drop it here once the host took it.
@@ -184,6 +191,7 @@ impl State {
         match result {
             Ok(_) => {
                 log::info!("[history] cleared the command history of {project}");
+                self.command_history_loaded(&project, &json!([]));
                 self.terms.history.loaded.insert(project, Vec::new());
                 self.close(CONFIRM);
             }

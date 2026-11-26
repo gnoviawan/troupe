@@ -116,6 +116,10 @@ impl State {
         if text.is_empty() {
             return;
         }
+        if self.terms.editor.lines.contains_key(id) {
+            self.command_paste(id, text);
+            return;
+        }
         if text.len() > MAX_PASTE {
             log::warn!("[term] paste of {} bytes refused; the most is {MAX_PASTE}", text.len());
             return;
