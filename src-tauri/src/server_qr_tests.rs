@@ -108,8 +108,9 @@ fn parse_qr_args_rejects_port_zero_and_unknown_flag() {
 #[test]
 fn parse_qr_args_unknown_option_omits_the_raw_argument() {
     let secret = "fragment-token-SECRET";
-    let arg = format!("--url=https://example.com/#token={secret}");
-    let err = parse_qr_args(&[arg.clone()]).expect_err("equals form is unsupported");
+    let raw = format!("--url=https://example.com/#token={secret}");
+    let args = strings(&[raw.as_str()]);
+    let err = parse_qr_args(&args).expect_err("equals form is unsupported");
     let QrCliParseError::Message(msg) = err else {
         panic!("expected a message error");
     };
@@ -122,7 +123,7 @@ fn parse_qr_args_unknown_option_omits_the_raw_argument() {
 
     let mut out = Vec::new();
     let mut err_buf = Vec::new();
-    let code = run_with_io(&[arg], false, None, None, &mut out, &mut err_buf);
+    let code = run_with_io(&args, false, None, None, &mut out, &mut err_buf);
     assert_eq!(code, ExitCode::from(2));
     let err_str = String::from_utf8(err_buf).expect("stderr utf8");
     let out_str = String::from_utf8(out).expect("stdout utf8");
