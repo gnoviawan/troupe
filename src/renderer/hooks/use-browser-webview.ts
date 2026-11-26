@@ -400,8 +400,7 @@ export function useBrowserWebview(
             !cancelled &&
             token === occlusionTokenRef.current &&
             !visibilityRef.current &&
-            shot &&
-            shot.success &&
+            shot?.success &&
             shot.data.base64
           ) {
             preview = `data:${shot.data.mimeType};base64,${shot.data.base64}`
