@@ -1,0 +1,18 @@
+[package]
+name = "troupe-flow"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "Troupe's node canvas for the Rune client: a layered auto-layout that keeps saved positions, edge geometry, and (feature `view`) the pan, zoom, select, drag and connect canvas, with the camera in Rune `Live` values."
+
+[features]
+default = ["view"]
+# The Rune canvas. Without it the crate is the layout and the geometry only, which the model
+# crate uses (it links no UI).
+view = ["dep:rune"]
+
+[dependencies]
+rune = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

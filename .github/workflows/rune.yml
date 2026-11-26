@@ -318,9 +318,9 @@ jobs:
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/dev' }}
 
-      - name: Check client and the terminal and editor models (wasm32)
+      - name: Check client, the terminal and editor models and the flow canvas (wasm32)
         working-directory: apps/rune
-        run: cargo check --target wasm32-unknown-unknown -p client -p troupe-term -p troupe-editor
+        run: cargo check --target wasm32-unknown-unknown -p client -p troupe-term -p troupe-editor -p troupe-flow
 
       # Off Unix the live driver is a no-op; this proves it still builds.
       - name: Check hello with the live driver (wasm32)
