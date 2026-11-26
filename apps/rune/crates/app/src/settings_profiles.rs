@@ -122,8 +122,10 @@ impl State {
         }
     }
 
+    /// Profiles carry environment values: only the key and the count reach the log.
     fn set_profiles(&mut self, list: &[Profile]) {
-        self.set_setting(profiles::KEY, json!(list));
+        log::info!("[settings] {} = {} profiles", profiles::KEY, list.len());
+        self.settings_step(model::settings::Event::UpdateSetting(profiles::KEY.to_owned(), json!(list)));
     }
 
     /// `remove`: the profile goes at once; the toast's Undo puts it back where it was.

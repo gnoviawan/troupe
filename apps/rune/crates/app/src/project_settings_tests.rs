@@ -196,3 +196,27 @@ fn the_phone_window_stacks_its_rows_and_titles_the_project() {
     assert!(name_y > label_y + 10.0, "the field sits under its label: {label_y} {name_y}");
 }
 
+
+#[test]
+fn a_switch_of_the_active_project_reloads_the_form_so_save_never_writes_one_into_another() {
+    let mut rt = desktop();
+    edit(&mut rt, |s| s.open_project_settings(None, None));
+    edit(&mut rt, |s| s.project_ui.name = TextEdit::new("alpha renamed"));
+    edit(&mut rt, |s| s.select_project("p-b"));
+    assert_eq!(rt.state.project_ui.inited.as_deref(), Some("p-b"));
+    assert_eq!(rt.state.project_ui.name.text, "beta", "the form follows the active project");
+    assert!(!rt.state.project_dirty(), "alpha's edit is not carried over");
+    edit(&mut rt, |s| s.project_ui.name = TextEdit::new("beta 2"));
+    tap(&mut rt, "save");
+    assert_eq!(updates(&rt), vec![json!({ "projectId": "p-b", "name": "beta 2" })]);
+}
+
+#[test]
+fn save_goes_to_the_project_the_form_was_loaded_from() {
+    let mut rt = desktop();
+    edit(&mut rt, |s| s.open_project_settings(Some("p-c"), None));
+    edit(&mut rt, |s| s.project_ui.name = TextEdit::new("gamma 2"));
+    edit(&mut rt, |s| s.select_project("p-b"));
+    edit(&mut rt, |s| s.save_project_settings());
+    assert_eq!(updates(&rt), vec![json!({ "projectId": "p-c", "name": "gamma 2" })]);
+}

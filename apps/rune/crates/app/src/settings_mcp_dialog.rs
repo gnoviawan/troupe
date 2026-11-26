@@ -111,10 +111,16 @@ fn glyph(name: &str) -> &'static rune::Icon {
     theme::icons::named(name).expect("bundled icon")
 }
 
+/// `SECRET_NAME`: a row whose name looks like a credential shows its value masked.
+fn secret_name(name: &str) -> bool {
+    let upper = name.to_uppercase();
+    ["KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH"].iter().any(|word| upper.contains(word))
+}
+
 /// `isLoopbackAuthRedirectUrl`: an http(s) address on this machine.
 fn loopback(raw: &str) -> bool {
     let Some(rest) = raw.strip_prefix("http://").or_else(|| raw.strip_prefix("https://")) else { return false };
-    let authority = &rest[..rest.find(['/', '?', '#']).unwrap_or(rest.len())];
+    let authority = &rest[..rest.find(['/', '\\', '?', '#']).unwrap_or(rest.len())];
     let host_port = authority.rsplit_once('@').map_or(authority, |(_, h)| h);
     let host = if host_port.starts_with('[') {
         &host_port[..host_port.find(']').map_or(host_port.len(), |i| i + 1)]
@@ -320,11 +326,9 @@ fn rows(t: &Tokens, list: &[RowEdit], key: &str, noun: &str, placeholders: (&str
             .grow(2.0)
             .min_w(0.0)
             .on_edit(move |s: &mut State| &mut of(s.mcp_ui.dialog.as_mut().expect("the dialog is open"))[i].name);
-        let value = Input::new(&r.value)
-            .placeholder(placeholders.1)
-            .label(format!("{label} value"))
-            .invalid(problem == Some("Needs a value."))
-            .build(t)
+        let value = Input::new(&r.value).placeholder(placeholders.1).label(format!("{label} value")).invalid(problem == Some("Needs a value.")).build(t);
+        let value = if secret_name(&r.name.text) { value.secure() } else { value };
+        let value = value
             .key("value")
             .grow(3.0)
             .min_w(0.0)
@@ -600,6 +604,8 @@ mod loopback_tests {
             ("http://127.999.1.1/cb", false),
             ("http://example.com/cb", false),
             ("ftp://127.0.0.1/cb", false),
+            ("http://evil.com\\@127.0.0.1/", false),
+            ("http://127.0.0.1\\@evil.com/", true),
         ] {
             assert_eq!(super::loopback(raw), ok, "{raw}");
         }

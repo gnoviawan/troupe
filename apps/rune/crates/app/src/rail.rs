@@ -79,6 +79,10 @@ impl State {
 
     /// Closes the top overlay: what Escape and a back press do. False when none was open.
     pub fn close_top(&mut self) -> bool {
+        // React's paste-back dialog cannot be dismissed while its paste is completing.
+        if self.overlays.top() == Some(crate::settings_mcp_dialog::PASTE) && self.mcp_ui.paste.completing {
+            return true;
+        }
         if self.overlays.top() == Some(crate::project_settings::PROJECT) && self.project_dirty() {
             self.overlays.open(crate::project_settings::LEAVE);
             return true;

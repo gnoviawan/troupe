@@ -140,9 +140,17 @@ impl State {
         self.project_ui.inited.is_some() && self.project_draft() != self.project_ui.base
     }
 
+    /// The project the form's fields were loaded from, while it is listed and not archived.
+    fn form_project(&self) -> Option<&Project> {
+        let id = self.project_ui.inited.as_deref()?;
+        self.projects.store.projects.iter().find(|p| p.id == id && p.is_archived != Some(true))
+    }
+
     /// `handleSave`: one `updateProject` with the normalized draft, which the form then shows.
+    /// It goes to the project the form was loaded from, never to whichever is active now.
     pub(crate) fn save_project_settings(&mut self) {
-        let Some(id) = self.settings_project().map(|p| p.id.clone()) else { return };
+        self.project_settings_check_target();
+        let Some(id) = self.form_project().map(|p| p.id.clone()) else { return };
         let updates = self.project_draft().updates();
         log::info!("[project-settings] save {id}");
         let env = updates.client.env_vars.clone().unwrap_or_default();
@@ -155,7 +163,7 @@ impl State {
 
     /// `handleDiscard`.
     pub(crate) fn discard_project_settings(&mut self) {
-        if let Some(p) = self.settings_project().cloned() {
+        if let Some(p) = self.form_project().cloned() {
             self.reset_project_form(&p);
         }
     }
@@ -184,13 +192,25 @@ impl State {
         }
     }
 
-    /// The project the window was opened for is gone or archived: drop the edits and close.
+    /// After a registry or selection change: a window that follows the active project loads the
+    /// new one (React's reset effect), and a window whose project is gone or archived drops the
+    /// edits and closes.
     pub(crate) fn project_settings_check_target(&mut self) {
-        if !self.overlays.is_open(PROJECT) || self.project_ui.target.is_none() {
+        if !self.overlays.is_open(PROJECT) {
             return;
         }
-        if self.settings_project().is_some_and(|p| p.is_archived != Some(true)) {
-            return;
+        let resolved = self.settings_project().filter(|p| p.is_archived != Some(true)).cloned();
+        match resolved {
+            Some(p) if self.project_ui.inited.as_deref() == Some(p.id.as_str()) => return,
+            Some(p) if self.project_ui.target.is_none() => {
+                log::info!("[project-settings] the active project is now {}; the form follows it", p.id);
+                self.close(LEAVE);
+                self.select_close();
+                self.reset_project_form(&p);
+                self.autofill_symlinks(&p);
+                return;
+            }
+            _ => {}
         }
         log::info!("[project-settings] the project was removed; closing");
         self.project_ui.inited = None;
@@ -284,7 +304,7 @@ impl State {
 
     /// The Sync from .gitignore button.
     pub(crate) fn sync_gitignore(&mut self) {
-        if let Some(p) = self.settings_project().cloned() {
+        if let Some(p) = self.form_project().cloned() {
             self.project_ui.syncing = true;
             self.read_gitignore(&p, GitignoreRead::Sync);
         }

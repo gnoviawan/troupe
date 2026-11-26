@@ -265,3 +265,85 @@ fn the_phone_drawer_opens_preferences() {
     assert!(rt.state.overlays.is_open(crate::settings_view::APP));
     assert!(!rt.state.overlays.is_open(crate::DRAWER));
 }
+
+/// Every log line, for the tests that check what reaches the log.
+static LOGGED: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+struct Capture;
+
+impl log::Log for Capture {
+    fn enabled(&self, _: &log::Metadata<'_>) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record<'_>) {
+        LOGGED.lock().unwrap().push(record.args().to_string());
+    }
+
+    fn flush(&self) {}
+}
+
+fn capture_logs() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        let _ = log::set_logger(&Capture);
+        log::set_max_level(log::LevelFilter::Trace);
+    });
+}
+
+#[test]
+fn a_saved_profile_never_logs_its_environment_values() {
+    capture_logs();
+    let mut rt = runtime_at((1280.0, 800.0));
+    edit(&mut rt, |s| s.open_settings(Some("terminal-profiles")));
+    tap(&mut rt, "add-profile");
+    edit(&mut rt, |s| {
+        s.settings_ui.profile.name = TextEdit::new("Node dev");
+        s.settings_ui.profile.env = TextEdit::new("TOKEN=hunter2-profile-secret");
+    });
+    tap(&mut rt, "save");
+    let saved = rt.state.settings.settings.get("terminalProfiles").cloned().unwrap_or_default();
+    assert!(saved.to_string().contains("hunter2-profile-secret"), "the profile was saved: {saved}");
+    let leaked: Vec<String> = LOGGED.lock().unwrap().iter().filter(|l| l.contains("hunter2-profile-secret")).cloned().collect();
+    assert!(leaked.is_empty(), "{leaked:?}");
+}
+
+#[test]
+fn credential_rows_show_their_values_masked() {
+    let mut rt = open_with(
+        (1280.0, 800.0),
+        json!([{ "id": "lin", "type": "http", "name": "Linear", "url": "https://mcp.linear.app/mcp", "headers": [{ "name": "Authorization", "value": "Bearer s3cr3t-value" }, { "name": "X-Team", "value": "core-team" }] }]),
+    );
+    edit(&mut rt, |s| s.open_mcp_edit("lin"));
+    let shown = |label: &str| rt.elements().into_iter().find(|e| e.label.as_deref() == Some(label)).and_then(|e| e.text).unwrap_or_default();
+    assert!(rt.elements().iter().any(|e| e.label.as_deref() == Some("Header 1 value")), "the token row is on screen");
+    let token = shown("Header 1 value");
+    assert!(!token.contains("s3cr3t"), "the token is masked: {token:?}");
+    assert_eq!(shown("Header 2 value"), "core-team", "a plain header shows as it is");
+}
+
+#[test]
+fn escape_does_not_dismiss_a_paste_that_is_completing() {
+    let mut rt = opened();
+    probe_answer(&mut rt, "lin", Ok(json!({ "status": "authRequired", "tools": [] })));
+    edit(&mut rt, |s| s.connect_mcp("lin"));
+    let effect = model::acp::Effect::StartMcpOAuth {
+        project_id: "p-a".into(),
+        url: "https://mcp.linear.app/mcp".into(),
+        server_id: "lin".into(),
+        server_name: "Linear".into(),
+        flow: 1,
+        deletions: 0,
+    };
+    let reply = json!({ "authUrl": "https://auth.example/x", "redirectUri": "http://127.0.0.1:4321/callback" });
+    edit(&mut rt, move |s| s.mcp_fetched(effect, Ok(reply)));
+    edit(&mut rt, |s| s.mcp_ui.paste.address = TextEdit::new("http://127.0.0.1:4321/callback?code=1&state=s"));
+    tap(&mut rt, "complete");
+    assert!(rt.state.mcp_ui.paste.completing);
+    assert_eq!(posted(&rt, "/mcp-servers/oauth/complete").len(), 1);
+    edit(&mut rt, |s| {
+        s.close_top();
+    });
+    assert!(rt.state.overlays.is_open(PASTE), "Escape waits for the paste");
+    assert_eq!(rt.state.chat.acp.mcp_oauth_connecting.get("lin"), Some(&json!(true)), "the flow is not cancelled");
+}
