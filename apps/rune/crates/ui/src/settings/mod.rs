@@ -1,10 +1,11 @@
 //! The Settings window's parts (`components/settings/`): the page header, a titled group, the
 //! raised card its rows sit in, a row with its label, help and control, the switch row, the
-//! stepper and the notice. The window shell and the pages are the app's; these hold the look.
+//! stepper, the notice, the empty state, the filter well and the segmented switch. The window
+//! shell and the pages are the app's; these hold the look.
 
 pub mod pages;
 
-use rune::{El, col, el, icon, row, text};
+use rune::{El, TextEdit, col, el, icon, row, text, text_input};
 use theme::Tokens;
 
 use crate::Switch;
@@ -204,4 +205,124 @@ pub fn notice(t: &Tokens, key: &str, body: &str) -> El {
                 .grow(1.0)
                 .min_w(0.0),
         )
+}
+
+/// `SettingsEmptyState`: an icon, what goes here, one line on what it is for, and the button
+/// that adds the first item.
+pub fn empty_state(t: &Tokens, key: &str, glyph: &str, title: &str, description: &str, action: Option<El>) -> El {
+    let c = &t.colors;
+    let g = theme::icons::named(glyph).expect("bundled icon");
+    let mut out = col()
+        .key(key.to_owned())
+        .w_full()
+        .gap(6.0)
+        .px(24.0)
+        .py(32.0)
+        .items_center()
+        .radius(8.0)
+        .fill(c.card)
+        .border(1.0, c.border)
+        .child(row().key("glyph").mb(4.0).a11y_hidden().child(icon(g, 20.0).color(c.muted_foreground)))
+        .child(text(title).font(sans(14.0, 500.0, 20.0)).color(c.foreground))
+        .child(text(description).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).wrap().max_w(384.0).align(rune::Align::Center));
+    if let Some(action) = action {
+        out = out.child(row().key("action").pt(8.0).gap(8.0).child(action));
+    }
+    out
+}
+
+/// `SettingsFilter`: the 32 px sunk well with a search glyph, and a clear button once it holds
+/// text. `wire_input` adds the field's `on_edit`; `wire_clear` the clear button's press.
+#[allow(clippy::too_many_arguments)]
+pub fn filter(
+    t: &Tokens,
+    key: &str,
+    edit: &TextEdit,
+    label: &str,
+    placeholder: &str,
+    coarse: bool,
+    wire_input: impl FnOnce(El) -> El,
+    wire_clear: impl FnOnce(El) -> El,
+) -> El {
+    let c = &t.colors;
+    let font = if coarse { sans(16.0, 500.0, 24.0) } else { sans(12.0, 500.0, 16.0) };
+    let field = text_input(edit, font)
+        .single_line()
+        .key("input")
+        .label(label.to_owned())
+        .placeholder(placeholder.to_owned(), c.muted_foreground)
+        .color(c.foreground)
+        .w_full()
+        .h(if coarse { 44.0 } else { 32.0 })
+        .pl(32.0)
+        .pr(if coarse { 44.0 } else { 32.0 })
+        .radius(6.0)
+        .fill(c.muted)
+        .focus_ring(2.0, -1.0, c.focus_ring);
+    let search = theme::icons::named("Search").expect("bundled icon");
+    let mut out = row()
+        .key(key.to_owned())
+        .min_w(0.0)
+        .child(wire_input(field))
+        .child(icon(search, 14.0).color(c.muted_foreground).pin(Some(10.0), None, Some(if coarse { 15.0 } else { 9.0 }), None).a11y_hidden());
+    if !edit.text.is_empty() {
+        let x = theme::icons::named("X").expect("bundled icon");
+        let side = if coarse { 44.0 } else { 24.0 };
+        let clear = row()
+            .key("clear")
+            .role("button")
+            .label("Clear text")
+            .size(side, side)
+            .center()
+            .radius(6.0)
+            .hover(c.foreground.alpha(0.04))
+            .child(icon(x, 13.0).color(c.muted_foreground))
+            .pin(None, Some(if coarse { 0.0 } else { 4.0 }), Some(if coarse { 0.0 } else { 4.0 }), None);
+        out = out.child(wire_clear(clear));
+    }
+    out
+}
+
+/// `SettingsSegmented`: a radio group of options on the sunk well, the chosen one raised.
+/// `options` are (label, count); `wire(i, el)` adds each option's press.
+pub fn segmented(t: &Tokens, key: &str, label: &str, options: &[(&str, Option<usize>)], chosen: usize, toolbar: bool, wire: impl Fn(usize, El) -> El) -> El {
+    let c = &t.colors;
+    let mut out = row()
+        .key(key.to_owned())
+        .role("radiogroup")
+        .label(label.to_owned())
+        .h(if toolbar { 32.0 } else { 28.0 })
+        .padding(2.0)
+        .gap(2.0)
+        .items_center()
+        .radius(6.0)
+        .fill(c.background)
+        .border(0.5, c.border);
+    for (i, (name, count)) in options.iter().enumerate() {
+        let on = i == chosen;
+        let mut words = row().gap(6.0).items_center().child(text(*name).font(sans(12.0, 500.0, 16.0)).color(if on { c.foreground } else { c.muted_foreground }));
+        if let Some(n) = count {
+            words = words.child(text(n.to_string()).font(sans(12.0, 500.0, 16.0)).color(c.muted_foreground));
+        }
+        let name_label = match count {
+            Some(n) => format!("{name} {n}"),
+            None => (*name).to_owned(),
+        };
+        let mut b = row()
+            .key(format!("option-{i}"))
+            .role("radio")
+            .label(name_label)
+            .checked(on)
+            .h_full()
+            .px(10.0)
+            .items_center()
+            .radius(4.0)
+            .focusable(true)
+            .child(words);
+        if on {
+            b = shadows(b.fill(c.muted), &t.shadows.shadow_control);
+        }
+        out = out.child(wire(i, b));
+    }
+    out
 }

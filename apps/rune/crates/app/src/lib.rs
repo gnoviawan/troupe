@@ -64,6 +64,7 @@ mod rail_menus;
 mod rail_view;
 mod settings;
 mod settings_pages;
+mod settings_profiles;
 mod settings_shortcuts;
 #[cfg(test)]
 mod settings_tests;

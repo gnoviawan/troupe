@@ -34,6 +34,12 @@ pub struct SettingsUi {
     pub shortcut_filter: TextEdit,
     /// Disclosures the user opened ("terminal-advanced", "agents-limits").
     pub open: Vec<&'static str>,
+    pub profile: crate::settings_profiles::ProfileEditor,
+    pub skills: crate::settings_profiles::SkillsUi,
+    /// The shells `/shells` detected; empty while the read is out.
+    pub shells: Option<Vec<crate::settings_profiles::ShellInfo>>,
+    /// The undo toast on screen and what its Undo puts back.
+    pub undo: Option<(u64, crate::settings_profiles::Undo)>,
 }
 
 impl State {
@@ -44,9 +50,18 @@ impl State {
         self.settings_ui.search = TextEdit::new("");
         self.settings_ui.shortcut_filter = TextEdit::new("");
         log::info!("[settings] open {}", self.settings_ui.page.unwrap_or("preferences"));
+        self.settings_page_opened();
         self.overlays.close(crate::DRAWER);
         if !self.overlays.is_open(APP) {
             self.overlays.open(APP);
+        }
+    }
+
+    /// Reads what the shown page lists, once per window.
+    pub(crate) fn settings_page_opened(&mut self) {
+        if self.settings_page().id == "skills" {
+            let root = self.active_project().and_then(|p| p.path.clone()).unwrap_or_default();
+            self.fetch_skills_for(root);
         }
     }
 
@@ -166,6 +181,7 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
                 log::info!("[settings] page {id}");
                 s.settings_ui.page = Some(id);
                 s.keys.recording = None;
+                s.settings_page_opened();
             }),
         );
     }
@@ -221,7 +237,10 @@ fn phone_bar(s: &State, t: &'static Tokens) -> El {
         strip = strip.child(
             rail_item(t, format!("page-{id}"), page.label, page.icon, id == active)
                 .h(44.0)
-                .on_press(move |s: &mut State| s.settings_ui.page = Some(id)),
+                .on_press(move |s: &mut State| {
+                    s.settings_ui.page = Some(id);
+                    s.settings_page_opened();
+                }),
         );
     }
     col()
@@ -247,7 +266,7 @@ fn phone_bar(s: &State, t: &'static Tokens) -> El {
         .child(row().key("strip-scroll").w_full().scroll_x().child(strip))
 }
 
-fn page_body(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
+fn page_body(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) -> El {
     let page = s.settings_page();
     let mut column = col()
         .key(format!("settings-page-{}", page.id))
@@ -258,7 +277,7 @@ fn page_body(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
         .items_stretch()
         .child(ui::settings::header(t, page.label, page.description));
     let groups = match page.owner {
-        Owner::Here => crate::settings_pages::page(s, t, page.id, layer),
+        Owner::Here => crate::settings_pages::page(s, t, page.id, phone, layer),
         Owner::Later(unit) => vec![ui::settings::notice(
             t,
             "later",
@@ -293,7 +312,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
         .fill(c.background)
         .items_stretch();
     let mut inner = Vec::new();
-    let body = page_body(s, t, &mut inner);
+    let body = page_body(s, t, phone, &mut inner);
     frame = if phone {
         frame
             .child(phone_bar(s, t))
@@ -305,6 +324,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
     };
     layer.push(frame);
     layer.extend(inner);
+    crate::settings_profiles::editor(s, t, layer);
     ConfirmDialog::new(
         RESET_ALL,
         "Reset all settings?",

@@ -15,8 +15,10 @@ use crate::{State, settings_shortcuts};
 
 type Pick = fn(&mut State, usize);
 
-pub fn page(s: &State, t: &'static Tokens, id: &str, layer: &mut Vec<El>) -> Vec<El> {
+pub fn page(s: &State, t: &'static Tokens, id: &str, phone: bool, layer: &mut Vec<El>) -> Vec<El> {
     match id {
+        "terminal-profiles" => crate::settings_profiles::profiles_page(s, t),
+        "skills" => crate::settings_profiles::skills_page(s, t, phone),
         "preferences" => preferences(s, t, layer),
         "terminal" => terminal(s, t, layer),
         "ai-agents" => agents(s, t, layer),

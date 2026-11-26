@@ -67,7 +67,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Terminal"),
         "Bookmark",
         "Saved terminals with their own shell, arguments, folder and variables. Open one from the command palette.",
-        Owner::Later("R9b follow-up"),
+        Owner::Here,
     ),
     page(
         "provider",
@@ -75,7 +75,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "KeyRound",
         "The accounts that agent chats use, and how much of each limit is used.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "ai-agents",
@@ -91,7 +91,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "GitBranch",
         "Agents your chats can hand work to, and what each one runs with.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "skills",
@@ -99,7 +99,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "Sparkles",
         "Skills in your home folder and in the open project. The slash menu uses this list.",
-        Owner::Later("R9b follow-up"),
+        Owner::Here,
     ),
     page(
         "mcp-servers",
@@ -107,7 +107,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "Network",
         "Servers that new agent chats can use. Each enabled server is offered when a chat starts.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "browser",
@@ -135,7 +135,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Settings",
         "Basic project identification and location.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "shell",
@@ -143,7 +143,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Terminal",
         "The shell new terminals in this project open with.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "env-vars",
@@ -151,7 +151,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Braces",
         "Secrets and config injected into your shell session. Secret values are cleared on app restart until secure storage is added.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "symlinks",
@@ -159,7 +159,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Project"),
         "Link2",
         "Directories to symlink from the project root into worktrees, so shared dependencies such as node_modules work without reinstalling.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "provider",
@@ -167,7 +167,7 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Agents"),
         "KeyRound",
         "Choose the account that this project's agent chats use.",
-        Owner::Later("R9b follow-up"),
+        Owner::Later("R9c follow-up"),
     ),
     page(
         "browser",
