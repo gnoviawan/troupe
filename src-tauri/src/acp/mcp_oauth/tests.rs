@@ -15,8 +15,59 @@ fn extract_missing() {
 fn auth_required() {
     assert!(is_auth_required(r#"Bearer resource_metadata="https://x""#));
     assert!(is_auth_required(r#"Bearer error="invalid_token""#));
+    assert!(is_auth_required("Bearer"));
+    assert!(is_auth_required(r#"Basic realm="t", Bearer"#));
     assert!(!is_auth_required("Basic realm=\"t\""));
+    assert!(!is_auth_required(r#"Basic realm="bearer""#));
     assert!(!is_auth_required(""));
+}
+
+#[test]
+fn extract_www_authenticate_prefers_bearer_across_multiple_headers() {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(r#"Basic realm="fallback""#),
+    );
+    headers.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Bearer resource_metadata="https://x.test/.well-known/oauth-protected-resource""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&headers).as_deref(),
+        Some(r#"Bearer resource_metadata="https://x.test/.well-known/oauth-protected-resource""#)
+    );
+}
+
+#[test]
+fn extract_www_authenticate_isolates_bearer_and_normalizes_param_whitespace() {
+    let mut combined = reqwest::header::HeaderMap::new();
+    combined.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Basic realm="proxy", scope="proxy.read", Bearer resource_metadata = "https://mcp.example/custom/prm?a = 1", scope = "mcp.read", Digest realm="d", scope="d.read""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&combined).as_deref(),
+        Some(
+            r#"Bearer resource_metadata="https://mcp.example/custom/prm?a = 1", scope="mcp.read""#
+        )
+    );
+
+    let mut compact = reqwest::header::HeaderMap::new();
+    compact.append(
+        reqwest::header::WWW_AUTHENTICATE,
+        reqwest::header::HeaderValue::from_static(
+            r#"Bearer resource_metadata="https://mcp.example/prm", scope="mcp.read""#,
+        ),
+    );
+    assert_eq!(
+        extract_www_authenticate(&compact).as_deref(),
+        Some(r#"Bearer resource_metadata="https://mcp.example/prm", scope="mcp.read""#)
+    );
 }
 #[test]
 fn key_normalizes() {
@@ -303,4 +354,389 @@ async fn rejected_refresh_deletes_stored_token() {
 
     assert_eq!(token.unwrap(), None);
     assert!(load_stored_token(&url).unwrap().is_none());
+}
+
+#[tokio::test]
+async fn refresh_without_expires_in_clears_expired_timestamp() {
+    let _tokens = TokenDirGuard::new("refresh-no-exp");
+    let (url, _requests) = serve_token_endpoint(serde_json::json!({
+        "access_token": "fresh-access",
+        "token_type": "Bearer",
+    }))
+    .await;
+    store_token(&url, &expired_token_with_refresh(&url)).unwrap();
+
+    let token = get_valid_token(&url).await.unwrap();
+    assert_eq!(token.as_deref(), Some("fresh-access"));
+    let stored = load_stored_token(&url).unwrap().expect("stored token");
+    assert_eq!(
+        stored.expires_at, None,
+        "omitted expires_in must not retain the old expired timestamp"
+    );
+}
+
+#[tokio::test]
+async fn discover_follows_401_challenge_resource_metadata_and_scope() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let base = format!("http://{addr}");
+    let prm_url = format!("{base}/custom/prm");
+    let issuer = format!("{base}/auth");
+    let resource_url = format!("{base}/api/mcp");
+
+    let prm_header = format!(r#"Bearer resource_metadata="{prm_url}", scope="custom.read""#);
+    let prm_body = serde_json::json!({
+        "resource": resource_url,
+        "authorization_servers": [issuer],
+    });
+    let as_meta = serde_json::json!({
+        "issuer": format!("{base}/auth"),
+        "authorization_endpoint": format!("{base}/auth/authorize"),
+        "token_endpoint": format!("{base}/auth/token"),
+        "registration_endpoint": format!("{base}/auth/register"),
+        "response_types_supported": ["code"],
+        "code_challenge_methods_supported": ["S256"],
+        "token_endpoint_auth_methods_supported": ["none"],
+    });
+
+    let app = axum::Router::new()
+        .route(
+            "/api/mcp",
+            axum::routing::post(move |headers: axum::http::HeaderMap| {
+                let header = prm_header.clone();
+                async move {
+                    let has_tenant =
+                        headers.get("x-tenant-id").and_then(|v| v.to_str().ok()) == Some("acme");
+                    if has_tenant {
+                        (
+                            axum::http::StatusCode::UNAUTHORIZED,
+                            [(axum::http::header::WWW_AUTHENTICATE, header)],
+                            "unauthorized",
+                        )
+                    } else {
+                        (
+                            axum::http::StatusCode::UNAUTHORIZED,
+                            [(
+                                axum::http::header::WWW_AUTHENTICATE,
+                                "Bearer realm=\"wrong-tenant\"".to_string(),
+                            )],
+                            "unauthorized",
+                        )
+                    }
+                }
+            }),
+        )
+        .route(
+            "/custom/prm",
+            axum::routing::get(move || {
+                let body = prm_body.clone();
+                async move { axum::Json(body) }
+            }),
+        )
+        .route(
+            "/.well-known/oauth-authorization-server/auth",
+            axum::routing::get(move || {
+                let body = as_meta.clone();
+                async move { axum::Json(body) }
+            }),
+        )
+        .route(
+            "/auth/register",
+            axum::routing::post(
+                |axum::Json(req): axum::Json<serde_json::Value>| async move {
+                    axum::Json(serde_json::json!({
+                        "client_id": "challenge-client",
+                        "redirect_uris": req["redirect_uris"],
+                    }))
+                },
+            ),
+        );
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+
+    let configured_headers = [crate::acp::mcp_probe::McpNameValuePair {
+        name: "X-Tenant-Id".to_string(),
+        value: "acme".to_string(),
+    }];
+    let session = start_authorization_session(
+        &resource_url,
+        "http://127.0.0.1:9999/callback",
+        &configured_headers,
+    )
+    .await
+    .expect("challenge discovery should succeed");
+    let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
+    assert_eq!(auth_url.path(), "/auth/authorize");
+    let scope = auth_url
+        .query_pairs()
+        .find_map(|(k, v)| (k == "scope").then(|| v.into_owned()))
+        .unwrap_or_default();
+    assert!(
+        scope.split_whitespace().any(|s| s == "custom.read"),
+        "expected challenge scope in auth url: {auth_url}"
+    );
+}
+
+/// Start a local mock MCP + OAuth 2.1 AS that advertises RFC 9207
+/// `authorization_response_iss_parameter_supported: true` (matching Craftwork
+/// and BetterAuth/Auth0/Keycloak servers).
+async fn serve_rfc9207_server(
+    token_status: axum::http::StatusCode,
+    token_body: serde_json::Value,
+) -> (String, String) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let base = format!("http://{addr}");
+    let issuer = format!("{base}/api/auth");
+    let resource_url = format!("{base}/api/mcp");
+    let prm_url = format!("{base}/.well-known/oauth-protected-resource/api/mcp");
+
+    let prm_header = format!(r#"Bearer resource_metadata="{prm_url}""#);
+    let prm_body = serde_json::json!({
+        "resource": resource_url,
+        "authorization_servers": [issuer],
+    });
+    let as_meta = serde_json::json!({
+        "issuer": format!("{base}/api/auth"),
+        "authorization_endpoint": format!("{base}/api/auth/oauth2/authorize"),
+        "token_endpoint": format!("{base}/api/auth/oauth2/token"),
+        "registration_endpoint": format!("{base}/api/auth/oauth2/register"),
+        "response_types_supported": ["code"],
+        "code_challenge_methods_supported": ["S256"],
+        "token_endpoint_auth_methods_supported": ["none"],
+        "authorization_response_iss_parameter_supported": true,
+    });
+
+    let app = axum::Router::new()
+        .route(
+            "/api/mcp",
+            axum::routing::post(move || {
+                let header = prm_header.clone();
+                async move {
+                    (
+                        axum::http::StatusCode::UNAUTHORIZED,
+                        [(axum::http::header::WWW_AUTHENTICATE, header)],
+                        "unauthorized",
+                    )
+                }
+            }),
+        )
+        .route(
+            "/.well-known/oauth-protected-resource/api/mcp",
+            axum::routing::get(move || {
+                let body = prm_body.clone();
+                async move { axum::Json(body) }
+            }),
+        )
+        .route(
+            "/.well-known/oauth-authorization-server/api/auth",
+            axum::routing::get(move || {
+                let body = as_meta.clone();
+                async move { axum::Json(body) }
+            }),
+        )
+        .route(
+            "/api/auth/oauth2/register",
+            axum::routing::post(
+                |axum::Json(req): axum::Json<serde_json::Value>| async move {
+                    axum::Json(serde_json::json!({
+                        "client_id": "rfc9207-client",
+                        "redirect_uris": req["redirect_uris"],
+                    }))
+                },
+            ),
+        )
+        .route(
+            "/api/auth/oauth2/token",
+            axum::routing::post(move || {
+                let body = token_body.clone();
+                async move { (token_status, axum::Json(body)) }
+            }),
+        );
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+    (resource_url, format!("{base}/api/auth"))
+}
+
+async fn send_raw_http(port: u16, request: &str) -> String {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .unwrap();
+    stream.write_all(request.as_bytes()).await.unwrap();
+    let mut buf = String::new();
+    stream.read_to_string(&mut buf).await.unwrap();
+    buf
+}
+
+#[tokio::test]
+async fn desktop_flow_validates_rfc9207_iss_and_ignores_preconnect_and_wrong_state() {
+    let _tokens = TokenDirGuard::new("desktop-rfc9207");
+    let (server_url, issuer) = serve_rfc9207_server(
+        axum::http::StatusCode::OK,
+        serde_json::json!({
+            "access_token": "rfc9207-access",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "refresh_token": "rfc9207-refresh",
+        }),
+    )
+    .await;
+
+    let cb_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = cb_listener.local_addr().unwrap().port();
+    let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
+
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
+        .await
+        .unwrap();
+    let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
+    let state = auth_url
+        .query_pairs()
+        .find_map(|(k, v)| (k == "state").then(|| v.into_owned()))
+        .unwrap();
+
+    // Open an idle speculative preconnect socket that never sends bytes.
+    let _preconnect = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .unwrap();
+
+    let server_url_clone = server_url.clone();
+    let state_clone = state.clone();
+    let flow_task = tokio::spawn(async move {
+        complete_desktop_flow(
+            cb_listener,
+            port,
+            &state_clone,
+            &server_url_clone,
+            session,
+            std::time::Duration::from_secs(5),
+        )
+        .await
+    });
+
+    // Stray wrong-state callback should return 404 and keep the flow alive.
+    let wrong_resp = send_raw_http(
+        port,
+        &format!("GET /callback?code=bad&state=wrong HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"),
+    )
+    .await;
+    assert!(wrong_resp.starts_with("HTTP/1.1 404"));
+
+    // Real callback carrying RFC 9207 `iss` succeeds even while `_preconnect` is open.
+    let encoded_iss = url::form_urlencoded::byte_serialize(issuer.as_bytes()).collect::<String>();
+    let ok_resp = send_raw_http(
+        port,
+        &format!(
+            "GET /callback?code=good-code&state={state}&iss={encoded_iss} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(ok_resp.starts_with("HTTP/1.1 200"));
+    assert!(ok_resp.contains("Authorization complete"));
+
+    let stored = flow_task.await.unwrap().expect("desktop flow succeeds");
+    assert_eq!(stored.access_token, "rfc9207-access");
+    assert_eq!(stored.refresh_token.as_deref(), Some("rfc9207-refresh"));
+}
+
+#[tokio::test]
+async fn desktop_flow_handles_error_redirect_immediately() {
+    let _tokens = TokenDirGuard::new("desktop-denied");
+    let (server_url, _issuer) = serve_rfc9207_server(
+        axum::http::StatusCode::OK,
+        serde_json::json!({ "access_token": "x", "token_type": "Bearer" }),
+    )
+    .await;
+
+    let cb_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = cb_listener.local_addr().unwrap().port();
+    let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
+        .await
+        .unwrap();
+    let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
+    let state = auth_url
+        .query_pairs()
+        .find_map(|(k, v)| (k == "state").then(|| v.into_owned()))
+        .unwrap();
+
+    let state_clone = state.clone();
+    let server_url_clone = server_url.clone();
+    let flow_task = tokio::spawn(async move {
+        complete_desktop_flow(
+            cb_listener,
+            port,
+            &state_clone,
+            &server_url_clone,
+            session,
+            std::time::Duration::from_secs(30),
+        )
+        .await
+    });
+
+    let resp = send_raw_http(
+        port,
+        &format!(
+            "GET /callback?error=access_denied&error_description=User+denied&state={state} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(resp.starts_with("HTTP/1.1 400"));
+
+    let err = flow_task.await.unwrap().unwrap_err();
+    assert_eq!(err.code(), "OAUTH_DENIED");
+    assert!(err.to_string().contains("User denied"));
+}
+
+#[tokio::test]
+async fn desktop_flow_returns_502_html_when_token_exchange_fails() {
+    let _tokens = TokenDirGuard::new("desktop-exchange-fail");
+    let (server_url, issuer) = serve_rfc9207_server(
+        axum::http::StatusCode::BAD_REQUEST,
+        serde_json::json!({ "error": "invalid_grant" }),
+    )
+    .await;
+
+    let cb_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = cb_listener.local_addr().unwrap().port();
+    let redirect_uri = format!("http://127.0.0.1:{port}{OAUTH_REDIRECT_PATH}");
+    let session = start_authorization_session(&server_url, &redirect_uri, &[])
+        .await
+        .unwrap();
+    let auth_url = url::Url::parse(session.get_authorization_url()).unwrap();
+    let state = auth_url
+        .query_pairs()
+        .find_map(|(k, v)| (k == "state").then(|| v.into_owned()))
+        .unwrap();
+
+    let state_clone = state.clone();
+    let server_url_clone = server_url.clone();
+    let flow_task = tokio::spawn(async move {
+        complete_desktop_flow(
+            cb_listener,
+            port,
+            &state_clone,
+            &server_url_clone,
+            session,
+            std::time::Duration::from_secs(5),
+        )
+        .await
+    });
+
+    let encoded_iss = url::form_urlencoded::byte_serialize(issuer.as_bytes()).collect::<String>();
+    let resp = send_raw_http(
+        port,
+        &format!(
+            "GET /callback?code=bad-code&state={state}&iss={encoded_iss} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(resp.starts_with("HTTP/1.1 502"));
+    assert!(resp.contains("Authorization failed"));
+
+    let err = flow_task.await.unwrap().unwrap_err();
+    assert_eq!(err.code(), "OAUTH_EXCHANGE_FAILED");
 }

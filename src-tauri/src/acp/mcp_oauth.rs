@@ -11,8 +11,8 @@ use std::sync::LazyLock;
 
 use parking_lot::Mutex;
 use rmcp::transport::auth::{
-    AuthorizationManager, AuthorizationSession, CredentialStore, InMemoryCredentialStore,
-    OAuthTokenResponse, StoredCredentials,
+    AuthorizationManager, AuthorizationRequest, AuthorizationSession, CredentialStore,
+    InMemoryCredentialStore, OAuthTokenResponse, StoredCredentials,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -57,6 +57,7 @@ pub enum McpOAuthError {
     DiscoveryFailed(String),
     RegistrationFailed(String),
     AuthUrlFailed(String),
+    Denied(String),
     TokenExchangeFailed(String),
     /// The authorization server definitively rejected the refresh token
     /// (`invalid_grant`). No retry can succeed.
@@ -68,6 +69,21 @@ pub enum McpOAuthError {
     UnsafeUrl(crate::acp::safe_url::UnsafeUrl),
 }
 
+impl McpOAuthError {
+    /// Stable wire error code shared by desktop Tauri and web HTTP transports.
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::UnsafeUrl(_) => crate::acp::safe_url::MCP_UNSAFE_URL,
+            Self::DiscoveryFailed(_) | Self::NoAuthorizationServers => "OAUTH_DISCOVERY_FAILED",
+            Self::RegistrationFailed(_) => "OAUTH_REGISTRATION_FAILED",
+            Self::Denied(_) => "OAUTH_DENIED",
+            Self::TokenExchangeFailed(_) | Self::RefreshRejected(_) => "OAUTH_EXCHANGE_FAILED",
+            Self::Timeout => "OAUTH_TIMEOUT",
+            _ => "OAUTH_START_FAILED",
+        }
+    }
+}
+
 impl std::fmt::Display for McpOAuthError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -76,6 +92,7 @@ impl std::fmt::Display for McpOAuthError {
             Self::DiscoveryFailed(m) => write!(f, "Discovery failed: {m}"),
             Self::RegistrationFailed(m) => write!(f, "Registration failed: {m}"),
             Self::AuthUrlFailed(m) => write!(f, "Auth URL failed: {m}"),
+            Self::Denied(m) => write!(f, "Authorization denied: {m}"),
             Self::TokenExchangeFailed(m) => write!(f, "Token exchange failed: {m}"),
             Self::RefreshRejected(m) => write!(f, "Refresh token rejected: {m}"),
             Self::Timeout => write!(f, "OAuth timed out"),
@@ -284,15 +301,120 @@ async fn refresh_expired(server_url: &str) -> Result<Option<String>, McpOAuthErr
     }
 }
 
-async fn refresh_token(stored: &StoredToken) -> Result<StoredToken, McpOAuthError> {
-    let mut manager = AuthorizationManager::new(&stored.issuer)
+/// Pick the `WWW-Authenticate` challenge from a `401` response, checking all
+/// header values per RFC 9110 §11.6.1. When a `Bearer` challenge is present
+/// (standalone or combined with other schemes in one header), returns only
+/// that `Bearer` challenge with whitespace around `=` normalized outside
+/// quoted values so `rmcp`'s parser reads its `resource_metadata` and `scope`
+/// parameters accurately.
+pub(crate) fn extract_www_authenticate(headers: &reqwest::header::HeaderMap) -> Option<String> {
+    let mut fallback: Option<String> = None;
+    for value in headers.get_all(reqwest::header::WWW_AUTHENTICATE) {
+        let Ok(raw) = value.to_str() else {
+            continue;
+        };
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Some(bearer) = extract_bearer_challenge(trimmed) {
+            return Some(normalize_auth_params(&bearer));
+        }
+        if fallback.is_none() {
+            fallback = Some(trimmed.to_string());
+        }
+    }
+    fallback
+}
+
+/// Probe `server_url` for a `401` `WWW-Authenticate` challenge header so
+/// reactive OAuth discovery can follow custom `resource_metadata` URLs and
+/// seed `scope` selection from the challenge (RFC 9728 + RFC 6750).
+/// Forwards configured server headers (same as `mcp_probe::check_oauth_required`)
+/// so tenant-scoped servers return the right `resource_metadata` challenge.
+pub(crate) async fn probe_www_authenticate(
+    server_url: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
+) -> Option<String> {
+    let url = crate::acp::safe_url::check_safe_url(server_url, crate::acp::safe_url::Opener::Host)
+        .ok()?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .ok()?;
+    let body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "initialize",
+        "id": 0,
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": { "name": "troupe-oauth", "version": "0.1" }
+        }
+    });
+    let mut request = client
+        .post(url)
+        .header(
+            reqwest::header::ACCEPT,
+            "application/json, text/event-stream",
+        )
+        .json(&body);
+    for pair in headers {
+        if let (Ok(name), Ok(value)) = (
+            reqwest::header::HeaderName::from_bytes(pair.name.as_bytes()),
+            reqwest::header::HeaderValue::from_str(&pair.value),
+        ) {
+            request = request.header(name, value);
+        }
+    }
+    let response = request.send().await.ok()?;
+    if response.status() != reqwest::StatusCode::UNAUTHORIZED {
+        return None;
+    }
+    extract_www_authenticate(response.headers())
+}
+
+/// Discover OAuth authorization server metadata for `server_url`, preferring
+/// reactive `401 WWW-Authenticate` challenge discovery and falling back to
+/// well-known / legacy endpoint discovery.
+pub async fn discover_authorization_manager(
+    server_url: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
+) -> Result<AuthorizationManager, McpOAuthError> {
+    let mut manager = AuthorizationManager::new(server_url)
         .await
         .map_err(|e| McpOAuthError::DiscoveryFailed(e.to_string()))?;
+    let challenge = probe_www_authenticate(server_url, headers).await;
     let resolution = manager
-        .resolve_metadata()
+        .resolve_metadata_from_challenge(challenge.as_deref())
         .await
         .map_err(|e| McpOAuthError::DiscoveryFailed(e.to_string()))?;
     manager.set_metadata(resolution.metadata);
+    Ok(manager)
+}
+
+/// Shared start path for desktop and web OAuth: discover metadata (challenge-
+/// aware), register a PKCE public client, and build the authorization session.
+pub async fn start_authorization_session(
+    server_url: &str,
+    redirect_uri: &str,
+    headers: &[crate::acp::mcp_probe::McpNameValuePair],
+) -> Result<AuthorizationSession, McpOAuthError> {
+    let manager = discover_authorization_manager(server_url, headers).await?;
+    let request = AuthorizationRequest::new(redirect_uri).with_client_name("Troupe");
+    AuthorizationSession::new(manager, request)
+        .await
+        .map_err(|(_manager, e)| McpOAuthError::RegistrationFailed(e.to_string()))
+}
+
+async fn refresh_token(stored: &StoredToken) -> Result<StoredToken, McpOAuthError> {
+    let discovery_url = if stored.server_url.is_empty() {
+        stored.issuer.as_str()
+    } else {
+        stored.server_url.as_str()
+    };
+    let mut manager = discover_authorization_manager(discovery_url, &[]).await?;
     let config = rmcp::transport::auth::OAuthClientConfig::new(
         stored.client_id.clone(),
         "http://127.0.0.1/callback",
@@ -329,15 +451,12 @@ async fn refresh_token(stored: &StoredToken) -> Result<StoredToken, McpOAuthErro
             .refresh_token()
             .map(|t| t.secret().to_string())
             .or_else(|| stored.refresh_token.clone()),
-        expires_at: tr
-            .expires_in()
-            .map(|d| {
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|n| n.as_secs() + d.as_secs())
-                    .unwrap_or(0)
-            })
-            .or(stored.expires_at),
+        expires_at: tr.expires_in().map(|d| {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|n| n.as_secs() + d.as_secs())
+                .unwrap_or(0)
+        }),
         client_id: stored.client_id.clone(),
         issuer: stored.issuer.clone(),
         server_url: stored.server_url.clone(),
@@ -472,10 +591,126 @@ pub fn extract_resource_metadata_url(header: &str) -> Option<String> {
     None
 }
 
+mod callback;
+pub use callback::complete_desktop_flow;
+
 pub fn is_auth_required(header: &str) -> bool {
-    let l = header.to_ascii_lowercase();
-    l.contains("bearer")
-        && (l.contains("resource_metadata") || l.contains("realm") || l.contains("error"))
+    extract_bearer_challenge(header).is_some()
+}
+
+/// Split an HTTP `WWW-Authenticate` header on commas outside quoted strings.
+fn split_header_segments(header: &str) -> Vec<&str> {
+    let mut segments = Vec::new();
+    let mut in_quotes = false;
+    let mut escaped = false;
+    let mut start = 0;
+    for (idx, &byte) in header.as_bytes().iter().enumerate() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if byte == b'\\' && in_quotes {
+            escaped = true;
+            continue;
+        }
+        if byte == b'"' {
+            in_quotes = !in_quotes;
+            continue;
+        }
+        if byte == b',' && !in_quotes {
+            segments.push(&header[start..idx]);
+            start = idx + 1;
+        }
+    }
+    segments.push(&header[start..]);
+    segments
+}
+
+/// Return the leading auth-scheme token if `segment` starts a new challenge
+/// (either a bare scheme with no `=`, or `<scheme> <rest>` where whitespace
+/// precedes any `=`). Returns `None` for a `name = value` auth-param segment.
+fn leading_auth_scheme(segment: &str) -> Option<&str> {
+    let trimmed = segment.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let first_sep = trimmed.find(|c: char| c.is_whitespace() || c == '=');
+    match first_sep {
+        None => Some(trimmed),
+        Some(pos) if trimmed.as_bytes()[pos] == b'=' => None,
+        Some(pos) => {
+            let after_ws = trimmed[pos..].trim_start();
+            if after_ws.starts_with('=') {
+                None
+            } else {
+                Some(&trimmed[..pos])
+            }
+        }
+    }
+}
+
+/// Extract only the `Bearer` challenge and its own auth-params from a single
+/// `WWW-Authenticate` header value, excluding parameters of other schemes.
+fn extract_bearer_challenge(header: &str) -> Option<String> {
+    let mut collected: Vec<&str> = Vec::new();
+    let mut in_bearer = false;
+    for segment in split_header_segments(header) {
+        let trimmed = segment.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Some(scheme) = leading_auth_scheme(trimmed) {
+            if in_bearer {
+                break;
+            }
+            if scheme.eq_ignore_ascii_case("bearer") {
+                in_bearer = true;
+                collected.push(trimmed);
+            }
+        } else if in_bearer {
+            collected.push(trimmed);
+        }
+    }
+    (!collected.is_empty()).then(|| collected.join(", "))
+}
+
+/// Remove optional whitespace around `=` outside quoted strings (RFC 9110
+/// allows `BWS "=" BWS`, whereas `rmcp`'s parser looks for compact `key=`).
+fn normalize_auth_params(challenge: &str) -> String {
+    let mut out = String::with_capacity(challenge.len());
+    let mut in_quotes = false;
+    let mut escaped = false;
+    let mut skip_after_eq = false;
+    for ch in challenge.chars() {
+        if in_quotes {
+            out.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_quotes = false;
+            }
+            continue;
+        }
+        if skip_after_eq && ch.is_whitespace() {
+            continue;
+        }
+        skip_after_eq = false;
+        if ch == '"' {
+            in_quotes = true;
+            out.push(ch);
+        } else if ch == '=' {
+            while out.ends_with(|c: char| c.is_whitespace()) {
+                out.pop();
+            }
+            out.push('=');
+            skip_after_eq = true;
+        } else {
+            out.push(ch);
+        }
+    }
+    out
 }
 
 pub fn bearer_header(token: &str) -> String {

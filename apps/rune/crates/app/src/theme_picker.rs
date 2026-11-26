@@ -340,36 +340,35 @@ impl State {
         self.theme = tokens.family.as_str();
         self.dark = tokens.dark;
         self.close(KEY);
-        let settings = &mut self.sync.app_settings;
-        settings.insert("colorTheme".into(), Value::from(tokens.family.clone()));
-        settings.insert(
+        let mut updates = serde_json::Map::new();
+        updates.insert("colorTheme".into(), Value::from(tokens.family.clone()));
+        updates.insert(
             "appearanceMode".into(),
             Value::from(if tokens.dark { "dark" } else { "light" }),
         );
-        let data = Value::Object(settings.clone());
-        self.write_shared(Shared::AppSettings, data);
+        self.settings_step(model::settings::Event::UpdateSettings(updates));
     }
 
     /// A shared key was read: the theme from `settings/app`, the bindings from
     /// `settings/keyboard-shortcuts`.
     pub(crate) fn shared_loaded(&mut self, shared: Shared, value: Option<Value>) {
         match shared {
-            Shared::AppSettings => {
-                let map = match value {
-                    Some(Value::Object(map)) => map,
-                    _ => serde_json::Map::new(),
-                };
-                if let Some(family) = map.get("colorTheme").and_then(Value::as_str) {
-                    let tokens = theme::tokens(family, true);
-                    self.theme = tokens.family.as_str();
-                }
-                self.dark = map.get("appearanceMode").and_then(Value::as_str) != Some("light");
-                if let Some(k) = map.get("uiZoomLevel").and_then(Value::as_f64) {
-                    self.zoom = ui::Zoom::new(k as f32);
-                }
-                self.sync.app_settings = map;
-            }
+            Shared::AppSettings => self.settings_loaded(Ok(value)),
             Shared::Shortcuts => self.shortcuts_loaded(value),
+            Shared::PinnedCommands => self.pinned_commands_loaded(value),
+        }
+    }
+
+    /// A shared key holds something this client did not write: another device's fields the
+    /// host merged into ours.
+    pub(crate) fn shared_changed(&mut self, shared: Shared, value: Value) {
+        match shared {
+            Shared::AppSettings => self.settings_step(model::settings::Event::SharedChange {
+                data: Some(value),
+                system_dark: crate::settings::system_dark(),
+            }),
+            Shared::Shortcuts => self.shortcuts_loaded(Some(value)),
+            Shared::PinnedCommands => self.pinned_commands_changed(value),
         }
     }
 }

@@ -38,11 +38,13 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::rail_forms::build(s, t, &mut layer);
     crate::phone::sheets(s, t, window, &mut layer);
     crate::theme_picker::build(s, t, phone, &mut layer);
+    crate::palette::build(s, t, phone, window, &mut layer);
     crate::chat_view::layer(s, t, &mut layer);
     crate::keys::build(s, t, window.1, &mut layer);
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
     crate::git_view::dialogs(s, t, &mut layer);
+    crate::settings_view::build(s, t, phone, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
@@ -69,7 +71,8 @@ fn editor_body(s: &State, t: &'static Tokens, tab: &model::workspace::Tab) -> Op
     let model::workspace::Tab::Editor { file_path, .. } = tab else {
         return None;
     };
-    ui::editor::view(s, editors, editors_mut, t, file_path)
+    ui::viewers::view(s, |s: &State| &s.viewers, |s: &mut State| &mut s.viewers, t, file_path)
+        .or_else(|| ui::editor::view(s, editors, editors_mut, t, file_path))
 }
 
 fn desktop_frame(

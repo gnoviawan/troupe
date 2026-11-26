@@ -33,6 +33,8 @@ pub enum Shared {
     AppSettings,
     /// `settings/keyboard-shortcuts`.
     Shortcuts,
+    /// `settings/pinned-commands`: the palette's pinned rows.
+    PinnedCommands,
 }
 
 impl Shared {
@@ -40,6 +42,7 @@ impl Shared {
         match self {
             Shared::AppSettings => "shared/lww/settings/app",
             Shared::Shortcuts => "shared/lww/settings/keyboard-shortcuts",
+            Shared::PinnedCommands => "shared/lww/settings/pinned-commands",
         }
     }
 }
@@ -51,6 +54,8 @@ pub(crate) enum Pending {
     ReadActiveProject,
     ReadPrefs,
     ReadShared(Shared),
+    /// This device's recent palette commands.
+    ReadRecentCommands,
     WriteShared(Shared),
     ListChats,
     Write(String),
@@ -117,8 +122,11 @@ pub struct Sync {
     held: Option<ProjectList>,
     /// The revision of each shared key this client last read or wrote.
     revisions: HashMap<Shared, u64>,
-    /// `settings/app` as read, so a theme change rewrites only its own fields.
-    pub(crate) app_settings: serde_json::Map<String, Value>,
+    /// Shared keys with a write on the wire: one at a time per key, as the web client
+    /// serializes them, so each write goes over the revision the one before it made.
+    writing: HashSet<Shared>,
+    /// The newest value written while its key had a write on the wire; it goes next.
+    queued: HashMap<Shared, Value>,
     /// A project `add_project` created, selected when its registry row lands.
     select_when_listed: Option<String>,
     /// Every command sent, for the tests (a test state has no host).
@@ -193,6 +201,45 @@ impl State {
         }
         self.list_chats();
         self.layout_step(LayoutEvent::StartHydrate);
+        self.palette_link_reset();
+    }
+
+    /// A watched store key changed (`StoreWatchState`: `exists` and the stored `value`). While
+    /// this client's own write to the key is out, its reply settles the value instead.
+    fn store_watched(&mut self, scope: &str, state: &Value) {
+        let shared = Shared::PinnedCommands;
+        if scope != shared.host_key() || self.sync.writing.contains(&shared) {
+            return;
+        }
+        if state.get("exists").and_then(Value::as_bool) != Some(true) {
+            return;
+        }
+        if let Some(value) = state.get("value").cloned().map(persistence::unwrap_stored) {
+            self.pinned_commands_changed(value);
+        }
+    }
+
+    /// The palette's pinned and recent lists, read the first time it opens on this link.
+    pub(crate) fn read_palette_lists(&mut self) {
+        if self.palette.read {
+            return;
+        }
+        self.palette.read = true;
+        // `useSharedKeySync`: a pin another device saves shows without a reload.
+        self.send(Command::Watch {
+            watch: WsWatchName::Store,
+            scope: Shared::PinnedCommands.host_key().to_owned(),
+        });
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": Shared::PinnedCommands.host_key() }),
+            Pending::ReadShared(Shared::PinnedCommands),
+        );
+        self.call(
+            WsRequestType::StoreRead,
+            json!({ "key": self.device_key(model::settings::palette::RECENT_KEY) }),
+            Pending::ReadRecentCommands,
+        );
     }
 
     /// The composers' agent reads (`acp/agents`, `agents/last-selected`), once the first
@@ -274,6 +321,7 @@ impl State {
                 tag @ (crate::host::Fetch::ExplorerList(_) | crate::host::Fetch::ExplorerOp(_)) => self.explorer_fetched(tag, result),
                 crate::host::Fetch::Git(task) => self.git_replied(task, result),
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
+                crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }
@@ -302,6 +350,16 @@ impl State {
                 Ok(list) => self.registry_list(list),
                 Err(e) => log::warn!("[app] unreadable projects frame: {e}"),
             },
+            Output::WatchState {
+                watch: WsWatchName::Store,
+                scope,
+                state,
+            }
+            | Output::WatchDelta {
+                watch: WsWatchName::Store,
+                scope,
+                delta: state,
+            } => self.store_watched(&scope, &state),
             Output::WatchDelta {
                 watch: WsWatchName::ChatHistory,
                 ..
@@ -363,6 +421,10 @@ impl State {
                 self.sync.prefs = Read::Read(());
                 self.release_held();
             }
+            Pending::ReadRecentCommands => match result {
+                Ok(reply) => self.recent_commands_loaded(stored_value(reply)),
+                Err(e) => self.recent_commands_unread(&e.code),
+            },
             Pending::ReadShared(shared) => match result {
                 Ok(reply) => {
                     let revision = reply
@@ -373,7 +435,14 @@ impl State {
                     self.sync.revisions.insert(shared, revision);
                     self.shared_loaded(shared, stored_value(reply));
                 }
-                Err(e) => log::warn!("[app] reading {} failed: {}", shared.host_key(), e.code),
+                Err(e) => {
+                    log::warn!("[app] reading {} failed: {}", shared.host_key(), e.code);
+                    match shared {
+                        Shared::AppSettings => self.settings_loaded(Err(e.code.clone())),
+                        Shared::PinnedCommands => self.pinned_commands_unread(&e.code),
+                        Shared::Shortcuts => {}
+                    }
+                }
             },
             Pending::WriteShared(shared) => match result {
                 Ok(reply) => {
@@ -384,8 +453,20 @@ impl State {
                     {
                         self.sync.revisions.insert(shared, revision);
                     }
+                    self.sync.writing.remove(&shared);
+                    if let Some(next) = self.sync.queued.remove(&shared) {
+                        self.write_shared(shared, next);
+                    } else if let Some(merged) = merged_value(reply.as_ref()) {
+                        // The host kept fields another device wrote since our read: show
+                        // what it holds now, as the web client's `notifyShared` does.
+                        self.shared_changed(shared, merged);
+                    }
                 }
                 Err(e) => {
+                    self.sync.writing.remove(&shared);
+                    if let Some(next) = self.sync.queued.remove(&shared) {
+                        self.write_shared(shared, next);
+                    }
                     log::warn!(
                         "[app] writing {} failed: {}: {}",
                         shared.host_key(),
@@ -684,11 +765,17 @@ impl State {
 
     /// Writes a shared key over the revision this client read; a key never read stays
     /// unwritten, so defaults cannot overwrite what another device saved.
+    /// While the key has a write on the wire the value waits, and a newer one replaces it.
     pub(crate) fn write_shared(&mut self, shared: Shared, data: Value) {
         let Some(&base) = self.sync.revisions.get(&shared) else {
             log::warn!("[app] not writing {}: it was never read", shared.host_key());
             return;
         };
+        if self.sync.writing.contains(&shared) {
+            self.sync.queued.insert(shared, data);
+            return;
+        }
+        self.sync.writing.insert(shared);
         self.call(
             WsRequestType::StoreWrite,
             json!({ "key": shared.host_key(), "value": persistence::stored(data), "baseRevision": base }),
@@ -763,6 +850,16 @@ use model::projects;
 
 /// A `store_read` reply's value without the web client's envelope, or `None` when the key
 /// is absent (revision 0).
+/// The stored value of a shared write's reply when the host merged it with a newer one
+/// (`merged`, sent by current hosts), else None.
+fn merged_value(reply: Option<&Value>) -> Option<Value> {
+    let reply = reply?;
+    if reply.get("merged").and_then(Value::as_bool) != Some(true) {
+        return None;
+    }
+    reply.get("value").cloned().map(persistence::unwrap_stored).filter(|v| !v.is_null())
+}
+
 pub(crate) fn stored_value(reply: Option<Value>) -> Option<Value> {
     let reply = reply?;
     if reply.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {

@@ -31,6 +31,7 @@ mod composer_sheet;
 mod composer_view;
 mod controls;
 mod editor_host;
+mod viewer_host;
 mod explorer_host;
 mod phone_files;
 #[cfg(test)]
@@ -56,11 +57,18 @@ mod launch;
 mod model_sheet;
 #[cfg(test)]
 mod model_sheet_tests;
+mod palette;
 mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
 mod rail_view;
+mod settings;
+mod settings_pages;
+mod settings_shortcuts;
+#[cfg(test)]
+mod settings_tests;
+mod settings_view;
 mod sync;
 mod term_host;
 mod term_input;
@@ -140,6 +148,7 @@ pub struct State {
     pub now: f64,
     pub rail: rail::RailUi,
     pub picker: theme_picker::Picker,
+    pub palette: palette::PaletteUi,
     pub keys: keys::KeysUi,
     pub phone: phone::PhoneUi,
     /// `settings/app` `uiZoomLevel`.
@@ -154,6 +163,7 @@ pub struct State {
     pub terms: terminal::TerminalUi,
     /// The open text files and their editor tabs.
     pub editors: ui::editor::Editors,
+    pub viewers: ui::viewers::Viewers,
     pub(crate) editor_host: editor_host::EditorHost,
     pub explorer: ui::explorer::Explorer,
     pub(crate) explorer_host: explorer_host::ExplorerHost,
@@ -161,6 +171,10 @@ pub struct State {
     pub git: git::GitUi,
     /// The git history reads and the History tab's own state.
     pub history: git_history::HistoryUi,
+    /// The shared `settings/app` record.
+    pub settings: model::settings::State,
+    /// The Settings window: which one is open, its page and its own fields.
+    pub settings_ui: settings_view::SettingsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -201,6 +215,7 @@ impl Default for State {
             now: 0.0,
             rail: rail::RailUi::default(),
             picker: theme_picker::Picker::default(),
+            palette: palette::PaletteUi::default(),
             keys: keys::KeysUi::default(),
             phone: phone::PhoneUi::default(),
             zoom: ui::Zoom::DEFAULT,
@@ -209,11 +224,14 @@ impl Default for State {
             composer: composer::ComposerUi::default(),
             terms: terminal::TerminalUi::default(),
             editors: ui::editor::Editors::default(),
+            viewers: ui::viewers::Viewers::default(),
             editor_host: editor_host::EditorHost::default(),
             explorer: ui::explorer::Explorer::default(),
             explorer_host: explorer_host::ExplorerHost::default(),
             git: git::GitUi::default(),
             history: git_history::HistoryUi::default(),
+            settings: model::settings::State::default(),
+            settings_ui: settings_view::SettingsUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -282,6 +300,8 @@ fn seed() -> u64 {
 fn setup(state: &mut State, wake: Waker) {
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
+    state.viewers.images = Some(rune::ImageCache::new(wake.clone()));
+    state.viewers.waker = Some(wake.clone());
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
         state.terms.host = Some(term_host::TermHost::connect(config.clone(), wake.clone()));
         state.connect(Host::connect(config, wake));
@@ -295,6 +315,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         changed |= state.close_top();
     }
     changed |= state.pump(now);
+    changed |= state.pump_viewers();
     changed |= state.pump_terminals(now);
     changed |= state.blink_flipped();
     state.sync_chats();

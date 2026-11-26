@@ -1065,6 +1065,7 @@ export async function startMcpOAuth(
   if (popup) popup.opener = null
   let authUrl: string
   let redirectUri: string
+  let startGeneration: number | undefined
   try {
     const result = await webServerMcpOAuth.start(projectId, serverUrl)
     if (!result.success) {
@@ -1073,16 +1074,18 @@ export async function startMcpOAuth(
     if (signal?.aborted) throw oauthCancelled()
     authUrl = result.data.authUrl
     redirectUri = result.data.redirectUri
+    startGeneration = result.data.tokenGeneration
   } catch (err) {
     popup?.close()
     throw err
   }
   if (popup) popup.location.href = authUrl
   onAuthUrl?.(authUrl, redirectUri)
-  // Wait for OAuth completion by polling the status endpoint until the token
-  // is stored. Either the host's `/oauth/callback` (a browser on the host's
-  // machine) or a pasted redirect (`complete`) stores it; once `hasToken` is
-  // true, the flow is complete.
+  // Wait for OAuth completion by polling the status endpoint until a fresh
+  // token is stored. Either the host's `/oauth/callback` (a browser on the
+  // host's machine) or a pasted redirect (`complete`) stores it; comparing
+  // `tokenGeneration` against the start snapshot prevents a pre-existing stale
+  // token from ending a re-sign-in flow early.
   const POLL_INTERVAL_MS = 1000
   const POLL_TIMEOUT_MS = 300_000 // 5 min — matches OAUTH_FLOW_TIMEOUT_SECS
   const deadline = Date.now() + POLL_TIMEOUT_MS
@@ -1093,10 +1096,20 @@ export async function startMcpOAuth(
       const status = await webServerMcpOAuth.status(projectId, serverUrl, signal)
       if (signal?.aborted) throw oauthCancelled()
       if (status.success && status.data?.hasToken) {
-        return
+        const currentGeneration = status.data.tokenGeneration
+        const isFreshToken =
+          startGeneration === undefined ||
+          currentGeneration === undefined ||
+          currentGeneration > startGeneration
+        if (isFreshToken) {
+          return
+        }
       }
     }
-    throw new Error('OAuth flow timed out — user did not complete authorization in time')
+    throw new McpOAuthError(
+      'OAuth flow timed out — user did not complete authorization in time',
+      'OAUTH_TIMEOUT'
+    )
   } catch (err) {
     // A cancelled or timed-out sign-in closes its provider window.
     popup?.close()

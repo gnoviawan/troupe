@@ -443,7 +443,10 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
                     s.close(MORE);
                     s.open_files();
                 }),
-                row_of("Search", "Command palette"),
+                mobile::sheet_row(t, glyph("Search"), "Command palette", false).on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.open_palette(true);
+                }),
                 mobile::sheet_row(t, glyph("TerminalSquare"), "New terminal", false).on_press(|s: &mut State| {
                     s.close(MORE);
                     s.new_terminal(None);

@@ -337,139 +337,118 @@ pub async fn acp_mcp_oauth_start(
     app: tauri::AppHandle,
     server_url: String,
 ) -> Result<IpcResult<()>, String> {
-    use rmcp::transport::auth::{AuthorizationManager, AuthorizationRequest, AuthorizationSession};
-    use std::net::TcpListener;
+    use tauri::Manager;
     use tauri_plugin_opener::OpenerExt;
 
-    // Bind a local TCP listener on an OS-assigned port for the OAuth callback.
-    let listener = TcpListener::bind("127.0.0.1:0")
-        .map_err(|e| format!("failed to bind callback listener: {e}"))?;
-    let port = listener
-        .local_addr()
-        .map_err(|e| format!("failed to get callback port: {e}"))?
-        .port();
+    // Bind an async local TCP listener on an OS-assigned port for the OAuth callback.
+    let listener = match tokio::net::TcpListener::bind("127.0.0.1:0").await {
+        Ok(listener) => listener,
+        Err(e) => {
+            log::warn!("[mcp-oauth] failed to bind callback listener: {e}");
+            return Ok(IpcResult::error(
+                format!("failed to bind callback listener: {e}"),
+                "OAUTH_START_FAILED",
+            ));
+        }
+    };
+    let port = match listener.local_addr() {
+        Ok(addr) => addr.port(),
+        Err(e) => {
+            log::warn!("[mcp-oauth] failed to get callback port: {e}");
+            return Ok(IpcResult::error(
+                format!("failed to get callback port: {e}"),
+                "OAUTH_START_FAILED",
+            ));
+        }
+    };
     let _owned_port = crate::host_perimeter::OwnedPort::claim(port);
     let redirect_uri = format!(
         "http://127.0.0.1:{port}{}",
         crate::acp::mcp_oauth::OAUTH_REDIRECT_PATH
     );
 
-    // Set the listener to non-blocking so we can poll it with a timeout.
-    listener
-        .set_nonblocking(true)
-        .map_err(|e| format!("failed to set non-blocking: {e}"))?;
-
-    // 1. Create AuthorizationManager + discover metadata + register client
-    let mut manager = AuthorizationManager::new(&server_url)
-        .await
-        .map_err(|e| format!("OAuth discovery failed: {e}"))?;
-    let resolution = manager
-        .resolve_metadata()
-        .await
-        .map_err(|e| format!("OAuth discovery failed: {e}"))?;
-    manager.set_metadata(resolution.metadata);
-
-    // 2. Create the authorization session (handles dynamic registration + PKCE).
-    //    The session holds the PKCE verifier in its InMemoryStateStore — we MUST
-    //    keep it alive until the callback arrives, then use it for the token exchange.
-    let request = AuthorizationRequest::new(&redirect_uri).with_client_name("Troupe");
-    let session = AuthorizationSession::new(manager, request)
-        .await
-        .map_err(|(_manager, e)| format!("OAuth registration failed: {e}"))?;
+    // 1. Challenge-aware metadata discovery + PKCE dynamic client registration.
+    //    Resolve the stored server URL and configured headers from the host
+    //    store when present so tenant-scoped servers return the same challenge
+    //    as `mcp_probe`.
+    let (target_url, configured_headers) = app
+        .try_state::<crate::remote::SharedLiveData>()
+        .and_then(|shared| {
+            crate::web::mcp_oauth_api::authorized_mcp_server(
+                Some(shared.store.as_ref()),
+                &server_url,
+            )
+        })
+        .map_or_else(
+            || (server_url.clone(), Vec::new()),
+            |authorized| (authorized.url, authorized.headers),
+        );
+    let session = match crate::acp::mcp_oauth::start_authorization_session(
+        &target_url,
+        &redirect_uri,
+        &configured_headers,
+    )
+    .await
+    {
+        Ok(session) => session,
+        Err(e) => {
+            log::warn!(
+                "[mcp-oauth] desktop flow start failed (url redacted): {}: {e}",
+                e.code()
+            );
+            return Ok(IpcResult::error(e.to_string(), e.code()));
+        }
+    };
 
     let auth_url = match host_auth_url(session.get_authorization_url()) {
         Ok(url) => url,
         Err(refusal) => return Ok(refusal),
+    };
+    let Some(expected_state) = auth_url
+        .query_pairs()
+        .find_map(|(key, value)| (key == "state").then(|| value.into_owned()))
+    else {
+        log::warn!("[mcp-oauth] desktop flow start failed: authorization URL missing state");
+        return Ok(IpcResult::error(
+            "Auth URL failed: authorization URL missing state parameter",
+            "OAUTH_START_FAILED",
+        ));
     };
 
     log::info!(
         "[mcp-oauth] opening browser for server (url redacted), redirect_uri={redirect_uri}"
     );
 
-    // 3. Open the authorization URL in the user's system browser.
-    app.opener()
-        .open_url(auth_url.as_str(), None::<&str>)
-        .map_err(|e| format!("failed to open browser: {e}"))?;
+    // 2. Open the authorization URL in the user's system browser.
+    if let Err(e) = app.opener().open_url(auth_url.as_str(), None::<&str>) {
+        log::warn!("[mcp-oauth] failed to open browser for OAuth (url redacted): {e}");
+        return Ok(IpcResult::error(
+            format!("failed to open browser: {e}"),
+            "OAUTH_START_FAILED",
+        ));
+    }
 
-    // 4. Wait for the callback on the local TCP listener.
-    let deadline = std::time::Instant::now()
-        + std::time::Duration::from_secs(crate::acp::mcp_oauth::OAUTH_FLOW_TIMEOUT_SECS);
-    let callback_url = loop {
-        if std::time::Instant::now() > deadline {
-            return Err(
-                "OAuth flow timed out — user did not complete authorization in time".to_string(),
-            );
-        }
-        match listener.accept() {
-            Ok((mut stream, _addr)) => {
-                use std::io::{BufRead, BufReader, Write};
-                // Accepted sockets inherit the listener's non-blocking mode;
-                // the header block must be read whole for the Host check.
-                let _ = stream.set_nonblocking(false);
-                let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(5)));
-                let reader = BufReader::new(&mut stream);
-                let mut lines = reader.lines();
-                if let Some(Ok(first_line)) = lines.next() {
-                    if !crate::web::host_allow::HostAllowList::loopback()
-                        .allows_header_block(&mut lines)
-                    {
-                        log::warn!(
-                            "[mcp-oauth] rejected callback request: foreign or missing host"
-                        );
-                        let _ = stream.write_all(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-                        let _ = stream.flush();
-                        continue;
-                    }
-                    // Parse the request target. Stray browser requests
-                    // (preconnect, favicon, malformed) must not break the
-                    // loop — only the callback path with a `code` param
-                    // completes the flow. Respond to non-callback requests
-                    // with a 404 and continue waiting.
-                    let target = first_line.split(' ').nth(1).unwrap_or("/").to_string();
-                    let path = target.split('?').next().unwrap_or("/");
-                    let is_callback = path == crate::acp::mcp_oauth::OAUTH_REDIRECT_PATH
-                        && target.contains("code=");
-                    if !is_callback {
-                        let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-                        let _ = stream.flush();
-                        continue;
-                    }
-                    let full_url = format!("http://127.0.0.1:{port}{target}");
-                    let body = "<!DOCTYPE html><html><body><h2>Authorization complete</h2><p>You can close this tab and return to Troupe.</p><script>window.close();</script></body></html>";
-                    let response = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                        body.len(), body
-                    );
-                    let _ = stream.write_all(response.as_bytes());
-                    let _ = stream.flush();
-                    break full_url;
-                }
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-            }
-            Err(e) => {
-                return Err(format!("callback listener error: {e}"));
-            }
-        }
-    };
-    // 5. Exchange the authorization code with the SAME session (it holds the
-    //    PKCE verifier) and store the token. The desktop flow does not pass
-    //    the callback's `iss` on to the issuer check.
-    let callback = rmcp::transport::auth::AuthorizationCallback::from_redirect_url(&callback_url)
-        .map_err(|e| format!("callback parse failed: {e}"))?;
-    let stored = crate::acp::mcp_oauth::finish_session(
-        &server_url,
+    // 3. Wait for the loopback callback, verify Host/state/iss, exchange code,
+    //    persist the token, and send the final browser response.
+    let stored = match crate::acp::mcp_oauth::complete_desktop_flow(
+        listener,
+        port,
+        &expected_state,
+        &target_url,
         session,
-        &callback.code,
-        &callback.csrf_token,
-        None,
+        std::time::Duration::from_secs(crate::acp::mcp_oauth::OAUTH_FLOW_TIMEOUT_SECS),
     )
     .await
-    .map_err(|e| {
-        log::warn!("[mcp-oauth] OAuth token exchange failed (url redacted): {e}");
-        e.to_string()
-    })?;
+    {
+        Ok(stored) => stored,
+        Err(e) => {
+            log::warn!(
+                "[mcp-oauth] desktop OAuth flow failed (url redacted): {}: {e}",
+                e.code()
+            );
+            return Ok(IpcResult::error(e.to_string(), e.code()));
+        }
+    };
 
     log::info!(
         "[mcp-oauth] OAuth flow completed for server (url redacted), has refresh token: {}",
