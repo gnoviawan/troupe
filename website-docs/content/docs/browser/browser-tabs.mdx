@@ -16,17 +16,68 @@ Use one of these ways:
 - Click **New tab** (the **+** at the end of a pane's tab bar) and select **New browser tab**. The tab opens in that pane.
 - Open the command palette with `Ctrl+K` (`Cmd+K` on macOS), then run **New Browser Tab**.
 
-The new tab opens in the pane you are working in and loads Google. The tab shows the host name of the page, such as `localhost:5173`.
+The new tab opens in the pane you are working in and shows the start page. The tab shows the host name of the page, such as `localhost:5173`.
+
+## Start page
+
+A new browser tab opens on a start page instead of a website:
+
+- **Open a local server or URL**: type an address or a local port and press `Enter`.
+- **Detected local servers** lists dev servers that are running on your computer on common ports, such as `localhost:5173` (Vite) or `localhost:3000`. Click one to open it.
+- **Recent pages** lists the last pages you opened in browser tabs. Click one to open it again, or click **Clear** to empty the list.
+
+At the bottom, the page shows the keys to focus the address bar, reload, and close the tab.
 
 ## Go to a page
 
-1. Click the address bar at the top of the browser tab.
+1. Click the address bar at the top of the browser tab, or press `Ctrl+L` (`Cmd+L` on macOS).
 2. Type the address.
 3. Press `Enter`.
 
-If you leave out `http://` or `https://`, Troupe adds `https://`. Most local dev servers use plain `http`, so type the full address, for example `http://localhost:5173`.
+If you leave out `http://` or `https://`, Troupe adds `https://`. Addresses that start with `localhost` or `127.0.0.1` get `http://` instead, so `localhost:5173` opens `http://localhost:5173`. You can also type only the port with a colon, such as `:5173`.
 
-The buttons to the left of the address bar are **Back**, **Forward**, and **Reload**. A spinner shows in the address bar while the page loads.
+To cancel an address you started typing, press `Esc` or click somewhere else. The address bar goes back to the current page.
+
+## The browser toolbar
+
+The buttons to the left of the address bar are **Back**, **Forward**, and **Reload**. While a page loads, a thin bar moves under the toolbar and **Reload** turns into **Stop**. Click it to stop loading.
+
+When the address bar isn't in use, the copy button at its right end copies the page address.
+
+The buttons to the right of the address bar are:
+
+- The device button (a monitor, **Switch Desktop / Tablet / Mobile**) switches between desktop, tablet, and phone sizes. See [Check a page at tablet and phone sizes](#check-a-page-at-tablet-and-phone-sizes).
+- **Screenshot** (the camera) takes a screenshot of the page or of an area. See [Annotate a page for an agent](/docs/browser/annotate-pages#take-a-screenshot).
+- **Annotate page** (the pen) lets you mark up the page for an agent. See [Annotate a page for an agent](/docs/browser/annotate-pages).
+- **More** (`...`) has **Zoom**, **Copy address**, **Open in default browser**, and **Hard reload**.
+
+While an agent uses a browser tab, the toolbar shows **Agent driving** and a **Stop** button instead. See [Let an agent use the browser](/docs/browser/agent-browser#stop-the-agent).
+
+## Zoom a page
+
+Each browser tab has its own zoom, from 50% to 200%. Zoom changes only the web page, not the rest of Troupe.
+
+- Open **More** (`...`) and use **-** and **+** next to **Zoom**. Click the percentage to go back to 100%.
+- Or press `Ctrl+=` to zoom in, `Ctrl+-` to zoom out, and `Ctrl+0` to go back to 100% (`Cmd` on macOS). When a browser tab is the active tab, these keys zoom the page. In other tabs they zoom the whole Troupe window.
+
+When the zoom isn't 100%, the address bar shows the zoom level, such as **125%**. Click it to open **Page zoom**, where you can use **-** and **+**, pick **75%**, **100%**, **125%**, or **150%**, or click **Reset**.
+
+## Check a page at tablet and phone sizes
+
+Click the device button to the right of the address bar to switch between three sizes. It shows **Tablet** or **Mobile** while one of those is on. Each click moves to the next one:
+
+- **Desktop**: the page fills the tab. This is the default.
+- **Tablet**: 768 × 1024 pixels.
+- **Mobile**: 390 × 844 pixels.
+
+In **Tablet** and **Mobile**, the page shows in a frame in the middle of the tab, and a bar under the toolbar has:
+
+- Buttons for **Desktop**, **Tablet**, and **Mobile**.
+- The size of the frame, such as `390 × 844`.
+- The rotate button (**Rotate portrait / landscape**), which switches between portrait and landscape.
+- Zoom buttons for the page.
+
+To try other widths, drag the handle on either side of the frame. The width can go from 320 to 1280 pixels. If the pane is smaller than the frame, the frame shrinks to fit and the bar shows the size it really has.
 
 ## Preview your dev server next to your code
 
@@ -35,6 +86,16 @@ The buttons to the left of the address bar are **Back**, **Forward**, and **Relo
 3. Move the browser tab into its own pane, so the page and your code are side by side. See [Terminals](/docs/terminals) for how to work with panes.
 
 Click **Reload** after a change if your dev server doesn't refresh the page by itself.
+
+## When a page can't load
+
+If Troupe can't connect to the address, the tab shows **Cannot connect to** and the address instead of the page.
+
+- **Retry** tries the address again.
+- **Open terminal** opens a terminal in the project folder, so you can start your dev server. It shows for `localhost` and `127.0.0.1` addresses.
+- **Back** in the toolbar returns to the page you were on before.
+
+For a local address, the tab checks the port every few seconds and reloads the page by itself as soon as your dev server starts.
 
 ## Open terminal links in a browser tab
 
@@ -47,6 +108,20 @@ By default, `Ctrl`+click (`Cmd`+click on macOS) on a link in terminal output ope
 This setting also applies to links in chats, Markdown, and files.
 
 Each link you `Ctrl`+click then opens in a new browser tab.
+
+## Keyboard shortcuts in a browser tab
+
+These keys work when a browser tab is the active tab. Use `Cmd` instead of `Ctrl` on macOS.
+
+| Key | What it does |
+| --- | --- |
+| `Ctrl+L` | Go to the address bar. |
+| `Ctrl+Shift+R` | Reload the page. |
+| `Ctrl+=`, `Ctrl+-`, `Ctrl+0` | Zoom the page in, out, or back to 100%. |
+| `Ctrl+Shift+S` | Take a screenshot of the visible page. |
+| `Ctrl+Shift+A` | Take a screenshot of an area. |
+
+The keys reach Troupe only when the keyboard focus isn't inside the web page. If a key does nothing after you clicked in the page, click the tab in the tab bar first.
 
 ## Close a browser tab
 
