@@ -117,6 +117,11 @@ pub struct Sync {
     held: Option<ProjectList>,
     /// The revision of each shared key this client last read or wrote.
     revisions: HashMap<Shared, u64>,
+    /// Shared keys with a write on the wire: one at a time per key, as the web client
+    /// serializes them, so each write goes over the revision the one before it made.
+    writing: HashSet<Shared>,
+    /// The newest value written while its key had a write on the wire; it goes next.
+    queued: HashMap<Shared, Value>,
     /// A project `add_project` created, selected when its registry row lands.
     select_when_listed: Option<String>,
     /// Every command sent, for the tests (a test state has no host).
@@ -388,8 +393,20 @@ impl State {
                     {
                         self.sync.revisions.insert(shared, revision);
                     }
+                    self.sync.writing.remove(&shared);
+                    if let Some(next) = self.sync.queued.remove(&shared) {
+                        self.write_shared(shared, next);
+                    } else if let Some(merged) = merged_value(reply.as_ref()) {
+                        // The host kept fields another device wrote since our read: show
+                        // what it holds now, as the web client's `notifyShared` does.
+                        self.shared_changed(shared, merged);
+                    }
                 }
                 Err(e) => {
+                    self.sync.writing.remove(&shared);
+                    if let Some(next) = self.sync.queued.remove(&shared) {
+                        self.write_shared(shared, next);
+                    }
                     log::warn!(
                         "[app] writing {} failed: {}: {}",
                         shared.host_key(),
@@ -688,11 +705,17 @@ impl State {
 
     /// Writes a shared key over the revision this client read; a key never read stays
     /// unwritten, so defaults cannot overwrite what another device saved.
+    /// While the key has a write on the wire the value waits, and a newer one replaces it.
     pub(crate) fn write_shared(&mut self, shared: Shared, data: Value) {
         let Some(&base) = self.sync.revisions.get(&shared) else {
             log::warn!("[app] not writing {}: it was never read", shared.host_key());
             return;
         };
+        if self.sync.writing.contains(&shared) {
+            self.sync.queued.insert(shared, data);
+            return;
+        }
+        self.sync.writing.insert(shared);
         self.call(
             WsRequestType::StoreWrite,
             json!({ "key": shared.host_key(), "value": persistence::stored(data), "baseRevision": base }),
@@ -767,6 +790,16 @@ use model::projects;
 
 /// A `store_read` reply's value without the web client's envelope, or `None` when the key
 /// is absent (revision 0).
+/// The stored value of a shared write's reply when the host merged it with a newer one
+/// (`merged`, sent by current hosts), else None.
+fn merged_value(reply: Option<&Value>) -> Option<Value> {
+    let reply = reply?;
+    if reply.get("merged").and_then(Value::as_bool) != Some(true) {
+        return None;
+    }
+    reply.get("value").cloned().map(persistence::unwrap_stored).filter(|v| !v.is_null())
+}
+
 pub(crate) fn stored_value(reply: Option<Value>) -> Option<Value> {
     let reply = reply?;
     if reply.get("revision").and_then(Value::as_u64).unwrap_or(0) == 0 {
