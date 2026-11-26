@@ -305,3 +305,80 @@ same listings and runs the same operations.
 
 **Source.** R8a (`reports/R8a.md`). Lanes: `tools/parity/lanes/explorer.ts`
 (desktop and `--phone`), `tools/parity/lanes/editor-desktop.ts`.
+
+## Markdown editor
+
+**Answer.** The Markdown editor is the code editor's buffer drawn as a
+document. `model::editor::markdown` splits the text into top-level blocks
+(front matter, ATX headings, fenced code, and runs of other lines). Each
+block is drawn rendered by rune-kit's `Markdown`, so a `mermaid` fence draws
+as a diagram. The block under the caret is drawn as its source lines in the
+code editor's rows, and it takes the code editor's keys. The toolbar's
+Preview and Source switch shows the same buffer in the code view. The view
+mode is kept in the workspace record (`OpenFile.viewMode`).
+
+**Why.** The buffer is the file's text, so an unedited file saves byte for
+byte and an edit changes only what was typed. The buffer keeps a file's
+`\r\n` line breaks and its byte order mark aside and puts them back on write.
+BlockNote, the web client's editor, parses the file into blocks and writes
+them out again, which rewrites lists, spacing and line breaks.
+
+**Candidates weighed (one sequential pass).**
+
+- A rich-text model (blocks with styled runs) serialised back to Markdown
+  (rejected). It is BlockNote's design, and every Markdown construct it does
+  not model is lost or rewritten on save.
+- A styled source view (rejected). Headings in a larger face break the code
+  view's fixed row height, which its 32-line virtual rows and Up and Down
+  need, and a mermaid fence would stay source.
+
+**Limits.** A block draws alone, so a reference-style link whose definition
+is in another block shows as text. A loose list splits at its blank lines.
+
+**Source.** R8b (`reports/R8b.md`). Tests:
+`apps/rune/crates/ui/src/editor/markdown_tests.rs` (20 fixture files).
+
+## PDF engine
+
+**Answer.** hayro 0.9, a pure-Rust PDF rasteriser (MIT or Apache-2.0), on
+both targets. `ui::viewers::PdfDoc` parses the file once, keeps each page's
+size, and rasterises a page on the CPU at the scale it draws at, the first
+time `virtual_rows` shows it. On the desktop the parse runs on a thread of
+its own and pages rasterise on one rasteriser thread per document; wasm has
+no threads, so both run inline there. A page rasterises to at most 8192 px a
+side, and the rasterised pages drawn longest ago are dropped past 256 MB
+(at least four stay). Rune decodes the pixels into its image atlas off the
+UI thread. Fonts are hayro's embedded standard 14; the CJK CMaps are
+left out to keep the wasm build small.
+
+**Candidates weighed (architect, one sequential pass: no subagents in this
+unit).**
+
+| Candidate | Native | Web | Verdict |
+|---|---|---|---|
+| hayro everywhere | pure Rust, a thread-free call | the same code in wasm | chosen: one path, headless tests render real pages |
+| pdfium (`pdfium-render`) | a 5 MB native library per OS to ship | needs a pdfium wasm build | rejected: three binaries to ship, no shared test path |
+| Native engine plus the browser's viewer in an `<iframe>` | hayro or pdfium | DOM over the canvas | rejected: two engines, and Rune menus cannot draw over the iframe |
+| Server-side page images | none | none | rejected for now: needs a `troupe-server` route, outside R8 |
+| MuPDF | C library | wasm build exists | rejected: AGPL |
+
+**Limits.** hayro does not open encrypted PDFs (the viewer says the file is
+password-protected) and lacks some blend and knockout features. On wasm a
+page still renders on the UI thread when it first shows; a 612x792 page at
+2x took tens of milliseconds in a debug test build.
+
+**Source.** R8b (`reports/R8b.md`). Tests:
+`apps/rune/crates/ui/src/viewers/tests.rs` (a 10-page fixture, page 5
+rasterised and its pixels checked).
+
+## Video viewer
+
+**Answer.** The desktop player follows "Video on Linux": ffprobe reads the
+clip's size, rate and length, and an ffmpeg subprocess decodes NV12 frames
+into a `NativeSurface`, paced on the player's own clock. It has no sound
+yet. The clip is staged for ffmpeg in a private temporary file (mode 0600,
+a random name per player) that goes with the player, and staging, probing
+and the first frame run off the UI thread. Clips larger than 8K
+(7680 x 4320 pixels, or 8192 a side) are refused. The web client hands the bytes to a hidden `<video>` element, which
+plays with sound, and copies its frames into `Pixels` every 33 ms, so Rune
+draws the picture and menus stay over it.

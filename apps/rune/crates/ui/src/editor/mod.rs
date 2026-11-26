@@ -7,12 +7,14 @@
 //! needs the server (reads and writes), which the app drains. [`view`] draws one file.
 
 mod keys;
+mod markdown;
 mod view;
 mod view_find;
 
 #[cfg(test)]
 mod tests;
-
+#[cfg(test)]
+mod markdown_tests;
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
@@ -25,7 +27,9 @@ use troupe_editor::highlight::Highlights;
 use troupe_editor::{Command, Selection};
 
 pub use keys::Outcome;
+pub use markdown::is_markdown;
 pub use view::{LINE, surface_key, view};
+pub(crate) use view::unavailable;
 
 /// The find widget over the editor's top right (`FindPanel` in `codemirror-find.tsx`).
 pub struct FindBar {
@@ -38,8 +42,8 @@ pub struct FindBar {
     pub replacing: bool,
     /// The query the selection last followed (find as you type).
     followed: Query,
-    /// The matches and the buffer revision and query they were read for.
-    matches: RefCell<Option<(u64, Query, Matches)>>,
+    /// The matches and the buffer version and query they were read for.
+    matches: RefCell<Option<(Version, Query, Matches)>>,
 }
 
 impl FindBar {
@@ -69,7 +73,7 @@ impl FindBar {
     /// The matches in `doc`, read again only when the text or the query changed.
     pub fn matches(&self, doc: &store::Doc) -> Matches {
         let query = self.query();
-        let revision = doc.editor.revision();
+        let revision = doc.version();
         let mut cache = self.matches.borrow_mut();
         if let Some((r, q, m)) = cache.as_ref()
             && *r == revision
@@ -82,6 +86,12 @@ impl FindBar {
         m
     }
 }
+
+/// A buffer's text version: [`store::Doc::version`].
+type Version = (u64, u64);
+
+/// Markdown blocks keyed by the buffer version they were split at.
+type BlockCache = RefCell<Option<(Version, Vec<model::editor::markdown::Block>)>>;
 
 /// One editor tab's view state.
 pub struct Pane {
@@ -97,6 +107,12 @@ pub struct Pane {
     pub page: usize,
     /// The caret's chunk to scroll into view after the next frame.
     pub reveal: bool,
+    /// A Markdown file: it has the toolbar's Preview / Source switch.
+    pub markdown: bool,
+    /// Drawn as a document (`markdown`), not as source.
+    pub preview: bool,
+    /// The Markdown blocks, and the buffer version they were split at.
+    blocks: BlockCache,
 }
 
 impl Pane {
@@ -109,7 +125,24 @@ impl Pane {
             columns: 0,
             page: 20,
             reveal: false,
+            markdown: is_markdown(path),
+            preview: is_markdown(path),
+            blocks: RefCell::new(None),
         }
+    }
+
+    /// `doc`'s Markdown blocks, split again only when the text changed.
+    pub fn blocks(&self, doc: &store::Doc) -> Vec<model::editor::markdown::Block> {
+        let revision = doc.version();
+        let mut cache = self.blocks.borrow_mut();
+        if let Some((r, blocks)) = cache.as_ref()
+            && *r == revision
+        {
+            return blocks.clone();
+        }
+        let blocks = model::editor::markdown::blocks(doc.editor.rope());
+        *cache = Some((revision, blocks.clone()));
+        blocks
     }
 }
 
