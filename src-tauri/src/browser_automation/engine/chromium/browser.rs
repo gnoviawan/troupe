@@ -16,6 +16,7 @@ use crate::browser_automation::engine::cdp::CdpMethod;
 use crate::browser_automation::engine::EngineError;
 
 /// How long `Browser.close` may take before the process is killed.
+#[allow(dead_code, reason = "used by close")]
 const CLOSE_GRACE: Duration = Duration::from_secs(5);
 
 #[derive(Default)]
