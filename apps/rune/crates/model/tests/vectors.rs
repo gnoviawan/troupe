@@ -344,7 +344,7 @@ fn replays_every_vector() {
                 "automation-run" => replay::<automations::RunStore>(vector),
                 "automation-routes" => replay::<automations::RoutesStore>(vector),
                 "subagents" => settings::replay_subagents(vector),
-                "accounts" => settings::replay_accounts(vector),
+                "provider-usage" => settings::replay_accounts(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

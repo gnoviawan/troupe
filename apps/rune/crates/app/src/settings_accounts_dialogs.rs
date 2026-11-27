@@ -126,7 +126,7 @@ impl State {
         }
         let Some(t) = flow.account.clone() else { return };
         flow.step = Step::Signing(Link::Submitting { url });
-        log::info!("[claudeAccounts.finishLinkLogin] finishing the link sign-in of {}", t.id);
+        log::info!("[claudeAccounts.finishLinkLogin] finishing a link sign-in");
         self.command(WsRequestType::FinishClaudeLinkLogin, json!({ "accountId": t.id, "code": code }), Pending::Accounts(AccountsCall::LinkFinish(t.id)));
     }
 
@@ -145,7 +145,7 @@ impl State {
             (AccountsCall::Add(p), Ok(Some(account))) => {
                 flow.busy = false;
                 let t = Target { provider: p, id: account["id"].as_str().unwrap_or_default().to_owned(), name: account["name"].as_str().unwrap_or_default().to_owned() };
-                log::info!("[settings.Accounts] {} account {} added", p.id(), t.id);
+                log::info!("[settings.Accounts] {} account added", p.id());
                 flow.account = Some(t);
                 self.accounts_reload(p);
                 self.accounts_start_sign_in();

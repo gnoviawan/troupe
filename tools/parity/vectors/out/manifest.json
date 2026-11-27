@@ -377,7 +377,7 @@
         "saving_a_profile_keeps_the_implicit_default"
       ]
     },
-    "accounts": {
+    "provider-usage": {
       "sources": {
         "src/renderer/lib/claude-usage-format.ts": "7db226efdfde02bb47bd84bc30f44492fc563397",
         "src/renderer/lib/codex-usage-format.ts": "2d0fcdd782b26e9fd304c03fba601f45846b4d6e",

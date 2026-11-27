@@ -25,7 +25,7 @@ const NOW = 1_800_000_000_000
  * `model::settings::accounts`.
  */
 export const accountsRecorder: StoreRecorder = {
-  store: 'accounts',
+  store: 'provider-usage',
   sources: [
     'src/renderer/lib/claude-usage-format.ts',
     'src/renderer/lib/codex-usage-format.ts',

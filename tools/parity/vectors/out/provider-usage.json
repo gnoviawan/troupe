@@ -1,6 +1,6 @@
 [
  {
-  "store": "accounts",
+  "store": "provider-usage",
   "name": "usage_words",
   "initial": null,
   "steps": [
@@ -441,7 +441,7 @@
   ]
  },
  {
-  "store": "accounts",
+  "store": "provider-usage",
   "name": "claude_rows_say_their_state",
   "initial": null,
   "steps": [

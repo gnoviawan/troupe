@@ -170,7 +170,7 @@ impl State {
 
     pub(crate) fn accounts_make_default(&mut self, target: Target) {
         self.accounts_ui.menu = None;
-        log::info!("[settings.Accounts] {} make default {}", target.provider.id(), target.id);
+        log::info!("[settings.Accounts] {} make default", target.provider.id());
         self.call(kind(target.provider, Act::Default), json!({ "accountId": target.id }), Pending::Accounts(AccountsCall::Default(target)));
     }
 
@@ -227,7 +227,7 @@ impl State {
         if self.accounts_ui.remove_busy {
             return;
         }
-        log::info!("[settings.Accounts] {} remove {}", target.provider.id(), target.id);
+        log::info!("[settings.Accounts] {} remove", target.provider.id());
         self.accounts_ui.remove_busy = true;
         self.call(kind(target.provider, Act::Remove), json!({ "accountId": target.id }), Pending::Accounts(AccountsCall::Remove(target)));
     }
