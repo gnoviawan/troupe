@@ -1,0 +1,2056 @@
+[
+ {
+  "store": "subagents",
+  "name": "profile_ids_follow_the_host_rule",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Enter a name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "a b",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Use letters, digits, and . _ : - only.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Use 64 characters or fewer.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "CODEX",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Another profile has this name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "codex-2",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "idError",
+     "args": [
+      "ok.name:v_1-2",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uniqueId",
+     "args": [
+      "codex",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "codex-2",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uniqueId",
+     "args": [
+      "codex-fast-9",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "codex-fast-2",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uniqueId",
+     "args": [
+      "-3",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "agent-2",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uniqueId",
+     "args": [
+      "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy-2",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shortName",
+     "args": [
+      "acp-registry:claude-acp"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "claude",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shortName",
+     "args": [
+      "custom:My Agent!!x"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "my-agent-x",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shortName",
+     "args": [
+      "acp-registry:"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "agent",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "shortName",
+     "args": [
+      "Gemini-CLI"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "gemini-cli",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "subagents",
+  "name": "which_profiles_may_move_or_go",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "canDelete",
+     "args": [
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Claude Agent",
+       "implicit": true
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canDelete",
+     "args": [
+      {
+       "id": "codex",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canDelete",
+     "args": [
+      {
+       "id": "codex-fast",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": "agent-full-access",
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "canDelete",
+     "args": [
+      {
+       "id": "gone",
+       "agentId": "old-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": null,
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "lockReason",
+     "args": [
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Claude Agent",
+       "implicit": true
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "This agent's only profile stays on it. Duplicate it to use another agent.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "lockReason",
+     "args": [
+      {
+       "id": "codex",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "lockReason",
+     "args": [
+      {
+       "id": "codex-fast",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": "agent-full-access",
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "lockReason",
+     "args": [
+      {
+       "id": "gone",
+       "agentId": "old-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": null,
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "lockReason",
+     "args": [
+      {
+       "id": "Codex-ACP",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       },
+       {
+        "id": "Codex-ACP",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       }
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Named after its agent, so it stays on it. Rename it to move it.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "skipsPrompts",
+     "args": [
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "skipsPrompts",
+     "args": [
+      {
+       "id": "codex",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "skipsPrompts",
+     "args": [
+      {
+       "id": "codex-fast",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": "agent-full-access",
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "skipsPrompts",
+     "args": [
+      {
+       "id": "gone",
+       "agentId": "old-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "subagents",
+  "name": "saving_a_profile_keeps_the_implicit_default",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "upserts",
+     "args": [
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ],
+      {
+       "id": "claude-2",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      },
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "profile": {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     },
+     {
+      "profile": {
+       "id": "claude-2",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "upserts",
+     "args": [
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ],
+      {
+       "id": "codex-renamed",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null
+      },
+      "codex"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "previousId": "codex",
+      "profile": {
+       "id": "codex-renamed",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null
+      }
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "upserts",
+     "args": [
+      [
+       {
+        "id": "claude",
+        "agentId": "claude-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Claude Agent",
+        "implicit": true
+       },
+       {
+        "id": "codex",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": "gpt-5",
+        "mode": null,
+        "configOptions": {},
+        "approvals": "allowAll",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "codex-fast",
+        "agentId": "codex-acp",
+        "enabled": true,
+        "model": null,
+        "mode": "agent-full-access",
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": "Codex",
+        "implicit": false
+       },
+       {
+        "id": "gone",
+        "agentId": "old-acp",
+        "enabled": true,
+        "model": null,
+        "mode": null,
+        "configOptions": {},
+        "approvals": "ask",
+        "description": null,
+        "agentName": null,
+        "implicit": false
+       }
+      ],
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": false,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      },
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "profile": {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": false,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null
+      }
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "apply",
+     "args": [
+      {
+       "enabled": true,
+       "maxRunning": 3,
+       "maxDepth": 1,
+       "profiles": [
+        {
+         "id": "claude",
+         "agentId": "claude-acp",
+         "enabled": true,
+         "model": null,
+         "mode": null,
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": "Claude Agent",
+         "implicit": true
+        },
+        {
+         "id": "codex",
+         "agentId": "codex-acp",
+         "enabled": true,
+         "model": "gpt-5",
+         "mode": null,
+         "configOptions": {},
+         "approvals": "allowAll",
+         "description": null,
+         "agentName": "Codex",
+         "implicit": false
+        },
+        {
+         "id": "codex-fast",
+         "agentId": "codex-acp",
+         "enabled": true,
+         "model": null,
+         "mode": "agent-full-access",
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": "Codex",
+         "implicit": false
+        },
+        {
+         "id": "gone",
+         "agentId": "old-acp",
+         "enabled": true,
+         "model": null,
+         "mode": null,
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": null,
+         "implicit": false
+        }
+       ]
+      },
+      {
+       "enabled": false,
+       "maxRunning": 5,
+       "deleteProfiles": [
+        "gone"
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "enabled": false,
+     "maxRunning": 5,
+     "maxDepth": 1,
+     "profiles": [
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Claude Agent",
+       "implicit": true
+      },
+      {
+       "id": "codex",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      {
+       "id": "codex-fast",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": "agent-full-access",
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "apply",
+     "args": [
+      {
+       "enabled": true,
+       "maxRunning": 3,
+       "maxDepth": 1,
+       "profiles": [
+        {
+         "id": "claude",
+         "agentId": "claude-acp",
+         "enabled": true,
+         "model": null,
+         "mode": null,
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": "Claude Agent",
+         "implicit": true
+        },
+        {
+         "id": "codex",
+         "agentId": "codex-acp",
+         "enabled": true,
+         "model": "gpt-5",
+         "mode": null,
+         "configOptions": {},
+         "approvals": "allowAll",
+         "description": null,
+         "agentName": "Codex",
+         "implicit": false
+        },
+        {
+         "id": "codex-fast",
+         "agentId": "codex-acp",
+         "enabled": true,
+         "model": null,
+         "mode": "agent-full-access",
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": "Codex",
+         "implicit": false
+        },
+        {
+         "id": "gone",
+         "agentId": "old-acp",
+         "enabled": true,
+         "model": null,
+         "mode": null,
+         "configOptions": {},
+         "approvals": "ask",
+         "description": null,
+         "agentName": null,
+         "implicit": false
+        }
+       ]
+      },
+      {
+       "upsertProfiles": [
+        {
+         "profile": {
+          "id": "claude",
+          "agentId": "claude-acp",
+          "enabled": true,
+          "model": null,
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null
+         }
+        },
+        {
+         "profile": {
+          "id": "claude-2",
+          "agentId": "claude-acp",
+          "enabled": true,
+          "model": null,
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null
+         }
+        },
+        {
+         "previousId": "codex",
+         "profile": {
+          "id": "codex-x",
+          "agentId": "codex-acp",
+          "enabled": true,
+          "model": "gpt-5",
+          "mode": null,
+          "configOptions": {},
+          "approvals": "allowAll",
+          "description": null
+         }
+        },
+        {
+         "profile": {
+          "id": "new",
+          "agentId": "new-acp",
+          "enabled": true,
+          "model": null,
+          "mode": null,
+          "configOptions": {},
+          "approvals": "ask",
+          "description": null
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "enabled": true,
+     "maxRunning": 3,
+     "maxDepth": 1,
+     "profiles": [
+      {
+       "id": "claude",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Claude Agent",
+       "implicit": false
+      },
+      {
+       "id": "codex-x",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": "gpt-5",
+       "mode": null,
+       "configOptions": {},
+       "approvals": "allowAll",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      {
+       "id": "codex-fast",
+       "agentId": "codex-acp",
+       "enabled": true,
+       "model": null,
+       "mode": "agent-full-access",
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Codex",
+       "implicit": false
+      },
+      {
+       "id": "gone",
+       "agentId": "old-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": null,
+       "implicit": false
+      },
+      {
+       "id": "claude-2",
+       "agentId": "claude-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": "Claude Agent",
+       "implicit": false
+      },
+      {
+       "id": "new",
+       "agentId": "new-acp",
+       "enabled": true,
+       "model": null,
+       "mode": null,
+       "configOptions": {},
+       "approvals": "ask",
+       "description": null,
+       "agentName": null,
+       "implicit": false
+      }
+     ]
+    },
+    "state": null
+   }
+  ]
+ }
+]

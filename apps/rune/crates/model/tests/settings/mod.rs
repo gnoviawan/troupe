@@ -329,6 +329,96 @@ pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
             "syncText" => json!(model::settings::mcp_catalog::sync_text(&args[0], "")),
             "syncErrorText" => json!(model::settings::mcp_catalog::sync_error_text(text(0))),
             "updatedText" => json!(model::settings::mcp_catalog::updated_text(None, "")),
+            "jsonImport" => {
+                let out = model::settings::mcp_json::parse_import(text(0));
+                json!({ "servers": out.servers, "errors": out.errors })
+            }
+            "installInitial" => to_value(&model::settings::mcp_install::initial_values(&parse::<Vec<model::settings::mcp_install::Field>>(&args[0])?)),
+            "installSplit" => {
+                let fields: Vec<model::settings::mcp_install::Field> = parse(&args[0])?;
+                let values: std::collections::BTreeMap<String, String> = parse(&args[1])?;
+                let (inputs, secrets) = model::settings::mcp_install::split_values(&fields, &values);
+                json!({ "inputs": inputs, "secretValues": secrets })
+            }
+            "canStartOver" => {
+                let failure = match (args[0]["kind"].as_str(), args[0]["code"].as_str()) {
+                    (Some("host"), Some(code)) => model::settings::mcp_install::Failure::Host(code.into()),
+                    (Some("unsupported"), _) => model::settings::mcp_install::Failure::Unsupported(args[0]["reason"].clone()),
+                    _ => model::settings::mcp_install::Failure::Save,
+                };
+                json!(failure.can_start_over())
+            }
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
+
+/// Replays the Sub-agents page's reads against `model::settings::subagents`.
+pub fn replay_subagents(vector: &Value) -> Result<usize, String> {
+    use model::settings::subagents::{self as rules, Object};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let list = |i: usize| -> Result<Vec<Object>, String> { parse::<Vec<Object>>(&args[i]) };
+        let object = |i: usize| -> Result<Object, String> { parse::<Object>(&args[i]) };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "idError" => json!(rules::id_error(text(0), &list(1)?)),
+            "uniqueId" => json!(rules::unique_id(text(0), &list(1)?)),
+            "shortName" => json!(rules::agent_short_name(text(0))),
+            "canDelete" => json!(rules::can_delete(&object(0)?, &list(1)?)),
+            "lockReason" => json!(rules::agent_lock_reason(&object(0)?, &list(1)?)),
+            "skipsPrompts" => json!(rules::skips_prompts(&object(0)?)),
+            "upserts" => json!(rules::profile_upserts(&list(0)?, &object(1)?, args[2].as_str())),
+            "apply" => rules::apply_input(&args[0], &args[1]),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
+
+/// Replays the Accounts page's words against `model::settings::accounts`.
+pub fn replay_accounts(vector: &Value) -> Result<usize, String> {
+    use model::settings::accounts::{self as rules, AccountTone, Provider, UsageTone};
+    const NOW: f64 = 1_800_000_000_000.0;
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "tone" => json!(match rules::usage_tone(args[0].as_f64().unwrap_or_default()) {
+                UsageTone::Normal => "normal",
+                UsageTone::Warning => "warning",
+                UsageTone::Critical => "critical",
+            }),
+            "label" => json!(rules::claude_meter(&args[0]).label),
+            "reset" => json!(rules::format_reset(args[0].as_f64().map(|s| s * 1000.0), NOW)),
+            "checked" => json!(rules::format_checked(args[0].as_f64().unwrap_or_default(), NOW)),
+            "plan" => json!(rules::plan_label(args[0].as_str())),
+            "primary" => json!(rules::claude_primary(Some(&args[0])).map(|m| m.percent)),
+            "status" => {
+                let usage = (!args[1].is_null()).then_some(&args[1]);
+                let (tone, meta) = rules::claude_status(&args[0], usage, args[2].as_bool().unwrap_or_default(), args[3].as_u64().unwrap_or_default() as usize);
+                let tone = match tone {
+                    AccountTone::Ok => "ok",
+                    AccountTone::Warning => "warning",
+                    AccountTone::Critical => "critical",
+                    AccountTone::SignedOut => "signed-out",
+                    AccountTone::Waiting => "waiting",
+                    AccountTone::Unknown => "unknown",
+                };
+                json!({ "tone": tone, "meta": meta })
+            }
+            "codexLabel" => json!(rules::meters(Provider::Codex, Some(&json!({ "status": "ok", "windows": [args[0]] })))[0].label),
+            "antigravityLabel" => json!(rules::meters(Provider::Antigravity, Some(&json!({ "status": "ok", "windows": [args[0]] })))[0].label),
             other => return Err(format!("step {index}: no read {other}")),
         };
         if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {

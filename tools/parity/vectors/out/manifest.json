@@ -245,7 +245,10 @@
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
         "src/renderer/lib/mcp-server-draft.ts": "2aa122699a92f39b69b4823481d8972177d7f6ce",
         "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9",
-        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35"
+        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35",
+        "src/renderer/lib/mcp-json-import.ts": "56003bee079e54465084e2d799cac3df38c6b075",
+        "src/renderer/components/settings/McpInstallForm.tsx": "88478a57885ef71bd11f0b7322b86cc70e066c11",
+        "src/renderer/hooks/use-mcp-catalog-install.ts": "7eb3c6c4c97999e5d566edd0cfc56d2753b6850d"
       },
       "vectors": [
         "the_registry_keeps_valid_entries",
@@ -255,7 +258,9 @@
         "servers_open_as_drafts",
         "url_and_sign_in_edits",
         "cards_show_status_target_and_tools",
-        "catalog_rows_and_sync_say_what_react_says"
+        "catalog_rows_and_sync_say_what_react_says",
+        "pasted_json_imports_like_the_dialog",
+        "install_form_values_and_retry"
       ]
     },
     "snapshots": {
@@ -360,6 +365,28 @@
       },
       "vectors": [
         "every route the Rune client calls"
+      ]
+    },
+    "subagents": {
+      "sources": {
+        "src/renderer/pages/app-preferences/subagent-profiles/profile-model.ts": "0d08ea7ca34587c06ef5147d506df7fa16a0b0fe"
+      },
+      "vectors": [
+        "profile_ids_follow_the_host_rule",
+        "which_profiles_may_move_or_go",
+        "saving_a_profile_keeps_the_implicit_default"
+      ]
+    },
+    "provider-usage": {
+      "sources": {
+        "src/renderer/lib/claude-usage-format.ts": "7db226efdfde02bb47bd84bc30f44492fc563397",
+        "src/renderer/lib/codex-usage-format.ts": "2d0fcdd782b26e9fd304c03fba601f45846b4d6e",
+        "src/renderer/lib/antigravity-usage-format.ts": "3d37161f25b4eb54d949d36598da8738e6806218",
+        "src/renderer/components/settings/provider/account-status.tsx": "b17d6f421f11cc78789ca9a0e26dff84c9b1299e"
+      },
+      "vectors": [
+        "usage_words",
+        "claude_rows_say_their_state"
       ]
     }
   }

@@ -124,6 +124,12 @@ impl State {
         if self.settings_page().id == crate::settings_mcp::PAGE {
             self.mcp_page_opened();
         }
+        if self.settings_page().id == crate::settings_accounts::PAGE {
+            self.accounts_opened();
+        }
+        if self.settings_page().id == crate::settings_subagents::PAGE {
+            self.subagents_opened();
+        }
         if self.settings_page().id == "skills" {
             let root = self.active_project().and_then(|p| p.path.clone()).unwrap_or_default();
             self.fetch_skills_for(root);
@@ -426,6 +432,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, (width, height): (f32, 
     crate::settings_profiles::editor(s, t, layer);
     crate::settings_mcp_dialog::server_dialog(s, t, phone, height, layer);
     crate::settings_mcp_dialog::paste_dialog(s, t, layer);
+    crate::mcp_install_view::install_dialog(s, t, phone, height, layer);
     ConfirmDialog::new(
         RESET_ALL,
         "Reset all settings?",
