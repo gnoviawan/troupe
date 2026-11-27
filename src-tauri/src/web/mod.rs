@@ -32,6 +32,9 @@ pub mod chat_reads;
 pub mod command_ledger;
 pub mod config;
 pub mod connection_runtime;
+pub mod desktop_mode;
+#[cfg(test)]
+mod desktop_mode_tests;
 pub mod diagnostics_api;
 pub mod fs_api;
 pub mod fs_watcher;
@@ -57,6 +60,9 @@ pub mod mcp_probe_api;
 pub mod mcp_registry;
 pub mod openapi;
 pub mod origin;
+pub mod parent_watch;
+#[cfg(test)]
+mod parent_watch_tests;
 pub mod permissions;
 pub mod presence;
 pub mod project_icon_api;
@@ -540,7 +546,27 @@ async fn shutdown_signal_future() {
     }
 }
 
-/// Wait for Ctrl-C (SIGINT) or, on Unix, SIGTERM.
+/// The in-process stop request ([`request_shutdown`]).
+fn shutdown_request() -> &'static tokio::sync::watch::Sender<bool> {
+    static REQUEST: std::sync::OnceLock<tokio::sync::watch::Sender<bool>> =
+        std::sync::OnceLock::new();
+    REQUEST.get_or_init(|| tokio::sync::watch::channel(false).0)
+}
+
+/// Stop the standalone server as SIGTERM would: every waiter on the shutdown
+/// signal resolves, including ones that start waiting later.
+pub fn request_shutdown() {
+    shutdown_request().send_replace(true);
+}
+
+async fn shutdown_requested() {
+    let mut requested = shutdown_request().subscribe();
+    if requested.wait_for(|stop| *stop).await.is_err() {
+        std::future::pending::<()>().await;
+    }
+}
+
+/// Wait for Ctrl-C (SIGINT), on Unix SIGTERM, or [`request_shutdown`].
 ///
 /// Returns `Err` if signal handlers cannot be installed (no `expect`/`unwrap`).
 async fn shutdown_signal() -> Result<(), std::io::Error> {
@@ -553,6 +579,7 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
         tokio::select! {
             result = ctrl_c => result?,
             _ = sigterm.recv() => {},
+            () = shutdown_requested() => {},
         }
         Ok(())
     }
@@ -561,6 +588,9 @@ async fn shutdown_signal() -> Result<(), std::io::Error> {
     {
         // Windows: Ctrl-C / console ctrl handler via tokio. SIGTERM is not a
         // portable Win32 signal; service-stop is out of scope for this scaffold.
-        ctrl_c.await
+        tokio::select! {
+            result = ctrl_c => result,
+            () = shutdown_requested() => Ok(()),
+        }
     }
 }
