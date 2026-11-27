@@ -88,7 +88,8 @@ impl Client {
     }
 
     async fn send(&mut self, type_: &str, payload: Value) -> WsReply {
-        let text = frame(type_, payload);
+        // A ledgered type carries a fresh `command_id`, like a client's.
+        let text = crate::web::command_ledger::test_clock::stamp_ws_text(&frame(type_, payload));
         assert!(dispatch_connection_text(&text, &mut self.conn, &self.env, &self.exec).await);
         loop {
             if let Outbound::Reply(reply) = self.next().await {
@@ -205,16 +206,23 @@ async fn a_malformed_payload_never_repeats_a_value() {
 }
 
 #[tokio::test]
-async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
+async fn trusting_a_host_key_names_the_key_of_an_open_question() {
     let dir = tempfile::tempdir().unwrap();
     let mut client = Client::new(&relay_with_ssh(dir.path()));
-    let trusted = client
+    let unnamed = client
         .send(
             "ssh_session_respond_host_key",
             json!({ "sessionId": "s1", "trust": true }),
         )
         .await;
-    assert_eq!(code(&trusted), "SSH_HOST_KEY_TRUST_UNAVAILABLE");
+    assert_eq!(code(&unnamed), "SSH_HOST_KEY_FINGERPRINT_REQUIRED");
+    let unasked = client
+        .send(
+            "ssh_session_respond_host_key",
+            json!({ "sessionId": "s1", "trust": true, "fingerprint": "SHA256:x" }),
+        )
+        .await;
+    assert_eq!(code(&unasked), "SSH_HOST_KEY_NOT_SHOWN");
     let rejected = client
         .send(
             "ssh_session_respond_host_key",
@@ -222,6 +230,67 @@ async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
         )
         .await;
     assert!(rejected.ok, "{rejected:?}");
+}
+
+/// The next watch frame on the client's queue, skipping replies.
+async fn next_watch(client: &mut Client) -> Value {
+    loop {
+        if let Outbound::Watch(frame) = client.next().await {
+            return serde_json::to_value(frame).unwrap();
+        }
+    }
+}
+
+#[tokio::test]
+async fn the_ssh_watch_carries_ssh_events_to_a_host_local_client_only() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+
+    let mut writer = test_access();
+    let mut authed = true;
+    let refused = handle_sync_with_access(
+        &frame("watch", json!({ "watch": "ssh", "scope": "" })),
+        &mut authed,
+        &mut None,
+        &mut writer,
+        None,
+    );
+    assert_eq!(code(&refused), "forbidden");
+    assert!(message(&refused).contains("credentials"), "{}", message(&refused));
+
+    let mut client = Client::new(&relay);
+    let watched = client
+        .send("watch", json!({ "watch": "ssh", "scope": "" }))
+        .await;
+    assert!(watched.ok, "{watched:?}");
+    let state = next_watch(&mut client).await;
+    assert_eq!(state["state"], json!({ "hostKeys": [] }));
+
+    let emit = Arc::clone(&relay.ssh().unwrap().emit);
+    emit(
+        crate::ssh::session::EVENT_PROGRESS,
+        json!({ "sessionId": "s1", "stage": "connecting" }),
+    );
+    emit(
+        crate::ssh::sftp::EVENT_TRANSFER_PROGRESS,
+        json!({
+            "connectionId": "s1", "remotePath": "/r", "localPath": "/l",
+            "bytesTransferred": 4, "totalBytes": 4, "direction": "upload",
+            "status": "completed", "error": null,
+        }),
+    );
+    let progress = next_watch(&mut client).await;
+    assert_eq!(
+        progress["delta"],
+        json!({ "event": "progress", "sessionId": "s1", "stage": "connecting" })
+    );
+    let transfer = next_watch(&mut client).await;
+    let delta: troupe_protocol::ws::SshWatchDelta =
+        serde_json::from_value(transfer["delta"].clone()).unwrap();
+    assert!(
+        matches!(delta, troupe_protocol::ws::SshWatchDelta::Transfer(ref t) if t.status == "completed"),
+        "{delta:?}"
+    );
 }
 
 fn password_profile(id: &str, host: &str, claims_stored: bool) -> Value {

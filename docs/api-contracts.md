@@ -643,6 +643,32 @@ The class column is the request's command class, defined in `src-tauri/src/web/c
 | `canvas_mount` | idempotent | Tells the host this connection runs a project's canvas mount (`{projectId, mountSeq}`). Replies `{attached: true}`, or `{attached: false, heldElsewhere}` when the host holds no such mount for this renderer. The host then forwards agent canvas calls to the connection as `canvas_call` frames. |
 | `canvas_unmount` | idempotent | Tells the host this connection no longer runs the mount (`{projectId, mountSeq}`) and replies `{unmounted}`. The mount itself closes only through the host's save-then-close sequence. |
 | `canvas_reply` | idempotent | Answers one `canvas_call` (`{callId, mountSeq, ok}` plus a `result` or an `error`) and replies `{resolved}`. A reply to a call that is no longer waiting is ignored. A `result` too long for one message (`/ws` takes at most 16 MiB a frame and 64 MiB a message from any peer) goes as several `canvas_reply`, each with `partial: true` but the last; the host joins them (up to 256 MiB) and answers a partial one `{accepted}`, which is `false` once the call is gone or the reply passed the limit. |
+| `ssh_list_profiles` | read | Lists the saved SSH hosts (`ssh-profiles.json` in the state dir). Never carries a stored secret. |
+| `ssh_save_profile` | idempotent | Creates or replaces one host by `profile.id`. A password or passphrase sent with the save goes to the OS keychain; a host moved to another target loses its stored secrets. |
+| `ssh_delete_profile` | command, payload | Deletes one host and its keychain secrets. An unknown id fails, so a resend replays the first answer. |
+| `ssh_duplicate_profile` | command, payload | Copies one host without its secrets and answers the copy. A resend answers the same copy. |
+| `ssh_import_config` | command, payload | Imports the hosts of `~/.ssh/config` and answers the imported hosts. |
+| `ssh_inspect_key` | read | Reads one private key file's status, type and whether it is encrypted, never its contents. |
+| `ssh_list_keys` | read | Lists the private keys in `~/.ssh`. |
+| `ssh_session_open` | command, receipt-only | Connects the client-chosen `request.sessionId` to a host and adopts its shell as a terminal. The reply carries the terminal's claim, so a resend answers a receipt only; `ssh_session_list` gives a fresh claim. |
+| `ssh_session_respond_host_key` | command, payload | Answers the open host-key question of a session. `trust: true` must name the `fingerprint` the question showed. |
+| `ssh_session_cancel` | idempotent | Aborts a connect in progress. |
+| `ssh_session_close` | idempotent | Closes a session's terminal, or cancels its connect. A gone session answers ok. |
+| `ssh_session_list` | read | Lists the live sessions, each with a fresh terminal claim. |
+| `sftp_list_dir` | read | Lists one remote directory of a live session (`request.connectionId` is the session id). |
+| `sftp_realpath` | read | Resolves a remote path. |
+| `sftp_download` | command, payload | Copies a remote file to a local path; progress arrives on the `ssh` watch. |
+| `sftp_upload` | command, payload | Copies a local file to a remote path; progress arrives on the `ssh` watch. |
+| `sftp_delete` | command, payload | Deletes a remote file or empty directory. |
+| `sftp_mkdir` | command, payload | Creates a remote directory. |
+| `sftp_rename` | command, payload | Renames or moves a remote path. |
+| `sftp_read_file` | read | Reads a remote text file. |
+| `sftp_write_file` | idempotent | Replaces a remote file's contents. |
+| `sftp_create_file` | command, payload | Creates an empty remote file; an existing one fails. |
+| `listeners_status` | read | Answers the LAN listener, the tunnel and whether remote writes are allowed. The URLs carry the remote token. |
+| `listeners_set_lan` | idempotent | Starts (`{enabled: true, port?}`) or stops the LAN listener and answers the status. |
+| `listeners_set_tunnel` | idempotent | Starts or stops the tunnel and answers the status. |
+| `listeners_rotate_token` | command, receipt-only | Replaces the remote token and restarts the running listeners. The reply carries the new URLs, so a resend answers a receipt only. |
 
 ### Events
 

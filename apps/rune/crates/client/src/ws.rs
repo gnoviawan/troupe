@@ -242,6 +242,7 @@ impl WsClient {
                         protocol_version: WS_PROTOCOL_VERSION,
                         device_id: self.config.device_id.clone(),
                         client_instance_id: self.config.client_instance_id.clone(),
+                        host_local_token: None,
                     };
                     let payload = serde_json::to_value(payload).unwrap_or(Value::Null);
                     self.send(

@@ -63,6 +63,9 @@ pub enum WatchKind {
     /// What every chat list shows for each agent chat: working, needs you,
     /// unread turn end.
     ChatActivity,
+    /// SSH session progress, host-key questions, session ends and transfer
+    /// progress (`troupe-server --desktop`); host-local connections only.
+    Ssh,
 }
 
 impl WatchKind {
@@ -77,6 +80,7 @@ impl WatchKind {
             Self::Store => "store",
             Self::Terminals => "terminals",
             Self::ChatActivity => "chat_activity",
+            Self::Ssh => "ssh",
         }
     }
 
@@ -91,6 +95,7 @@ impl WatchKind {
             "store" => Some(Self::Store),
             "terminals" => Some(Self::Terminals),
             "chat_activity" => Some(Self::ChatActivity),
+            "ssh" => Some(Self::Ssh),
             _ => None,
         }
     }
@@ -101,9 +106,11 @@ impl WatchKind {
     #[must_use]
     pub fn accepts_scope(self, scope: &str) -> bool {
         match self {
-            Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity => {
-                scope.is_empty()
-            }
+            Self::Projects
+            | Self::ChatHistory
+            | Self::Agents
+            | Self::ChatActivity
+            | Self::Ssh => scope.is_empty(),
             Self::Fs | Self::Store | Self::Terminals => {
                 !scope.trim().is_empty() && scope.len() <= MAX_SCOPE_BYTES
             }

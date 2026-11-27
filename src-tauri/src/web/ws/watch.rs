@@ -1,7 +1,7 @@
 //! `watch` / `unwatch` handlers: subscriptions to the watches of
 //! [`crate::web::watch::WatchHub`] (projects, chat-history index, agent
 //! roster, project file changes, store keys, project terminal set, chat
-//! activity). The notify watchers behind the `fs` watch live in
+//! activity, and SSH events for a host-local connection). The notify watchers behind the `fs` watch live in
 //! [`crate::web::fs_watcher::FsWatchHub`]; connection close releases every
 //! subscription through `ConnectionCleanup`.
 
@@ -78,6 +78,16 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
             }
             hub.subscribe(kind, &scope, &env.out_tx, || {
                 store_state(store, &scope, identity)
+            })
+        }
+        WatchKind::Ssh => {
+            // The capability check already admitted only a host-local
+            // connection (`ws_request_requirement`).
+            let Some(ssh) = relay.ssh() else {
+                return WsReply::err(id, WsErrorCode::Unsupported, "this host does not serve SSH");
+            };
+            hub.subscribe(kind, &scope, &env.out_tx, || {
+                crate::web::desktop_mode::ssh_state(&ssh)
             })
         }
         WatchKind::Fs => {

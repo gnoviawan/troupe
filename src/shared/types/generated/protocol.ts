@@ -14,6 +14,13 @@ export type AcpAuthenticatePayload = {
   clientInstanceId: string
   /** Per install or browser profile. */
   deviceId: string
+  /**
+   * The host-local credential: the contents of `<state>/host-local.token`,
+   * which only a `troupe-server --desktop` host writes. Sent by the Rune
+   * desktop app; a host grants `host_local` only to a direct loopback
+   * connection that presents it.
+   */
+  hostLocalToken?: string
   protocolVersion: number
   token?: string
 }
@@ -404,6 +411,99 @@ export type SpawnedTerminal = {
   pid: number
   rows: number
   shell: string
+}
+
+/**
+ * `ssh_session_respond_host_key` payload. Trusting over `/ws` names the
+ * fingerprint the person saw; the host refuses a trust whose fingerprint is
+ * not the one of the question open for that session.
+ */
+export type SshHostKeyAnswer = {
+  fingerprint?: string
+  sessionId: string
+  trust: boolean
+}
+
+/** A host-key question waiting for an answer. */
+export type SshHostKeyPrompt = {
+  /** `SHA256:<base64>` of the key the server presented. */
+  fingerprint: string
+  host: string
+  /** OpenSSH key type name, e.g. `ssh-ed25519`. */
+  keyType: string
+  port: number
+  /**
+   * `SHA256:<base64>` of each key known_hosts records for this host and key
+   * type. Empty unless `status` is `changed`.
+   */
+  previousFingerprints?: Array<string>
+  sessionId: string
+  status: SshHostKeyStatus
+}
+
+/** A host-key question was answered, cancelled or timed out. */
+export type SshHostKeyResolved = {
+  sessionId: string
+}
+
+/**
+ * Why a host key needs a person. A trusted key is never asked about and
+ * a revoked one is refused without asking.
+ */
+export type SshHostKeyStatus = 'unknown' | 'changed'
+
+export const SshHostKeyStatusValues = ['unknown', 'changed'] as const
+
+/**
+ * A session's shell ended: `exited` (with its code), `lost` (with a
+ * detail) or `closed`.
+ */
+export type SshSessionEnded = {
+  detail: string | null
+  exitCode: number | null
+  reason: string
+  sessionId: string
+  terminalId: string | null
+}
+
+/**
+ * A connect moved to its next stage (`connecting`, `verifyingHostKey`,
+ * `authenticating`, `startingShell`).
+ */
+export type SshSessionProgress = {
+  sessionId: string
+  stage: string
+}
+
+/** Progress of one SFTP upload or download. */
+export type SshTransferProgress = {
+  bytesTransferred: number
+  /** The session the transfer runs on. */
+  connectionId: string
+  /** `upload` or `download`. */
+  direction: string
+  error: string | null
+  localPath: string
+  remotePath: string
+  /** `in-progress`, `completed`, `failed` or `cancelled`. */
+  status: string
+  totalBytes: number
+}
+
+/** An `ssh` delta: one SSH fact, tagged by `event`. */
+export type SshWatchDelta =
+  | SshSessionProgress
+  | SshHostKeyPrompt
+  | SshHostKeyResolved
+  | SshSessionEnded
+  | SshTransferProgress
+
+/**
+ * `ssh` watch state: the host-key questions open now. A client that missed
+ * a `host_key` delta finds the question here when it watches again.
+ */
+export type SshWatchState = {
+  hostKeys: Array<SshHostKeyPrompt>
 }
 
 /** `store_delete` request payload; shared keys follow the write preconditions. */
@@ -1179,6 +1279,32 @@ export type WsRequestType =
   | 'canvas_mount'
   | 'canvas_unmount'
   | 'canvas_reply'
+  | 'ssh_list_profiles'
+  | 'ssh_save_profile'
+  | 'ssh_delete_profile'
+  | 'ssh_duplicate_profile'
+  | 'ssh_import_config'
+  | 'ssh_inspect_key'
+  | 'ssh_list_keys'
+  | 'ssh_session_open'
+  | 'ssh_session_respond_host_key'
+  | 'ssh_session_cancel'
+  | 'ssh_session_close'
+  | 'ssh_session_list'
+  | 'sftp_list_dir'
+  | 'sftp_realpath'
+  | 'sftp_download'
+  | 'sftp_upload'
+  | 'sftp_delete'
+  | 'sftp_mkdir'
+  | 'sftp_rename'
+  | 'sftp_read_file'
+  | 'sftp_write_file'
+  | 'sftp_create_file'
+  | 'listeners_status'
+  | 'listeners_set_lan'
+  | 'listeners_set_tunnel'
+  | 'listeners_rotate_token'
 
 export const WsRequestTypeValues = [
   'send_prompt',
@@ -1283,7 +1409,33 @@ export const WsRequestTypeValues = [
   'start_antigravity_account_login',
   'canvas_mount',
   'canvas_unmount',
-  'canvas_reply'
+  'canvas_reply',
+  'ssh_list_profiles',
+  'ssh_save_profile',
+  'ssh_delete_profile',
+  'ssh_duplicate_profile',
+  'ssh_import_config',
+  'ssh_inspect_key',
+  'ssh_list_keys',
+  'ssh_session_open',
+  'ssh_session_respond_host_key',
+  'ssh_session_cancel',
+  'ssh_session_close',
+  'ssh_session_list',
+  'sftp_list_dir',
+  'sftp_realpath',
+  'sftp_download',
+  'sftp_upload',
+  'sftp_delete',
+  'sftp_mkdir',
+  'sftp_rename',
+  'sftp_read_file',
+  'sftp_write_file',
+  'sftp_create_file',
+  'listeners_status',
+  'listeners_set_lan',
+  'listeners_set_tunnel',
+  'listeners_rotate_token'
 ] as const
 
 /** Any frame the host writes on `/ws`. */
@@ -1321,9 +1473,10 @@ export type WsWatchDeltaFrame = {
 export type WsWatchFrame = WsWatchStateFrame | WsWatchDeltaFrame
 
 /**
- * A watch a connection can hold. `projects`, `chat_history`, `agents` and
- * `chat_activity` have the empty scope; `fs` and `terminals` are scoped
- * to a project id, `store` to a store key.
+ * A watch a connection can hold. `projects`, `chat_history`, `agents`,
+ * `chat_activity` and `ssh` have the empty scope; `fs` and `terminals`
+ * are scoped to a project id, `store` to a store key. Only a
+ * `host_local` connection may watch `ssh`.
  */
 export type WsWatchName =
   | 'projects'
@@ -1333,6 +1486,7 @@ export type WsWatchName =
   | 'store'
   | 'terminals'
   | 'chat_activity'
+  | 'ssh'
 
 export const WsWatchNameValues = [
   'projects',
@@ -1341,7 +1495,8 @@ export const WsWatchNameValues = [
   'fs',
   'store',
   'terminals',
-  'chat_activity'
+  'chat_activity',
+  'ssh'
 ] as const
 
 /** `watch` reply payload. */

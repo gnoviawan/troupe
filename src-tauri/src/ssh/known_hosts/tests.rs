@@ -175,3 +175,20 @@ fn glob_matches_like_openssh() {
     assert!(!glob_match(b"*.example.com", b"example.com"));
     assert!(!glob_match(b"host?", b"host12"));
 }
+
+#[test]
+fn a_changed_key_names_the_recorded_key_it_replaces() {
+    let contents = format!(
+        "example.com {KEY_B}\nexample.com {KEY_ECDSA}\nother.com {KEY_B}\n@revoked example.com {KEY_B}\nexample.com {KEY_A}\n"
+    );
+    let previous = recorded_others(&contents, "example.com", &key(KEY_A));
+    assert_eq!(
+        previous,
+        vec![key(KEY_B).fingerprint(HashAlg::Sha256).to_string()],
+        "one entry per other key of the same type; markers, other types and other hosts are skipped"
+    );
+    assert!(recorded_others(&contents, "nowhere.com", &key(KEY_A)).is_empty());
+    assert!(info_for("example.com", 22, &key(KEY_A))
+        .previous_fingerprints
+        .is_empty());
+}

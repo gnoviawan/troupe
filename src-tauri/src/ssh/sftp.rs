@@ -7,6 +7,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 /// Where transfer progress goes (`ssh-transfer-progress`).
+/// The progress event of an upload or download.
+pub const EVENT_TRANSFER_PROGRESS: &str = "ssh-transfer-progress";
+
 pub type ProgressSink<'a> = &'a (dyn Fn(&'static str, serde_json::Value) + Send + Sync);
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -246,7 +249,7 @@ impl Progress<'_> {
             error,
         };
         (self.sink)(
-            "ssh-transfer-progress",
+            EVENT_TRANSFER_PROGRESS,
             serde_json::to_value(&progress).unwrap_or_default(),
         );
     }

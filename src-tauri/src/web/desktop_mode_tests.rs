@@ -69,3 +69,56 @@ fn legacy_chat_history_is_found_only_when_the_directory_exists() {
         Some(dir.path().join("acp-chat-history"))
     );
 }
+
+#[test]
+fn each_ssh_event_becomes_a_typed_ssh_watch_delta() {
+    use crate::ssh::{session, sftp};
+    use crate::web::desktop_mode::ssh_delta;
+    use serde_json::json;
+    use troupe_protocol::ws::SshWatchDelta;
+
+    let events = [
+        (
+            session::EVENT_PROGRESS,
+            json!({ "sessionId": "s1", "stage": "authenticating" }),
+            "progress",
+        ),
+        (
+            session::EVENT_HOST_KEY,
+            json!({
+                "sessionId": "s1", "status": "changed", "host": "h", "port": 22,
+                "keyType": "ssh-ed25519", "fingerprint": "SHA256:new",
+                "previousFingerprints": ["SHA256:old"],
+            }),
+            "host_key",
+        ),
+        (
+            session::EVENT_HOST_KEY_RESOLVED,
+            json!({ "sessionId": "s1" }),
+            "host_key_resolved",
+        ),
+        (
+            session::EVENT_ENDED,
+            json!({ "sessionId": "s1", "terminalId": null, "reason": "lost",
+                    "exitCode": null, "detail": "reset" }),
+            "ended",
+        ),
+        (
+            sftp::EVENT_TRANSFER_PROGRESS,
+            json!({ "connectionId": "s1", "remotePath": "/r", "localPath": "/l",
+                    "bytesTransferred": 1, "totalBytes": 2, "direction": "download",
+                    "status": "in-progress", "error": null }),
+            "transfer",
+        ),
+    ];
+    for (event, payload, tag) in events {
+        let delta = ssh_delta(event, payload).expect(event);
+        assert_eq!(delta["event"], tag);
+        let typed: SshWatchDelta = serde_json::from_value(delta.clone()).expect(event);
+        assert_eq!(serde_json::to_value(typed).unwrap(), delta, "{event}");
+    }
+    assert_eq!(
+        ssh_delta("ssh-port-forward-status-changed", json!(["s1", {}])),
+        None
+    );
+}

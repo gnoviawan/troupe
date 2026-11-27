@@ -104,6 +104,9 @@ pub fn protocol_schema() -> Value {
     add::<ws::FsWatchDelta>(g);
     add::<ws::StoreWatchState>(g);
     add::<ws::TerminalsWatchState>(g);
+    add::<ws::SshWatchState>(g);
+    add::<ws::SshWatchDelta>(g);
+    add::<ws::SshHostKeyAnswer>(g);
     add::<ws::AcpAuthenticatePayload>(g);
     add::<ws::AcpAuthenticateReply>(g);
     add::<ws::DeleteSessionPayload>(g);

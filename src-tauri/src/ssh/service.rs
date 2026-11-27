@@ -268,6 +268,14 @@ pub fn respond_host_key(ssh: &SSHManager, session_id: &str, trust: bool) -> bool
     ssh.sessions.respond_host_key(session_id, trust)
 }
 
+/// Trust the open host-key question of `session_id` when `fingerprint` is
+/// the key it shows; false otherwise (see
+/// [`super::session::SshSessionManager::trust_host_key_shown`]).
+#[must_use]
+pub fn trust_host_key_shown(ssh: &SSHManager, session_id: &str, fingerprint: &str) -> bool {
+    ssh.sessions.trust_host_key_shown(session_id, fingerprint)
+}
+
 #[must_use]
 pub fn cancel_session(ssh: &SSHManager, session_id: &str) -> bool {
     ssh.sessions.cancel(session_id)
