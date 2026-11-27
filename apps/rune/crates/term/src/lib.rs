@@ -15,6 +15,7 @@ pub mod mouse;
 mod perform;
 pub mod search;
 pub mod selection;
+mod status;
 mod term;
 pub mod text;
 mod width;
@@ -132,3 +133,5 @@ fn clamp(cols: u16, rows: u16) -> (usize, usize) {
 
 #[cfg(test)]
 mod term_tests;
+#[cfg(test)]
+mod status_tests;
