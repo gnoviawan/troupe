@@ -114,15 +114,6 @@ fn every_ssh_request_is_forbidden_to_a_writer_that_is_not_host_local() {
         assert_eq!(code(&reply), "forbidden", "{type_}");
         assert!(message(&reply).contains("credentials"), "{type_}");
     }
-    let mut authed = true;
-    let watch = handle_sync_with_access(
-        &frame("watch", json!({ "watch": "ssh" })),
-        &mut authed,
-        &mut None,
-        &mut access,
-        None,
-    );
-    assert_eq!(code(&watch), "forbidden", "the ssh watch needs host-local");
 }
 
 #[tokio::test]
@@ -211,28 +202,4 @@ async fn a_malformed_payload_never_repeats_a_value() {
         .await;
     assert_eq!(code(&reply), "SSH_INVALID_REQUEST");
     assert!(!message(&reply).contains("hunter2"), "{}", message(&reply));
-}
-
-#[tokio::test]
-async fn ssh_events_reach_the_ssh_watch() {
-    let dir = tempfile::tempdir().unwrap();
-    let relay = relay_with_ssh(dir.path());
-    let mut client = Client::new(&relay);
-
-    let watched = client.send("watch", json!({ "watch": "ssh" })).await;
-    assert!(watched.ok, "{watched:?}");
-
-    let emit = Arc::clone(&relay.ssh().unwrap().emit);
-    (*emit)("ssh-session-ended", json!({ "sessionId": "s1" }));
-    loop {
-        if let Outbound::Watch(frame) = client.next().await {
-            let frame = serde_json::to_value(&frame).unwrap();
-            if frame.get("delta").is_some() {
-                assert_eq!(frame["watch"], "ssh");
-                assert_eq!(frame["delta"]["event"], "ssh-session-ended");
-                assert_eq!(frame["delta"]["payload"]["sessionId"], "s1");
-                break;
-            }
-        }
-    }
 }

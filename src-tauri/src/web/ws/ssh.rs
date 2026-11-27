@@ -4,7 +4,8 @@
 //! command's arguments (`{ request }`, `{ profileId }`, `{ sessionId, trust }`,
 //! ...). A success answers the command's value; a failure answers the
 //! service's stable code (`SSH_AUTH_FAILED`, `SFTP_ERROR`, ...) with its
-//! message. Port forwarding is not served: no client calls it yet.
+//! message. Port forwarding is not served: no client calls it yet. SSH
+//! events are not pushed yet (see `web::desktop_mode::attach_ssh`).
 //!
 //! The capability check admits these only for a `host_local` connection:
 //! they use the host's SSH keys, keychain and known_hosts. Payloads can carry

@@ -30,7 +30,7 @@ pub struct SSHManager {
     pub sessions: Arc<SshSessionManager>,
     /// Where session progress, host-key questions, session ends, transfer
     /// progress and port-forward status go: Tauri events in the Tauri app,
-    /// the `ssh` watch on `troupe-server --desktop`.
+    /// a log line on `troupe-server --desktop` (`web::desktop_mode`).
     pub emit: Emit,
 }
 
