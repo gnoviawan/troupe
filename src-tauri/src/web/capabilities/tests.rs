@@ -23,6 +23,7 @@ const VIEW_ONLY: Capabilities = Capabilities::none(Carrier::Ws);
 const WRITER: Capabilities = Capabilities {
     carrier: Carrier::Ws,
     write: true,
+    host_local: false,
 };
 
 #[test]

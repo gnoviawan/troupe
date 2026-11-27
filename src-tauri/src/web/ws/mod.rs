@@ -689,6 +689,8 @@ mod capability_tests;
 #[cfg(test)]
 pub(crate) mod harness;
 #[cfg(test)]
+mod host_local_tests;
+#[cfg(test)]
 mod host_ticket_route_tests;
 #[cfg(test)]
 mod mcp_install_route_tests;

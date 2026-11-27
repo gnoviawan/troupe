@@ -44,6 +44,10 @@ pub mod git_history_api;
 pub mod git_hunk_api;
 pub mod github_api;
 pub mod host_allow;
+pub mod host_local;
+#[cfg(test)]
+mod host_local_tests;
+pub mod host_secrets;
 pub mod html_preview_api;
 pub mod install_api;
 pub mod log_api;

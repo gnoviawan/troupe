@@ -1092,6 +1092,8 @@ pub(super) fn test_policy(peer: [u8; 4], allow_remote_writes: bool, shared_live_
             allow_remote_writes,
             shared_live_writes_denied,
         },
+        token_gated: false,
+        proxied: false,
     }
 }
 
