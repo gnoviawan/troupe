@@ -258,6 +258,47 @@
         "catalog_rows_and_sync_say_what_react_says"
       ]
     },
+    "snapshots": {
+      "sources": {
+        "src/renderer/stores/snapshot-store.ts": "c5d04ffcd2ab974d74ddea11dc94412c23d2e526",
+        "src/renderer/lib/persistence-trim.ts": "abbb5edd6acf7a7f674afd6e54c99b9fb644dd0b"
+      },
+      "vectors": [
+        "loads_a_projects_list_and_an_empty_one",
+        "creates_on_top_of_the_saved_list",
+        "creates_the_first_snapshot_of_a_project",
+        "create_rolls_back_when_the_list_cannot_be_read",
+        "create_rolls_back_when_the_write_fails",
+        "renames_and_deletes_only_the_picked_snapshot",
+        "rename_rolls_back_when_the_write_fails_or_the_list_is_gone",
+        "delete_keeps_the_local_removal_when_the_list_is_missing_or_unreadable",
+        "gets_a_snapshot_with_its_terminals",
+        "trims_output_first_then_the_oldest_snapshots"
+      ]
+    },
+    "setup": {
+      "sources": {
+        "src/renderer/components/setup/ServerSetupWizard.tsx": "7f14e767f4142adf39fd6dd7b682f52965b26c15",
+        "src/renderer/components/setup/RestartingScreen.tsx": "c29ea8d317062a740a68918ada4172b3b9221258",
+        "src/renderer/components/onboarding/onboarding-gate.ts": "7440f31af72b763d5e4de10e8cdec6aa4d297ba9",
+        "src/renderer/components/onboarding/land-onboarding.ts": "c85cf73b73c42056b73daaaebc30f7bce1fea5b9"
+      },
+      "vectors": [
+        "hosts_read_as_one_of_the_two_bind_modes",
+        "the_restart_lands_on_the_new_address_with_the_token",
+        "first_run_shows_only_when_every_fact_holds",
+        "onboarding_lands_on_the_launcher_a_quick_chat_or_the_workspace"
+      ]
+    },
+    "bug-report": {
+      "sources": {
+        "src/renderer/lib/bug-report-api.ts": "921c75e88be6bc489f9c7851826e210f667c8d02"
+      },
+      "vectors": [
+        "the_markdown_is_what_the_dialog_previews_and_sends",
+        "the_fallback_url_carries_the_body_or_the_short_one"
+      ]
+    },
     "github": {
       "sources": {
         "src/renderer/stores/github-store.ts": "54ff83e5eef923c52ffc7371c34782bb8c984eab"
@@ -279,6 +320,46 @@
       "vectors": [
         "reads",
         "writes"
+      ]
+    },
+    "automation-draft": {
+      "sources": {
+        "src/renderer/components/automations/canvas/draft/draft.ts": "c9fa003e6eeb3c4b5ba8e9714486dd72c2136121",
+        "src/renderer/components/automations/canvas/draft/apply-op.ts": "ec9678e8b6bb3da5624fadce3efab953d1c24501",
+        "src/renderer/components/automations/canvas/draft/inverse.ts": "4866f28887cb9c0da354a77c3ae3e7b385626317",
+        "src/renderer/components/automations/canvas/draft/gestures.ts": "15801231d1ca053b0d9854ccc51e04ff8a78d37e",
+        "src/renderer/components/automations/canvas/layout.ts": "091f786c38fc5a573ac8056f056ffa392773909b",
+        "src/renderer/components/automations/canvas/ports.ts": "367d78cf46816161c37c883eaa0519bf951a13e7",
+        "src/renderer/components/automations/canvas/palette/node-kinds.ts": "40b91799d62a92edb2a7359f3dff4aafccbf34c3"
+      },
+      "vectors": [
+        "each fixture batch as a gesture, undone and redone",
+        "add, connect, move and remove on a placed canvas",
+        "dry runs land only on the pending list they ran",
+        "save keeps the history on our own revision only",
+        "a new head replaces a clean draft and waits behind a dirty one",
+        "a rebase replays the edits that still apply and names the rest"
+      ]
+    },
+    "automation-run": {
+      "sources": {
+        "src/renderer/components/automations/canvas/run/run-overlay.ts": "bf0154c60f85338d779d65a91e5d15405ef26282",
+        "src/renderer/components/automations/canvas/inspector/template-scope.ts": "4ebf1a09cdae69ba7a130db7fa4d7167af52124b",
+        "src/renderer/components/automations/automation-format.ts": "8c6b83a0cd67520bff43a132b056cc7a6d423bbb"
+      },
+      "vectors": [
+        "the fixture runs on their own graphs",
+        "how automations read",
+        "new nodes from the add menu"
+      ]
+    },
+    "automation-routes": {
+      "sources": {
+        "src/renderer/lib/automation-api.ts": "3eabd5fbed55e434697c4f559fa6b7439bb431bb",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "every route the Rune client calls"
       ]
     }
   }

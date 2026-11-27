@@ -689,6 +689,7 @@ export function ServerSetupWizard({
       <SettingsDisclosure
         title="Advanced"
         summary="Where the server keeps terminal data and the project list."
+        layout="stacked"
         open={advancedOpen}
         onOpenChange={setAdvancedOpen}
       >

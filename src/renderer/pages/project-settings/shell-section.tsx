@@ -26,7 +26,7 @@ export function ShellSection({
   const options = shellSelectOptions(value, availableShells, 'App default')
   return (
     <SettingsSection id="shell">
-      <SettingsGroup title="Default shell">
+      <SettingsGroup title="Default shell" description="Override the app shell for this project.">
         <SettingsCard>
           <SettingsRow
             id={rowId('project-default-shell')}

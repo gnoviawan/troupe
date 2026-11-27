@@ -2,8 +2,10 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { ProgressBar } from '@/components/ui/progress-bar'
+import { catalogColumnsForWidth } from './McpCatalogCard'
 import { SettingsDisclosure } from './SettingsDisclosure'
 import { SettingsFilter } from './SettingsFilter'
+import { SETTINGS_SPLIT_GROUP_CLASS, SettingsGroup } from './SettingsGroup'
 import { SETTINGS_REVEAL_EVENT } from './SettingsLayout'
 import { SettingsSegmented } from './SettingsSegmented'
 
@@ -69,14 +71,75 @@ describe('SettingsFilter', () => {
   })
 })
 
+describe('SettingsGroup', () => {
+  it('renders title, description, meta, actions, children and footnote in split mode by default', () => {
+    render(
+      <SettingsGroup
+        title="Appearance"
+        description="Theme, interface zoom, and window chrome."
+        meta="3 options"
+        actions={<button type="button">Reset</button>}
+        footnote="Applies immediately."
+      >
+        <p>Row content</p>
+      </SettingsGroup>
+    )
+
+    const section = screen.getByRole('region', { name: 'Appearance' })
+    expect(section).toHaveClass(SETTINGS_SPLIT_GROUP_CLASS)
+    expect(screen.getByText('Theme, interface zoom, and window chrome.')).toBeInTheDocument()
+    expect(screen.getByText('3 options')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeInTheDocument()
+    expect(screen.getByText('Row content')).toBeInTheDocument()
+    expect(screen.getByText('Applies immediately.')).toBeInTheDocument()
+  })
+
+  it('stays stacked when layout="stacked" or title is omitted', () => {
+    const { rerender } = render(
+      <SettingsGroup
+        title="Added"
+        layout="stacked"
+        description="Installed servers."
+        meta="4 servers"
+        actions={<button type="button">Add server</button>}
+        footnote="Changes apply to new chats."
+      >
+        <p>Card grid</p>
+      </SettingsGroup>
+    )
+
+    const stacked = screen.getByRole('region', { name: 'Added' })
+    expect(stacked).not.toHaveClass(SETTINGS_SPLIT_GROUP_CLASS)
+    expect(screen.getByText('Installed servers.')).toBeInTheDocument()
+    expect(screen.getByText('Card grid')).toBeInTheDocument()
+    expect(screen.getByText('Changes apply to new chats.')).toBeInTheDocument()
+
+    rerender(
+      <SettingsGroup data-testid="untitled-group">
+        <p>Standalone card</p>
+      </SettingsGroup>
+    )
+    const untitled = screen.getByTestId('untitled-group')
+    expect(untitled).not.toHaveClass(SETTINGS_SPLIT_GROUP_CLASS)
+    expect(untitled).not.toHaveAttribute('aria-labelledby')
+  })
+})
+
 describe('SettingsDisclosure', () => {
   it('starts closed with its summary, keeps its rows mounted, and opens on click', () => {
     render(
-      <SettingsDisclosure title="Advanced" summary="Auto · 10,000 lines">
+      <SettingsDisclosure
+        title="Advanced"
+        description="Renderer, scrollback history, and command completions."
+        summary="Auto · 10,000 lines"
+      >
         <p>Renderer row</p>
       </SettingsDisclosure>
     )
 
+    expect(
+      screen.getByText('Renderer, scrollback history, and command completions.')
+    ).toBeInTheDocument()
     const trigger = screen.getByRole('button', { name: /Advanced/ })
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
     expect(screen.getByText('Auto · 10,000 lines')).toBeInTheDocument()
@@ -86,6 +149,17 @@ describe('SettingsDisclosure', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('Renderer row')).toBeVisible()
     expect(screen.queryByText('Auto · 10,000 lines')).not.toBeInTheDocument()
+  })
+
+  it('supports layout="stacked" without the split grid wrapper', () => {
+    const { container } = render(
+      <SettingsDisclosure title="Advanced" summary="Extra options" layout="stacked">
+        <p>Nested row</p>
+      </SettingsDisclosure>
+    )
+
+    expect(container.firstElementChild).not.toHaveClass(SETTINGS_SPLIT_GROUP_CLASS)
+    expect(screen.getByRole('button', { name: /Advanced/ })).toBeInTheDocument()
   })
 })
 
@@ -103,6 +177,17 @@ describe('SettingsDisclosure search reveal', () => {
       row.dispatchEvent(new CustomEvent(SETTINGS_REVEAL_EVENT, { bubbles: true }))
     })
     expect(row).toBeVisible()
+  })
+})
+
+describe('catalogColumnsForWidth', () => {
+  it('returns 1 column below 520px, 2 from 520px to 859px, and 3 at 860px or wider', () => {
+    expect(catalogColumnsForWidth(320)).toBe(1)
+    expect(catalogColumnsForWidth(519)).toBe(1)
+    expect(catalogColumnsForWidth(520)).toBe(2)
+    expect(catalogColumnsForWidth(859)).toBe(2)
+    expect(catalogColumnsForWidth(860)).toBe(3)
+    expect(catalogColumnsForWidth(1080)).toBe(3)
   })
 })
 

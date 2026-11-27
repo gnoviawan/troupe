@@ -1890,6 +1890,7 @@ dependencies = [
  "sha1",
  "sha2",
  "troupe-editor",
+ "troupe-flow",
 ]
 
 [[package]]
@@ -4386,6 +4387,7 @@ dependencies = [
  "serde_json",
  "theme",
  "troupe-editor",
+ "troupe-flow",
  "troupe-protocol",
  "troupe-term",
  "ui",
@@ -4429,6 +4431,14 @@ dependencies = [
  "regex-lite",
  "ropey",
  "rune-highlights",
+]
+
+[[package]]
+name = "troupe-flow"
+version = "0.0.1"
+dependencies = [
+ "rune",
+ "serde_json",
 ]
 
 [[package]]

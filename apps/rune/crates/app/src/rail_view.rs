@@ -56,7 +56,8 @@ pub fn body(
                 collapsed,
                 !has_project,
             )
-            .key("rail-automations"),
+            .key("rail-automations")
+            .on_press(|s: &mut State| s.open_automations()),
         );
 
     let mut projects = col()
@@ -164,7 +165,7 @@ pub fn body(
             .on_press(|s: &mut State| s.open_settings(None)),
         shell::rail_button(t, &i::BUG, "Report a bug", 28.0, 14.0, false)
             .key("rail-report-bug")
-            .on_press(|s: &mut State| s.toast_later("Report a bug")),
+            .on_press(|s: &mut State| s.open_bug_report()),
         shell::rail_button(
             t,
             &i::PALETTE,
