@@ -58,10 +58,14 @@ const STACK_BELOW: f32 = 560.0;
 /// column narrower than 560 px the control goes on its own line under them.
 pub fn setting(t: &Tokens, key: &str, label: &str, description: &str, control: Option<El>) -> El {
     let width = column_width();
-    let control = match control {
-        Some(control) if width > 0.0 && width < STACK_BELOW => return setting_stacked(t, key, label, description, control),
-        other => other,
-    };
+    match control {
+        Some(control) if width > 0.0 && width < STACK_BELOW => setting_stacked(t, key, label, description, control),
+        control => inline_setting(t, key, label, description, control),
+    }
+}
+
+/// `SettingsRow` `layout="inline"`: the control stays on the label's line at any width.
+fn inline_setting(t: &Tokens, key: &str, label: &str, description: &str, control: Option<El>) -> El {
     let c = &t.colors;
     let mut words = col()
         .key("words")
@@ -113,7 +117,7 @@ pub fn setting_stacked(t: &Tokens, key: &str, label: &str, description: &str, co
 /// `on_press` to the switch through `wire`.
 pub fn switch_row(t: &Tokens, key: &str, label: &str, description: &str, checked: bool, wire: impl FnOnce(El) -> El) -> El {
     let toggle = wire(Switch::new(checked).label(label).build(t).key(format!("{key}-switch")));
-    setting(t, key, label, description, Some(toggle))
+    inline_setting(t, key, label, description, Some(toggle))
 }
 
 /// A stepper's parts: the value as shown and whether each button is at its limit.
