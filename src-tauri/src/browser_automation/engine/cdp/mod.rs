@@ -16,6 +16,10 @@ pub mod input;
 
 /// Closed CDP method allow-list: a transport can issue nothing else.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(
+    not(unix),
+    allow(dead_code, reason = "the page, target and fetch methods serve the Chromium engine, which is Unix only")
+)]
 pub enum CdpMethod {
     PageGetFrameTree,
     PageCreateIsolatedWorld,
