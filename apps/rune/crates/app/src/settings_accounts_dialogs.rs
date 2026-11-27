@@ -23,6 +23,8 @@ const RISK: &str = "account-risk";
 const ADD: &str = "account-add";
 /// `MAX_NAME_CHARS`.
 const MAX_NAME_CHARS: usize = 40;
+/// `NAME_SUGGESTIONS`.
+const NAME_SUGGESTIONS: [&str; 3] = ["Work", "Personal", "Team"];
 
 /// The Claude link sign-in, as the user moves through it.
 #[derive(Clone, Debug, PartialEq)]
@@ -194,6 +196,52 @@ impl State {
     }
 }
 
+/// `AccountSteps`: "1 Name — 2 Sign in — 3 Done".
+fn steps(t: &Tokens, step: &Step) -> El {
+    let c = &t.colors;
+    let at = match step {
+        Step::Name => 0,
+        Step::Done => 2,
+        _ => 1,
+    };
+    ["Name", "Sign in", "Done"].iter().enumerate().fold(row().key("steps").role("list").label("Steps").gap(6.0).items_center(), |r, (i, label)| {
+        let mark = if i < at { "✓".to_owned() } else { (i + 1).to_string() };
+        let dot = row().key(format!("step-{i}")).w(16.0).h(16.0).radius(8.0).items_center().justify_center().border(1.0, if i == at { c.muted_foreground } else { c.border }).fill(if i < at { c.foreground } else if i == at { c.muted } else { c.background }).child(text(mark).font(sans(9.0, 600.0, 12.0)).color(if i < at { c.background } else if i == at { c.foreground } else { c.muted_foreground }));
+        let mut r = r.child(dot).child(text(*label).font(sans(11.0, 400.0, 15.0)).color(if i <= at { c.secondary_foreground } else { c.muted_foreground }));
+        if i < 2 {
+            r = r.child(rune::el().key(format!("rule-{i}")).w(16.0).h(1.0).fill(c.border).a11y_hidden());
+        }
+        r
+    })
+}
+
+/// `AccountSummary`: the new account's plan, usage and default.
+fn summary(s: &State, t: &Tokens, flow: &AddFlow) -> El {
+    let c = &t.colors;
+    let g = s.account_group(flow.provider);
+    let id = flow.account.as_ref().map(|a| a.id.as_str()).unwrap_or_default();
+    let usage = g.usage.get(id);
+    let plan_key = if flow.provider == Provider::Claude { "subscriptionType" } else { "planType" };
+    let plan = rules::plan_label(usage.and_then(|u| u[plan_key].as_str())).unwrap_or_else(|| "—".into());
+    let primary = rules::claude_primary(usage);
+    let (label, value) = primary.map_or(("Usage".to_owned(), "not started".to_owned()), |m| (m.label, format!("{}% used", m.percent.round() as i64)));
+    let default_id = g.snapshot.as_ref().and_then(|v| v["defaultAccountId"].as_str()).unwrap_or_default();
+    let default_name = g.snapshot.as_ref().and_then(|v| v["accounts"].as_array()).and_then(|a| a.iter().find(|x| x["id"] == json!(default_id))).and_then(|x| x["name"].as_str());
+    let default = default_name.map_or("No".to_owned(), |n| format!("No — {n} stays default"));
+    let line = |key: &str, k: String, v: String| row().key(key.to_owned()).w_full().gap(16.0).child(text(k).font(sans(11.0, 400.0, 15.0)).color(c.muted_foreground)).child(rune::el().key("gap").grow(1.0)).child(text(v).font(sans(11.0, 400.0, 15.0)).color(c.secondary_foreground));
+    col()
+        .key("summary")
+        .w_full()
+        .gap(8.0)
+        .padding(12.0)
+        .radius(8.0)
+        .border(1.0, c.border)
+        .fill(c.background)
+        .child(line("plan", "Plan".into(), plan))
+        .child(line("usage", label, value))
+        .child(line("default", "Default".into(), default))
+}
+
 fn header(t: &Tokens, title: &str, body: &str) -> El {
     col()
         .key("step-head")
@@ -259,9 +307,11 @@ fn add_dialog(s: &State, t: &'static Tokens, flow: &AddFlow, layer: &mut Vec<El>
     let cancel = |label: &str| Button::new(label).variant(ButtonVariant::Ghost).size(ButtonSize::Sm).build(t).key("cancel").on_press(|s: &mut State| s.accounts_close_add());
     match &flow.step {
         Step::Name => {
-            body.push(header(t, &format!("Add a {} account", flow.provider.name()), "Name it so you can tell your accounts apart. Next, you sign in."));
+            let article = if flow.provider.name().starts_with(['A', 'E', 'I', 'O', 'U']) { "an" } else { "a" };
+            body.push(header(t, &format!("Add {article} {} account", flow.provider.name()), "Give it a short name. Troupe shows this name, never the email."));
+            body.push(text("Name").font(sans(12.0, 500.0, 16.0)).color(c.foreground));
             let input = Input::new(&flow.name)
-                .placeholder("e.g. Work, Personal")
+                .placeholder("e.g. Work")
                 .label("Name")
                 .invalid(flow.error.is_some())
                 .disabled(flow.busy)
@@ -277,10 +327,19 @@ fn add_dialog(s: &State, t: &'static Tokens, flow: &AddFlow, layer: &mut Vec<El>
                     }
                 });
             body.push(input);
+            let g = s.account_group(flow.provider);
+            let used: Vec<String> = g.snapshot.as_ref().and_then(|v| v["accounts"].as_array()).into_iter().flatten().filter_map(|a| a["name"].as_str().map(str::to_lowercase)).collect();
+            let suggestions = NAME_SUGGESTIONS.iter().filter(|n| !used.contains(&n.to_lowercase())).fold(row().key("suggestions").gap(6.0).flex_wrap(), |r, n| {
+                r.child(Button::new(*n).variant(ButtonVariant::Secondary).size(ButtonSize::Xs).build(t).key(format!("suggest-{n}")).on_press(move |s: &mut State| {
+                    if let Some(f) = &mut s.accounts_ui.add {
+                        f.name.replace_text(*n);
+                    }
+                }))
+            });
+            body.push(suggestions);
             if let Some(e) = &flow.error {
                 body.push(error_line(t, "error", e));
             }
-            let g = s.account_group(flow.provider);
             let signed_in = g.snapshot.as_ref().and_then(|v| v["accounts"].as_array()).is_some_and(|a| a.iter().any(|x| Readiness::of(x, g.usage.get(x["id"].as_str().unwrap_or_default())) == Readiness::Ready));
             if signed_in {
                 let words = format!(
@@ -302,6 +361,7 @@ fn add_dialog(s: &State, t: &'static Tokens, flow: &AddFlow, layer: &mut Vec<El>
         }
         Step::Done => {
             body.push(header(t, &format!("{name} is ready"), &format!("New chats in projects that use {name} sign in with it.")));
+            body.push(summary(s, t, flow));
             footer.push(Button::new("Make default").variant(ButtonVariant::Ghost).size(ButtonSize::Sm).build(t).key("make-default").on_press(|s: &mut State| s.accounts_add_make_default()));
             footer.push(Button::new("Done").size(ButtonSize::Sm).build(t).key("done").on_press(|s: &mut State| s.accounts_ui.add = None));
         }
@@ -312,6 +372,9 @@ fn add_dialog(s: &State, t: &'static Tokens, flow: &AddFlow, layer: &mut Vec<El>
                 footer.push(Button::new("Try again").size(ButtonSize::Sm).build(t).key("try-again").on_press(|s: &mut State| s.accounts_start_sign_in()));
             }
         }
+    }
+    if !matches!(flow.step, Step::Failed(_)) {
+        body.insert(0, steps(t, &flow.step));
     }
     let mut d = Dialog::new(ADD, "").width(400.0).child(col().key("add-flow").w_full().gap(16.0).items_stretch().children(body));
     for f in footer {

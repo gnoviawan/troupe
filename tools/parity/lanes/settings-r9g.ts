@@ -46,6 +46,19 @@ interface Row {
   defaultOption: unknown
 }
 
+/** Waits for the catalog sync to settle, so both clients search the same catalog. */
+async function catalogSettled(world: World): Promise<void> {
+  for (let i = 0; i < 120; i++) {
+    const body = (await (await serverFetch(world.server, '/mcp-catalog/status')).json()) as {
+      data?: { sample?: boolean; sync?: { state?: string } }
+    }
+    const status = body.data
+    if (status && !status.sample && status.sync?.state === 'idle') return
+    await Bun.sleep(2000)
+  }
+  throw new Error('the catalog never finished syncing')
+}
+
 /** A catalog row whose install form asks for nothing required, so both clients fill the same. */
 async function pickRow(world: World): Promise<Row> {
   const page = (await (await serverFetch(world.server, '/mcp-catalog/search?limit=50')).json()) as {
@@ -121,6 +134,22 @@ async function runeButton(client: Client, name: string, group?: string): Promise
   if (!pressed) throw new Error(`no Rune button named "${name}"`)
 }
 
+/** Types into the catalog search, which sits just under the "From the catalog" heading. */
+async function runeSearch(client: Client, query: string): Promise<void> {
+  const box = await client.page.evaluate(() => {
+    const root = document.querySelector('[data-rune-a11y]')
+    for (const el of root?.querySelectorAll('*') ?? []) {
+      if ((el.textContent ?? '').trim() !== 'From the catalog' || el.children.length > 0) continue
+      const r = el.getBoundingClientRect()
+      if (r.width > 0) return { x: r.x + 200, y: r.y + r.height / 2 + 33 }
+    }
+    return null
+  })
+  if (!box) throw new Error('no "From the catalog" heading in the Rune mirror')
+  await client.page.mouse.click(box.x, box.y)
+  await client.page.keyboard.type(query, { delay: 15 })
+}
+
 async function run(
   client: Client,
   world: World,
@@ -144,7 +173,6 @@ async function run(
   }
   const settle = (ms = 800) => client.page.waitForTimeout(ms)
   const react = client.name === 'react'
-  const title = row.title ?? row.name.slice(row.name.lastIndexOf('/') + 1)
   const button = (name: string, group?: string) =>
     react
       ? (group ? client.page.getByRole('group', { name: group, exact: true }) : client.page)
@@ -168,10 +196,24 @@ async function run(
   )
   await settle()
   await act('mcp page', () => nav('MCP servers'))
-  await step('catalog', () => client.sees(title, 20_000))
-  await act('install', () => button('Install', title))
   await settle(1500)
-  if (await client.sees('Review', 2_000)) await act('review', () => button('Review'))
+  await act('search the catalog', () =>
+    react ? client.fill('Search the MCP catalog', row.name) : runeSearch(client, row.name)
+  )
+  await settle(2000)
+  await step('catalog', () => client.sees(row.name, 20_000))
+  await act('install', () =>
+    react
+      ? client.page
+          .getByRole('button', { name: 'Install', exact: true })
+          .first()
+          .click({ timeout: 20_000 })
+      : runeButton(client, 'Install')
+  )
+  await settle(1500)
+  if (await client.sees('Fill in what this server needs.', 2_000)) {
+    await act('review', () => button('Review'))
+  }
   await settle(1500)
   await step('consent', () => client.sees('Review exactly what will run.', 15_000))
   await act('approve', () => button('Approve'))
@@ -184,16 +226,14 @@ async function run(
   )
   await act('done', () => button('Done'))
   await settle(600)
-  await act('open the server', () => client.click(title))
-  await settle(800)
-  await act('edit', () => button('Edit'))
+  await act('add server', () => button('Add server'))
   await settle(600)
-  await act('as json', () => button('Edit as JSON'))
-  await step('json-view', () => client.sees('MCP JSON', 10_000))
+  await act('import json', () => button('Import JSON instead'))
+  await step('json-view', () =>
+    client.sees('Paste a Claude Desktop "mcpServers" config or a single server object.', 10_000)
+  )
   await act('close the dialog', () => button('Cancel'))
-  await settle(600)
-  await client.page.keyboard.press('Escape')
-  await settle(400)
+  await settle(800)
   await act('subagents page', () => nav('Sub-agents'))
   await step('subagents', () => client.sees('Let agents start other agents', 10_000))
   await act('more running', () => button('More running sub-agents'))
@@ -201,9 +241,18 @@ async function run(
   await step('subagents-raised', async () => JSON.parse(await hostState(world)).maxRunning === 4)
   await act('accounts page', () => nav('Accounts'))
   await step('accounts', () => client.sees('Claude Code', 10_000))
-  await act('add account', () => button('Add account', 'Claude Code'))
+  await act('add account', () =>
+    react
+      ? client.page
+          .getByRole('button', { name: 'Add account', exact: true })
+          .first()
+          .click({ timeout: 20_000 })
+      : runeButton(client, 'Add account', 'Claude Code')
+  )
   await settle(800)
-  await step('add-account', () => client.sees('e.g. Work, Personal', 10_000))
+  await step('add-account', () =>
+    client.sees('Give it a short name. Troupe shows this name, never the email.', 10_000)
+  )
   await act('cancel add', () => button('Cancel'))
   await settle(600)
   return { seen, state: await hostState(world) }
@@ -218,6 +267,7 @@ const world = await createWorld({
 const results: Record<string, { seen: string[]; state: string }> = {}
 let row: Row | null = null
 try {
+  await catalogSettled(world)
   row = await pickRow(world)
   console.log(`catalog row: ${row.name} ${row.version}`)
   for (const name of ['react', 'rune'] as const) {
