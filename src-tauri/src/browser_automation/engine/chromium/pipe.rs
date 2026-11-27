@@ -161,10 +161,12 @@ fn route(message: &[u8], pending: &Pending, events: &mpsc::UnboundedSender<CdpEv
         return;
     };
     if let Some(id) = value.get("id").and_then(Value::as_u64) {
-        let reply = match value.get_mut("result") {
-            Some(result) => Ok(result.take()),
-            None if value.get("error").is_some() => Err(EngineErrorKind::Protocol),
-            None => Err(EngineErrorKind::Malformed),
+        let reply = if value.get("result").is_some() {
+            Ok(value["result"].take())
+        } else if value.get("error").is_some() {
+            Err(EngineErrorKind::Protocol)
+        } else {
+            Err(EngineErrorKind::Malformed)
         };
         let waiter = pending.lock().as_mut().and_then(|map| map.remove(&id));
         if let Some(waiter) = waiter {
