@@ -229,6 +229,7 @@ const { projectSettingsRecorder, projectSettingsScenarios } = await import(
   './stores/project-settings'
 )
 const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
+const { subagentsRecorder, subagentsScenarios } = await import('./stores/subagents')
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -247,7 +248,8 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [paletteRecorder, paletteScenarios],
   [terminalProfilesRecorder, terminalProfilesScenarios],
   [projectSettingsRecorder, projectSettingsScenarios],
-  [mcpServersRecorder, mcpServersScenarios]
+  [mcpServersRecorder, mcpServersScenarios],
+  [subagentsRecorder, subagentsScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

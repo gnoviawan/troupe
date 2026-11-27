@@ -262,6 +262,16 @@
         "pasted_json_imports_like_the_dialog",
         "install_form_values_and_retry"
       ]
+    },
+    "subagents": {
+      "sources": {
+        "src/renderer/pages/app-preferences/subagent-profiles/profile-model.ts": "0d08ea7ca34587c06ef5147d506df7fa16a0b0fe"
+      },
+      "vectors": [
+        "profile_ids_follow_the_host_rule",
+        "which_profiles_may_move_or_go",
+        "saving_a_profile_keeps_the_implicit_default"
+      ]
     }
   }
 }

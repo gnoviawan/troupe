@@ -123,6 +123,9 @@ impl State {
         if self.settings_page().id == crate::settings_mcp::PAGE {
             self.mcp_page_opened();
         }
+        if self.settings_page().id == crate::settings_subagents::PAGE {
+            self.subagents_opened();
+        }
         if self.settings_page().id == "skills" {
             let root = self.active_project().and_then(|p| p.path.clone()).unwrap_or_default();
             self.fetch_skills_for(root);

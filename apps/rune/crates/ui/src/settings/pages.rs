@@ -91,7 +91,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "GitBranch",
         "Agents your chats can hand work to, and what each one runs with.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "skills",

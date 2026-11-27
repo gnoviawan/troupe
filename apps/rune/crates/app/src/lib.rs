@@ -78,6 +78,7 @@ mod settings_mcp_json;
 mod settings_pages;
 mod settings_profiles;
 mod settings_shortcuts;
+mod settings_subagents;
 #[cfg(test)]
 mod settings_tests;
 mod settings_view;
@@ -191,6 +192,7 @@ pub struct State {
     pub project_ui: project_settings::ProjectSettingsUi,
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
+    pub subagents_ui: settings_subagents::SubagentsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -250,6 +252,7 @@ impl Default for State {
             settings_ui: settings_view::SettingsUi::default(),
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
+            subagents_ui: settings_subagents::SubagentsUi::default(),
             sync: sync::Sync::default(),
         }
     }

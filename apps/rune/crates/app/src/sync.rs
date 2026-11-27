@@ -104,6 +104,8 @@ pub(crate) enum Pending {
     Mcp(Box<model::acp::Effect>),
     /// Its registry write, with what the Settings page does once it lands.
     McpSave(Box<model::acp::Effect>, Option<crate::settings_mcp::Action>),
+    /// The Sub-agents page's read or change.
+    Subagents(crate::settings_subagents::SubagentCall),
     /// The empty list the history's Clear wrote for a project.
     ClearHistory(String),
 }
@@ -520,6 +522,7 @@ impl State {
             Pending::ClearHistory(project) => self.history_cleared(project, result),
             Pending::Mcp(effect) => self.mcp_loaded(*effect, result),
             Pending::McpSave(effect, action) => self.mcp_saved(*effect, action, result),
+            Pending::Subagents(call) => self.subagents_answered(call, result),
             Pending::ListChats => {
                 match result.map(|r| r.map(serde_json::from_value::<Vec<Chat>>)) {
                     Ok(Some(Ok(list))) => self.chats.replace(list),

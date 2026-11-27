@@ -356,3 +356,31 @@ pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays the Sub-agents page's reads against `model::settings::subagents`.
+pub fn replay_subagents(vector: &Value) -> Result<usize, String> {
+    use model::settings::subagents::{self as rules, Object};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let list = |i: usize| -> Result<Vec<Object>, String> { parse::<Vec<Object>>(&args[i]) };
+        let object = |i: usize| -> Result<Object, String> { parse::<Object>(&args[i]) };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "idError" => json!(rules::id_error(text(0), &list(1)?)),
+            "uniqueId" => json!(rules::unique_id(text(0), &list(1)?)),
+            "shortName" => json!(rules::agent_short_name(text(0))),
+            "canDelete" => json!(rules::can_delete(&object(0)?, &list(1)?)),
+            "lockReason" => json!(rules::agent_lock_reason(&object(0)?, &list(1)?)),
+            "skipsPrompts" => json!(rules::skips_prompts(&object(0)?)),
+            "upserts" => json!(rules::profile_upserts(&list(0)?, &object(1)?, args[2].as_str())),
+            "apply" => rules::apply_input(&args[0], &args[1]),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}

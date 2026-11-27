@@ -17,6 +17,7 @@ pub mod palette;
 pub mod profiles;
 pub mod project;
 pub mod routes;
+pub mod subagents;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
