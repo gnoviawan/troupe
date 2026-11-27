@@ -263,6 +263,47 @@
         "install_form_values_and_retry"
       ]
     },
+    "snapshots": {
+      "sources": {
+        "src/renderer/stores/snapshot-store.ts": "c5d04ffcd2ab974d74ddea11dc94412c23d2e526",
+        "src/renderer/lib/persistence-trim.ts": "abbb5edd6acf7a7f674afd6e54c99b9fb644dd0b"
+      },
+      "vectors": [
+        "loads_a_projects_list_and_an_empty_one",
+        "creates_on_top_of_the_saved_list",
+        "creates_the_first_snapshot_of_a_project",
+        "create_rolls_back_when_the_list_cannot_be_read",
+        "create_rolls_back_when_the_write_fails",
+        "renames_and_deletes_only_the_picked_snapshot",
+        "rename_rolls_back_when_the_write_fails_or_the_list_is_gone",
+        "delete_keeps_the_local_removal_when_the_list_is_missing_or_unreadable",
+        "gets_a_snapshot_with_its_terminals",
+        "trims_output_first_then_the_oldest_snapshots"
+      ]
+    },
+    "setup": {
+      "sources": {
+        "src/renderer/components/setup/ServerSetupWizard.tsx": "7f14e767f4142adf39fd6dd7b682f52965b26c15",
+        "src/renderer/components/setup/RestartingScreen.tsx": "c29ea8d317062a740a68918ada4172b3b9221258",
+        "src/renderer/components/onboarding/onboarding-gate.ts": "7440f31af72b763d5e4de10e8cdec6aa4d297ba9",
+        "src/renderer/components/onboarding/land-onboarding.ts": "c85cf73b73c42056b73daaaebc30f7bce1fea5b9"
+      },
+      "vectors": [
+        "hosts_read_as_one_of_the_two_bind_modes",
+        "the_restart_lands_on_the_new_address_with_the_token",
+        "first_run_shows_only_when_every_fact_holds",
+        "onboarding_lands_on_the_launcher_a_quick_chat_or_the_workspace"
+      ]
+    },
+    "bug-report": {
+      "sources": {
+        "src/renderer/lib/bug-report-api.ts": "921c75e88be6bc489f9c7851826e210f667c8d02"
+      },
+      "vectors": [
+        "the_markdown_is_what_the_dialog_previews_and_sends",
+        "the_fallback_url_carries_the_body_or_the_short_one"
+      ]
+    },
     "github": {
       "sources": {
         "src/renderer/stores/github-store.ts": "54ff83e5eef923c52ffc7371c34782bb8c984eab"

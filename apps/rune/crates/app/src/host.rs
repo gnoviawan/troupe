@@ -45,6 +45,8 @@ pub enum Fetch {
     Mcp(Box<model::acp::Effect>),
     /// A web sign-in's token poll (`/mcp-servers/oauth/status`), by server URL.
     McpPoll(String),
+    /// A Report a Bug collect or submit (`/log/*`).
+    BugReport(crate::bug_report::Step),
     /// A catalog read on the MCP servers page.
     Catalog(crate::mcp_catalog::CatalogFetch),
     /// An `/api/automations` route.

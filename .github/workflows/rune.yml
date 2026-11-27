@@ -149,6 +149,12 @@ on:
       - 'src/renderer/lib/command-lifecycle/**'
       - 'src/renderer/lib/persistence-trim.ts'
       - 'src/renderer/stores/command-history-store.ts'
+      - 'src/renderer/stores/snapshot-store.ts'
+      - 'src/renderer/lib/bug-report-api.ts'
+      - 'src/renderer/components/onboarding/land-onboarding.ts'
+      - 'src/renderer/components/onboarding/onboarding-gate.ts'
+      - 'src/renderer/components/setup/RestartingScreen.tsx'
+      - 'src/renderer/components/setup/ServerSetupWizard.tsx'
   # Runs on dev save the Rust cache (`save-if` below) that PR runs restore.
   push:
     branches: [dev]

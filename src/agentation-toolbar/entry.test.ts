@@ -34,6 +34,45 @@ describe('computeGuideBadgeLayout', () => {
     expect(layout.get('h1')?.left).toBe(16)
     expect(layout.get('h2')?.left).toBe(132)
   })
+
+  it('reflows overflowing horizontal guide badges vertically on narrow 320px viewports without overlap', () => {
+    const layout = computeGuideBadgeLayout(
+      [
+        { id: 'h1', axis: 'horizontal', pos: 64 },
+        { id: 'h2', axis: 'horizontal', pos: 65 },
+        { id: 'h3', axis: 'horizontal', pos: 66 },
+        { id: 'h4', axis: 'horizontal', pos: 67 }
+      ],
+      320,
+      640
+    )
+
+    const placements = ['h1', 'h2', 'h3', 'h4'].map((id) => layout.get(id)!)
+    for (let i = 0; i < placements.length; i += 1) {
+      for (let j = i + 1; j < placements.length; j += 1) {
+        const a = placements[i]
+        const b = placements[j]
+        const sameColumn = Math.abs(a.left - b.left) < 68
+        const verticalOverlap = Math.abs((a.top ?? 0) - (b.top ?? 0)) < 20
+        expect(sameColumn && verticalOverlap).toBe(false)
+      }
+    }
+  })
+
+  it('tracks actual wide horizontal badge widths so adjacent offset badges never overlap', () => {
+    const layout = computeGuideBadgeLayout(
+      [
+        { id: 'h1', axis: 'horizontal', pos: 100, deltaPx: 24 },
+        { id: 'h2', axis: 'horizontal', pos: 101, deltaPx: 23 }
+      ],
+      800,
+      600
+    )
+    const p1 = layout.get('h1')!
+    const p2 = layout.get('h2')!
+    const estWidth1 = Math.ceil(p1.text.length * 7.2 + 18)
+    expect(p2.left).toBeGreaterThanOrEqual(p1.left + estWidth1 + 6)
+  })
 })
 
 describe('TroupeAnnotationOverlay', () => {
@@ -68,19 +107,16 @@ describe('TroupeAnnotationOverlay', () => {
       cb(0)
       return 1
     })
-    ;(window as unknown as Record<string, unknown>).__TERMUL_AGENTATION_NONCE__ = 'test-nonce'
     ;(window as unknown as Record<string, unknown>).__TERMUL_TAB_ID__ = 'tab-1'
   })
 
   afterEach(() => {
     const win = window as unknown as {
       __TROUPE_ANNOTATE__?: { unmount: () => void }
-      __TERMUL_AGENTATION_NONCE__?: string
       __TERMUL_AGENTATION_ENDPOINT__?: string
       __TERMUL_TAB_ID__?: string
     }
     win.__TROUPE_ANNOTATE__?.unmount()
-    delete win.__TERMUL_AGENTATION_NONCE__
     delete win.__TERMUL_AGENTATION_ENDPOINT__
     delete win.__TERMUL_TAB_ID__
     vi.useRealTimers()
@@ -88,8 +124,8 @@ describe('TroupeAnnotationOverlay', () => {
     vi.unstubAllGlobals()
   })
 
-  function setupOverlay() {
-    const overlay = mountOverlay()
+  function setupOverlay(bridgeNonce: string | null = 'test-nonce') {
+    const overlay = mountOverlay(bridgeNonce)
     overlay.dispatch({ type: 'set_active', active: true })
     const host = document.getElementById('termul-agentation-host') as HTMLDivElement
     const shadow = host.shadowRoot as ShadowRoot
@@ -153,6 +189,38 @@ describe('TroupeAnnotationOverlay', () => {
     expect(previewLine.classList.contains('horizontal')).toBe(true)
     expect(previewLine.style.top).toBe('180px')
     expect(previewBadge.textContent).toContain('y 180px')
+  })
+
+  it('defaults to horizontal guide preview and placement when set_tool specifies axis horizontal', () => {
+    const { overlay, shadow, layer } = setupOverlay()
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler', axis: 'horizontal' })
+
+    dispatchPointer(layer, 'pointermove', { clientX: 424, clientY: 220, shiftKey: false })
+
+    const previewLine = shadow.querySelector('.guide-preview') as HTMLDivElement
+    const previewBadge = shadow.querySelector('.guide-preview-badge') as HTMLDivElement
+    expect(previewLine.classList.contains('horizontal')).toBe(true)
+    expect(previewLine.style.top).toBe('220px')
+    expect(previewBadge.textContent).toContain('H · y 220px')
+    expect(previewBadge.textContent).toContain('Shift: V')
+
+    // Clicking places a horizontal guide directly without needing Shift
+    dispatchPointer(layer, 'pointerdown', { clientX: 424, clientY: 220, button: 0 })
+    const guideHit = shadow.querySelector('.guide-hit.horizontal') as HTMLDivElement
+    expect(guideHit).toBeTruthy()
+    expect(guideHit.style.top).toBe('220px')
+
+    // Dragging the horizontal guide moves vertically along Y
+    dispatchPointer(guideHit, 'pointerdown', { clientX: 424, clientY: 220, button: 0 })
+    dispatchPointer(window, 'pointermove', { clientX: 424, clientY: 290 })
+    dispatchPointer(window, 'pointerup', { clientX: 424, clientY: 290, button: 0 })
+    const movedHit = shadow.querySelector('.guide-hit.horizontal') as HTMLDivElement
+    expect(movedHit.style.top).toBe('290px')
+
+    // Holding Shift while in horizontal mode temporarily toggles preview to vertical
+    dispatchPointer(layer, 'pointermove', { clientX: 424, clientY: 290, shiftKey: true })
+    expect(previewLine.classList.contains('vertical')).toBe(true)
+    expect(previewBadge.textContent).toContain('V · x 424px')
   })
 
   it('auto-hides guide popover on drag, waits 2000ms after drag end, and resets timer on re-drag', () => {
@@ -254,5 +322,339 @@ describe('TroupeAnnotationOverlay', () => {
       expect(shadow.querySelector('.popover')).toBeNull()
       expect(shadow.querySelectorAll('.pin').length).toBe(1)
     })
+  })
+
+  it('hides selectedBox, dragBox, and suppresses comment hoverBox when pinsHidden is true and restores selectedBox on show', () => {
+    const { overlay, shadow, layer } = setupOverlay()
+    const hoverBox = shadow.querySelector('.hover-box') as HTMLDivElement
+    const selectedBox = shadow.querySelector('.selected-box') as HTMLDivElement
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    expect(selectedBox.style.display).toBe('block')
+
+    overlay.dispatch({ type: 'set_pins_hidden', hidden: true })
+    expect(selectedBox.style.display).toBe('none')
+
+    // Re-enabling visibility while popover is still open restores selectedBox
+    overlay.dispatch({ type: 'set_pins_hidden', hidden: false })
+    expect(selectedBox.style.display).toBe('block')
+
+    // Close popover, hide visuals, then verify comment hover/click, rectangle, and ruler are gated while screenshot-area still works
+    ;(shadow.querySelector('.btn-sec') as HTMLButtonElement).click()
+    overlay.dispatch({ type: 'set_pins_hidden', hidden: true })
+    dispatchPointer(layer, 'pointermove', { clientX: 300, clientY: 160 })
+    expect(hoverBox.style.display).toBe('none')
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    expect(shadow.querySelector('.popover')).toBeNull()
+
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+    dispatchPointer(layer, 'pointerdown', { clientX: 320, clientY: 160, button: 0 })
+    expect(shadow.querySelector('.popover')).toBeNull()
+
+    overlay.dispatch({ type: 'set_tool', tool: 'screenshot-area' })
+    dispatchPointer(layer, 'pointerdown', { clientX: 100, clientY: 100, button: 0 })
+    dispatchPointer(layer, 'pointermove', { clientX: 250, clientY: 220 })
+    expect((shadow.querySelector('.drag-box') as HTMLDivElement).style.display).toBe('block')
+  })
+
+  it('enables passthrough on guides and pins during screenshot-area and rectangle tools', () => {
+    const { overlay, shadow } = setupOverlay()
+    const guidesLayer = shadow.querySelector('.guides-layer') as HTMLDivElement
+    const pinsLayer = shadow.querySelector('.pins-layer') as HTMLDivElement
+
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+    expect(guidesLayer.classList.contains('passthrough')).toBe(false)
+
+    overlay.dispatch({ type: 'set_tool', tool: 'screenshot-area' })
+    expect(guidesLayer.classList.contains('passthrough')).toBe(true)
+    expect(pinsLayer.classList.contains('passthrough')).toBe(true)
+
+    overlay.dispatch({ type: 'set_tool', tool: 'rectangle' })
+    expect(guidesLayer.classList.contains('passthrough')).toBe(true)
+
+    overlay.dispatch({ type: 'set_tool', tool: 'comment' })
+    expect(guidesLayer.classList.contains('passthrough')).toBe(false)
+  })
+
+  it('temporarily hides and restores overlay host on set_capture_hidden', () => {
+    const { overlay, host } = setupOverlay()
+    expect(host.style.display).toBe('')
+
+    overlay.dispatch({ type: 'set_capture_hidden', hidden: true })
+    expect(host.style.display).toBe('none')
+
+    overlay.dispatch({ type: 'set_capture_hidden', hidden: false })
+    expect(host.style.display).toBe('')
+  })
+
+  it('notifies host to remove saved annotations when removing a guide', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+
+    // Place vertical guide and save a comment on it
+    dispatchPointer(layer, 'pointerdown', { clientX: 350, clientY: 180, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Align edge'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const saveQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+    }>
+    host.removeAttribute(OUTBOX_ATTR)
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: saveQueue[0].reqId,
+      ok: true,
+      id: 'ann-guide-1',
+      sessionId: 'sess-g1'
+    })
+
+    await vi.waitFor(() => {
+      expect(shadow.querySelectorAll('.pin').length).toBe(1)
+    })
+
+    // Click guide to reopen popover and click "Remove guide"
+    const guideHit = shadow.querySelector('.guide-hit') as HTMLDivElement
+    dispatchPointer(guideHit, 'pointerdown', { clientX: 350, clientY: 180, button: 0 })
+    dispatchPointer(window, 'pointerup', { clientX: 350, clientY: 180, button: 0 })
+    const removeBtn = shadow.querySelector('.pop-link') as HTMLButtonElement
+    expect(removeBtn.textContent).toBe('Remove guide')
+    removeBtn.click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const actionQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      kind: string
+      payload: { output: string }
+    }>
+    expect(actionQueue[0].kind).toBe('action')
+    expect(JSON.parse(actionQueue[0].payload.output)).toMatchObject({
+      kind: 'annotations_removed',
+      ids: ['ann-guide-1']
+    })
+    expect(shadow.querySelectorAll('.pin').length).toBe(0)
+  })
+
+  it('does not restore selectedBox after failed save when popover was closed with Escape', async () => {
+    const { host, shadow, layer } = setupOverlay()
+    const selectedBox = shadow.querySelector('.selected-box') as HTMLDivElement
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Will time out'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+
+    // Close popover with Escape while save is in flight
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(shadow.querySelector('.popover')).toBeNull()
+    expect(selectedBox.style.display).toBe('none')
+
+    // Advance past OUTBOX_TIMEOUT_MS so save fails
+    await vi.advanceTimersByTimeAsync(6500)
+    expect(selectedBox.style.display).toBe('none')
+    expect(host.getAttribute(OUTBOX_ATTR)).toBeNull()
+  })
+
+  it('coalesces initial host-bridge submissions so both reuse the first acknowledged sessionId', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'First comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const firstQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+      sessionId?: string
+    }>
+    expect(firstQueue).toHaveLength(1)
+    expect(firstQueue[0].sessionId).toBeUndefined()
+    host.removeAttribute(OUTBOX_ATTR)
+
+    // Press Escape and immediately submit a second comment before first ack arrives
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Second comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    // Second submission waits until first ack provides sessionId
+    await Promise.resolve()
+    expect(host.getAttribute(OUTBOX_ATTR)).toBeNull()
+
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: firstQueue[0].reqId,
+      ok: true,
+      id: 'ann-1',
+      sessionId: 'sess-shared'
+    })
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const secondQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+      sessionId?: string
+    }>
+    expect(secondQueue).toHaveLength(1)
+    expect(secondQueue[0].sessionId).toBe('sess-shared')
+  })
+
+  it('skips HTTP fallback when a timed-out outbox envelope was already drained by the host', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'dup' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    ;(window as unknown as Record<string, unknown>).__TERMUL_AGENTATION_ENDPOINT__ =
+      'http://127.0.0.1:9999/secret'
+
+    const origLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...origLocation, protocol: 'https:', href: 'https://absenin.id/' }
+    })
+
+    try {
+      const { host, shadow, layer } = setupOverlay()
+      dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+      ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Drained comment'
+      ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+      await vi.waitFor(() => {
+        expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+      })
+      // Host drains the attribute, then ack is lost/slow until timeout
+      host.removeAttribute(OUTBOX_ATTR)
+
+      await vi.advanceTimersByTimeAsync(6500)
+      expect(fetchMock).not.toHaveBeenCalled()
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: origLocation })
+    }
+  })
+
+  it('skips HTTP fallback when overlay is destroyed after host already drained the outbox', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'dup' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    ;(window as unknown as Record<string, unknown>).__TERMUL_AGENTATION_ENDPOINT__ =
+      'http://127.0.0.1:9999/secret'
+
+    const origLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...origLocation, protocol: 'https:', href: 'https://absenin.id/' }
+    })
+
+    try {
+      const { overlay, host, shadow, layer } = setupOverlay()
+      dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+      ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Drained before unmount'
+      ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+      await vi.waitFor(() => {
+        expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+      })
+      // Host drains the attribute before overlay unmounts
+      host.removeAttribute(OUTBOX_ATTR)
+      overlay.destroy()
+
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(fetchMock).not.toHaveBeenCalled()
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: origLocation })
+    }
+  })
+
+  it('suppresses pin and requests backend deletion if a guide was removed while its save was in flight', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 360, clientY: 180, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Late guide comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const saveQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+    }>
+    host.removeAttribute(OUTBOX_ATTR)
+
+    // Reopen guide popover and delete guide BEFORE the in-flight save ack arrives
+    const guideHit = shadow.querySelector('.guide-hit') as HTMLDivElement
+    dispatchPointer(guideHit, 'pointerdown', { clientX: 360, clientY: 180, button: 0 })
+    dispatchPointer(window, 'pointerup', { clientX: 360, clientY: 180, button: 0 })
+    ;(shadow.querySelector('.pop-link') as HTMLButtonElement).click()
+
+    // Late save ack arrives for the already-deleted guide
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: saveQueue[0].reqId,
+      ok: true,
+      id: 'ann-late-guide',
+      sessionId: 'sess-g-late'
+    })
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    expect(shadow.querySelectorAll('.pin').length).toBe(0)
+    const cleanupQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      kind: string
+      payload: { output: string }
+    }>
+    expect(cleanupQueue[0].kind).toBe('action')
+    expect(JSON.parse(cleanupQueue[0].payload.output)).toMatchObject({
+      kind: 'annotations_removed',
+      ids: ['ann-late-guide']
+    })
+  })
+
+  it('records sessionId from a late outbox_ack so later submissions join the same session', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'First timed-out comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const firstQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+    }>
+    host.removeAttribute(OUTBOX_ATTR)
+
+    // First request times out after host drained it
+    await vi.advanceTimersByTimeAsync(6500)
+
+    // Late ACK arrives after timeout removed pending entry
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: firstQueue[0].reqId,
+      ok: true,
+      id: 'ann-late-1',
+      sessionId: 'sess-from-late-ack'
+    })
+
+    // Next submission must reuse the sessionId captured from the late ACK
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Follow-up comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const nextQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      sessionId?: string
+    }>
+    expect(nextQueue[0].sessionId).toBe('sess-from-late-ack')
   })
 })

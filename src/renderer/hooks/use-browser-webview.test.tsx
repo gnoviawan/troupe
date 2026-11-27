@@ -387,6 +387,36 @@ describe('useBrowserWebview bounds updates', () => {
     visible.unmount()
     resetNativeWebviewOcclusionForTests()
   })
+
+  it('retries browserTabShow once on reveal failure and clears preview if retry also fails', async () => {
+    const OccluderHarness = ({ open }: { open: boolean }): null => {
+      useNativeWebviewOcclusion(open)
+      return null
+    }
+    const visible = render(<BrowserWebviewHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalled())
+
+    const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeTruthy())
+
+    vi.mocked(browserTabShow).mockClear()
+    vi.mocked(browserTabShow)
+      .mockResolvedValueOnce({ success: false, error: 'Transient show failure' })
+      .mockResolvedValueOnce({ success: false, error: 'Permanent show failure' })
+
+    occluder.rerender(<OccluderHarness open={false} />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+    // Preview stays visible while retry is pending
+    expect(visible.queryByTestId('occlusion-preview')).toBeTruthy()
+
+    // Retry fires and clears preview if show still fails so no frozen overlay remains stuck
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeNull())
+
+    occluder.unmount()
+    visible.unmount()
+    resetNativeWebviewOcclusionForTests()
+  })
 })
 
 describe('useBrowserWebview agent control', () => {
