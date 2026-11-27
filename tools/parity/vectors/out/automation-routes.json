@@ -1,0 +1,372 @@
+[
+ {
+  "store": "automation-routes",
+  "name": "every route the Rune client calls",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "list",
+     "args": [
+      "proj 1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automations?project_id=proj%201",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "get",
+     "args": [
+      "auto 1/é"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automations/auto%201%2F%C3%A9",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "create",
+     "args": [
+      "proj 1",
+      "Digest"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations",
+     "body": {
+      "project_id": "proj 1",
+      "name": "Digest"
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "applyOps",
+     "args": [
+      "auto 1/é",
+      3,
+      [
+       {
+        "op": "rename",
+        "name": "x"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/ops",
+     "body": {
+      "base_revision": 3,
+      "ops": [
+       {
+        "op": "rename",
+        "name": "x"
+       }
+      ]
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "previewOps",
+     "args": [
+      "auto 1/é",
+      3,
+      [
+       {
+        "op": "remove_node",
+        "id": "fetch"
+       }
+      ]
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/ops/preview",
+     "body": {
+      "base_revision": 3,
+      "ops": [
+       {
+        "op": "remove_node",
+        "id": "fetch"
+       }
+      ]
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "setLayout",
+     "args": [
+      "auto 1/é",
+      {
+       "trigger": {
+        "x": 0,
+        "y": 1.5
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/layout",
+     "body": {
+      "layout": {
+       "trigger": {
+        "x": 0,
+        "y": 1.5
+       }
+      }
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "remove",
+     "args": [
+      "auto 1/é"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "DELETE",
+     "path": "/api/automations/auto%201%2F%C3%A9",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "setEnabled",
+     "args": [
+      "auto 1/é",
+      false
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/enabled",
+     "body": {
+      "enabled": false
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "approve",
+     "args": [
+      "auto 1/é",
+      4
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/approve",
+     "body": {
+      "revision": 4
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runNow",
+     "args": [
+      "auto 1/é"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/run",
+     "body": {},
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "cancelRun",
+     "args": [
+      "run/1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automation-runs/run%2F1/cancel",
+     "body": {},
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decideApproval",
+     "args": [
+      "run/1",
+      "gate",
+      true
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automation-runs/run%2F1/approval",
+     "body": {
+      "node_id": "gate",
+      "approved": true
+     },
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "listRuns",
+     "args": [
+      "auto 1/é",
+      25
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automations/auto%201%2F%C3%A9/runs?limit=25",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runSteps",
+     "args": [
+      "run/1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automation-runs/run%2F1/steps",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "markSeen",
+     "args": [
+      "auto 1/é"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "POST",
+     "path": "/api/automations/auto%201%2F%C3%A9/seen",
+     "body": {},
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "listAgents",
+     "args": []
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automation-agents",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "listSecrets",
+     "args": [
+      "proj 1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "http",
+     "method": "GET",
+     "path": "/api/automation-secrets?project_id=proj%201",
+     "body": null,
+     "commandId": false
+    },
+    "state": null
+   }
+  ]
+ }
+]

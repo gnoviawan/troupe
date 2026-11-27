@@ -192,6 +192,16 @@ vi.mock(`${lib}/git-api`, async (importOriginal) => {
     realGitApi: actual.gitApi
   }
 })
+// The GitHub store's host calls answer the vector's `context.github` queue.
+vi.mock(`${lib}/github-api`, async (importOriginal) => {
+  const { githubCall, GITHUB_OPS } = await import('./stores/github-mock')
+  // `realGithubApi` is the web client's own facade, for the route vectors.
+  const actual = await importOriginal<{ githubApi: object }>()
+  return {
+    githubApi: Object.fromEntries(GITHUB_OPS.map((op) => [op, githubCall(op)])),
+    realGithubApi: actual.githubApi
+  }
+})
 vi.mock(`${lib}/worktree-reconciler`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   reconcileWorktreeOwnerOf: (cwd: string) => {
@@ -222,6 +232,11 @@ const { gitRoutesRecorder, gitRoutesScenarios } = await import('./stores/git-rou
 const { appSettingsRecorder, appSettingsScenarios } = await import('./stores/app-settings')
 const { settingsRoutesRecorder, settingsRoutesScenarios } = await import('./stores/settings-routes')
 const { paletteRecorder, paletteScenarios } = await import('./stores/palette')
+const { githubRecorder, githubScenarios, githubRoutesRecorder, githubRoutesScenarios } =
+  await import('./stores/github')
+const { realGithubApi } = (await import(`${lib}/github-api`)) as unknown as {
+  realGithubApi: Record<string, (...args: unknown[]) => unknown>
+}
 const { terminalProfilesRecorder, terminalProfilesScenarios } = await import(
   './stores/terminal-profiles'
 )
@@ -230,6 +245,15 @@ const { projectSettingsRecorder, projectSettingsScenarios } = await import(
 )
 const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
 const { subagentsRecorder, subagentsScenarios } = await import('./stores/subagents')
+const {
+  automationDraftRecorder,
+  automationDraftScenarios,
+  automationRunRecorder,
+  automationRunScenarios,
+  automationRoutesRecorder,
+  automationRoutesScenarios
+} = await import('./stores/automations')
+const { webAutomationTransport } = await import(`${lib}/automation-api`)
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -249,6 +273,16 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [terminalProfilesRecorder, terminalProfilesScenarios],
   [projectSettingsRecorder, projectSettingsScenarios],
   [mcpServersRecorder, mcpServersScenarios],
+  [githubRecorder, githubScenarios],
+  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios],
+  [automationDraftRecorder, automationDraftScenarios],
+  [automationRunRecorder, automationRunScenarios],
+  [
+    automationRoutesRecorder(
+      webAutomationTransport as unknown as Record<string, (...args: unknown[]) => unknown>
+    ),
+    automationRoutesScenarios
+  ],
   [subagentsRecorder, subagentsScenarios]
 ]
 

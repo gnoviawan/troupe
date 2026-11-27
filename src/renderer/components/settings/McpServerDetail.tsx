@@ -79,7 +79,7 @@ export function McpServerDetail({
   }, [server.id, enabled])
 
   return (
-    <div className="flex flex-col gap-8" data-testid="mcp-server-detail">
+    <div className="flex flex-col gap-8 @[52rem]/settings:gap-6" data-testid="mcp-server-detail">
       <div className="flex flex-col gap-4">
         <button
           type="button"
@@ -227,23 +227,25 @@ export function McpServerDetail({
 
       <ToolsGroup enabled={enabled} tools={tools} probing={probing} probeStatus={probeStatus} />
 
-      <div className={cn('flex items-center gap-6 px-4 py-3.5', SETTINGS_CARD_CLASS)}>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium leading-4 text-foreground">Remove server</p>
-          <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-            New chats stop offering its tools. You can undo it for a few seconds.
-          </p>
+      <SettingsGroup title="Remove" description="Stop offering this server's tools to new chats.">
+        <div className={cn('flex items-center gap-6 px-4 py-3.5', SETTINGS_CARD_CLASS)}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium leading-4 text-foreground">Remove server</p>
+            <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
+              New chats stop offering its tools. You can undo it for a few seconds.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="xs"
+            variant="secondary"
+            className="text-destructive hover:text-destructive"
+            onClick={onRemove}
+          >
+            Remove
+          </Button>
         </div>
-        <Button
-          type="button"
-          size="xs"
-          variant="secondary"
-          className="text-destructive hover:text-destructive"
-          onClick={onRemove}
-        >
-          Remove
-        </Button>
-      </div>
+      </SettingsGroup>
     </div>
   )
 }

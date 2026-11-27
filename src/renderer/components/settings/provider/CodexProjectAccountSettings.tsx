@@ -7,7 +7,7 @@ import { useServerAdmitsRemoteWrites } from '@/hooks/use-server-admits-remote-wr
 import { AccountOptionRow } from './AccountOptionRow'
 import { CodexSignInDialog } from './CodexSignInDialog'
 import { CODEX_NOT_READY_REASON, codexAccountReadiness } from './codex-account-status'
-import { ProviderGroupHeader } from './ProviderGroupHeader'
+import { ProviderGroup } from './ProviderGroupHeader'
 
 interface CodexProjectAccountSettingsProps {
   codex: ProjectCodexAccountDraft
@@ -44,19 +44,19 @@ export function CodexProjectAccountSettings({
   const selected = (accountId: string | null): boolean => codex.value === accountId
 
   return (
-    <div className="mt-6 flex flex-col gap-2" data-testid="codex-project-accounts">
-      <ProviderGroupHeader
-        iconKey="acp:codex-acp"
-        name="Codex"
-        lastChecked={null}
-        refreshing={false}
-        action={
-          <Button type="button" size="xs" variant="outline" onClick={onManageAccounts}>
-            Manage accounts
-            <ExternalLink size={12} />
-          </Button>
-        }
-      />
+    <ProviderGroup
+      data-testid="codex-project-accounts"
+      iconKey="acp:codex-acp"
+      name="Codex"
+      lastChecked={null}
+      refreshing={false}
+      action={
+        <Button type="button" size="xs" variant="outline" onClick={onManageAccounts}>
+          Manage accounts
+          <ExternalLink size={12} />
+        </Button>
+      }
+    >
       {loading && <p className="py-3 text-xs text-muted-foreground">Loading Codex accounts…</p>}
       {failed && (
         <p className="py-3 text-xs text-muted-foreground">
@@ -116,6 +116,6 @@ export function CodexProjectAccountSettings({
           await refreshUsage(true)
         }}
       />
-    </div>
+    </ProviderGroup>
   )
 }

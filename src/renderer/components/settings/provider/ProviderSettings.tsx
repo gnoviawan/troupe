@@ -22,7 +22,7 @@ import { accountReadiness } from './account-status'
 import { ClaudeAccountActions } from './ClaudeAccountActions'
 import { ClaudeAccountRow, isAccountSignedOut } from './ClaudeAccountRow'
 import { LinkSignInDialog } from './LinkSignInDialog'
-import { oldestCheck, ProviderGroupHeader } from './ProviderGroupHeader'
+import { oldestCheck, ProviderGroup } from './ProviderGroupHeader'
 
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
@@ -158,23 +158,21 @@ export function ProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="flex flex-col gap-3">
-      <ProviderGroupHeader
-        iconKey="acp:claude-acp"
-        name="Claude Code"
-        count={
-          snapshot && !failed
-            ? accounts.length === 1
-              ? '1 account'
-              : `${accounts.length} accounts`
-            : undefined
-        }
-        lastChecked={failed ? null : oldestCheck(usage)}
-        refreshing={refreshingUsage}
-        onRefresh={failed ? undefined : () => void refreshUsage(true)}
-        action={addButton}
-      />
-
+    <ProviderGroup
+      iconKey="acp:claude-acp"
+      name="Claude Code"
+      count={
+        snapshot && !failed
+          ? accounts.length === 1
+            ? '1 account'
+            : `${accounts.length} accounts`
+          : undefined
+      }
+      lastChecked={failed ? null : oldestCheck(usage)}
+      refreshing={refreshingUsage}
+      onRefresh={failed ? undefined : () => void refreshUsage(true)}
+      action={addButton}
+    >
       {loading && (
         <div>
           <SkeletonRow />
@@ -331,6 +329,6 @@ export function ProviderSettings(): React.JSX.Element {
           </div>
         )}
       </ConfirmDialog>
-    </div>
+    </ProviderGroup>
   )
 }
