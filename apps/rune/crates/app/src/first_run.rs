@@ -211,7 +211,8 @@ impl State {
         }
         let hash = page::hash();
         let last = self.first_run.hash.replace(hash.clone());
-        if last.is_some() && last.as_deref() != Some(hash.as_str()) {
+        // An empty hash names no route: the overlay history's back press lands on one.
+        if last.is_some() && last.as_deref() != Some(hash.as_str()) && !hash.is_empty() {
             let route = crate::Route::from_hash(&hash);
             log::info!("[app] the hash moved the route to {route:?}");
             if route == crate::Route::Snapshots {
@@ -435,7 +436,7 @@ impl State {
             return;
         }
         w.submitting = true;
-        let body = serde_json::to_value(&answers).unwrap_or(Value::Null);
+        let body = answers.to_request();
         self.first_run_send(Ask::Validate, HttpRequest { method: Method::Post, path: "/setup/validate".into(), body: Some(body), command_id: None });
     }
 
@@ -451,7 +452,7 @@ impl State {
                 w.errors = field_error(&verdict["fieldErrors"]);
             }
             Ok(_) => {
-                let body = self.wizard_answers().map(|a| serde_json::to_value(a).unwrap_or(Value::Null));
+                let body = self.wizard_answers().map(|a| a.to_request());
                 self.first_run_send(Ask::Apply, HttpRequest { method: Method::Post, path: "/setup/apply".into(), body, command_id: None });
             }
         }
@@ -610,9 +611,13 @@ mod page {
         window().and_then(|w| w.location().hash().ok()).unwrap_or_default()
     }
 
+    /// Replaces the current entry's hash: the overlay history owns the entries.
     pub fn set_hash(hash: &str) {
-        if let Some(w) = window() {
-            let _ = w.location().set_hash(hash);
+        let Some(w) = window() else { return };
+        let path = w.location().pathname().unwrap_or_else(|_| "/".into());
+        let search = w.location().search().unwrap_or_default();
+        if let Ok(history) = w.history() {
+            let _ = history.replace_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&format!("{path}{search}{hash}")));
         }
     }
 

@@ -16,7 +16,7 @@ import { parseArgs } from 'node:util'
 import { type Browser, chromium } from 'playwright'
 import { scopedKey } from '../../../src/shared/types/persistence.types'
 import { REFERENCE_ARGS } from '../drivers/chromium'
-import { runeWebArgs } from '../drivers/rune-web'
+import { mirrorPoint, runeWebArgs } from '../drivers/rune-web'
 import { REPO_DIR } from '../server'
 import { createWorld, PROJECTS, TOKEN, type World } from '../world'
 import { connectWs } from '../ws'
@@ -159,6 +159,12 @@ async function run(client: Client, world: World): Promise<{ seen: string[]; stat
     await act('rename', () => button('Rename snapshot', 1))
     await settle(400)
     await act('rename text', async () => {
+      // The mirror has no node for the Rune field: press the field, just above the card's
+      // description.
+      if (!react) {
+        const below = await mirrorPoint(client.page, 'one terminal', true)
+        if (below) await client.page.mouse.click(below.x, below.y - 28)
+      }
       await client.page.keyboard.press('Control+a')
       await client.page.keyboard.type(RENAMED, { delay: 15 })
       await client.page.keyboard.press('Enter')

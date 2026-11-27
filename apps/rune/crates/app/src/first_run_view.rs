@@ -70,6 +70,7 @@ fn field(t: &Tokens, edit: &rune::TextEdit, name: &str, mono_font: bool) -> El {
         .w_full()
         .h(36.0)
         .px(12.0)
+        .py(8.0)
         .radius(6.0)
         .fill(c.background)
         .border(1.0, c.input)
@@ -126,7 +127,7 @@ fn wizard(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
         })
         .on_close(|s: &mut State| s.close(CHANNEL_SELECT))
         .build(t, layer);
-    let group = |children: Vec<Option<El>>| col().w_full().gap(6.0).children(children.into_iter().flatten());
+    let group = |children: Vec<Option<El>>| col().w_full().min_w(0.0).gap(6.0).children(children.into_iter().flatten());
     let mut form = col()
         .key("setup-form")
         .w_full()
@@ -189,11 +190,17 @@ fn wizard(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
                 .w_full()
                 .gap(16.0)
                 .justify_between()
-                .child(group(vec![
-                    Some(label(t, "Let other devices make changes")),
-                    Some(hint(t, "When off, other devices can watch terminals and browse files but can't type or edit.")),
-                    err("allowRemoteWrites"),
-                ]))
+                .child(
+                    col().grow(1.0).min_w(0.0).gap(6.0).children(
+                        [
+                            Some(label(t, "Let other devices make changes")),
+                            Some(hint(t, "When off, other devices can watch terminals and browse files but can't type or edit.")),
+                            err("allowRemoteWrites"),
+                        ]
+                        .into_iter()
+                        .flatten(),
+                    ),
+                )
                 .child(
                     ui::Switch::new(a.allow_remote_writes)
                         .label("Let other devices make changes")
@@ -216,6 +223,7 @@ fn wizard(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
             .icon(glyph(chevron))
             .build(t)
             .key("setup-advanced")
+            .self_start()
             .ml(-8.0)
             .on_press(|s: &mut State| s.first_run.wizard.advanced = !s.first_run.wizard.advanced),
     );
@@ -328,6 +336,7 @@ fn token_gate(s: &State, t: &'static Tokens, phone: bool) -> El {
         .w_full()
         .h(36.0)
         .px(12.0)
+        .py(8.0)
         .radius(6.0)
         .fill(c.background)
         .border(1.0, c.input)

@@ -38,7 +38,7 @@ fn a_server_in_setup_mode_shows_the_wizard_and_the_answers_go_through_its_dry_ru
     s.submit_wizard();
     let (ask, request) = s.first_run.sent.last().cloned().unwrap();
     assert_eq!(ask, Ask::Validate);
-    assert_eq!(request.body.as_ref().unwrap()["port"], json!(8195.0));
+    assert_eq!(request.body.as_ref().unwrap()["port"], json!(8195), "a whole number, as the server's u16 takes it");
     s.first_run_replied(Ask::Validate, Ok(json!({ "ok": true, "fieldErrors": {} })));
     assert_eq!(s.first_run.sent.last().unwrap().0, Ask::Apply);
     s.first_run_replied(Ask::Apply, Ok(json!({ "ok": true, "host": "0.0.0.0", "port": 8195, "webAuthToken": "secret" })));

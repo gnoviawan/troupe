@@ -48,6 +48,21 @@ impl Answers {
         }
     }
 
+    /// The body `/setup/validate` and `/setup/apply` take: whole numbers as integers, as
+    /// `valueAsNumber` gives them to `JSON.stringify` (the server's `u16` refuses `8195.0`).
+    #[must_use]
+    pub fn to_request(&self) -> serde_json::Value {
+        let whole = |n: Option<f64>| match n {
+            Some(v) if v.fract() == 0.0 && v.abs() < 9.0e15 => serde_json::json!(v as i64),
+            Some(v) => serde_json::json!(v),
+            None => serde_json::Value::Null,
+        };
+        let mut body = serde_json::to_value(self).unwrap_or_default();
+        body["port"] = whole(self.port);
+        body["updateIntervalSecs"] = whole(self.update_interval_secs);
+        body
+    }
+
     /// The client's own check before the server's dry run.
     #[must_use]
     pub fn port_error(&self) -> Option<&'static str> {
