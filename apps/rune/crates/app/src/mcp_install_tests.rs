@@ -91,10 +91,15 @@ fn committed() -> Value {
 
 /// The MCP page with an empty registry and one catalog card, Install pressed.
 fn describing() -> Runtime<State> {
+    describing_with(json!([]))
+}
+
+/// The MCP page with `list` in the registry and one catalog card, Install pressed.
+fn describing_with(list: Value) -> Runtime<State> {
     let mut rt = runtime_at((1280.0, 800.0));
     edit(&mut rt, |s| s.open_settings(Some(crate::settings_mcp::PAGE)));
     let (call, _, _) = registry_calls(&rt).into_iter().next().expect("the page reads the registry");
-    store_reply(&mut rt, call, Ok(json!({ "value": { "_version": 1, "data": [] }, "revision": 4 })));
+    store_reply(&mut rt, call, Ok(json!({ "value": { "_version": 1, "data": list }, "revision": 4 })));
     let g = rt.state.mcp_ui.catalog.search_generation();
     let row = json!({ "name": "io.github.acme/notes", "title": null, "description": "Notes", "version": "1.2.0", "status": "active", "state": "installable", "reason": null, "defaultOption": { "kind": "package", "index": 0 }, "repositoryUrl": null, "hasIcon": false });
     let page = json!({ "items": [row], "nextCursor": null, "total": 1, "updatedAt": "2026-11-26T10:00:00Z", "sample": false });
@@ -104,7 +109,10 @@ fn describing() -> Runtime<State> {
 }
 
 fn at_consent() -> Runtime<State> {
-    let mut rt = describing();
+    consent_on(describing())
+}
+
+fn consent_on(mut rt: Runtime<State>) -> Runtime<State> {
     let g = generation(&rt);
     answer(&mut rt, InstallFetch::Describe(g), Ok(json!({ "outcome": "form", "form": form() })));
     edit(&mut rt, |s| {
@@ -239,4 +247,41 @@ fn a_save_the_registry_refuses_fails_the_install_and_frees_the_page() {
     store_reply(&mut rt, call, Ok(json!({ "revision": 5 })));
     assert!(rt.state.toasts.visible().iter().any(|t| t.title == "Added 1 MCP server"), "the next write takes its own action");
     assert!(rt.state.mcp_ui.dialog.is_none());
+}
+
+fn writes(rt: &Runtime<State>) -> Vec<(u64, Value)> {
+    registry_calls(rt).into_iter().filter(|(_, k, _)| *k == WsRequestType::StoreWrite).map(|(c, _, p)| (c, p)).collect()
+}
+
+#[test]
+fn a_refusal_from_outside_the_registry_does_not_touch_the_install() {
+    let mut rt = at_consent();
+    tap(&mut rt, "approve");
+    answer(&mut rt, InstallFetch::Commit, Ok(committed()));
+    let (call, _) = writes(&rt).pop().expect("the install write is out");
+    let claimed = rt.state.mcp_rejected("the agent is busy");
+    assert!(!claimed, "a chat or agent refusal keeps its own toast");
+    assert!(matches!(rt.state.mcp_ui.install.flow, Flow::Committing { .. }));
+    store_reply(&mut rt, call, Ok(json!({ "revision": 5 })));
+    assert!(matches!(rt.state.mcp_ui.install.flow, Flow::Probing { .. }), "{:?}", rt.state.mcp_ui.install.flow);
+}
+
+#[test]
+fn a_failed_toggle_ahead_of_the_install_keeps_its_toast_and_the_install_still_saves() {
+    let list = json!([{ "id": "fs", "type": "stdio", "name": "files", "command": "npx", "enabled": true }]);
+    let mut rt = consent_on(describing_with(list));
+    edit(&mut rt, |s| s.mcp_write(crate::settings_mcp::Action::Toggle, model::acp::Event::SetMcpServerEnabled("fs".into(), json!(false))));
+    let (toggle, _) = writes(&rt).pop().expect("the toggle write is out");
+    tap(&mut rt, "approve");
+    answer(&mut rt, InstallFetch::Commit, Ok(committed()));
+    assert_eq!(writes(&rt).len(), 1, "the install write waits behind the toggle");
+    store_reply(&mut rt, toggle, Err(WsError { code: "INTERNAL".into(), message: "disk full".into(), details: None }));
+    assert!(rt.state.toasts.visible().iter().any(|t| t.title == "Could not update the MCP server. Your previous setting was restored."));
+    assert!(matches!(rt.state.mcp_ui.install.flow, Flow::Committing { .. }), "{:?}", rt.state.mcp_ui.install.flow);
+    let all = writes(&rt);
+    assert_eq!(all.len(), 2, "the install write runs once the toggle answered");
+    assert!(all[1].1["value"]["data"].as_array().unwrap().iter().any(|s| s["name"] == json!("notes")));
+    store_reply(&mut rt, all[1].0, Ok(json!({ "revision": 6 })));
+    assert!(matches!(rt.state.mcp_ui.install.flow, Flow::Probing { .. }), "{:?}", rt.state.mcp_ui.install.flow);
+    assert!(rt.state.mcp_ui.actions.is_empty());
 }
