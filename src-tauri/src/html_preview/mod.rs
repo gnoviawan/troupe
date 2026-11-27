@@ -203,6 +203,16 @@ impl Registry {
         self.sessions.lock().by_token.remove(token).is_some()
     }
 
+    /// End every session, so no `/preview/<token>/` URL a remote device
+    /// learned keeps serving files once its access is revoked. Returns how
+    /// many were open.
+    pub fn close_all(&self) -> usize {
+        let mut sessions = self.sessions.lock();
+        let open = sessions.by_token.len();
+        sessions.by_token.clear();
+        open
+    }
+
     /// The session's root, entry name and buffer, copied out of the lock.
     fn lookup(&self, token: &str) -> Option<(PathBuf, String, Option<String>)> {
         let sessions = self.sessions.lock();

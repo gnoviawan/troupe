@@ -73,6 +73,7 @@ mod commands;
 mod dispatch;
 mod import_session;
 mod lifecycle;
+mod listeners;
 mod mcp_catalog;
 mod projects;
 mod prompts;
@@ -98,6 +99,7 @@ use commands::*;
 use dispatch::*;
 use import_session::*;
 use lifecycle::*;
+use listeners::*;
 use projects::*;
 use prompts::*;
 use relay::*;
@@ -112,6 +114,7 @@ use watch::*;
 #[cfg(test)]
 pub(crate) use relay::{outbound_channel, OutboundReceiver, OUTBOUND_QUEUE_CAPACITY};
 pub use relay::{ws_upgrade, AUTH_REQUIRED_TYPE, WS_BATCH_TYPE, WS_GAP_TYPE, WS_HEARTBEAT_TYPE};
+pub use listeners::LISTENERS_WS_REQUESTS;
 pub use ssh::SSH_WS_REQUESTS;
 pub(crate) use relay::{EnqueueOutcome, Outbound, OutboundSender};
 

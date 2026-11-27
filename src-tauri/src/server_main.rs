@@ -646,6 +646,7 @@ fn main() -> ExitCode {
             acp_install,
             store,
             web_auth,
+            launch.desktop,
         )
         .await
         {

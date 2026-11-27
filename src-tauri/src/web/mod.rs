@@ -56,6 +56,9 @@ pub mod mcp_catalog_api;
 pub(crate) mod log_capture;
 pub mod mcp_oauth_api;
 pub mod link_preview_api;
+pub mod listeners_api;
+#[cfg(test)]
+mod listeners_api_tests;
 #[cfg(test)]
 mod html_preview_api_tests;
 #[cfg(test)]
@@ -85,6 +88,9 @@ pub mod setup;
 pub mod sink;
 pub mod skills_api;
 pub mod store;
+pub mod stream_cutoff;
+#[cfg(test)]
+mod stream_cutoff_tests;
 pub mod terminal_ws;
 pub mod watch;
 pub mod worktree_api;
@@ -168,6 +174,9 @@ fn oauth_redirect_base(addr: SocketAddr) -> String {
 /// The standalone binary owns its agent lifetime end-to-end, so it kills agents
 /// on exit. The desktop-hosted shared-live path calls [`serve_router`] directly
 /// and must NOT kill the desktop's live agents — see [`serve_router`].
+///
+/// `remote_listeners` (`--desktop`) attaches the remote access controls
+/// ([`listeners_api`]) to the relay; they stop before the agents do.
 #[allow(clippy::too_many_arguments)]
 pub async fn serve(
     acp: Arc<AcpManager>,
@@ -183,7 +192,24 @@ pub async fn serve(
     acp_install: Option<Arc<crate::acp::install::AcpInstallService>>,
     store: Arc<WebStore>,
     web_auth: Option<Arc<auth::WebAuth>>,
+    remote_listeners: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if remote_listeners {
+        ws_relay.set_listeners(Some(Arc::new(listeners_api::Listeners::new(
+            listeners_api::ListenerParts {
+                acp: Arc::clone(&acp),
+                pty: Arc::clone(&pty),
+                relay: Arc::clone(&ws_relay),
+                registry: Arc::clone(&registry),
+                acp_catalog: acp_catalog.clone(),
+                acp_install: acp_install.clone(),
+                store: Arc::clone(&store),
+                state_dir: cfg.service_account_state_dir(),
+                allow_remote_writes: cfg.allow_remote_writes,
+            },
+        ))));
+    }
+    let listeners_relay = Arc::clone(&ws_relay);
     // Idle agent reaper (standalone server; the desktop starts its own from
     // `lib.rs` — see the module doc for why this is NOT in `serve_router`).
     // The shutdown future resolves
@@ -283,6 +309,12 @@ pub async fn serve(
     .await?;
 
     let serve_result = handle.await;
+
+    // The remote listeners drain their sockets before the agents stop.
+    if let Some(listeners) = listeners_relay.listeners() {
+        listeners.stop_all().await;
+        listeners_relay.set_listeners(None);
+    }
 
     // Reap loop cleanup: signal it to stop (no-op if the OS signal already
     // resolved its shutdown future) and join so a slow sweep cannot leak the
@@ -487,7 +519,11 @@ pub async fn serve_router(
         connections,
         server_admin,
         cfg.rune_web_dir.clone(),
-    );
+    )
+    .layer(axum::middleware::from_fn_with_state(
+        socket_shutdown.stop_token(),
+        stream_cutoff::end_streams_on_stop,
+    ));
 
     // Stale device partitions are swept daily while this host serves; the
     // task stops with it (the desktop shared-live host starts and stops).
