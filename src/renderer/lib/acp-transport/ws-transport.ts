@@ -507,7 +507,15 @@ export class WsAcpTransport implements AcpTransport {
   private installPendingPrompts(sessionId: string, reply: { headSeq?: number } | undefined): void {
     const prompts = readPendingPrompts(sessionId, reply)
     this.pendingCoverage.note(sessionId, reply?.headSeq, prompts)
-    if (!prompts.permissions && !prompts.questions && !prompts.elicitations) return
+    if (
+      !prompts.permissions &&
+      !prompts.questions &&
+      !prompts.elicitations &&
+      !prompts.mcpInstalls &&
+      !prompts.comuState
+    ) {
+      return
+    }
     const restored = pendingPromptCounts(prompts)
     if (restored) {
       void logFrontendError({

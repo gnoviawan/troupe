@@ -325,7 +325,15 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
     categoryId: 'comu',
     label: 'Enable Computer Use (Troupe Comu)',
     description: 'Let agents inspect and operate native desktop apps on this machine.',
-    keywords: ['comu', 'computer use', 'desktop', 'native apps', 'automation', 'accessibility'],
+    keywords: [
+      'comu',
+      'computer use',
+      'desktop',
+      'native apps',
+      'automation',
+      'os permissions',
+      'screen recording'
+    ],
     anchorId: COMU_ANCHORS.appEnabled
   },
   {

@@ -182,7 +182,8 @@ vi.mock('@/components/settings/BrowserPolicySettings', () => ({
 
 vi.mock('@/components/settings/ComuPolicySettings', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/components/settings/ComuPolicySettings')>()),
-  ComuAppPolicy: () => null
+  ComuAppPolicy: () => null,
+  ComuSection: () => null
 }))
 
 // Radix Select content does not render under jsdom. A native select keeps

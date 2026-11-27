@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { useAppComuPolicy, useComuPermissions, useProjectComuPolicy } from '@/hooks/use-comu-policy'
 import type { ComuPolicyFailure } from '@/lib/comu-policy-api'
 import { SettingsCard, SettingsGroup } from './SettingsGroup'
+import { SettingsSection } from './SettingsLayout'
 import { SettingsNotice } from './SettingsNotice'
 import { SettingsRow, settingsDescriptionId } from './SettingsRow'
 
@@ -226,6 +227,7 @@ export function ComuAppPolicy(): React.JSX.Element {
   const { state, edit } = useAppComuPolicy()
   const {
     status: osPerms,
+    error: permsError,
     loading: permsLoading,
     recheck,
     request
@@ -283,7 +285,7 @@ export function ComuAppPolicy(): React.JSX.Element {
         </SettingsCard>
       </SettingsGroup>
 
-      {osPerms && (
+      {(osPerms || permsError || permsLoading) && (
         <SettingsGroup
           id={COMU_ANCHORS.appPermissions}
           title="System permissions"
@@ -292,12 +294,24 @@ export function ComuAppPolicy(): React.JSX.Element {
         >
           <SettingsCard>
             <SettingsRow
-              label={osPerms.ready ? 'System access ready' : 'System access needed'}
-              description={osPerms.summary}
+              label={
+                osPerms
+                  ? osPerms.ready
+                    ? 'System access ready'
+                    : 'System access needed'
+                  : 'System access status unavailable'
+              }
+              description={
+                osPerms
+                  ? osPerms.summary
+                  : permsError
+                    ? describeComuFailure(permsError)
+                    : 'Checking system permissions…'
+              }
               layout="inline"
             >
               <div className="flex flex-wrap items-center gap-2">
-                {osPerms.platform === 'macos' && !osPerms.accessibilityGranted && (
+                {osPerms?.platform === 'macos' && !osPerms.accessibilityGranted && (
                   <Button
                     type="button"
                     size="xs"
@@ -309,7 +323,7 @@ export function ComuAppPolicy(): React.JSX.Element {
                     Grant Accessibility
                   </Button>
                 )}
-                {osPerms.platform === 'macos' && !osPerms.screenRecordingGranted && (
+                {osPerms?.platform === 'macos' && !osPerms.screenRecordingGranted && (
                   <Button
                     type="button"
                     size="xs"
@@ -334,6 +348,11 @@ export function ComuAppPolicy(): React.JSX.Element {
               </div>
             </SettingsRow>
           </SettingsCard>
+          {permsError && (
+            <SettingsNotice tone="danger" role="alert">
+              {describeComuFailure(permsError)}
+            </SettingsNotice>
+          )}
         </SettingsGroup>
       )}
 
@@ -385,5 +404,13 @@ export function ComuAppPolicy(): React.JSX.Element {
         onRemove={(app) => edit({ op: 'remove_app', app })}
       />
     </>
+  )
+}
+
+export function ComuSection(): React.JSX.Element {
+  return (
+    <SettingsSection id="comu">
+      <ComuAppPolicy />
+    </SettingsSection>
   )
 }

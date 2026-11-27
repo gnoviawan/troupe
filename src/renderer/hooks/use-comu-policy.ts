@@ -18,6 +18,7 @@ import {
   onComuPolicyChanged,
   onComuPolicyResync
 } from '@/lib/comu-policy-api'
+import { logFrontendError } from '@/lib/log-api'
 
 export type ComuPolicyResource<P> =
   | { status: 'loading' }
@@ -76,8 +77,10 @@ function useComuResource<P, Op>(
   }, [scopeKey, reload])
 
   const edit = useCallback(async (op: Op): Promise<ComuPolicyFailure | null> => {
+    const started = generation.current
     const result = await latest.current.apply(op, policyRef.current)
     if (!result.success) return comuPolicyFailure(result)
+    if (started !== generation.current) return null
     generation.current += 1
     policyRef.current = result.data
     setState({ status: 'ready', policy: result.data })
@@ -109,6 +112,7 @@ export function useAppComuPolicy(): Resource<AppComuPolicy, AppComuPolicyOp> {
 
 export interface ComuPermissionsResource {
   status: ComuOsPermissionsStatus | null
+  error: ComuPolicyFailure | null
   loading: boolean
   recheck: () => Promise<void>
   request: (kind: ComuOsPermissionKind) => Promise<void>
@@ -116,13 +120,25 @@ export interface ComuPermissionsResource {
 
 export function useComuPermissions(enabled: boolean): ComuPermissionsResource {
   const [status, setStatus] = useState<ComuOsPermissionsStatus | null>(null)
+  const [error, setError] = useState<ComuPolicyFailure | null>(null)
   const [loading, setLoading] = useState(false)
 
   const recheck = useCallback(async () => {
     setLoading(true)
     try {
       const result = await comuPolicyApi.getPermissions()
-      if (result.success) setStatus(result.data)
+      if (result.success) {
+        setStatus(result.data)
+        setError(null)
+      } else {
+        const failure = comuPolicyFailure(result)
+        setError(failure)
+        void logFrontendError({
+          level: 'warn',
+          source: 'use-comu-policy',
+          message: `comu permissions check failed: code=${failure.code} reason=${failure.reason ?? 'none'}`
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -132,7 +148,18 @@ export function useComuPermissions(enabled: boolean): ComuPermissionsResource {
     setLoading(true)
     try {
       const result = await comuPolicyApi.requestPermission(kind)
-      if (result.success) setStatus(result.data)
+      if (result.success) {
+        setStatus(result.data)
+        setError(null)
+      } else {
+        const failure = comuPolicyFailure(result)
+        setError(failure)
+        void logFrontendError({
+          level: 'warn',
+          source: 'use-comu-policy',
+          message: `comu permission request (${kind}) failed: code=${failure.code} reason=${failure.reason ?? 'none'}`
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -143,5 +170,5 @@ export function useComuPermissions(enabled: boolean): ComuPermissionsResource {
     void recheck()
   }, [enabled, recheck])
 
-  return { status, loading, recheck, request }
+  return { status, error, loading, recheck, request }
 }

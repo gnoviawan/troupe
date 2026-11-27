@@ -908,12 +908,14 @@ export interface BrowserStopChangedEvent {
 export interface ComuSessionActiveEvent {
   sessionId: string
   active: boolean
+  seq?: number
 }
 
 /** Computer Use Stop latched (`stopped: true`) or cleared on the next user turn. */
 export interface ComuStopChangedEvent {
   sessionId: string
   stopped: boolean
+  seq?: number
 }
 
 /** Agent browser tab lifecycle — the host asks the desktop renderer to open

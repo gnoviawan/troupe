@@ -1,7 +1,7 @@
 //! Per-session Stop latch and active-session indicator events for Troupe Comu.
 
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use parking_lot::Mutex;
 use serde_json::json;
@@ -14,9 +14,40 @@ pub const EVENT_COMU_SESSION_ACTIVE: &str = "acp:comu_session_active";
 /// Session-scoped event emitted when Stop latches or clears on the next user turn.
 pub const EVENT_COMU_STOP_CHANGED: &str = "acp:comu_stop_changed";
 
+/// Authoritative Computer Use activity and Stop state for one session,
+/// attached to `/ws` `subscribe` and `recover_session_snapshot` replies so
+/// reconnecting clients recover missed live-only transitions.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ComuSessionRuntimeState {
+    pub active: bool,
+    pub stopped: bool,
+    pub seq: u64,
+}
+
+#[derive(Default)]
+struct LiveComuRegistry {
+    seq: u64,
+    /// `session_id -> (active, stopped)`
+    sessions: HashMap<String, (bool, bool)>,
+}
+
+static LIVE_COMU_REGISTRY: LazyLock<Mutex<LiveComuRegistry>> =
+    LazyLock::new(|| Mutex::new(LiveComuRegistry::default()));
+
+/// Read the current Computer Use `(active, stopped, seq)` state for `session_id`.
+#[must_use]
+pub fn session_runtime_state(session_id: &str) -> ComuSessionRuntimeState {
+    let reg = LIVE_COMU_REGISTRY.lock();
+    let (active, stopped) = reg.sessions.get(session_id).copied().unwrap_or((false, false));
+    ComuSessionRuntimeState {
+        active,
+        stopped,
+        seq: reg.seq,
+    }
+}
+
 struct SessionSlot {
     epoch: u64,
-    seq: u64,
     stopped: bool,
     tx: watch::Sender<u64>,
 }
@@ -68,7 +99,6 @@ impl ComuStopRegistry {
             let (tx, _rx) = watch::channel(0);
             SessionSlot {
                 epoch: 0,
-                seq: 0,
                 stopped: false,
                 tx,
             }
@@ -84,12 +114,22 @@ impl ComuStopRegistry {
 
     /// Mark `session_id` as actively using Computer Use so UI surfaces show the Stop bar.
     pub fn mark_active(&self, session_id: &str) {
-        if self.active_sessions.lock().insert(session_id.to_string()) {
+        let mut active = self.active_sessions.lock();
+        if active.insert(session_id.to_string()) {
+            let seq = {
+                let mut reg = LIVE_COMU_REGISTRY.lock();
+                reg.seq = reg.seq.saturating_add(1);
+                reg.sessions
+                    .entry(session_id.to_string())
+                    .or_insert((false, false))
+                    .0 = true;
+                reg.seq
+            };
             crate::acp::events::fan_out(
                 &self.sinks,
                 Some(session_id),
                 EVENT_COMU_SESSION_ACTIVE,
-                &json!({ "sessionId": session_id, "active": true }),
+                &json!({ "sessionId": session_id, "active": true, "seq": seq }),
             );
         }
     }
@@ -103,7 +143,6 @@ impl ComuStopRegistry {
             let (tx, _rx) = watch::channel(0);
             SessionSlot {
                 epoch: 0,
-                seq: 0,
                 stopped: false,
                 tx,
             }
@@ -111,9 +150,16 @@ impl ComuStopRegistry {
         let newly_stopped = !slot.stopped;
         slot.stopped = true;
         slot.epoch = slot.epoch.saturating_add(1);
-        slot.seq = slot.seq.saturating_add(1);
         let _ = slot.tx.send_replace(slot.epoch);
-        let seq = slot.seq;
+        let seq = {
+            let mut reg = LIVE_COMU_REGISTRY.lock();
+            reg.seq = reg.seq.saturating_add(1);
+            reg.sessions
+                .entry(session_id.to_string())
+                .or_insert((false, false))
+                .1 = true;
+            reg.seq
+        };
         crate::acp::events::fan_out(
             &self.sinks,
             Some(session_id),
@@ -133,8 +179,14 @@ impl ComuStopRegistry {
             return false;
         }
         slot.stopped = false;
-        slot.seq = slot.seq.saturating_add(1);
-        let seq = slot.seq;
+        let seq = {
+            let mut reg = LIVE_COMU_REGISTRY.lock();
+            reg.seq = reg.seq.saturating_add(1);
+            if let Some(entry) = reg.sessions.get_mut(session_id) {
+                entry.1 = false;
+            }
+            reg.seq
+        };
         crate::acp::events::fan_out(
             &self.sinks,
             Some(session_id),
@@ -148,12 +200,21 @@ impl ComuStopRegistry {
     /// `ComuStopToken::wait_stopped` awaiting on that session.
     pub fn forget_session(&self, session_id: &str) {
         self.slots.lock().remove(session_id);
-        if self.active_sessions.lock().remove(session_id) {
+        let was_active = self.active_sessions.lock().remove(session_id);
+        let seq = {
+            let mut reg = LIVE_COMU_REGISTRY.lock();
+            let removed = reg.sessions.remove(session_id).is_some();
+            if was_active || removed {
+                reg.seq = reg.seq.saturating_add(1);
+            }
+            reg.seq
+        };
+        if was_active {
             crate::acp::events::fan_out(
                 &self.sinks,
                 Some(session_id),
                 EVENT_COMU_SESSION_ACTIVE,
-                &json!({ "sessionId": session_id, "active": false }),
+                &json!({ "sessionId": session_id, "active": false, "seq": seq }),
             );
         }
     }

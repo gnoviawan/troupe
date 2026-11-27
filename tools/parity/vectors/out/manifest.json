@@ -195,7 +195,7 @@
     },
     "settings-routes": {
       "sources": {
-        "src/renderer/lib/acp-transport/ws-transport.ts": "6bcbf55796ea7f0aff8c5ca7046c9d44fcbd29ca",
+        "src/renderer/lib/acp-transport/ws-transport.ts": "baafc6d5917d8b3baf3e02f607da23291952cdbb",
         "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
       },
       "vectors": [

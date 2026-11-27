@@ -3889,7 +3889,7 @@ describe('Standalone troupe-server QR parity (CLI, Web tool strip, Settings -> S
 describe('Troupe Comu parity (desktop, web, shared-live, standalone server)', () => {
   const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
   const PolicyFacade = join(LIB_DIR, 'comu-policy-api.ts')
-  const ConsentFacade = join(LIB_DIR, 'comu-consent-api.ts')
+  const ConsentFacade = PolicyFacade
   const RouterRust = join(SRC_TAURI, 'web', 'router', 'mod.rs')
   const RouteRust = join(SRC_TAURI, 'web', 'comu_api.rs')
   const CommandsRust = join(SRC_TAURI, 'commands', 'comu.rs')

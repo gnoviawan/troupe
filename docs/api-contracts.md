@@ -687,6 +687,8 @@ A session log event has one of three delivery tiers (`tier_of` in `src-tauri/src
 | `acp:local_title_generated` | session | Session log event (reliable). Durable record of a host-generated background title. Clients have no handler for it: the title reaches the UI through the `acp:session_info_update` that follows. |
 | `acp:browser_ticket_closed` | session | Session log event (reliable). Live only. A browser consent ticket was answered, timed out or withdrawn, `{sessionId, requestId, outcome}`, so every surface drops it. |
 | `acp:browser_stop_changed` | session | Session log event (reliable). Live only. Stop latched or cleared for the session, `{sessionId, stopped}`. |
+| `acp:comu_session_active` | session | Session log event (reliable). Live only. Computer Use started or ended in the session, `{sessionId, active, seq}`; `subscribe` and `recover_session_snapshot` restore current flags in `comuState`. |
+| `acp:comu_stop_changed` | session | Session log event (reliable). Live only. Computer Use Stop latched or cleared for the session, `{sessionId, stopped, seq}`; `subscribe` and `recover_session_snapshot` restore current flags in `comuState`. |
 | `acp:browser_agent_tab` | session | Session log event (reliable). The agent's browser tab opened or closed. |
 | `acp:browser_tab_updated` | session | Session log event (reliable). The tab registry's view of one of the session's agent tabs, `{tabId, url, title, loading, agentControlled, epoch}`, after an engine navigation, title or load event. |
 | `acp:browser_tab_closed` | session | Session log event (reliable). The engine destroyed one of the session's agent tabs, `{tabId}`. |

@@ -52,8 +52,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { isAgentDeadError, sessionTurnBusy } from '@/stores/prompt-queue-orchestration'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { agentChatTabId, useWorkspaceStore } from '@/stores/workspace-store'
-import { ComuAgentIndicator } from '../comu/ComuAgentStop'
-import { ComuConsentCard } from '../comu/ComuConsentCard'
+import { ComuAgentIndicator, ComuConsentCard } from '../comu/ComuConsentCardHost'
 import { AgentConnectionLamp } from './AgentConnectionLamp'
 import { AskUserQuestion } from './AskUserQuestion'
 import { AntigravityLimitNotice } from './antigravity-account/AntigravityLimitNotice'
@@ -272,12 +271,6 @@ export function AgentChatPanel({
     return () => unregisterConsentCard(sessionId)
   }, [consentCardHosted, sessionId, registerConsentCard, unregisterConsentCard])
 
-  const comuCardHosted = pendingComuConsent != null && isVisible && session?.status !== 'closed'
-  useEffect(() => {
-    if (!comuCardHosted) return
-    registerComuCard(sessionId)
-    return () => unregisterComuCard(sessionId)
-  }, [comuCardHosted, sessionId, registerComuCard, unregisterComuCard])
   const sendPrompt = useAcpStore((s) => s.sendPrompt)
   const sendPromptBlocks = useAcpStore((s) => s.sendPromptBlocks)
   const cancelPrompt = useAcpStore((s) => s.cancelPrompt)
@@ -410,6 +403,21 @@ export function AgentChatPanel({
     openHistorySession,
     markResumeFailed
   })
+
+  const restoringPreload =
+    isRestoringChat && !(session != null && (autoResumeActive || adoptedLaunch))
+  const showComuConsentCard =
+    pendingComuConsent != null &&
+    session != null &&
+    session.status !== 'closed' &&
+    !restoringPreload &&
+    !overlayOpen
+  const comuCardHosted = isVisible && showComuConsentCard
+  useEffect(() => {
+    if (!comuCardHosted) return
+    registerComuCard(sessionId)
+    return () => unregisterComuCard(sessionId)
+  }, [comuCardHosted, sessionId, registerComuCard, unregisterComuCard])
 
   // Manual "Resume chat" on a stopped chat (stopped bar or error notice). A
   // reopen can resolve still `closed` (read-only strategy) after clearing
@@ -1136,7 +1144,7 @@ export function AgentChatPanel({
           </div>
         </div>
       )}
-      {pendingComuConsent != null && !isClosed && !overlayOpen && (
+      {showComuConsentCard && pendingComuConsent != null && (
         <div className={`${CHAT_GUTTER_X} pb-2 pt-3`}>
           <div className="mx-auto w-full max-w-3xl">
             <ComuConsentCard consent={pendingComuConsent} />

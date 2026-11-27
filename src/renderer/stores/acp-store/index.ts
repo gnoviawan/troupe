@@ -649,8 +649,12 @@ export function initAcpEventListeners(): () => void {
       useAcpStore.setState({
         resyncingSessions: Object.fromEntries(sessionIds.map((sid) => [sid, true as const]))
       }),
-    installPendingPrompts: (sessionId, prompts) =>
-      syncPendingPrompts(useAcpStore.getState, useAcpStore.setState, sessionId, prompts),
+    installPendingPrompts: (sessionId, prompts) => {
+      syncPendingPrompts(useAcpStore.getState, useAcpStore.setState, sessionId, prompts)
+      if (prompts.comuState) {
+        useComuControlStore.getState().installSessionState(sessionId, prompts.comuState)
+      }
+    },
     setReconnecting: (reconnecting, recovered) => {
       useAcpStore.setState({ transportReconnecting: reconnecting })
       if (!reconnecting) {
@@ -793,12 +797,20 @@ export function initAcpEventListeners(): () => void {
     ),
     acpApi.onEvent<ComuSessionActiveEvent>(ACP_EVENTS.comuSessionActive, (e) => {
       if (typeof e.sessionId === 'string' && e.sessionId.length > 0) {
-        useComuControlStore.getState().setActive(e.sessionId, e.active === true)
+        useComuControlStore
+          .getState()
+          .setActive(e.sessionId, e.active === true, typeof e.seq === 'number' ? e.seq : undefined)
       }
     }),
     acpApi.onEvent<ComuStopChangedEvent>(ACP_EVENTS.comuStopChanged, (e) => {
       if (typeof e.sessionId === 'string' && e.sessionId.length > 0) {
-        useComuControlStore.getState().setStopped(e.sessionId, e.stopped === true)
+        useComuControlStore
+          .getState()
+          .setStopped(
+            e.sessionId,
+            e.stopped === true,
+            typeof e.seq === 'number' ? e.seq : undefined
+          )
       }
     })
   ]
