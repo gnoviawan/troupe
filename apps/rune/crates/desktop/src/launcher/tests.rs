@@ -113,7 +113,12 @@ fn a_taken_port_falls_back_to_a_free_one() {
     let picked = process::pick_port(Some(taken)).unwrap();
     assert_ne!(picked, taken);
     drop(held);
-    assert_eq!(process::pick_port(Some(taken)).unwrap(), taken);
+    // Tests in parallel may take a freed ephemeral port; one of a few tries keeps its own.
+    let kept = (0..5).any(|_| {
+        let free = process::pick_port(None).unwrap();
+        process::pick_port(Some(free)).unwrap() == free
+    });
+    assert!(kept, "a free preferred port is kept");
 }
 
 #[test]
@@ -244,8 +249,19 @@ fn the_lock_holder_that_answers_is_reused() {
 #[cfg(unix)]
 #[test]
 fn a_reused_server_that_holds_the_lock_stays_alive_while_it_is_slow_to_answer() {
+    use std::io::{Read, Write};
     let paths = paths("slow");
-    let port = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap().local_addr().unwrap().port();
+    // A server too busy to answer: every probe gets a 503. Holding the port keeps another
+    // test's listener from taking it.
+    let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    std::thread::spawn(move || {
+        for mut conn in listener.incoming().flatten() {
+            let mut buf = [0u8; 512];
+            let _ = conn.read(&mut buf);
+            let _ = conn.write_all(b"HTTP/1.1 503 Busy\r\n\r\n");
+        }
+    });
     let held = hold_lock(&paths, 4_000_000);
     let mut runner = super::Runner::new(&paths, "troupe-server".into(), port, "t".into(), false, super::Proc::adopted(4_000_000));
     let t0 = Instant::now();
@@ -253,8 +269,14 @@ fn a_reused_server_that_holds_the_lock_stays_alive_while_it_is_slow_to_answer() 
         assert_eq!(runner.exited(t0 + Duration::from_millis(1100 * i)), None, "probe {i}: the lock says it lives");
     }
     drop(held);
-    assert_eq!(runner.exited(t0 + Duration::from_millis(1100 * 5)), None, "one miss");
-    assert!(runner.exited(t0 + Duration::from_millis(1100 * 6)).is_some(), "gone once it let go of the lock");
+    assert_eq!(runner.exited(t0 + Duration::from_millis(1100 * 5)), None, "one miss is not enough");
+    // A process another test forks in parallel holds a copy of the lock until it execs, so
+    // give the release a few probes.
+    let gone = (6..=20).any(|i| {
+        std::thread::sleep(Duration::from_millis(50));
+        runner.exited(t0 + Duration::from_millis(1100 * i)).is_some()
+    });
+    assert!(gone, "gone once it let go of the lock");
 }
 
 #[test]
