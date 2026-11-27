@@ -4,8 +4,9 @@
 //! The `/fs/*` routes resolve any absolute path (ADR-007), so without this
 //! list a bearer-token holder could read `<state dir>/host-local.token` and
 //! present it at `authenticate` to become host-local. The writer of such a
-//! file registers it here ([`protect`]); `fs_api::resolve_request_path` and
-//! the content search consult [`snapshot`].
+//! file registers it here ([`protect`]); `fs_api::resolve_request_path`, the
+//! content search and the git path routes (diff, stage, unstage, discard)
+//! consult it.
 //!
 //! This guards honest clients and the cheap path. It is not a boundary
 //! against a token holder: a bearer token opens a terminal running as the
@@ -40,6 +41,12 @@ pub fn snapshot() -> HostSecrets {
             .map(|path| canonical(path))
             .collect(),
     )
+}
+
+/// `path` (any form) is a protected file, or a directory that holds one.
+#[must_use]
+pub fn exposed(path: &Path) -> bool {
+    snapshot().exposes(&canonical(path))
 }
 
 /// The canonical form of `path`, or of its parent joined with its name when
