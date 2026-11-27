@@ -3,7 +3,7 @@
 use model::shortcuts::{Shortcut, format_key_for_display};
 use rune::{El, col, row, text};
 use theme::Tokens;
-use ui::settings::{card, group, setting};
+use ui::settings::{card, described, group, setting};
 use ui::type_::sans;
 use ui::{Button, ButtonSize, ButtonVariant};
 
@@ -172,10 +172,11 @@ pub fn about(t: &'static Tokens) -> Vec<El> {
         "The web client is served by the termul-server and updates together with it. Reload the page after the server updates.",
         None,
     );
-    let logs = group(
+    let logs = described(
         t,
         "logs",
         "Logs and bug reports",
+        "Diagnostics for troubleshooting issues.",
         vec![],
         vec![card(
             t,
@@ -225,6 +226,7 @@ pub fn about(t: &'static Tokens) -> Vec<El> {
                 .key("reset-settings")
                 .on_press(|s: &mut State| s.overlays.open(RESET_ALL)),
         );
-    let reset = card(t, "reset-card", vec![reset]);
-    vec![card(t, "version-card", vec![version]), logs, reset]
+    let reset = described(t, "reset", "Reset", "Restore all preferences and shortcuts to defaults.", vec![], vec![card(t, "reset-card", vec![reset])]);
+    let version = described(t, "version", "Version", "Current server build.", vec![], vec![card(t, "version-card", vec![version])]);
+    vec![version, logs, reset]
 }

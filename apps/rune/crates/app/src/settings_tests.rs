@@ -161,3 +161,47 @@ fn a_merged_reply_shows_what_the_host_kept() {
     assert_eq!(rt.state.settings.get("uiZoomLevel"), &json!(1.1), "our zoom");
     assert_eq!(written(&rt).len(), 1, "adopting the merge writes nothing back");
 }
+
+fn rect(rt: &Runtime<State>, path: &str) -> [f32; 4] {
+    let (x, y) = rt.find(path).unwrap_or_else(|| panic!("no element at {path}"));
+    let leaf = path.rsplit('/').next().unwrap_or(path);
+    rt.elements()
+        .into_iter()
+        .filter(|e| e.key.as_deref() == Some(leaf) && !e.exiting)
+        .map(|e| e.rect)
+        .find(|r| x >= r[0] && x <= r[0] + r[2] && y >= r[1] && y <= r[1] + r[3])
+        .unwrap_or_else(|| panic!("no rect for {path}"))
+}
+
+#[test]
+fn a_wide_window_splits_each_group_into_a_heading_column_and_its_cards() {
+    let mut rt = desktop();
+    open(&mut rt);
+    let column = rect(&rt, "settings-page-preferences");
+    assert_eq!(column[2], 1280.0 - 240.0 - 80.0, "the column takes the body up to 1080");
+    let head = rect(&rt, "appearance/split/head");
+    let card = rect(&rt, "appearance/split/body");
+    assert_eq!(head[2], 240.0, "a 240 px heading column");
+    assert_eq!(card[0] - (head[0] + head[2]), 32.0, "cards start 32 px to its right");
+    assert!((card[1] - head[1]).abs() < 1.0, "side by side");
+    assert!(rt.find("appearance/split/head/description").is_some(), "the group's help shows");
+    assert!(!rt.find("appearance/rule").is_some(), "the first section has no hairline");
+    assert!(rt.find("notifications/rule").is_some(), "later sections do");
+
+    tap(&mut rt, "page-terminal");
+    let words = rt.elements().into_iter().filter(|e| !e.exiting).filter_map(|e| e.text.clone()).collect::<Vec<_>>();
+    assert!(!words.iter().any(|w| w == "Show options"), "the advanced card shows its summary while closed");
+    tap(&mut rt, "terminal-advanced-head");
+    let words = rt.elements().into_iter().filter(|e| !e.exiting).filter_map(|e| e.text.clone()).collect::<Vec<_>>();
+    assert!(words.iter().any(|w| w == "Hide options"), "open, the header says Hide options");
+}
+
+#[test]
+fn a_narrow_window_keeps_groups_stacked() {
+    let mut rt = runtime_at((1000.0, 800.0));
+    open(&mut rt);
+    let head = rect(&rt, "appearance/head");
+    let column = rect(&rt, "settings-page-preferences");
+    assert_eq!(head[2], column[2], "the heading spans the 680 px column");
+    assert!(!rt.find("notifications/rule").is_some());
+}

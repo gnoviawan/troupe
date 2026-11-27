@@ -7,7 +7,7 @@ use rune::{El, col, icon, row, text};
 use serde_json::{Value, json};
 use theme::Tokens;
 use ui::overlay::Select;
-use ui::settings::{Stepper, card, group, notice, setting, stepper, switch_row};
+use ui::settings::{Stepper, card, described, notice, setting, stepper, switch_row};
 use ui::type_::sans;
 use ui::{Button, ButtonSize, ButtonVariant};
 
@@ -103,10 +103,11 @@ fn preferences(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) 
     } else {
         "Ctrl+=, Ctrl+- and Ctrl+0"
     };
-    let appearance = group(
+    let appearance = described(
         t,
         "appearance",
         "Appearance",
+        "Theme, interface zoom, and window chrome.",
         vec![],
         vec![card(
             t,
@@ -123,10 +124,11 @@ fn preferences(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) 
             ],
         )],
     );
-    let notifications = group(
+    let notifications = described(
         t,
         "notifications",
         "Notifications",
+        "Choose when Troupe alerts you in the background.",
         vec![],
         vec![card(
             t,
@@ -169,10 +171,11 @@ fn preferences(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) 
     } else {
         Some(0)
     };
-    let editor = group(
+    let editor = described(
         t,
         "editor",
         "Editor",
+        "How edited files are written to disk.",
         vec![],
         vec![card(
             t,
@@ -204,10 +207,11 @@ fn preferences(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) 
         )],
     );
     let colours = swatches(t, "Default project color", s.settings.str("defaultProjectColor"), phone, |s, colour| s.set_setting("defaultProjectColor", json!(colour)));
-    let new_projects = group(
+    let new_projects = described(
         t,
         "new-projects",
         "New projects",
+        "Defaults applied when you add a project.",
         vec![],
         vec![card(
             t,
@@ -263,11 +267,27 @@ pub(crate) fn swatches(t: &Tokens, label: &str, chosen: &str, coarse: bool, pick
     group
 }
 
-/// `SettingsDisclosure`: a card whose header row opens the rows under it.
-fn disclosure(s: &State, t: &Tokens, id: &'static str, title: &str, summary: &str, rows: Vec<El>) -> El {
+/// `SettingsDisclosure`: a card whose header row opens the rows under it. On a split page the
+/// title and help sit in the left column and the header reads the summary, "Show options" or
+/// "Hide options".
+fn disclosure(s: &State, t: &Tokens, id: &'static str, title: &str, description: &str, summary: &str, rows: Vec<El>) -> El {
     let c = &t.colors;
     let open = s.settings_ui.open.contains(&id);
+    let split = ui::settings::split();
     let chevron = theme::icons::named(if open { "ChevronUp" } else { "ChevronDown" }).expect("bundled icon");
+    let mut words = col().grow(1.0).min_w(0.0).gap(2.0);
+    if !split {
+        words = words.child(text(title).font(sans(12.0, 500.0, 16.0)).color(c.foreground));
+    }
+    let line = match (open, split) {
+        (false, _) if !summary.is_empty() => Some((summary, 400.0)),
+        (false, true) => Some(("Show options", 400.0)),
+        (true, true) => Some(("Hide options", 500.0)),
+        _ => None,
+    };
+    if let Some((words_line, weight)) = line {
+        words = words.child(text(words_line).font(sans(12.0, weight, 16.0)).color(c.muted_foreground).single_line().truncate());
+    }
     let head = row()
         .key(format!("{id}-head"))
         .role("button")
@@ -280,27 +300,19 @@ fn disclosure(s: &State, t: &Tokens, id: &'static str, title: &str, summary: &st
         .items_center()
         .focusable(true)
         .hover(c.foreground.alpha(0.03))
-        .child(
-            col()
-                .grow(1.0)
-                .min_w(0.0)
-                .gap(2.0)
-                .child(text(title).font(sans(12.0, 500.0, 16.0)).color(c.foreground))
-                .child(
-                    text(summary)
-                        .font(sans(12.0, 400.0, 16.0))
-                        .color(c.muted_foreground)
-                        .single_line()
-                        .truncate(),
-                ),
-        )
+        .child(words)
         .child(icon(chevron, 14.0).color(c.muted_foreground).a11y_hidden())
         .on_press(move |s: &mut State| s.toggle_disclosure(id));
     let mut all = vec![head];
     if open {
         all.extend(rows);
     }
-    card(t, id, all)
+    let body = card(t, id, all);
+    if !split {
+        return body;
+    }
+    let heading = ui::settings::split_heading(t, ui::settings::Heading { title, description, meta: "" }, vec![]).a11y_hidden();
+    ui::settings::split_row(t, &format!("{id}-section"), title, heading, body.grow(1.0).min_w(0.0))
 }
 
 fn terminal(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
@@ -342,10 +354,11 @@ fn terminal(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
         .child(line(1, "Hello, World!"))
         .child(line(2, "$ ls -la"))
         .child(line(3, "drwxr-xr-x 5 user staff 160 Jan 11 10:00 ."));
-    let text_group = group(
+    let text_group = described(
         t,
         "text",
         "Text",
+        "Font size and live preview for terminal tabs.",
         vec![],
         vec![card(
             t,
@@ -368,10 +381,11 @@ fn terminal(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
     } else {
         vec!["System default", shell]
     };
-    let new_terminals = group(
+    let new_terminals = described(
         t,
         "new-terminals",
         "New terminals",
+        "Default shell and accessibility behavior.",
         vec![],
         vec![card(
             t,
@@ -434,6 +448,7 @@ fn terminal(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
         t,
         "terminal-advanced",
         "Advanced",
+        "Renderer, scrollback history, and command completions.",
         &summary,
         vec![
             setting(
@@ -549,10 +564,11 @@ fn agents(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
             s.settings_step(Event::SetAgentIdleWindow(secs));
         },
     );
-    let chats = group(
+    let chats = described(
         t,
         "chats",
         "Chats",
+        "Idle cleanup and automation suggestions.",
         vec![],
         vec![
             card(
@@ -634,7 +650,7 @@ fn agents(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
         limit_label(&TURN_IDLE, secs(s, "acpTurnIdleTimeoutSecs"), "No limit"),
         limit_label(&TURN, secs(s, "acpTurnTimeoutSecs"), "No limit")
     );
-    let limits = disclosure(s, t, "agents-limits", "Advanced: time limits", &summary, rows);
+    let limits = disclosure(s, t, "agents-limits", "Advanced: time limits", "Response and startup timeouts for agent chats.", &summary, rows);
     let suggest = card(
         t,
         "suggest-card",
