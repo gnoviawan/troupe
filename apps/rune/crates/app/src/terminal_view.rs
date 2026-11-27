@@ -82,7 +82,10 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, touch: bool) -> Option
     if let Some(card) = crate::term_menu::assist_card(s, t, &id) {
         surface = surface.child(rune::el().pin(None, None, Some(12.0), Some(12.0)).child(card));
     }
-    let mut body = body.child(surface);
+    // The dots sit in the left padding, outside the surface's clip.
+    let pad = if touch { PAD_PHONE } else { PAD[0] };
+    let gutter = ui::terminal::status_gutter(&format!("terminal-{terminal_id}"), &shown, &palette, &m, pad).absolute(0.0, PAD[1]);
+    let mut body = body.child(surface).child(gutter);
     match s.terms.sessions.get(terminal_id).map(|session| &session.status) {
         Some(Status::Exited { code }) => {
             let code = code.map_or_else(|| "unknown".to_owned(), |c| c.to_string());

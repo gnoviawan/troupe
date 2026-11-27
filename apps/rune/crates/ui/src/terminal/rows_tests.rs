@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use rune::{Cx, El, Env, Key, KeyEvent, Runtime};
 use troupe_term::Term;
 
-use super::{Metrics, Palette, RowCache, Screen, keys, screen, visible_rows};
+use super::{Metrics, Palette, RowCache, Screen, keys, screen, status_gutter, visible_rows};
 
 struct S {
     term: Term,
@@ -17,7 +17,10 @@ fn view(s: &S, _: &mut Cx<S>) -> El {
     let t = theme::tokens("termul", true);
     let m = Metrics::new(super::FONT_SIZE, super::LINE_HEIGHT);
     let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[], compact: false };
-    screen("term", &shown, &Palette::new(t), &m, &s.cache)
+    let palette = Palette::new(t);
+    rune::row()
+        .child(status_gutter("term", &shown, &palette, &m, super::PAD[0]))
+        .child(screen("term", &shown, &palette, &m, &s.cache).clip_rounded(0.0))
 }
 
 fn runtime(bytes: &[u8]) -> Runtime<S> {
