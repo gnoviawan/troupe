@@ -102,7 +102,7 @@ impl Client {
 fn every_ssh_request_is_forbidden_to_a_writer_that_is_not_host_local() {
     let mut access = test_access();
     assert!(access.capabilities().write && !access.capabilities().host_local);
-    for type_ in SSH_WS_REQUESTS {
+    for type_ in SSH_WS_REQUESTS.iter().chain(LISTENERS_WS_REQUESTS) {
         let mut authed = true;
         let reply = handle_sync_with_access(
             &frame(type_, json!({})),

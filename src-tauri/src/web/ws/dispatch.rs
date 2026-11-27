@@ -188,6 +188,11 @@ pub(super) async fn route_request(req: WsRequest, env: &HandlerEnv) -> WsReply {
         // SSH profiles, keys, sessions and SFTP (`ssh.rs`), under the Tauri
         // command names; `host_local` connections only.
         t if SSH_WS_REQUESTS.contains(&t) => handle_ssh_request(id, t, &req.payload, env).await,
+        // LAN listener, tunnel and remote token (`listeners.rs`);
+        // `host_local` connections only.
+        t if LISTENERS_WS_REQUESTS.contains(&t) => {
+            handle_listeners_request(id, t, &req.payload, env).await
+        }
         "start_claude_link_login" => handle_start_claude_link_login(id, &req.payload, acp).await,
         "finish_claude_link_login" => handle_finish_claude_link_login(id, &req.payload, acp).await,
         "cancel_claude_login" => handle_cancel_claude_login(id, &req.payload, acp).await,
