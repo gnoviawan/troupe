@@ -37,7 +37,7 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
 }
 
 const ZOOM_EPSILON = 0.001
-const OCCLUSION_SNAPSHOT_TIMEOUT_MS = 220
+const OCCLUSION_SNAPSHOT_TIMEOUT_MS = 350
 
 export function useBrowserWebview(
   browserTabId: string,
@@ -358,31 +358,57 @@ export function useBrowserWebview(
         })
     }
 
+    let retryTimerId: number | null = null
     if (isVisible) {
       void updateBounds().then(() => {
         if (cancelled || !visibilityRef.current || !createdRef.current) return
-        browserTabShow(browserTabId)
-          .then((r) => {
-            if (!r.success) {
+        const clearPreviewIfCurrent = () => {
+          if (!cancelled && token === occlusionTokenRef.current) {
+            setOcclusionPreviewUrl(null)
+          }
+        }
+        const revealNative = (attempt: number) => {
+          browserTabShow(browserTabId)
+            .then((r) => {
+              if (r.success) {
+                clearPreviewIfCurrent()
+                return
+              }
               void logFrontendError({
-                message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
+                message: `browserTabShow failed for tab ${browserTabId} (attempt ${attempt}): ${r.error}`,
                 source: 'useBrowserWebview'
               })
-            }
-          })
-          .catch((err) => {
-            void logFrontendError({
-              message: `browserTabShow rejected for tab ${browserTabId}: ${
-                err instanceof Error ? err.message : String(err)
-              }`,
-              source: 'useBrowserWebview'
+              if (attempt === 1 && !cancelled && token === occlusionTokenRef.current) {
+                retryTimerId = window.setTimeout(() => {
+                  retryTimerId = null
+                  if (!cancelled && visibilityRef.current && createdRef.current) {
+                    revealNative(2)
+                  }
+                }, 120)
+              } else {
+                clearPreviewIfCurrent()
+              }
             })
-          })
-          .finally(() => {
-            if (!cancelled && token === occlusionTokenRef.current) {
-              setOcclusionPreviewUrl(null)
-            }
-          })
+            .catch((err) => {
+              void logFrontendError({
+                message: `browserTabShow rejected for tab ${browserTabId} (attempt ${attempt}): ${
+                  err instanceof Error ? err.message : String(err)
+                }`,
+                source: 'useBrowserWebview'
+              })
+              if (attempt === 1 && !cancelled && token === occlusionTokenRef.current) {
+                retryTimerId = window.setTimeout(() => {
+                  retryTimerId = null
+                  if (!cancelled && visibilityRef.current && createdRef.current) {
+                    revealNative(2)
+                  }
+                }, 120)
+              } else {
+                clearPreviewIfCurrent()
+              }
+            })
+        }
+        revealNative(1)
       })
     } else if (occluded && paneVisible && hasDocument) {
       void (async () => {
@@ -431,6 +457,9 @@ export function useBrowserWebview(
     }
     return () => {
       cancelled = true
+      if (retryTimerId !== null) {
+        window.clearTimeout(retryTimerId)
+      }
     }
   }, [isVisible, occluded, paneVisible, hasDocument, browserTabId, updateBounds])
 

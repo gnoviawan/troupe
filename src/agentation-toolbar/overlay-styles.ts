@@ -229,6 +229,11 @@ export const OVERLAY_CSS = `
   background: #dc2626;
   box-shadow: 0 0 0 1.5px rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.35);
 }
+.guides-layer.passthrough .guide-hit,
+.guides-layer.passthrough .guide-badge,
+.pins-layer.passthrough .pin {
+  pointer-events: none;
+}
 .popover {
   position: fixed;
   width: min(332px, calc(100vw - 24px));
