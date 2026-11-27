@@ -51,8 +51,17 @@ pub fn card(t: &Tokens, key: &str, rows: Vec<El>) -> El {
     shadows(body, &t.shadows.shadow_control)
 }
 
-/// `SettingsRow`: the label and help on the left, the control on the right.
+/// The settings column width below which a row puts its control under its label (`35rem`).
+const STACK_BELOW: f32 = 560.0;
+
+/// `SettingsRow`: the label and help on the left, the control on the right. In a settings
+/// column narrower than 560 px the control goes on its own line under them.
 pub fn setting(t: &Tokens, key: &str, label: &str, description: &str, control: Option<El>) -> El {
+    let width = column_width();
+    let control = match control {
+        Some(control) if width > 0.0 && width < STACK_BELOW => return setting_stacked(t, key, label, description, control),
+        other => other,
+    };
     let c = &t.colors;
     let mut words = col()
         .key("words")

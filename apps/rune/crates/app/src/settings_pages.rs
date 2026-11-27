@@ -239,6 +239,7 @@ pub(crate) fn swatches(t: &Tokens, label: &str, chosen: &str, coarse: bool, pick
         .role("radiogroup")
         .label(label.to_owned())
         .gap(if coarse { 0.0 } else { 8.0 })
+        .shrink()
         .flex_wrap()
         .items_center();
     for colour in COLOURS {

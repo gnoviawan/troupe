@@ -243,3 +243,13 @@ fn colour_swatches_take_a_44px_touch_target_on_the_phone_and_stay_24px_on_the_de
     let [x2, ..] = rect(&rt, "swatch-orange");
     assert_eq!((w, h, x2 - x1), (24.0, 24.0, 32.0), "desktop keeps 24 px dots 8 px apart");
 }
+
+#[test]
+fn on_the_phone_all_nine_swatches_fit_by_wrapping() {
+    let mut rt = runtime_at((390.0, 844.0));
+    edit(&mut rt, |s| s.open_project_settings(Some("p-b"), None));
+    let [x1, y1, ..] = rect(&rt, "swatch-blue");
+    let [x9, y9, w9, _] = rect(&rt, "swatch-gray");
+    assert!(x9 + w9 <= 390.0, "the last swatch is on screen: {x9}");
+    assert!(y9 > y1 && x9 <= x1 + 44.0 * 2.0, "it wrapped to a second line");
+}

@@ -187,6 +187,9 @@ fn a_wide_window_splits_each_group_into_a_heading_column_and_its_cards() {
     assert!(rt.find("appearance/split/head/description").is_some(), "the group's help shows");
     assert!(!rt.find("appearance/rule").is_some(), "the first section has no hairline");
     assert!(rt.find("notifications/rule").is_some(), "later sections do");
+    tap(&mut rt, "page-about");
+    assert!(rt.find("version/rule").is_none(), "About's first section, Version, has no hairline");
+    assert!(rt.find("logs/rule").is_some());
 
     tap(&mut rt, "page-terminal");
     let words = rt.elements().into_iter().filter(|e| !e.exiting).filter_map(|e| e.text.clone()).collect::<Vec<_>>();

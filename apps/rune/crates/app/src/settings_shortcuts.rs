@@ -172,6 +172,8 @@ pub fn about(t: &'static Tokens) -> Vec<El> {
         "The web client is served by the termul-server and updates together with it. Reload the page after the server updates.",
         None,
     );
+    // Built first: the first split section on the page draws no hairline.
+    let version = described(t, "version", "Version", "Current server build.", vec![], vec![card(t, "version-card", vec![version])]);
     let logs = described(
         t,
         "logs",
@@ -227,6 +229,5 @@ pub fn about(t: &'static Tokens) -> Vec<El> {
                 .on_press(|s: &mut State| s.overlays.open(RESET_ALL)),
         );
     let reset = described(t, "reset", "Reset", "Restore all preferences and shortcuts to defaults.", vec![], vec![card(t, "reset-card", vec![reset])]);
-    let version = described(t, "version", "Version", "Current server build.", vec![], vec![card(t, "version-card", vec![version])]);
     vec![version, logs, reset]
 }
