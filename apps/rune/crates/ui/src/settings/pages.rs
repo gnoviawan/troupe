@@ -44,7 +44,7 @@ const fn page(
 /// The web client's About description: it updates with its server.
 pub const WEB_ABOUT: &str = "This Troupe server, logs for bug reports, and a full reset.";
 
-pub const APP_PAGES: [Page; 11] = [
+pub const APP_PAGES: [Page; 12] = [
     page(
         "preferences",
         "Preferences",
@@ -118,6 +118,14 @@ pub const APP_PAGES: [Page; 11] = [
         Owner::Later("R11"),
     ),
     page(
+        "comu",
+        "Computer Use",
+        Some("Agents"),
+        "Monitor",
+        "Which desktop apps agents may operate on this machine, virtual cursor settings, and OS permissions.",
+        Owner::Later("R11"),
+    ),
+    page(
         "shortcuts",
         "Keyboard shortcuts",
         Some("App"),
@@ -128,7 +136,7 @@ pub const APP_PAGES: [Page; 11] = [
     page("about", "About", Some("App"), "Info", WEB_ABOUT, Owner::Here),
 ];
 
-pub const PROJECT_PAGES: [Page; 6] = [
+pub const PROJECT_PAGES: [Page; 7] = [
     page(
         "general",
         "General",
@@ -175,6 +183,14 @@ pub const PROJECT_PAGES: [Page; 6] = [
         Some("Agents"),
         "Globe",
         "Which sites agents may browse in this project without asking.",
+        Owner::Later("R11"),
+    ),
+    page(
+        "comu",
+        "Computer Use",
+        Some("Agents"),
+        "Monitor",
+        "Which desktop apps agents may operate in this project without asking.",
         Owner::Later("R11"),
     ),
 ];

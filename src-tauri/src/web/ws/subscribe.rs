@@ -74,6 +74,12 @@ pub(super) fn attach_pending_prompts(reply: &mut Value, relay: &WsRelaySink, ses
     }
     reply["pendingElicitations"] = Value::Array(elicitations);
     reply["pendingMcpInstalls"] = Value::Array(mcp_installs);
+    let comu = crate::comu::stop::session_runtime_state(session_id);
+    reply["comuState"] = json!({
+        "active": comu.active,
+        "stopped": comu.stopped,
+        "seq": comu.seq,
+    });
 }
 
 /// Wire `subscribe` → [`WsRelaySink::subscribe`] + forward replay/live to this connection.

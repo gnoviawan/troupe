@@ -60,6 +60,8 @@ import {
   type BrowserTabClosedEvent,
   type BrowserTicketClosedEvent,
   type CommandsUpdateEvent,
+  type ComuSessionActiveEvent,
+  type ComuStopChangedEvent,
   type ConfigOptionsUpdateEvent,
   type ContentBlock,
   type ElicitationRequestEvent,
@@ -92,6 +94,7 @@ import { foldRecoveredPlan, markPlanTool } from '@/lib/plan-session'
 import { wireBlocksToDisplay } from '@/lib/skills-wire-reverse'
 import { useChatActivityStore } from '@/stores/chat-activity-store'
 import { useChatStartPickStore } from '@/stores/chat-start-pick-store'
+import { useComuControlStore } from '@/stores/comu-control-store'
 import { getAgentChatSessionIdsInAllTrees, useWorkspaceStore } from '@/stores/workspace-store'
 import type { QueuedPrompt } from '../prompt-queue-orchestration'
 import { attachAgentRosterWatch } from './agent-roster-watch'
@@ -646,8 +649,12 @@ export function initAcpEventListeners(): () => void {
       useAcpStore.setState({
         resyncingSessions: Object.fromEntries(sessionIds.map((sid) => [sid, true as const]))
       }),
-    installPendingPrompts: (sessionId, prompts) =>
-      syncPendingPrompts(useAcpStore.getState, useAcpStore.setState, sessionId, prompts),
+    installPendingPrompts: (sessionId, prompts) => {
+      syncPendingPrompts(useAcpStore.getState, useAcpStore.setState, sessionId, prompts)
+      if (prompts.comuState) {
+        useComuControlStore.getState().installSessionState(sessionId, prompts.comuState)
+      }
+    },
     setReconnecting: (reconnecting, recovered) => {
       useAcpStore.setState({ transportReconnecting: reconnecting })
       if (!reconnecting) {
@@ -761,9 +768,12 @@ export function initAcpEventListeners(): () => void {
     acpApi.onEvent<AgentDisconnectedEvent>(ACP_EVENTS.agentDisconnected, (e) =>
       useAcpStore.getState()._onAgentDisconnected(e)
     ),
-    acpApi.onEvent<SessionClosedEvent>(ACP_EVENTS.sessionClosed, (e) =>
+    acpApi.onEvent<SessionClosedEvent>(ACP_EVENTS.sessionClosed, (e) => {
       useAcpStore.getState()._onSessionClosed(e)
-    ),
+      if (typeof e.sessionId === 'string') {
+        useComuControlStore.getState().forgetSession(e.sessionId)
+      }
+    }),
     acpApi.onEvent<BrowserOpenRequestEvent>(ACP_EVENTS.browserOpenRequest, (e) =>
       useAcpStore.getState()._onBrowserOpenRequest(e)
     ),
@@ -784,7 +794,25 @@ export function initAcpEventListeners(): () => void {
     ),
     acpApi.onEvent<BrowserStopChangedEvent>(ACP_EVENTS.browserStopChanged, (e) =>
       useAcpStore.getState()._onBrowserStopChanged(e)
-    )
+    ),
+    acpApi.onEvent<ComuSessionActiveEvent>(ACP_EVENTS.comuSessionActive, (e) => {
+      if (typeof e.sessionId === 'string' && e.sessionId.length > 0) {
+        useComuControlStore
+          .getState()
+          .setActive(e.sessionId, e.active === true, typeof e.seq === 'number' ? e.seq : undefined)
+      }
+    }),
+    acpApi.onEvent<ComuStopChangedEvent>(ACP_EVENTS.comuStopChanged, (e) => {
+      if (typeof e.sessionId === 'string' && e.sessionId.length > 0) {
+        useComuControlStore
+          .getState()
+          .setStopped(
+            e.sessionId,
+            e.stopped === true,
+            typeof e.seq === 'number' ? e.seq : undefined
+          )
+      }
+    })
   ]
   return () => {
     historyTornDown = true

@@ -42,6 +42,7 @@ Troupe treats workspaces as first-class citizens, allowing you to organize termi
 | **Agent Launcher**     | Start a chat from a prompt in the active pane (`Ctrl+T`), pick the agent and model, and optionally isolate the chat in a new Git worktree                                                   |
 | **Custom ACP Agents**  | Add your own ACP agents in Settings, or paste a Zed-style `agent_servers` config                                                                                                            |
 | **Terminal AI Assist** | Right-click selected terminal output and choose **Explain with AI** or **Fix Command with AI**. Suggested commands insert at the prompt without running                                     |
+| **Computer Use (Troupe Comu)** | Let ACP agents inspect accessibility trees, capture window screenshots, and operate native desktop apps on your machine with per-app approval, a virtual agent cursor, a live Stop button, and a hard guard keeping Troupe itself off-limits ([docs](docs/comu.md)) |
 
 ### 🌿 Git & Worktrees
 
@@ -425,6 +426,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - [shadcn/ui](https://ui.shadcn.com/) — UI components
 - [Tauri](https://tauri.app/) — Desktop app framework
 - [FigCraft](https://github.com/storytold/figcraft) — Canvas based on FigCraft by the ArtCraft team (MIT OR Apache-2.0)
+- [Cua](https://github.com/trycua/cua) — Computer Use (`Troupe Comu`) native desktop driver engine adapted from `cua-driver` by TryCua, MIT ([licence](comu/licenses/MIT-cua.txt))
 - [Inter](https://github.com/rsms/inter) — Font embedded in the canvas, Copyright (c) 2016 The Inter Project Authors, SIL Open Font License 1.1 ([licence](canvas/licenses/OFL-inter.txt))
 - [Noto Sans Georgian](https://github.com/notofonts/georgian) — Font embedded in the canvas, Copyright 2022 The Noto Project Authors, SIL Open Font License 1.1 ([licence](canvas/licenses/OFL-noto-sans-georgian.txt)). The canvas bundle also ships the SIL OFL 1.1 licence of each family in FigCraft's font catalog as `OFL-<family>.txt`
 - [Ubuntu](https://design.ubuntu.com/font), [Hack](https://github.com/source-foundry/Hack), [Noto Emoji](https://github.com/googlefonts/noto-emoji) and [emoji-icon-font](https://github.com/jslegers/emoji-icon-font) — egui's interface fonts, embedded in the canvas editor: Ubuntu Light, Copyright 2011 Canonical Ltd., Ubuntu Font Licence 1.0 ([licence](canvas/licenses/UFL-ubuntu.txt)); Hack, Copyright 2018 Source Foundry Authors, MIT, with Bitstream Vera Sans Mono, Copyright 2003 Bitstream Inc., Bitstream Vera License ([licence](canvas/licenses/LICENSE-hack.txt)); Noto Emoji, Copyright 2013 Google Inc., SIL Open Font License 1.1 ([licence](canvas/licenses/OFL-noto-emoji.txt)); emoji-icon-font, Copyright (c) 2014 John Slegers, MIT ([licence](canvas/licenses/MIT-emoji-icon-font.txt))

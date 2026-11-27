@@ -2248,6 +2248,14 @@ pub fn run() {
             commands::browser_policy_get_app,
             commands::browser_policy_apply_project,
             commands::browser_policy_apply_app,
+            // Troupe Comu (local Computer Use, main webview only)
+            commands::comu_policy_get_app,
+            commands::comu_policy_apply_app,
+            commands::comu_policy_get_project,
+            commands::comu_policy_apply_project,
+            commands::comu_permissions_status,
+            commands::comu_request_permission,
+            commands::comu_stop,
             // Automations (main webview only)
             commands::automation_list,
             commands::automation_get,

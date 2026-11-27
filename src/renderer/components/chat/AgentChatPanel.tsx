@@ -44,6 +44,7 @@ import { isLaunchPlaceholderSessionId } from '@/stores/acp-store/live-turn'
 import { useConsentCardHost } from '@/stores/browser-consent-card-store'
 import { useIsConsentStripHosting } from '@/stores/browser-consent-strip-store'
 import { useSessionDrivesBrowser } from '@/stores/browser-control-store'
+import { useComuControlStore, useSessionDrivesComu } from '@/stores/comu-control-store'
 import { useConnectionStatusStore } from '@/stores/connection-status-store'
 import { useGitSheetStore } from '@/stores/git-sheet-store'
 import { hydrateGithubChatLinks } from '@/stores/github-chat-links-store'
@@ -51,6 +52,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { isAgentDeadError, sessionTurnBusy } from '@/stores/prompt-queue-orchestration'
 import { useQuickChatStore } from '@/stores/quick-chat-store'
 import { agentChatTabId, useWorkspaceStore } from '@/stores/workspace-store'
+import { ComuAgentIndicator, ComuConsentCard } from '../comu/ComuConsentCardHost'
 import { AgentConnectionLamp } from './AgentConnectionLamp'
 import { AskUserQuestion } from './AskUserQuestion'
 import { AntigravityLimitNotice } from './antigravity-account/AntigravityLimitNotice'
@@ -244,6 +246,14 @@ export function AgentChatPanel({
   const stripHosting = useIsConsentStripHosting()
   // The agent-control indicator with Stop shows while an agent drives a tab.
   const drivesBrowser = useSessionDrivesBrowser(sessionId)
+  const drivesComu = useSessionDrivesComu(sessionId)
+  const pendingComuConsent = useComuControlStore(
+    useShallow(
+      (s) => Object.values(s.pendingConsents).find((c) => c.sessionId === sessionId) ?? null
+    )
+  )
+  const registerComuCard = useComuControlStore((s) => s.registerHostedSession)
+  const unregisterComuCard = useComuControlStore((s) => s.unregisterHostedSession)
   const overlayOpen = useInterfaceOverlayOpen()
   const registerConsentCard = useConsentCardHost((s) => s.register)
   const unregisterConsentCard = useConsentCardHost((s) => s.unregister)
@@ -260,6 +270,7 @@ export function AgentChatPanel({
     registerConsentCard(sessionId)
     return () => unregisterConsentCard(sessionId)
   }, [consentCardHosted, sessionId, registerConsentCard, unregisterConsentCard])
+
   const sendPrompt = useAcpStore((s) => s.sendPrompt)
   const sendPromptBlocks = useAcpStore((s) => s.sendPromptBlocks)
   const cancelPrompt = useAcpStore((s) => s.cancelPrompt)
@@ -392,6 +403,21 @@ export function AgentChatPanel({
     openHistorySession,
     markResumeFailed
   })
+
+  const restoringPreload =
+    isRestoringChat && !(session != null && (autoResumeActive || adoptedLaunch))
+  const showComuConsentCard =
+    pendingComuConsent != null &&
+    session != null &&
+    session.status !== 'closed' &&
+    !restoringPreload &&
+    !overlayOpen
+  const comuCardHosted = isVisible && showComuConsentCard
+  useEffect(() => {
+    if (!comuCardHosted) return
+    registerComuCard(sessionId)
+    return () => unregisterComuCard(sessionId)
+  }, [comuCardHosted, sessionId, registerComuCard, unregisterComuCard])
 
   // Manual "Resume chat" on a stopped chat (stopped bar or error notice). A
   // reopen can resolve still `closed` (read-only strategy) after clearing
@@ -1104,10 +1130,24 @@ export function AgentChatPanel({
           </div>
         </div>
       )}
+      {!isClosed && drivesComu && (
+        <div className={`${CHAT_GUTTER_X} pt-2`}>
+          <div className="mx-auto w-full max-w-3xl">
+            <ComuAgentIndicator sessionId={sessionId} />
+          </div>
+        </div>
+      )}
       {showBrowserConsentCard && (
         <div className={`${CHAT_GUTTER_X} pb-2 pt-3`}>
           <div className="mx-auto w-full max-w-3xl">
             <BrowserConsentCard consent={pendingBrowserConsent} />
+          </div>
+        </div>
+      )}
+      {showComuConsentCard && pendingComuConsent != null && (
+        <div className={`${CHAT_GUTTER_X} pb-2 pt-3`}>
+          <div className="mx-auto w-full max-w-3xl">
+            <ComuConsentCard consent={pendingComuConsent} />
           </div>
         </div>
       )}

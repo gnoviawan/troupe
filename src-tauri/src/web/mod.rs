@@ -30,6 +30,7 @@ pub mod catalog_api;
 pub mod chat_activity;
 pub mod chat_reads;
 pub mod command_ledger;
+pub mod comu_api;
 pub mod config;
 pub mod connection_runtime;
 pub mod diagnostics_api;

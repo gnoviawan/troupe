@@ -6,6 +6,7 @@ import {
   Info,
   Keyboard,
   KeyRound,
+  Monitor,
   Network,
   Sliders,
   Sparkles,
@@ -88,6 +89,14 @@ const APP_PREF_CATEGORIES: SettingsCategory[] = [
     description:
       'Which sites agents may browse without asking, and whether they keep logins between chats.',
     icon: <Globe size={RAIL_ICON_SIZE} />
+  },
+  {
+    id: 'comu',
+    group: 'Agents',
+    label: 'Computer Use',
+    description:
+      'Which desktop apps agents may operate on this machine, virtual cursor settings, and OS permissions.',
+    icon: <Monitor size={RAIL_ICON_SIZE} />
   },
   {
     id: 'shortcuts',
