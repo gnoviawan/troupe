@@ -4,6 +4,7 @@ import type { BrowserTabView } from '@/lib/browser-api'
 export type ViewportPreset = 'desktop' | 'tablet' | 'mobile'
 export type ViewportOrientation = 'portrait' | 'landscape'
 export type AnnotateTool = 'comment' | 'rectangle' | 'ruler' | 'screenshot-area'
+export type RulerAxis = 'vertical' | 'horizontal'
 
 export interface BrowserLoadError {
   code: string
@@ -53,6 +54,7 @@ export interface BrowserTab {
   customViewportWidth?: number
   annotateMode: boolean
   annotateTool: AnnotateTool
+  rulerAxis: RulerAxis
   standaloneScreenshotArea?: boolean
   /** Monotonic counter scoping async area-capture cleanup to the capture that started it. */
   screenshotAreaToken?: number
@@ -166,6 +168,7 @@ export interface BrowserSessionState {
   setCustomViewportWidth: (id: string, width: number | undefined) => void
   setAnnotateMode: (id: string, active: boolean) => void
   setAnnotateTool: (id: string, tool: AnnotateTool) => void
+  setRulerAxis: (id: string, axis: RulerAxis) => void
   setStandaloneScreenshotArea: (id: string, active: boolean) => void
   bumpScreenshotAreaToken: (id: string) => number
   markScreenshotCopied: (id: string) => void
@@ -225,6 +228,7 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
       viewportOrientation: 'portrait',
       annotateMode: false,
       annotateTool: 'comment',
+      rulerAxis: 'vertical',
       animationsPaused: false,
       pinsHidden: false,
       pendingAnnotations: [],
@@ -361,6 +365,9 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
 
   setAnnotateTool: (id, tool) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, annotateTool: tool }))),
+
+  setRulerAxis: (id, axis) =>
+    set((state) => updateTab(state, id, (t) => ({ ...t, rulerAxis: axis }))),
 
   setStandaloneScreenshotArea: (id, active) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, standaloneScreenshotArea: active }))),

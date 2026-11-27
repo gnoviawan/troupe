@@ -202,8 +202,67 @@ describe('BrowserControls', () => {
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
     expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
       type: 'set_tool',
-      tool: 'ruler'
+      tool: 'ruler',
+      axis: 'vertical'
     })
+  })
+
+  it('opens Ruler orientation dropdown with occlusion and activates Horizontal or Vertical ruler with visual icons', async () => {
+    const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
+    const { isNativeWebviewOccluded, resetNativeWebviewOcclusionForTests } = await import(
+      '@/hooks/use-native-webview-occlusion'
+    )
+    ;(window as unknown as { __TAURI_INTERNALS__?: Record<string, unknown> }).__TAURI_INTERNALS__ =
+      {}
+
+    try {
+      useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+      useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+      renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+      const trigger = screen.getByTestId('annotation-ruler-trigger')
+      expect(isNativeWebviewOccluded()).toBe(false)
+
+      fireEvent.click(trigger)
+      expect(isNativeWebviewOccluded()).toBe(true)
+
+      const verticalOpt = screen.getByTestId('annotation-ruler-option-vertical')
+      const horizontalOpt = screen.getByTestId('annotation-ruler-option-horizontal')
+      expect(verticalOpt.querySelector('[data-ruler-axis-icon="vertical"]')).toBeTruthy()
+      expect(horizontalOpt.querySelector('[data-ruler-axis-icon="horizontal"]')).toBeTruthy()
+
+      fireEvent.click(horizontalOpt)
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.rulerAxis).toBe('horizontal')
+      expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+        type: 'set_tool',
+        tool: 'ruler',
+        axis: 'horizontal'
+      })
+      expect(isNativeWebviewOccluded()).toBe(false)
+      expect(trigger.querySelector('[data-ruler-axis-icon="horizontal"]')).toBeTruthy()
+
+      // Reopening shows Horizontal checked and allows switching to Vertical
+      fireEvent.click(trigger)
+      expect(
+        screen.getByTestId('annotation-ruler-option-horizontal').getAttribute('aria-checked')
+      ).toBe('true')
+      expect(
+        screen.getByTestId('annotation-ruler-option-vertical').getAttribute('aria-checked')
+      ).toBe('false')
+
+      fireEvent.click(screen.getByTestId('annotation-ruler-option-vertical'))
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.rulerAxis).toBe('vertical')
+      expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+        type: 'set_tool',
+        tool: 'ruler',
+        axis: 'vertical'
+      })
+      expect(trigger.querySelector('[data-ruler-axis-icon="vertical"]')).toBeTruthy()
+    } finally {
+      delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
+      resetNativeWebviewOcclusionForTests()
+    }
   })
 
   it('copies visible screenshot to clipboard without queuing into pending annotations', async () => {

@@ -225,3 +225,25 @@ fn outbox_carries_fallback_session_id_across_same_poll_batch() {
     assert_eq!(store.list_sessions().len(), 1);
     assert_eq!(store.get_pending_annotations(&batch_sid).len(), 2);
 }
+
+#[test]
+fn set_tool_command_serializes_optional_ruler_axis() {
+    use super::browser::{AnnotationGuideAxis, AnnotationOverlayTool, BrowserAnnotationCommand};
+
+    let with_axis = serde_json::to_value(BrowserAnnotationCommand::SetTool {
+        tool: AnnotationOverlayTool::Ruler,
+        axis: Some(AnnotationGuideAxis::Horizontal),
+    })
+    .unwrap();
+    assert_eq!(
+        with_axis,
+        json!({ "type": "set_tool", "tool": "ruler", "axis": "horizontal" })
+    );
+
+    let without_axis: BrowserAnnotationCommand =
+        serde_json::from_value(json!({ "type": "set_tool", "tool": "comment" })).unwrap();
+    assert_eq!(
+        serde_json::to_value(without_axis).unwrap(),
+        json!({ "type": "set_tool", "tool": "comment" })
+    );
+}

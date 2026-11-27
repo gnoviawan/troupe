@@ -191,6 +191,38 @@ describe('TroupeAnnotationOverlay', () => {
     expect(previewBadge.textContent).toContain('y 180px')
   })
 
+  it('defaults to horizontal guide preview and placement when set_tool specifies axis horizontal', () => {
+    const { overlay, shadow, layer } = setupOverlay()
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler', axis: 'horizontal' })
+
+    dispatchPointer(layer, 'pointermove', { clientX: 424, clientY: 220, shiftKey: false })
+
+    const previewLine = shadow.querySelector('.guide-preview') as HTMLDivElement
+    const previewBadge = shadow.querySelector('.guide-preview-badge') as HTMLDivElement
+    expect(previewLine.classList.contains('horizontal')).toBe(true)
+    expect(previewLine.style.top).toBe('220px')
+    expect(previewBadge.textContent).toContain('H · y 220px')
+    expect(previewBadge.textContent).toContain('Shift: V')
+
+    // Clicking places a horizontal guide directly without needing Shift
+    dispatchPointer(layer, 'pointerdown', { clientX: 424, clientY: 220, button: 0 })
+    const guideHit = shadow.querySelector('.guide-hit.horizontal') as HTMLDivElement
+    expect(guideHit).toBeTruthy()
+    expect(guideHit.style.top).toBe('220px')
+
+    // Dragging the horizontal guide moves vertically along Y
+    dispatchPointer(guideHit, 'pointerdown', { clientX: 424, clientY: 220, button: 0 })
+    dispatchPointer(window, 'pointermove', { clientX: 424, clientY: 290 })
+    dispatchPointer(window, 'pointerup', { clientX: 424, clientY: 290, button: 0 })
+    const movedHit = shadow.querySelector('.guide-hit.horizontal') as HTMLDivElement
+    expect(movedHit.style.top).toBe('290px')
+
+    // Holding Shift while in horizontal mode temporarily toggles preview to vertical
+    dispatchPointer(layer, 'pointermove', { clientX: 424, clientY: 290, shiftKey: true })
+    expect(previewLine.classList.contains('vertical')).toBe(true)
+    expect(previewBadge.textContent).toContain('V · x 424px')
+  })
+
   it('auto-hides guide popover on drag, waits 2000ms after drag end, and resets timer on re-drag', () => {
     const { overlay, shadow, layer } = setupOverlay()
     overlay.dispatch({ type: 'set_tool', tool: 'ruler' })

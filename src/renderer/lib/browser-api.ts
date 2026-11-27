@@ -46,7 +46,11 @@ export interface LocalDevServer {
 
 export type BrowserAnnotationCommand =
   | { type: 'set_active'; active: boolean }
-  | { type: 'set_tool'; tool: 'comment' | 'rectangle' | 'ruler' | 'screenshot-area' }
+  | {
+      type: 'set_tool'
+      tool: 'comment' | 'rectangle' | 'ruler' | 'screenshot-area'
+      axis?: 'horizontal' | 'vertical'
+    }
   | { type: 'set_pause'; paused: boolean }
   | { type: 'set_pins_hidden'; hidden: boolean }
   | { type: 'set_capture_hidden'; hidden: boolean }

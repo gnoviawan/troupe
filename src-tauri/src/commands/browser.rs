@@ -312,7 +312,11 @@ pub enum AnnotationGuideAxis {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BrowserAnnotationCommand {
     SetActive { active: bool },
-    SetTool { tool: AnnotationOverlayTool },
+    SetTool {
+        tool: AnnotationOverlayTool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        axis: Option<AnnotationGuideAxis>,
+    },
     SetPause { paused: bool },
     SetPinsHidden { hidden: bool },
     SetCaptureHidden { hidden: bool },

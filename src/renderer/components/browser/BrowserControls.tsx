@@ -408,8 +408,9 @@ export function BrowserControls({
         setAnnotateTool(browserTabId, 'rectangle')
         void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'rectangle' })
       } else if (key === 'm') {
+        const axis = useBrowserSessionStore.getState().getTab(browserTabId)?.rulerAxis ?? 'vertical'
         setAnnotateTool(browserTabId, 'ruler')
-        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'ruler' })
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'ruler', axis })
       } else if (key === 'p') {
         const next = useBrowserSessionStore.getState().toggleAnimationsPaused(browserTabId)
         void browserTabAnnotationCmd(browserTabId, { type: 'set_pause', paused: next })

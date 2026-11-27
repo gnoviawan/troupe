@@ -95,6 +95,7 @@ class TroupeAnnotationOverlay {
 
   private active = false
   private tool: AnnotateTool = 'comment'
+  private rulerAxis: GuideAxis = 'vertical'
   private pinsHidden = false
   private captureHidden = false
   private selectedRect: {
@@ -204,6 +205,11 @@ class TroupeAnnotationOverlay {
     }
   }
 
+  private effectiveRulerAxis(shiftKey = this.shiftHeld): GuideAxis {
+    if (!shiftKey) return this.rulerAxis
+    return this.rulerAxis === 'vertical' ? 'horizontal' : 'vertical'
+  }
+
   private updateRulerPreview(clientX: number, clientY: number, shiftKey: boolean): void {
     if (
       !this.active ||
@@ -215,7 +221,7 @@ class TroupeAnnotationOverlay {
       this.hideRulerPreview()
       return
     }
-    const axis: GuideAxis = shiftKey ? 'horizontal' : 'vertical'
+    const axis: GuideAxis = this.effectiveRulerAxis(shiftKey)
     const pos = axis === 'vertical' ? Math.round(clientX) : Math.round(clientY)
 
     this.layer.className = axis === 'vertical' ? 'layer ruler-v' : 'layer ruler-h'
@@ -232,7 +238,13 @@ class TroupeAnnotationOverlay {
     const nearestGap = findNearestGuideGap(this.guides, axis, pos)
     const axisLabel = axis === 'vertical' ? `V · x ${pos}px` : `H · y ${pos}px`
     const deltaText = nearestGap !== null ? ` · Δ ${nearestGap}px` : ''
-    const hintText = axis === 'vertical' ? ' · Shift: H' : ' · Release Shift: V'
+    const hintText = shiftKey
+      ? axis === 'vertical'
+        ? ' · Release Shift: H'
+        : ' · Release Shift: V'
+      : axis === 'vertical'
+        ? ' · Shift: H'
+        : ' · Shift: V'
     const text = `${axisLabel}${deltaText}${hintText}`
     this.previewGuideBadge.textContent = text
     this.previewGuideBadge.style.display = 'block'
@@ -269,6 +281,9 @@ class TroupeAnnotationOverlay {
         break
       case 'set_tool':
         if (cmd.tool) this.tool = cmd.tool
+        if (cmd.axis === 'horizontal' || cmd.axis === 'vertical') {
+          this.rulerAxis = cmd.axis
+        }
         this.clearGuideReopenTimer()
         this.closePopover()
         this.hideHoverVisuals()
@@ -276,6 +291,9 @@ class TroupeAnnotationOverlay {
         this.dragStart = null
         this.dragBox.style.display = 'none'
         this.syncLayerMode()
+        if (this.active && this.tool === 'ruler' && this.lastPointer && !this.pinsHidden) {
+          this.updateRulerPreview(this.lastPointer.x, this.lastPointer.y, this.shiftHeld)
+        }
         break
       case 'set_pause':
         this.setAnimationsPaused(Boolean(cmd.paused))
@@ -343,7 +361,7 @@ class TroupeAnnotationOverlay {
     if (this.tool === 'rectangle' || this.tool === 'screenshot-area') {
       this.layer.classList.add('capture')
     } else if (this.tool === 'ruler') {
-      this.layer.classList.add(this.shiftHeld ? 'ruler-h' : 'ruler-v')
+      this.layer.classList.add(this.effectiveRulerAxis() === 'horizontal' ? 'ruler-h' : 'ruler-v')
     } else {
       this.layer.classList.add('comment-mode')
     }
@@ -426,7 +444,7 @@ class TroupeAnnotationOverlay {
       }
       if (this.tool === 'ruler') {
         this.clearGuideReopenTimer()
-        const axis: GuideAxis = e.shiftKey ? 'horizontal' : 'vertical'
+        const axis: GuideAxis = this.effectiveRulerAxis(e.shiftKey)
         const pos = axis === 'vertical' ? Math.round(e.clientX) : Math.round(e.clientY)
         const guide = this.addGuide(axis, pos)
         this.hideRulerPreview()

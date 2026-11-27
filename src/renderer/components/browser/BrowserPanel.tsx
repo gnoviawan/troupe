@@ -113,7 +113,11 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       const latest = useBrowserSessionStore.getState().getTab(browserTabId)
       if (!latest?.annotateMode) return
       void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
-      void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: latest.annotateTool })
+      void browserTabAnnotationCmd(browserTabId, {
+        type: 'set_tool',
+        tool: latest.annotateTool,
+        axis: latest.annotateTool === 'ruler' ? latest.rulerAxis : undefined
+      })
       if (latest.animationsPaused) {
         void browserTabAnnotationCmd(browserTabId, { type: 'set_pause', paused: true })
       }
