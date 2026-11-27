@@ -50,6 +50,7 @@ export class OverlayTransport {
   private sessionPromise: Promise<string | null> | null = null
   private bridgeSessionInit: Promise<void> | null = null
   private bridgeNonce: string | null = null
+  private disposed = false
   private reqSeq = 0
   private pendingOutbox = new Map<string, PendingOutboxRequest>()
 
@@ -77,14 +78,14 @@ export class OverlayTransport {
   }
 
   public handleOutboxAck(msg: OutboxAckMessage): void {
+    if (msg.sessionId) {
+      this.sessionId = msg.sessionId
+    }
     if (!msg.reqId) return
     const pending = this.pendingOutbox.get(msg.reqId)
     if (!pending) return
     this.pendingOutbox.delete(msg.reqId)
     window.clearTimeout(pending.timer)
-    if (msg.sessionId) {
-      this.sessionId = msg.sessionId
-    }
     pending.resolve({
       ok: Boolean(msg.ok),
       id: msg.id,
@@ -121,6 +122,7 @@ export class OverlayTransport {
   }
 
   public destroy(): void {
+    this.disposed = true
     for (const [reqId, pending] of this.pendingOutbox) {
       window.clearTimeout(pending.timer)
       const reclaimed = this.removeFromOutbox(reqId)
@@ -130,13 +132,20 @@ export class OverlayTransport {
   }
 
   /**
-   * Coalesce concurrent initial submissions until the first submission settles
-   * `this.sessionId` (across both the host bridge and any HTTP fallback).
+   * Coalesce concurrent initial submissions until the first submission establishes
+   * `this.sessionId` (or finishes initialization). Call `releaseGate()` as soon as
+   * `sessionId` is known so waiting submissions do not block behind slow HTTP POSTs.
    */
-  private async withSessionInitGate<T>(fn: () => Promise<T>): Promise<T> {
+  private async withSessionInitGate<T>(
+    disposedFallback: T,
+    fn: (releaseGate: () => void) => Promise<T>
+  ): Promise<T> {
+    if (this.disposed) return disposedFallback
     while (!this.sessionId && this.bridgeSessionInit) {
       await this.bridgeSessionInit
+      if (this.disposed) return disposedFallback
     }
+    if (this.disposed) return disposedFallback
 
     let finishInit: (() => void) | null = null
     if (!this.sessionId) {
@@ -145,13 +154,19 @@ export class OverlayTransport {
       })
     }
 
-    try {
-      return await fn()
-    } finally {
+    const releaseGate = () => {
       if (finishInit) {
+        const done = finishInit
+        finishInit = null
         this.bridgeSessionInit = null
-        ;(finishInit as () => void)()
+        done()
       }
+    }
+
+    try {
+      return await fn(releaseGate)
+    } finally {
+      releaseGate()
     }
   }
 
@@ -236,7 +251,7 @@ export class OverlayTransport {
   public async postAnnotation(
     payload: Record<string, unknown>
   ): Promise<{ ok: boolean; id?: string }> {
-    return this.withSessionInitGate(async () => {
+    return this.withSessionInitGate({ ok: false }, async (releaseGate) => {
       const body = {
         url: window.location.href,
         timestamp: Date.now(),
@@ -250,12 +265,14 @@ export class OverlayTransport {
         if (bridged.ok) return { ok: true, id: bridged.id }
         // Never fall back to HTTP if the host already drained the outbox envelope,
         // otherwise a slow host ack plus HTTP fallback would duplicate the annotation.
-        if (bridged.drained) return { ok: false }
+        if (bridged.drained || this.disposed) return { ok: false }
       }
 
       const ep = this.getEndpoint()
       if (ep) {
         const sid = await this.ensureHttpSession()
+        releaseGate()
+        if (this.disposed) return { ok: false }
         if (sid) {
           try {
             const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
@@ -273,7 +290,7 @@ export class OverlayTransport {
         }
       }
 
-      if (!this.preferHostBridge() && this.bridgeNonce) {
+      if (!this.preferHostBridge() && this.bridgeNonce && !this.disposed) {
         const bridged = await this.sendViaHostBridge('annotation', body)
         if (bridged.ok) return { ok: true, id: bridged.id }
       }
@@ -286,7 +303,7 @@ export class OverlayTransport {
   }
 
   public async postAction(payload: Record<string, unknown>): Promise<boolean> {
-    return this.withSessionInitGate(async () => {
+    return this.withSessionInitGate(false, async (releaseGate) => {
       const output = JSON.stringify({
         viewportWidth: window.innerWidth,
         ...payload,
@@ -296,12 +313,14 @@ export class OverlayTransport {
       if (this.preferHostBridge()) {
         const bridged = await this.sendViaHostBridge('action', { output })
         if (bridged.ok) return true
-        if (bridged.drained) return false
+        if (bridged.drained || this.disposed) return false
       }
 
       const ep = this.getEndpoint()
       if (ep) {
         const sid = await this.ensureHttpSession()
+        releaseGate()
+        if (this.disposed) return false
         if (sid) {
           try {
             const res = await fetch(`${ep}/sessions/${sid}/action`, {
@@ -322,7 +341,7 @@ export class OverlayTransport {
         }
       }
 
-      if (!this.preferHostBridge() && this.bridgeNonce) {
+      if (!this.preferHostBridge() && this.bridgeNonce && !this.disposed) {
         const bridged = await this.sendViaHostBridge('action', { output })
         return bridged.ok
       }

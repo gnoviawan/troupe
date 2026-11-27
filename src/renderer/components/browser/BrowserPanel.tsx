@@ -72,6 +72,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
 
   const stageRef = useRef<HTMLDivElement>(null)
   const gripCleanupRef = useRef<(() => void) | null>(null)
+  const removedAnnotationIdsRef = useRef<Set<string>>(new Set())
   const [reloadNonce, setReloadNonce] = useState(0)
   const [measuredViewport, setMeasuredViewport] = useState<{
     width: number
@@ -132,6 +133,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     const subUpdated = onAgentationAnnotationUpdated((payload) => {
       if (payload.tabId && payload.tabId !== browserTabId) return
       if (payload.status !== 'resolved' && payload.status !== 'dismissed') return
+      removedAnnotationIdsRef.current.add(payload.id)
       const hasItem = useBrowserSessionStore
         .getState()
         .getTab(browserTabId)
@@ -140,7 +142,10 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       removePendingAnnotation(browserTabId, payload.id)
       void browserTabAnnotationCmd(browserTabId, { type: 'clear', ids: [payload.id] })
     })
-    return () => subUpdated.unlisten()
+    return () => {
+      subUpdated.unlisten()
+      removedAnnotationIdsRef.current.clear()
+    }
   }, [browserTabId, removePendingAnnotation])
 
   // Drain overlay annotations/actions via the CSP- and mixed-content-proof host
@@ -219,6 +224,10 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             }
           }
         }
+        if (removedAnnotationIdsRef.current.has(payload.id)) {
+          removedAnnotationIdsRef.current.delete(payload.id)
+          return
+        }
         addPendingAnnotation(browserTabId, {
           id: payload.id,
           kind,
@@ -260,6 +269,9 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             (id): id is string => typeof id === 'string' && id.length > 0
           )
           if (ids.length > 0) {
+            for (const id of ids) {
+              removedAnnotationIdsRef.current.add(id)
+            }
             removePendingAnnotations(browserTabId, ids)
             void browserAnnotationsSync('delete', ids)
           }

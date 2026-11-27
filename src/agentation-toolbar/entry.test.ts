@@ -617,4 +617,44 @@ describe('TroupeAnnotationOverlay', () => {
       ids: ['ann-late-guide']
     })
   })
+
+  it('records sessionId from a late outbox_ack so later submissions join the same session', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'First timed-out comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const firstQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+    }>
+    host.removeAttribute(OUTBOX_ATTR)
+
+    // First request times out after host drained it
+    await vi.advanceTimersByTimeAsync(6500)
+
+    // Late ACK arrives after timeout removed pending entry
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: firstQueue[0].reqId,
+      ok: true,
+      id: 'ann-late-1',
+      sessionId: 'sess-from-late-ack'
+    })
+
+    // Next submission must reuse the sessionId captured from the late ACK
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Follow-up comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const nextQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      sessionId?: string
+    }>
+    expect(nextQueue[0].sessionId).toBe('sess-from-late-ack')
+  })
 })
