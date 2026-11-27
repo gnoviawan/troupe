@@ -49,6 +49,8 @@ pub enum Fetch {
     BugReport(crate::bug_report::Step),
     /// A catalog read on the MCP servers page.
     Catalog(crate::mcp_catalog::CatalogFetch),
+    /// An `/api/automations` route.
+    Automation(crate::automations::AutoFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

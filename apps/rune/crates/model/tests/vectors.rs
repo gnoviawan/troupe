@@ -4,6 +4,7 @@
 //! store's TypeScript source changed after its vectors were recorded.
 
 mod bug_report;
+mod automations;
 mod common;
 mod git;
 mod github;
@@ -339,6 +340,9 @@ fn replays_every_vector() {
                 "snapshots" => snapshots::replay(vector),
                 "setup" => setup::replay(vector),
                 "bug-report" => bug_report::replay(vector),
+                "automation-draft" => replay::<automations::DraftStore>(vector),
+                "automation-run" => replay::<automations::RunStore>(vector),
+                "automation-routes" => replay::<automations::RoutesStore>(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

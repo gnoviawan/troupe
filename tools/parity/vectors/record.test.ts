@@ -254,6 +254,15 @@ const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-s
 const { snapshotsRecorder, snapshotsScenarios } = await import('./stores/snapshots')
 const { setupRecorder, setupScenarios } = await import('./stores/setup')
 const { bugReportRecorder, bugReportScenarios } = await import('./stores/bug-report')
+const {
+  automationDraftRecorder,
+  automationDraftScenarios,
+  automationRunRecorder,
+  automationRunScenarios,
+  automationRoutesRecorder,
+  automationRoutesScenarios
+} = await import('./stores/automations')
+const { webAutomationTransport } = await import(`${lib}/automation-api`)
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -277,7 +286,15 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [setupRecorder, setupScenarios],
   [bugReportRecorder, bugReportScenarios],
   [githubRecorder, githubScenarios],
-  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios]
+  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios],
+  [automationDraftRecorder, automationDraftScenarios],
+  [automationRunRecorder, automationRunScenarios],
+  [
+    automationRoutesRecorder(
+      webAutomationTransport as unknown as Record<string, (...args: unknown[]) => unknown>
+    ),
+    automationRoutesScenarios
+  ]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'
