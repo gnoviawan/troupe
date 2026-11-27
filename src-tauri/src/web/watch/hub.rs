@@ -63,6 +63,8 @@ pub enum WatchKind {
     /// What every chat list shows for each agent chat: working, needs you,
     /// unread turn end.
     ChatActivity,
+    /// One browser tab's screencast frames (scope = tab id).
+    BrowserScreencast,
 }
 
 impl WatchKind {
@@ -77,6 +79,7 @@ impl WatchKind {
             Self::Store => "store",
             Self::Terminals => "terminals",
             Self::ChatActivity => "chat_activity",
+            Self::BrowserScreencast => "browser_screencast",
         }
     }
 
@@ -91,6 +94,7 @@ impl WatchKind {
             "store" => Some(Self::Store),
             "terminals" => Some(Self::Terminals),
             "chat_activity" => Some(Self::ChatActivity),
+            "browser_screencast" => Some(Self::BrowserScreencast),
             _ => None,
         }
     }
@@ -104,7 +108,7 @@ impl WatchKind {
             Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity => {
                 scope.is_empty()
             }
-            Self::Fs | Self::Store | Self::Terminals => {
+            Self::Fs | Self::Store | Self::Terminals | Self::BrowserScreencast => {
                 !scope.trim().is_empty() && scope.len() <= MAX_SCOPE_BYTES
             }
         }

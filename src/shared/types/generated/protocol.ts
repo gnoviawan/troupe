@@ -1323,7 +1323,7 @@ export type WsWatchFrame = WsWatchStateFrame | WsWatchDeltaFrame
 /**
  * A watch a connection can hold. `projects`, `chat_history`, `agents` and
  * `chat_activity` have the empty scope; `fs` and `terminals` are scoped
- * to a project id, `store` to a store key.
+ * to a project id, `store` to a store key, `browser_screencast` to a tab id.
  */
 export type WsWatchName =
   | 'projects'
@@ -1333,6 +1333,7 @@ export type WsWatchName =
   | 'store'
   | 'terminals'
   | 'chat_activity'
+  | 'browser_screencast'
 
 export const WsWatchNameValues = [
   'projects',
@@ -1341,7 +1342,8 @@ export const WsWatchNameValues = [
   'fs',
   'store',
   'terminals',
-  'chat_activity'
+  'chat_activity',
+  'browser_screencast'
 ] as const
 
 /** `watch` reply payload. */

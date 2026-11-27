@@ -80,6 +80,27 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
                 store_state(store, &scope, identity)
             })
         }
+        #[cfg(unix)]
+        WatchKind::BrowserScreencast => {
+            let host = match super::browser_pane::screencast_watch_allowed(&id, &scope, env) {
+                Ok(host) => host,
+                Err(reply) => return reply,
+            };
+            let subscribed = hub.subscribe(kind, &scope, &env.out_tx, || json!({ "tabId": scope }));
+            if subscribed.is_ok() {
+                let label = scope.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = host.watcher_joined(&label).await {
+                        log::info!("[ws] browser screencast did not start: {e}");
+                    }
+                });
+            }
+            subscribed
+        }
+        #[cfg(not(unix))]
+        WatchKind::BrowserScreencast => {
+            return WsReply::err_with_code(id, "capability_unavailable", "the browser host is not available on this OS yet");
+        }
         WatchKind::Fs => {
             let Some(root) = env.registry.canonical_root(&scope) else {
                 log::warn!("[ws] watch fs refused: failure=not_found project_id={scope}");
@@ -130,6 +151,13 @@ pub(super) fn handle_unwatch(id: String, payload: &Value, env: &HandlerEnv) -> W
     let mut was_subscribed = env.relay.watches().unsubscribe(kind, &scope, &env.out_tx);
     if kind == WatchKind::Fs {
         was_subscribed |= env.relay.fs_watches().unsubscribe(&scope, &env.out_tx);
+    }
+    #[cfg(unix)]
+    if kind == WatchKind::BrowserScreencast {
+        if let Some(host) = crate::browser_host::installed() {
+            let label = scope.clone();
+            tokio::spawn(async move { host.watcher_left(&label).await });
+        }
     }
     log::info!("[ws] unwatch watch={} was_subscribed={was_subscribed}", kind.as_str());
     WsReply::ok(id, Some(json!({ "watch": kind.as_str(), "scope": scope })))

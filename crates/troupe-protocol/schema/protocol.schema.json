@@ -2275,8 +2275,17 @@
       "description": "A watch frame: exactly one of the full state and a delta."
     },
     "WsWatchName": {
-      "description": "A watch a connection can hold. `projects`, `chat_history`, `agents` and\n`chat_activity` have the empty scope; `fs` and `terminals` are scoped\nto a project id, `store` to a store key.",
-      "enum": ["projects", "chat_history", "agents", "fs", "store", "terminals", "chat_activity"],
+      "description": "A watch a connection can hold. `projects`, `chat_history`, `agents` and\n`chat_activity` have the empty scope; `fs` and `terminals` are scoped\nto a project id, `store` to a store key, `browser_screencast` to a tab id.",
+      "enum": [
+        "projects",
+        "chat_history",
+        "agents",
+        "fs",
+        "store",
+        "terminals",
+        "chat_activity",
+        "browser_screencast"
+      ],
       "type": "string"
     },
     "WsWatchReply": {

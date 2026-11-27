@@ -3,7 +3,7 @@
 //! [`TabEvents`].
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use parking_lot::Mutex;
 use serde_json::{json, Value};
@@ -52,6 +52,21 @@ pub struct Tabs {
     source: Arc<dyn BrowserSource>,
     policy: Policy,
     open: Mutex<HashMap<String, Arc<Tab>>>,
+    frames: OnceLock<Arc<dyn FrameSink>>,
+}
+
+/// One screencast frame: a JPEG as Chromium sent it, base64.
+#[derive(Debug, Clone)]
+pub struct Frame {
+    pub data: String,
+    pub width: u32,
+    pub height: u32,
+}
+
+/// Where screencast frames go. `frame` answers whether anyone still wants
+/// the tab's stream; on false the engine stops the screencast.
+pub trait FrameSink: Send + Sync {
+    fn frame(&self, label: &str, frame: Frame) -> bool;
 }
 
 impl Tabs {
@@ -60,7 +75,67 @@ impl Tabs {
             source,
             policy,
             open: Mutex::new(HashMap::new()),
+            frames: OnceLock::new(),
         }
+    }
+
+    /// Send every tab's screencast frames to `sink`. Set once.
+    pub fn set_frame_sink(&self, sink: Arc<dyn FrameSink>) {
+        let _ = self.frames.set(sink);
+    }
+
+    /// Start the tab's screencast, JPEG frames no larger than the given
+    /// size. Chromium sends a frame only when the page changes, and the
+    /// next one only after the previous was acknowledged.
+    pub async fn start_screencast(&self, label: &str, max: (u32, u32)) -> Result<(), EngineError> {
+        let params = json!({
+            "format": "jpeg",
+            "quality": 70,
+            "maxWidth": max.0,
+            "maxHeight": max.1,
+            "everyNthFrame": 1,
+        });
+        self.get(label)?
+            .call(CdpMethod::PageStartScreencast, params)
+            .await
+            .map(drop)
+    }
+
+    pub async fn stop_screencast(&self, label: &str) -> Result<(), EngineError> {
+        self.get(label)?
+            .call(CdpMethod::PageStopScreencast, json!({}))
+            .await
+            .map(drop)
+    }
+
+    /// Set the tab's viewport in CSS px; `mobile` emulates a phone.
+    pub async fn resize(
+        &self,
+        label: &str,
+        width: u32,
+        height: u32,
+        mobile: bool,
+    ) -> Result<(), EngineError> {
+        let params = json!({
+            "width": width.max(1),
+            "height": height.max(1),
+            "deviceScaleFactor": 1,
+            "mobile": mobile,
+        });
+        self.get(label)?
+            .call(CdpMethod::EmulationSetDeviceMetricsOverride, params)
+            .await
+            .map(drop)
+    }
+
+    /// One pane input command, already mapped to its CDP call.
+    pub async fn input(
+        &self,
+        label: &str,
+        method: CdpMethod,
+        params: Value,
+    ) -> Result<(), EngineError> {
+        self.get(label)?.call(method, params).await.map(drop)
     }
 
     pub fn policy(&self) -> Policy {
@@ -315,6 +390,9 @@ fn on_event(tabs: &Arc<Tabs>, tab: &Arc<Tab>, event: CdpEvent) -> bool {
     let params = &event.params;
     let str_at = |pointer: &str| params.pointer(pointer).and_then(Value::as_str);
     match event.method.as_str() {
+        "Page.screencastFrame" => {
+            tokio::spawn(on_frame(tabs.clone(), tab.clone(), params.clone()));
+        }
         "Fetch.requestPaused" => {
             tokio::spawn(decide_request(tabs.policy, tab.clone(), params.clone()));
         }
@@ -401,4 +479,44 @@ async fn decide_request(policy: Policy, tab: Arc<Tab>, params: Value) {
     if reply.is_err() {
         log::debug!("[chromium] a paused request was already gone");
     }
+}
+
+/// Hand a screencast frame to the sink, then acknowledge it (Chromium sends
+/// the next frame only after that) or stop the stream when nobody watches.
+async fn on_frame(tabs: Arc<Tabs>, tab: Arc<Tab>, params: Value) {
+    let Some(ack) = params.get("sessionId").and_then(Value::as_i64) else {
+        return;
+    };
+    let label = tab.events.label().to_string();
+    let frame = params
+        .get("data")
+        .and_then(Value::as_str)
+        .map(|data| Frame {
+            data: data.to_string(),
+            width: dimension(&params, "/metadata/deviceWidth"),
+            height: dimension(&params, "/metadata/deviceHeight"),
+        });
+    let wanted = match (frame, tabs.frames.get()) {
+        (Some(frame), Some(sink)) => sink.frame(&label, frame),
+        _ => false,
+    };
+    let reply = if wanted {
+        tab.call(
+            CdpMethod::PageScreencastFrameAck,
+            json!({ "sessionId": ack }),
+        )
+        .await
+    } else {
+        tab.call(CdpMethod::PageStopScreencast, json!({})).await
+    };
+    if reply.is_err() {
+        log::debug!("[chromium] screencast reply for a closed tab dropped");
+    }
+}
+
+fn dimension(params: &Value, pointer: &str) -> u32 {
+    params
+        .pointer(pointer)
+        .and_then(Value::as_f64)
+        .map_or(0, |v| v.round().clamp(0.0, f64::from(u32::MAX)) as u32)
 }

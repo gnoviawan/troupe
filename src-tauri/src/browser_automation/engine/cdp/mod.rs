@@ -49,6 +49,11 @@ pub enum CdpMethod {
     TargetDisposeBrowserContext,
     TargetSetDiscoverTargets,
     BrowserClose,
+    PageStartScreencast,
+    PageStopScreencast,
+    PageScreencastFrameAck,
+    InputDispatchTouchEvent,
+    InputImeSetComposition,
 }
 
 impl CdpMethod {
@@ -86,6 +91,11 @@ impl CdpMethod {
             CdpMethod::TargetDisposeBrowserContext => "Target.disposeBrowserContext",
             CdpMethod::TargetSetDiscoverTargets => "Target.setDiscoverTargets",
             CdpMethod::BrowserClose => "Browser.close",
+            CdpMethod::PageStartScreencast => "Page.startScreencast",
+            CdpMethod::PageStopScreencast => "Page.stopScreencast",
+            CdpMethod::PageScreencastFrameAck => "Page.screencastFrameAck",
+            CdpMethod::InputDispatchTouchEvent => "Input.dispatchTouchEvent",
+            CdpMethod::InputImeSetComposition => "Input.imeSetComposition",
         }
     }
 }

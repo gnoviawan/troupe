@@ -6,7 +6,9 @@
 //! The host reuses the desktop's automation core unchanged: origin consent
 //! tickets go to the `/ws` clients through the permission rendezvous, the
 //! browser policy store lives under the state dir, and every request a tab
-//! makes passes the Chromium perimeter proxy.
+//! makes passes the Chromium perimeter proxy. `browser_host` owns the
+//! processes (a profile per project, idle shutdown) and the screencast
+//! streams the `/ws` pane requests use.
 
 use std::path::Path;
 use std::sync::Arc;
@@ -17,8 +19,9 @@ use crate::acp::session_persistence::UNASSIGNED_PROJECT_ID;
 use crate::acp::SessionPersistence;
 use crate::browser_automation::core::{HostedSurface, ProjectResolver, RootResolver};
 use crate::browser_automation::engine::chromium::perimeter::{InternalAddresses, Perimeter};
-use crate::browser_automation::engine::chromium::{launch, ChromiumEngine, LocalSource, Tabs};
+use crate::browser_automation::engine::chromium::{launch, ChromiumEngine, Tabs};
 use crate::browser_automation::{self, DesktopBrowserHost, HostServices};
+use crate::browser_host::BrowserHost;
 use crate::web::desktop_mode::BrowserHostOptions;
 use crate::web::{EventSink, ProjectRegistry, WsRelaySink};
 
@@ -53,13 +56,16 @@ pub async fn install(
         .map_err(|e| format!("could not start the browser perimeter: {e}"))?;
     let root = state_dir.join(ROOT_DIR);
     let policy = perimeter.policy();
-    let source = Arc::new(LocalSource::new(
+    let processes = BrowserHost::new(
         binary,
         root.join("profiles"),
         options.no_sandbox,
         perimeter,
-    ));
-    let tabs = Arc::new(Tabs::new(source, policy));
+        Arc::clone(relay),
+    );
+    let tabs = Arc::new(Tabs::new(processes.clone(), policy));
+    processes.attach(&tabs);
+    crate::browser_host::install(processes);
     let sinks: Vec<Arc<dyn EventSink>> = vec![relay.clone()];
 
     let tickets = Arc::new(HostTickets::for_relay(Arc::clone(relay)));
@@ -138,6 +144,8 @@ pub async fn conformance_host(
     sinks: Vec<Arc<dyn EventSink>>,
     services: HostServices,
 ) -> Option<Arc<dyn crate::browser_automation::engine::BrowserEngine>> {
+    use crate::browser_automation::engine::chromium::LocalSource;
+
     let binary = launch::find()?;
     let perimeter = Perimeter::start(InternalAddresses::Allow).await.ok()?;
     let policy = perimeter.policy();

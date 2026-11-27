@@ -9,20 +9,22 @@
 
 mod browser;
 pub mod launch;
+#[cfg(any(test, feature = "conformance"))]
+mod local;
 pub mod perimeter;
 mod pipe;
 mod tab;
 
-use std::collections::HashMap;
 use std::future::Future;
-use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use serde_json::Value;
 
 pub use browser::Browser;
-pub use tab::Tabs;
+#[cfg(any(test, feature = "conformance"))]
+pub use local::LocalSource;
+pub use tab::{Frame, FrameSink, Tabs};
 
 use super::assets::Script;
 use super::cdp::{self, input as cdp_input, CdpMethod, CdpTransport};
@@ -33,8 +35,6 @@ use super::{
     EngineFuture, EngineTraits, InputMode, KeyInput, Point, Support,
 };
 use crate::browser_automation::budgets::EVAL_STEP;
-use launch::LaunchSpec;
-use perimeter::Perimeter;
 
 pub type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -50,73 +50,6 @@ pub trait BrowserSource: Send + Sync {
     fn tab_opened(&self, _label: &str) {}
     /// A tab of that browser closed.
     fn tab_closed(&self, _label: &str) {}
-}
-
-/// Which persistent profile a store maps to. Ephemeral tabs run in a
-/// disposable context of the agent profile's browser.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum ProfileKey {
-    User,
-    Agent,
-}
-
-/// The plain source: one browser per profile under `root`, started on
-/// first use and kept until the source is dropped.
-pub struct LocalSource {
-    binary: PathBuf,
-    root: PathBuf,
-    no_sandbox: bool,
-    perimeter: Arc<Perimeter>,
-    running: tokio::sync::Mutex<HashMap<ProfileKey, Arc<Browser>>>,
-}
-
-impl LocalSource {
-    pub fn new(
-        binary: PathBuf,
-        root: PathBuf,
-        no_sandbox: bool,
-        perimeter: Arc<Perimeter>,
-    ) -> Self {
-        Self {
-            binary,
-            root,
-            no_sandbox,
-            perimeter,
-            running: tokio::sync::Mutex::new(HashMap::new()),
-        }
-    }
-}
-
-impl BrowserSource for LocalSource {
-    fn browser_for<'a>(
-        &'a self,
-        _label: &'a str,
-        store: &'a DataStore,
-    ) -> SourceFuture<'a, Result<Arc<Browser>, String>> {
-        Box::pin(async move {
-            let key = match store {
-                DataStore::App => ProfileKey::User,
-                DataStore::Global | DataStore::Ephemeral { .. } => ProfileKey::Agent,
-            };
-            let mut running = self.running.lock().await;
-            if let Some(browser) = running.get(&key).filter(|b| b.is_alive()) {
-                return Ok(browser.clone());
-            }
-            let dir = match key {
-                ProfileKey::User => "user",
-                ProfileKey::Agent => "agent",
-            };
-            let spec = LaunchSpec {
-                binary: self.binary.clone(),
-                profile_dir: self.root.join(dir),
-                no_sandbox: self.no_sandbox,
-                proxy_port: self.perimeter.port(),
-            };
-            let browser = Browser::launch(&spec).await?;
-            running.insert(key, browser.clone());
-            Ok(browser)
-        })
-    }
 }
 
 impl CdpTransport for Tabs {

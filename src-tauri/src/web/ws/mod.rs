@@ -64,6 +64,7 @@ use crate::web::store::WebStore;
 mod access;
 mod agents;
 mod antigravity_accounts;
+mod browser_pane;
 mod canvas;
 pub mod channel;
 mod chat_reads;
