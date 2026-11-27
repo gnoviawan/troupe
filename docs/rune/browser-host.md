@@ -71,8 +71,8 @@ browser_automation/engine/chromium/   the engine adapter
   launch.rs     find a browser binary, build its argv, spawn it on a pipe
   pipe.rs       one CDP connection over fds 3 and 4: requests, replies, events
   mod.rs        ChromiumEngine: BrowserEngine + CdpTransport over tab sessions
-  surface.rs    ChromiumSurface: TabSurface (create, navigate, history, close)
-  events.rs     CDP page events -> TabEvents (commits, loads, dialogs, titles)
+  tab.rs        open, steer and close tabs; CDP page events -> TabEvents
+  perimeter.rs  the loopback proxy that enforces the address policy
   tests.rs      click, type and navigate a local page
 
 browser_host/                          the process and stream owner
@@ -80,8 +80,9 @@ browser_host/                          the process and stream owner
   profiles.rs   ProfileKey -> running Chromium, launched on demand
   screencast.rs per-tab frame stream with a subscriber count
   input.rs      pane input events -> CDP Input.* (pointer, wheel, keys, IME, touch)
-  perimeter.rs  the internal-address policy for every request a tab makes
 
+core/hosted.rs                         HostedSurface: the windowless TabSurface
+web/hosted_browser.rs                  --browser-host: build and register the host
 web/ws/browser_pane.rs                 the /ws requests and the watch
 ```
 
@@ -211,22 +212,28 @@ Who can reach a tab:
 
 Where a tab can go:
 
-- `perimeter.rs` sees every request the page makes, through `Fetch.enable`
-  on each tab session at the request stage. It refuses, by default:
-  loopback, private (RFC 1918, unique-local IPv6), link-local, carrier-grade
-  NAT, unspecified and cloud metadata addresses, whether written as a literal
-  or reached by name, and every port Troupe itself listens on
-  (`host_perimeter::owned_ports`). A hostname is resolved before the request
-  continues, and refused when any address it resolves to is internal.
-- The refusal is `Fetch.failRequest` with `BlockedByClient`. A main-frame
-  hop is also reported to the core as a denied `NavStarting`, so the agent
-  reply says it was blocked.
+- Every Chromium sends all of its traffic through a loopback proxy in the
+  server (`engine/chromium/perimeter.rs`), loopback included
+  (`--proxy-server`, `--proxy-bypass-list=<-loopback>`). WebRTC is limited
+  to proxied UDP (`--force-webrtc-ip-handling-policy=disable_non_proxied_udp`).
+  Popups, frames, workers and WebSockets take the same path as the page.
+- The proxy resolves each name itself and refuses the request when any
+  address it resolves to is internal. It then connects to the address it
+  checked, so a rebinding name cannot swap the address after the check.
+  It refuses, by default: loopback, private (RFC 1918, unique-local IPv6),
+  link-local, carrier-grade NAT, unspecified, multicast and cloud metadata
+  addresses, every port Troupe itself listens on
+  (`host_perimeter::owned_ports`), and the proxy's own port.
+- The main-frame navigation hook (`Fetch.enable` on document requests)
+  applies the same verdict to literal addresses and `localhost` names, and
+  then the core's agent policy. A refused hop is reported as a denied
+  `NavStarting`, so the agent's reply says it was blocked.
 - The operator opts in with `--browser-host-allow-internal`, which allows
   loopback and private addresses. Link-local, metadata and Troupe's own
   ports stay refused even then.
-- Non-http schemes other than `about:blank` and `data:` are refused.
-  `file:` URLs are refused on the server: the desktop's local-file rules
-  (`core::local_files`) do not apply to a host other people reach.
+- Schemes other than http(s), ws(s), `about:`, `data:` and `blob:` are
+  refused. `file:` URLs are refused on the server: the desktop's local-file
+  rules (`core::local_files`) do not apply to a host other people reach.
 - Downloads go to a per-tab folder under the host state dir, through the
   core's download gate. Nothing writes to a project folder.
 
@@ -239,10 +246,9 @@ What never leaves the host:
 - Screencast frames go only to the connections that watch that tab and hold
   write.
 
-Residual risks: DNS rebinding between the host's check and Chromium's own
-lookup (Chromium resolves again). WebSocket and WebRTC traffic is not seen by
-`Fetch`. A page can still fingerprint the host's public address. The design
-accepts these for a flag-gated first version and lists them below.
+Residual risks: the proxy port is reachable by other local processes, but
+it forwards only to addresses the policy allows, so it grants nothing they
+could not already reach. A page can still learn the host's public address.
 
 ## Synthesis decision
 
@@ -275,9 +281,9 @@ actionability checks.
 - We accept JPEG frames decoded by the client in exchange for 5 to 10 times
   fewer bytes than PNG. The Rune pane must use `jpeg-decoder`, because
   zune-jpeg 0.5.15 corrupts these frames.
-- We accept intercepting every request with `Fetch` in exchange for a
-  perimeter that covers subresources as well as navigations. It costs a
-  round trip per request on the pipe.
+- We accept a loopback proxy hop for every request in exchange for a
+  perimeter that covers subresources, popups, workers and WebSockets as
+  well as navigations, and that pins the address it checked.
 - We accept no Windows pipe transport in R11a. Chromium on Windows takes
   inherited handles, which needs its own launch code. The server ships on
   Linux and macOS first.
