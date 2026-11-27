@@ -312,18 +312,8 @@ pub(super) fn is_safe_relative_path(path: &str) -> bool {
     })
 }
 
-fn git_command_result(cwd: &str, args: &[&str], failure_context: &str) -> Result<(), String> {
-    let output = GitTracker::run_git_command(cwd, args)
-        .ok_or_else(|| format!("Failed to run {failure_context}"))?;
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
-    }
-}
-
-/// [`git_command_result`] with literal pathspecs, for commands that take a
-/// path a client sent.
+/// Run a git command that takes a path a client sent, with literal
+/// pathspecs; its stderr is the error.
 fn git_path_command_result(cwd: &str, args: &[&str], failure_context: &str) -> Result<(), String> {
     let output = GitTracker::run_git_command_literal(cwd, args)
         .ok_or_else(|| format!("Failed to run {failure_context}"))?;
