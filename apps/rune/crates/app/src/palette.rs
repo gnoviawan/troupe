@@ -504,6 +504,8 @@ impl State {
             "open-command-history" => self.open_command_history(),
             "change-color-theme" => self.open_theme_picker(),
             "open-shortcut-menu" => self.overlays.open(crate::keys::MENU),
+            "save-snapshot" => self.open_create_snapshot(),
+            "report-bug" => self.open_bug_report(),
             _ => {
                 if let Some(project) = id.strip_prefix("project-") {
                     self.select_project(project);

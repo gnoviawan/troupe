@@ -1,0 +1,493 @@
+[
+ {
+  "store": "setup",
+  "name": "hosts_read_as_one_of_the_two_bind_modes",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "127.0.0.1"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "0.0.0.0"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "0.0.0.0",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      " ALL "
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "0.0.0.0",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "any"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "0.0.0.0",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "localhost"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "loopback"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalizeHost",
+     "args": [
+      "10.0.0.2"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "127.0.0.1",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "setup",
+  "name": "the_restart_lands_on_the_new_address_with_the_token",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "healthUrl",
+     "args": [
+      "127.0.0.1",
+      8195
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://127.0.0.1:8195/health",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "healthUrl",
+     "args": [
+      "0.0.0.0",
+      9000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://localhost:9000/health",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landingUrl",
+     "args": [
+      "127.0.0.1",
+      8195
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://127.0.0.1:8195/",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landingUrl",
+     "args": [
+      "0.0.0.0",
+      8195,
+      "tok en/+=?&#"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://localhost:8195/#token=tok%20en%2F%2B%3D%3F%26%23",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landingUrl",
+     "args": [
+      " box.lan ",
+      80,
+      "ünï"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http://box.lan:80/#token=%C3%BCn%C3%AF",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "setup",
+  "name": "first_run_shows_only_when_every_fact_holds",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "show",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 2,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "skip",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "failed",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "skip",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": "2026-11-20T10:00:00.000Z",
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "skip",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "pending",
+       "completedAt": "2026-11-20T10:00:00.000Z",
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "pending",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "refused"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "skip",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "timed-out"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "skip",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "pending"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "pending",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "missing",
+       "completedAt": null,
+       "projectsLoaded": false,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "pending",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "found",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "show",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "decide",
+     "args": [
+      {
+       "hostRead": "pending",
+       "completedAt": null,
+       "projectsLoaded": true,
+       "projectCount": 0,
+       "writes": "admitted"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "pending",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "setup",
+  "name": "onboarding_lands_on_the_launcher_a_quick_chat_or_the_workspace",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "landing",
+     "args": [
+      {
+       "agent": {
+        "id": "claude-acp"
+       },
+       "projectId": "p1"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "launcher",
+     "projectId": "p1"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landing",
+     "args": [
+      {
+       "agent": null,
+       "projectId": "p1"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "launcher",
+     "projectId": "p1"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landing",
+     "args": [
+      {
+       "agent": {
+        "id": "claude-acp"
+       },
+       "projectId": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "quick-chat"
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "landing",
+     "args": [
+      {
+       "agent": null,
+       "projectId": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "workspace"
+    },
+    "state": null
+   }
+  ]
+ }
+]

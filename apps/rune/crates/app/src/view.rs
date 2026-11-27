@@ -25,12 +25,18 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     let phone = size.is_some_and(|[w, _]| w <= PHONE_MAX_WIDTH);
     let window = size.map_or((1280.0, 800.0), |[w, h]| (w, h));
     let root = row().key(ROOT).w_full().h_full().fill(t.colors.background);
+    let mut layer = Vec::new();
+    if let Some(screen) = crate::first_run_view::screen(s, t, phone, &mut layer) {
+        // Onboarding's project step opens the new project modal over its screen.
+        crate::rail_forms::build(s, t, &mut layer);
+        return ui::overlay::root(root.child(screen), layer);
+    }
     if let Route::NotFound(path) = &s.route {
         return root.child(not_found(t, path));
     }
-    let mut layer = Vec::new();
     let root = if phone {
-        root.child(crate::phone::frame(s, t, workspace_main(s, t, &mut layer)))
+        let main = if s.route == Route::Snapshots { crate::snapshots_view::page(s, t, true) } else { workspace_main(s, t, &mut layer) };
+        root.child(crate::phone::frame(s, t, main))
     } else {
         root.children(desktop_frame(s, t, cx, &mut layer))
     };
@@ -47,6 +53,8 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::automations_view::dialogs(s, t, &mut layer);
     crate::automation_editor_view::dialogs(s, t, &mut layer);
     crate::settings_view::build(s, t, phone, window.1, &mut layer);
+    crate::snapshots_view::dialogs(s, t, phone, &mut layer);
+    crate::bug_report::build(s, t, phone, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
@@ -174,6 +182,9 @@ fn main_area(
     cx: &Cx<State>,
     layer: &mut Vec<El>,
 ) -> El {
+    if s.route == Route::Snapshots {
+        return crate::snapshots_view::page(s, t, false);
+    }
     let start = if rail_collapsed {
         vec![rail_toggle(t, false)]
     } else {

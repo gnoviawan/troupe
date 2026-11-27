@@ -86,6 +86,9 @@ impl State {
         if self.overlays.top() == Some(crate::mcp_install::INSTALL) && self.install_busy() {
             return true;
         }
+        if self.snapshot_confirm_busy() || (self.overlays.top() == Some(crate::bug_report::KEY) && self.bug.submitting) {
+            return true;
+        }
         if self.overlays.top() == Some(crate::project_settings::PROJECT) && self.project_dirty() {
             self.overlays.open(crate::project_settings::LEAVE);
             return true;
@@ -123,6 +126,7 @@ impl State {
             crate::keys::MENU | crate::settings_view::APP => self.keys.recording = None,
             crate::settings_view::SELECT => self.settings_ui.select = None,
             crate::project_settings::PROJECT => self.project_ui.import_request += 1,
+            crate::snapshots::CREATE | crate::snapshots::RESTORE | crate::snapshots::DELETE => self.snapshot_dialog_closed(key),
             crate::settings_mcp_dialog::DIALOG => self.mcp_ui.dialog = None,
             crate::mcp_install::INSTALL => self.install_closed(),
             crate::settings_mcp_dialog::PASTE => {
