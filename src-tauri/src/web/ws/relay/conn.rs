@@ -278,6 +278,45 @@ async fn run_request(request: WsRequest, env: HandlerEnv) {
     env.out_tx.reply(reply).await;
 }
 
+/// Whether `authenticate` carried the host-local credential
+/// (`payload.hostLocalToken`, compared in constant time). A presented but
+/// wrong credential is logged, never its value.
+fn host_credential_accepted(request: &WsRequest, env: &HandlerEnv) -> bool {
+    let presented = request.payload["hostLocalToken"].as_str().unwrap_or("");
+    if presented.is_empty() {
+        return false;
+    }
+    let accepted = env
+        .web_auth
+        .as_deref()
+        .is_some_and(|gate| gate.accepts_host_local(presented));
+    if !accepted {
+        warn!(
+            target: "termul::web::ws",
+            request_id = %request.id,
+            "/ws authenticate presented a host-local credential this host did not issue"
+        );
+    }
+    accepted
+}
+
+/// A host-local client is the Rune desktop app. Like the Tauri webview over
+/// the desktop carrier, its device takes over the pending import of the
+/// retired plugin-store file, here, before its first store request. A failed
+/// write leaves the import pending for the next authenticate.
+fn claim_desktop_import(store: Option<&Arc<WebStore>>, identity: &ClientIdentity) {
+    let Some(store) = store else {
+        return;
+    };
+    if let Err(error) = store.claim_desktop_import(identity, crate::web::store::unix_ms()) {
+        warn!(
+            target: "termul::web::ws",
+            device_id = %ClientIdentity::log_label(&identity.device_id),
+            "the desktop device could not take over the retired plugin-store import: {error}"
+        );
+    }
+}
+
 /// The pre-auth gate (AC9): only `authenticate` is allowed; everything else is
 /// `unauthorized`.
 fn pre_auth_reply(request: &WsRequest, conn: &mut ConnState, env: &HandlerEnv) -> WsReply {
@@ -331,9 +370,12 @@ fn pre_auth_reply(request: &WsRequest, conn: &mut ConnState, env: &HandlerEnv) -
         client_instance_id = %ClientIdentity::log_label(&validated.client_instance_id),
         "/ws connection authenticated"
     );
-    // Capabilities are resolved ONCE, here (carrier + deployment flags + peer),
-    // and the device joins presence.
-    conn.access.grant();
+    // Capabilities are resolved ONCE, here (carrier + deployment flags + peer
+    // + the host-local credential), and the device joins presence.
+    conn.access.grant(host_credential_accepted(request, env));
+    if conn.access.capabilities().host_local {
+        claim_desktop_import(env.store.as_ref(), &validated);
+    }
     conn.presence = Some(env.relay.presence().register(&validated, conn.access.carrier()));
     // First authenticate wins; the connection is authed from here on.
     let _ = conn.identity.set(validated);

@@ -332,7 +332,9 @@ pub fn git_get_commit_file_diff(
         .first()
         .map(String::as_str)
         .unwrap_or_else(|| empty_tree_for(full.len()));
+    // Literal: the client's path is a file name, never a glob or magic.
     let mut args = vec![
+        "--literal-pathspecs",
         "diff",
         "--no-color",
         "--no-ext-diff",
