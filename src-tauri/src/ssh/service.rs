@@ -129,21 +129,34 @@ pub fn save_profile(ssh: &SSHManager, mut profile: SSHProfile) -> SshResult<()> 
     // kept for live sessions stale (a later tab would try the old one first).
     let profile_id = profile.id.clone();
     let secret_changed = profile.password.is_some() || profile.passphrase.is_some();
-    let target_changed = match ssh.profiles.get(&profile_id) {
-        Ok(Some(previous)) => {
-            target_of(&previous).fingerprint() != target_of(&profile).fingerprint()
+    let previous = ssh.profiles.get(&profile_id).map_err(profile_error)?;
+    let target_changed = previous.as_ref().is_some_and(|previous| {
+        target_of(previous).fingerprint() != target_of(&profile).fingerprint()
+    });
+    // Whether a secret is stored is the host's record, never the client's
+    // claim: `ProfileManager::save` sets the flag again only for a secret
+    // sent with this save. A stored secret belongs to the target it was
+    // typed for, so a profile moved to another host, port, user, auth method
+    // or key loses it, from the keychain too.
+    let (stored_password, stored_passphrase) = match &previous {
+        Some(previous) if !target_changed => {
+            (previous.has_stored_password, previous.has_stored_passphrase)
         }
-        _ => false,
+        _ => (false, false),
     };
+    profile.has_stored_password = stored_password;
+    profile.has_stored_passphrase = stored_passphrase;
     if target_changed {
-        // A stored secret belongs to the host it was typed for: a profile
-        // moved to another host, port, user or key must not send it there.
-        // Only a secret sent with this save is kept.
-        if profile.password.as_deref().is_none_or(str::is_empty) {
-            profile.has_stored_password = false;
-        }
-        if profile.passphrase.as_deref().is_none_or(str::is_empty) {
-            profile.has_stored_passphrase = false;
+        if previous
+            .as_ref()
+            .is_some_and(|previous| previous.has_stored_password || previous.has_stored_passphrase)
+        {
+            if let Err(e) = super::credential_store::delete_credentials(&profile_id) {
+                log::warn!(
+                    "[SSH] Could not delete the moved profile's stored secrets: {}",
+                    e
+                );
+            }
         }
         log::info!("[SSH] Profile target changed; stored secrets need entering again");
     }
