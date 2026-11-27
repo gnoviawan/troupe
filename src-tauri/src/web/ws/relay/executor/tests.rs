@@ -17,6 +17,22 @@ fn request(type_: &str, payload: serde_json::Value) -> WsRequest {
 }
 
 #[test]
+fn ssh_session_requests_never_share_a_key_with_an_acp_session() {
+    let key = |type_, payload| entity_key(&request(type_, payload));
+    for type_ in ["ssh_session_cancel", "ssh_session_close", "ssh_session_respond_host_key"] {
+        assert_eq!(
+            key(type_, json!({"sessionId": "same"})).as_deref(),
+            Some("ssh-session:same"),
+            "{type_}"
+        );
+    }
+    assert_ne!(
+        key("ssh_session_close", json!({"sessionId": "same"})),
+        key("close_session", json!({"sessionId": "same"})),
+    );
+}
+
+#[test]
 fn entity_keys_name_the_first_entity_and_never_collide_across_kinds() {
     let key = |type_, payload| entity_key(&request(type_, payload));
     assert_eq!(

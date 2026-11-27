@@ -5,6 +5,9 @@ use russh_sftp::client::SftpSession;
 use russh_sftp::protocol::OpenFlags;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
+
+/// Where transfer progress goes (`ssh-transfer-progress`).
+pub type ProgressSink<'a> = &'a (dyn Fn(&'static str, serde_json::Value) + Send + Sync);
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 /// Largest file the editor opens (it holds the whole file in memory).
@@ -222,7 +225,7 @@ pub async fn rename(sftp: &SftpSession, old_path: &str, new_path: &str) -> Resul
 }
 
 struct Progress<'a> {
-    app: &'a AppHandle,
+    sink: ProgressSink<'a>,
     connection_id: &'a str,
     remote_path: &'a str,
     local_path: &'a str,
@@ -242,7 +245,10 @@ impl Progress<'_> {
             status: status.to_string(),
             error,
         };
-        let _ = self.app.emit("ssh-transfer-progress", &progress);
+        (self.sink)(
+            "ssh-transfer-progress",
+            serde_json::to_value(&progress).unwrap_or_default(),
+        );
     }
 }
 
@@ -292,6 +298,20 @@ pub async fn download_file(
     app: &AppHandle,
     connection_id: &str,
 ) -> Result<(), String> {
+    let sink = |event: &'static str, payload: serde_json::Value| {
+        let _ = app.emit(event, payload);
+    };
+    download_file_to(sftp, remote_path, local_path, &sink, connection_id).await
+}
+
+/// [`download_file`] with progress sent to `sink`.
+pub async fn download_file_to(
+    sftp: &SftpSession,
+    remote_path: &str,
+    local_path: &str,
+    sink: ProgressSink<'_>,
+    connection_id: &str,
+) -> Result<(), String> {
     let total = sftp
         .metadata(remote_path)
         .await
@@ -299,7 +319,7 @@ pub async fn download_file(
         .size
         .unwrap_or(0);
     let progress = Progress {
-        app,
+        sink,
         connection_id,
         remote_path,
         local_path,
@@ -336,12 +356,26 @@ pub async fn upload_file(
     app: &AppHandle,
     connection_id: &str,
 ) -> Result<(), String> {
+    let sink = |event: &'static str, payload: serde_json::Value| {
+        let _ = app.emit(event, payload);
+    };
+    upload_file_from(sftp, local_path, remote_path, &sink, connection_id).await
+}
+
+/// [`upload_file`] with progress sent to `sink`.
+pub async fn upload_file_from(
+    sftp: &SftpSession,
+    local_path: &str,
+    remote_path: &str,
+    sink: ProgressSink<'_>,
+    connection_id: &str,
+) -> Result<(), String> {
     let total = tokio::fs::metadata(local_path)
         .await
         .map_err(|e| format!("Local file not found: {} ({})", local_path, e))?
         .len();
     let progress = Progress {
-        app,
+        sink,
         connection_id,
         remote_path,
         local_path,

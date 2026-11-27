@@ -469,6 +469,17 @@ impl GitTracker {
         Self::run_git_command_with_timeout(cwd, args, GIT_COMMAND_TIMEOUT_MS)
     }
 
+    /// [`Self::run_git_command`] with every pathspec taken literally
+    /// (`git --literal-pathspecs`): a path a client sent is a file name,
+    /// never a glob (`*`) or magic (`:/`) that reaches files it did not name.
+    /// A flag, not `GIT_LITERAL_PATHSPECS`, so it also reaches git inside WSL.
+    pub fn run_git_command_literal(cwd: &str, args: &[&str]) -> Option<std::process::Output> {
+        let mut literal = Vec::with_capacity(args.len() + 1);
+        literal.push("--literal-pathspecs");
+        literal.extend_from_slice(args);
+        Self::run_git_command(cwd, &literal)
+    }
+
     /// Run a git command with an explicit timeout (ms). Network-bound commands
     /// such as `git push` must use a generous timeout instead of the short
     /// status-poll default, which would otherwise kill the process mid-transfer.

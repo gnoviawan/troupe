@@ -46,6 +46,10 @@ pub mod github_api;
 pub mod host_allow;
 #[cfg(unix)]
 pub mod hosted_browser;
+pub mod host_local;
+#[cfg(test)]
+mod host_local_tests;
+pub mod host_secrets;
 pub mod html_preview_api;
 pub mod install_api;
 pub mod log_api;

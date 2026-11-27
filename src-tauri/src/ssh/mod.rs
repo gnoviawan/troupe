@@ -12,12 +12,15 @@ pub mod keys;
 pub mod known_hosts;
 pub mod port_forward;
 pub mod profile_manager;
+pub mod service;
 pub mod session;
 pub mod sftp;
 pub mod shell;
 
 use profile_manager::ProfileManager;
+pub use session::Emit;
 use session::SshSessionManager;
+use std::path::Path;
 use std::sync::Arc;
 use tauri::Emitter;
 
@@ -25,18 +28,35 @@ use tauri::Emitter;
 pub struct SSHManager {
     pub profiles: Arc<ProfileManager>,
     pub sessions: Arc<SshSessionManager>,
+    /// Where session progress, host-key questions, session ends, transfer
+    /// progress and port-forward status go: Tauri events in the Tauri app,
+    /// a log line on `troupe-server --desktop` (`web::desktop_mode`).
+    pub emit: Emit,
 }
 
 impl SSHManager {
     pub fn new(app_handle: tauri::AppHandle) -> Self {
         let profiles = Arc::new(ProfileManager::new(app_handle.clone()));
         let emitter = app_handle;
-        let sessions = SshSessionManager::new(Arc::new(move |event, payload| {
+        let emit: Emit = Arc::new(move |event, payload| {
             if let Err(e) = emitter.emit(event, payload) {
                 log::error!("[SSH] Failed to emit {}: {}", event, e);
             }
-        }));
-        Self { profiles, sessions }
+        });
+        Self {
+            profiles,
+            sessions: SshSessionManager::new(emit.clone()),
+            emit,
+        }
+    }
+
+    /// The server's manager: profiles in `data_dir`, events to `emit`.
+    pub fn for_server(data_dir: &Path, emit: Emit) -> Self {
+        Self {
+            profiles: Arc::new(ProfileManager::in_dir(data_dir)),
+            sessions: SshSessionManager::new(emit.clone()),
+            emit,
+        }
     }
 
     /// App exit: abort pending connects and stop port forwards. Live shells
