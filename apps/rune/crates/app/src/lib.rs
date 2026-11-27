@@ -49,6 +49,12 @@ mod git_history_tests;
 #[cfg(test)]
 mod git_tests;
 mod git_view;
+mod github;
+mod github_item_view;
+mod github_logic;
+#[cfg(test)]
+mod github_tests;
+mod github_view;
 #[cfg(test)]
 mod controls_tests;
 mod history_host;
@@ -64,9 +70,16 @@ mod phone;
 mod rail;
 mod rail_forms;
 mod rail_menus;
+mod mcp_catalog;
+mod mcp_host;
+mod project_settings;
+mod project_settings_view;
 mod rail_view;
 mod settings;
+mod settings_mcp;
+mod settings_mcp_dialog;
 mod settings_pages;
+mod settings_profiles;
 mod settings_shortcuts;
 #[cfg(test)]
 mod settings_tests;
@@ -173,10 +186,16 @@ pub struct State {
     pub git: git::GitUi,
     /// The git history reads and the History tab's own state.
     pub history: git_history::HistoryUi,
+    /// The GitHub cache and the area's own state.
+    pub github: github::GithubUi,
     /// The shared `settings/app` record.
     pub settings: model::settings::State,
     /// The Settings window: which one is open, its page and its own fields.
     pub settings_ui: settings_view::SettingsUi,
+    /// The project settings window's draft and its own fields.
+    pub project_ui: project_settings::ProjectSettingsUi,
+    /// The MCP servers page, its dialogs and the host side of the registry.
+    pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -232,8 +251,11 @@ impl Default for State {
             explorer_host: explorer_host::ExplorerHost::default(),
             git: git::GitUi::default(),
             history: git_history::HistoryUi::default(),
+            github: github::GithubUi::default(),
             settings: model::settings::State::default(),
             settings_ui: settings_view::SettingsUi::default(),
+            project_ui: project_settings::ProjectSettingsUi::default(),
+            mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -332,6 +354,9 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     state.sync_editors();
     state.sync_explorer();
     let next_git = state.git_tick();
+    let next_github = state.github_tick();
+    let next_mcp = state.mcp_tick(now);
+    let next_catalog = state.catalog_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
@@ -343,6 +368,9 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         state.next_find_refresh(),
         state.next_draft_sync(),
         next_git,
+        next_github,
+        next_mcp,
+        next_catalog,
         next_completion,
     ];
     for due in waits.into_iter().flatten() {

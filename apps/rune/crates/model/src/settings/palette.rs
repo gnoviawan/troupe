@@ -231,6 +231,10 @@ impl Row {
 /// A group heading of the palette's list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Heading {
+    /// The active project's chats matching the query (`CommandPaletteChats`).
+    Chats,
+    /// Quick chats matching the query (`CommandPaletteQuickChats`).
+    QuickChats,
     Pinned,
     Recent,
     Category(Category),
@@ -240,6 +244,8 @@ impl Heading {
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
+            Heading::Chats => "Chats",
+            Heading::QuickChats => "Quick chats",
             Heading::Pinned => "Pinned",
             Heading::Recent => "Recent",
             Heading::Category(c) => c.label(),
@@ -277,6 +283,85 @@ pub fn groups<'a>(rows: &'a [Row], query: &str, lists: &Commands) -> Vec<(Headin
     }
     out.retain(|(_, rows)| !rows.is_empty());
     out
+}
+
+/// At most this many quick chats in the palette (`PALETTE_QUICK_CHATS_LIMIT`).
+pub const QUICK_CHATS_LIMIT: usize = 5;
+
+/// A chat card of the active project (`ChatCardData`, the fields the palette searches).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ChatCard {
+    pub id: String,
+    pub title: String,
+    /// The configured agent's name, when known.
+    pub agent_name: Option<String>,
+    /// The model the session index recorded (`modelName || modelId`).
+    pub index_model: Option<String>,
+    /// The branch line; empty when the project has no git.
+    pub branch: String,
+}
+
+impl ChatCard {
+    /// `modelLineOf`: the recorded model, else the agent's name, else "Agent".
+    #[must_use]
+    pub fn model_line(&self) -> &str {
+        self.index_model.as_deref().filter(|m| !m.is_empty()).or(self.agent_name.as_deref().filter(|a| !a.is_empty())).unwrap_or("Agent")
+    }
+
+    /// `filterChatCards`: a case-insensitive substring of the title, agent name, branch or
+    /// model line.
+    #[must_use]
+    pub fn matches(&self, query: &str) -> bool {
+        let q = query.trim().to_lowercase();
+        q.is_empty()
+            || self.title.to_lowercase().contains(&q)
+            || self.agent_name.as_ref().is_some_and(|a| a.to_lowercase().contains(&q))
+            || self.branch.to_lowercase().contains(&q)
+            || self.model_line().to_lowercase().contains(&q)
+    }
+
+    /// The item's cmdk value and keywords (`chat:<id>` and the matched fields).
+    fn score(&self, query: &str) -> f64 {
+        let keywords: Vec<String> = [self.title.as_str(), self.agent_name.as_deref().unwrap_or_default(), &self.branch, self.model_line()]
+            .into_iter()
+            .filter(|k| !k.is_empty())
+            .map(|k| k.trim().to_owned())
+            .collect();
+        command_score(&format!("chat:{}", self.id), query, &keywords)
+    }
+}
+
+/// A quick chat (no project): its id, its title (`UNTITLED_HOST_TITLE` when unnamed) and when
+/// it was made.
+#[derive(Clone, Debug, PartialEq)]
+pub struct QuickChat {
+    pub id: String,
+    pub title: String,
+    pub created_at: f64,
+}
+
+/// The palette's Chats and Quick chats groups for `query`, each in the order cmdk leaves it:
+/// with no query, neither shows. Chats are the cards `filterChatCards` keeps; quick chats are
+/// the newest five whose title holds the query. cmdk then keeps each item scoring above 0,
+/// best first.
+#[must_use]
+pub fn chat_groups<'a>(cards: &'a [ChatCard], quick: &'a [QuickChat], query: &str) -> (Vec<&'a ChatCard>, Vec<&'a QuickChat>) {
+    if query.trim().is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let mut chats: Vec<(f64, &ChatCard)> = cards.iter().filter(|c| c.matches(query)).map(|c| (c.score(query), c)).filter(|(s, _)| *s > 0.0).collect();
+    chats.sort_by(|a, b| b.0.total_cmp(&a.0));
+    let needle = query.trim().to_lowercase();
+    let mut newest: Vec<&QuickChat> = quick.iter().filter(|q| q.title.to_lowercase().contains(&needle)).collect();
+    newest.sort_by(|a, b| b.created_at.total_cmp(&a.created_at));
+    newest.truncate(QUICK_CHATS_LIMIT);
+    let mut quick: Vec<(f64, &QuickChat)> = newest
+        .into_iter()
+        .map(|q| (command_score(format!("{} quick-chat:{}", q.title, q.id).trim(), query, &[q.title.trim().to_owned(), "quick chat".into()]), q))
+        .filter(|(s, _)| *s > 0.0)
+        .collect();
+    quick.sort_by(|a, b| b.0.total_cmp(&a.0));
+    (chats.into_iter().map(|(_, c)| c).collect(), quick.into_iter().map(|(_, q)| q).collect())
 }
 
 #[cfg(test)]

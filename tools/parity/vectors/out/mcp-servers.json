@@ -1,0 +1,2889 @@
+[
+ {
+  "store": "mcp-servers",
+  "name": "the_registry_keeps_valid_entries",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "normalize",
+     "args": [
+      [
+       {
+        "id": "s1",
+        "type": "stdio",
+        "name": "fs",
+        "command": "npx",
+        "args": [
+         "-y",
+         "@mcp/fs",
+         "my dir"
+        ],
+        "env": [
+         {
+          "name": "ROOT",
+          "value": "/w"
+         }
+        ],
+        "enabled": true
+       },
+       {
+        "id": "s2",
+        "type": "sse",
+        "name": "Linear",
+        "url": "https://mcp.linear.app/sse",
+        "headers": [
+         {
+          "name": "authorization",
+          "value": "Bearer x"
+         }
+        ],
+        "enabled": false
+       },
+       {
+        "id": "n",
+        "name": "no type",
+        "command": "uvx",
+        "extra": 1
+       },
+       {
+        "id": "h",
+        "type": "http",
+        "name": "h",
+        "url": "https://x.dev/mcp",
+        "catalog": {
+         "source": "mcp-registry",
+         "name": "io.github/linear",
+         "version": "1.0.0",
+         "kind": "remote",
+         "index": 0,
+         "repositoryId": null,
+         "launchDigest": "abc"
+        }
+       },
+       {
+        "id": "c",
+        "type": "http",
+        "name": "bad catalog",
+        "url": "https://x.dev",
+        "catalog": {
+         "source": "x"
+        }
+       },
+       {
+        "id": "bad-url",
+        "type": "http",
+        "name": "b",
+        "url": "not a url"
+       },
+       {
+        "id": "bad-args",
+        "name": "b",
+        "command": "x",
+        "args": [
+         "a",
+         1
+        ]
+       },
+       {
+        "id": "bad-env",
+        "name": "b",
+        "command": "x",
+        "env": [
+         {
+          "name": "A"
+         }
+        ]
+       },
+       {
+        "id": "null-enabled",
+        "name": "b",
+        "command": "x",
+        "enabled": null
+       },
+       {
+        "id": "ws",
+        "type": "ws",
+        "name": "b",
+        "url": "wss://x"
+       },
+       {
+        "id": "blank",
+        "name": "  ",
+        "command": "x"
+       },
+       {
+        "name": "no id",
+        "command": "x"
+       },
+       "text"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     {
+      "id": "s1",
+      "type": "stdio",
+      "name": "fs",
+      "command": "npx",
+      "args": [
+       "-y",
+       "@mcp/fs",
+       "my dir"
+      ],
+      "env": [
+       {
+        "name": "ROOT",
+        "value": "/w"
+       }
+      ],
+      "enabled": true
+     },
+     {
+      "id": "s2",
+      "type": "sse",
+      "name": "Linear",
+      "url": "https://mcp.linear.app/sse",
+      "headers": [
+       {
+        "name": "authorization",
+        "value": "Bearer x"
+       }
+      ],
+      "enabled": false
+     },
+     {
+      "id": "n",
+      "type": "stdio",
+      "name": "no type",
+      "command": "uvx",
+      "enabled": true
+     },
+     {
+      "id": "h",
+      "type": "http",
+      "name": "h",
+      "url": "https://x.dev/mcp",
+      "enabled": true,
+      "catalog": {
+       "source": "mcp-registry",
+       "name": "io.github/linear",
+       "version": "1.0.0",
+       "kind": "remote",
+       "index": 0,
+       "repositoryId": null,
+       "launchDigest": "abc"
+      }
+     },
+     {
+      "id": "c",
+      "type": "http",
+      "name": "bad catalog",
+      "url": "https://x.dev",
+      "enabled": true
+     }
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalize",
+     "args": [
+      {
+       "not": "a list"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "normalize",
+     "args": [
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "validation_names_each_problem",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "name": "",
+       "command": " "
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "name-required",
+     "command-required"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "http",
+       "name": "a",
+       "url": ""
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "url-required"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "https://mcp.example.com/mcp"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "http://localhost:3000/sse"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "localhost:3000"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "example.com:8080/mcp"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "mcp.example.com"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "url-invalid"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "https://"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "url-invalid"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "http://a b/"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "url-invalid"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "http://host:99999/"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "url-invalid"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "http://[::1]:8080/mcp"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": "file:///tmp/x"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "validate",
+     "args": [
+      {
+       "type": "sse",
+       "name": "a",
+       "url": " https://padded.dev "
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "command_lines_split_and_join_like_a_shell",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "tokenize",
+     "args": [
+      "npx -y @mcp/fs \"/my dir\" 'it'\"s\""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "npx",
+     "-y",
+     "@mcp/fs",
+     "/my dir",
+     "its"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tokenize",
+     "args": [
+      "a\\ b \"q\\\"x\\\\\" '\\n' c\\d"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "a b",
+     "q\"x\\",
+     "\\n",
+     "c\\d"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tokenize",
+     "args": [
+      "  spaced   out  "
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "spaced",
+     "out"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tokenize",
+     "args": [
+      "npx \"open"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "tokenize",
+     "args": [
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "join",
+     "args": [
+      [
+       "npx",
+       "-y",
+       "my dir",
+       "it's",
+       "",
+       "a\"b",
+       "plain"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "npx -y 'my dir' \"it's\" '' 'a\"b' plain",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "liftEnvPrefix",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "A=1 B=two npx server --flag=1",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "commandLine": "npx server --flag=1",
+     "env": [
+      {
+       "name": "A",
+       "value": "1"
+      },
+      {
+       "name": "B",
+       "value": "two"
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "liftEnvPrefix",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "A=1  B=2",
+        "env": [
+         {
+          "name": "A",
+          "value": "old"
+         },
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "commandLine": "",
+     "env": [
+      {
+       "name": "A",
+       "value": "1"
+      },
+      {
+       "name": "B",
+       "value": "2"
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "liftEnvPrefix",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "npx A=1",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "commandLine": "npx A=1",
+     "env": [
+      {
+       "name": "",
+       "value": ""
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "liftEnvPrefix",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "A=\"open",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "commandLine": "A=\"open",
+     "env": [
+      {
+       "name": "",
+       "value": ""
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "rowProblem",
+     "args": [
+      "A",
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Needs a value.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "rowProblem",
+     "args": [
+      "",
+      "v"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Needs a name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "rowProblem",
+     "args": [
+      " ",
+      " "
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "drafts_become_servers_or_name_their_errors",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "local",
+       "name": " fs ",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "API=1 npx -y \"my server\"",
+        "env": [
+         {
+          "name": " ROOT ",
+          "value": "/w"
+         },
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "config": {
+      "type": "stdio",
+      "name": "fs",
+      "command": "npx",
+      "args": [
+       "-y",
+       "my server"
+      ],
+      "env": [
+       {
+        "name": "ROOT",
+        "value": "/w"
+       },
+       {
+        "name": "API",
+        "value": "1"
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "local",
+       "name": "",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "npx 'open",
+        "env": [
+         {
+          "name": "X",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "errors": {
+      "env": "Needs a value.",
+      "commandLine": "Close the quote in the command.",
+      "name": "Give the server a name."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "errors": {
+      "commandLine": "Enter the command that starts the server."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "config": {
+      "type": "http",
+      "name": "Linear",
+      "url": "https://mcp.linear.app/mcp"
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "",
+       "remote": {
+        "url": "nope",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": "v"
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "errors": {
+      "headers": "Needs a name.",
+      "name": "Give the server a name.",
+      "url": "Enter a full URL, like https://mcp.example.com/mcp."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "errors": {
+      "url": "Enter the server URL."
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toConfig",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "sse",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": "Bearer t"
+         },
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "config": {
+      "type": "sse",
+      "name": "Linear",
+      "url": "https://mcp.linear.app/mcp",
+      "headers": [
+       {
+        "name": "Authorization",
+        "value": "Bearer t"
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uncheckedConfig",
+     "args": [
+      {
+       "kind": "local",
+       "name": "docs",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "npx 'open",
+        "env": [
+         {
+          "name": "X",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "stdio",
+     "name": "docs",
+     "command": "npx",
+     "args": [
+      "open"
+     ],
+     "env": [
+      {
+       "name": "X",
+       "value": ""
+      }
+     ]
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "uncheckedConfig",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "X",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "type": "http",
+     "name": "Linear",
+     "url": "https://mcp.linear.app/mcp",
+     "headers": [
+      {
+       "name": "X",
+       "value": ""
+      }
+     ]
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "servers_open_as_drafts",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "fromServer",
+     "args": [
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y",
+        "@mcp/fs",
+        "my dir"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/w"
+        }
+       ],
+       "enabled": true
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "local",
+     "name": "fs",
+     "remote": {
+      "url": "",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "npx -y @mcp/fs 'my dir'",
+      "env": [
+       {
+        "name": "ROOT",
+        "value": "/w"
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "fromServer",
+     "args": [
+      {
+       "id": "s2",
+       "type": "sse",
+       "name": "Linear",
+       "url": "https://mcp.linear.app/sse",
+       "headers": [
+        {
+         "name": "authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": false
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://mcp.linear.app/sse",
+      "transport": "sse",
+      "transportPinned": false,
+      "auth": "token",
+      "headers": [
+       {
+        "name": "authorization",
+        "value": "Bearer x"
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "fromServer",
+     "args": [
+      {
+       "id": "h",
+       "type": "http",
+       "name": "h",
+       "url": "https://x.dev/sse"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "h",
+     "remote": {
+      "url": "https://x.dev/sse",
+      "transport": "http",
+      "transportPinned": true,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "fromServer",
+     "args": [
+      {
+       "id": "n",
+       "name": "n",
+       "command": "uvx",
+       "args": []
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "local",
+     "name": "n",
+     "remote": {
+      "url": "",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "uvx",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sameLaunch",
+     "args": [
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y",
+        "@mcp/fs",
+        "my dir"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/w"
+        }
+       ],
+       "enabled": true
+      },
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y",
+        "@mcp/fs",
+        "my dir"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/other"
+        }
+       ],
+       "enabled": false
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": true,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sameLaunch",
+     "args": [
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y",
+        "@mcp/fs",
+        "my dir"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/w"
+        }
+       ],
+       "enabled": true
+      },
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/w"
+        }
+       ],
+       "enabled": true
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sameLaunch",
+     "args": [
+      {
+       "id": "s2",
+       "type": "sse",
+       "name": "Linear",
+       "url": "https://mcp.linear.app/sse",
+       "headers": [
+        {
+         "name": "authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": false
+      },
+      {
+       "id": "s2",
+       "type": "sse",
+       "name": "Linear",
+       "url": "https://mcp.linear.app/sse",
+       "headers": [],
+       "enabled": false
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": false,
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "url_and_sign_in_edits",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "transportForUrl",
+     "args": [
+      "https://x.dev/sse"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "sse",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "transportForUrl",
+     "args": [
+      "https://x.dev/SSE/?a=1"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "sse",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "transportForUrl",
+     "args": [
+      "https://sse"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "transportForUrl",
+     "args": [
+      "x.dev/sse#frag"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "sse",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "transportForUrl",
+     "args": [
+      "https://x.dev/sse/more"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "http",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withUrl",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "https://x.dev/sse"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://x.dev/sse",
+      "transport": "sse",
+      "transportPinned": false,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withUrl",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": true,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "https://x.dev/sse"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://x.dev/sse",
+      "transport": "http",
+      "transportPinned": true,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withAuth",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "X-Team",
+          "value": "1"
+         },
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "token"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://mcp.linear.app/mcp",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "token",
+      "headers": [
+       {
+        "name": "Authorization",
+        "value": ""
+       },
+       {
+        "name": "X-Team",
+        "value": "1"
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withAuth",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "authorization",
+          "value": "k"
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "token"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://mcp.linear.app/mcp",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "token",
+      "headers": [
+       {
+        "name": "authorization",
+        "value": "k"
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withAuth",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "token",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": "k"
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "browser"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://mcp.linear.app/mcp",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "withAuth",
+     "args": [
+      {
+       "kind": "remote",
+       "name": "Linear",
+       "remote": {
+        "url": "https://mcp.linear.app/mcp",
+        "transport": "http",
+        "transportPinned": false,
+        "auth": "browser",
+        "headers": [
+         {
+          "name": "Authorization",
+          "value": ""
+         },
+         {
+          "name": "X",
+          "value": "1"
+         }
+        ]
+       },
+       "local": {
+        "commandLine": "",
+        "env": [
+         {
+          "name": "",
+          "value": ""
+         }
+        ]
+       }
+      },
+      "browser"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "kind": "remote",
+     "name": "Linear",
+     "remote": {
+      "url": "https://mcp.linear.app/mcp",
+      "transport": "http",
+      "transportPinned": false,
+      "auth": "browser",
+      "headers": [
+       {
+        "name": "X",
+        "value": "1"
+       }
+      ]
+     },
+     "local": {
+      "commandLine": "",
+      "env": [
+       {
+        "name": "",
+        "value": ""
+       }
+      ]
+     }
+    },
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "cards_show_status_target_and_tools",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      false,
+      true,
+      "connected"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "muted",
+     "label": "Off",
+     "pending": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      true,
+      true,
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "muted",
+     "label": "Checking…",
+     "pending": true
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      true,
+      false,
+      "connected"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "success",
+     "label": "Connected",
+     "pending": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      true,
+      false,
+      "disconnected"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "danger",
+     "label": "Unreachable",
+     "pending": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      true,
+      false,
+      "authRequired"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "warning",
+     "label": "Needs sign-in",
+     "pending": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "status",
+     "args": [
+      true,
+      false,
+      null
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "tone": "muted",
+     "label": "Not checked",
+     "pending": false
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "target",
+     "args": [
+      {
+       "id": "s1",
+       "type": "stdio",
+       "name": "fs",
+       "command": "npx",
+       "args": [
+        "-y",
+        "@mcp/fs",
+        "my dir"
+       ],
+       "env": [
+        {
+         "name": "ROOT",
+         "value": "/w"
+        }
+       ],
+       "enabled": true
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "npx",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "target",
+     "args": [
+      {
+       "id": "s2",
+       "type": "sse",
+       "name": "Linear",
+       "url": "https://mcp.linear.app/sse",
+       "headers": [
+        {
+         "name": "authorization",
+         "value": "Bearer x"
+        }
+       ],
+       "enabled": false
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "https://mcp.linear.app/sse",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toolCount",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "0 tools",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toolCount",
+     "args": [
+      1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 tool",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "toolCount",
+     "args": [
+      12
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "12 tools",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "catalog_rows_and_sync_say_what_react_says",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "needs-runtime",
+       "runtime": "npx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Install Node.js (npx) on this computer to run it.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "needs-runtime",
+       "runtime": "dotnet"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Install .NET SDK 10 or newer on this computer to run it.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "no-install-options"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "The registry lists only its source code, with no package or hosted URL to install.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unparseable"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Troupe couldn't read this server's registry entry.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "insecure-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL doesn't use https.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "local-network-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL points to a local or private network address.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL isn't a valid web address.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unknown-remote-transport",
+       "transport": "ws"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL uses the \"ws\" transport, which Troupe doesn't support.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "secret-in-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL must carry a secret, and Troupe never stores secrets in URLs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "secret-in-arguments"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its launch arguments must carry a secret, and Troupe never stores secrets in arguments.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "runtime-arguments"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It needs extra options passed to its runtime, which Troupe does not allow.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "runtime-hint-mismatch",
+       "runtimeHint": "bunx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It asks to run with \"bunx\", which doesn't match its package type.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "denied-env",
+       "name": "LD_PRELOAD"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It sets LD_PRELOAD, an environment variable Troupe blocks because it can change what runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-env-name",
+       "name": "1X"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It uses \"1X\", which isn't a valid environment variable name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-registry-type",
+       "registryType": "cargo"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package comes from cargo, which Troupe can't install from.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "non-stdio-transport",
+       "transport": "sse"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package talks over \"sse\". Troupe runs packages over stdio only.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unpinned-version"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package has no fixed version, so Troupe can't pin what it runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-package"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package name or version isn't valid.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-registry",
+       "registry": "example.com"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package is hosted on example.com, which Troupe doesn't download from.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-command"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its command starts with \"-\", so it would be read as an option.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-header-name",
+       "name": "a b"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It sends \"a b\", which isn't a valid HTTP header name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "control-character",
+       "field": "description"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its description holds a control character.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "duplicate-name",
+       "name": "API_KEY"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It lists \"API_KEY\" more than once.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "cmd-metacharacter",
+       "field": "argument"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its argument holds a character Windows reads as a command operator (& | < > ^ % ! \" ( or )).",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-launch-argument",
+       "command": "npx",
+       "argument": "--package"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It passes --package to npx, which Troupe doesn't allow because it can change what runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-runner",
+       "command": "bunx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It runs its package through bunx, which Troupe can't check. Use npx, uvx, docker or dotnet dnx instead.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "installable"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Installable",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "needs-runtime"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Needs a runtime",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "unsupported"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Unsupported",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "source-only"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Source only",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "disabled"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "This is the small sample bundled with this build, not the full registry. Turn on sync to load the full catalog.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "This is the small sample bundled with this build, not the full registry. Sync replaces it with the full catalog.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "disabled"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Sync is off. No catalog request leaves this host.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Up to date.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "syncing",
+        "full": true,
+        "fetched": 12345
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Downloading the full registry… 12,345 servers so far.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "syncing",
+        "full": false,
+        "fetched": 0
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Checking for updates…",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncErrorText",
+     "args": [
+      "FORBIDDEN"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Only the host can change catalog sync.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncErrorText",
+     "args": [
+      "NETWORK_ERROR"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Couldn't change catalog sync. Try again.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "updatedText",
+     "args": []
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "No catalog is loaded yet.",
+    "state": null
+   }
+  ]
+ }
+]

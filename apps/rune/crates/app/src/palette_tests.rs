@@ -202,3 +202,89 @@ fn runs_and_pins_before_the_reads_land_on_top_of_what_was_saved() {
 fn read_value(value: Value, revision: u64) -> Value {
     json!({ "value": { "_version": 1, "data": value }, "revision": revision, "clientInstanceId": null })
 }
+
+fn with_chats(rt: &mut Runtime<State>) {
+    let chat = |id: &str, project: Option<&str>, title: &str, at: f64, extra: Value| {
+        let mut c = json!({ "sessionId": id, "projectId": project, "title": title, "lastActivityAt": at, "createdAt": at });
+        c.as_object_mut().unwrap().extend(extra.as_object().unwrap().clone());
+        c
+    };
+    let list = vec![
+        chat("c-old", Some("p-a"), "Fix the login form", 1.0, json!({})),
+        chat("c-new", Some("p-a"), "Login redirect loops", 5.0, json!({ "modelName": "Opus 4.5" })),
+        chat("c-beta", Some("p-b"), "Login on beta", 9.0, json!({})),
+        chat("c-found", Some("p-a"), "Login found on disk", 8.0, json!({ "discovered": true })),
+        chat("q-1", None, "Login notes", 3.0, json!({ "kind": "quick" })),
+        chat("q-2", None, "Groceries", 4.0, json!({ "kind": "quick" })),
+    ];
+    let list: Vec<model::chats::Chat> = list.into_iter().map(|c| serde_json::from_value(c).unwrap()).collect();
+    rt.update_if(move |s, _| {
+        s.select_project("p-a");
+        s.chats.replace(list.clone());
+        true
+    });
+    rt.frame(0.016);
+}
+
+fn ids_shown(rt: &Runtime<State>) -> Vec<String> {
+    super::shown(&rt.state).into_iter().map(|(h, r)| format!("{}/{}", h.label(), r.id)).collect()
+}
+
+#[test]
+fn a_query_finds_the_active_projects_chats_and_quick_chats_above_the_commands() {
+    let mut rt = desktop();
+    with_chats(&mut rt);
+    tap(&mut rt, "rail-search");
+    assert!(!ids_shown(&rt).iter().any(|id| id.contains("chat:")), "no chats without a query");
+    typed(&mut rt, "login");
+    let shown = ids_shown(&rt);
+    assert_eq!(
+        shown[..3],
+        ["Chats/chat:c-old", "Chats/chat:c-new", "Quick chats/quick-chat:q-1"],
+        "only this project's own chats, best cmdk score first, then quick chats: {shown:?}"
+    );
+    assert!(!shown.iter().any(|id| id.contains("c-beta") || id.contains("c-found") || id.contains("q-2")));
+    rt.update_if(|s, _| {
+        s.palette.query = rune::TextEdit::new("opus");
+        true
+    });
+    rt.frame(0.016);
+    assert_eq!(ids_shown(&rt).first().map(String::as_str), Some("Chats/chat:c-new"), "the model line is searched too");
+}
+
+#[test]
+fn picking_a_chat_opens_it_and_saves_no_recent_command() {
+    let mut rt = desktop();
+    with_chats(&mut rt);
+    let (_, recent) = open_palette(&mut rt);
+    answer(&mut rt, recent, read_value(json!([]), 0));
+    typed(&mut rt, "redirect");
+    press(&mut rt, Key::Enter);
+    assert!(!rt.state.overlays.is_open(KEY));
+    let tabs: Vec<String> = model::workspace::leaves(rt.state.workspace.root())
+        .into_iter()
+        .flat_map(|leaf| leaf.tabs.iter())
+        .filter_map(|tab| match tab {
+            model::workspace::Tab::AgentChat { session_id, .. } => Some(session_id.clone()),
+            _ => None,
+        })
+        .collect();
+    let deferred = rt.state.chat.open_when_shown.as_ref().map(|(_, session)| session.clone());
+    assert!(tabs.contains(&"c-new".to_owned()) || deferred.as_deref() == Some("c-new"), "{tabs:?} {deferred:?}");
+    assert!(writes(&rt, "settings/recent-commands").is_empty());
+}
+
+#[test]
+fn the_phone_palette_searches_quick_chats_but_not_project_chats() {
+    let mut rt = runtime_at((390.0, 844.0));
+    with_chats(&mut rt);
+    rt.update_if(|s, _| {
+        s.open_palette(true);
+        s.palette.query = rune::TextEdit::new("login");
+        true
+    });
+    rt.frame(0.016);
+    let shown = ids_shown(&rt);
+    assert_eq!(shown.first().map(String::as_str), Some("Quick chats/quick-chat:q-1"), "{shown:?}");
+    assert!(!shown.iter().any(|id| id.starts_with("Chats/")));
+}
