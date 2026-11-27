@@ -123,6 +123,19 @@ describe('MessageScrollerProvider scroll ownership', () => {
 })
 
 describe('MessageScrollerViewport scroll anchor', () => {
+  it('renders no anchor when auto-scroll is off, so the browser cannot follow growth', () => {
+    const view = render(
+      <MessageScrollerProvider autoScroll={false}>
+        <MessageScrollerViewport data-testid="viewport">
+          <MessageScrollerContent />
+        </MessageScrollerViewport>
+      </MessageScrollerProvider>
+    )
+    expect(
+      view.getByTestId('viewport').querySelector('[data-slot="message-scroller-anchor"]')
+    ).toBeNull()
+  })
+
   it('renders the scroll anchor as the last child, after the content', () => {
     const view = render(<Scroller followContent={false} />)
     const viewport = view.getByTestId('viewport')
@@ -209,6 +222,19 @@ describe('MessageScrollerProvider reader intent', () => {
     act(() => {
       viewport.dispatchEvent(touchEvent('touchstart', 100))
       viewport.dispatchEvent(touchEvent('touchmove', 130))
+    })
+    expect(probe.dataset.pinned).toBe('false')
+  })
+
+  it('lets go when a finger drag reverses toward the content top', () => {
+    const { viewport, probe } = renderNearEnd()
+    act(() => {
+      viewport.dispatchEvent(touchEvent('touchstart', 300))
+      viewport.dispatchEvent(touchEvent('touchmove', 250))
+    })
+    expect(probe.dataset.pinned).toBe('true')
+    act(() => {
+      viewport.dispatchEvent(touchEvent('touchmove', 275))
     })
     expect(probe.dataset.pinned).toBe('false')
   })

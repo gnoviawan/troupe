@@ -31,6 +31,8 @@ interface MessageScrollerContextValue {
   /** The current viewport scroll element (for the virtualizer's `getScrollElement`). */
   viewportEl: HTMLDivElement | null
   pinned: boolean
+  /** Whether the list follows its live edge at all; off also drops the scroll anchor. */
+  autoScroll: boolean
   /** The browser's scroll anchoring follows content growth; lists must not write scrollTop for it. */
   anchoring: boolean
   showButton: boolean
@@ -165,6 +167,7 @@ function MessageScrollerProvider({
     const onTouchMove = (event: TouchEvent): void => {
       const y = event.touches[0]?.clientY
       if (touchY !== null && y !== undefined && y > touchY) release()
+      touchY = y ?? null
     }
     viewportEl.addEventListener('wheel', onWheel, { passive: true })
     viewportEl.addEventListener('keydown', onKeyDown)
@@ -210,6 +213,7 @@ function MessageScrollerProvider({
       registerViewport: setViewportEl,
       viewportEl,
       pinned,
+      autoScroll,
       anchoring,
       showButton,
       newCount,
@@ -217,7 +221,7 @@ function MessageScrollerProvider({
       scrollToEnd,
       setEndScroller
     }),
-    [viewportEl, pinned, anchoring, showButton, newCount, scrollToEnd, setEndScroller]
+    [viewportEl, pinned, autoScroll, anchoring, showButton, newCount, scrollToEnd, setEndScroller]
   )
 
   return <MessageScrollerContext.Provider value={value}>{children}</MessageScrollerContext.Provider>
@@ -246,7 +250,7 @@ function MessageScrollerViewport({
   children,
   ...props
 }: React.ComponentProps<'div'>): React.JSX.Element {
-  const { registerViewport } = useMessageScroller()
+  const { registerViewport, autoScroll } = useMessageScroller()
   return (
     <div
       ref={registerViewport}
@@ -258,7 +262,7 @@ function MessageScrollerViewport({
       {...props}
     >
       {children}
-      <MessageScrollerAnchor />
+      {autoScroll && <MessageScrollerAnchor />}
     </div>
   )
 }
