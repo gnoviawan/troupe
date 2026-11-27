@@ -99,6 +99,7 @@ impl Browser {
     }
 
     /// Ask the browser to quit, then kill it if it has not after the grace.
+    #[allow(dead_code, reason = "the browser host's idle timer (R11a PR 3) is the caller")]
     pub async fn close(&self) {
         let _ =
             tokio::time::timeout(CLOSE_GRACE, self.call(CdpMethod::BrowserClose, json!({}))).await;
@@ -113,6 +114,7 @@ impl Browser {
     }
 
     /// True once the process has exited (and was waited for).
+    #[allow(dead_code, reason = "used by close")]
     fn reap(&self) -> bool {
         let mut child = self.child.lock();
         match child.as_mut().map(Child::try_wait) {
