@@ -45,7 +45,7 @@ pub enum AutoFetch {
     },
     Act(Act),
     /// A draft's dry run, save, head read or position write (`automation_editor`).
-    Edit(crate::automation_editor::EditFetch),
+    Edit(String, crate::automation_editor::EditFetch),
 }
 
 /// A button's call, as `AutomationDetail`'s `act` names it.
@@ -453,7 +453,7 @@ impl State {
                 }
             }
             AutoFetch::Act(act) => self.automation_acted(act, result),
-            AutoFetch::Edit(edit) => self.automation_edit_replied(edit, result),
+            AutoFetch::Edit(id, edit) => self.automation_edit_replied(id, edit, result),
         }
     }
 

@@ -387,3 +387,159 @@ fn a_cancelled_delete_forgets_its_automation() {
         "nothing is deleted after a cancel"
     );
 }
+
+/// The detail the editor opens on: a condition with no right operand and an HTTP step with an
+/// empty body, the shapes an untouched inspector must keep.
+fn tricky_host(method: &str, path: &str) -> Value {
+    match (method, path) {
+        ("GET", "/api/automations/a1") => {
+            let mut a = automation("a1", "Digest");
+            let nodes = a["graph"]["nodes"].as_array_mut().expect("nodes");
+            for node in nodes {
+                match node["id"].as_str() {
+                    Some("check") => node["spec"]["right"] = Value::Null,
+                    Some("post") => node["spec"]["body"] = json!(""),
+                    _ => {}
+                }
+            }
+            detail(&a)
+        }
+        _ => editor_host(method, path),
+    }
+}
+
+#[test]
+fn inspecting_every_card_without_typing_makes_no_edit() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &tricky_host);
+    s.automation_edit();
+    let ids: Vec<String> = std::iter::once("trigger".to_owned())
+        .chain(
+            s.automations
+                .editor
+                .as_ref()
+                .unwrap()
+                .draft
+                .doc
+                .graph
+                .nodes
+                .iter()
+                .map(|n| n.id.clone()),
+        )
+        .collect();
+    for id in ids {
+        s.automation_inspect(Some(id.clone()));
+        s.automation_commit_fields();
+        assert!(
+            !s.automations.editor.as_ref().unwrap().draft.dirty(),
+            "inspecting {id} made an edit"
+        );
+    }
+}
+
+#[test]
+fn exists_drops_the_right_operand_as_react_does() {
+    use model::automations::{ConditionOp, NodeSpec};
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    s.automation_inspect(Some("check".into()));
+    s.automation_set_spec("check", |spec| {
+        crate::automation_fields::set_op(spec, ConditionOp::Exists)
+    });
+    let node = s
+        .automations
+        .editor
+        .as_ref()
+        .unwrap()
+        .draft
+        .doc
+        .graph
+        .node("check")
+        .unwrap()
+        .clone();
+    assert!(
+        matches!(
+            node.spec,
+            NodeSpec::Condition {
+                op: ConditionOp::Exists,
+                right: None,
+                ..
+            }
+        ),
+        "{:?}",
+        node.spec
+    );
+    s.automation_set_spec("check", |spec| {
+        crate::automation_fields::set_op(spec, ConditionOp::Eq)
+    });
+    let node = s
+        .automations
+        .editor
+        .as_ref()
+        .unwrap()
+        .draft
+        .doc
+        .graph
+        .node("check")
+        .unwrap()
+        .clone();
+    assert!(matches!(node.spec, NodeSpec::Condition { right: Some(ref r), .. } if r.is_empty()));
+}
+
+#[test]
+fn a_refused_position_write_keeps_the_saved_revision() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    let base = s.automations.editor.as_ref().unwrap().draft.base.revision;
+    s.automation_add(model::automations::NodeKind::Wait);
+    s.automation_save();
+    let refusing = |method: &str, path: &str| match (method, path) {
+        ("POST", "/api/automations/a1/layout") => Value::Null,
+        _ => editor_host(method, path),
+    };
+    answer_all(&mut s, &refusing);
+    let editor = s.automations.editor.as_ref().unwrap();
+    assert_eq!(
+        editor.draft.base.revision,
+        base + 1,
+        "the draft sits on the saved head"
+    );
+    assert_eq!(
+        editor.draft.pending.len(),
+        1,
+        "the positions wait for the next Save"
+    );
+    assert!(editor.draft.pending[0].ops.is_empty());
+}
+
+#[test]
+fn a_late_reply_for_another_automations_editor_is_dropped() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    s.automation_add(model::automations::NodeKind::Wait);
+    s.automation_save();
+    let late = std::mem::take(&mut s.automations.unsent);
+    // The user leaves A's editor and opens B's before A's Save answers.
+    s.automations.editor = None;
+    s.automations.editing = None;
+    s.automation_select(Some("a2".into()));
+    s.automations_tick(2.0);
+    answer_all(&mut s, &host);
+    s.automation_edit();
+    let before = s.automations.editor.as_ref().unwrap().draft.base.clone();
+    for (tag, _) in late {
+        s.automation_replied(tag, Ok(editor_host("POST", "/api/automations/a1/ops")));
+    }
+    let editor = s.automations.editor.as_ref().unwrap();
+    assert_eq!(
+        editor.draft.base, before,
+        "A's reply did not touch B's draft"
+    );
+    assert!(
+        s.automations.unsent.is_empty(),
+        "nothing was written on B's behalf"
+    );
+}

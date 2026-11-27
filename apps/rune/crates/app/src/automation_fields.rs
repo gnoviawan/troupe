@@ -37,7 +37,7 @@ pub(crate) fn fields_of(draft: &Draft, id: &str) -> Fields {
         match &draft.doc.trigger {
             Trigger::Schedule {
                 schedule: Schedule::Every { every_ms, .. },
-            } => set(&mut f.a, &ms_text(*every_ms as u64, 60_000.0)),
+            } => set(&mut f.a, &ms_text(*every_ms, 60_000.0)),
             Trigger::Schedule {
                 schedule: Schedule::Cron { expr, timezone },
             } => {
@@ -128,7 +128,7 @@ pub(crate) fn spec_from(spec: &NodeSpec, f: &Fields) -> NodeSpec {
                 .filter(|h| !h.is_empty())
                 .map(str::to_owned)
                 .collect();
-            *body = (!c.is_empty()).then_some(c);
+            *body = optional(body.as_deref(), c);
         }
         NodeSpec::Agent {
             agent_id,
@@ -138,11 +138,25 @@ pub(crate) fn spec_from(spec: &NodeSpec, f: &Fields) -> NodeSpec {
         } => {
             *agent_id = a;
             *prompt = b;
-            *model = (!c.trim().is_empty()).then_some(c);
+            *model = if c == model.as_deref().unwrap_or_default() {
+                model.clone()
+            } else if c.trim().is_empty() {
+                None
+            } else {
+                Some(c)
+            };
         }
-        NodeSpec::Condition { left, right, .. } => {
+        NodeSpec::Condition { left, op, right } => {
             *left = a;
-            *right = Some(b);
+            // `exists` takes no right operand (`node-forms.tsx`); the others keep what they had
+            // until the field changes.
+            *right = if *op == ConditionOp::Exists {
+                None
+            } else if b == right.as_deref().unwrap_or_default() {
+                right.clone()
+            } else {
+                Some(b)
+            };
         }
         NodeSpec::Fail { message } => *message = a,
         NodeSpec::ForEach {
@@ -171,13 +185,23 @@ pub(crate) fn spec_from(spec: &NodeSpec, f: &Fields) -> NodeSpec {
     spec
 }
 
+/// An optional text field read back: the old value while the text still shows it (so
+/// `null` and `""` both survive an untouched field), else the text, `None` when empty.
+fn optional(old: Option<&str>, text: String) -> Option<String> {
+    if text == old.unwrap_or_default() {
+        old.map(str::to_owned)
+    } else {
+        (!text.is_empty()).then_some(text)
+    }
+}
+
 /// The trigger kinds the trigger inspector switches between.
 pub fn trigger_of(kind: &str) -> Trigger {
     match kind {
         "every" => Trigger::Schedule {
             schedule: Schedule::Every {
-                every_ms: 3_600_000.0,
-                anchor_ms: 0.0,
+                every_ms: 3_600_000,
+                anchor_ms: 0,
             },
         },
         "cron" => Trigger::Schedule {
@@ -196,9 +220,15 @@ pub fn set_method(spec: &mut NodeSpec, to: HttpMethod) {
     }
 }
 
+/// `exists` takes no right operand; the others need one (`node-forms.tsx`).
 pub fn set_op(spec: &mut NodeSpec, to: ConditionOp) {
-    if let NodeSpec::Condition { op, .. } = spec {
+    if let NodeSpec::Condition { op, right, .. } = spec {
         *op = to;
+        *right = if to == ConditionOp::Exists {
+            None
+        } else {
+            Some(right.take().unwrap_or_default())
+        };
     }
 }
 

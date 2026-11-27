@@ -39,8 +39,11 @@ pub enum EditFetch {
     Head {
         then: AfterHead,
     },
+    /// `saved` is the automation `apply_ops` returned: a refused position write still
+    /// leaves the draft on it, as `use-draft.ts` does.
     Layout {
         changed: LayoutPatch,
+        saved: Box<Automation>,
     },
     Approve,
 }
@@ -277,7 +280,8 @@ impl State {
                         let minutes = editor.fields.a.text.trim().parse::<f64>().ok();
                         Trigger::Schedule {
                             schedule: Schedule::Every {
-                                every_ms: minutes.map_or(*every_ms, |m| (m * 60_000.0).round()),
+                                every_ms: minutes
+                                    .map_or(*every_ms, |m| (m * 60_000.0).round() as u64),
                                 anchor_ms: *anchor_ms,
                             },
                         }
@@ -459,10 +463,7 @@ impl State {
             base_revision: base.revision,
             ops,
         };
-        self.automation_send(
-            call,
-            AutoFetch::Edit(EditFetch::Preview { pending_rev: rev }),
-        );
+        self.edit_send(call, EditFetch::Preview { pending_rev: rev });
         None
     }
 
@@ -478,20 +479,20 @@ impl State {
         let base = editor.draft.base.clone();
         let ops = editor.draft.pending_ops();
         if ops.is_empty() {
-            self.automation_send(
+            self.edit_send(
                 Call::Get { id: base.id },
-                AutoFetch::Edit(EditFetch::Head {
+                EditFetch::Head {
                     then: AfterHead::SaveLayout,
-                }),
+                },
             );
         } else {
-            self.automation_send(
+            self.edit_send(
                 Call::ApplyOps {
                     id: base.id,
                     base_revision: base.revision,
                     ops,
                 },
-                AutoFetch::Edit(EditFetch::Save),
+                EditFetch::Save,
             );
         }
     }
@@ -502,10 +503,7 @@ impl State {
         };
         editor.approving = true;
         let (id, revision) = (editor.draft.base.id.clone(), editor.draft.base.revision);
-        self.automation_send(
-            Call::Approve { id, revision },
-            AutoFetch::Edit(EditFetch::Approve),
-        );
+        self.edit_send(Call::Approve { id, revision }, EditFetch::Approve);
     }
 
     /// The positions this draft moved, onto `head`'s layout.
@@ -519,12 +517,15 @@ impl State {
             return;
         }
         let layout = draft::patch_layout(&head.layout, &changed);
-        self.automation_send(
+        self.edit_send(
             Call::SetLayout {
                 id: head.id.clone(),
                 layout,
             },
-            AutoFetch::Edit(EditFetch::Layout { changed }),
+            EditFetch::Layout {
+                changed,
+                saved: Box::new(head.clone()),
+            },
         );
     }
 
@@ -552,20 +553,42 @@ impl State {
             return;
         };
         let id = editor.draft.base.id.clone();
-        self.automation_send(
+        self.edit_send(
             Call::Get { id },
-            AutoFetch::Edit(EditFetch::Head {
+            EditFetch::Head {
                 then: AfterHead::Rebase,
-            }),
+            },
         );
     }
 
+    /// Sends a call for the open editor's automation; its reply names that automation.
+    fn edit_send(&mut self, call: Call, fetch: EditFetch) {
+        let Some(id) = self
+            .automations
+            .editor
+            .as_ref()
+            .map(|e| e.draft.base.id.clone())
+        else {
+            return;
+        };
+        self.automation_send(call, AutoFetch::Edit(id, fetch));
+    }
+
+    /// A reply for the editor of automation `id`; one for an editor since closed or opened on
+    /// another automation is dropped, so it cannot rebase or save into that one.
     pub(crate) fn automation_edit_replied(
         &mut self,
+        id: String,
         tag: EditFetch,
         result: Result<Value, HttpError>,
     ) {
-        if self.automations.editor.is_none() {
+        let open = self
+            .automations
+            .editor
+            .as_ref()
+            .map(|e| e.draft.base.id.as_str());
+        if open != Some(id.as_str()) {
+            log::info!("[automations] dropped a {tag:?} reply for {id}: its editor is gone");
             return;
         }
         match tag {
@@ -668,20 +691,15 @@ impl State {
                     }
                 }
             }
-            EditFetch::Layout { changed } => match decode::<Automation>("set_layout", result) {
-                Ok(automation) => self.edit_saved(automation, None),
-                Err(e) => {
-                    self.toast_error(&format!("Saved, but the positions were not: {e}"), "");
-                    let base = self
-                        .automations
-                        .editor
-                        .as_ref()
-                        .map(|e| e.draft.base.clone());
-                    if let Some(base) = base {
-                        self.edit_saved(base, Some(changed));
+            EditFetch::Layout { changed, saved } => {
+                match decode::<Automation>("set_layout", result) {
+                    Ok(automation) => self.edit_saved(automation, None),
+                    Err(e) => {
+                        self.toast_error(&format!("Saved, but the positions were not: {e}"), "");
+                        self.edit_saved(*saved, Some(changed));
                     }
                 }
-            },
+            }
             EditFetch::Approve => {
                 if let Some(editor) = self.automations.editor.as_mut() {
                     editor.approving = false;
