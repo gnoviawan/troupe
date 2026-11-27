@@ -207,6 +207,7 @@ export function McpCatalogBrowser(): React.JSX.Element {
   return (
     <SettingsGroup
       title="From the catalog"
+      layout="stacked"
       meta={results ? <span aria-live="polite">{summary(results)}</span> : undefined}
       footnote={block && <span id={hintId}>{MCP_INSTALL_BLOCK_TEXT[block]}</span>}
     >

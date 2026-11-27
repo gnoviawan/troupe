@@ -51,7 +51,7 @@ function TextGroup(): React.JSX.Element {
   const updateSetting = useUpdateAppSetting()
   const fontSize = useTerminalFontSize()
   return (
-    <SettingsGroup title="Text">
+    <SettingsGroup title="Text" description="Font size and live preview for terminal tabs.">
       <SettingsCard>
         <SettingsRow
           id={rowId('terminal-font-size')}
@@ -126,7 +126,7 @@ function NewTerminalsGroup(): React.JSX.Element {
   }
 
   return (
-    <SettingsGroup title="New terminals">
+    <SettingsGroup title="New terminals" description="Default shell and accessibility behavior.">
       <SettingsCard>
         <SettingsRow
           id={rowId('default-shell')}
@@ -194,7 +194,11 @@ function AdvancedGroup(): React.JSX.Element {
   }
 
   return (
-    <SettingsDisclosure title="Advanced" summary={summary}>
+    <SettingsDisclosure
+      title="Advanced"
+      description="Renderer, scrollback history, and command completions."
+      summary={summary}
+    >
       <SettingsRow
         id={rowId('terminal-renderer')}
         htmlFor="terminal-renderer"

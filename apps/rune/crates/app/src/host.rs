@@ -31,6 +31,8 @@ pub enum Fetch {
     Git(model::git::TaskId),
     /// A history read (`/git/log`, `/git/commit-detail`, `/git/commit-file-diff`).
     History(crate::git_history::HistoryFetch),
+    /// A `githubApi` call of a `model::github` task.
+    Github(model::github::TaskId),
     /// A settings route (`/host/agent-idle-window`).
     Settings(crate::settings::IdleFetch),
     /// `/shells`: the shells the host found.
@@ -45,6 +47,8 @@ pub enum Fetch {
     McpPoll(String),
     /// A Report a Bug collect or submit (`/log/*`).
     BugReport(crate::bug_report::Step),
+    /// A catalog read on the MCP servers page.
+    Catalog(crate::mcp_catalog::CatalogFetch),
 }
 
 pub type Fetched = (Fetch, Result<Value, HttpError>);

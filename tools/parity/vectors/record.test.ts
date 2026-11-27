@@ -194,6 +194,16 @@ vi.mock(`${lib}/git-api`, async (importOriginal) => {
     realGitApi: actual.gitApi
   }
 })
+// The GitHub store's host calls answer the vector's `context.github` queue.
+vi.mock(`${lib}/github-api`, async (importOriginal) => {
+  const { githubCall, GITHUB_OPS } = await import('./stores/github-mock')
+  // `realGithubApi` is the web client's own facade, for the route vectors.
+  const actual = await importOriginal<{ githubApi: object }>()
+  return {
+    githubApi: Object.fromEntries(GITHUB_OPS.map((op) => [op, githubCall(op)])),
+    realGithubApi: actual.githubApi
+  }
+})
 vi.mock(`${lib}/worktree-reconciler`, async (importOriginal) => ({
   ...(await importOriginal<object>()),
   reconcileWorktreeOwnerOf: (cwd: string) => {
@@ -229,6 +239,11 @@ const { gitRoutesRecorder, gitRoutesScenarios } = await import('./stores/git-rou
 const { appSettingsRecorder, appSettingsScenarios } = await import('./stores/app-settings')
 const { settingsRoutesRecorder, settingsRoutesScenarios } = await import('./stores/settings-routes')
 const { paletteRecorder, paletteScenarios } = await import('./stores/palette')
+const { githubRecorder, githubScenarios, githubRoutesRecorder, githubRoutesScenarios } =
+  await import('./stores/github')
+const { realGithubApi } = (await import(`${lib}/github-api`)) as unknown as {
+  realGithubApi: Record<string, (...args: unknown[]) => unknown>
+}
 const { terminalProfilesRecorder, terminalProfilesScenarios } = await import(
   './stores/terminal-profiles'
 )
@@ -260,7 +275,9 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [mcpServersRecorder, mcpServersScenarios],
   [snapshotsRecorder, snapshotsScenarios],
   [setupRecorder, setupScenarios],
-  [bugReportRecorder, bugReportScenarios]
+  [bugReportRecorder, bugReportScenarios],
+  [githubRecorder, githubScenarios],
+  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'

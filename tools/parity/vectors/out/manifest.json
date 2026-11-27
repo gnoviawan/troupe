@@ -244,7 +244,8 @@
       "sources": {
         "src/renderer/lib/acp-mcp-persistence.ts": "bed8fcce03497836ea8c5d4ad6bfcb815fe70ec0",
         "src/renderer/lib/mcp-server-draft.ts": "2aa122699a92f39b69b4823481d8972177d7f6ce",
-        "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9"
+        "src/renderer/components/settings/mcp-server-view.ts": "ec9facf5f655b71f2b8a9e6c2af42d1af7c311d9",
+        "src/renderer/lib/mcp-catalog-copy.ts": "6b08decdad83daa9a080f337ee749dfe44ef8d35"
       },
       "vectors": [
         "the_registry_keeps_valid_entries",
@@ -253,7 +254,8 @@
         "drafts_become_servers_or_name_their_errors",
         "servers_open_as_drafts",
         "url_and_sign_in_edits",
-        "cards_show_status_target_and_tools"
+        "cards_show_status_target_and_tools",
+        "catalog_rows_and_sync_say_what_react_says"
       ]
     },
     "snapshots": {
@@ -276,7 +278,7 @@
     },
     "setup": {
       "sources": {
-        "src/renderer/components/setup/ServerSetupWizard.tsx": "4de432a72d3fbaccd7d2023499e9f55eaa3b2537",
+        "src/renderer/components/setup/ServerSetupWizard.tsx": "7f14e767f4142adf39fd6dd7b682f52965b26c15",
         "src/renderer/components/setup/RestartingScreen.tsx": "c29ea8d317062a740a68918ada4172b3b9221258",
         "src/renderer/components/onboarding/onboarding-gate.ts": "7440f31af72b763d5e4de10e8cdec6aa4d297ba9",
         "src/renderer/components/onboarding/land-onboarding.ts": "c85cf73b73c42056b73daaaebc30f7bce1fea5b9"
@@ -295,6 +297,29 @@
       "vectors": [
         "the_markdown_is_what_the_dialog_previews_and_sends",
         "the_fallback_url_carries_the_body_or_the_short_one"
+      ]
+    },
+    "github": {
+      "sources": {
+        "src/renderer/stores/github-store.ts": "54ff83e5eef923c52ffc7371c34782bb8c984eab"
+      },
+      "vectors": [
+        "context, filter and list",
+        "every filter field keys its own list",
+        "a slower older read never overwrites a newer one",
+        "item, checks, log and repository meta",
+        "merge re-reads checks, list and item",
+        "comments show before the re-read",
+        "label create, edit and state writes"
+      ]
+    },
+    "github-routes": {
+      "sources": {
+        "src/renderer/lib/github-api.ts": "a934ceba3f6af82012c9703725e84bfb5d401bd7"
+      },
+      "vectors": [
+        "reads",
+        "writes"
       ]
     }
   }

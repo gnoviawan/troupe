@@ -2219,5 +2219,671 @@
     "state": null
    }
   ]
+ },
+ {
+  "store": "mcp-servers",
+  "name": "catalog_rows_and_sync_say_what_react_says",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "needs-runtime",
+       "runtime": "npx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Install Node.js (npx) on this computer to run it.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "needs-runtime",
+       "runtime": "dotnet"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Install .NET SDK 10 or newer on this computer to run it.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "no-install-options"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "The registry lists only its source code, with no package or hosted URL to install.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unparseable"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Troupe couldn't read this server's registry entry.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "insecure-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL doesn't use https.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "local-network-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL points to a local or private network address.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL isn't a valid web address.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unknown-remote-transport",
+       "transport": "ws"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL uses the \"ws\" transport, which Troupe doesn't support.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "secret-in-url"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its hosted URL must carry a secret, and Troupe never stores secrets in URLs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "secret-in-arguments"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its launch arguments must carry a secret, and Troupe never stores secrets in arguments.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "runtime-arguments"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It needs extra options passed to its runtime, which Troupe does not allow.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "runtime-hint-mismatch",
+       "runtimeHint": "bunx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It asks to run with \"bunx\", which doesn't match its package type.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "denied-env",
+       "name": "LD_PRELOAD"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It sets LD_PRELOAD, an environment variable Troupe blocks because it can change what runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-env-name",
+       "name": "1X"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It uses \"1X\", which isn't a valid environment variable name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-registry-type",
+       "registryType": "cargo"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package comes from cargo, which Troupe can't install from.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "non-stdio-transport",
+       "transport": "sse"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package talks over \"sse\". Troupe runs packages over stdio only.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unpinned-version"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package has no fixed version, so Troupe can't pin what it runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-package"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package name or version isn't valid.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-registry",
+       "registry": "example.com"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its package is hosted on example.com, which Troupe doesn't download from.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-command"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its command starts with \"-\", so it would be read as an option.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "invalid-header-name",
+       "name": "a b"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It sends \"a b\", which isn't a valid HTTP header name.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "control-character",
+       "field": "description"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its description holds a control character.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "duplicate-name",
+       "name": "API_KEY"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It lists \"API_KEY\" more than once.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "cmd-metacharacter",
+       "field": "argument"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Its argument holds a character Windows reads as a command operator (& | < > ^ % ! \" ( or )).",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-launch-argument",
+       "command": "npx",
+       "argument": "--package"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It passes --package to npx, which Troupe doesn't allow because it can change what runs.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "reasonText",
+     "args": [
+      {
+       "code": "unsupported-runner",
+       "command": "bunx"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "It runs its package through bunx, which Troupe can't check. Use npx, uvx, docker or dotnet dnx instead.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "installable"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Installable",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "needs-runtime"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Needs a runtime",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "unsupported"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Unsupported",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stateLabel",
+     "args": [
+      "source-only"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Source only",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "disabled"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "This is the small sample bundled with this build, not the full registry. Turn on sync to load the full catalog.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "sampleText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "This is the small sample bundled with this build, not the full registry. Sync replaces it with the full catalog.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "disabled"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Sync is off. No catalog request leaves this host.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Up to date.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": true,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "idle"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "syncing",
+        "full": true,
+        "fetched": 12345
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Downloading the full registry… 12,345 servers so far.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncText",
+     "args": [
+      {
+       "sample": false,
+       "updatedAt": null,
+       "servers": 0,
+       "sync": {
+        "state": "syncing",
+        "full": false,
+        "fetched": 0
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Checking for updates…",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncErrorText",
+     "args": [
+      "FORBIDDEN"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Only the host can change catalog sync.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "syncErrorText",
+     "args": [
+      "NETWORK_ERROR"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Couldn't change catalog sync. Try again.",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "updatedText",
+     "args": []
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "No catalog is loaded yet.",
+    "state": null
+   }
+  ]
  }
 ]

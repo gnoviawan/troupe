@@ -33,7 +33,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
         return root.child(not_found(t, path));
     }
     let root = if phone {
-        let main = if s.route == Route::Snapshots { crate::snapshots_view::page(s, t, true) } else { workspace_main(s, t) };
+        let main = if s.route == Route::Snapshots { crate::snapshots_view::page(s, t, true) } else { workspace_main(s, t, &mut layer) };
         root.child(crate::phone::frame(s, t, main))
     } else {
         root.children(desktop_frame(s, t, cx, &mut layer))
@@ -206,6 +206,7 @@ fn main_area(
                 .or_else(|| crate::git_history_view::tab_body(s, t, tab, &mut menus.borrow_mut()))
                 .or_else(|| crate::chat_view::tab_body(s, t, tab, ui::composer::view::Place::Chat))
                 .or_else(|| crate::git_diff::tab_body(s, t, tab))
+                .or_else(|| crate::github_item_view::tab_body(s, t, tab, false, &mut menus.borrow_mut()))
                 .or_else(|| editor_body(s, t, tab))
         };
         let slots = ui::workspace::Slots {
@@ -319,7 +320,7 @@ fn side_panel(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
             (actions, ui::explorer::view(s, explorer_host::get, explorer_host::lens, t, explorer_host::hooks()))
         }
         Tab::Changes => (crate::git_view::header_actions(s, t, layer), crate::git_view::changes_panel(s, t, false)),
-        _ => (Vec::new(), shell::panel_skeleton(t).key(format!("side-panel-{}", tab.label().to_lowercase()))),
+        Tab::Github => (Vec::new(), crate::github_view::panel(s, t, false, layer)),
     };
     actions.push(close);
     col()
@@ -424,7 +425,13 @@ fn active_phone_tab(s: &State) -> Option<&model::workspace::Tab> {
         .find(|tab| Some(tab.id()) == leaf.active_tab_id.as_deref())
 }
 
-fn workspace_main(s: &State, t: &'static Tokens) -> El {
+fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
+    // An issue or PR the GitHub sheet opened.
+    if let Some(tab @ model::workspace::Tab::GithubItem { .. }) = active_phone_tab(s)
+        && let Some(body) = crate::github_item_view::tab_body(s, t, tab, true, layer)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
     if let Some(tab @ model::workspace::Tab::Terminal { terminal_id, .. }) = active_phone_tab(s)
         && let Some(body) = crate::terminal_view::tab_body(s, t, tab, true)
     {
