@@ -245,6 +245,6 @@ impl portable_pty::Child for WindowsConPtyChild {
     }
 
     fn as_raw_handle(&self) -> Option<*mut std::ffi::c_void> {
-        Some(self.process_handle as *mut std::ffi::c_void)
+        Some(self.process_handle)
     }
 }

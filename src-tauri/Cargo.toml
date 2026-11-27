@@ -163,6 +163,9 @@ figcraft-mcp = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0
 # a `ui.key` call as the command its key runs (`acp/host_mcp/canvas_policy.rs`).
 # Same tag as figcraft-mcp; a test checks the lock holds one figcraft-engine.
 figcraft-engine = { git = "https://github.com/gnoviawan/figcraft", tag = "termul-v0.6.0" }
+# Troupe Comu local Computer Use engine (MIT crates extracted from trycua/cua).
+# Pinned by `troupe-*` release tag, checked by `scripts/comu/check-comu-pin.mjs`.
+troupe-comu-engine = { git = "https://github.com/naddrzz/troupe-comu", tag = "troupe-v0.1.0" }
 # OAuth2 — needed for the `TokenResponse` trait used by the MCP OAuth flow
 # (rmcp's `auth` feature pulls this transitively, but we use it directly).
 oauth2 = "5.0"

@@ -33,6 +33,7 @@ use crate::web::EventSink;
 mod ask;
 mod automation;
 mod canvas;
+mod comu;
 mod mcp_install;
 mod read_chat;
 mod subagents;
@@ -351,6 +352,7 @@ impl HostPlanServer {
         }
         drop(active_turns);
         self.presence.hide(real_session_id);
+        crate::comu::turn_ended(real_session_id);
         log::debug!(
             "[host-mcp] removed active plan route for session {} (agent {})",
             crate::logging::redact_session_id(real_session_id),
@@ -414,6 +416,9 @@ impl HostPlanServer {
         // Close agent-controlled browser tabs + drop the consent grant. The
         // host no-ops when no browser feature was used by this session.
         crate::browser_automation::session_ended(real_session_id);
+        if keep_token.is_none() {
+            crate::comu::session_ended(real_session_id);
+        }
     }
 
     /// Test seam: the tokens currently bound to `real_session_id`.
@@ -451,14 +456,16 @@ impl HostPlanServer {
         }
     }
 
-    /// `agent_id`'s display name, shown on its sessions' canvas cursors.
+    /// `agent_id`'s display name, shown on its sessions' canvas and Comu cursors.
     pub fn name_agent(&self, agent_id: &str, name: &str) {
         self.presence.name_agent(agent_id, name);
+        crate::comu::name_agent(agent_id, name);
     }
 
-    /// `agent_id` exited; presence forgets its name.
+    /// `agent_id` exited; presence and Comu forget its name.
     pub fn forget_agent(&self, agent_id: &str) {
         self.presence.forget_agent(agent_id);
+        crate::comu::forget_agent(agent_id);
     }
 
     /// The canvas router: renderers report mounts and replies to it.
@@ -558,6 +565,9 @@ impl HostPlanServer {
 
         if req.kind == FrameKind::Describe {
             return describe_reply();
+        }
+        if req.kind == FrameKind::DescribeComu {
+            return comu::describe_comu_reply();
         }
 
         // The real session_id must be bound (post `session/new`). If not, the
@@ -677,6 +687,17 @@ impl HostPlanServer {
                 }
             }
             FrameKind::Describe => describe_reply(),
+            FrameKind::DescribeComu => comu::describe_comu_reply(),
+            FrameKind::Comu => {
+                self.comu_call(
+                    &real_session_id,
+                    &auth.agent_id,
+                    req.comu_tool,
+                    req.comu_input,
+                    hung_up,
+                )
+                .await
+            }
             FrameKind::Canvas => {
                 self.canvas_call(
                     &real_session_id,
