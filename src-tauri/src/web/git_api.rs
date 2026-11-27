@@ -245,8 +245,27 @@ pub(super) fn cwd_string<T>(resolved: &std::path::Path) -> Result<String, RouteE
 
 /// `FORBIDDEN` when `path` under `cwd` is a host credential or a directory
 /// holding one (`web::host_secrets`): a diff would print it, and staging it
-/// would let a commit and push carry it off the host.
-fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
+/// would let a commit and push carry it off the host. A `..`, root or drive
+/// component is refused first (`PATH_TRAVERSAL`): git resolves `..` even
+/// where the filesystem cannot (`missing/../host-local.token`), so the
+/// secrets check could not see where such a path lands.
+pub(super) fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
+    use std::path::Component;
+    if Path::new(path).components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
+        tracing::warn!("[Security] a git route refused a path leaving the repository");
+        return Some((
+            StatusCode::OK,
+            Json(IpcBody::<T>::err(
+                "the path must be relative to the repository, without '..'",
+                "PATH_TRAVERSAL",
+            )),
+        ));
+    }
     if !crate::web::host_secrets::exposed(&Path::new(cwd).join(path)) {
         return None;
     }
@@ -682,8 +701,17 @@ pub async fn stash_save(
         let work_tree = tokio::task::spawn_blocking(move || git_work_tree(&probe))
             .await
             .ok()
-            .flatten()
-            .unwrap_or_else(|| cwd.clone());
+            .flatten();
+        let Some(work_tree) = work_tree else {
+            tracing::warn!("[Security] stash -u refused: the work tree could not be found");
+            return (
+                StatusCode::OK,
+                Json(IpcBody::<()>::err(
+                    "cannot tell which work tree a stash with untracked files would move",
+                    "FORBIDDEN",
+                )),
+            );
+        };
         if let Some(refused) = host_secret_refusal::<()>(&work_tree, "") {
             return refused;
         }
