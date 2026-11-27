@@ -76,6 +76,8 @@ interface BrowserControlsProps {
   ) => Promise<boolean> | boolean
 }
 
+const visibleCapturesInFlight = new Set<string>()
+
 function logControlError(action: string, error: unknown): void {
   void logFrontendError({
     level: 'warn',
@@ -306,19 +308,21 @@ export function BrowserControls({
   )
 
   const handleCaptureVisible = useCallback(async () => {
-    setScreenshotOpen(false)
-    await waitForOcclusionClear()
-    const wasAnnotating =
-      useBrowserSessionStore.getState().getTab(browserTabId)?.annotateMode === true
-    if (wasAnnotating) {
-      await browserTabAnnotationCmd(browserTabId, { type: 'set_capture_hidden', hidden: true })
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve())
-        })
-      })
-    }
+    if (visibleCapturesInFlight.has(browserTabId)) return
+    visibleCapturesInFlight.add(browserTabId)
+    let wasAnnotating = false
     try {
+      setScreenshotOpen(false)
+      await waitForOcclusionClear()
+      wasAnnotating = useBrowserSessionStore.getState().getTab(browserTabId)?.annotateMode === true
+      if (wasAnnotating) {
+        await browserTabAnnotationCmd(browserTabId, { type: 'set_capture_hidden', hidden: true })
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => resolve())
+          })
+        })
+      }
       const res = await browserTabScreenshot(browserTabId)
       if (!res.success) {
         toast.error(res.error || 'Could not capture screenshot.')
@@ -336,6 +340,7 @@ export function BrowserControls({
       if (wasAnnotating) {
         void browserTabAnnotationCmd(browserTabId, { type: 'set_capture_hidden', hidden: false })
       }
+      visibleCapturesInFlight.delete(browserTabId)
     }
   }, [browserTabId, markScreenshotCopied])
 

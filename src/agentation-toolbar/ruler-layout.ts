@@ -81,7 +81,7 @@ export function computeGuideBadgeLayout(
   // vertically into the column with the lowest occupied bottom edge instead of clamping onto
   // an already-occupied position.
   const horizontals = guides.filter((g) => g.axis === 'horizontal').sort((a, b) => a.pos - b.pos)
-  const columns: Array<{ left: number; bottomEdge: number }> = []
+  const columns: Array<{ left: number; rightEdge: number; bottomEdge: number }> = []
   for (const guide of horizontals) {
     const text = formatGuideBadgeText(guide)
     const width = estimateBadgeWidth(text)
@@ -97,18 +97,22 @@ export function computeGuideBadgeLayout(
     if (chosenCol !== -1) {
       left = columns[chosenCol].left
       top = desiredTop
+      columns[chosenCol].rightEdge = Math.max(columns[chosenCol].rightEdge, left + width)
       columns[chosenCol].bottomEdge = top
     } else {
-      const nextLeft = HORIZONTAL_BASE_LEFT_PX + columns.length * HORIZONTAL_LANE_STEP_PX
-      const canAddColumn =
-        columns.length === 0 ||
-        (nextLeft <= maxLeft &&
-          nextLeft >= columns[columns.length - 1].left + BADGE_MIN_WIDTH_PX + BADGE_LANE_GAP_PX)
+      const nextLeft =
+        columns.length === 0
+          ? HORIZONTAL_BASE_LEFT_PX
+          : Math.max(
+              HORIZONTAL_BASE_LEFT_PX + columns.length * HORIZONTAL_LANE_STEP_PX,
+              columns[columns.length - 1].rightEdge + BADGE_LANE_GAP_PX
+            )
+      const canAddColumn = columns.length === 0 || nextLeft <= maxLeft
 
       if (canAddColumn) {
         left = Math.min(maxLeft, nextLeft)
         top = desiredTop
-        columns.push({ left, bottomEdge: top })
+        columns.push({ left, rightEdge: left + width, bottomEdge: top })
       } else {
         // Overflow: reflow into the existing column with the lowest occupied bottom edge
         chosenCol = 0
@@ -122,6 +126,7 @@ export function computeGuideBadgeLayout(
           vh - 28,
           Math.max(desiredTop, columns[chosenCol].bottomEdge + HORIZONTAL_MIN_Y_GAP_PX)
         )
+        columns[chosenCol].rightEdge = Math.max(columns[chosenCol].rightEdge, left + width)
         columns[chosenCol].bottomEdge = top
       }
     }

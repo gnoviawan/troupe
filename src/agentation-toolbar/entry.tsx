@@ -781,6 +781,16 @@ class TroupeAnnotationOverlay {
       },
       onSubmit: (payload) => this.transport.postAnnotation(payload),
       onSaved: (popoverEl, id, comment, pinX, pinY) => {
+        if (opts.guide && !this.guides.some((g) => g.id === opts.guide?.id)) {
+          if (id) {
+            void this.transport.postAction({
+              kind: 'annotations_removed',
+              ids: [id]
+            })
+          }
+          if (this.popoverEl === popoverEl) this.closePopover()
+          return
+        }
         const num = this.pins.length + 1
         this.pins.push({
           id: id ?? `pin-${Date.now()}-${num}`,

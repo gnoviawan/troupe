@@ -269,6 +269,37 @@ describe('BrowserControls', () => {
     expect(screen.queryByTestId('browser-screenshot-copied-pill')).toBeNull()
   })
 
+  it('ignores concurrent Visible screenshot requests on the same tab until the active capture finishes', async () => {
+    const { browserTabScreenshot } = await import('@/lib/browser-api')
+    let resolveShot:
+      | ((v: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveShot = resolve
+        })
+    )
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    const visibleBtn = screen.getByLabelText('Screenshot visible viewport')
+    fireEvent.click(visibleBtn)
+    fireEvent.click(visibleBtn)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+    expect(browserTabScreenshot).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+    })
+  })
+
   it('gives the Eye toggle explicit annotations & guides labels and sends set_pins_hidden', async () => {
     const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')

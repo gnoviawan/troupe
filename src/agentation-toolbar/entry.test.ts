@@ -58,6 +58,21 @@ describe('computeGuideBadgeLayout', () => {
       }
     }
   })
+
+  it('tracks actual wide horizontal badge widths so adjacent offset badges never overlap', () => {
+    const layout = computeGuideBadgeLayout(
+      [
+        { id: 'h1', axis: 'horizontal', pos: 100, deltaPx: 24 },
+        { id: 'h2', axis: 'horizontal', pos: 101, deltaPx: 23 }
+      ],
+      800,
+      600
+    )
+    const p1 = layout.get('h1')!
+    const p2 = layout.get('h2')!
+    const estWidth1 = Math.ceil(p1.text.length * 7.2 + 18)
+    expect(p2.left).toBeGreaterThanOrEqual(p1.left + estWidth1 + 6)
+  })
 })
 
 describe('TroupeAnnotationOverlay', () => {
@@ -523,5 +538,51 @@ describe('TroupeAnnotationOverlay', () => {
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: origLocation })
     }
+  })
+
+  it('suppresses pin and requests backend deletion if a guide was removed while its save was in flight', async () => {
+    const { overlay, host, shadow, layer } = setupOverlay()
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+
+    dispatchPointer(layer, 'pointerdown', { clientX: 360, clientY: 180, button: 0 })
+    ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Late guide comment'
+    ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    const saveQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      reqId: string
+    }>
+    host.removeAttribute(OUTBOX_ATTR)
+
+    // Reopen guide popover and delete guide BEFORE the in-flight save ack arrives
+    const guideHit = shadow.querySelector('.guide-hit') as HTMLDivElement
+    dispatchPointer(guideHit, 'pointerdown', { clientX: 360, clientY: 180, button: 0 })
+    dispatchPointer(window, 'pointerup', { clientX: 360, clientY: 180, button: 0 })
+    ;(shadow.querySelector('.pop-link') as HTMLButtonElement).click()
+
+    // Late save ack arrives for the already-deleted guide
+    overlay.dispatch({
+      type: 'outbox_ack',
+      reqId: saveQueue[0].reqId,
+      ok: true,
+      id: 'ann-late-guide',
+      sessionId: 'sess-g-late'
+    })
+
+    await vi.waitFor(() => {
+      expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+    })
+    expect(shadow.querySelectorAll('.pin').length).toBe(0)
+    const cleanupQueue = JSON.parse(host.getAttribute(OUTBOX_ATTR) as string) as Array<{
+      kind: string
+      payload: { output: string }
+    }>
+    expect(cleanupQueue[0].kind).toBe('action')
+    expect(JSON.parse(cleanupQueue[0].payload.output)).toMatchObject({
+      kind: 'annotations_removed',
+      ids: ['ann-late-guide']
+    })
   })
 })

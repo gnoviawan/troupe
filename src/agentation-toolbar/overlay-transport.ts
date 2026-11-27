@@ -127,7 +127,32 @@ export class OverlayTransport {
       pending.resolve({ ok: false, error: 'Overlay unmounted', drained: !reclaimed })
     }
     this.pendingOutbox.clear()
-    this.bridgeSessionInit = null
+  }
+
+  /**
+   * Coalesce concurrent initial submissions until the first submission settles
+   * `this.sessionId` (across both the host bridge and any HTTP fallback).
+   */
+  private async withSessionInitGate<T>(fn: () => Promise<T>): Promise<T> {
+    while (!this.sessionId && this.bridgeSessionInit) {
+      await this.bridgeSessionInit
+    }
+
+    let finishInit: (() => void) | null = null
+    if (!this.sessionId) {
+      this.bridgeSessionInit = new Promise<void>((resolve) => {
+        finishInit = resolve
+      })
+    }
+
+    try {
+      return await fn()
+    } finally {
+      if (finishInit) {
+        this.bridgeSessionInit = null
+        ;(finishInit as () => void)()
+      }
+    }
   }
 
   private async sendViaHostBridge(
@@ -138,61 +163,40 @@ export class OverlayTransport {
       return { ok: false, error: 'Host bridge unavailable', drained: false }
     }
 
-    // Coalesce concurrent initial bridge submissions until the first ack sets
-    // `this.sessionId`, matching `sessionPromise` on the HTTP path.
-    while (!this.sessionId && this.bridgeSessionInit) {
-      await this.bridgeSessionInit
+    const reqId = `ov-${Date.now()}-${++this.reqSeq}`
+    const envelope = {
+      reqId,
+      nonce: this.bridgeNonce,
+      kind,
+      url: window.location.href,
+      sessionId: this.sessionId ?? undefined,
+      payload
     }
 
-    let finishInit: (() => void) | null = null
-    if (!this.sessionId) {
-      const initPromise = new Promise<void>((resolve) => {
-        finishInit = resolve
+    let queue: unknown[] = []
+    const existing = this.host.getAttribute(OUTBOX_ATTR)
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing)
+        if (Array.isArray(parsed)) queue = parsed
+      } catch {
+        queue = []
+      }
+    }
+    queue.push(envelope)
+    this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(queue))
+
+    return await new Promise<HostBridgeResult>((resolve) => {
+      const timer = window.setTimeout(() => {
+        this.pendingOutbox.delete(reqId)
+        const reclaimed = this.removeFromOutbox(reqId)
+        resolve({ ok: false, error: 'Host bridge timed out', drained: !reclaimed })
+      }, OUTBOX_TIMEOUT_MS)
+      this.pendingOutbox.set(reqId, {
+        resolve: (ack) => resolve({ drained: false, ...ack }),
+        timer
       })
-      this.bridgeSessionInit = initPromise
-    }
-
-    try {
-      const reqId = `ov-${Date.now()}-${++this.reqSeq}`
-      const envelope = {
-        reqId,
-        nonce: this.bridgeNonce,
-        kind,
-        url: window.location.href,
-        sessionId: this.sessionId ?? undefined,
-        payload
-      }
-
-      let queue: unknown[] = []
-      const existing = this.host.getAttribute(OUTBOX_ATTR)
-      if (existing) {
-        try {
-          const parsed = JSON.parse(existing)
-          if (Array.isArray(parsed)) queue = parsed
-        } catch {
-          queue = []
-        }
-      }
-      queue.push(envelope)
-      this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(queue))
-
-      return await new Promise<HostBridgeResult>((resolve) => {
-        const timer = window.setTimeout(() => {
-          this.pendingOutbox.delete(reqId)
-          const reclaimed = this.removeFromOutbox(reqId)
-          resolve({ ok: false, error: 'Host bridge timed out', drained: !reclaimed })
-        }, OUTBOX_TIMEOUT_MS)
-        this.pendingOutbox.set(reqId, {
-          resolve: (ack) => resolve({ drained: false, ...ack }),
-          timer
-        })
-      })
-    } finally {
-      if (finishInit) {
-        this.bridgeSessionInit = null
-        ;(finishInit as () => void)()
-      }
-    }
+    })
   }
 
   private async ensureHttpSession(): Promise<string | null> {
@@ -232,94 +236,98 @@ export class OverlayTransport {
   public async postAnnotation(
     payload: Record<string, unknown>
   ): Promise<{ ok: boolean; id?: string }> {
-    const body = {
-      url: window.location.href,
-      timestamp: Date.now(),
-      tabId: this.getTabId(),
-      viewportWidth: window.innerWidth,
-      ...payload
-    }
+    return this.withSessionInitGate(async () => {
+      const body = {
+        url: window.location.href,
+        timestamp: Date.now(),
+        tabId: this.getTabId(),
+        viewportWidth: window.innerWidth,
+        ...payload
+      }
 
-    if (this.preferHostBridge()) {
-      const bridged = await this.sendViaHostBridge('annotation', body)
-      if (bridged.ok) return { ok: true, id: bridged.id }
-      // Never fall back to HTTP if the host already drained the outbox envelope,
-      // otherwise a slow host ack plus HTTP fallback would duplicate the annotation.
-      if (bridged.drained) return { ok: false }
-    }
+      if (this.preferHostBridge()) {
+        const bridged = await this.sendViaHostBridge('annotation', body)
+        if (bridged.ok) return { ok: true, id: bridged.id }
+        // Never fall back to HTTP if the host already drained the outbox envelope,
+        // otherwise a slow host ack plus HTTP fallback would duplicate the annotation.
+        if (bridged.drained) return { ok: false }
+      }
 
-    const ep = this.getEndpoint()
-    if (ep) {
-      const sid = await this.ensureHttpSession()
-      if (sid) {
-        try {
-          const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-          })
-          if (res.ok) {
-            const parsed = (await res.json().catch(() => null)) as { id?: string } | null
-            return { ok: true, id: parsed?.id }
+      const ep = this.getEndpoint()
+      if (ep) {
+        const sid = await this.ensureHttpSession()
+        if (sid) {
+          try {
+            const res = await fetch(`${ep}/sessions/${sid}/annotations`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            })
+            if (res.ok) {
+              const parsed = (await res.json().catch(() => null)) as { id?: string } | null
+              return { ok: true, id: parsed?.id }
+            }
+          } catch {
+            // Fall back to host bridge below
           }
-        } catch {
-          // Fall back to host bridge below
         }
       }
-    }
 
-    if (!this.preferHostBridge() && this.bridgeNonce) {
-      const bridged = await this.sendViaHostBridge('annotation', body)
-      if (bridged.ok) return { ok: true, id: bridged.id }
-    }
+      if (!this.preferHostBridge() && this.bridgeNonce) {
+        const bridged = await this.sendViaHostBridge('annotation', body)
+        if (bridged.ok) return { ok: true, id: bridged.id }
+      }
 
-    if (!ep && !this.bridgeNonce) {
-      return { ok: true }
-    }
-    return { ok: false }
+      if (!ep && !this.bridgeNonce) {
+        return { ok: true }
+      }
+      return { ok: false }
+    })
   }
 
   public async postAction(payload: Record<string, unknown>): Promise<boolean> {
-    const output = JSON.stringify({
-      viewportWidth: window.innerWidth,
-      ...payload,
-      tabId: this.getTabId()
-    })
+    return this.withSessionInitGate(async () => {
+      const output = JSON.stringify({
+        viewportWidth: window.innerWidth,
+        ...payload,
+        tabId: this.getTabId()
+      })
 
-    if (this.preferHostBridge()) {
-      const bridged = await this.sendViaHostBridge('action', { output })
-      if (bridged.ok) return true
-      if (bridged.drained) return false
-    }
+      if (this.preferHostBridge()) {
+        const bridged = await this.sendViaHostBridge('action', { output })
+        if (bridged.ok) return true
+        if (bridged.drained) return false
+      }
 
-    const ep = this.getEndpoint()
-    if (ep) {
-      const sid = await this.ensureHttpSession()
-      if (sid) {
-        try {
-          const res = await fetch(`${ep}/sessions/${sid}/action`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sessionId: sid,
-              tabId: this.getTabId(),
-              annotations: [],
-              output,
-              timestamp: new Date().toISOString()
+      const ep = this.getEndpoint()
+      if (ep) {
+        const sid = await this.ensureHttpSession()
+        if (sid) {
+          try {
+            const res = await fetch(`${ep}/sessions/${sid}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: sid,
+                tabId: this.getTabId(),
+                annotations: [],
+                output,
+                timestamp: new Date().toISOString()
+              })
             })
-          })
-          if (res.ok) return true
-        } catch {
-          // Fall back to host bridge below
+            if (res.ok) return true
+          } catch {
+            // Fall back to host bridge below
+          }
         }
       }
-    }
 
-    if (!this.preferHostBridge() && this.bridgeNonce) {
-      const bridged = await this.sendViaHostBridge('action', { output })
-      return bridged.ok
-    }
+      if (!this.preferHostBridge() && this.bridgeNonce) {
+        const bridged = await this.sendViaHostBridge('action', { output })
+        return bridged.ok
+      }
 
-    return false
+      return false
+    })
   }
 }
