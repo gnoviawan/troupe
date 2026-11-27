@@ -234,7 +234,8 @@ pub fn git_get_diff(cwd: &str, path: &str, staged: bool) -> Result<String, Strin
     }
 
     // First check if file is untracked (but not ignored)
-    let status_output = GitTracker::run_git_command(cwd, &["status", "--porcelain", "--", path])
+    let status_output =
+        GitTracker::run_git_command_literal(cwd, &["status", "--porcelain", "--", path])
         .ok_or_else(|| "Failed to run git status".to_string())?;
 
     let status_str = String::from_utf8_lossy(&status_output.stdout);
@@ -242,7 +243,7 @@ pub fn git_get_diff(cwd: &str, path: &str, staged: bool) -> Result<String, Strin
 
     let args = build_diff_args(path, is_untracked, staged);
 
-    let output = GitTracker::run_git_command(cwd, &args)
+    let output = GitTracker::run_git_command_literal(cwd, &args)
         .ok_or_else(|| "Failed to run git diff".to_string())?;
 
     // git diff returns 1 if there are differences, which is "success" for us
@@ -313,6 +314,18 @@ pub(super) fn is_safe_relative_path(path: &str) -> bool {
 
 fn git_command_result(cwd: &str, args: &[&str], failure_context: &str) -> Result<(), String> {
     let output = GitTracker::run_git_command(cwd, args)
+        .ok_or_else(|| format!("Failed to run {failure_context}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+    }
+}
+
+/// [`git_command_result`] with literal pathspecs, for commands that take a
+/// path a client sent.
+fn git_path_command_result(cwd: &str, args: &[&str], failure_context: &str) -> Result<(), String> {
+    let output = GitTracker::run_git_command_literal(cwd, args)
         .ok_or_else(|| format!("Failed to run {failure_context}"))?;
     if output.status.success() {
         Ok(())
@@ -414,7 +427,7 @@ pub fn git_create_branch(cwd: &str, branch: &str, start_ref: Option<&str>) -> Re
 
 /// Stage a single file (`git add -- <path>`). Works for modified and untracked files.
 pub fn git_stage_file(cwd: &str, path: &str) -> Result<(), String> {
-    git_command_result(cwd, &["add", "--", path], "git add")
+    git_path_command_result(cwd, &["add", "--", path], "git add")
 }
 
 /// Unstage a single file.
@@ -426,9 +439,9 @@ pub fn git_stage_file(cwd: &str, path: &str) -> Result<(), String> {
 /// entry is removed from the index while the working-tree file is kept intact.
 pub fn git_unstage_file(cwd: &str, path: &str) -> Result<(), String> {
     if repo_has_head(cwd) {
-        git_command_result(cwd, &["reset", "-q", "HEAD", "--", path], "git reset")
+        git_path_command_result(cwd, &["reset", "-q", "HEAD", "--", path], "git reset")
     } else {
-        git_command_result(cwd, &["rm", "--cached", "--", path], "git rm --cached")
+        git_path_command_result(cwd, &["rm", "--cached", "--", path], "git rm --cached")
     }
 }
 
@@ -637,7 +650,8 @@ fn delete_untracked_path(cwd: &str, path: &str) -> Result<(), String> {
 /// tracked changes revert the working tree to the index (`git checkout -- <path>`),
 /// which preserves any staged content. A clean/unknown path is a no-op.
 pub fn git_discard_file(cwd: &str, path: &str) -> Result<(), String> {
-    let status_output = GitTracker::run_git_command(cwd, &["status", "--porcelain", "--", path])
+    let status_output =
+        GitTracker::run_git_command_literal(cwd, &["status", "--porcelain", "--", path])
         .ok_or_else(|| "Failed to run git status".to_string())?;
     let status_str = String::from_utf8_lossy(&status_output.stdout);
     let status_line = status_str.lines().next().unwrap_or("");
@@ -645,7 +659,7 @@ pub fn git_discard_file(cwd: &str, path: &str) -> Result<(), String> {
     match classify_discard_action(status_line) {
         DiscardAction::DeleteUntracked => delete_untracked_path(cwd, path),
         DiscardAction::RevertWorktree => {
-            git_command_result(cwd, &["checkout", "--", path], "git checkout")
+            git_path_command_result(cwd, &["checkout", "--", path], "git checkout")
         }
         DiscardAction::Noop => Ok(()),
     }
@@ -978,7 +992,8 @@ pub fn git_get_commit_context(cwd: &str) -> Result<GitCommitContext, String> {
 }
 
 fn is_git_ignored(cwd: &str, path: &str) -> Result<bool, String> {
-    let output = GitTracker::run_git_command(cwd, &["check-ignore", "--quiet", "--", path])
+    let output =
+        GitTracker::run_git_command_literal(cwd, &["check-ignore", "--quiet", "--", path])
         .ok_or_else(|| "Failed to run git check-ignore".to_string())?;
 
     match output.status.code() {

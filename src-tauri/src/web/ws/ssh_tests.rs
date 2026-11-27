@@ -224,50 +224,81 @@ async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
     assert!(rejected.ok, "{rejected:?}");
 }
 
-fn password_profile(host: &str) -> Value {
+fn password_profile(id: &str, host: &str, claims_stored: bool) -> Value {
     json!({ "profile": {
-        "id": "p1",
+        "id": id,
         "name": "prod",
         "host": host,
         "port": 22,
         "username": "deploy",
         "authMethod": "password",
         "portForwards": [],
-        "hasStoredPassword": true,
+        "hasStoredPassword": claims_stored,
         "hasStoredPassphrase": false,
     }})
 }
 
 #[tokio::test]
-async fn moving_a_profile_to_another_host_drops_its_stored_password() {
+async fn whether_a_password_is_stored_is_the_hosts_record_and_a_moved_profile_loses_it() {
     let dir = tempfile::tempdir().unwrap();
+    // A profile whose password the keychain holds, as an earlier run left it.
+    std::fs::write(
+        dir.path().join("ssh-profiles.json"),
+        json!({ "profiles": [{
+            "id": "p1",
+            "name": "prod",
+            "host": "a.example",
+            "port": 22,
+            "username": "deploy",
+            "authMethod": "password",
+            "jumpHostId": null,
+            "portForwards": [],
+            "tags": null,
+            "lastConnected": null,
+            "importedFrom": null,
+            "hasStoredPassword": true,
+        }]})
+        .to_string(),
+    )
+    .unwrap();
     let mut client = Client::new(&relay_with_ssh(dir.path()));
-    let stored = |reply: &WsReply| reply.payload.as_ref().unwrap()[0]["hasStoredPassword"].clone();
+    let stored = |reply: &WsReply, id: &str| {
+        reply
+            .payload
+            .as_ref()
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|profile| profile["id"] == id)
+            .unwrap()["hasStoredPassword"]
+            .clone()
+    };
+    let edit = password_profile("p1", "a.example", false);
+    assert!(client.send("ssh_save_profile", edit).await.ok);
+    let listed = client.send("ssh_list_profiles", json!({})).await;
+    assert_eq!(stored(&listed, "p1"), json!(true), "the same host keeps it");
 
-    assert!(
-        client
-            .send("ssh_save_profile", password_profile("a.example"))
-            .await
-            .ok
-    );
-    assert!(
-        client
-            .send("ssh_save_profile", password_profile("a.example"))
-            .await
-            .ok
-    );
-    let same_host = client.send("ssh_list_profiles", json!({})).await;
-    assert_eq!(stored(&same_host), json!(true), "the same host keeps it");
+    for attempt in 0..2 {
+        let moved = password_profile("p1", "b.example", true);
+        assert!(client.send("ssh_save_profile", moved).await.ok);
+        let listed = client.send("ssh_list_profiles", json!({})).await;
+        assert_eq!(listed.payload.as_ref().unwrap()[0]["host"], "b.example");
+        assert_eq!(
+            stored(&listed, "p1"),
+            json!(false),
+            "save {attempt} to the new host must not bring the old password back"
+        );
+    }
 
-    assert!(
-        client
-            .send("ssh_save_profile", password_profile("b.example"))
-            .await
-            .ok
+    let fresh = password_profile("p2", "c.example", true);
+    assert!(client.send("ssh_save_profile", fresh).await.ok);
+    let listed = client.send("ssh_list_profiles", json!({})).await;
+    assert_eq!(
+        stored(&listed, "p2"),
+        json!(false),
+        "a client cannot claim a stored password"
     );
-    let moved = client.send("ssh_list_profiles", json!({})).await;
-    assert_eq!(moved.payload.as_ref().unwrap()[0]["host"], "b.example");
-    assert_eq!(stored(&moved), json!(false), "a new host must ask again");
 }
 
 /// A TCP server that accepts and never speaks SSH, so a connect hangs in the

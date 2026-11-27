@@ -185,6 +185,10 @@ async fn post(state: AppState, uri: &str, body: serde_json::Value) -> serde_json
             "/git/stage",
             axum::routing::post(crate::web::git_api::stage),
         )
+        .route(
+            "/git/stash-save",
+            axum::routing::post(crate::web::git_api::stash_save),
+        )
         .with_state(state);
     let response = app
         .oneshot(
@@ -256,4 +260,95 @@ async fn git_routes_refuse_the_credential_in_a_state_dir_inside_a_work_tree() {
         .await;
         assert_eq!(staged["code"], "FORBIDDEN", "staging {path}: {staged}");
     }
+}
+
+fn git(dir: &std::path::Path, args: &[&str]) -> String {
+    let output = std::process::Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .unwrap();
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[tokio::test]
+async fn git_pathspec_wildcards_and_magic_never_reach_the_credential() {
+    let dir = tempfile::tempdir().unwrap();
+    let git_ok = std::process::Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(dir.path())
+        .status()
+        .is_ok_and(|status| status.success());
+    if !git_ok {
+        return;
+    }
+    let (credential, _) = issue(dir.path()).unwrap();
+    let cwd = dir
+        .path()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let patterns = ["*", "host-local.tok*", ":/", ":(glob)*"];
+
+    for path in patterns {
+        let _ = post(
+            git_route_state(dir.path()),
+            "/git/stage",
+            serde_json::json!({ "cwd": cwd, "path": path }),
+        )
+        .await;
+        assert!(
+            !git(dir.path(), &["ls-files", "--stage"]).contains(HOST_LOCAL_TOKEN_FILE),
+            "staging {path:?} must not stage the credential"
+        );
+    }
+
+    // Tracked by other means (a terminal), the credential still never prints.
+    git(dir.path(), &["add", "--", HOST_LOCAL_TOKEN_FILE]);
+    assert!(git(dir.path(), &["ls-files", "--stage"]).contains(HOST_LOCAL_TOKEN_FILE));
+    for path in patterns {
+        for staged in [true, false] {
+            let diff = post(
+                git_route_state(dir.path()),
+                "/git/diff",
+                serde_json::json!({ "cwd": cwd, "path": path, "staged": staged }),
+            )
+            .await;
+            assert!(
+                !diff.to_string().contains(credential.as_str()),
+                "diff of {path:?} (staged {staged}) printed the credential: {diff}"
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn stash_with_untracked_files_is_refused_while_the_work_tree_holds_the_credential() {
+    let dir = tempfile::tempdir().unwrap();
+    let git_ok = std::process::Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(dir.path())
+        .status()
+        .is_ok_and(|status| status.success());
+    if !git_ok {
+        return;
+    }
+    issue(dir.path()).unwrap();
+    std::fs::create_dir(dir.path().join("sub")).unwrap();
+    let sub = dir
+        .path()
+        .join("sub")
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let stash = post(
+        git_route_state(dir.path()),
+        "/git/stash-save",
+        serde_json::json!({ "cwd": sub, "includeUntracked": true }),
+    )
+    .await;
+    assert_eq!(stash["code"], "FORBIDDEN", "{stash}");
+    assert!(dir.path().join(HOST_LOCAL_TOKEN_FILE).is_file());
 }
