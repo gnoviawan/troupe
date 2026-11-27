@@ -195,6 +195,10 @@ pub struct WsRelaySink {
     /// What every chat list shows for each chat, derived from the events
     /// this relay numbers and served to every `chat_activity` watcher.
     chat_activity: crate::web::chat_activity::ChatActivities,
+    /// The SSH manager behind the host-local `/ws` SSH requests. Only
+    /// `troupe-server --desktop` attaches one; the Tauri app keeps its own
+    /// behind its commands.
+    ssh: Mutex<Option<Arc<crate::ssh::SSHManager>>>,
 }
 
 /// Where a session's log stands at a point under the seq lock: the identity
@@ -270,7 +274,19 @@ impl WsRelaySink {
             presence: Arc::new(crate::web::presence::PresenceRegistry::new()),
             chat_reads: crate::web::chat_reads::ChatReads::default(),
             chat_activity: crate::web::chat_activity::ChatActivities::default(),
+            ssh: Mutex::new(None),
         }
+    }
+
+    /// Attach the SSH manager the `/ws` SSH requests run on.
+    pub fn set_ssh(&self, ssh: Arc<crate::ssh::SSHManager>) {
+        *self.ssh.lock() = Some(ssh);
+    }
+
+    /// The attached SSH manager, if any.
+    #[must_use]
+    pub fn ssh(&self) -> Option<Arc<crate::ssh::SSHManager>> {
+        self.ssh.lock().clone()
     }
 
     /// The command receipt ledger.

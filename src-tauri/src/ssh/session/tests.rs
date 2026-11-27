@@ -36,8 +36,9 @@ fn target(host: &str, port: u16) -> SessionTarget {
 fn secret_cache_lives_as_long_as_its_sessions() {
     let (manager, _) = recording_manager();
     assert_eq!(manager.cached_secret("p1"), None);
-    manager.retain_secret("p1", "one");
-    manager.retain_secret("p1", "two");
+    let host = target("a.example", 22);
+    manager.retain_secret(&host, "one");
+    manager.retain_secret(&host, "two");
     assert_eq!(manager.cached_secret("p1").as_deref(), Some("two"));
     manager.release_secret("p1");
     assert_eq!(manager.cached_secret("p1").as_deref(), Some("two"));
@@ -45,9 +46,37 @@ fn secret_cache_lives_as_long_as_its_sessions() {
     assert_eq!(manager.cached_secret("p1"), None);
     // Releasing an unknown host is a no-op.
     manager.release_secret("p1");
-    manager.retain_secret("p2", "x");
+    let other = SessionTarget {
+        profile_id: "p2".into(),
+        ..target("b.example", 22)
+    };
+    manager.retain_secret(&other, "x");
     manager.forget_secret("p2");
     assert_eq!(manager.cached_secret("p2"), None);
+}
+
+#[test]
+fn a_cached_secret_goes_only_to_the_target_it_worked_for() {
+    let (manager, _) = recording_manager();
+    manager.retain_secret(&target("a.example", 22), "secret");
+    assert_eq!(
+        manager.cached_secret_for(&target("a.example", 22)).as_deref(),
+        Some("secret")
+    );
+    for moved in [
+        target("b.example", 22),
+        target("a.example", 2222),
+        SessionTarget {
+            username: "root".into(),
+            ..target("a.example", 22)
+        },
+        SessionTarget {
+            key_path: Some("~/.ssh/other".into()),
+            ..target("a.example", 22)
+        },
+    ] {
+        assert_eq!(manager.cached_secret_for(&moved), None, "{}", moved.host);
+    }
 }
 
 #[test]

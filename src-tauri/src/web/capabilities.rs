@@ -295,6 +295,9 @@ pub enum Requirement {
     DeviceStore,
     /// Every other mutation: needs [`Capabilities::write`].
     Write,
+    /// Acts with the host's own credentials (the SSH requests): needs
+    /// [`Capabilities::host_local`].
+    HostLocal,
 }
 
 /// Classify a `/ws` request type. Allow-list of the view-level types; every
@@ -336,6 +339,7 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
         | "store_read"
         | "mark_chat_read" => Requirement::View,
         "store_write" | "store_delete" => Requirement::DeviceStore,
+        t if crate::web::ws::SSH_WS_REQUESTS.contains(&t) => Requirement::HostLocal,
         _ => Requirement::Write,
     }
 }
@@ -352,6 +356,7 @@ pub fn ws_request_permitted(
     match ws_requirement(request_type) {
         Requirement::View => true,
         Requirement::Write => caps.write,
+        Requirement::HostLocal => caps.host_local,
         Requirement::DeviceStore => {
             caps.write
                 || payload["key"]
