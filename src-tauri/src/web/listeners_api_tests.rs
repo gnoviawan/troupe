@@ -5,6 +5,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -126,4 +127,57 @@ async fn rotating_with_nothing_running_only_replaces_the_token() {
     let status = listeners.rotate_token().await.unwrap();
     assert!(status.lan.is_none() && !status.tunnel_running);
     assert!(!token(dir.path()).is_empty());
+}
+
+#[tokio::test]
+async fn rotating_the_token_closes_every_preview_session() {
+    let dir = tempfile::tempdir().unwrap();
+    let page = dir.path().join("page.html");
+    std::fs::write(&page, "<p>hi</p>").unwrap();
+    let opened = crate::html_preview::registry()
+        .open(&page.to_string_lossy(), String::new())
+        .unwrap();
+    let acp = running_agent();
+    let listeners = listeners(dir.path(), &acp);
+    listeners.rotate_token().await.unwrap();
+    assert!(
+        !crate::html_preview::registry().close(&opened.token),
+        "the preview URL stops serving once the token rotates"
+    );
+}
+
+#[tokio::test]
+async fn a_stalled_download_cannot_hold_the_lan_listener_open() {
+    let dir = tempfile::tempdir().unwrap();
+    let acp = running_agent();
+    let listeners = listeners(dir.path(), &acp);
+    let port = listeners.start_lan(0).await.unwrap().lan.unwrap().port;
+
+    let big = dir.path().join("big.mp4");
+    std::fs::write(&big, vec![7u8; 48 * 1024 * 1024]).unwrap();
+    let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .unwrap();
+    let request = format!(
+        "GET /fs/raw?path={} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {}\r\n\r\n",
+        url::form_urlencoded::byte_serialize(big.to_string_lossy().as_bytes()).collect::<String>(),
+        token(dir.path())
+    );
+    stream.write_all(request.as_bytes()).await.unwrap();
+    let mut head = [0u8; 64];
+    let read = stream.read(&mut head).await.unwrap();
+    assert!(
+        String::from_utf8_lossy(&head[..read]).contains("200"),
+        "the download started"
+    );
+
+    let stopped = tokio::time::timeout(
+        crate::web::listeners_api::STOP_BOUND + Duration::from_secs(5),
+        listeners.stop_lan(),
+    )
+    .await
+    .expect("the stop does not wait for the stalled reader");
+    assert!(stopped.lan.is_none());
+    assert!(acp.list_agents().contains(&AgentId(AGENT.to_string())));
+    drop(stream);
 }

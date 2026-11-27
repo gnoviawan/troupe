@@ -315,6 +315,9 @@ impl Drop for RemoteServer {
     }
 }
 
+/// Longest [`RemoteServerState::stop`] waits for the serve task to drain.
+const STOP_DRAIN_BOUND: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// Tauri-managed wrapper tracking the in-process web server's start/stop state.
 pub struct RemoteServerState {
     inner: std::sync::Mutex<Option<RemoteServer>>,
@@ -633,12 +636,21 @@ impl RemoteServerState {
                 if let Some(tx) = server.shutdown_tx.take() {
                     let _ = tx.send(());
                 }
-                if let Some(handle) = server.serve_handle.take() {
+                if let Some(mut handle) = server.serve_handle.take() {
                     // `axum::serve` returns on graceful-shutdown completion; a
                     // panic surfaces as `JoinError` — log, don't propagate.
-                    if let Err(join_err) = handle.await {
-                        if !join_err.is_cancelled() {
+                    // A connection that never finishes cannot hold the stop
+                    // (and the caller's locks) forever: past the bound the
+                    // serve task is aborted.
+                    match tokio::time::timeout(STOP_DRAIN_BOUND, &mut handle).await {
+                        Ok(Err(join_err)) if !join_err.is_cancelled() => {
                             warn!("Shared-live serve task ended unexpectedly: {join_err}");
+                        }
+                        Ok(_) => {}
+                        Err(_) => {
+                            warn!("Shared-live web server did not drain in time; aborting it");
+                            handle.abort();
+                            let _ = handle.await;
                         }
                     }
                 }

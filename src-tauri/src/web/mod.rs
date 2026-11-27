@@ -88,6 +88,9 @@ pub mod setup;
 pub mod sink;
 pub mod skills_api;
 pub mod store;
+pub mod stream_cutoff;
+#[cfg(test)]
+mod stream_cutoff_tests;
 pub mod terminal_ws;
 pub mod watch;
 pub mod worktree_api;
@@ -516,7 +519,11 @@ pub async fn serve_router(
         connections,
         server_admin,
         cfg.rune_web_dir.clone(),
-    );
+    )
+    .layer(axum::middleware::from_fn_with_state(
+        socket_shutdown.stop_token(),
+        stream_cutoff::end_streams_on_stop,
+    ));
 
     // Stale device partitions are swept daily while this host serves; the
     // task stops with it (the desktop shared-live host starts and stops).

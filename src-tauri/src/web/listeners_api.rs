@@ -19,6 +19,7 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use serde::Serialize;
 use tokio::sync::{oneshot, Mutex};
@@ -33,6 +34,21 @@ use crate::web::project_registry::ProjectRegistry;
 use crate::web::sink::WsRelaySink;
 use crate::web::store::WebStore;
 use crate::web::{serve_router, ServerConfig};
+
+/// Longest a stopping listener may take to drain before its serve task is
+/// aborted. Streamed bodies already end at stop (`web::stream_cutoff`); this
+/// is the backstop that keeps a stop, a rotation or the server's exit from
+/// hanging on a connection that never finishes.
+pub const STOP_BOUND: Duration = Duration::from_secs(5);
+
+/// End every HTML preview session: a `/preview/<token>/` URL a remote
+/// device learned must stop serving once its access goes.
+fn close_previews() {
+    let closed = crate::html_preview::registry().close_all();
+    if closed > 0 {
+        info!(target: "termul::web::listeners", closed, "preview sessions closed");
+    }
+}
 
 /// What a remote listener serves: the running host's pieces.
 pub struct ListenerParts {
@@ -189,11 +205,12 @@ impl Listeners {
         })
     }
 
-    /// Unbind the LAN listener and close its sockets.
+    /// Unbind the LAN listener, close its sockets and the preview sessions.
     pub async fn stop_lan(&self) -> ListenersStatus {
         let mut lan = self.lan.lock().await;
         if let Some(running) = lan.take() {
             stop_lan(running).await;
+            close_previews();
         }
         self.status_with(None)
     }
@@ -254,10 +271,13 @@ impl Listeners {
         }
     }
 
-    /// Stop cloudflared and the tunnel listener, closing its sockets.
+    /// Stop cloudflared and the tunnel listener, closing its sockets and the
+    /// preview sessions.
     pub async fn stop_tunnel(&self) -> ListenersStatus {
         let lan = self.lan.lock().await;
-        let _ = self.tunnel.stop().await;
+        if self.tunnel.stop().await.is_ok() {
+            close_previews();
+        }
         info!(target: "termul::web::listeners", "tunnel off");
         self.status_with(lan.as_ref())
     }
@@ -294,6 +314,7 @@ impl Listeners {
             }
         }
         self.remote_gate()?;
+        close_previews();
         info!(target: "termul::web::listeners", "remote token rotated");
         if let Some(port) = lan_port {
             *lan = Some(self.bind_lan(port).await?);
@@ -304,19 +325,32 @@ impl Listeners {
         Ok(self.status_with(lan.as_ref()))
     }
 
-    /// Server exit: stop both listeners.
+    /// Server exit: stop both listeners and the preview sessions.
     pub async fn stop_all(&self) {
         if let Some(running) = self.lan.lock().await.take() {
             stop_lan(running).await;
         }
         let _ = self.tunnel.stop().await;
+        close_previews();
     }
 }
 
-async fn stop_lan(lan: Lan) {
+async fn stop_lan(mut lan: Lan) {
     let _ = lan.shutdown.send(());
-    if let Err(error) = lan.serve.await {
-        warn!(target: "termul::web::listeners", "LAN listener task ended badly: {error}");
+    match tokio::time::timeout(STOP_BOUND, &mut lan.serve).await {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => {
+            warn!(target: "termul::web::listeners", "LAN listener task ended badly: {error}");
+        }
+        Err(_) => {
+            warn!(
+                target: "termul::web::listeners",
+                bound_secs = STOP_BOUND.as_secs(),
+                "LAN listener did not drain in time; aborting it"
+            );
+            lan.serve.abort();
+            let _ = lan.serve.await;
+        }
     }
     info!(target: "termul::web::listeners", port = lan.addr.port(), "LAN listener off");
 }

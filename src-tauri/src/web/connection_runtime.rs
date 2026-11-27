@@ -66,6 +66,12 @@ impl HostShutdown {
         self.stop.cancel();
     }
 
+    /// Fires when [`Self::begin`] runs.
+    #[must_use]
+    pub fn stop_token(&self) -> CancellationToken {
+        self.stop.clone()
+    }
+
     /// Whether [`Self::begin`] has run.
     #[must_use]
     pub fn is_stopping(&self) -> bool {
