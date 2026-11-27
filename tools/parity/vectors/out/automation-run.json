@@ -1,0 +1,3673 @@
+[
+ {
+  "store": "automation-run",
+  "name": "the fixture runs on their own graphs",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "runOverlay",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "fired": {
+      "by": "scheduled",
+      "at": 1773046800000
+     },
+     "cards": {
+      "trigger": {
+       "status": "succeeded"
+      },
+      "each": {
+       "status": "pending",
+       "loop": {
+        "iterations": 2,
+        "failed": 0
+       }
+      },
+      "body": {
+       "status": "succeeded"
+      },
+      "join": {
+       "status": "pending"
+      },
+      "pause": {
+       "status": "waiting"
+      },
+      "gate": {
+       "status": "pending"
+      },
+      "stop": {
+       "status": "pending"
+      },
+      "triage": {
+       "status": "pending"
+      }
+     },
+     "edges": {
+      "trigger:out->each": "taken",
+      "each:item->body": "taken"
+     },
+     "loops": {
+      "each": {
+       "iterations": [
+        "succeeded",
+        "running"
+       ],
+       "failed": 0,
+       "picked": 1
+      }
+     },
+     "loopOf": {
+      "body": "each"
+     },
+     "rows": {
+      "body": {
+       "run_id": "run-1",
+       "node_id": "body",
+       "iteration": 1,
+       "status": "succeeded",
+       "output": {
+        "item": "b",
+        "index": 1
+       },
+       "error": null,
+       "started_at": 1773046860100,
+       "finished_at": 1773046860200,
+       "wait_until": null
+      },
+      "pause": {
+       "run_id": "run-1",
+       "node_id": "pause",
+       "iteration": null,
+       "status": "waiting",
+       "output": null,
+       "error": null,
+       "started_at": 1773046861000,
+       "finished_at": null,
+       "wait_until": 1773050461000
+      }
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runOverlay",
+     "args": [
+      0,
+      {
+       "each": 0
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "fired": {
+      "by": "scheduled",
+      "at": 1773046800000
+     },
+     "cards": {
+      "trigger": {
+       "status": "succeeded"
+      },
+      "each": {
+       "status": "pending",
+       "loop": {
+        "iterations": 2,
+        "failed": 0
+       }
+      },
+      "body": {
+       "status": "pending"
+      },
+      "join": {
+       "status": "pending"
+      },
+      "pause": {
+       "status": "waiting"
+      },
+      "gate": {
+       "status": "pending"
+      },
+      "stop": {
+       "status": "pending"
+      },
+      "triage": {
+       "status": "pending"
+      }
+     },
+     "edges": {
+      "trigger:out->each": "taken",
+      "each:item->body": "taken"
+     },
+     "loops": {
+      "each": {
+       "iterations": [
+        "succeeded",
+        "running"
+       ],
+       "failed": 0,
+       "picked": 0
+      }
+     },
+     "loopOf": {
+      "body": "each"
+     },
+     "rows": {
+      "pause": {
+       "run_id": "run-1",
+       "node_id": "pause",
+       "iteration": null,
+       "status": "waiting",
+       "output": null,
+       "error": null,
+       "started_at": 1773046861000,
+       "finished_at": null,
+       "wait_until": 1773050461000
+      }
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runOverlay",
+     "args": [
+      0,
+      {
+       "each": 7
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "fired": {
+      "by": "scheduled",
+      "at": 1773046800000
+     },
+     "cards": {
+      "trigger": {
+       "status": "succeeded"
+      },
+      "each": {
+       "status": "pending",
+       "loop": {
+        "iterations": 2,
+        "failed": 0
+       }
+      },
+      "body": {
+       "status": "succeeded"
+      },
+      "join": {
+       "status": "pending"
+      },
+      "pause": {
+       "status": "waiting"
+      },
+      "gate": {
+       "status": "pending"
+      },
+      "stop": {
+       "status": "pending"
+      },
+      "triage": {
+       "status": "pending"
+      }
+     },
+     "edges": {
+      "trigger:out->each": "taken",
+      "each:item->body": "taken"
+     },
+     "loops": {
+      "each": {
+       "iterations": [
+        "succeeded",
+        "running"
+       ],
+       "failed": 0,
+       "picked": 1
+      }
+     },
+     "loopOf": {
+      "body": "each"
+     },
+     "rows": {
+      "body": {
+       "run_id": "run-1",
+       "node_id": "body",
+       "iteration": 1,
+       "status": "succeeded",
+       "output": {
+        "item": "b",
+        "index": 1
+       },
+       "error": null,
+       "started_at": 1773046860100,
+       "finished_at": 1773046860200,
+       "wait_until": null
+      },
+      "pause": {
+       "run_id": "run-1",
+       "node_id": "pause",
+       "iteration": null,
+       "status": "waiting",
+       "output": null,
+       "error": null,
+       "started_at": 1773046861000,
+       "finished_at": null,
+       "wait_until": 1773050461000
+      }
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runOverlay",
+     "args": [
+      1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "fired": {
+      "by": "catch_up",
+      "at": 1773046800000
+     },
+     "cards": {
+      "trigger": {
+       "status": "succeeded"
+      },
+      "each": {
+       "status": "pending",
+       "loop": {
+        "iterations": 0,
+        "failed": 0
+       }
+      },
+      "body": {
+       "status": "pending"
+      },
+      "join": {
+       "status": "pending"
+      },
+      "pause": {
+       "status": "pending"
+      },
+      "gate": {
+       "status": "pending"
+      },
+      "stop": {
+       "status": "pending"
+      },
+      "triage": {
+       "status": "pending"
+      }
+     },
+     "edges": {
+      "trigger:out->each": "taken"
+     },
+     "loops": {
+      "each": {
+       "iterations": [],
+       "failed": 0,
+       "picked": null
+      }
+     },
+     "loopOf": {
+      "body": "each"
+     },
+     "rows": {}
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runOverlay",
+     "args": [
+      2
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "fired": {
+      "by": "catch_up",
+      "at": 1773046800000
+     },
+     "cards": {
+      "trigger": {
+       "status": "succeeded"
+      },
+      "each": {
+       "status": "pending",
+       "loop": {
+        "iterations": 0,
+        "failed": 0
+       }
+      },
+      "body": {
+       "status": "pending"
+      },
+      "join": {
+       "status": "pending"
+      },
+      "pause": {
+       "status": "pending"
+      },
+      "gate": {
+       "status": "pending"
+      },
+      "stop": {
+       "status": "pending"
+      },
+      "triage": {
+       "status": "pending"
+      }
+     },
+     "edges": {
+      "trigger:out->each": "taken"
+     },
+     "loops": {
+      "each": {
+       "iterations": [],
+       "failed": 0,
+       "picked": null
+      }
+     },
+     "loopOf": {
+      "body": "each"
+     },
+     "rows": {}
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "openingStep",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "pause",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "openingStep",
+     "args": [
+      1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "openingStep",
+     "args": [
+      2
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stepOrder",
+     "args": [
+      {
+       "nodes": [
+        {
+         "id": "each",
+         "label": "Each item",
+         "spec": {
+          "kind": "for_each",
+          "items": "{{trigger.kind}}",
+          "max_iterations": 5
+         }
+        },
+        {
+         "id": "body",
+         "label": "Body",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "item",
+            "value": "{{nodes.each.item.name}}"
+           },
+           {
+            "name": "index",
+            "value": "{{nodes.each.index}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "join",
+         "label": "Join",
+         "spec": {
+          "kind": "merge",
+          "mode": "any"
+         }
+        },
+        {
+         "id": "pause",
+         "label": "Pause",
+         "spec": {
+          "kind": "wait",
+          "duration_ms": 3600000
+         }
+        },
+        {
+         "id": "gate",
+         "label": "Ship it?",
+         "spec": {
+          "kind": "approval",
+          "message": "Ship {{nodes.body.output.item}}?",
+          "timeout_ms": 86400000
+         }
+        },
+        {
+         "id": "stop",
+         "label": "Stop",
+         "spec": {
+          "kind": "fail",
+          "message": "{{trigger.kind}}"
+         }
+        },
+        {
+         "id": "triage",
+         "label": "Triage",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": null,
+          "prompt": "Triage",
+          "output_schema": {
+           "type": "object"
+          },
+          "timeout_ms": 60000,
+          "max_attempts": 1,
+          "tools": [
+           "other"
+          ],
+          "mcp_servers": [
+           "srv-github"
+          ]
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "each"
+        },
+        {
+         "from": "each",
+         "port": "item",
+         "to": "body"
+        },
+        {
+         "from": "each",
+         "port": "out",
+         "to": "join"
+        },
+        {
+         "from": "each",
+         "port": "error",
+         "to": "join"
+        },
+        {
+         "from": "join",
+         "port": "out",
+         "to": "pause"
+        },
+        {
+         "from": "pause",
+         "port": "out",
+         "to": "gate"
+        },
+        {
+         "from": "gate",
+         "port": "out",
+         "to": "stop"
+        },
+        {
+         "from": "gate",
+         "port": "error",
+         "to": "stop"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "each",
+     "body",
+     "join",
+     "pause",
+     "gate",
+     "stop",
+     "triage"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "stepOrder",
+     "args": [
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "fetch",
+     "extract",
+     "alert",
+     "check",
+     "shape",
+     "post"
+    ],
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runStatusLabel",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Failed",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runStatusLabel",
+     "args": [
+      1
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Running",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "runStatusLabel",
+     "args": [
+      2
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Waiting for approval",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "automation-run",
+  "name": "how automations read",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "automationState",
+     "args": [
+      {
+       "id": "auto-1",
+       "project_id": "project-1",
+       "name": "Morning digest",
+       "revision": 1,
+       "approved_revision": 1,
+       "enabled": true,
+       "trigger": {
+        "kind": "schedule",
+        "schedule": {
+         "kind": "cron",
+         "expr": "0 5 * * 1-5",
+         "timezone": "America/New_York"
+        }
+       },
+       "graph": {
+        "nodes": [
+         {
+          "id": "fetch",
+          "label": "Fetch items",
+          "spec": {
+           "kind": "http",
+           "method": "GET",
+           "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+           "headers": [
+            {
+             "name": "Authorization",
+             "value": "Bearer {{secrets.API_KEY}}"
+            }
+           ],
+           "body": null,
+           "allowed_hosts": [
+            "api.example.com"
+           ]
+          }
+         },
+         {
+          "id": "extract",
+          "label": "Extract",
+          "spec": {
+           "kind": "agent",
+           "agent_id": "claude",
+           "model": "sonnet",
+           "prompt": "Summarize {{nodes.fetch.output.items}}",
+           "output_schema": {
+            "type": "object",
+            "properties": {
+             "summary": {
+              "type": "string"
+             },
+             "urgent": {
+              "type": "boolean"
+             }
+            },
+            "required": [
+             "summary",
+             "urgent"
+            ]
+           },
+           "timeout_ms": 120000,
+           "max_attempts": 2,
+           "tools": [
+            "search",
+            "read",
+            "search"
+           ],
+           "mcp_servers": null
+          }
+         },
+         {
+          "id": "check",
+          "label": "Urgent?",
+          "spec": {
+           "kind": "condition",
+           "left": "{{nodes.extract.output.urgent}}",
+           "op": "eq",
+           "right": "true"
+          }
+         },
+         {
+          "id": "shape",
+          "label": "Shape",
+          "spec": {
+           "kind": "transform",
+           "fields": [
+            {
+             "name": "text",
+             "value": "{{nodes.extract.output.summary}}"
+            }
+           ]
+          }
+         },
+         {
+          "id": "post",
+          "label": "Notify",
+          "spec": {
+           "kind": "http",
+           "method": "POST",
+           "url": "https://hooks.example.com/notify",
+           "headers": [
+            {
+             "name": "X-Key",
+             "value": "{{secrets.HOOK_KEY}}"
+            }
+           ],
+           "body": "{{nodes.shape.output}}",
+           "allowed_hosts": [
+            "hooks.example.com"
+           ]
+          }
+         },
+         {
+          "id": "alert",
+          "label": "Fetch failed",
+          "spec": {
+           "kind": "fail",
+           "message": "fetch failed"
+          }
+         }
+        ],
+        "edges": [
+         {
+          "from": "trigger",
+          "port": "out",
+          "to": "fetch"
+         },
+         {
+          "from": "fetch",
+          "port": "out",
+          "to": "extract"
+         },
+         {
+          "from": "fetch",
+          "port": "error",
+          "to": "alert"
+         },
+         {
+          "from": "extract",
+          "port": "out",
+          "to": "check"
+         },
+         {
+          "from": "check",
+          "port": "true",
+          "to": "shape"
+         },
+         {
+          "from": "shape",
+          "port": "out",
+          "to": "post"
+         }
+        ]
+       },
+       "layout": {
+        "extract": {
+         "x": 480,
+         "y": -16
+        },
+        "fetch": {
+         "x": 240,
+         "y": 40.5
+        },
+        "trigger": {
+         "x": 0,
+         "y": 40
+        }
+       },
+       "isolation": "shared_in_root",
+       "next_run_at": 1773046800000,
+       "consecutive_errors": 1,
+       "schedule_error_count": 0,
+       "unseen_failures": 2,
+       "last_run": {
+        "run_id": "run-1",
+        "status": "failed",
+        "finished_at": 1773046860000
+       },
+       "created_at": 1000,
+       "updated_at": 1000,
+       "deleted_at": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "armed",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "automationState",
+     "args": [
+      {
+       "id": "auto-1",
+       "project_id": "project-1",
+       "name": "Morning digest",
+       "revision": 1,
+       "approved_revision": 1,
+       "enabled": true,
+       "trigger": {
+        "kind": "schedule",
+        "schedule": {
+         "kind": "cron",
+         "expr": "0 5 * * 1-5",
+         "timezone": "America/New_York"
+        }
+       },
+       "graph": {
+        "nodes": [
+         {
+          "id": "fetch",
+          "label": "Fetch items",
+          "spec": {
+           "kind": "http",
+           "method": "GET",
+           "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+           "headers": [
+            {
+             "name": "Authorization",
+             "value": "Bearer {{secrets.API_KEY}}"
+            }
+           ],
+           "body": null,
+           "allowed_hosts": [
+            "api.example.com"
+           ]
+          }
+         },
+         {
+          "id": "extract",
+          "label": "Extract",
+          "spec": {
+           "kind": "agent",
+           "agent_id": "claude",
+           "model": "sonnet",
+           "prompt": "Summarize {{nodes.fetch.output.items}}",
+           "output_schema": {
+            "type": "object",
+            "properties": {
+             "summary": {
+              "type": "string"
+             },
+             "urgent": {
+              "type": "boolean"
+             }
+            },
+            "required": [
+             "summary",
+             "urgent"
+            ]
+           },
+           "timeout_ms": 120000,
+           "max_attempts": 2,
+           "tools": [
+            "search",
+            "read",
+            "search"
+           ],
+           "mcp_servers": null
+          }
+         },
+         {
+          "id": "check",
+          "label": "Urgent?",
+          "spec": {
+           "kind": "condition",
+           "left": "{{nodes.extract.output.urgent}}",
+           "op": "eq",
+           "right": "true"
+          }
+         },
+         {
+          "id": "shape",
+          "label": "Shape",
+          "spec": {
+           "kind": "transform",
+           "fields": [
+            {
+             "name": "text",
+             "value": "{{nodes.extract.output.summary}}"
+            }
+           ]
+          }
+         },
+         {
+          "id": "post",
+          "label": "Notify",
+          "spec": {
+           "kind": "http",
+           "method": "POST",
+           "url": "https://hooks.example.com/notify",
+           "headers": [
+            {
+             "name": "X-Key",
+             "value": "{{secrets.HOOK_KEY}}"
+            }
+           ],
+           "body": "{{nodes.shape.output}}",
+           "allowed_hosts": [
+            "hooks.example.com"
+           ]
+          }
+         },
+         {
+          "id": "alert",
+          "label": "Fetch failed",
+          "spec": {
+           "kind": "fail",
+           "message": "fetch failed"
+          }
+         }
+        ],
+        "edges": [
+         {
+          "from": "trigger",
+          "port": "out",
+          "to": "fetch"
+         },
+         {
+          "from": "fetch",
+          "port": "out",
+          "to": "extract"
+         },
+         {
+          "from": "fetch",
+          "port": "error",
+          "to": "alert"
+         },
+         {
+          "from": "extract",
+          "port": "out",
+          "to": "check"
+         },
+         {
+          "from": "check",
+          "port": "true",
+          "to": "shape"
+         },
+         {
+          "from": "shape",
+          "port": "out",
+          "to": "post"
+         }
+        ]
+       },
+       "layout": {
+        "extract": {
+         "x": 480,
+         "y": -16
+        },
+        "fetch": {
+         "x": 240,
+         "y": 40.5
+        },
+        "trigger": {
+         "x": 0,
+         "y": 40
+        }
+       },
+       "isolation": "shared_in_root",
+       "next_run_at": 1773046800000,
+       "consecutive_errors": 1,
+       "schedule_error_count": 0,
+       "unseen_failures": 2,
+       "last_run": {
+        "run_id": "run-1",
+        "status": "failed",
+        "finished_at": 1773046860000
+       },
+       "created_at": 1000,
+       "updated_at": 1000,
+       "deleted_at": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "armed",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "automationState",
+     "args": [
+      {
+       "id": "auto-1",
+       "project_id": "project-1",
+       "name": "Morning digest",
+       "revision": 1,
+       "approved_revision": 1,
+       "enabled": false,
+       "trigger": {
+        "kind": "schedule",
+        "schedule": {
+         "kind": "cron",
+         "expr": "0 5 * * 1-5",
+         "timezone": "America/New_York"
+        }
+       },
+       "graph": {
+        "nodes": [
+         {
+          "id": "fetch",
+          "label": "Fetch items",
+          "spec": {
+           "kind": "http",
+           "method": "GET",
+           "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+           "headers": [
+            {
+             "name": "Authorization",
+             "value": "Bearer {{secrets.API_KEY}}"
+            }
+           ],
+           "body": null,
+           "allowed_hosts": [
+            "api.example.com"
+           ]
+          }
+         },
+         {
+          "id": "extract",
+          "label": "Extract",
+          "spec": {
+           "kind": "agent",
+           "agent_id": "claude",
+           "model": "sonnet",
+           "prompt": "Summarize {{nodes.fetch.output.items}}",
+           "output_schema": {
+            "type": "object",
+            "properties": {
+             "summary": {
+              "type": "string"
+             },
+             "urgent": {
+              "type": "boolean"
+             }
+            },
+            "required": [
+             "summary",
+             "urgent"
+            ]
+           },
+           "timeout_ms": 120000,
+           "max_attempts": 2,
+           "tools": [
+            "search",
+            "read",
+            "search"
+           ],
+           "mcp_servers": null
+          }
+         },
+         {
+          "id": "check",
+          "label": "Urgent?",
+          "spec": {
+           "kind": "condition",
+           "left": "{{nodes.extract.output.urgent}}",
+           "op": "eq",
+           "right": "true"
+          }
+         },
+         {
+          "id": "shape",
+          "label": "Shape",
+          "spec": {
+           "kind": "transform",
+           "fields": [
+            {
+             "name": "text",
+             "value": "{{nodes.extract.output.summary}}"
+            }
+           ]
+          }
+         },
+         {
+          "id": "post",
+          "label": "Notify",
+          "spec": {
+           "kind": "http",
+           "method": "POST",
+           "url": "https://hooks.example.com/notify",
+           "headers": [
+            {
+             "name": "X-Key",
+             "value": "{{secrets.HOOK_KEY}}"
+            }
+           ],
+           "body": "{{nodes.shape.output}}",
+           "allowed_hosts": [
+            "hooks.example.com"
+           ]
+          }
+         },
+         {
+          "id": "alert",
+          "label": "Fetch failed",
+          "spec": {
+           "kind": "fail",
+           "message": "fetch failed"
+          }
+         }
+        ],
+        "edges": [
+         {
+          "from": "trigger",
+          "port": "out",
+          "to": "fetch"
+         },
+         {
+          "from": "fetch",
+          "port": "out",
+          "to": "extract"
+         },
+         {
+          "from": "fetch",
+          "port": "error",
+          "to": "alert"
+         },
+         {
+          "from": "extract",
+          "port": "out",
+          "to": "check"
+         },
+         {
+          "from": "check",
+          "port": "true",
+          "to": "shape"
+         },
+         {
+          "from": "shape",
+          "port": "out",
+          "to": "post"
+         }
+        ]
+       },
+       "layout": {
+        "extract": {
+         "x": 480,
+         "y": -16
+        },
+        "fetch": {
+         "x": 240,
+         "y": 40.5
+        },
+        "trigger": {
+         "x": 0,
+         "y": 40
+        }
+       },
+       "isolation": "shared_in_root",
+       "next_run_at": 1773046800000,
+       "consecutive_errors": 1,
+       "schedule_error_count": 0,
+       "unseen_failures": 2,
+       "last_run": {
+        "run_id": "run-1",
+        "status": "failed",
+        "finished_at": 1773046860000
+       },
+       "created_at": 1000,
+       "updated_at": 1000,
+       "deleted_at": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "disabled",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      0
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "0 ms",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      999
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "999 ms",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      1000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 s",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      59400
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "59 s",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      60000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 min",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      125000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "2 min 5 s",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      3600000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 h",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      5400000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 h 30 min",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      86400000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 day",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "formatDuration",
+     "args": [
+      90000000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "1 d 1 h",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "triggerSummary",
+     "args": [
+      {
+       "kind": "manual"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Run manually",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "triggerSummary",
+     "args": [
+      {
+       "kind": "schedule",
+       "schedule": {
+        "kind": "cron",
+        "expr": "0 5 * * 1-5",
+        "timezone": "America/New_York"
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Cron 0 5 * * 1-5 (America/New_York)",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "triggerSummary",
+     "args": [
+      {
+       "kind": "schedule",
+       "schedule": {
+        "kind": "every",
+        "every_ms": 900000,
+        "anchor_ms": 0
+       }
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Every 15 min",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "http",
+       "method": "GET",
+       "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+       "headers": [
+        {
+         "name": "Authorization",
+         "value": "Bearer {{secrets.API_KEY}}"
+        }
+       ],
+       "body": null,
+       "allowed_hosts": [
+        "api.example.com"
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "GET api.example.com",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "agent",
+       "agent_id": "claude",
+       "model": "sonnet",
+       "prompt": "Summarize {{nodes.fetch.output.items}}",
+       "output_schema": {
+        "type": "object",
+        "properties": {
+         "summary": {
+          "type": "string"
+         },
+         "urgent": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "summary",
+         "urgent"
+        ]
+       },
+       "timeout_ms": 120000,
+       "max_attempts": 2,
+       "tools": [
+        "search",
+        "read",
+        "search"
+       ],
+       "mcp_servers": null
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "claude · sonnet",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "condition",
+       "left": "{{nodes.extract.output.urgent}}",
+       "op": "eq",
+       "right": "true"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "{{nodes.extract.output.urgent}} eq true",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "transform",
+       "fields": [
+        {
+         "name": "text",
+         "value": "{{nodes.extract.output.summary}}"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "text",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "http",
+       "method": "POST",
+       "url": "https://hooks.example.com/notify",
+       "headers": [
+        {
+         "name": "X-Key",
+         "value": "{{secrets.HOOK_KEY}}"
+        }
+       ],
+       "body": "{{nodes.shape.output}}",
+       "allowed_hosts": [
+        "hooks.example.com"
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "POST hooks.example.com",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "fail",
+       "message": "fetch failed"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "fetch failed",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "for_each",
+       "items": "{{trigger.kind}}",
+       "max_iterations": 5
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "{{trigger.kind}} · max 5",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "transform",
+       "fields": [
+        {
+         "name": "item",
+         "value": "{{nodes.each.item.name}}"
+        },
+        {
+         "name": "index",
+         "value": "{{nodes.each.index}}"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "item, index",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "merge",
+       "mode": "any"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "When any branch ran",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "wait",
+       "duration_ms": 3600000
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Wait 1 h",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "approval",
+       "message": "Ship {{nodes.body.output.item}}?",
+       "timeout_ms": 86400000
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "Ship {{nodes.body.output.item}}?",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "fail",
+       "message": "{{trigger.kind}}"
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "{{trigger.kind}}",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "nodeKeyDetail",
+     "args": [
+      {
+       "kind": "agent",
+       "agent_id": "claude",
+       "model": null,
+       "prompt": "Triage",
+       "output_schema": {
+        "type": "object"
+       },
+       "timeout_ms": 60000,
+       "max_attempts": 1,
+       "tools": [
+        "other"
+       ],
+       "mcp_servers": [
+        "srv-github"
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "claude",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "agentToolsLabel",
+     "args": [
+      []
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "no tools",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "agentToolsLabel",
+     "args": [
+      [
+       "read",
+       "execute",
+       "other"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "tools: read files, run commands (full access), MCP and other tools",
+    "state": null
+   }
+  ]
+ },
+ {
+  "store": "automation-run",
+  "name": "new nodes from the add menu",
+  "initial": null,
+  "steps": [
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "http",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "http",
+     "label": "HTTP",
+     "spec": {
+      "kind": "http",
+      "method": "GET",
+      "url": "",
+      "headers": [],
+      "body": null,
+      "allowed_hosts": []
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "http"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "agent",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "agent",
+     "label": "Agent",
+     "spec": {
+      "kind": "agent",
+      "agent_id": "",
+      "model": null,
+      "prompt": "",
+      "output_schema": {
+       "type": "string"
+      },
+      "timeout_ms": 120000,
+      "max_attempts": 1,
+      "tools": [],
+      "mcp_servers": null
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "agent"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "mcp_tool",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "mcp_tool",
+     "label": "MCP tool",
+     "spec": {
+      "kind": "mcp_tool",
+      "server_id": "",
+      "tool": "",
+      "arguments": [],
+      "timeout_ms": 60000
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "mcp_tool"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "condition",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "condition",
+     "label": "Condition",
+     "spec": {
+      "kind": "condition",
+      "left": "",
+      "op": "eq",
+      "right": ""
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "condition"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "true",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "for_each",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "for_each",
+     "label": "For each",
+     "spec": {
+      "kind": "for_each",
+      "items": "",
+      "max_iterations": 10
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "for_each"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "merge",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "merge",
+     "label": "Merge",
+     "spec": {
+      "kind": "merge",
+      "mode": "any"
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "merge"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "wait",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "wait",
+     "label": "Wait",
+     "spec": {
+      "kind": "wait",
+      "duration_ms": 60000
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "wait"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "fail",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "fail",
+     "label": "Fail",
+     "spec": {
+      "kind": "fail",
+      "message": "Stopped"
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "fail"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "approval",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "approval",
+     "label": "Approval",
+     "spec": {
+      "kind": "approval",
+      "message": "Approve this run?",
+      "timeout_ms": 86400000
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "approval"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "transform",
+      {
+       "nodes": [
+        {
+         "id": "fetch",
+         "label": "Fetch items",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "extract",
+         "label": "Extract",
+         "spec": {
+          "kind": "agent",
+          "agent_id": "claude",
+          "model": "sonnet",
+          "prompt": "Summarize {{nodes.fetch.output.items}}",
+          "output_schema": {
+           "type": "object",
+           "properties": {
+            "summary": {
+             "type": "string"
+            },
+            "urgent": {
+             "type": "boolean"
+            }
+           },
+           "required": [
+            "summary",
+            "urgent"
+           ]
+          },
+          "timeout_ms": 120000,
+          "max_attempts": 2,
+          "tools": [
+           "search",
+           "read",
+           "search"
+          ],
+          "mcp_servers": null
+         }
+        },
+        {
+         "id": "check",
+         "label": "Urgent?",
+         "spec": {
+          "kind": "condition",
+          "left": "{{nodes.extract.output.urgent}}",
+          "op": "eq",
+          "right": "true"
+         }
+        },
+        {
+         "id": "shape",
+         "label": "Shape",
+         "spec": {
+          "kind": "transform",
+          "fields": [
+           {
+            "name": "text",
+            "value": "{{nodes.extract.output.summary}}"
+           }
+          ]
+         }
+        },
+        {
+         "id": "post",
+         "label": "Notify",
+         "spec": {
+          "kind": "http",
+          "method": "POST",
+          "url": "https://hooks.example.com/notify",
+          "headers": [
+           {
+            "name": "X-Key",
+            "value": "{{secrets.HOOK_KEY}}"
+           }
+          ],
+          "body": "{{nodes.shape.output}}",
+          "allowed_hosts": [
+           "hooks.example.com"
+          ]
+         }
+        },
+        {
+         "id": "alert",
+         "label": "Fetch failed",
+         "spec": {
+          "kind": "fail",
+          "message": "fetch failed"
+         }
+        }
+       ],
+       "edges": [
+        {
+         "from": "trigger",
+         "port": "out",
+         "to": "fetch"
+        },
+        {
+         "from": "fetch",
+         "port": "out",
+         "to": "extract"
+        },
+        {
+         "from": "fetch",
+         "port": "error",
+         "to": "alert"
+        },
+        {
+         "from": "extract",
+         "port": "out",
+         "to": "check"
+        },
+        {
+         "from": "check",
+         "port": "true",
+         "to": "shape"
+        },
+        {
+         "from": "shape",
+         "port": "out",
+         "to": "post"
+        }
+       ]
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "transform",
+     "label": "Transform",
+     "spec": {
+      "kind": "transform",
+      "fields": []
+     }
+    },
+    "state": null
+   },
+   {
+    "event": {
+     "action": "chainPort",
+     "args": [
+      "transform"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": "out",
+    "state": null
+   },
+   {
+    "event": {
+     "action": "newNode",
+     "args": [
+      "http",
+      {
+       "nodes": [
+        {
+         "id": "http",
+         "label": "Other",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        },
+        {
+         "id": "other",
+         "label": "HTTP 2",
+         "spec": {
+          "kind": "http",
+          "method": "GET",
+          "url": "https://api.example.com/items?since={{trigger.scheduled_for}}",
+          "headers": [
+           {
+            "name": "Authorization",
+            "value": "Bearer {{secrets.API_KEY}}"
+           }
+          ],
+          "body": null,
+          "allowed_hosts": [
+           "api.example.com"
+          ]
+         }
+        }
+       ],
+       "edges": []
+      }
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "http_3",
+     "label": "HTTP 3",
+     "spec": {
+      "kind": "http",
+      "method": "GET",
+      "url": "",
+      "headers": [],
+      "body": null,
+      "allowed_hosts": []
+     }
+    },
+    "state": null
+   }
+  ]
+ }
+]

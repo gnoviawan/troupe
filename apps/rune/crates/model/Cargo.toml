@@ -12,6 +12,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 sha2 = "0.10"
 troupe-editor = { path = "../editor" }
+# The canvas layout only; the model links no UI.
+troupe-flow = { path = "../flow", default-features = false }
 
 [dev-dependencies]
 sha1 = "0.10"

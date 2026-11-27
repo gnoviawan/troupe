@@ -25,12 +25,18 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     let phone = size.is_some_and(|[w, _]| w <= PHONE_MAX_WIDTH);
     let window = size.map_or((1280.0, 800.0), |[w, h]| (w, h));
     let root = row().key(ROOT).w_full().h_full().fill(t.colors.background);
+    let mut layer = Vec::new();
+    if let Some(screen) = crate::first_run_view::screen(s, t, phone, &mut layer) {
+        // Onboarding's project step opens the new project modal over its screen.
+        crate::rail_forms::build(s, t, &mut layer);
+        return ui::overlay::root(root.child(screen), layer);
+    }
     if let Route::NotFound(path) = &s.route {
         return root.child(not_found(t, path));
     }
-    let mut layer = Vec::new();
     let root = if phone {
-        root.child(crate::phone::frame(s, t, workspace_main(s, t, &mut layer)))
+        let main = if s.route == Route::Snapshots { crate::snapshots_view::page(s, t, true) } else { workspace_main(s, t, &mut layer) };
+        root.child(crate::phone::frame(s, t, main))
     } else {
         root.children(desktop_frame(s, t, cx, &mut layer))
     };
@@ -44,7 +50,11 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
     crate::git_view::dialogs(s, t, &mut layer);
+    crate::automations_view::dialogs(s, t, &mut layer);
+    crate::automation_editor_view::dialogs(s, t, &mut layer);
     crate::settings_view::build(s, t, phone, window.1, &mut layer);
+    crate::snapshots_view::dialogs(s, t, phone, &mut layer);
+    crate::bug_report::build(s, t, phone, &mut layer);
     layer.push(
         row()
             .key("toaster-layer")
@@ -172,6 +182,9 @@ fn main_area(
     cx: &Cx<State>,
     layer: &mut Vec<El>,
 ) -> El {
+    if s.route == Route::Snapshots {
+        return crate::snapshots_view::page(s, t, false);
+    }
     let start = if rail_collapsed {
         vec![rail_toggle(t, false)]
     } else {
@@ -199,6 +212,7 @@ fn main_area(
                 .or_else(|| crate::git_diff::tab_body(s, t, tab))
                 .or_else(|| crate::github_item_view::tab_body(s, t, tab, false, &mut menus.borrow_mut()))
                 .or_else(|| editor_body(s, t, tab))
+                .or_else(|| crate::automations_view::tab_body(s, t, tab, false))
         };
         let slots = ui::workspace::Slots {
             leading,
@@ -436,6 +450,11 @@ fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     // A file the Files sheet opened.
     if let Some(tab @ model::workspace::Tab::Editor { .. }) = active_phone_tab(s)
         && let Some(body) = editor_body(s, t, tab)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
+    if let Some(tab @ model::workspace::Tab::Automations { .. }) = active_phone_tab(s)
+        && let Some(body) = crate::automations_view::tab_body(s, t, tab, true)
     {
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }

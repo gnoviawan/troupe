@@ -22,11 +22,20 @@ describe('browser-session-store', () => {
       viewportOrientation: 'portrait',
       annotateMode: false,
       annotateTool: 'comment',
+      rulerAxis: 'vertical',
       animationsPaused: false,
       pinsHidden: false,
       pendingAnnotations: [],
       loadError: null
     })
+  })
+
+  it('updates rulerAxis independently per tab', () => {
+    const store = useBrowserSessionStore.getState()
+    store.createTab(TAB, 'https://example.com')
+    expect(store.getTab(TAB)?.rulerAxis).toBe('vertical')
+    store.setRulerAxis(TAB, 'horizontal')
+    expect(useBrowserSessionStore.getState().getTab(TAB)?.rulerAxis).toBe('horizontal')
   })
 
   it('mirrors the host registry view of a tab it knows', () => {

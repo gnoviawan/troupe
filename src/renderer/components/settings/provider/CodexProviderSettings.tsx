@@ -29,7 +29,7 @@ import {
   CODEX_STATUS_TONE,
   codexAccountReadiness
 } from './codex-account-status'
-import { ProviderGroupHeader } from './ProviderGroupHeader'
+import { ProviderGroup } from './ProviderGroupHeader'
 
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
@@ -115,30 +115,29 @@ export function CodexProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="flex flex-col gap-3" data-testid="codex-provider-settings">
-      <ProviderGroupHeader
-        iconKey="acp:codex-acp"
-        name="Codex"
-        count={
-          snapshot && !failed
-            ? accounts.length === 1
-              ? '1 account'
-              : `${accounts.length} accounts`
-            : undefined
-        }
-        lastChecked={null}
-        refreshing={refreshingUsage}
-        action={
-          canManage &&
-          !failed && (
-            <Button type="button" size="xs" variant="outline" onClick={() => setAddOpen(true)}>
-              <Plus />
-              Add account
-            </Button>
-          )
-        }
-      />
-
+    <ProviderGroup
+      data-testid="codex-provider-settings"
+      iconKey="acp:codex-acp"
+      name="Codex"
+      count={
+        snapshot && !failed
+          ? accounts.length === 1
+            ? '1 account'
+            : `${accounts.length} accounts`
+          : undefined
+      }
+      lastChecked={null}
+      refreshing={refreshingUsage}
+      action={
+        canManage &&
+        !failed && (
+          <Button type="button" size="xs" variant="outline" onClick={() => setAddOpen(true)}>
+            <Plus />
+            Add account
+          </Button>
+        )
+      }
+    >
       {loading && (
         <div className="py-4 text-xs text-muted-foreground" aria-busy="true">
           Loading Codex accounts…
@@ -315,6 +314,6 @@ export function CodexProviderSettings(): React.JSX.Element {
           </div>
         )}
       </ConfirmDialog>
-    </div>
+    </ProviderGroup>
   )
 }

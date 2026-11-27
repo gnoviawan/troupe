@@ -120,7 +120,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
 
   return (
     <>
-      <SettingsGroup title="General">
+      <SettingsGroup title="General" description="Concurrency and nesting limits for sub-agents.">
         <SettingsCard>
           <SettingsSwitchRow
             id="subagent-enabled"
@@ -164,6 +164,7 @@ export function SubagentSettingsGroup(): React.JSX.Element {
       <SettingsGroup
         id={rowId('subagent-profiles')}
         title={`Profiles · ${profiles.length} · ${enabledIds.length} on`}
+        description="Agent presets available to calling chats."
         actions={
           <Button
             size="sm"

@@ -9,6 +9,7 @@ description = "Troupe's Rune app root: connects to a Troupe server and draws the
 client = { path = "../client" }
 log = "0.4"
 troupe-editor = { path = "../editor" }
+troupe-flow = { path = "../flow" }
 model = { path = "../model" }
 rune = { workspace = true, features = ["tooling"] }
 rune-kit = { workspace = true }
@@ -24,4 +25,4 @@ ui = { path = "../ui" }
 js-sys = "0.3"
 wasm-bindgen-futures = "0.4"
 wasm-bindgen = { workspace = true }
-web-sys = { version = "0.3", features = ["MediaQueryList", "Window"] }
+web-sys = { version = "0.3", features = ["History", "Location", "MediaQueryList", "Request", "RequestInit", "RequestMode", "Response", "Storage", "Window"] }

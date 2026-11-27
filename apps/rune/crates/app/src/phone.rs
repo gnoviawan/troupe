@@ -310,9 +310,16 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
             s.close(DRAWER);
             s.open_settings(None);
         }))
-        .child(foot("Camera", "Screenshot", "Screenshots"))
+        .child(mobile::icon_button(t, glyph("Camera"), "Snapshots").key("drawer-snapshots").on_press(|s: &mut State| s.open_snapshots()))
         .child(foot("History", "Git history", "Git history"))
-        .child(foot("CalendarClock", "Automations", "Automations"))
+        .child(
+            mobile::icon_button(t, glyph("CalendarClock"), "Automations")
+                .key("drawer-automations")
+                .on_press(|s: &mut State| {
+                    s.open_automations();
+                    s.close(DRAWER);
+                }),
+        )
         .child(new_chat);
     col()
         .key(DRAWER)
@@ -439,12 +446,6 @@ pub(crate) fn sheet(key: &'static str, title: String, s: &State) -> MobileSheet 
 }
 
 fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec<El>) {
-    let row_of = |name: &str, label: &'static str| {
-        mobile::sheet_row(t, glyph(name), label, false).on_press(move |s: &mut State| {
-            s.close(MORE);
-            s.toast_later(label);
-        })
-    };
     sheet(MORE, "Troupe".to_owned(), s)
         .child(stack(
             vec![
@@ -469,7 +470,10 @@ fn more_sheet(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
                     s.close(MORE);
                     s.open_project_settings(None, None);
                 }),
-                row_of("Bug", "Report a bug"),
+                mobile::sheet_row(t, glyph("Bug"), "Report a bug", false).on_press(|s: &mut State| {
+                    s.close(MORE);
+                    s.open_bug_report();
+                }),
             ],
             0.0,
         ))

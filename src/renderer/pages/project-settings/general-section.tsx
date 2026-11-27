@@ -32,7 +32,7 @@ export function GeneralSection({
 }: GeneralSectionProps): React.JSX.Element {
   return (
     <SettingsSection id="general">
-      <SettingsGroup title="Project">
+      <SettingsGroup title="Project" description="Name, folder on disk, and sidebar color.">
         <SettingsCard>
           <SettingsRow id={rowId('project-name')} htmlFor="project-name" label="Name">
             <input

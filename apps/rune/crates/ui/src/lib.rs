@@ -15,6 +15,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod automations;
 pub mod base;
 pub mod chat;
 pub mod composer;

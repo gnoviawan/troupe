@@ -10,7 +10,7 @@ import {
   ANTIGRAVITY_NOT_READY_REASON,
   antigravityAccountReadiness
 } from './antigravity-account-status'
-import { ProviderGroupHeader } from './ProviderGroupHeader'
+import { ProviderGroup } from './ProviderGroupHeader'
 
 interface AntigravityProjectAccountSettingsProps {
   antigravity: ProjectAntigravityAccountDraft
@@ -47,19 +47,19 @@ export function AntigravityProjectAccountSettings({
   const selected = (accountId: string | null): boolean => antigravity.value === accountId
 
   return (
-    <div className="mt-6 flex flex-col gap-2" data-testid="antigravity-project-accounts">
-      <ProviderGroupHeader
-        iconKey="acp:antigravity-acp"
-        name="Antigravity"
-        lastChecked={null}
-        refreshing={false}
-        action={
-          <Button type="button" size="xs" variant="outline" onClick={onManageAccounts}>
-            Manage accounts
-            <ExternalLink size={12} />
-          </Button>
-        }
-      />
+    <ProviderGroup
+      data-testid="antigravity-project-accounts"
+      iconKey="acp:antigravity-acp"
+      name="Antigravity"
+      lastChecked={null}
+      refreshing={false}
+      action={
+        <Button type="button" size="xs" variant="outline" onClick={onManageAccounts}>
+          Manage accounts
+          <ExternalLink size={12} />
+        </Button>
+      }
+    >
       {loading && (
         <p className="py-3 text-xs text-muted-foreground">Loading Antigravity accounts…</p>
       )}
@@ -121,6 +121,6 @@ export function AntigravityProjectAccountSettings({
           await refreshUsage(true)
         }}
       />
-    </div>
+    </ProviderGroup>
   )
 }
