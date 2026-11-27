@@ -982,8 +982,9 @@ pub fn git_get_commit_context(cwd: &str) -> Result<GitCommitContext, String> {
 }
 
 fn is_git_ignored(cwd: &str, path: &str) -> Result<bool, String> {
-    let output =
-        GitTracker::run_git_command_literal(cwd, &["check-ignore", "--quiet", "--", path])
+    // `check-ignore` reads pathnames, not pathspecs, and refuses the
+    // literal-pathspec flag, so it runs plain.
+    let output = GitTracker::run_git_command(cwd, &["check-ignore", "--quiet", "--", path])
         .ok_or_else(|| "Failed to run git check-ignore".to_string())?;
 
     match output.status.code() {
