@@ -52,7 +52,7 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::git_view::dialogs(s, t, &mut layer);
     crate::automations_view::dialogs(s, t, &mut layer);
     crate::automation_editor_view::dialogs(s, t, &mut layer);
-    crate::settings_view::build(s, t, phone, window.1, &mut layer);
+    crate::settings_view::build(s, t, phone, window, &mut layer);
     crate::snapshots_view::dialogs(s, t, phone, &mut layer);
     crate::bug_report::build(s, t, phone, &mut layer);
     layer.push(

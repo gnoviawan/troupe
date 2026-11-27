@@ -1,14 +1,14 @@
 //! The MCP catalog under the servers you added (`McpCatalogBrowser.tsx`, `McpCatalogCard.tsx`
 //! and the search and status hooks): a debounced search of `/mcp-catalog/search` with pages of
-//! 50, the catalog's source card with its sync switch, polled while it syncs, and two cards per
-//! row (one on a phone). The rules and words are `model::settings::mcp_catalog`.
+//! 50, the catalog's source card with its sync switch, polled while it syncs, and two or three
+//! cards per row by width (one on a phone). The rules and words are `model::settings::mcp_catalog`.
 
 use client::http::{HttpError, HttpRequest, Method};
 use model::settings::mcp_catalog::{self as rules, Block, More, Page, Row, Search};
 use rune::{El, TextEdit, Tx, col, row, text};
 use serde_json::{Value, json};
 use theme::Tokens;
-use ui::settings::{StatusTone, card, filter, group_with_meta, letter_tile, notice, status_word, switch_row, toned_notice};
+use ui::settings::{Heading, Layout, StatusTone, card, filter, letter_tile, section, notice, status_word, switch_row, toned_notice};
 use ui::type_::{mono, sans};
 use ui::{Button, ButtonSize, ButtonVariant};
 
@@ -491,7 +491,14 @@ pub fn browser(s: &State, t: &'static Tokens, phone: bool) -> El {
                 ),
             ),
             Some(results) => {
-                let per_row = if phone { 1 } else { 2 };
+                // `catalogColumnsForWidth`: three columns from 860 px.
+                let per_row = if phone {
+                    1
+                } else if ui::settings::column_width() >= 860.0 {
+                    3
+                } else {
+                    2
+                };
                 let mut grid = col().key("catalog-grid").w_full().gap(12.0).items_stretch();
                 for (i, chunk) in results.rows.chunks(per_row).enumerate() {
                     let mut line = row().key(format!("line-{i}")).w_full().gap(12.0).items_stretch();
@@ -541,7 +548,7 @@ pub fn browser(s: &State, t: &'static Tokens, phone: bool) -> El {
         content.push(notice(t, "install-block", block.text()));
     }
     let meta = shown.map(rules::summary).unwrap_or_default();
-    group_with_meta(t, "mcp-catalog", "From the catalog", &meta, vec![], content)
+    section(t, "mcp-catalog", Heading { title: "From the catalog", meta: &meta, ..Heading::default() }, Layout::Stacked, vec![], content)
 }
 
 #[cfg(test)]
