@@ -80,3 +80,48 @@ fn scrolling_up_shows_scroll_to_latest_and_pressing_it_returns_to_the_end() {
     assert_eq!(rt.scroll_at_bottom("chat-scroll-c1"), Some(true), "the press scrolls to the end");
     assert_eq!(latest_button(&rt), None, "and the button goes");
 }
+
+/// The chat's last agent message, grown by `lines` more lines of streamed prose.
+fn stream(rt: &mut Runtime<S>, lines: usize) {
+    rt.update_if(move |s, _| {
+        let last = s.acp.messages.get_mut("c1").and_then(|m| m.last_mut()).expect("a message");
+        let mut text = String::new();
+        for n in 0..lines {
+            text.push_str(&format!("Streamed line {n}, long enough to take its own row in the transcript.\n\n"));
+        }
+        *last = serde_json::from_value(json!({
+            "id": "m-live", "role": "agent", "streaming": true, "timestamp": 1.0e9, "seq": 1.0e6,
+            "blocks": [{ "type": "text", "text": text }],
+        }))
+        .unwrap();
+        true
+    });
+    settle(rt);
+}
+
+#[test]
+fn a_stream_keeps_a_reader_at_the_end_pinned() {
+    let mut rt = chat(30);
+    for lines in [4, 8, 12] {
+        stream(&mut rt, lines);
+        assert_eq!(rt.scroll_at_bottom("chat-scroll-c1"), Some(true), "the end follows the stream ({lines} lines)");
+    }
+}
+
+/// #2165: a small scroll up while a reply streams lets go of the end at once; the growing
+/// reply does not pull the reader back down.
+#[test]
+fn a_small_scroll_up_during_a_stream_is_not_pulled_back_to_the_end() {
+    let mut rt = chat(30);
+    stream(&mut rt, 4);
+    assert_eq!(rt.scroll_at_bottom("chat-scroll-c1"), Some(true));
+    rt.wheel(400.0, 300.0, 20.0);
+    rt.frame(1.0 / 60.0);
+    settle(&mut rt);
+    assert_eq!(rt.scroll_at_bottom("chat-scroll-c1"), Some(false), "20 px up lets go of the end");
+    for lines in [8, 12, 16] {
+        stream(&mut rt, lines);
+        assert_eq!(rt.scroll_at_bottom("chat-scroll-c1"), Some(false), "the stream does not pull the reader back ({lines} lines)");
+    }
+    assert!(latest_button(&rt).is_some(), "Scroll to latest offers the way back");
+}
