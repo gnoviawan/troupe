@@ -97,6 +97,11 @@ pub async fn get_commit_file_diff(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    for path in std::iter::once(&req.path).chain(req.old_path.as_ref()) {
+        if let Some(refused) = super::git_api::host_secret_refusal::<GitCommitFileDiff>(&cwd, path) {
+            return refused;
+        }
+    }
     let cwd_for_log = cwd.clone();
     let hash_for_log = req.hash.chars().take(40).collect::<String>();
     let GitCommitFileDiffRequest {
