@@ -20,7 +20,7 @@ pub fn page(s: &State, t: &'static Tokens, id: &str, phone: bool, layer: &mut Ve
         "terminal-profiles" => crate::settings_profiles::profiles_page(s, t),
         "skills" => crate::settings_profiles::skills_page(s, t, phone),
         crate::settings_mcp::PAGE => crate::settings_mcp::page(s, t, phone),
-        "preferences" => preferences(s, t, layer),
+        "preferences" => preferences(s, t, phone, layer),
         "terminal" => terminal(s, t, layer),
         "ai-agents" => agents(s, t, layer),
         "shortcuts" => settings_shortcuts::shortcuts(s, t),
@@ -64,7 +64,7 @@ fn number(s: &State, key: &str) -> Option<f64> {
     s.settings.get(key).as_f64()
 }
 
-fn preferences(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
+fn preferences(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) -> Vec<El> {
     let theme_name = s.tokens().name.clone();
     let change = Button::new("Change theme")
         .variant(ButtonVariant::Secondary)
@@ -203,7 +203,7 @@ fn preferences(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
             )],
         )],
     );
-    let colours = swatches(t, "Default project color", s.settings.str("defaultProjectColor"), |s, colour| s.set_setting("defaultProjectColor", json!(colour)));
+    let colours = swatches(t, "Default project color", s.settings.str("defaultProjectColor"), phone, |s, colour| s.set_setting("defaultProjectColor", json!(colour)));
     let new_projects = group(
         t,
         "new-projects",
@@ -226,34 +226,39 @@ fn preferences(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
 
 const COLOURS: [&str; 9] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "cyan", "gray"];
 
-/// `ColorSwatchGroup`: 24 px dots, the chosen one checked; `pick` stores a press.
-pub(crate) fn swatches(t: &Tokens, label: &str, chosen: &str, pick: fn(&mut State, &'static str)) -> El {
+/// `ColorSwatchGroup`: 24 px dots, the chosen one checked; `pick` stores a press. On touch each
+/// dot sits in a 44 px hit area (`TOUCH_HIT_AREA_CLASS`), so the dots stand 20 px apart.
+pub(crate) fn swatches(t: &Tokens, label: &str, chosen: &str, coarse: bool, pick: fn(&mut State, &'static str)) -> El {
     let check = theme::icons::named("Check").expect("bundled icon");
     let mut group = row()
         .key("swatches")
         .role("radiogroup")
         .label(label.to_owned())
-        .gap(8.0)
+        .gap(if coarse { 0.0 } else { 8.0 })
+        .flex_wrap()
         .items_center();
     for colour in COLOURS {
         let name = format!("{}{}", colour[..1].to_uppercase(), &colour[1..]);
-        let mut dot = row()
-            .key(format!("swatch-{colour}"))
-            .role("radio")
-            .label(name)
-            .checked(colour == chosen)
-            .w(24.0)
-            .h(24.0)
-            .radius(12.0)
-            .items_center()
-            .justify_center()
-            .focusable(true)
-            .fill(ui::shell::project_color(t, colour))
-            .on_press(move |s: &mut State| pick(s, colour));
+        let mut dot = row().key("dot").w(24.0).h(24.0).radius(12.0).items_center().justify_center().fill(ui::shell::project_color(t, colour));
         if colour == chosen {
             dot = dot.child(icon(check, 12.0).color(t.colors.background).a11y_hidden());
         }
-        group = group.child(dot);
+        let hit = if coarse { 44.0 } else { 24.0 };
+        group = group.child(
+            row()
+                .key(format!("swatch-{colour}"))
+                .role("radio")
+                .label(name)
+                .checked(colour == chosen)
+                .w(hit)
+                .h(hit)
+                .radius(hit / 2.0)
+                .items_center()
+                .justify_center()
+                .focusable(true)
+                .on_press(move |s: &mut State| pick(s, colour))
+                .child(dot),
+        );
     }
     group
 }

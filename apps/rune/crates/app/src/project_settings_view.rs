@@ -65,7 +65,7 @@ fn general(s: &State, t: &'static Tokens, phone: bool) -> Vec<El> {
         .key("browse")
         .h(if phone { 44.0 } else { 32.0 })
         .on_press(|s: &mut State| s.toast_later("Browsing the server's folders"));
-    let colours = crate::settings_pages::swatches(t, "Project color", &ui.color, |s, colour| s.project_ui.color = colour.to_owned());
+    let colours = crate::settings_pages::swatches(t, "Project color", &ui.color, phone, |s, colour| s.project_ui.color = colour.to_owned());
     vec![group(
         t,
         "project",
@@ -247,7 +247,7 @@ pub fn footer(t: &'static Tokens, phone: bool) -> El {
     row()
         .key("settings-footer")
         .w_full()
-        .px(if phone { 16.0 } else { 32.0 })
+        .px(if phone { 16.0 } else { 40.0 })
         .py(12.0)
         .justify_center()
         .fill(c.background)

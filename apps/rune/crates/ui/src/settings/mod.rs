@@ -3,7 +3,10 @@
 //! stepper, the notice, the empty state, the filter well and the segmented switch. The window
 //! shell and the pages are the app's; these hold the look.
 
+mod group;
 pub mod pages;
+
+pub use group::{COLUMN, Heading, Layout, SPLIT_FROM, after_lead, column_width, described, group, group_with_meta, page, section, split, split_heading, split_row};
 
 use rune::{El, TextEdit, col, el, icon, row, text, text_input};
 use theme::Tokens;
@@ -12,8 +15,6 @@ use crate::Switch;
 use crate::paint::shadows;
 use crate::type_::sans;
 
-/// The page column's widest (`SETTINGS_COLUMN_CLASS`, `max-w-[640px]`).
-pub const COLUMN: f32 = 640.0;
 /// The rail's width at `md` and up (`md:w-60`).
 pub const RAIL: f32 = 240.0;
 
@@ -27,36 +28,6 @@ pub fn header(t: &Tokens, title: &str, description: &str) -> El {
         .pb(32.0)
         .child(text(title).font(sans(20.0, 500.0, 28.0)).color(c.foreground).role("heading"))
         .child(text(description).font(sans(14.0, 400.0, 20.0)).color(c.muted_foreground).wrap())
-}
-
-/// `SettingsGroup`: a 14/20 heading, its actions at the right, then 12 px, then `content`.
-pub fn group(t: &Tokens, key: &str, title: &str, actions: Vec<El>, content: Vec<El>) -> El {
-    group_with_meta(t, key, title, "", actions, content)
-}
-
-/// `SettingsGroup` with its `meta`: a 12 px note after the heading, such as a count.
-pub fn group_with_meta(t: &Tokens, key: &str, title: &str, meta: &str, actions: Vec<El>, content: Vec<El>) -> El {
-    let c = &t.colors;
-    let mut head = row().key("head").w_full().min_h(28.0).items_center().justify_between().gap(12.0);
-    if !title.is_empty() {
-        let mut words = row().key("title").min_w(0.0).gap(8.0).items_center().child(text(title).font(sans(14.0, 500.0, 20.0)).color(c.foreground).role("heading"));
-        if !meta.is_empty() {
-            words = words.child(text(meta).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).single_line().truncate());
-        }
-        head = head.child(words);
-    }
-    if !actions.is_empty() {
-        head = head.child(row().key("actions").gap(8.0).items_center().children(actions));
-    }
-    col()
-        .key(key.to_owned())
-        .role("group")
-        .label(title.to_owned())
-        .w_full()
-        .gap(12.0)
-        .items_stretch()
-        .child(head)
-        .children(content)
 }
 
 /// `SettingsCard`: the card fill, a 0.5 px edge and the control drop, radius 8, its rows split by
