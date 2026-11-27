@@ -203,3 +203,152 @@ async fn a_malformed_payload_never_repeats_a_value() {
     assert_eq!(code(&reply), "SSH_INVALID_REQUEST");
     assert!(!message(&reply).contains("hunter2"), "{}", message(&reply));
 }
+
+#[tokio::test]
+async fn trusting_a_host_key_is_refused_until_the_prompt_reaches_the_client() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut client = Client::new(&relay_with_ssh(dir.path()));
+    let trusted = client
+        .send(
+            "ssh_session_respond_host_key",
+            json!({ "sessionId": "s1", "trust": true }),
+        )
+        .await;
+    assert_eq!(code(&trusted), "SSH_HOST_KEY_TRUST_UNAVAILABLE");
+    let rejected = client
+        .send(
+            "ssh_session_respond_host_key",
+            json!({ "sessionId": "s1", "trust": false }),
+        )
+        .await;
+    assert!(rejected.ok, "{rejected:?}");
+}
+
+fn password_profile(host: &str) -> Value {
+    json!({ "profile": {
+        "id": "p1",
+        "name": "prod",
+        "host": host,
+        "port": 22,
+        "username": "deploy",
+        "authMethod": "password",
+        "portForwards": [],
+        "hasStoredPassword": true,
+        "hasStoredPassphrase": false,
+    }})
+}
+
+#[tokio::test]
+async fn moving_a_profile_to_another_host_drops_its_stored_password() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut client = Client::new(&relay_with_ssh(dir.path()));
+    let stored = |reply: &WsReply| reply.payload.as_ref().unwrap()[0]["hasStoredPassword"].clone();
+
+    assert!(
+        client
+            .send("ssh_save_profile", password_profile("a.example"))
+            .await
+            .ok
+    );
+    assert!(
+        client
+            .send("ssh_save_profile", password_profile("a.example"))
+            .await
+            .ok
+    );
+    let same_host = client.send("ssh_list_profiles", json!({})).await;
+    assert_eq!(stored(&same_host), json!(true), "the same host keeps it");
+
+    assert!(
+        client
+            .send("ssh_save_profile", password_profile("b.example"))
+            .await
+            .ok
+    );
+    let moved = client.send("ssh_list_profiles", json!({})).await;
+    assert_eq!(moved.payload.as_ref().unwrap()[0]["host"], "b.example");
+    assert_eq!(stored(&moved), json!(false), "a new host must ask again");
+}
+
+/// A TCP server that accepts and never speaks SSH, so a connect hangs in the
+/// handshake.
+async fn silent_host() -> (u16, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let mut held = Vec::new();
+        while let Ok((socket, _)) = listener.accept().await {
+            held.push(socket);
+        }
+    });
+    (port, server)
+}
+
+fn silent_target(port: u16) -> crate::ssh::session::SessionTarget {
+    crate::ssh::session::SessionTarget {
+        profile_id: "p1".to_string(),
+        host: "127.0.0.1".to_string(),
+        port,
+        username: "deploy".to_string(),
+        auth_method: "agent".to_string(),
+        key_path: None,
+    }
+}
+
+#[tokio::test]
+async fn a_dropped_open_releases_its_session_id() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+    let ssh = relay.ssh().unwrap();
+    let pty = crate::web::test_pty_manager();
+    let (port, server) = silent_host().await;
+
+    let open = ssh
+        .sessions
+        .open(&pty, "s1", silent_target(port), None, 80, 24);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(500), open)
+            .await
+            .is_err(),
+        "the handshake hangs"
+    );
+    assert!(
+        !ssh.sessions.cancel("s1"),
+        "the dropped open no longer holds s1"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+async fn pending_connects_are_capped() {
+    let dir = tempfile::tempdir().unwrap();
+    let relay = relay_with_ssh(dir.path());
+    let ssh = relay.ssh().unwrap();
+    let pty = crate::web::test_pty_manager();
+    let (port, server) = silent_host().await;
+
+    let mut opens = Vec::new();
+    for n in 0..crate::ssh::session::MAX_PENDING_CONNECTS {
+        let (ssh, pty) = (Arc::clone(&ssh), Arc::clone(&pty));
+        opens.push(tokio::spawn(async move {
+            let _ = ssh
+                .sessions
+                .open(&pty, &format!("s{n}"), silent_target(port), None, 80, 24)
+                .await;
+        }));
+    }
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    let over = tokio::time::timeout(
+        Duration::from_secs(2),
+        ssh.sessions
+            .open(&pty, "one-too-many", silent_target(port), None, 80, 24),
+    )
+    .await
+    .expect("refused at once, not queued");
+    let error = over.err().expect("refused");
+    assert!(error.detail.contains("Too many"), "{}", error.detail);
+    for open in opens {
+        open.abort();
+    }
+    server.abort();
+}

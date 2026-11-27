@@ -49,6 +49,43 @@ pub struct SessionTarget {
     pub key_path: Option<String>,
 }
 
+impl SessionTarget {
+    /// Everything that decides which host a secret goes to.
+    #[must_use]
+    pub fn fingerprint(&self) -> String {
+        format!(
+            "{}\u{0}{}\u{0}{}\u{0}{}\u{0}{}",
+            self.host,
+            self.port,
+            self.username,
+            self.auth_method,
+            self.key_path.as_deref().unwrap_or("")
+        )
+    }
+}
+
+/// An `open`'s hold on its session id. Dropping it (the open finished,
+/// failed, or its future was dropped) releases the id, unless another open
+/// has taken it since.
+struct PendingReservation<'a> {
+    manager: &'a SshSessionManager,
+    session_id: &'a str,
+    pending: Arc<Pending>,
+}
+
+impl Drop for PendingReservation<'_> {
+    fn drop(&mut self) {
+        let mut pending = lock(&self.manager.pending);
+        if pending
+            .get(self.session_id)
+            .is_some_and(|held| Arc::ptr_eq(held, &self.pending))
+        {
+            pending.remove(self.session_id);
+            lock(&self.manager.early_ends).remove(self.session_id);
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
@@ -79,7 +116,12 @@ struct Pending {
 struct SecretEntry {
     secret: String,
     sessions: usize,
+    /// The host the secret worked for ([`SessionTarget::fingerprint`]).
+    target: String,
 }
+
+/// Most connects that may be in progress at once.
+pub const MAX_PENDING_CONNECTS: usize = 8;
 
 pub struct SshSessionManager {
     emit: Emit,
@@ -188,16 +230,28 @@ impl SshSessionManager {
             .map(|entry| entry.secret.clone())
     }
 
-    fn retain_secret(&self, profile_id: &str, secret: &str) {
+    /// [`Self::cached_secret`], only when it worked for this exact target:
+    /// a profile edited to another host, port, user or key never gets the
+    /// old host's secret.
+    pub fn cached_secret_for(&self, target: &SessionTarget) -> Option<String> {
+        lock(&self.secrets)
+            .get(&target.profile_id)
+            .filter(|entry| entry.target == target.fingerprint())
+            .map(|entry| entry.secret.clone())
+    }
+
+    fn retain_secret(&self, target: &SessionTarget, secret: &str) {
         let mut secrets = lock(&self.secrets);
         let entry = secrets
-            .entry(profile_id.to_string())
+            .entry(target.profile_id.clone())
             .or_insert_with(|| SecretEntry {
                 secret: String::new(),
                 sessions: 0,
+                target: String::new(),
             });
         // The newest secret that worked wins (the user may have changed it).
         entry.secret = secret.to_string();
+        entry.target = target.fingerprint();
         entry.sessions += 1;
     }
 
@@ -243,8 +297,22 @@ impl SshSessionManager {
                     "Session id already in use",
                 ));
             }
+            if pending_map.len() >= MAX_PENDING_CONNECTS {
+                return Err(ConnectError::new(
+                    ConnectErrorKind::Internal,
+                    "Too many connections are being opened; wait for one to finish",
+                ));
+            }
             pending_map.insert(session_id.to_string(), pending.clone());
         }
+        // Dropped with this future (a client that disconnected mid-open
+        // aborts its request): the reservation is released, not left until
+        // the host-key timeout.
+        let _reservation = PendingReservation {
+            manager: self,
+            session_id,
+            pending: Arc::clone(&pending),
+        };
         log::info!(
             "[SSH] Opening session {} for profile {} ({})",
             crate::logging::redact_session_id(session_id),
@@ -287,7 +355,7 @@ impl SshSessionManager {
             let cancelled = pending.cancelled.load(Ordering::Acquire);
             if !cancelled && early_end.is_none() {
                 if let Some(secret) = secret.as_deref() {
-                    self.retain_secret(&target.profile_id, secret);
+                    self.retain_secret(&target, secret);
                 }
                 live.insert(
                     session_id.to_string(),

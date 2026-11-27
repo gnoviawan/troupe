@@ -106,6 +106,11 @@ pub(super) fn entity_key(request: &WsRequest) -> Option<EntityKey> {
             return Some(format!("project:{id}"));
         }
     }
+    // An SSH session id is not an ACP session id: its own key kind keeps the
+    // two from queueing behind each other when they happen to match.
+    if crate::web::ws::SSH_WS_REQUESTS.contains(&request.type_.as_str()) {
+        return text("sessionId").map(|id| format!("ssh-session:{id}"));
+    }
     [
         ("sessionId", "session"),
         ("terminalId", "terminal"),
