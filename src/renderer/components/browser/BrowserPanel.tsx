@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useBrowserWebview } from '@/hooks/use-browser-webview'
 import {
+  browserAnnotationsSync,
   browserCheckLocalPort,
   browserSaveAnnotationCrop,
   browserTabAnnotationCmd,
@@ -59,9 +60,11 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   const setCustomViewportWidth = useBrowserSessionStore((s) => s.setCustomViewportWidth)
   const addPendingAnnotation = useBrowserSessionStore((s) => s.addPendingAnnotation)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
+  const removePendingAnnotations = useBrowserSessionStore((s) => s.removePendingAnnotations)
   const setAnnotateMode = useBrowserSessionStore((s) => s.setAnnotateMode)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
   const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
+  const markScreenshotCopied = useBrowserSessionStore((s) => s.markScreenshotCopied)
 
   const activeProject = useProjectStore((s) =>
     s.activeProjectId ? s.projects.find((p) => p.id === s.activeProjectId) : undefined
@@ -69,6 +72,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
 
   const stageRef = useRef<HTMLDivElement>(null)
   const gripCleanupRef = useRef<(() => void) | null>(null)
+  const removedAnnotationIdsRef = useRef<Set<string>>(new Set())
   const [reloadNonce, setReloadNonce] = useState(0)
   const [measuredViewport, setMeasuredViewport] = useState<{
     width: number
@@ -110,7 +114,11 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       const latest = useBrowserSessionStore.getState().getTab(browserTabId)
       if (!latest?.annotateMode) return
       void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: true })
-      void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: latest.annotateTool })
+      void browserTabAnnotationCmd(browserTabId, {
+        type: 'set_tool',
+        tool: latest.annotateTool,
+        axis: latest.annotateTool === 'ruler' ? latest.rulerAxis : undefined
+      })
       if (latest.animationsPaused) {
         void browserTabAnnotationCmd(browserTabId, { type: 'set_pause', paused: true })
       }
@@ -125,6 +133,7 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     const subUpdated = onAgentationAnnotationUpdated((payload) => {
       if (payload.tabId && payload.tabId !== browserTabId) return
       if (payload.status !== 'resolved' && payload.status !== 'dismissed') return
+      removedAnnotationIdsRef.current.add(payload.id)
       const hasItem = useBrowserSessionStore
         .getState()
         .getTab(browserTabId)
@@ -133,7 +142,10 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
       removePendingAnnotation(browserTabId, payload.id)
       void browserTabAnnotationCmd(browserTabId, { type: 'clear', ids: [payload.id] })
     })
-    return () => subUpdated.unlisten()
+    return () => {
+      subUpdated.unlisten()
+      removedAnnotationIdsRef.current.clear()
+    }
   }, [browserTabId, removePendingAnnotation])
 
   // Drain overlay annotations/actions via the CSP- and mixed-content-proof host
@@ -171,11 +183,9 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   useEffect(() => {
     if (!isVisible || !annotateMode) return
     const subCreated = onAgentationAnnotationCreated((payload) => {
-      if (payload.tabId) {
-        if (payload.tabId !== browserTabId) return
-      } else if (!sameOriginAndPath(payload.url, url)) {
-        return
-      }
+      if (payload.tabId && payload.tabId !== browserTabId) return
+      if (!sameOriginAndPath(payload.url, url)) return
+      const expectedPageUrl = payload.url || url
       const kind =
         payload.kind === 'rectangle' || payload.kind === 'guide' || payload.kind === 'measurement'
           ? payload.kind
@@ -212,6 +222,14 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             }
           }
         }
+        if (removedAnnotationIdsRef.current.has(payload.id)) {
+          removedAnnotationIdsRef.current.delete(payload.id)
+          return
+        }
+        const liveUrl = useBrowserSessionStore.getState().getTab(browserTabId)?.url ?? ''
+        if (!sameOriginAndPath(expectedPageUrl, liveUrl)) {
+          return
+        }
         addPendingAnnotation(browserTabId, {
           id: payload.id,
           kind,
@@ -241,31 +259,63 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
         const parsed = JSON.parse(payload.output) as {
           kind?: string
           tabId?: string
+          ids?: unknown[]
           rect?: { x: number; y: number; width: number; height: number }
           dpr?: number
           viewportWidth?: number
         }
         if (parsed.tabId && parsed.tabId !== browserTabId) return
 
-        const finishAreaCapture = () => {
+        if (parsed.kind === 'annotations_removed' && Array.isArray(parsed.ids)) {
+          const ids = parsed.ids.filter(
+            (id): id is string => typeof id === 'string' && id.length > 0
+          )
+          if (ids.length > 0) {
+            for (const id of ids) {
+              removedAnnotationIdsRef.current.add(id)
+            }
+            removePendingAnnotations(browserTabId, ids)
+            void browserAnnotationsSync('delete', ids)
+          }
+          return
+        }
+
+        const captureToken =
+          useBrowserSessionStore.getState().getTab(browserTabId)?.screenshotAreaToken ?? 0
+
+        const finishAreaCapture = (expectedToken: number) => {
           const latestTab = useBrowserSessionStore.getState().getTab(browserTabId)
+          if ((latestTab?.screenshotAreaToken ?? 0) !== expectedToken) return
           if (latestTab?.standaloneScreenshotArea) {
             setStandaloneScreenshotArea(browserTabId, false)
             setAnnotateMode(browserTabId, false)
             void browserTabAnnotationCmd(browserTabId, { type: 'set_active', active: false })
-          } else {
+          } else if (latestTab?.annotateMode && latestTab.annotateTool === 'screenshot-area') {
             setAnnotateTool(browserTabId, 'comment')
             void browserTabAnnotationCmd(browserTabId, { type: 'set_tool', tool: 'comment' })
           }
         }
 
         if (parsed.kind === 'screenshot_area_cancelled') {
-          finishAreaCapture()
+          finishAreaCapture(captureToken)
           return
         }
         if (parsed.kind !== 'screenshot_area' || !parsed.rect) return
         const rect = parsed.rect
         void (async () => {
+          const hideOverlay =
+            useBrowserSessionStore.getState().getTab(browserTabId)?.annotateMode === true
+          if (hideOverlay) {
+            await browserTabAnnotationCmd(browserTabId, {
+              type: 'set_capture_hidden',
+              hidden: true
+            })
+            await new Promise<void>((resolve) => {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => resolve())
+              })
+            })
+          }
           try {
             const shot = await browserTabScreenshot(browserTabId)
             if (!shot.success) {
@@ -294,12 +344,19 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
             }
             const copied = await copyBase64PngToClipboard(cropped.base64)
             if (copied.ok) {
+              markScreenshotCopied(browserTabId)
               toast.success('Screenshot copied to clipboard')
             } else {
               toast.error(copied.error)
             }
           } finally {
-            finishAreaCapture()
+            if (hideOverlay) {
+              void browserTabAnnotationCmd(browserTabId, {
+                type: 'set_capture_hidden',
+                hidden: false
+              })
+            }
+            finishAreaCapture(captureToken)
           }
         })()
       } catch {
@@ -316,6 +373,8 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
     annotateMode,
     browserTabId,
     isVisible,
+    markScreenshotCopied,
+    removePendingAnnotations,
     setAnnotateMode,
     setAnnotateTool,
     setStandaloneScreenshotArea,
