@@ -472,6 +472,9 @@ fn main() -> ExitCode {
                     Duration::from_secs(cfg.receipt_retention_secs),
                 )),
         );
+        if launch.desktop {
+            desktop_mode::attach_ssh(&ws_relay, &data_paths.state_dir);
+        }
         let (claude_limit, claude_limit_inbox) =
             termul_manager_lib::claude_limit::ClaudeLimitHandle::channel();
         let (codex_limit, codex_limit_inbox) =

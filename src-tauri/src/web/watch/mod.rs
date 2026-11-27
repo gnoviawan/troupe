@@ -20,7 +20,8 @@ pub use sources::{
     agents_state, attach_terminal_set_observer, chat_activity_state, chat_history_state,
     fs_state, projects_state, publish_agent_event, publish_chat_activity,
     publish_chat_history, publish_projects, publish_store,
-    publish_terminals, publish_worktree_branch_renamed, store_state, terminals_state,
+    publish_ssh_event, publish_terminals, publish_worktree_branch_renamed, ssh_state,
+    store_state, terminals_state,
     AGENT_ROSTER_EVENTS, AGENT_TRANSIENT_EVENTS,
 };
 

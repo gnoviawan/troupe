@@ -8,7 +8,7 @@
 use super::*;
 use crate::web::watch::{
     agents_state, chat_activity_state, chat_history_state, fs_state,
-    projects_state, store_state,
+    projects_state, ssh_state, store_state,
     terminals_state,
     SubscribeError, WatchKind,
 };
@@ -57,6 +57,7 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
                 _ => agents_state(&env.acp),
             })
         }
+        WatchKind::Ssh => hub.subscribe(kind, &scope, &env.out_tx, ssh_state),
         WatchKind::Terminals => hub.subscribe(kind, &scope, &env.out_tx, || {
             terminals_state(&env.pty, &scope)
         }),

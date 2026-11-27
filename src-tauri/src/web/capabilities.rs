@@ -295,6 +295,9 @@ pub enum Requirement {
     DeviceStore,
     /// Every other mutation: needs [`Capabilities::write`].
     Write,
+    /// Acts with the host's own credentials (the SSH requests and the `ssh`
+    /// watch): needs [`Capabilities::host_local`].
+    HostLocal,
 }
 
 /// Classify a `/ws` request type. Allow-list of the view-level types; every
@@ -336,8 +339,20 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
         | "store_read"
         | "mark_chat_read" => Requirement::View,
         "store_write" | "store_delete" => Requirement::DeviceStore,
+        t if crate::web::ws::SSH_WS_REQUESTS.contains(&t) => Requirement::HostLocal,
         _ => Requirement::Write,
     }
+}
+
+/// [`ws_requirement`] refined by the payload: a `watch` of the `ssh` watch
+/// needs [`Requirement::HostLocal`], because SSH events (host-key questions,
+/// remote paths) go only to the connections that may run the sessions.
+#[must_use]
+pub fn ws_request_requirement(request_type: &str, payload: &serde_json::Value) -> Requirement {
+    if request_type == "watch" && payload["watch"].as_str() == Some("ssh") {
+        return Requirement::HostLocal;
+    }
+    ws_requirement(request_type)
 }
 
 /// Whether `caps` may run a `/ws` request of `request_type` whose payload is
@@ -349,9 +364,10 @@ pub fn ws_request_permitted(
     caps: Capabilities,
     identity: Option<&ClientIdentity>,
 ) -> bool {
-    match ws_requirement(request_type) {
+    match ws_request_requirement(request_type, payload) {
         Requirement::View => true,
         Requirement::Write => caps.write,
+        Requirement::HostLocal => caps.host_local,
         Requirement::DeviceStore => {
             caps.write
                 || payload["key"]

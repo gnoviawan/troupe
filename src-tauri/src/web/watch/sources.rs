@@ -205,6 +205,23 @@ pub fn publish_worktree_branch_renamed(relay: &WsRelaySink, payload: &Value) {
     });
 }
 
+/// Full state of the `ssh` watch. Its deltas are events, not state, so a
+/// (re)subscribe starts from nothing; `ssh_session_list` lists live sessions.
+#[must_use]
+pub fn ssh_state() -> Value {
+    json!({})
+}
+
+/// One SSH event (`ssh-session-progress`, `ssh-session-host-key`,
+/// `ssh-session-ended`, `ssh-transfer-progress`,
+/// `ssh-port-forward-status-changed`) to every `ssh` watcher, as
+/// `{ event, payload }`.
+pub fn publish_ssh_event(relay: &WsRelaySink, event: &str, payload: Value) {
+    relay.watches().publish(WatchKind::Ssh, "", || {
+        json!({ "event": event, "payload": payload })
+    });
+}
+
 /// Route every change of a project's terminal set to its `terminals` watchers.
 /// The observer holds the manager weakly: the manager owns it.
 pub fn attach_terminal_set_observer(pty: &Arc<PtyManager>, relay: &Arc<WsRelaySink>) {

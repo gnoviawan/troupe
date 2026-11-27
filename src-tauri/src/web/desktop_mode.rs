@@ -3,7 +3,8 @@
 //!
 //! The desktop mode runs the startup work only the Tauri process did before:
 //! the import of the retired plugin-store file `termul-data.json`, the import
-//! of the legacy renderer-authored chat history, and the keychain self-test.
+//! of the legacy renderer-authored chat history, the SSH manager (served to
+//! the host-local client over `/ws`) and the keychain self-test.
 //! It binds loopback only and never self-updates (the app bundle owns the
 //! binary). `--parent-pid` stops the server cleanly when the app exits; it
 //! works with or without `--desktop`. Both are off by default.
@@ -14,6 +15,7 @@ use std::sync::Arc;
 use tracing::{error, info};
 
 use crate::acp::{import_chat_history, ChatHistoryStore, SessionPersistence};
+use crate::web::sink::WsRelaySink;
 use crate::web::store::{desktop_legacy_file, WebStore};
 
 /// The legacy renderer-authored chat history, under the Tauri app data dir.
@@ -108,6 +110,26 @@ pub fn spawn_legacy_history_import(persistence: Arc<SessionPersistence>, state_d
             "legacy chat history import finished: {imported} new session(s)"
         );
     });
+}
+
+/// Serve the host-local client's SSH requests: profiles in the state dir (the
+/// Tauri app's `ssh-profiles.json`), events to the `ssh` watch. The emitter
+/// holds the relay weakly, because the relay owns the manager.
+pub fn attach_ssh(relay: &Arc<WsRelaySink>, state_dir: &Path) {
+    let events = Arc::downgrade(relay);
+    let emit: crate::ssh::Emit = Arc::new(move |event, payload| {
+        if let Some(relay) = events.upgrade() {
+            crate::web::watch::publish_ssh_event(&relay, event, payload);
+        }
+    });
+    relay.set_ssh(Arc::new(crate::ssh::SSHManager::for_server(
+        state_dir, emit,
+    )));
+    info!(
+        target: "termul::desktop_mode",
+        "SSH manager attached; profiles in '{}'",
+        state_dir.display()
+    );
 }
 
 /// Check that the OS keychain persists secrets. When it does not, stored SSH
