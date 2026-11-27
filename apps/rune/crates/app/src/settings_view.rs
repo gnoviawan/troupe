@@ -7,10 +7,11 @@
 use rune::{El, TextEdit, col, el, icon, row, text};
 use theme::Tokens;
 use ui::overlay::{ConfirmDialog, ConfirmVariant};
-use ui::settings::pages::{self, APP_PAGES, Owner, Page};
+use ui::settings::pages::{self, APP_PAGES, Owner, PROJECT_PAGES, Page};
 use ui::type_::sans;
 
 use crate::State;
+use crate::project_settings::{LEAVE, PROJECT};
 
 /// The overlay key of the App Preferences window.
 pub const APP: &str = "settings-app";
@@ -34,9 +35,75 @@ pub struct SettingsUi {
     pub shortcut_filter: TextEdit,
     /// Disclosures the user opened ("terminal-advanced", "agents-limits").
     pub open: Vec<&'static str>,
+    pub profile: crate::settings_profiles::ProfileEditor,
+    pub skills: crate::settings_profiles::SkillsUi,
+    /// The shells `/shells` detected; empty while the read is out.
+    pub shells: Option<Vec<crate::settings_profiles::ShellInfo>>,
+    /// The undo toast on screen and what its Undo puts back.
+    pub undo: Option<(u64, crate::settings_profiles::Undo)>,
+}
+
+/// Which Settings window is open: App Preferences or a project's settings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Window {
+    App,
+    Project,
+}
+
+impl Window {
+    fn pages(self) -> &'static [Page] {
+        match self {
+            Window::App => &APP_PAGES,
+            Window::Project => &PROJECT_PAGES,
+        }
+    }
+
+    fn title(self) -> &'static str {
+        match self {
+            Window::App => "Preferences",
+            Window::Project => "Project settings",
+        }
+    }
 }
 
 impl State {
+    /// The Settings window on screen, if any.
+    pub(crate) fn settings_window(&self) -> Option<Window> {
+        if self.overlays.is_open(APP) {
+            Some(Window::App)
+        } else if self.overlays.is_open(PROJECT) {
+            Some(Window::Project)
+        } else {
+            None
+        }
+    }
+
+    fn window_page(&self, w: Window) -> &'static Page {
+        match w {
+            Window::App => self.settings_page(),
+            Window::Project => pages::find(&PROJECT_PAGES, self.project_ui.page.unwrap_or("general")),
+        }
+    }
+
+    fn pick_page(&mut self, w: Window, id: &'static str) {
+        log::info!("[settings] page {id}");
+        match w {
+            Window::App => {
+                self.settings_ui.page = Some(id);
+                self.keys.recording = None;
+                self.settings_page_opened();
+            }
+            Window::Project => self.project_ui.page = Some(id),
+        }
+    }
+
+    fn close_window(&mut self, w: Window) {
+        match w {
+            Window::App => self.close_settings(),
+            Window::Project => self.close_project_settings(),
+        }
+    }
+
     /// `openApp(page)`: the window on `page` (old ids follow their alias), else the first page.
     pub fn open_settings(&mut self, page: Option<&str>) {
         let id = page.map(pages::resolve_app_page);
@@ -44,9 +111,21 @@ impl State {
         self.settings_ui.search = TextEdit::new("");
         self.settings_ui.shortcut_filter = TextEdit::new("");
         log::info!("[settings] open {}", self.settings_ui.page.unwrap_or("preferences"));
+        self.settings_page_opened();
         self.overlays.close(crate::DRAWER);
         if !self.overlays.is_open(APP) {
             self.overlays.open(APP);
+        }
+    }
+
+    /// Reads what the shown page lists, once per window.
+    pub(crate) fn settings_page_opened(&mut self) {
+        if self.settings_page().id == crate::settings_mcp::PAGE {
+            self.mcp_page_opened();
+        }
+        if self.settings_page().id == "skills" {
+            let root = self.active_project().and_then(|p| p.path.clone()).unwrap_or_default();
+            self.fetch_skills_for(root);
         }
     }
 
@@ -133,9 +212,9 @@ fn rail_item(t: &Tokens, key: String, label: &str, glyph_name: &str, active: boo
     r
 }
 
-fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
+fn rail(s: &State, t: &'static Tokens, w: Window) -> El {
     let c = &t.colors;
-    let active = s.settings_page().id;
+    let active = s.window_page(w).id;
     let mut nav = col()
         .key("settings-nav")
         .role("navigation")
@@ -145,8 +224,8 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
         .px(12.0)
         .pb(12.0);
     let mut last_group = None;
-    for page in &APP_PAGES {
-        if page.group != last_group && !phone {
+    for page in w.pages() {
+        if page.group != last_group {
             if let Some(group) = page.group {
                 nav = nav.child(
                     row()
@@ -162,11 +241,7 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
         }
         let id = page.id;
         nav = nav.child(
-            rail_row(t, format!("page-{id}"), page.label, page.icon, id == active).on_press(move |s: &mut State| {
-                log::info!("[settings] page {id}");
-                s.settings_ui.page = Some(id);
-                s.keys.recording = None;
-            }),
+            rail_row(t, format!("page-{id}"), page.label, page.icon, id == active).on_press(move |s: &mut State| s.pick_page(w, id)),
         );
     }
     let search = ui::panel_field(t, &s.settings_ui.search, "Search settings...", false)
@@ -183,32 +258,45 @@ fn rail(s: &State, t: &'static Tokens, phone: bool) -> El {
                 .a11y_hidden(),
         ),
     );
-    let mut aside = col()
+    let mut back = col().key("back-band").px(12.0).pb(4.0).gap(4.0).child(
+        rail_row(t, "settings-back".into(), "Back to app", "ArrowLeft", false).on_press(move |s: &mut State| s.close_window(w)),
+    );
+    if let Some(subtitle) = subtitle(s, w) {
+        back = back.child(
+            col()
+                .key("rail-title")
+                .w_full()
+                .px(8.0)
+                .pt(8.0)
+                .pb(4.0)
+                .child(text(w.title()).font(sans(12.0, 500.0, 16.0)).color(c.foreground).truncate())
+                .child(text(subtitle).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).truncate()),
+        );
+    }
+    col()
         .key("settings-rail")
-        .w(if phone { 0.0 } else { RAIL })
+        .w(RAIL)
         .h_full()
         .fill(c.sidebar_background)
-        .items_stretch();
-    if phone {
-        return aside;
+        .items_stretch()
+        .child(el().key("top").h(44.0))
+        .child(back)
+        .child(search)
+        .child(ui::scroll_area(t, "settings-nav-scroll", nav))
+}
+
+/// The line under the window's title: the project's name.
+fn subtitle(s: &State, w: Window) -> Option<String> {
+    match w {
+        Window::App => None,
+        Window::Project => s.settings_project().map(|p| p.name.clone()),
     }
-    aside =
-        aside
-            .child(el().key("top").h(44.0))
-            .child(
-                col().key("back-band").px(12.0).pb(4.0).child(
-                    rail_row(t, "settings-back".into(), "Back to app", "ArrowLeft", false).on_press(|s: &mut State| s.close_settings()),
-                ),
-            )
-            .child(search)
-            .child(ui::scroll_area(t, "settings-nav-scroll", nav));
-    aside
 }
 
 /// The narrow layout's top: the title and Close, then the pages as a scrolling strip.
-fn phone_bar(s: &State, t: &'static Tokens) -> El {
+fn phone_bar(s: &State, t: &'static Tokens, w: Window) -> El {
     let c = &t.colors;
-    let active = s.settings_page().id;
+    let active = s.window_page(w).id;
     let mut strip = row()
         .key("settings-strip")
         .role("navigation")
@@ -216,13 +304,17 @@ fn phone_bar(s: &State, t: &'static Tokens) -> El {
         .gap(1.0)
         .px(12.0)
         .pb(8.0);
-    for page in &APP_PAGES {
+    for page in w.pages() {
         let id = page.id;
         strip = strip.child(
             rail_item(t, format!("page-{id}"), page.label, page.icon, id == active)
                 .h(44.0)
-                .on_press(move |s: &mut State| s.settings_ui.page = Some(id)),
+                .on_press(move |s: &mut State| s.pick_page(w, id)),
         );
+    }
+    let mut title = col().key("words").grow(1.0).min_w(0.0).py(8.0).child(text(w.title()).font(sans(14.0, 600.0, 20.0)).color(c.foreground).truncate());
+    if let Some(subtitle) = subtitle(s, w) {
+        title = title.child(text(subtitle).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground).truncate());
     }
     col()
         .key("settings-phone-bar")
@@ -237,28 +329,32 @@ fn phone_bar(s: &State, t: &'static Tokens) -> El {
                 .pl(16.0)
                 .pr(10.0)
                 .items_center()
-                .child(text("Preferences").font(sans(14.0, 600.0, 20.0)).color(c.foreground).grow(1.0))
+                .child(title)
                 .child(
-                    ui::quiet_icon_button(t, glyph("X"), "Close Preferences", 44.0, 16.0)
+                    ui::quiet_icon_button(t, glyph("X"), format!("Close {}", w.title()), 44.0, 16.0)
                         .key("settings-close")
-                        .on_press(|s: &mut State| s.close_settings()),
+                        .on_press(move |s: &mut State| s.close_window(w)),
                 ),
         )
         .child(row().key("strip-scroll").w_full().scroll_x().child(strip))
 }
 
-fn page_body(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
-    let page = s.settings_page();
+fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, layer: &mut Vec<El>) -> El {
+    let page = s.window_page(w);
     let mut column = col()
         .key(format!("settings-page-{}", page.id))
         .role("region")
         .label(page.label)
         .w_full()
         .max_w(COLUMN)
-        .items_stretch()
-        .child(ui::settings::header(t, page.label, page.description));
+        .items_stretch();
+    // A server's detail page has its own title (`SettingsSection` `subpage`).
+    if !(page.id == crate::settings_mcp::PAGE && s.mcp_ui.detail.is_some()) {
+        column = column.child(ui::settings::header(t, page.label, page.description));
+    }
     let groups = match page.owner {
-        Owner::Here => crate::settings_pages::page(s, t, page.id, layer),
+        Owner::Here if w == Window::Project => crate::project_settings_view::page(s, t, page.id, phone, layer),
+        Owner::Here => crate::settings_pages::page(s, t, page.id, phone, layer),
         Owner::Later(unit) => vec![ui::settings::notice(
             t,
             "later",
@@ -280,31 +376,46 @@ fn page_body(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     )
 }
 
-pub fn build(s: &State, t: &'static Tokens, phone: bool, layer: &mut Vec<El>) {
-    if !s.overlays.is_open(APP) {
+pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mut Vec<El>) {
+    let Some(w) = s.settings_window() else {
         return;
-    }
+    };
     let c = &t.colors;
     let mut frame = if phone { col() } else { row() }
         .key("settings-window")
         .role("dialog")
-        .label("Preferences")
+        .label(w.title())
         .pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0))
         .fill(c.background)
         .items_stretch();
     let mut inner = Vec::new();
-    let body = page_body(s, t, &mut inner);
+    let body = page_body(s, t, w, phone, &mut inner);
+    let mut main = col().key("settings-main").grow(1.0).items_stretch().child(col().key("settings-body").grow(1.0).min_h(0.0).child(body));
+    if w == Window::Project && s.project_dirty() {
+        main = main.child(crate::project_settings_view::footer(t, phone));
+    }
     frame = if phone {
-        frame
-            .child(phone_bar(s, t))
-            .child(col().key("settings-main").grow(1.0).min_h(0.0).child(body))
+        frame.child(phone_bar(s, t, w)).child(main.min_h(0.0))
     } else {
-        frame
-            .child(rail(s, t, false))
-            .child(col().key("settings-main").grow(1.0).min_w(0.0).h_full().child(body))
+        frame.child(rail(s, t, w)).child(main.min_w(0.0).h_full())
     };
     layer.push(frame);
     layer.extend(inner);
+    if w == Window::Project {
+        let name = s.settings_project().map_or_else(|| "this project".to_owned(), |p| p.name.clone());
+        ConfirmDialog::new(LEAVE, "Unsaved changes", format!("You have unsaved changes in {name}. Leaving will discard them."))
+            .variant(ConfirmVariant::Danger)
+            .confirm_label("Leave")
+            .cancel_label("Cancel")
+            .open(s.overlays.is_open(LEAVE))
+            .on_cancel(|s: &mut State| s.close(LEAVE))
+            .on_confirm(|s: &mut State| s.leave_project_settings())
+            .build(t, layer);
+        return;
+    }
+    crate::settings_profiles::editor(s, t, layer);
+    crate::settings_mcp_dialog::server_dialog(s, t, phone, height, layer);
+    crate::settings_mcp_dialog::paste_dialog(s, t, layer);
     ConfirmDialog::new(
         RESET_ALL,
         "Reset all settings?",

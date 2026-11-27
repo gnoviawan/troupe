@@ -109,6 +109,7 @@ export const RUNE_SHELL_SURFACES: ReadonlySet<string> = new Set([
   'git.history-scope',
   'git.history-author',
   'git.commit-diff',
+  'github.panel',
   'palette.open',
   'settings.app',
   'settings.app-preferences',

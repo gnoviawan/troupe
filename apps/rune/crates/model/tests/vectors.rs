@@ -5,6 +5,7 @@
 
 mod common;
 mod git;
+mod github;
 mod settings;
 mod terminal;
 
@@ -324,9 +325,14 @@ fn replays_every_vector() {
                 "pane-tree" => replay::<PaneTree>(vector),
                 "git-status" => git::replay(vector),
                 "git-routes" => git::replay_routes(vector),
+                "github" => github::replay(vector),
+                "github-routes" => github::replay_routes(vector),
                 "app-settings" => settings::replay(vector),
                 "settings-routes" => settings::replay_routes(vector),
                 "palette" => settings::replay_palette(vector),
+                "terminal-profiles" => settings::replay_terminal_profiles(vector),
+                "project-settings" => settings::replay_project_settings(vector),
+                "mcp-servers" => settings::replay_mcp_servers(vector),
                 other => Err(format!("no replay for store {other}")),
             };
             match result {

@@ -1,0 +1,6675 @@
+[
+ {
+  "store": "github",
+  "name": "context, filter and list",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "auth": {
+       "state": "connected",
+       "host": "github.com",
+       "account": "ann",
+       "scopes": [
+        "repo"
+       ],
+       "tokenSource": "keyring",
+       "missingScopes": [],
+       "fixCommands": []
+      },
+      "repo": {
+       "kind": "resolved",
+       "origin": {
+        "host": "github.com",
+        "owner": "acme",
+        "name": "app"
+       },
+       "upstream": {
+        "host": "github.com",
+        "owner": "upstream",
+        "name": "app"
+       }
+      }
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 7,
+        "title": "Item 7",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7",
+        "checks": "pending"
+       },
+       {
+        "kind": "pr",
+        "number": 8,
+        "title": "Item 8",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/8",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 7,
+        "title": "Item 7",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": false,
+     "code": "GH_RATE_LIMITED",
+     "error": "API rate limit exceeded"
+    },
+    {
+     "success": false,
+     "code": "GH_UNAUTHENTICATED",
+     "error": "not logged in"
+    },
+    {
+     "success": true,
+     "data": {
+      "auth": {
+       "state": "unauthenticated",
+       "host": "github.com",
+       "loginCommand": "gh auth login --hostname github.com"
+      },
+      "repo": {
+       "kind": "resolved",
+       "origin": {
+        "host": "github.com",
+        "owner": "acme",
+        "name": "app"
+       },
+       "upstream": null
+      }
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadContext",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getContext",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "connected",
+         "host": "github.com",
+         "account": "ann",
+         "scopes": [
+          "repo"
+         ],
+         "tokenSource": "keyring",
+         "missingScopes": [],
+         "fixCommands": []
+        },
+        "repo": {
+         "kind": "resolved",
+         "origin": {
+          "host": "github.com",
+          "owner": "acme",
+          "name": "app"
+         },
+         "upstream": {
+          "host": "github.com",
+          "owner": "upstream",
+          "name": "app"
+         }
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {},
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadList",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "connected",
+         "host": "github.com",
+         "account": "ann",
+         "scopes": [
+          "repo"
+         ],
+         "tokenSource": "keyring",
+         "missingScopes": [],
+         "fixCommands": []
+        },
+        "repo": {
+         "kind": "resolved",
+         "origin": {
+          "host": "github.com",
+          "owner": "acme",
+          "name": "app"
+         },
+         "upstream": {
+          "host": "github.com",
+          "owner": "upstream",
+          "name": "app"
+         }
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         },
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "kind": "pr",
+       "search": "  crash "
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "pr",
+         "state": "open",
+         "search": "  crash ",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "connected",
+         "host": "github.com",
+         "account": "ann",
+         "scopes": [
+          "repo"
+         ],
+         "tokenSource": "keyring",
+         "missingScopes": [],
+         "fixCommands": []
+        },
+        "repo": {
+         "kind": "resolved",
+         "origin": {
+          "host": "github.com",
+          "owner": "acme",
+          "name": "app"
+         },
+         "upstream": {
+          "host": "github.com",
+          "owner": "upstream",
+          "name": "app"
+         }
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         },
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000pr\u0000open\u0000crash\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "pr",
+       "state": "open",
+       "search": "  crash ",
+       "labels": [],
+       "labelMode": "any",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadList",
+     "args": [
+      "/repo",
+      {
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "pr",
+         "state": "open",
+         "search": "  crash ",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "connected",
+         "host": "github.com",
+         "account": "ann",
+         "scopes": [
+          "repo"
+         ],
+         "tokenSource": "keyring",
+         "missingScopes": [],
+         "fixCommands": []
+        },
+        "repo": {
+         "kind": "resolved",
+         "origin": {
+          "host": "github.com",
+          "owner": "acme",
+          "name": "app"
+         },
+         "upstream": {
+          "host": "github.com",
+          "owner": "upstream",
+          "name": "app"
+         }
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         },
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000pr\u0000open\u0000crash\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_RATE_LIMITED",
+       "error": "API rate limit exceeded"
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "pr",
+       "state": "open",
+       "search": "  crash ",
+       "labels": [],
+       "labelMode": "any",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "loadList",
+     "args": [
+      "/repo"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "pr",
+         "state": "open",
+         "search": "  crash ",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getContext",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "unauthenticated",
+         "host": "github.com",
+         "loginCommand": "gh auth login --hostname github.com"
+        },
+        "repo": {
+         "kind": "resolved",
+         "origin": {
+          "host": "github.com",
+          "owner": "acme",
+          "name": "app"
+         },
+         "upstream": null
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         },
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000pr\u0000open\u0000crash\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 7,
+          "title": "Item 7",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_UNAUTHENTICATED",
+       "error": "not logged in"
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "pr",
+       "state": "open",
+       "search": "  crash ",
+       "labels": [],
+       "labelMode": "any",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "every filter field keys its own list",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 1,
+        "title": "Item 1",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/1",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 2,
+        "title": "Item 2",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/2",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 3,
+        "title": "Item 3",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/3",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 4,
+        "title": "Item 4",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/4",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 5,
+        "title": "Item 5",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/5",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [
+          "bug",
+          "p1"
+         ],
+         "labelMode": "exclude",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 1,
+          "title": "Item 1",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/1",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "all",
+       "state": "open",
+       "search": "",
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "assignee": {
+        "kind": "user",
+        "login": "bob"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [
+          "bug",
+          "p1"
+         ],
+         "labelMode": "exclude",
+         "assignee": {
+          "kind": "user",
+          "login": "bob"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 1,
+          "title": "Item 1",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/1",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000user:bob\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 2,
+          "title": "Item 2",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/2",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "all",
+       "state": "open",
+       "search": "",
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude",
+       "assignee": {
+        "kind": "user",
+        "login": "bob"
+       },
+       "reviewRequested": false,
+       "sort": "updated"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [
+          "bug",
+          "p1"
+         ],
+         "labelMode": "exclude",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": true,
+         "sort": "updated"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 1,
+          "title": "Item 1",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/1",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000user:bob\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 2,
+          "title": "Item 2",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/2",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 3,
+          "title": "Item 3",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/3",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "all",
+       "state": "open",
+       "search": "",
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": true,
+       "sort": "updated"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "state": "all",
+       "sort": "comments"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "all",
+         "search": "",
+         "labels": [
+          "bug",
+          "p1"
+         ],
+         "labelMode": "exclude",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": true,
+         "sort": "comments"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 1,
+          "title": "Item 1",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/1",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000user:bob\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 2,
+          "title": "Item 2",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/2",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 3,
+          "title": "Item 3",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/3",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000all\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000comments": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 4,
+          "title": "Item 4",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/4",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "origin",
+       "kind": "all",
+       "state": "all",
+       "search": "",
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": true,
+       "sort": "comments"
+      }
+     }
+    }
+   },
+   {
+    "event": {
+     "action": "setFilter",
+     "args": [
+      "/repo",
+      {
+       "repo": "upstream"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "upstream",
+         "kind": "all",
+         "state": "all",
+         "search": "",
+         "labels": [
+          "bug",
+          "p1"
+         ],
+         "labelMode": "exclude",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": true,
+         "sort": "comments"
+        }
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 1,
+          "title": "Item 1",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/1",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000user:bob\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 2,
+          "title": "Item 2",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/2",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 3,
+          "title": "Item 3",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/3",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u0000all\u0000all\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000comments": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 4,
+          "title": "Item 4",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/4",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000upstream\u0000all\u0000all\u0000\u0000exclude\u0000[\"bug\",\"p1\"]\u0000anyone\u0000review\u0000comments": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 5,
+          "title": "Item 5",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/5",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {
+      "/repo": {
+       "repo": "upstream",
+       "kind": "all",
+       "state": "all",
+       "search": "",
+       "labels": [
+        "bug",
+        "p1"
+       ],
+       "labelMode": "exclude",
+       "assignee": {
+        "kind": "anyone"
+       },
+       "reviewRequested": true,
+       "sort": "comments"
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "a slower older read never overwrites a newer one",
+  "context": {
+   "github": [
+    {
+     "hold": true
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "pr",
+       "number": 7,
+       "title": "Item 7",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7",
+       "checks": "pending"
+      },
+      "body": "new",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [
+       {
+        "id": "C1",
+        "author": "bob",
+        "isBot": false,
+        "body": "Looks good",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7#C1"
+       }
+      ],
+      "timeline": [
+       {
+        "id": "E1",
+        "kind": "labeled",
+        "actor": "ann",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "label": {
+         "name": "bug",
+         "color": "d73a4a"
+        },
+        "assignee": null
+       }
+      ],
+      "stateReason": null,
+      "pr": {
+       "headRefName": "feature/x",
+       "headSha": "abc123",
+       "baseRefName": "main",
+       "isCrossRepository": false,
+       "maintainerCanModify": true,
+       "mergeable": "mergeable",
+       "mergeStateStatus": "CLEAN",
+       "autoMergeEnabled": false,
+       "additions": 12,
+       "deletions": 3,
+       "changedFiles": 2,
+       "reviewThreads": [
+        {
+         "id": "T1",
+         "path": "src/a.ts",
+         "line": 4,
+         "isResolved": false,
+         "isOutdated": false,
+         "comments": [
+          {
+           "id": "R1",
+           "author": "bob",
+           "isBot": false,
+           "body": "Why?",
+           "createdAt": "2026-11-20T10:00:00Z",
+           "url": "https://github.com/acme/app/pull/7#R1"
+          }
+         ]
+        }
+       ]
+      },
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7
+       }
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": null,
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "new",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "success": true,
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "old",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       }
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "new",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "item, checks, log and repository meta",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "pr",
+       "number": 7,
+       "title": "Item 7",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7",
+       "checks": "pending"
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [
+       {
+        "id": "C1",
+        "author": "bob",
+        "isBot": false,
+        "body": "Looks good",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7#C1"
+       }
+      ],
+      "timeline": [
+       {
+        "id": "E1",
+        "kind": "labeled",
+        "actor": "ann",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "label": {
+         "name": "bug",
+         "color": "d73a4a"
+        },
+        "assignee": null
+       }
+      ],
+      "stateReason": null,
+      "pr": {
+       "headRefName": "feature/x",
+       "headSha": "abc123",
+       "baseRefName": "main",
+       "isCrossRepository": false,
+       "maintainerCanModify": true,
+       "mergeable": "mergeable",
+       "mergeStateStatus": "CLEAN",
+       "autoMergeEnabled": false,
+       "additions": 12,
+       "deletions": 3,
+       "changedFiles": 2,
+       "reviewThreads": [
+        {
+         "id": "T1",
+         "path": "src/a.ts",
+         "line": 4,
+         "isResolved": false,
+         "isOutdated": false,
+         "comments": [
+          {
+           "id": "R1",
+           "author": "bob",
+           "isBot": false,
+           "body": "Why?",
+           "createdAt": "2026-11-20T10:00:00Z",
+           "url": "https://github.com/acme/app/pull/7#R1"
+          }
+         ]
+        }
+       ]
+      },
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "headSha": "abc123",
+      "rollup": "failure",
+      "checks": [
+       {
+        "name": "test",
+        "workflow": "CI",
+        "status": "failure",
+        "detailsUrl": "https://x/1",
+        "jobId": 11
+       },
+       {
+        "name": "lint",
+        "workflow": "CI",
+        "status": "success",
+        "detailsUrl": null,
+        "jobId": null
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "jobId": 11,
+      "tail": "##[error] boom",
+      "truncated": true
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "labels": [
+       {
+        "name": "bug",
+        "color": "d73a4a",
+        "description": null
+       }
+      ],
+      "assignableUsers": [
+       "ann",
+       "bob"
+      ],
+      "viewer": "ann",
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": false,
+     "code": "GH_TIMEOUT",
+     "error": "timed out"
+    },
+    {
+     "success": false,
+     "code": "GH_NOT_FOUND",
+     "error": "no such issue"
+    },
+    {
+     "success": false,
+     "code": "GH_NOT_GITHUB_REPO",
+     "error": "remote moved"
+    },
+    {
+     "success": true,
+     "data": {
+      "auth": {
+       "state": "connected",
+       "host": "github.com",
+       "account": "ann",
+       "scopes": [
+        "repo"
+       ],
+       "tokenSource": "keyring",
+       "missingScopes": [],
+       "fixCommands": []
+      },
+      "repo": {
+       "kind": "not_github"
+      }
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadChecks",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getChecks",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadCheckLog",
+     "args": [
+      "/repo",
+      "origin",
+      11
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getCheckLog",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "jobId": 11
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {
+      "/repo\u0000origin\u0000job\u000011": {
+       "data": {
+        "jobId": 11,
+        "tail": "##[error] boom",
+        "truncated": true
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadRepoMeta",
+     "args": [
+      "/repo",
+      "origin"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getRepoMeta",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin"
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {
+      "/repo\u0000origin\u0000job\u000011": {
+       "data": {
+        "jobId": 11,
+        "tail": "##[error] boom",
+        "truncated": true
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadChecks",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getChecks",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_TIMEOUT",
+       "error": "timed out"
+      }
+     },
+     "logs": {
+      "/repo\u0000origin\u0000job\u000011": {
+       "data": {
+        "jobId": 11,
+        "tail": "##[error] boom",
+        "truncated": true
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "issue",
+       "number": 3
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u00003": {
+       "data": null,
+       "status": "error",
+       "errorCode": "GH_NOT_FOUND",
+       "error": "no such issue"
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_TIMEOUT",
+       "error": "timed out"
+      }
+     },
+     "logs": {
+      "/repo\u0000origin\u0000job\u000011": {
+       "data": {
+        "jobId": 11,
+        "tail": "##[error] boom",
+        "truncated": true
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "loadRepoMeta",
+     "args": [
+      "/repo",
+      "origin",
+      {
+       "refresh": true
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getRepoMeta",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getContext",
+      "args": [
+       "/repo"
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {
+      "/repo": {
+       "data": {
+        "auth": {
+         "state": "connected",
+         "host": "github.com",
+         "account": "ann",
+         "scopes": [
+          "repo"
+         ],
+         "tokenSource": "keyring",
+         "missingScopes": [],
+         "fixCommands": []
+        },
+        "repo": {
+         "kind": "not_github"
+        }
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u00003": {
+       "data": null,
+       "status": "error",
+       "errorCode": "GH_NOT_FOUND",
+       "error": "no such issue"
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_TIMEOUT",
+       "error": "timed out"
+      }
+     },
+     "logs": {
+      "/repo\u0000origin\u0000job\u000011": {
+       "data": {
+        "jobId": 11,
+        "tail": "##[error] boom",
+        "truncated": true
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_NOT_GITHUB_REPO",
+       "error": "remote moved"
+      }
+     },
+     "filters": {}
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "merge re-reads checks, list and item",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "number": 7
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "headSha": "abc123",
+      "rollup": "failure",
+      "checks": [
+       {
+        "name": "test",
+        "workflow": "CI",
+        "status": "failure",
+        "detailsUrl": "https://x/1",
+        "jobId": 11
+       },
+       {
+        "name": "lint",
+        "workflow": "CI",
+        "status": "success",
+        "detailsUrl": null,
+        "jobId": null
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 8,
+        "title": "Item 8",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/8",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "pr",
+       "number": 7,
+       "title": "Item 7",
+       "state": "merged",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7",
+       "checks": "pending"
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [
+       {
+        "id": "C1",
+        "author": "bob",
+        "isBot": false,
+        "body": "Looks good",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7#C1"
+       }
+      ],
+      "timeline": [
+       {
+        "id": "E1",
+        "kind": "labeled",
+        "actor": "ann",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "label": {
+         "name": "bug",
+         "color": "d73a4a"
+        },
+        "assignee": null
+       }
+      ],
+      "stateReason": null,
+      "pr": {
+       "headRefName": "feature/x",
+       "headSha": "abc123",
+       "baseRefName": "main",
+       "isCrossRepository": false,
+       "maintainerCanModify": true,
+       "mergeable": "mergeable",
+       "mergeStateStatus": "CLEAN",
+       "autoMergeEnabled": false,
+       "additions": 12,
+       "deletions": 3,
+       "changedFiles": 2,
+       "reviewThreads": [
+        {
+         "id": "T1",
+         "path": "src/a.ts",
+         "line": 4,
+         "isResolved": false,
+         "isOutdated": false,
+         "comments": [
+          {
+           "id": "R1",
+           "author": "bob",
+           "isBot": false,
+           "body": "Why?",
+           "createdAt": "2026-11-20T10:00:00Z",
+           "url": "https://github.com/acme/app/pull/7#R1"
+          }
+         ]
+        }
+       ]
+      },
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": false,
+     "code": "GH_NOT_MERGEABLE",
+     "error": "Pull request is not mergeable"
+    },
+    {
+     "success": true,
+     "data": {
+      "headSha": "abc123",
+      "rollup": "failure",
+      "checks": [
+       {
+        "name": "test",
+        "workflow": "CI",
+        "status": "failure",
+        "detailsUrl": "https://x/1",
+        "jobId": 11
+       },
+       {
+        "name": "lint",
+        "workflow": "CI",
+        "status": "success",
+        "detailsUrl": null,
+        "jobId": null
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 8,
+        "title": "Item 8",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/8",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "hold": true
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "merge",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "kind": "merge",
+       "method": "squash"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "merge",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7,
+        "action": {
+         "kind": "merge",
+         "method": "squash"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getChecks",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "number": 7
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "merged",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "merge",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "kind": "enable_auto_merge",
+       "method": "rebase"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "merge",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7,
+        "action": {
+         "kind": "enable_auto_merge",
+         "method": "rebase"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getChecks",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "pending": true
+    },
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "merged",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "releaseHeld",
+     "args": [
+      {
+       "success": false,
+       "code": "GH_FAILED",
+       "error": "gh exited 1"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 8,
+          "title": "Item 8",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/8",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "merged",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "error",
+       "errorCode": "GH_FAILED",
+       "error": "gh exited 1"
+      }
+     },
+     "checks": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "headSha": "abc123",
+        "rollup": "failure",
+        "checks": [
+         {
+          "name": "test",
+          "workflow": "CI",
+          "status": "failure",
+          "detailsUrl": "https://x/1",
+          "jobId": 11
+         },
+         {
+          "name": "lint",
+          "workflow": "CI",
+          "status": "success",
+          "detailsUrl": null,
+          "jobId": null
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "comments show before the re-read",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "pr",
+       "number": 7,
+       "title": "Item 7",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7",
+       "checks": "pending"
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [
+       {
+        "id": "C1",
+        "author": "bob",
+        "isBot": false,
+        "body": "Looks good",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7#C1"
+       }
+      ],
+      "timeline": [
+       {
+        "id": "E1",
+        "kind": "labeled",
+        "actor": "ann",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "label": {
+         "name": "bug",
+         "color": "d73a4a"
+        },
+        "assignee": null
+       }
+      ],
+      "stateReason": null,
+      "pr": {
+       "headRefName": "feature/x",
+       "headSha": "abc123",
+       "baseRefName": "main",
+       "isCrossRepository": false,
+       "maintainerCanModify": true,
+       "mergeable": "mergeable",
+       "mergeStateStatus": "CLEAN",
+       "autoMergeEnabled": false,
+       "additions": 12,
+       "deletions": 3,
+       "changedFiles": 2,
+       "reviewThreads": [
+        {
+         "id": "T1",
+         "path": "src/a.ts",
+         "line": 4,
+         "isResolved": false,
+         "isOutdated": false,
+         "comments": [
+          {
+           "id": "R1",
+           "author": "bob",
+           "isBot": false,
+           "body": "Why?",
+           "createdAt": "2026-11-20T10:00:00Z",
+           "url": "https://github.com/acme/app/pull/7#R1"
+          }
+         ]
+        }
+       ]
+      },
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "C2",
+       "author": "bob",
+       "isBot": false,
+       "body": "Thanks",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#C2"
+      }
+     }
+    },
+    {
+     "hold": true
+    },
+    {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "R2",
+       "author": "bob",
+       "isBot": true,
+       "body": "Because",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#R2"
+      }
+     }
+    },
+    {
+     "hold": true
+    },
+    {
+     "success": false,
+     "code": "GH_EMPTY_COMMENT",
+     "error": "empty"
+    },
+    {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "C9",
+       "author": "bob",
+       "isBot": false,
+       "body": "unseen",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#C9"
+      }
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "issue",
+       "number": 3,
+       "title": "Item 3",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/3",
+       "checks": null
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [],
+      "timeline": [],
+      "stateReason": null,
+      "pr": null,
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7
+       }
+      ]
+     }
+    ],
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "comment",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "kind": "conversation"
+      },
+      "Thanks"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "comment",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "target": {
+         "kind": "conversation"
+        },
+        "body": "Thanks"
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "C2",
+       "author": "bob",
+       "isBot": false,
+       "body": "Thanks",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#C2"
+      }
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         },
+         {
+          "id": "C2",
+          "author": "bob",
+          "isBot": false,
+          "body": "Thanks",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C2"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "comment",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "kind": "review_thread",
+       "threadId": "T1"
+      },
+      "Because"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "comment",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "target": {
+         "kind": "review_thread",
+         "threadId": "T1"
+        },
+        "body": "Because"
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "R2",
+       "author": "bob",
+       "isBot": true,
+       "body": "Because",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#R2"
+      }
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         },
+         {
+          "id": "C2",
+          "author": "bob",
+          "isBot": false,
+          "body": "Thanks",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C2"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            },
+            {
+             "id": "R2",
+             "author": "bob",
+             "isBot": true,
+             "body": "Because",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R2"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "comment",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "pr",
+       "number": 7
+      },
+      {
+       "kind": "conversation"
+      },
+      "   "
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "comment",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "pr",
+        "number": 7,
+        "target": {
+         "kind": "conversation"
+        },
+        "body": "   "
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": false,
+     "code": "GH_EMPTY_COMMENT",
+     "error": "empty"
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         },
+         {
+          "id": "C2",
+          "author": "bob",
+          "isBot": false,
+          "body": "Thanks",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C2"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            },
+            {
+             "id": "R2",
+             "author": "bob",
+             "isBot": true,
+             "body": "Because",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R2"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "comment",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "issue",
+       "number": 3
+      },
+      {
+       "kind": "conversation"
+      },
+      "unseen"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "comment",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "target": {
+         "kind": "conversation"
+        },
+        "body": "unseen"
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "comment": {
+       "id": "C9",
+       "author": "bob",
+       "isBot": false,
+       "body": "unseen",
+       "createdAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/7#C9"
+      }
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {
+      "/repo\u0000origin\u00007": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "pr",
+         "number": 7,
+         "title": "Item 7",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/7",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         },
+         {
+          "id": "C2",
+          "author": "bob",
+          "isBot": false,
+          "body": "Thanks",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C2"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": null,
+        "pr": {
+         "headRefName": "feature/x",
+         "headSha": "abc123",
+         "baseRefName": "main",
+         "isCrossRepository": false,
+         "maintainerCanModify": true,
+         "mergeable": "mergeable",
+         "mergeStateStatus": "CLEAN",
+         "autoMergeEnabled": false,
+         "additions": 12,
+         "deletions": 3,
+         "changedFiles": 2,
+         "reviewThreads": [
+          {
+           "id": "T1",
+           "path": "src/a.ts",
+           "line": 4,
+           "isResolved": false,
+           "isOutdated": false,
+           "comments": [
+            {
+             "id": "R1",
+             "author": "bob",
+             "isBot": false,
+             "body": "Why?",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R1"
+            },
+            {
+             "id": "R2",
+             "author": "bob",
+             "isBot": true,
+             "body": "Because",
+             "createdAt": "2026-11-20T10:00:00Z",
+             "url": "https://github.com/acme/app/pull/7#R2"
+            }
+           ]
+          }
+         ]
+        },
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "loading",
+       "errorCode": null,
+       "error": null
+      },
+      "/repo\u0000origin\u00003": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "issue",
+         "number": 3,
+         "title": "Item 3",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/3",
+         "checks": null
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [],
+        "timeline": [],
+        "stateReason": null,
+        "pr": null,
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {},
+     "filters": {}
+    }
+   }
+  ]
+ },
+ {
+  "store": "github",
+  "name": "label create, edit and state writes",
+  "context": {
+   "github": [
+    {
+     "success": true,
+     "data": {
+      "label": {
+       "name": "p1",
+       "color": "b60205",
+       "description": "urgent"
+      }
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "labels": [
+       {
+        "name": "bug",
+        "color": "d73a4a",
+        "description": null
+       },
+       {
+        "name": "p1",
+        "color": "b60205",
+        "description": "urgent"
+       }
+      ],
+      "assignableUsers": [
+       "ann",
+       "bob"
+      ],
+      "viewer": "ann",
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "number": 3
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 3,
+        "title": "Item 3",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/3",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "issue",
+       "number": 3,
+       "title": "Item 3",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/3",
+       "checks": null
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [],
+      "timeline": [],
+      "stateReason": null,
+      "pr": null,
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": false,
+     "code": "GH_FAILED",
+     "error": "no permission"
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [
+       {
+        "kind": "pr",
+        "number": 3,
+        "title": "Item 3",
+        "state": "open",
+        "author": "ann",
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a"
+         }
+        ],
+        "assignees": [],
+        "commentCount": 1,
+        "updatedAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/3",
+        "checks": "pending"
+       }
+      ],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "issue",
+       "number": 3,
+       "title": "Item 3",
+       "state": "open",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/3",
+       "checks": null
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [],
+      "timeline": [],
+      "stateReason": null,
+      "pr": null,
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "number": 3
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "items": [],
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    },
+    {
+     "success": true,
+     "data": {
+      "repo": {
+       "host": "github.com",
+       "owner": "acme",
+       "name": "app"
+      },
+      "item": {
+       "kind": "issue",
+       "number": 3,
+       "title": "Item 3",
+       "state": "closed",
+       "author": "ann",
+       "labels": [
+        {
+         "name": "bug",
+         "color": "d73a4a"
+        }
+       ],
+       "assignees": [],
+       "commentCount": 1,
+       "updatedAt": "2026-11-20T10:00:00Z",
+       "url": "https://github.com/acme/app/pull/3",
+       "checks": "pending"
+      },
+      "body": "Fixes the thing.",
+      "createdAt": "2026-11-20T10:00:00Z",
+      "comments": [
+       {
+        "id": "C1",
+        "author": "bob",
+        "isBot": false,
+        "body": "Looks good",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "url": "https://github.com/acme/app/pull/7#C1"
+       }
+      ],
+      "timeline": [
+       {
+        "id": "E1",
+        "kind": "labeled",
+        "actor": "ann",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "label": {
+         "name": "bug",
+         "color": "d73a4a"
+        },
+        "assignee": null
+       }
+      ],
+      "stateReason": "not_planned",
+      "pr": null,
+      "fetchedAt": "2026-11-20T10:00:00Z"
+     }
+    }
+   ]
+  },
+  "initial": {
+   "contexts": {},
+   "lists": {},
+   "items": {},
+   "checks": {},
+   "logs": {},
+   "repoMeta": {},
+   "filters": {}
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createLabel",
+     "args": [
+      "/repo",
+      "origin",
+      {
+       "name": "p1",
+       "color": "b60205",
+       "description": "urgent"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "createLabel",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "name": "p1",
+        "color": "b60205",
+        "description": "urgent"
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getRepoMeta",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "label": {
+       "name": "p1",
+       "color": "b60205",
+       "description": "urgent"
+      }
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {},
+     "items": {},
+     "checks": {},
+     "logs": {},
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         },
+         {
+          "name": "p1",
+          "color": "b60205",
+          "description": "urgent"
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "editItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "issue",
+       "number": 3
+      },
+      {
+       "addLabels": [
+        "p1"
+       ],
+       "removeLabels": [
+        "bug"
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "editItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "addLabels": [
+         "p1"
+        ],
+        "removeLabels": [
+         "bug"
+        ]
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "number": 3
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 3,
+          "title": "Item 3",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/3",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00003": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "issue",
+         "number": 3,
+         "title": "Item 3",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/3",
+         "checks": null
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [],
+        "timeline": [],
+        "stateReason": null,
+        "pr": null,
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         },
+         {
+          "name": "p1",
+          "color": "b60205",
+          "description": "urgent"
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "editItem",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "issue",
+       "number": 3
+      },
+      {
+       "addAssignees": [
+        "bob"
+       ]
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "editItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "addAssignees": [
+         "bob"
+        ]
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": false,
+     "code": "GH_FAILED",
+     "error": "no permission"
+    },
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [
+         {
+          "kind": "pr",
+          "number": 3,
+          "title": "Item 3",
+          "state": "open",
+          "author": "ann",
+          "labels": [
+           {
+            "name": "bug",
+            "color": "d73a4a"
+           }
+          ],
+          "assignees": [],
+          "commentCount": 1,
+          "updatedAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/3",
+          "checks": "pending"
+         }
+        ],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00003": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "issue",
+         "number": 3,
+         "title": "Item 3",
+         "state": "open",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/3",
+         "checks": null
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [],
+        "timeline": [],
+        "stateReason": null,
+        "pr": null,
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         },
+         {
+          "name": "p1",
+          "color": "b60205",
+          "description": "urgent"
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   },
+   {
+    "event": {
+     "action": "setItemState",
+     "args": [
+      {
+       "cwd": "/repo",
+       "repo": "origin",
+       "kind": "issue",
+       "number": 3
+      },
+      {
+       "kind": "close",
+       "reason": "not_planned"
+      }
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "github",
+      "op": "setItemState",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "action": {
+         "kind": "close",
+         "reason": "not_planned"
+        }
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "listItems",
+      "args": [
+       {
+        "cwd": "/repo",
+        "filter": {
+         "repo": "origin",
+         "kind": "all",
+         "state": "open",
+         "search": "",
+         "labels": [],
+         "labelMode": "any",
+         "assignee": {
+          "kind": "anyone"
+         },
+         "reviewRequested": false,
+         "sort": "updated"
+        },
+        "refresh": true
+       }
+      ]
+     },
+     {
+      "kind": "github",
+      "op": "getItem",
+      "args": [
+       {
+        "cwd": "/repo",
+        "repo": "origin",
+        "kind": "issue",
+        "number": 3,
+        "refresh": true
+       }
+      ]
+     }
+    ],
+    "result": {
+     "success": true,
+     "data": {
+      "number": 3
+     }
+    },
+    "state": {
+     "contexts": {},
+     "lists": {
+      "/repo\u0000origin\u0000all\u0000open\u0000\u0000any\u0000[]\u0000anyone\u0000\u0000updated": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "items": [],
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "items": {
+      "/repo\u0000origin\u00003": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "item": {
+         "kind": "issue",
+         "number": 3,
+         "title": "Item 3",
+         "state": "closed",
+         "author": "ann",
+         "labels": [
+          {
+           "name": "bug",
+           "color": "d73a4a"
+          }
+         ],
+         "assignees": [],
+         "commentCount": 1,
+         "updatedAt": "2026-11-20T10:00:00Z",
+         "url": "https://github.com/acme/app/pull/3",
+         "checks": "pending"
+        },
+        "body": "Fixes the thing.",
+        "createdAt": "2026-11-20T10:00:00Z",
+        "comments": [
+         {
+          "id": "C1",
+          "author": "bob",
+          "isBot": false,
+          "body": "Looks good",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "url": "https://github.com/acme/app/pull/7#C1"
+         }
+        ],
+        "timeline": [
+         {
+          "id": "E1",
+          "kind": "labeled",
+          "actor": "ann",
+          "createdAt": "2026-11-20T10:00:00Z",
+          "label": {
+           "name": "bug",
+           "color": "d73a4a"
+          },
+          "assignee": null
+         }
+        ],
+        "stateReason": "not_planned",
+        "pr": null,
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "checks": {},
+     "logs": {},
+     "repoMeta": {
+      "/repo\u0000origin": {
+       "data": {
+        "repo": {
+         "host": "github.com",
+         "owner": "acme",
+         "name": "app"
+        },
+        "labels": [
+         {
+          "name": "bug",
+          "color": "d73a4a",
+          "description": null
+         },
+         {
+          "name": "p1",
+          "color": "b60205",
+          "description": "urgent"
+         }
+        ],
+        "assignableUsers": [
+         "ann",
+         "bob"
+        ],
+        "viewer": "ann",
+        "fetchedAt": "2026-11-20T10:00:00Z"
+       },
+       "status": "idle",
+       "errorCode": null,
+       "error": null
+      }
+     },
+     "filters": {}
+    }
+   }
+  ]
+ }
+]

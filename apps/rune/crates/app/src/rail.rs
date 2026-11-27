@@ -79,6 +79,14 @@ impl State {
 
     /// Closes the top overlay: what Escape and a back press do. False when none was open.
     pub fn close_top(&mut self) -> bool {
+        // React's paste-back dialog cannot be dismissed while its paste is completing.
+        if self.overlays.top() == Some(crate::settings_mcp_dialog::PASTE) && self.mcp_ui.paste.completing {
+            return true;
+        }
+        if self.overlays.top() == Some(crate::project_settings::PROJECT) && self.project_dirty() {
+            self.overlays.open(crate::project_settings::LEAVE);
+            return true;
+        }
         let Some(top) = self.overlays.pop() else {
             return false;
         };
@@ -111,6 +119,14 @@ impl State {
             crate::theme_picker::KEY => self.picker_closed(),
             crate::keys::MENU | crate::settings_view::APP => self.keys.recording = None,
             crate::settings_view::SELECT => self.settings_ui.select = None,
+            crate::project_settings::PROJECT => self.project_ui.import_request += 1,
+            crate::settings_mcp_dialog::DIALOG => self.mcp_ui.dialog = None,
+            crate::settings_mcp_dialog::PASTE => {
+                if let Some(id) = self.mcp_ui.paste.flow.as_ref().map(|(id, _)| id.clone()) {
+                    self.acp_step(model::acp::Event::CancelMcpOAuth(id));
+                }
+                self.mcp_ui.paste = crate::settings_mcp_dialog::PasteUi::default();
+            }
             crate::phone::MORE | crate::phone::PROJECTS | crate::phone::RECENTS => {
                 self.phone.drag = ui::overlay::SheetDrag::default();
                 if key == crate::phone::RECENTS {
