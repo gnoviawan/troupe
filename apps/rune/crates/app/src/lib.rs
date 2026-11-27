@@ -387,10 +387,16 @@ fn on_key(state: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
 /// The app for `launch`. The entries call `run` on it, the desktop one after linking the live
 /// driver. Call it once per process.
 pub fn app(launch: Launch) -> rune::App<State> {
+    app_with(spec(launch))
+}
+
+/// The app's spec for `launch`, for a shell that changes the window before `app_with` builds
+/// it. Call it once per process.
+pub fn spec(launch: Launch) -> AppSpec<State> {
     if LAUNCH.set(launch).is_err() {
         log::warn!("[app] launched twice; keeping the first launch");
     }
-    let spec = AppSpec {
+    AppSpec {
         fonts: theme::FONTS,
         families: theme::FAMILIES,
         setup: Some(setup),
@@ -398,7 +404,10 @@ pub fn app(launch: Launch) -> rune::App<State> {
         on_key: Some(on_key),
         min_size: Some((360.0, 400.0)),
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
-    };
+    }
+}
+
+pub fn app_with(spec: AppSpec<State>) -> rune::App<State> {
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
     rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }
