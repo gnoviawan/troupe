@@ -184,12 +184,18 @@ pub struct Engine {
     sessions_root: PathBuf,
 }
 
-impl Engine {
-    pub fn install(app: &AppHandle) -> Self {
-        let tabs = Arc::new(host::BrowserTabManager::new(app.clone()));
-        tabs.set_agentation_enabled(false);
-        let (tx, rx) = mpsc::unbounded_channel();
-        let sink: Arc<dyn EventSink> = Arc::new(RendererSink(tx));
+struct Services {
+    policy_root: tempfile::TempDir,
+    policy: Arc<host::BrowserPolicyService>,
+    tickets: Arc<Approver>,
+    project: Project,
+    sink: Arc<dyn EventSink>,
+    renderer: mpsc::UnboundedReceiver<AcpEvent>,
+}
+
+impl Services {
+    fn new() -> Self {
+        let (tx, renderer) = mpsc::unbounded_channel();
         let policy_root = tempfile::tempdir().expect("policy dir");
         let policy = Arc::new(host::BrowserPolicyService::new(
             policy_root.path().to_path_buf(),
@@ -197,37 +203,79 @@ impl Engine {
             Vec::new(),
             Arc::new(host::UnwiredProfileControl),
         ));
-        let tickets = Arc::new(Approver::default());
-        let project = project();
-        let root = project.root.path().to_path_buf();
+        Self {
+            policy_root,
+            policy,
+            tickets: Arc::new(Approver::default()),
+            project: project(),
+            sink: Arc::new(RendererSink(tx)),
+            renderer,
+        }
+    }
+
+    fn host_services(&self) -> host::HostServices {
+        let root = self.project.root.path().to_path_buf();
+        host::HostServices {
+            permissions: self.tickets.clone(),
+            policy: self.policy.clone(),
+            // Each case's session is its own project, so the profile
+            // mode and pre-approvals one case sets reach no other.
+            project_of: Arc::new(|session: &str| session.to_string()),
+            root_of: Arc::new(move |_| Some(root.clone())),
+        }
+    }
+
+    fn into_engine(self, app: &AppHandle, input: Arc<dyn host::BrowserEngine>, sessions_root: PathBuf) -> Engine {
+        tauri::async_runtime::spawn(renderer_stand_in(self.renderer));
+        Engine {
+            app: app.clone(),
+            input,
+            _policy_root: self.policy_root,
+            policy: self.policy,
+            tickets: self.tickets,
+            project: self.project,
+            sessions_root,
+        }
+    }
+}
+
+impl Engine {
+    pub fn install(app: &AppHandle) -> Self {
+        let tabs = Arc::new(host::BrowserTabManager::new(app.clone()));
+        tabs.set_agentation_enabled(false);
+        let services = Services::new();
         host::set_browser_host(host::DesktopBrowserHost::new(
             app.clone(),
             tabs.clone(),
-            vec![sink],
-            host::HostServices {
-                permissions: tickets.clone(),
-                policy: policy.clone(),
-                // Each case's session is its own project, so the profile
-                // mode and pre-approvals one case sets reach no other.
-                project_of: Arc::new(|session: &str| session.to_string()),
-                root_of: Arc::new(move |_| Some(root.clone())),
-            },
+            vec![services.sink.clone()],
+            services.host_services(),
         ));
-        tauri::async_runtime::spawn(renderer_stand_in(rx));
         let sessions_root = app
             .path()
             .app_data_dir()
             .expect("app data dir")
             .join("browser-sessions");
-        Self {
-            app: app.clone(),
-            input: host::desktop_engine(tabs),
-            _policy_root: policy_root,
-            policy,
-            tickets,
-            project,
-            sessions_root,
-        }
+        services.into_engine(app, host::desktop_engine(tabs), sessions_root)
+    }
+
+    /// The server's host on a Chromium of this machine, replacing the
+    /// webview host. `None` when there is no browser to run.
+    #[cfg(unix)]
+    pub async fn install_chromium(app: &AppHandle) -> Option<Self> {
+        let data = app.path().app_data_dir().expect("app data dir").join("browser-chromium");
+        let services = Services::new();
+        let input = termul_manager_lib::web::hosted_browser::conformance_host(
+            &data,
+            vec![services.sink.clone()],
+            services.host_services(),
+        )
+        .await?;
+        Some(services.into_engine(app, input, data.join("browser-sessions")))
+    }
+
+    #[cfg(not(unix))]
+    pub async fn install_chromium(_app: &AppHandle) -> Option<Self> {
+        None
     }
 
     /// Every ticket `session` raised so far.

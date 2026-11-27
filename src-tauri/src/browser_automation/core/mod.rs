@@ -12,6 +12,8 @@ pub(crate) mod dispatch;
 mod downloads;
 mod events;
 mod frames;
+#[cfg(unix)]
+mod hosted;
 mod observe;
 mod input_actions;
 mod link_hops;
@@ -45,6 +47,8 @@ pub use reply::{
     Success, ERR_CAPABILITY, ERR_CONFIRMATION, ERR_INTERNAL, ERR_INVALID_PARAMS, ERR_STALE_REF,
     ERR_TAB_NOT_FOUND, ERR_TIMEOUT,
 };
+#[cfg(unix)]
+pub(crate) use hosted::HostedSurface;
 pub use tabs::TabView;
 #[cfg(any(test, feature = "conformance"))]
 pub use teardown::session_dir;

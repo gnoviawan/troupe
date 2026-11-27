@@ -1,6 +1,6 @@
-//! Engine-neutral CDP logic over a [`CdpTransport`]. WebView2's
-//! `CallDevToolsProtocolMethod` is the only transport today; a future
-//! CDP-speaking runtime reuses this module unchanged.
+//! Engine-neutral CDP logic over a [`CdpTransport`]. Two transports use
+//! it: WebView2's `CallDevToolsProtocolMethod` and the Chromium engine's
+//! `--remote-debugging-pipe` connection.
 //!
 //! Helpers run in an isolated world of the main frame: the page shares
 //! its DOM with that world but none of its globals, prototypes or
@@ -33,6 +33,22 @@ pub enum CdpMethod {
     DomSetFileInputFiles,
     PageEnable,
     PageSetInterceptFileChooserDialog,
+    PageNavigate,
+    PageReload,
+    PageGetNavigationHistory,
+    PageNavigateToHistoryEntry,
+    PageHandleJavaScriptDialog,
+    FetchEnable,
+    FetchContinueRequest,
+    FetchFailRequest,
+    EmulationSetDeviceMetricsOverride,
+    TargetCreateTarget,
+    TargetAttachToTarget,
+    TargetCloseTarget,
+    TargetCreateBrowserContext,
+    TargetDisposeBrowserContext,
+    TargetSetDiscoverTargets,
+    BrowserClose,
 }
 
 impl CdpMethod {
@@ -54,6 +70,22 @@ impl CdpMethod {
             CdpMethod::DomSetFileInputFiles => "DOM.setFileInputFiles",
             CdpMethod::PageEnable => "Page.enable",
             CdpMethod::PageSetInterceptFileChooserDialog => "Page.setInterceptFileChooserDialog",
+            CdpMethod::PageNavigate => "Page.navigate",
+            CdpMethod::PageReload => "Page.reload",
+            CdpMethod::PageGetNavigationHistory => "Page.getNavigationHistory",
+            CdpMethod::PageNavigateToHistoryEntry => "Page.navigateToHistoryEntry",
+            CdpMethod::PageHandleJavaScriptDialog => "Page.handleJavaScriptDialog",
+            CdpMethod::FetchEnable => "Fetch.enable",
+            CdpMethod::FetchContinueRequest => "Fetch.continueRequest",
+            CdpMethod::FetchFailRequest => "Fetch.failRequest",
+            CdpMethod::EmulationSetDeviceMetricsOverride => "Emulation.setDeviceMetricsOverride",
+            CdpMethod::TargetCreateTarget => "Target.createTarget",
+            CdpMethod::TargetAttachToTarget => "Target.attachToTarget",
+            CdpMethod::TargetCloseTarget => "Target.closeTarget",
+            CdpMethod::TargetCreateBrowserContext => "Target.createBrowserContext",
+            CdpMethod::TargetDisposeBrowserContext => "Target.disposeBrowserContext",
+            CdpMethod::TargetSetDiscoverTargets => "Target.setDiscoverTargets",
+            CdpMethod::BrowserClose => "Browser.close",
         }
     }
 }

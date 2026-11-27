@@ -480,7 +480,7 @@ fn main() -> ExitCode {
                     codex_limit.sink(),
                     antigravity_limit.sink(),
                 ],
-                persistence,
+                Arc::clone(&persistence),
                 claude_agent,
                 codex_agent,
             )
@@ -561,6 +561,25 @@ fn main() -> ExitCode {
             );
             Arc::new(ProjectRegistry::new())
         };
+        // `--browser-host`: agent browser tabs on a Chromium of this host.
+        #[cfg(unix)]
+        if let Some(options) = launch.browser_host {
+            if let Err(error) = termul_manager_lib::web::hosted_browser::install(
+                options,
+                &data_paths.state_dir,
+                &ws_relay,
+                &persistence,
+                &registry,
+            )
+            .await
+            {
+                warn!("troupe-server: browser host not started: {error}");
+            }
+        }
+        #[cfg(not(unix))]
+        if launch.browser_host.is_some() {
+            warn!("troupe-server: --browser-host is not available on this OS yet");
+        }
         // The MCP server list is one host-wide store value; a host that kept
         // one list per project file merges them into it once.
         termul_manager_lib::host_mcp::mcp_install::install_live(Arc::clone(&store));
@@ -1118,6 +1137,15 @@ OPTIONS:
                                   warning is logged at startup).
 
   Experimental:
+    --browser-host                Serve the agent browser tool from a Chrome,
+                                  Edge or Chromium on this host (headless,
+                                  driven over a pipe). Off by default. Tabs
+                                  cannot reach loopback or private addresses.
+                                  [env: TROUPE_CHROMIUM_PATH picks the binary]
+    --browser-host-allow-internal Let browser-host tabs reach loopback and
+                                  private networks.
+    --browser-host-no-sandbox     Run Chromium without its sandbox, which it
+                                  needs when the server runs as root.
     --experimental-rune-client    Serve the Rune web client preview at /rune/
                                   and redirect /?ui=rune there. Needs
                                   --rune-web-dir; off by default, when /rune/
