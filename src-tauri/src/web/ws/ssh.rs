@@ -139,7 +139,17 @@ async fn run(
         }
         "ssh_session_respond_host_key" => {
             let a: HostKeyArg = args(request_type, payload)?;
-            value(Ok(service::respond_host_key(ssh, &a.session_id, a.trust)))
+            // The host-key question (with its fingerprint) is not pushed to
+            // this client yet, so it cannot have seen what it would trust,
+            // and trusting a changed key rewrites known_hosts. Only a
+            // rejection is accepted until the push channel exists.
+            if a.trust {
+                return Err(SshFailure::new(
+                    "Trusting a host key needs the host-key prompt, which this server cannot show yet",
+                    "SSH_HOST_KEY_TRUST_UNAVAILABLE",
+                ));
+            }
+            value(Ok(service::respond_host_key(ssh, &a.session_id, false)))
         }
         "ssh_session_cancel" => {
             let a: SessionIdArg = args(request_type, payload)?;

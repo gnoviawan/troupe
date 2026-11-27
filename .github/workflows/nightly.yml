@@ -87,19 +87,47 @@ jobs:
 
           # A rebuild under a published version would overwrite its files in
           # place, and an X.Y.0 nightly would shadow the stable of that name.
+          # However, if a new stable tag just shipped and the published nightly
+          # is still on an older MAJOR.MINOR (e.g. 0.5.85 when v0.6.0 shipped),
+          # publish a prerelease X.Y.0-nightly.<date>.<run>.g<sha> so nightly
+          # users receive fixes merged into that release without shadowing X.Y.0.
           PUBLISHED="$(gh release download nightly --repo "$GITHUB_REPOSITORY" -p nightly.json -O - 2>/dev/null | jq -r '.version // empty' || true)"
-          SKIP=false
-          if [ "$COMMITS" = 0 ] || [ "$NIGHTLY_VERSION" = "$PUBLISHED" ]; then
-            SKIP=true
-            echo "Nothing to publish: $NIGHTLY_VERSION (published: ${PUBLISHED:-none})."
+          PUBLISHED_OLDER_THAN_STABLE=false
+          if [ -z "$PUBLISHED" ]; then
+            PUBLISHED_OLDER_THAN_STABLE=true
+          else
+            PUB_CORE="${PUBLISHED%%-*}"
+            IFS=. read -r PUB_MAJOR PUB_MINOR _ <<< "$PUB_CORE"
+            if [[ "$PUB_MAJOR" =~ ^[0-9]+$ && "$PUB_MINOR" =~ ^[0-9]+$ ]]; then
+              if (( 10#$PUB_MAJOR < 10#$MAJOR || (10#$PUB_MAJOR == 10#$MAJOR && 10#$PUB_MINOR < 10#$MINOR) )); then
+                PUBLISHED_OLDER_THAN_STABLE=true
+              fi
+            fi
           fi
 
-          # Builds released before this scheme only accept
-          # `<core>-nightly.<date>.<run>.<sha>` versions from latest-nightly.json.
-          # That manifest keeps advertising this build under such a version so
-          # they update onto it, and from then on they read nightly.json.
-          # The g keeps an all-digit SHA with a leading 0 valid SemVer.
-          LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.g${SHORT_SHA}"
+          SKIP=false
+          if [ "$COMMITS" = 0 ]; then
+            if [ "$PUBLISHED_OLDER_THAN_STABLE" = true ]; then
+              NIGHTLY_VERSION="${MAJOR}.${MINOR}.0-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.g${SHORT_SHA}"
+              LEGACY_VERSION="$NIGHTLY_VERSION"
+              echo "Published nightly (${PUBLISHED:-none}) predates $STABLE_TAG; building prerelease $NIGHTLY_VERSION."
+            else
+              SKIP=true
+              LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.g${SHORT_SHA}"
+              echo "Nothing to publish: $NIGHTLY_VERSION (published: ${PUBLISHED:-none})."
+            fi
+          else
+            # Builds released before this scheme only accept
+            # `<core>-nightly.<date>.<run>.<sha>` versions from latest-nightly.json.
+            # That manifest keeps advertising this build under such a version so
+            # they update onto it, and from then on they read nightly.json.
+            # The g keeps an all-digit SHA with a leading 0 valid SemVer.
+            LEGACY_VERSION="${NIGHTLY_VERSION}-nightly.${NIGHTLY_DATE}.${RUN_NUMBER}.g${SHORT_SHA}"
+            if [ "$NIGHTLY_VERSION" = "$PUBLISHED" ]; then
+              SKIP=true
+              echo "Nothing to publish: $NIGHTLY_VERSION (published: ${PUBLISHED:-none})."
+            fi
+          fi
 
           echo "Nightly $NIGHTLY_VERSION: $COMMITS commits after $STABLE_TAG (legacy $LEGACY_VERSION)."
           echo "nightly_version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
@@ -895,7 +923,7 @@ jobs:
           jq -r --arg current "$VERSION" --arg published "$PUBLISHED" '
             .assets[].name as $name
             | $name
-            | capture("^Troupe[-_](?<version>[0-9]+\\.[0-9]+\\.[0-9]+(-nightly\\.[0-9]+\\.[0-9]+\\.[0-9a-f]+)?)[-_]")
+            | capture("^Troupe[-_](?<version>[0-9]+\\.[0-9]+\\.[0-9]+(-nightly\\.[0-9]+\\.[0-9]+\\.g?[0-9a-f]+)?)[-_]")
             | select(.version != $current and .version != $published)
             | $name' <<< "$release" |
           while IFS= read -r name; do

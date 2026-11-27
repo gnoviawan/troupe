@@ -243,6 +243,23 @@ pub(super) fn cwd_string<T>(resolved: &std::path::Path) -> Result<String, RouteE
     Ok(simplified)
 }
 
+/// `FORBIDDEN` when `path` under `cwd` is a host credential or a directory
+/// holding one (`web::host_secrets`): a diff would print it, and staging it
+/// would let a commit and push carry it off the host.
+fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
+    if !crate::web::host_secrets::exposed(&Path::new(cwd).join(path)) {
+        return None;
+    }
+    tracing::warn!("[Security] a git route refused a host credential path");
+    Some((
+        StatusCode::OK,
+        Json(IpcBody::<T>::err(
+            "this path holds a host credential and is not served",
+            "FORBIDDEN",
+        )),
+    ))
+}
+
 // ============================ Route handlers ============================
 
 /// `POST /git/status` — list modified/staged/untracked entries.
@@ -297,6 +314,9 @@ pub async fn get_diff(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    if let Some(refused) = host_secret_refusal::<String>(&cwd, &req.path) {
+        return refused;
+    }
     let cwd_for_log = cwd.clone();
     let path = req.path;
     let staged = req.staged;
@@ -912,6 +932,9 @@ async fn run_git_path_write(
         Ok(s) => s,
         Err((st, body)) => return (st, body),
     };
+    if let Some(refused) = host_secret_refusal::<()>(&cwd, &req.path) {
+        return refused;
+    }
     let (raw_cwd, req_path) = (req.cwd, req.path);
     let body = run_http(
         state.relay.ledger(),

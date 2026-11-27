@@ -112,21 +112,41 @@ pub fn list_profiles(ssh: &SSHManager) -> SshResult<Vec<SSHProfile>> {
     ssh.profiles.list().map_err(profile_error)
 }
 
-pub fn save_profile(ssh: &SSHManager, profile: SSHProfile) -> SshResult<()> {
+/// The host a profile's secret goes to.
+fn target_of(profile: &SSHProfile) -> SessionTarget {
+    SessionTarget {
+        profile_id: profile.id.clone(),
+        host: profile.host.clone(),
+        port: profile.port,
+        username: profile.username.clone(),
+        auth_method: profile.auth_method.clone(),
+        key_path: profile.private_key_path.clone(),
+    }
+}
+
+pub fn save_profile(ssh: &SSHManager, mut profile: SSHProfile) -> SshResult<()> {
     // A new secret, or a different host/user/auth, makes the in-memory copy
     // kept for live sessions stale (a later tab would try the old one first).
     let profile_id = profile.id.clone();
     let secret_changed = profile.password.is_some() || profile.passphrase.is_some();
     let target_changed = match ssh.profiles.get(&profile_id) {
         Ok(Some(previous)) => {
-            previous.host != profile.host
-                || previous.port != profile.port
-                || previous.username != profile.username
-                || previous.auth_method != profile.auth_method
-                || previous.private_key_path != profile.private_key_path
+            target_of(&previous).fingerprint() != target_of(&profile).fingerprint()
         }
         _ => false,
     };
+    if target_changed {
+        // A stored secret belongs to the host it was typed for: a profile
+        // moved to another host, port, user or key must not send it there.
+        // Only a secret sent with this save is kept.
+        if profile.password.as_deref().is_none_or(str::is_empty) {
+            profile.has_stored_password = false;
+        }
+        if profile.passphrase.as_deref().is_none_or(str::is_empty) {
+            profile.has_stored_passphrase = false;
+        }
+        log::info!("[SSH] Profile target changed; stored secrets need entering again");
+    }
     ssh.profiles.save(profile).map_err(profile_error)?;
     if secret_changed || target_changed {
         ssh.sessions.forget_secret(&profile_id);
@@ -179,21 +199,16 @@ pub async fn open_session(
         .get_with_credentials(&request.profile_id)
         .map_err(profile_error)?
         .ok_or_else(|| SshFailure::new("Profile not found", "SSH_PROFILE_NOT_FOUND"))?;
-    // Prompt answer, then the secret a live session to this host used, then
-    // the keychain.
+    // Prompt answer, then the secret a live session to this exact target
+    // used, then the keychain. All three belong to this one snapshot of the
+    // profile, so an edit made meanwhile never mixes hosts and secrets.
+    let target = target_of(&profile);
+    let fingerprint = target.fingerprint();
     let prompted = request.secret;
     let secret = prompted
         .clone()
-        .or_else(|| ssh.sessions.cached_secret(&profile.id))
+        .or_else(|| ssh.sessions.cached_secret_for(&target))
         .or_else(|| stored_secret(&profile));
-    let target = SessionTarget {
-        profile_id: profile.id.clone(),
-        host: profile.host.clone(),
-        port: profile.port,
-        username: profile.username.clone(),
-        auth_method: profile.auth_method.clone(),
-        key_path: profile.private_key_path.clone(),
-    };
     let opened = ssh
         .sessions
         .open(
@@ -207,8 +222,18 @@ pub async fn open_session(
         .await
         .map_err(|e| SshFailure::new(e.detail, e.kind.code()))?;
 
+    // The profile may have been edited while the session opened; the
+    // prompted secret is saved only if it still points at the host it
+    // worked for.
+    let unchanged = matches!(
+        ssh.profiles.get(&profile.id),
+        Ok(Some(now)) if target_of(&now).fingerprint() == fingerprint
+    );
     let mut secret_saved = false;
-    if request.save_secret {
+    if request.save_secret && !unchanged {
+        log::warn!("[SSH] Profile changed during connect; the typed secret was not saved");
+    }
+    if request.save_secret && unchanged {
         if let Some(secret) = prompted.as_deref() {
             match ssh.profiles.store_secret(&profile.id, secret) {
                 Ok(()) => secret_saved = true,
