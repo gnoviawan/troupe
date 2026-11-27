@@ -97,15 +97,28 @@ impl ChromiumEngine {
     }
 }
 
-/// Every input goes through CDP `Input.*`, so it is trusted. Popups,
-/// downloads, permissions, the console and the network are not wired yet.
+/// Every input goes through CDP `Input.*`, so it is trusted. The agent tab
+/// floor is native too:
+/// - navigation: `Fetch` pauses each document request for the core;
+/// - new windows: every new target starts paused, and a popup is closed
+///   before it runs while its opener reports the request;
+/// - downloads: Chromium names each one to the host, which asks the core;
+/// - dialogs: `Page.javascriptDialogOpening` holds them for the core;
+/// - file choosers: intercepted and cancelled, inputs set by element;
+/// - permissions: `--deny-permission-prompts` refuses every request;
+/// - external apps: headless Chromium has no prompt to launch one.
+/// The console and the network are not observed yet.
 pub fn capability_table() -> CapabilityTable {
     CapabilityTable::unavailable("not implemented on the Chromium engine yet")
         .with(CapabilityId::IsolatedEval, Support::Trusted)
         .with(CapabilityId::PersistentProfile, Support::Trusted)
         .with(CapabilityId::NavigationIntercept, Support::Trusted)
+        .with(CapabilityId::NewWindowIntercept, Support::Trusted)
+        .with(CapabilityId::DownloadIntercept, Support::Trusted)
         .with(CapabilityId::DialogIntercept, Support::Trusted)
         .with(CapabilityId::FileChooser, Support::Trusted)
+        .with(CapabilityId::PermissionIntercept, Support::Trusted)
+        .with(CapabilityId::ExternalProtocolIntercept, Support::Trusted)
         .with(CapabilityId::Screenshot, Support::Trusted)
         .with(CapabilityId::PointerClick, Support::Trusted)
         .with(CapabilityId::TrustedKey, Support::Trusted)

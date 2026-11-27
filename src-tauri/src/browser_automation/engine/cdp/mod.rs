@@ -52,12 +52,16 @@ pub enum CdpMethod {
     TargetCreateBrowserContext,
     TargetDisposeBrowserContext,
     TargetSetDiscoverTargets,
+    TargetDetachFromTarget,
+    RuntimeRunIfWaitingForDebugger,
     BrowserClose,
     PageStartScreencast,
     PageStopScreencast,
     PageScreencastFrameAck,
     InputDispatchTouchEvent,
     InputImeSetComposition,
+    BrowserSetDownloadBehavior,
+    BrowserCancelDownload,
 }
 
 impl CdpMethod {
@@ -94,12 +98,16 @@ impl CdpMethod {
             CdpMethod::TargetCreateBrowserContext => "Target.createBrowserContext",
             CdpMethod::TargetDisposeBrowserContext => "Target.disposeBrowserContext",
             CdpMethod::TargetSetDiscoverTargets => "Target.setDiscoverTargets",
+            CdpMethod::TargetDetachFromTarget => "Target.detachFromTarget",
+            CdpMethod::RuntimeRunIfWaitingForDebugger => "Runtime.runIfWaitingForDebugger",
             CdpMethod::BrowserClose => "Browser.close",
             CdpMethod::PageStartScreencast => "Page.startScreencast",
             CdpMethod::PageStopScreencast => "Page.stopScreencast",
             CdpMethod::PageScreencastFrameAck => "Page.screencastFrameAck",
             CdpMethod::InputDispatchTouchEvent => "Input.dispatchTouchEvent",
             CdpMethod::InputImeSetComposition => "Input.imeSetComposition",
+            CdpMethod::BrowserSetDownloadBehavior => "Browser.setDownloadBehavior",
+            CdpMethod::BrowserCancelDownload => "Browser.cancelDownload",
         }
     }
 }
