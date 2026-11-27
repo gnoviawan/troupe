@@ -282,20 +282,20 @@ pub(super) fn screencast_watch_allowed(
     id: &str,
     scope: &str,
     env: &HandlerEnv,
-) -> Result<Arc<BrowserHost>, WsReply> {
+) -> Result<Arc<BrowserHost>, Box<WsReply>> {
     let Some(host) = browser_host::installed() else {
-        return Err(WsReply::err_with_code(
+        return Err(Box::new(WsReply::err_with_code(
             id,
             NO_HOST,
             "this server has no browser host (--browser-host)",
-        ));
+        )));
     };
     if !host.may_watch(scope, &env.out_tx) {
-        return Err(WsReply::err(
+        return Err(Box::new(WsReply::err(
             id,
             WsErrorCode::Forbidden,
             "open or attach the tab before watching it",
-        ));
+        )));
     }
     Ok(host)
 }

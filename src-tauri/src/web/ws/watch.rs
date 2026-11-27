@@ -84,7 +84,7 @@ pub(super) fn handle_watch(id: String, payload: &Value, env: &HandlerEnv) -> WsR
         WatchKind::BrowserScreencast => {
             let host = match super::browser_pane::screencast_watch_allowed(&id, &scope, env) {
                 Ok(host) => host,
-                Err(reply) => return reply,
+                Err(reply) => return *reply,
             };
             let subscribed = hub.subscribe(kind, &scope, &env.out_tx, || json!({ "tabId": scope }));
             if subscribed.is_ok() {
