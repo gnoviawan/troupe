@@ -67,6 +67,8 @@ pub struct McpUi {
     /// Page writes in the order the model saves them.
     pub actions: VecDeque<Action>,
     pub rejection: Option<OnReject>,
+    /// The model may run a queued registry write in this step: a page write or a registry answer.
+    pub registry_step: bool,
     pub polls: Vec<Poll>,
     pub dialog: Option<crate::settings_mcp_dialog::ServerDialog>,
     pub paste: crate::settings_mcp_dialog::PasteUi,
@@ -175,7 +177,9 @@ impl State {
     /// A page write: the model saves it, and `mcp_host` answers with what the page does next.
     pub(crate) fn mcp_write(&mut self, action: Action, event: Event) {
         self.mcp_ui.actions.push_back(action);
+        self.mcp_ui.registry_step = true;
         self.acp_step(event);
+        self.mcp_ui.registry_step = false;
     }
 
     /// The page's write landed.
