@@ -260,6 +260,16 @@ fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
     ))
 }
 
+/// The top of the work tree `cwd` is in, if git can tell.
+fn git_work_tree(cwd: &str) -> Option<String> {
+    let output = GitTracker::run_git_command(cwd, &["rev-parse", "--show-toplevel"])?;
+    if !output.status.success() {
+        return None;
+    }
+    let top = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    (!top.is_empty()).then_some(top)
+}
+
 // ============================ Route handlers ============================
 
 /// `POST /git/status` — list modified/staged/untracked entries.
@@ -664,6 +674,20 @@ pub async fn stash_save(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    // `stash -u` moves every untracked file of the work tree into the stash,
+    // from where it can be applied anywhere: never with a host credential
+    // in the tree.
+    if req.include_untracked.unwrap_or(false) {
+        let probe = cwd.clone();
+        let work_tree = tokio::task::spawn_blocking(move || git_work_tree(&probe))
+            .await
+            .ok()
+            .flatten()
+            .unwrap_or_else(|| cwd.clone());
+        if let Some(refused) = host_secret_refusal::<()>(&work_tree, "") {
+            return refused;
+        }
+    }
     let body = run_http(
         state.relay.ledger(),
         &headers,
