@@ -266,6 +266,13 @@ pub(super) fn host_secret_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T
             )),
         ));
     }
+    host_credential_refusal(cwd, path)
+}
+
+/// `FORBIDDEN` when `path` under `cwd` is a host credential or a directory
+/// holding one. Callers refuse `..` first ([`host_secret_refusal`]) or rely
+/// on their own relative-path check.
+pub(super) fn host_credential_refusal<T>(cwd: &str, path: &str) -> Option<RouteErr<T>> {
     if !crate::web::host_secrets::exposed(&Path::new(cwd).join(path)) {
         return None;
     }

@@ -97,8 +97,12 @@ pub async fn get_commit_file_diff(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    // `..` and absolute paths are refused below with `INVALID_PATH`
+    // (`is_safe_relative_path`), before git runs.
     for path in std::iter::once(&req.path).chain(req.old_path.as_ref()) {
-        if let Some(refused) = super::git_api::host_secret_refusal::<GitCommitFileDiff>(&cwd, path) {
+        if let Some(refused) =
+            super::git_api::host_credential_refusal::<GitCommitFileDiff>(&cwd, path)
+        {
             return refused;
         }
     }
