@@ -345,7 +345,7 @@ async fn pending_connects_are_capped() {
     )
     .await
     .expect("refused at once, not queued");
-    let error = over.err().expect("refused");
+    let error = over.expect_err("refused");
     assert!(error.detail.contains("Too many"), "{}", error.detail);
     for open in opens {
         open.abort();
