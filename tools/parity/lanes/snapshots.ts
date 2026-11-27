@@ -178,7 +178,18 @@ async function run(client: Client, world: World): Promise<{ seen: string[]; stat
   await act('restore older', () => button('Restore', 1))
   await step('restore-dialog', () => client.sees(`"${first}"`, 5_000))
   await act('confirm restore', () => button('Restore'))
-  await step('restored', () => client.sees('What should we do in alpha?', 1).then((v) => !v))
+  // Restore lands on the workspace and stays there: the URL reads `#/` and the page is gone,
+  // checked again after the dialog's history entry has unwound.
+  await step('restored', async () => {
+    const landed = () =>
+      Promise.all([
+        new URL(client.page.url()).hash === '#/',
+        client.sees('Workspace Snapshots', 300).then((v) => !v)
+      ]).then(([url, gone]) => url && gone)
+    if (!(await until(landed, 10_000))) return false
+    await client.page.waitForTimeout(1500)
+    return landed()
+  })
   await openPage()
   await act('delete newer', () => button(options.phone ? 'Delete snapshot' : 'Delete', 0))
   await step('delete-dialog', () => client.sees(`"${SECOND}"`, 5_000))

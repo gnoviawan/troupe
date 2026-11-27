@@ -91,6 +91,10 @@ pub struct FirstRun {
     pub landing: bool,
     /// The agent config the agents step picked, by id.
     pub agent: Option<String>,
+    /// The project the project step picked: one created from its new project modal.
+    pub project: Option<String>,
+    /// The projects there were when the step opened the modal; a new one becomes the pick.
+    known_projects: Option<Vec<String>>,
     probes: u32,
     retry_at: Option<f64>,
     /// This boot's one-time setup token (`?setup=`), for `/setup/*` only.
@@ -139,6 +143,7 @@ impl State {
         let f = &mut self.first_run;
         f.setup_token = page.setup_token;
         f.config = Some(config);
+        page::wake_on_hashchange(wake.clone());
         f.waker = Some(wake);
         f.gate = Gate::Checking;
         f.auth = AuthGate::Checking;
@@ -191,45 +196,49 @@ impl State {
         }
         // A live link the host refused for its token: the token screen comes back (#907).
         if self.first_run.gate != Gate::Off
-            && self.first_run.auth == AuthGate::Ok
+            && matches!(self.first_run.auth, AuthGate::Ok | AuthGate::NetworkError)
             && matches!(&self.status, client::link::Status::Halted { code, .. } if code.eq_ignore_ascii_case("unauthorized"))
         {
             log::warn!("[first-run] the server refused this client's token; showing the token screen");
             self.first_run.auth = AuthGate::Unauthorized;
         }
         self.onboarding_latch();
+        self.onboarding_pick_created();
         self.follow_hash();
         [self.first_run.retry_at, self.first_run.wizard.poll_at].into_iter().flatten().reduce(f64::min)
     }
 
-    /// The web client's hash router, both ways: a `#/…` the user changed moves the route, and a
-    /// route the app changed (a restore returns to the workspace) writes its hash, as React's
-    /// `navigate` does.
+    /// The web client's hash router, both ways (see [`hash_step`]).
     fn follow_hash(&mut self) {
         if self.first_run.gate == Gate::Off {
             return;
         }
-        let hash = page::hash();
-        let last = self.first_run.hash.replace(hash.clone());
-        // An empty hash names no route: the overlay history's back press lands on one.
-        if last.is_some() && last.as_deref() != Some(hash.as_str()) && !hash.is_empty() {
-            let route = crate::Route::from_hash(&hash);
-            log::info!("[app] the hash moved the route to {route:?}");
-            if route == crate::Route::Snapshots {
-                self.open_snapshots();
-            } else {
-                self.route = route;
+        let settled = self.overlays.depth() == 0 && !page::on_overlay_entry();
+        let route_hash = route_hash(&self.route);
+        match hash_step(&mut self.first_run.hash, &page::hash(), settled, &route_hash) {
+            HashStep::Stay => {}
+            HashStep::Follow(hash) => {
+                let route = crate::Route::from_hash(&hash);
+                log::info!("[app] the hash moved the route to {route:?}");
+                if route == crate::Route::Snapshots {
+                    self.open_snapshots();
+                } else {
+                    self.route = route;
+                }
             }
-            return;
-        }
-        let wanted = match &self.route {
-            crate::Route::Workspace => "#/".to_owned(),
-            crate::Route::Snapshots => "#/snapshots".to_owned(),
-            crate::Route::NotFound(path) => format!("#{path}"),
-        };
-        if crate::Route::from_hash(&hash) != self.route {
-            page::set_hash(&wanted);
-            self.first_run.hash = Some(wanted);
+            HashStep::Write => page::set_hash(&route_hash),
+            HashStep::Token(token) => {
+                log::info!("[first-run] took an access token from the URL");
+                page::save_token(&token);
+                page::set_hash(&route_hash);
+                if let Some(config) = self.first_run.config.as_mut() {
+                    config.token = Some(token.clone());
+                }
+                if self.first_run.auth == AuthGate::Unauthorized {
+                    self.first_run.token = TextEdit::new(&token);
+                    self.submit_token();
+                }
+            }
         }
     }
 
@@ -339,8 +348,11 @@ impl State {
     /// The token form's Continue (`handleSubmit`). The token is kept as the `#token=` link keeps
     /// it, then checked against a gated route.
     pub(crate) fn submit_token(&mut self) {
+        if self.first_run.submitting {
+            return;
+        }
         let token = self.first_run.token.text.trim().to_owned();
-        if token.is_empty() || self.first_run.submitting {
+        if token.is_empty() {
             self.first_run.token_error = Some(Submit::Empty);
             return;
         }
@@ -534,6 +546,22 @@ impl State {
         log::info!("[onboarding] Step {} ({})", self.first_run.step + 1, setup::STEPS[self.first_run.step]);
     }
 
+    /// The project step's two choices open the new project modal over onboarding.
+    pub(crate) fn onboarding_new_project(&mut self) {
+        self.first_run.known_projects = Some(self.projects.store.projects.iter().map(|p| p.id.clone()).collect());
+        self.overlays.open(crate::rail::NEW_PROJECT);
+    }
+
+    /// A project the modal created shows up in the registry: it is the step's pick.
+    fn onboarding_pick_created(&mut self) {
+        let Some(known) = &self.first_run.known_projects else { return };
+        if let Some(new) = self.projects.store.projects.iter().find(|p| !known.contains(&p.id)) {
+            log::info!("[onboarding] Project created");
+            self.first_run.project = Some(new.id.clone());
+            self.first_run.known_projects = None;
+        }
+    }
+
     /// The project step's Skip or Continue (`landOnboarding`): record completion, leave, land.
     pub(crate) fn finish_onboarding(&mut self, project_id: Option<String>) {
         if self.first_run.landing {
@@ -548,6 +576,73 @@ impl State {
             self.select_project(&project_id);
         }
     }
+}
+
+/// What the hash router does this frame.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum HashStep {
+    Stay,
+    /// The user moved the hash: the route follows it.
+    Follow(String),
+    /// The app moved the route: the hash follows it.
+    Write,
+    /// A `#token=` landing mid-session: keep the token, take it off the URL.
+    Token(String),
+}
+
+/// The hash a route shows (`#/`, `#/snapshots`, the path a 404 named).
+pub fn route_hash(route: &crate::Route) -> String {
+    match route {
+        crate::Route::Workspace => "#/".to_owned(),
+        crate::Route::Snapshots => "#/snapshots".to_owned(),
+        crate::Route::NotFound(path) => format!("#{path}"),
+    }
+}
+
+/// One frame of the hash router. Only a settled page is read: no overlay open and the
+/// current history entry not one an overlay pushed. While an overlay closes, its back step
+/// lands on an older entry whose hash is stale; following that would undo a route the app
+/// just changed. `seen` is the hash the router last left the page at.
+pub fn hash_step(seen: &mut Option<String>, hash: &str, settled: bool, route_hash: &str) -> HashStep {
+    if !settled {
+        return HashStep::Stay;
+    }
+    if let Some(token) = hash.strip_prefix("#token=").filter(|t| !t.is_empty()) {
+        *seen = Some(route_hash.to_owned());
+        return HashStep::Token(decode(token));
+    }
+    let moved = seen.as_deref().is_some_and(|s| s != hash) && !hash.is_empty();
+    let first = seen.is_none();
+    *seen = Some(hash.to_owned());
+    if moved && !first {
+        return HashStep::Follow(hash.to_owned());
+    }
+    if crate::Route::from_hash(hash) != crate::Route::from_hash(route_hash) {
+        *seen = Some(route_hash.to_owned());
+        return HashStep::Write;
+    }
+    HashStep::Stay
+}
+
+/// `decodeURIComponent` for a token, leaving a malformed escape as it is.
+fn decode(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| char::from(b).to_digit(16);
+        match (bytes[i], bytes.get(i + 1).and_then(|b| hex(*b)), bytes.get(i + 2).and_then(|b| hex(*b))) {
+            (b'%', Some(h), Some(l)) => {
+                out.push((h * 16 + l) as u8);
+                i += 3;
+            }
+            (b, ..) => {
+                out.push(b);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8(out).unwrap_or_else(|_| text.to_owned())
 }
 
 /// The page the web client runs in: its URL, its storage and its navigation.
@@ -609,6 +704,26 @@ mod page {
 
     pub fn hash() -> String {
         window().and_then(|w| w.location().hash().ok()).unwrap_or_default()
+    }
+
+    /// Whether the current history entry is one the overlay history pushed.
+    pub fn on_overlay_entry() -> bool {
+        window()
+            .and_then(|w| w.history().ok())
+            .and_then(|h| h.state().ok())
+            .and_then(|state| state.as_string())
+            .is_some_and(|state| state.starts_with("troupe-overlay:"))
+    }
+
+    /// A hash the user changes wakes the app, so the route follows it without other input.
+    pub fn wake_on_hashchange(wake: Waker) {
+        use wasm_bindgen::JsCast;
+        let Some(w) = window() else { return };
+        let on_change = wasm_bindgen::closure::Closure::<dyn Fn()>::new(move || wake());
+        if w.add_event_listener_with_callback("hashchange", on_change.as_ref().unchecked_ref()).is_err() {
+            log::warn!("[app] no hashchange listener; the route follows the hash on the next input");
+        }
+        on_change.forget();
     }
 
     /// Replaces the current entry's hash: the overlay history owns the entries.
@@ -691,6 +806,12 @@ mod page {
     pub fn hash() -> String {
         String::new()
     }
+
+    pub fn on_overlay_entry() -> bool {
+        false
+    }
+
+    pub fn wake_on_hashchange(_: Waker) {}
 
     pub fn set_hash(_: &str) {}
 

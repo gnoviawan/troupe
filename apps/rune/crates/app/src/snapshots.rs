@@ -52,8 +52,9 @@ pub struct SnapshotsUi {
     pub rename: TextEdit,
     /// The desktop card under the pointer: it shows its Rename and Delete.
     pub hovered: Option<String>,
-    /// Terminals a restore spawned, by spawn call: the saved name each tab takes.
-    pub names: BTreeMap<CallId, String>,
+    /// Terminals a restore spawned, by spawn call: the saved name each tab takes and the saved
+    /// lines it shows before the shell's output (`pendingScrollback`).
+    pub names: BTreeMap<CallId, (String, Vec<String>)>,
 }
 
 fn read_of(result: Result<Option<Value>, WsError>, key: &str) -> Read {
@@ -296,8 +297,10 @@ impl State {
             return;
         }
         let Some(snapshot) = self.snapshots.restore.clone() else { return };
-        let Some(project) = self.active_project().map(|p| p.id.clone()) else {
-            log::error!("[snapshots] failed to restore snapshot: No active project");
+        // A restore spawns into the shown project; a snapshot of another one restores nothing.
+        let Some(project) = self.active_project().map(|p| p.id.clone()).filter(|p| *p == snapshot.project_id) else {
+            log::error!("[snapshots] failed to restore snapshot {}: its project is not the one shown", snapshot.id);
+            self.close(RESTORE);
             return;
         };
         self.snapshots.restoring = true;
@@ -331,7 +334,11 @@ impl State {
             let shell = terminal["shell"].as_str().filter(|s| !s.is_empty()).map(str::to_owned);
             if let Some(call) = self.spawn_terminal_with(None, cwd, shell) {
                 let tab_name = terminal["name"].as_str().unwrap_or("Terminal").to_owned();
-                self.snapshots.names.insert(call, tab_name);
+                let lines = terminal["scrollback"]
+                    .as_array()
+                    .map(|l| l.iter().filter_map(Value::as_str).map(str::to_owned).collect())
+                    .unwrap_or_default();
+                self.snapshots.names.insert(call, (tab_name, lines));
             }
         }
         self.snapshots.restoring = false;
@@ -342,8 +349,15 @@ impl State {
 
     /// A spawn a restore asked for landed as terminal `id`: it takes the saved name.
     pub(crate) fn snapshot_terminal_named(&mut self, call: CallId, id: &str) {
-        if let Some(name) = self.snapshots.names.remove(&call) {
+        if let Some((name, lines)) = self.snapshots.names.remove(&call) {
             self.terms.names.insert(id.to_owned(), name);
+            // `restoreScrollback`: the saved lines, then the shell's own output after them.
+            if !lines.is_empty()
+                && let Some(view) = self.terms.views.get(id)
+                && let Ok(mut term) = view.cells.lock()
+            {
+                term.advance(format!("{}\r\n", lines.join("\r\n")).as_bytes());
+            }
         }
     }
 

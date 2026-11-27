@@ -93,7 +93,7 @@ fn restore_reads_the_picked_snapshot_spawns_its_terminals_and_returns_to_the_wor
     assert!(spawns.iter().all(|p| p["shell"] == json!("bash") && p["projectId"] == json!("p-a")));
     assert_eq!(s.route, Route::Workspace);
     assert!(!s.overlays.is_open(RESTORE));
-    assert_eq!(s.snapshots.names.values().collect::<Vec<_>>(), ["Beta 0", "Beta 1"]);
+    assert_eq!(s.snapshots.names.values().map(|(n, _)| n.as_str()).collect::<Vec<_>>(), ["Beta 0", "Beta 1"]);
 }
 
 #[test]
@@ -133,4 +133,36 @@ fn the_page_lists_cards_and_a_card_delete_opens_the_confirm_naming_it() {
 #[test]
 fn the_route_reads_from_the_hash() {
     assert_eq!(Route::from_hash("#/snapshots"), Route::Snapshots);
+}
+
+#[test]
+fn a_restored_terminal_shows_its_saved_lines_before_the_shells_output() {
+    let mut s = page();
+    s.ask_restore(pick(&s, "a"));
+    s.confirm_restore();
+    let (read, _) = last_store_call(&s, WsRequestType::StoreRead);
+    let mut saved = list();
+    saved["snapshots"][0]["terminals"][0]["scrollback"] = json!(["$ make", "done"]);
+    s.apply(read_reply(read, saved));
+    let call = *s.snapshots.names.keys().next().expect("a spawn");
+    s.terms.views.insert("pty-9".into(), crate::terminal::TermView::new(std::sync::Arc::new(std::sync::Mutex::new(troupe_term::Term::new(20, 4)))));
+    s.snapshot_terminal_named(call, "pty-9");
+    let term = s.terms.views["pty-9"].cells.lock().unwrap();
+    let text: Vec<String> = term.lines().iter().map(|l| troupe_term::text::line_text(l, 0, l.cells.len(), true)).collect();
+    assert_eq!(&text[..2], ["$ make", "done"]);
+    assert_eq!(s.terms.names.get("pty-9").map(String::as_str), Some("Alpha 0"));
+}
+
+#[test]
+fn a_snapshot_of_another_project_restores_nothing() {
+    let mut s = page();
+    let mut other = pick(&s, "b");
+    other.project_id = "p-b".into();
+    s.ask_restore(other);
+    s.terms.sent.clear();
+    let before = s.sync.sent.len();
+    s.confirm_restore();
+    assert_eq!(s.sync.sent.len(), before, "no read for a restore into the wrong project");
+    assert!(!s.snapshots.restoring);
+    assert!(!s.overlays.is_open(RESTORE));
 }

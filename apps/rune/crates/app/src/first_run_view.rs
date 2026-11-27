@@ -658,15 +658,45 @@ fn project(s: &State, t: &'static Tokens, phone: bool) -> El {
                     .child(text(detail.to_owned()).font(sans(12.0, 400.0, 16.0)).color(c.muted_foreground)),
             )
     };
-    let choices = if phone { col().w_full().gap(8.0) } else { row().w_full().gap(8.0) }
-        .child(
-            choice("onboarding-open", "FolderOpen", "Open a folder", "A project already on this computer")
-                .on_press(|s: &mut State| s.overlays.open(crate::rail::NEW_PROJECT)),
-        )
-        .child(
-            choice("onboarding-create", "FolderPlus", "Create a new project", "An empty folder or a template, with Git")
-                .on_press(|s: &mut State| s.overlays.open(crate::rail::NEW_PROJECT)),
-        );
+    // A project created from this step is the pick (`PickedProject`); Continue lands in it.
+    let picked = s.first_run.project.as_ref().and_then(|id| s.projects.store.projects.iter().find(|p| &p.id == id));
+    let choices = match picked {
+        Some(project) => row()
+            .key("onboarding-picked")
+            .w_full()
+            .min_h(56.0)
+            .px(12.0)
+            .gap(12.0)
+            .items_center()
+            .radius(8.0)
+            .fill(c.card)
+            .border(1.0, c.border)
+            .child(row().size(32.0, 32.0).radius(8.0).fill(c.muted).center().child(icon(glyph("Folder"), 16.0).color(c.foreground.alpha(0.8))))
+            .child(
+                col()
+                    .grow(1.0)
+                    .min_w(0.0)
+                    .child(text(project.name.clone()).font(sans(12.0, 500.0, 16.0)).color(c.foreground))
+                    .child(text(project.path.clone().unwrap_or_default()).font(mono(11.0, 400.0, 16.0)).color(c.muted_foreground).single_line().truncate()),
+            )
+            .child(
+                Button::new("Change")
+                    .variant(ButtonVariant::Ghost)
+                    .size(ButtonSize::Xs)
+                    .build(t)
+                    .key("onboarding-change")
+                    .on_press(|s: &mut State| s.first_run.project = None),
+            ),
+        None => if phone { col().w_full().gap(8.0) } else { row().w_full().gap(8.0) }
+            .child(
+                choice("onboarding-open", "FolderOpen", "Open a folder", "A project already on this computer")
+                    .on_press(|s: &mut State| s.onboarding_new_project()),
+            )
+            .child(
+                choice("onboarding-create", "FolderPlus", "Create a new project", "An empty folder or a template, with Git")
+                    .on_press(|s: &mut State| s.onboarding_new_project()),
+            ),
+    };
     let landing = s.first_run.landing;
     let skip = if s.first_run.agent.is_some() { "Skip, chat without a project" } else { "Skip for now" };
     let end = row()
@@ -682,7 +712,20 @@ fn project(s: &State, t: &'static Tokens, phone: bool) -> El {
                 .on_press(|s: &mut State| s.finish_onboarding(None)),
             phone,
         ))
-        .child(touch(Button::new("Continue").size(ButtonSize::Sm).disabled(true).build(t).key("onboarding-finish"), phone));
+        .child(touch(
+            Button::new("Continue")
+                .size(ButtonSize::Sm)
+                .disabled(picked.is_none() || landing)
+                .build(t)
+                .key("onboarding-finish")
+                .on_press(|s: &mut State| {
+                    let project = s.first_run.project.clone();
+                    if project.is_some() {
+                        s.finish_onboarding(project);
+                    }
+                }),
+            phone,
+        ));
     let footer = row().w_full().justify_between().items_center().child(back(t, 1, phone)).child(end);
     frame(t, 2, "Where should agents work?", "Pick a folder. Agents start in it, and every chat shows what changed.", false, choices, footer)
 }

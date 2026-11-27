@@ -131,3 +131,98 @@ fn the_token_screen_and_the_wizard_draw_in_place_of_the_shell() {
     assert!(crate::tests::present(&rt, "token-continue"));
     assert!(!crate::tests::present(&rt, "shell-rail"));
 }
+
+mod hash {
+    use crate::first_run::{HashStep, hash_step};
+
+    /// One settled frame of the router with the page at `hash` while the app's route shows
+    /// `route`; `None` for a frame whose page is still on an overlay's entry.
+    fn frame(seen: &mut Option<String>, hash: &str, route: &str, settled: bool) -> HashStep {
+        hash_step(seen, hash, settled, route)
+    }
+
+    #[test]
+    fn a_route_changed_while_a_dialog_closes_is_not_undone_by_the_stale_entry() {
+        let mut seen = None;
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/snapshots", true), HashStep::Stay);
+        // The restore dialog is open: its entry carries the page's hash.
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/snapshots", false), HashStep::Stay);
+        // Restore closes it and returns to the workspace in one frame; the back step has not
+        // landed yet, then lands on the entry before the dialog, still at #/snapshots.
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/", false), HashStep::Stay);
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/", true), HashStep::Write);
+        assert_eq!(frame(&mut seen, "#/", "#/", true), HashStep::Stay);
+    }
+
+    #[test]
+    fn the_drawers_routes_hold_from_either_hash() {
+        // Snapshots from the drawer while the page is at #/.
+        let mut seen = Some("#/".to_owned());
+        assert_eq!(frame(&mut seen, "#/", "#/snapshots", false), HashStep::Stay);
+        assert_eq!(frame(&mut seen, "#/", "#/snapshots", true), HashStep::Write);
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/snapshots", true), HashStep::Stay);
+        // A project picked in the drawer on the snapshots page goes back to the workspace.
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/", false), HashStep::Stay);
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/", true), HashStep::Write);
+        assert_eq!(frame(&mut seen, "#/", "#/", true), HashStep::Stay);
+    }
+
+    #[test]
+    fn a_hash_the_user_types_moves_the_route() {
+        let mut seen = None;
+        assert_eq!(frame(&mut seen, "#/", "#/", true), HashStep::Stay);
+        assert_eq!(frame(&mut seen, "#/snapshots", "#/", true), HashStep::Follow("#/snapshots".into()));
+    }
+
+    #[test]
+    fn a_token_landing_mid_session_is_taken_and_taken_off_the_url() {
+        let mut seen = Some("#/".to_owned());
+        assert_eq!(frame(&mut seen, "#token=a%2Bb", "#/", true), HashStep::Token("a+b".into()));
+        assert_eq!(seen.as_deref(), Some("#/"));
+    }
+}
+
+#[test]
+fn a_halt_for_the_token_brings_the_screen_back_after_a_network_error_probe() {
+    let mut s = web();
+    s.first_run_replied(Ask::Health, Ok(json!({ "status": "ok" })));
+    s.first_run_replied(Ask::Projects { submitted: false }, Err(HttpError::Network("blip".into())));
+    assert_eq!(s.first_run.auth, AuthGate::NetworkError);
+    s.status = client::link::Status::Halted { code: "unauthorized".into(), message: "bad token".into() };
+    s.first_run_tick(0.0);
+    assert_eq!(s.first_run.auth, AuthGate::Unauthorized);
+}
+
+#[test]
+fn return_while_a_token_is_verifying_says_nothing() {
+    let mut s = web();
+    s.first_run.auth = AuthGate::Unauthorized;
+    s.first_run.token = rune::TextEdit::new("tok");
+    s.submit_token();
+    let sent = s.first_run.sent.len();
+    s.submit_token();
+    assert_eq!(s.first_run.token_error, None);
+    assert_eq!(s.first_run.sent.len(), sent, "one check at a time");
+}
+
+#[test]
+fn the_project_steps_choices_open_the_new_project_modal_over_onboarding() {
+    let mut s = connected();
+    for call in 1..=5 {
+        s.apply(crate::tests::read_reply(call, serde_json::Value::Null));
+    }
+    s.apply(client::ws::Output::WatchState {
+        watch: troupe_protocol::ws::WsWatchName::Projects,
+        scope: String::new(),
+        state: json!({ "projects": [], "defaultProjectId": null }),
+    });
+    s.first_run_tick(0.0);
+    s.onboarding_step(2);
+    let mut rt = Runtime::new(s, view, (1280.0, 800.0), Env::new(true, 1.0));
+    rt.frame(0.0);
+    rt.frame(0.016);
+    crate::tests::tap(&mut rt, "onboarding-create");
+    assert!(rt.state.overlays.is_open(crate::rail::NEW_PROJECT));
+    assert!(crate::tests::present(&rt, "new-project-dialog"), "the modal draws over the onboarding screen");
+    assert!(crate::tests::present(&rt, "onboarding-project"));
+}

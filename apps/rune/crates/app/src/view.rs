@@ -27,6 +27,8 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     let root = row().key(ROOT).w_full().h_full().fill(t.colors.background);
     let mut layer = Vec::new();
     if let Some(screen) = crate::first_run_view::screen(s, t, phone, &mut layer) {
+        // Onboarding's project step opens the new project modal over its screen.
+        crate::rail_forms::build(s, t, &mut layer);
         return ui::overlay::root(root.child(screen), layer);
     }
     if let Route::NotFound(path) = &s.route {
