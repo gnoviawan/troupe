@@ -112,15 +112,17 @@ pub fn spawn_legacy_history_import(persistence: Arc<SessionPersistence>, state_d
     });
 }
 
-/// Serve the host-local client's SSH requests: profiles in the state dir (the
-/// Tauri app's `ssh-profiles.json`), events to the `ssh` watch. The emitter
-/// holds the relay weakly, because the relay owns the manager.
-pub fn attach_ssh(relay: &Arc<WsRelaySink>, state_dir: &Path) {
-    let events = Arc::downgrade(relay);
-    let emit: crate::ssh::Emit = Arc::new(move |event, payload| {
-        if let Some(relay) = events.upgrade() {
-            crate::web::watch::publish_ssh_event(&relay, event, payload);
-        }
+/// Serve the host-local client's SSH requests, with profiles in the state dir
+/// (the Tauri app's `ssh-profiles.json`).
+///
+/// Session progress, host-key questions, session ends and transfer progress
+/// are not pushed to the client yet: a push channel needs a watch name in
+/// `troupe-protocol`. Until then they are logged by name only (payloads can
+/// name hosts and paths), and an unanswered host-key question fails closed
+/// after its timeout.
+pub fn attach_ssh(relay: &WsRelaySink, state_dir: &Path) {
+    let emit: crate::ssh::Emit = Arc::new(|event, _payload| {
+        tracing::debug!(target: "termul::desktop_mode", event, "SSH event not delivered");
     });
     relay.set_ssh(Arc::new(crate::ssh::SSHManager::for_server(
         state_dir, emit,

@@ -295,8 +295,8 @@ pub enum Requirement {
     DeviceStore,
     /// Every other mutation: needs [`Capabilities::write`].
     Write,
-    /// Acts with the host's own credentials (the SSH requests and the `ssh`
-    /// watch): needs [`Capabilities::host_local`].
+    /// Acts with the host's own credentials (the SSH requests): needs
+    /// [`Capabilities::host_local`].
     HostLocal,
 }
 
@@ -344,17 +344,6 @@ pub fn ws_requirement(request_type: &str) -> Requirement {
     }
 }
 
-/// [`ws_requirement`] refined by the payload: a `watch` of the `ssh` watch
-/// needs [`Requirement::HostLocal`], because SSH events (host-key questions,
-/// remote paths) go only to the connections that may run the sessions.
-#[must_use]
-pub fn ws_request_requirement(request_type: &str, payload: &serde_json::Value) -> Requirement {
-    if request_type == "watch" && payload["watch"].as_str() == Some("ssh") {
-        return Requirement::HostLocal;
-    }
-    ws_requirement(request_type)
-}
-
 /// Whether `caps` may run a `/ws` request of `request_type` whose payload is
 /// `payload`. `identity` supplies the `deviceId` for the device-store rule.
 #[must_use]
@@ -364,7 +353,7 @@ pub fn ws_request_permitted(
     caps: Capabilities,
     identity: Option<&ClientIdentity>,
 ) -> bool {
-    match ws_request_requirement(request_type, payload) {
+    match ws_requirement(request_type) {
         Requirement::View => true,
         Requirement::Write => caps.write,
         Requirement::HostLocal => caps.host_local,
