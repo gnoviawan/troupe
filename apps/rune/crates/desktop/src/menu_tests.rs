@@ -73,21 +73,29 @@ fn shown(rt: &Runtime<State>, key: &str) -> bool {
     rt.elements().iter().any(|e| e.key.as_deref() == Some(key) && !e.exiting)
 }
 
+/// Where `action` sits in this platform's View menu.
+fn view_entry(action: Action) -> usize {
+    let view = menus(Os::CURRENT).into_iter().find(|m| m.title == "View").unwrap();
+    view.entries.iter().position(|e| matches!(e, Entry::Item(_, _, a) if *a == action)).unwrap()
+}
+
 #[test]
 fn view_zoom_in_from_the_window_menu_bar_zooms_and_closes_the_menu() {
     let mut rt = Runtime::new(State::default(), view, (1200.0, 800.0), Env::new(true, 1.0));
     rt.frame(0.0);
-    for title in ["file", "edit", "view", "window", "help"] {
+    // macOS draws no File menu (Quit lives in the app menu); the bar follows this platform.
+    for menu in menus(Os::CURRENT) {
+        let title = menu.title.to_ascii_lowercase();
         assert!(shown(&rt, &format!("app-menu-{title}-title")), "{title}");
     }
     tap(&mut rt, "app-menu-view-title");
     assert!(shown(&rt, "app-menu-view-menu"));
-    let zoom_in = menus(Os::Linux)[2].entries.iter().position(|e| matches!(e, Entry::Item(_, _, Action::ZoomIn))).unwrap();
+    let zoom_in = view_entry(Action::ZoomIn);
     tap(&mut rt, &format!("app-menu-view-item{zoom_in}"));
     assert!((rt.state.zoom.factor() - 1.1).abs() < 1e-6, "zoomed to {}", rt.state.zoom.factor());
     assert!(!shown(&rt, "app-menu-view-menu"), "the menu closed");
     tap(&mut rt, "app-menu-view-title");
-    let reset = menus(Os::Linux)[2].entries.iter().position(|e| matches!(e, Entry::Item(_, _, Action::ActualSize))).unwrap();
+    let reset = view_entry(Action::ActualSize);
     tap(&mut rt, &format!("app-menu-view-item{reset}"));
     assert!((rt.state.zoom.factor() - 1.0).abs() < 1e-6);
 }
