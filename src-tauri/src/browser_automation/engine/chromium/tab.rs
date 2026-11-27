@@ -541,6 +541,7 @@ fn dimension(params: &Value, pointer: &str) -> u32 {
         .pointer(pointer)
         .and_then(Value::as_f64)
         .map_or(0, |v| v.round().clamp(0.0, f64::from(u32::MAX)) as u32)
+}
 
 /// The core decides a download the tab started: where it goes, or no.
 fn download_starting(tab: &Arc<Tab>, params: &Value) {
