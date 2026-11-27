@@ -126,11 +126,18 @@ pub struct Line {
     pub wrapped: bool,
     /// Changes whenever the line does, so a view can keep what it built for a revision.
     pub rev: u64,
+    /// The exit code of the command this row ran, from Troupe's shell marks (see `status.rs`).
+    pub status: Option<i64>,
 }
 
 impl Line {
     pub fn new(cols: usize, fill: Style) -> Line {
-        Line { cells: vec![Cell::blank(fill); cols], wrapped: false, rev: next_rev() }
+        Line { cells: vec![Cell::blank(fill); cols], wrapped: false, rev: next_rev(), status: None }
+    }
+
+    /// No cell shows anything but spaces (`translateToString(true).trim() === ''`).
+    pub fn is_blank(&self) -> bool {
+        self.cells.iter().all(|c| !c.has_content() || c.ch.is_whitespace())
     }
 
     pub(crate) fn touch(&mut self) {

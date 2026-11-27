@@ -160,6 +160,17 @@ pub struct Launch {
     pub route: Route,
 }
 
+/// A bar the desktop shell draws above the frame (the in-window app menu on Linux and
+/// Windows). It may push its open menus onto the overlay layer.
+pub type ShellBar = fn(&State, &'static Tokens, &mut Vec<rune::El>) -> rune::El;
+
+static SHELL_BAR: OnceLock<ShellBar> = OnceLock::new();
+
+/// Sets the shell's bar; call before the app runs.
+pub fn set_shell_bar(bar: ShellBar) {
+    let _ = SHELL_BAR.set(bar);
+}
+
 static LAUNCH: OnceLock<Launch> = OnceLock::new();
 
 /// The overlay key of the phone shell's rail drawer.
@@ -230,6 +241,8 @@ pub struct State {
     pub snapshots: snapshots::SnapshotsUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
+    /// The window's waker, kept for `reload`.
+    pub(crate) waker: Option<Waker>,
 }
 
 /// A resizable edge of the shell.
@@ -294,6 +307,7 @@ impl Default for State {
             first_run: first_run::FirstRun::default(),
             snapshots: snapshots::SnapshotsUi::default(),
             automations: automations::AutomationsUi::default(),
+            waker: None,
         }
     }
 }
@@ -358,7 +372,22 @@ fn seed() -> u64 {
     (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
 }
 
+/// Drops every connection and all view state, then connects again as at launch: the desktop
+/// menu's Reload, as a webview reload rebuilds the React client.
+pub fn reload(state: &mut State) {
+    let Some(wake) = state.waker.clone() else { return };
+    log::info!("[app] reload");
+    *state = State::default();
+    setup(state, wake);
+}
+
+/// The shell's bar above the frame, if the entry has one.
+pub(crate) fn shell_bar() -> Option<ShellBar> {
+    SHELL_BAR.get().copied()
+}
+
 fn setup(state: &mut State, wake: Waker) {
+    state.waker = Some(wake.clone());
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     state.viewers.images = Some(rune::ImageCache::new(wake.clone()));
@@ -440,10 +469,16 @@ fn on_key(state: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
 /// The app for `launch`. The entries call `run` on it, the desktop one after linking the live
 /// driver. Call it once per process.
 pub fn app(launch: Launch) -> rune::App<State> {
+    app_with(spec(launch))
+}
+
+/// The app's spec for `launch`, for a shell that changes the window before `app_with` builds
+/// it. Call it once per process.
+pub fn spec(launch: Launch) -> AppSpec<State> {
     if LAUNCH.set(launch).is_err() {
         log::warn!("[app] launched twice; keeping the first launch");
     }
-    let spec = AppSpec {
+    AppSpec {
         fonts: theme::FONTS,
         families: theme::FAMILIES,
         setup: Some(setup),
@@ -451,7 +486,10 @@ pub fn app(launch: Launch) -> rune::App<State> {
         on_key: Some(on_key),
         min_size: Some((360.0, 400.0)),
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
-    };
+    }
+}
+
+pub fn app_with(spec: AppSpec<State>) -> rune::App<State> {
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
     rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }

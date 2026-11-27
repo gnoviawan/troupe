@@ -26,7 +26,7 @@ fn view(s: &S, _: &mut Cx<S>) -> El {
     let t = theme::tokens("termul", true);
     let m = s.metrics.get().unwrap_or_else(|| Metrics::new(FONT_SIZE, LINE_HEIGHT));
     s.metrics.set(Some(m));
-    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[] };
+    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[], compact: false };
     screen("term", &shown, &Palette::new(t), &m, &s.cache)
 }
 

@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use rune::{Cx, El, Env, Key, KeyEvent, Runtime};
 use troupe_term::Term;
 
-use super::{Metrics, Palette, RowCache, Screen, keys, screen, visible_rows};
+use super::{Metrics, Palette, RowCache, Screen, keys, screen, status_gutter, visible_rows};
 
 struct S {
     term: Term,
@@ -16,8 +16,11 @@ struct S {
 fn view(s: &S, _: &mut Cx<S>) -> El {
     let t = theme::tokens("termul", true);
     let m = Metrics::new(super::FONT_SIZE, super::LINE_HEIGHT);
-    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[] };
-    screen("term", &shown, &Palette::new(t), &m, &s.cache)
+    let shown = Screen { term: &s.term, scrolled: 0, focused: true, blink_on: true, marks: &[], compact: false };
+    let palette = Palette::new(t);
+    rune::row()
+        .child(status_gutter("term", &shown, &palette, &m, super::PAD[0]))
+        .child(screen("term", &shown, &palette, &m, &s.cache).clip_rounded(0.0))
 }
 
 fn runtime(bytes: &[u8]) -> Runtime<S> {
@@ -38,7 +41,7 @@ fn rows_read_as_text_with_wide_cells_in_place() {
 }
 
 fn live(term: &Term) -> Screen<'_> {
-    Screen { term, scrolled: 0, focused: true, blink_on: true, marks: &[] }
+    Screen { term, scrolled: 0, focused: true, blink_on: true, marks: &[], compact: false }
 }
 
 #[test]
@@ -114,4 +117,22 @@ fn a_double_corner_meets_at_its_outer_and_inner_lines() {
     want = r(want, 3.0, 8.0, 4.0, 19.0);
     want = r(want, 5.0, 10.0, 6.0, 19.0);
     assert_eq!(super::glyphs::draw(Shape::new(), '╔', 0.0, 8.0, 19.0, w), want);
+}
+
+#[test]
+fn a_finished_command_shows_a_success_or_failure_dot_left_of_its_row() {
+    let rt = runtime(b"\x1b]133;A;termul\x07$ true\r\n\x1b]133;D;0;termul\x07\x1b]133;A;termul\x07$ false\r\n\x1b]133;D;1;termul\x07$ ");
+    let dots: Vec<_> = rt.elements().into_iter().filter(|e| e.role == "img" && !e.exiting).collect();
+    let labels: Vec<_> = dots.iter().filter_map(|e| e.label.clone()).collect();
+    assert_eq!(labels, ["Command succeeded (exit code 0)", "Command failed (exit code 1)"]);
+    let grid = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("term-grid")).expect("the grid").rect;
+    let m = Metrics::new(super::FONT_SIZE, super::LINE_HEIGHT);
+    for (row, dot) in dots.iter().enumerate() {
+        assert_eq!((dot.rect[2], dot.rect[3]), (6.0, 6.0));
+        assert_eq!(grid[0] - (dot.rect[0] + dot.rect[2]), 5.0, "in the padding, 5 px from the text");
+        let centre = dot.rect[1] + 3.0 - grid[1];
+        assert!((centre - (row as f32 + 0.5) * m.cell_h).abs() < 0.5, "centred on row {row}");
+    }
+    let t = theme::tokens("termul", true);
+    assert_eq!((dots[0].fill, dots[1].fill), (t.colors.success, t.colors.destructive));
 }

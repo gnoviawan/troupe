@@ -22,8 +22,9 @@ pub const SELECT: &str = "settings-select";
 
 /// The rail's width on a wide window.
 const RAIL: f32 = 240.0;
-/// The page column's widest.
-const COLUMN: f32 = 640.0;
+/// The page body's side padding on a wide window (`md:px-10`) and on a phone (`px-4`).
+const PAD: f32 = 40.0;
+const PHONE_PAD: f32 = 16.0;
 
 #[derive(Default)]
 pub struct SettingsUi {
@@ -339,20 +340,27 @@ fn phone_bar(s: &State, t: &'static Tokens, w: Window) -> El {
         .child(row().key("strip-scroll").w_full().scroll_x().child(strip))
 }
 
-fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, layer: &mut Vec<El>) -> El {
+/// The page column's width in a `window_w` wide window.
+fn column_width(window_w: f32, phone: bool) -> f32 {
+    let body = if phone { window_w - 2.0 * PHONE_PAD } else { window_w - RAIL - 2.0 * PAD };
+    body.clamp(0.0, ui::settings::COLUMN)
+}
+
+fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, window_w: f32, layer: &mut Vec<El>) -> El {
     let page = s.window_page(w);
     let mut column = col()
         .key(format!("settings-page-{}", page.id))
         .role("region")
         .label(page.label)
         .w_full()
-        .max_w(COLUMN)
+        .max_w(ui::settings::COLUMN)
         .items_stretch();
     // A server's detail page has its own title (`SettingsSection` `subpage`).
     if !(page.id == crate::settings_mcp::PAGE && s.mcp_ui.detail.is_some()) {
         column = column.child(ui::settings::header(t, page.label, page.description));
     }
-    let groups = match page.owner {
+    let width = column_width(window_w, phone);
+    let groups = ui::settings::page(width, || match page.owner {
         Owner::Here if w == Window::Project => crate::project_settings_view::page(s, t, page.id, phone, layer),
         Owner::Here => crate::settings_pages::page(s, t, page.id, phone, layer),
         Owner::Later(unit) => vec![ui::settings::notice(
@@ -360,23 +368,25 @@ fn page_body(s: &State, t: &'static Tokens, w: Window, phone: bool, layer: &mut 
             "later",
             &format!("This page is not in the Rune client yet; {unit} ports it. Open it in the web client meanwhile."),
         )],
-    };
-    column = column.child(col().key("groups").w_full().gap(32.0).items_stretch().children(groups));
+    });
+    let gap = if width >= ui::settings::SPLIT_FROM { 24.0 } else { 32.0 };
+    log::debug!("[settings] page {} column {width} split {}", page.id, width >= ui::settings::SPLIT_FROM);
+    column = column.child(col().key("groups").w_full().gap(gap).items_stretch().children(groups));
     ui::scroll_area(
         t,
         "settings-page-scroll",
         row()
             .key("settings-page-pad")
             .w_full()
-            .px(32.0)
-            .pt(16.0)
+            .px(if phone { PHONE_PAD } else { PAD })
+            .pt(if phone { 24.0 } else { 20.0 })
             .pb(80.0)
             .justify_center()
             .child(column),
     )
 }
 
-pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mut Vec<El>) {
+pub fn build(s: &State, t: &'static Tokens, phone: bool, (width, height): (f32, f32), layer: &mut Vec<El>) {
     let Some(w) = s.settings_window() else {
         return;
     };
@@ -389,7 +399,7 @@ pub fn build(s: &State, t: &'static Tokens, phone: bool, height: f32, layer: &mu
         .fill(c.background)
         .items_stretch();
     let mut inner = Vec::new();
-    let body = page_body(s, t, w, phone, &mut inner);
+    let body = page_body(s, t, w, phone, width, &mut inner);
     let mut main = col().key("settings-main").grow(1.0).items_stretch().child(col().key("settings-body").grow(1.0).min_h(0.0).child(body));
     if w == Window::Project && s.project_dirty() {
         main = main.child(crate::project_settings_view::footer(t, phone));

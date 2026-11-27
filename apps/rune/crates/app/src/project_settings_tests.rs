@@ -220,3 +220,36 @@ fn save_goes_to_the_project_the_form_was_loaded_from() {
     edit(&mut rt, |s| s.save_project_settings());
     assert_eq!(updates(&rt), vec![json!({ "projectId": "p-c", "name": "gamma 2" })]);
 }
+
+/// The rect of the live element keyed `key`.
+fn rect(rt: &Runtime<State>, key: &str) -> [f32; 4] {
+    rt.elements().into_iter().find(|e| e.key.as_deref() == Some(key) && !e.exiting).unwrap_or_else(|| panic!("no element keyed {key}")).rect
+}
+
+#[test]
+fn colour_swatches_take_a_44px_touch_target_on_the_phone_and_stay_24px_on_the_desktop() {
+    let mut rt = runtime_at((390.0, 844.0));
+    edit(&mut rt, |s| s.open_project_settings(Some("p-b"), None));
+    let [x1, _, w, h] = rect(&rt, "swatch-red");
+    assert_eq!((w, h), (44.0, 44.0), "the touch hit area");
+    let [x2, ..] = rect(&rt, "swatch-orange");
+    assert_eq!(x2 - x1, 44.0, "hit areas meet without overlapping, so the dots stand 20 px apart");
+    tap(&mut rt, "swatch-orange");
+    assert_eq!(rt.state.project_ui.color, "orange");
+
+    let mut rt = desktop();
+    edit(&mut rt, |s| s.open_project_settings(Some("p-b"), None));
+    let [x1, _, w, h] = rect(&rt, "swatch-red");
+    let [x2, ..] = rect(&rt, "swatch-orange");
+    assert_eq!((w, h, x2 - x1), (24.0, 24.0, 32.0), "desktop keeps 24 px dots 8 px apart");
+}
+
+#[test]
+fn on_the_phone_all_nine_swatches_fit_by_wrapping() {
+    let mut rt = runtime_at((390.0, 844.0));
+    edit(&mut rt, |s| s.open_project_settings(Some("p-b"), None));
+    let [x1, y1, ..] = rect(&rt, "swatch-blue");
+    let [x9, y9, w9, _] = rect(&rt, "swatch-gray");
+    assert!(x9 + w9 <= 390.0, "the last swatch is on screen: {x9}");
+    assert!(y9 > y1 && x9 <= x1 + 44.0 * 2.0, "it wrapped to a second line");
+}

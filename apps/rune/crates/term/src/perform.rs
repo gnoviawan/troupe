@@ -49,11 +49,13 @@ impl Perform for Emu {
     }
 
     fn osc_dispatch(&mut self, params: &[&[u8]], _bell_terminated: bool) {
-        if let [kind, rest @ ..] = params
-            && matches!(*kind, b"0" | b"2")
-        {
-            let parts: Vec<String> = rest.iter().map(|p| String::from_utf8_lossy(p).into_owned()).collect();
-            self.title = parts.join(";");
+        match params {
+            [kind, rest @ ..] if matches!(*kind, b"0" | b"2") => {
+                let parts: Vec<String> = rest.iter().map(|p| String::from_utf8_lossy(p).into_owned()).collect();
+                self.title = parts.join(";");
+            }
+            [b"133", rest @ ..] => self.command_mark(rest),
+            _ => {}
         }
         self.preceding = 0;
     }
