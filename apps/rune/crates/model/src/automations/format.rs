@@ -133,10 +133,13 @@ pub fn trigger_summary(trigger: &Trigger, now_ms: f64, offset_min: i64) -> Strin
         } => format!("Cron {expr} ({timezone})"),
         Trigger::Schedule {
             schedule: Schedule::Every { every_ms, .. },
-        } => format!("Every {}", format_duration(*every_ms)),
+        } => format!("Every {}", format_duration(*every_ms as f64)),
         Trigger::Schedule {
             schedule: Schedule::At { at },
-        } => format!("Once at {}", format_date_time(*at, now_ms, offset_min)),
+        } => format!(
+            "Once at {}",
+            format_date_time(*at as f64, now_ms, offset_min)
+        ),
     }
 }
 

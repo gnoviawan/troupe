@@ -354,3 +354,36 @@ fn the_inspector_writes_a_steps_fields_as_one_update() {
     );
     assert_eq!(draft.pending_ops().len(), 1);
 }
+#[test]
+fn delete_removes_the_automation_the_confirm_named_even_after_the_selection_moved() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_ask_delete();
+    // a1 is deleted elsewhere: the list now holds only a2, which the pane falls back to.
+    let only_a2 = |method: &str, path: &str| match (method, path) {
+        ("GET", p) if p.starts_with("/api/automations?project_id=") => {
+            json!([automation("a2", "Second")])
+        }
+        _ => host(method, path),
+    };
+    s.automation_changed(None);
+    answer_all(&mut s, &only_a2);
+    assert_eq!(s.automations.selected(), Some("a2"));
+    s.automation_confirm_delete();
+    let calls = answer_all(&mut s, &only_a2);
+    assert_eq!(calls[0], "DELETE /api/automations/a1", "{calls:?}");
+    assert!(!calls.contains(&"DELETE /api/automations/a2".to_owned()));
+}
+
+#[test]
+fn a_cancelled_delete_forgets_its_automation() {
+    let mut s = on_alpha();
+    answer_all(&mut s, &host);
+    s.automation_ask_delete();
+    s.automation_cancel_delete();
+    s.automation_confirm_delete();
+    assert!(
+        s.automations.unsent.is_empty(),
+        "nothing is deleted after a cancel"
+    );
+}
