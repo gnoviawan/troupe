@@ -16,6 +16,8 @@ mod paths;
 mod refusal;
 mod window;
 
+use std::sync::Mutex;
+
 use launcher::supervisor::Notice;
 use launcher::{Control, LaunchError};
 use paths::Paths;
@@ -43,7 +45,7 @@ fn main() {
     let route = Route::from_hash(&std::env::var("TROUPE_ROUTE").unwrap_or_default());
     if rune::is_headless() {
         log::info!("[startup] headless run; no server");
-        run(Launch { config: None, route }, None, &paths);
+        build(Launch { config: None, route }, None, &paths).run();
         return;
     }
     rune::set_app_id("troupe-preview");
@@ -63,15 +65,26 @@ fn main() {
         }
     };
     log::info!("[startup] server {:?} at {}", started.mode, started.config.base_url);
-    run(Launch { config: Some(started.config), route }, started.control.as_ref(), &paths);
-    if let Some(control) = started.control {
+    let app = build(Launch { config: Some(started.config), route }, started.control.as_ref(), &paths);
+    *CONTROL.lock().unwrap_or_else(|e| e.into_inner()) = started.control;
+    // Rune ends the process right after the quit hooks, so the server stops in its last step.
+    rune::fast_exit(stop_server);
+    app.run();
+    stop_server();
+}
+
+static CONTROL: Mutex<Option<Control>> = Mutex::new(None);
+
+/// Stops a server the app started, once, as the app ends.
+fn stop_server() {
+    if let Some(control) = CONTROL.lock().unwrap_or_else(|e| e.into_inner()).take() {
         control.stop();
     }
     log::info!("[startup] quit");
     log::logger().flush();
 }
 
-fn run(launch: Launch, control: Option<&Control>, paths: &Paths) {
+fn build(launch: Launch, control: Option<&Control>, paths: &Paths) -> rune::App<State> {
     let saved = window::load(&paths.window_file());
     window::track(&paths.window_file());
     let mut spec = troupe_app::spec(launch);
@@ -89,16 +102,21 @@ fn run(launch: Launch, control: Option<&Control>, paths: &Paths) {
         })
         .on_close(|_, _| window::save())
         .on_quit(|_, _| window::save())
+        // Rune shows a hidden window on a second launch but leaves a showing one where it is;
+        // the Tauri app shows, unminimizes and focuses it either way.
         .on_reopen(|_, _, _| {
             log::info!("[instance] a second launch asked for the window");
             launcher::retry();
-            false
+            let Some(window) = window::handle() else { return false };
+            window.open();
+            window.focus();
+            true
         });
     if let Some(control) = control {
         let handle = app.handle();
         control.on_notice(move |notice| handle.update(move |s, _| toast(s, notice)));
     }
-    automation::install(app).run();
+    automation::install(app)
 }
 
 /// What the window says when the server stops and comes back.
