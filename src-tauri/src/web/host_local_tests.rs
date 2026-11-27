@@ -168,3 +168,92 @@ async fn fs_read_refuses_the_host_local_credential_file() {
     assert_eq!(served["success"], true, "{served}");
     assert_eq!(served["data"]["content"], "hello");
 }
+
+fn git_route_state(dir: &std::path::Path) -> AppState {
+    let mut state = file_route_state(dir);
+    state.registry = ProjectRegistry::seeded_for_test(&dir.canonicalize().unwrap());
+    state
+}
+
+async fn post(state: AppState, uri: &str, body: serde_json::Value) -> serde_json::Value {
+    let app = axum::Router::new()
+        .route(
+            "/git/diff",
+            axum::routing::post(crate::web::git_api::get_diff),
+        )
+        .route(
+            "/git/stage",
+            axum::routing::post(crate::web::git_api::stage),
+        )
+        .with_state(state);
+    let response = app
+        .oneshot(
+            Request::post(uri)
+                .header("content-type", "application/json")
+                .header(
+                    crate::web::command_ledger::COMMAND_ID_HEADER,
+                    crate::web::command_ledger::test_clock::fresh_command_id(),
+                )
+                .extension(axum::extract::ConnectInfo(SocketAddr::from((
+                    [127, 0, 0, 1],
+                    40000,
+                ))))
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    serde_json::from_slice(&bytes).unwrap()
+}
+
+#[tokio::test]
+async fn git_routes_refuse_the_credential_in_a_state_dir_inside_a_work_tree() {
+    let dir = tempfile::tempdir().unwrap();
+    let git_ok = std::process::Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(dir.path())
+        .status()
+        .is_ok_and(|status| status.success());
+    if !git_ok {
+        return;
+    }
+    let (credential, _) = issue(dir.path()).unwrap();
+    std::fs::write(dir.path().join("notes.txt"), "hello\n").unwrap();
+    let cwd = dir
+        .path()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+
+    let diff = post(
+        git_route_state(dir.path()),
+        "/git/diff",
+        serde_json::json!({ "cwd": cwd, "path": HOST_LOCAL_TOKEN_FILE }),
+    )
+    .await;
+    assert_eq!(diff["code"], "FORBIDDEN", "{diff}");
+    assert!(!diff.to_string().contains(credential.as_str()));
+
+    let neighbour = post(
+        git_route_state(dir.path()),
+        "/git/diff",
+        serde_json::json!({ "cwd": cwd, "path": "notes.txt" }),
+    )
+    .await;
+    assert_eq!(neighbour["success"], true, "{neighbour}");
+    assert!(neighbour["data"].as_str().unwrap().contains("hello"));
+
+    for path in [HOST_LOCAL_TOKEN_FILE, "."] {
+        let staged = post(
+            git_route_state(dir.path()),
+            "/git/stage",
+            serde_json::json!({ "cwd": cwd, "path": path }),
+        )
+        .await;
+        assert_eq!(staged["code"], "FORBIDDEN", "staging {path}: {staged}");
+    }
+}
