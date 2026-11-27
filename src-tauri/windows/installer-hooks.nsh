@@ -139,19 +139,52 @@ Function un.TroupeUnlinkDirLinks
   Pop $R0
 FunctionEnd
 
+; Unlinks the directory links in an app data root (on the stack). A root that
+; is itself a link is unlinked and never entered, so RmDir /r has nothing to
+; follow there.
+Function un.TroupeUnlinkAppData
+  Exch $R0
+  Push $R1
+
+  System::Call 'kernel32::GetFileAttributesW(w R0) i .R1'
+  ${If} $R1 <> -1
+    IntOp $R1 $R1 & 0x400 ; FILE_ATTRIBUTE_REPARSE_POINT
+    ${If} $R1 <> 0
+      DetailPrint "Unlinking $R0"
+      RMDir "$R0"
+      System::Call 'kernel32::GetFileAttributesW(w R0) i .R1'
+      ${If} $R1 <> -1
+        StrCpy $TroupeLinkLeft 1
+      ${EndIf}
+    ${Else}
+      Push $R0
+      Call un.TroupeUnlinkDirLinks
+    ${EndIf}
+  ${EndIf}
+
+  Pop $R1
+  Pop $R0
+FunctionEnd
+
 !macro NSIS_HOOK_PREUNINSTALL
   ; Same condition as the template's app data deletion: an unticked box, an
   ; update, or a silent run leave app data and its links alone.
   ${If} $DeleteAppDataCheckboxState = 1
   ${AndIf} $UpdateMode <> 1
+    ; The template checks for a running Troupe only after this hook. Check
+    ; first: a running Troupe can recreate the links (ensure_links) after the
+    ; sweep, and cancelling the close prompt must abort before any link is
+    ; removed. The template's own check then finds nothing running.
+    !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
+
     StrCpy $TroupeLinkLeft 0
     ${If} ${FileExists} "$APPDATA\${BUNDLEID}\*.*"
       Push "$APPDATA\${BUNDLEID}"
-      Call un.TroupeUnlinkDirLinks
+      Call un.TroupeUnlinkAppData
     ${EndIf}
     ${If} ${FileExists} "$LOCALAPPDATA\${BUNDLEID}\*.*"
       Push "$LOCALAPPDATA\${BUNDLEID}"
-      Call un.TroupeUnlinkDirLinks
+      Call un.TroupeUnlinkAppData
     ${EndIf}
     ; A link that is still there would be followed by RmDir /r. Keeping all
     ; app data is safer than deleting through it.

@@ -113,6 +113,23 @@ fn preuninstall_unlinks_without_recursing_and_keeps_data_on_failure() {
     assert!(hook.contains(r#"Push "$APPDATA\${BUNDLEID}""#));
     assert!(hook.contains(r#"Push "$LOCALAPPDATA\${BUNDLEID}""#));
     assert!(hook.contains("StrCpy $DeleteAppDataCheckboxState 0"));
+    // The running-app check comes before the first link is removed.
+    let check = hook
+        .find(r#"!insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe""#)
+        .expect("running-app check");
+    let sweep = hook.find("Call un.TroupeUnlinkAppData").expect("sweep");
+    assert!(check < sweep);
+    assert!(!hook.contains("Call un.TroupeUnlinkDirLinks"));
+
+    // A root that is itself a link is unlinked, never entered.
+    let start = HOOKS
+        .find("Function un.TroupeUnlinkAppData")
+        .expect("root check exists");
+    let root = &HOOKS[start..];
+    let root = &root[..root.find("FunctionEnd").unwrap()];
+    assert!(root.contains("& 0x400"));
+    assert!(root.contains(r#"RMDir "$R0""#));
+    assert!(!root.to_lowercase().contains("rmdir /r"));
 
     let start = HOOKS
         .find("Function un.TroupeUnlinkDirLinks")
@@ -122,4 +139,32 @@ fn preuninstall_unlinks_without_recursing_and_keeps_data_on_failure() {
     assert!(walker.contains("& 0x400"));
     assert!(walker.contains(r#"RMDir "$R3""#));
     assert!(!walker.to_lowercase().contains("rmdir /r"));
+}
+
+#[test]
+fn resolved_dir_matches_other_spellings_of_the_same_folder() {
+    let root = tempfile::tempdir().unwrap();
+    let own = root.path().join("Troupe");
+    let other = root.path().join("Old App");
+    std::fs::create_dir(&own).unwrap();
+    std::fs::create_dir(&other).unwrap();
+    assert_eq!(same_resolved_dir(&own.join("."), &own), Some(true));
+    assert_eq!(
+        same_resolved_dir(&root.path().join("Old App").join("..").join("Troupe"), &own),
+        Some(true)
+    );
+    assert_eq!(same_resolved_dir(&other, &own), Some(false));
+    // A folder that cannot be resolved is never treated as separate.
+    assert_eq!(same_resolved_dir(&root.path().join("missing"), &own), None);
+}
+
+#[cfg(unix)]
+#[test]
+fn resolved_dir_follows_a_link_to_the_folder() {
+    let root = tempfile::tempdir().unwrap();
+    let own = root.path().join("Troupe");
+    std::fs::create_dir(&own).unwrap();
+    let link = root.path().join("link");
+    std::os::unix::fs::symlink(&own, &link).unwrap();
+    assert_eq!(same_resolved_dir(&link, &own), Some(true));
 }

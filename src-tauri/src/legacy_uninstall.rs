@@ -79,6 +79,15 @@ fn same_windows_dir(a: &str, b: &str) -> bool {
     normalize(a) == normalize(b)
 }
 
+/// Whether two folders resolve to the same folder, or `None` when either one
+/// cannot be resolved. Catches spellings a text comparison misses, such as
+/// `C:\Apps\Troupe\.` or a link to the folder.
+pub(crate) fn same_resolved_dir(a: &Path, b: &Path) -> Option<bool> {
+    let a = std::fs::canonicalize(a).ok()?;
+    let b = std::fs::canonicalize(b).ok()?;
+    Some(a == b || same_windows_dir(&a.to_string_lossy(), &b.to_string_lossy()))
+}
+
 /// The uninstaller in an old install folder.
 pub(crate) fn legacy_uninstaller(dir: &str) -> PathBuf {
     Path::new(dir).join("uninstall.exe")
@@ -144,15 +153,21 @@ fn remove_legacy_install() {
             .ok()
     };
     // HKCU first, then HKLM, as the hook reads them.
-    let Some((location, binary)) = [HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE]
+    let Some((hive, location, binary)) = [HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE]
         .into_iter()
         .find_map(|hive| {
             let location = read(hive, "InstallLocation").filter(|v| !v.trim().is_empty())?;
-            Some((location, read(hive, "MainBinaryName")))
+            Some((hive, location, read(hive, "MainBinaryName")))
         })
     else {
         return;
     };
+    // A per-machine install belongs to every user of the machine. Never remove
+    // it from a startup task, even when Troupe happens to run elevated.
+    if hive == HKEY_LOCAL_MACHINE {
+        log::info!("[legacy-uninstall] the old install is per machine; leaving it");
+        return;
+    }
     let own_dir = std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(Path::to_path_buf));
@@ -163,6 +178,16 @@ fn remove_legacy_install() {
     let uninstaller = legacy_uninstaller(&dir);
     if !uninstaller.is_file() {
         log::info!("[legacy-uninstall] the old install entry has no uninstaller");
+        return;
+    }
+    // The text check above misses other spellings of Troupe's own folder.
+    // Never run an uninstaller whose folder cannot be told apart from it.
+    let separate = own_dir
+        .as_deref()
+        .and_then(|own| same_resolved_dir(Path::new(&dir), own))
+        .map(|same| !same);
+    if separate != Some(true) {
+        log::info!("[legacy-uninstall] the old install folder is not clearly separate; leaving it");
         return;
     }
 
