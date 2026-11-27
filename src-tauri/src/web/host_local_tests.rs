@@ -189,6 +189,10 @@ async fn post(state: AppState, uri: &str, body: serde_json::Value) -> serde_json
             "/git/stash-save",
             axum::routing::post(crate::web::git_api::stash_save),
         )
+        .route(
+            "/git/commit-file-diff",
+            axum::routing::post(crate::web::git_history_api::get_commit_file_diff),
+        )
         .with_state(state);
     let response = app
         .oneshot(
@@ -351,4 +355,120 @@ async fn stash_with_untracked_files_is_refused_while_the_work_tree_holds_the_cre
     .await;
     assert_eq!(stash["code"], "FORBIDDEN", "{stash}");
     assert!(dir.path().join(HOST_LOCAL_TOKEN_FILE).is_file());
+}
+
+fn git_repo_with_credential() -> Option<(tempfile::TempDir, String, String)> {
+    let dir = tempfile::tempdir().unwrap();
+    let git_ok = std::process::Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(dir.path())
+        .status()
+        .is_ok_and(|status| status.success());
+    if !git_ok {
+        return None;
+    }
+    let (credential, _) = issue(dir.path()).unwrap();
+    let cwd = dir
+        .path()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    Some((dir, cwd, credential.as_str().to_string()))
+}
+
+#[tokio::test]
+async fn a_dot_dot_through_a_missing_directory_never_reaches_the_credential() {
+    let Some((dir, cwd, credential)) = git_repo_with_credential() else {
+        return;
+    };
+    let sneaky = format!("missing/../{HOST_LOCAL_TOKEN_FILE}");
+    let absolute = dir
+        .path()
+        .join(HOST_LOCAL_TOKEN_FILE)
+        .to_string_lossy()
+        .into_owned();
+    for path in [sneaky.as_str(), absolute.as_str()] {
+        let staged = post(
+            git_route_state(dir.path()),
+            "/git/stage",
+            serde_json::json!({ "cwd": cwd, "path": path }),
+        )
+        .await;
+        assert_eq!(staged["code"], "PATH_TRAVERSAL", "stage {path}: {staged}");
+        assert!(!git(dir.path(), &["ls-files", "--stage"]).contains(HOST_LOCAL_TOKEN_FILE));
+    }
+    git(dir.path(), &["add", "--", HOST_LOCAL_TOKEN_FILE]);
+    for staged in [true, false] {
+        let diff = post(
+            git_route_state(dir.path()),
+            "/git/diff",
+            serde_json::json!({ "cwd": cwd, "path": sneaky, "staged": staged }),
+        )
+        .await;
+        assert_eq!(diff["code"], "PATH_TRAVERSAL", "{diff}");
+        assert!(!diff.to_string().contains(&credential));
+    }
+}
+
+#[tokio::test]
+async fn a_committed_credential_never_prints_in_a_commit_file_diff() {
+    let Some((dir, cwd, credential)) = git_repo_with_credential() else {
+        return;
+    };
+    std::fs::write(dir.path().join("notes.txt"), "hello\n").unwrap();
+    git(dir.path(), &["add", "-A"]);
+    git(
+        dir.path(),
+        &[
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=Test",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-qm",
+            "leak",
+        ],
+    );
+    let hash = git(dir.path(), &["rev-parse", "HEAD"]).trim().to_string();
+    assert!(!hash.is_empty(), "the commit exists");
+    for path in [HOST_LOCAL_TOKEN_FILE, "*", "host-local.tok*", ":(glob)*"] {
+        let diff = post(
+            git_route_state(dir.path()),
+            "/git/commit-file-diff",
+            serde_json::json!({ "cwd": cwd, "hash": hash, "path": path }),
+        )
+        .await;
+        assert!(
+            !diff.to_string().contains(&credential),
+            "{path:?} printed the credential: {diff}"
+        );
+    }
+    let neighbour = post(
+        git_route_state(dir.path()),
+        "/git/commit-file-diff",
+        serde_json::json!({ "cwd": cwd, "hash": hash, "path": "notes.txt" }),
+    )
+    .await;
+    assert!(neighbour.to_string().contains("hello"), "{neighbour}");
+}
+
+#[tokio::test]
+async fn stash_with_untracked_files_is_refused_when_the_work_tree_is_unknown() {
+    let dir = tempfile::tempdir().unwrap();
+    let cwd = dir
+        .path()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let stash = post(
+        git_route_state(dir.path()),
+        "/git/stash-save",
+        serde_json::json!({ "cwd": cwd, "includeUntracked": true }),
+    )
+    .await;
+    assert_eq!(stash["code"], "FORBIDDEN", "{stash}");
 }
