@@ -66,3 +66,16 @@ fn each_data_dir_gets_its_own_instance_id() {
     assert_eq!(a.instance_id(), a.clone().instance_id());
     assert!(a.instance_id().starts_with("com.termul-manager.app.preview-"));
 }
+
+#[test]
+fn aliases_of_one_data_dir_share_an_instance_id() {
+    let real = std::env::temp_dir().join(format!("r10a-alias-{}", std::process::id()));
+    std::fs::create_dir_all(&real).unwrap();
+    let dotted = real.join("..").join(real.file_name().unwrap());
+    let at = |dir: &std::path::Path| {
+        let dir = dir.to_string_lossy().into_owned();
+        Paths::resolve(Os::Linux, move |k| (k == "TROUPE_PREVIEW_DATA_DIR").then(|| dir.clone())).unwrap()
+    };
+    assert_eq!(at(&real).instance_id(), at(&dotted).instance_id());
+    std::fs::remove_dir_all(&real).unwrap();
+}

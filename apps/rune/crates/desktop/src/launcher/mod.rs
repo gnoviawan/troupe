@@ -3,8 +3,11 @@
 //!
 //! - **Attach.** `TROUPE_SERVER_URL` (and `TROUPE_SERVER_TOKEN`) names a server to use as is;
 //!   the app never starts or stops it.
-//! - **Reuse.** `server.json` names a server for this data dir that answers `/health`: the app
-//!   uses it and leaves it running at quit. If it dies, the app starts its own on its port.
+//! - **Reuse.** `server.json` names a server that holds this data dir's lock (on Unix, its pid
+//!   is the lock's holder) and answers `/health`: the app uses it and leaves it running at quit.
+//!   The lock is checked before any network probe, so a stale record never sends the token to
+//!   whatever now listens on its port; a stale record is deleted. If the reused server dies,
+//!   the app starts its own on its port.
 //! - **Spawn.** Otherwise the app refuses when another host holds the data dir
 //!   (`data_lock`), then starts `troupe-server` on loopback with a fresh token in
 //!   `TROUPE_WEB_AUTH_TOKEN` and waits for `/health`.
@@ -101,14 +104,14 @@ fn env(name: &str) -> Option<String> {
 
 pub fn start(paths: &Paths) -> Result<Started, LaunchError> {
     if let Some(url) = env("TROUPE_SERVER_URL") {
-        log::info!("[launcher] attaching to {url}; it is not managed");
+        log::info!("[launcher] attaching to {}; it is not managed", redact_url(&url));
         let base = url.trim_end_matches('/').to_owned();
         return Ok(Started { config: config(paths, base, env("TROUPE_SERVER_TOKEN")), mode: Mode::Attached, control: None });
     }
     let keep_alive = env("TROUPE_PREVIEW_KEEP_SERVER").is_some_and(|v| v == "1" || v == "true");
     if let Some((record, token)) = reusable(paths) {
         log::info!("[launcher] reusing server pid {} on 127.0.0.1:{}", record.pid, record.port);
-        let runner = Runner::new(paths, record.binary.clone(), record.port, token.clone(), keep_alive, Proc::adopted());
+        let runner = Runner::new(paths, record.binary.clone(), record.port, token.clone(), keep_alive, Proc::adopted(record.pid));
         let config = config(paths, base_url(record.port), Some(token));
         return Ok(Started { config, mode: Mode::Reused, control: Some(runner.run()) });
     }
@@ -143,14 +146,38 @@ pub fn start(paths: &Paths) -> Result<Started, LaunchError> {
     Ok(Started { config, mode: Mode::Spawned, control: Some(runner.run()) })
 }
 
-/// A recorded server for this data dir that answers, with its token.
+/// The recorded server, with its token, when it still owns this data dir and answers. A record
+/// whose server no longer holds the lock is stale and deleted.
 fn reusable(paths: &Paths) -> Option<(ServerRecord, String)> {
     let record = record::read_record(&paths.record_file())?;
-    if record.data_dir != paths.data_dir {
+    let holder = data_lock::holder(&paths.data_dir).ok().flatten();
+    if record.data_dir != paths.data_dir || !holds_lock(record.pid, holder.as_ref()) {
+        log::info!("[launcher] server.json names pid {} that no longer owns the data dir; deleting it", record.pid);
+        let _ = std::fs::remove_file(paths.record_file());
         return None;
     }
     let token = record::read_token(&paths.token_file())?;
     process::healthy(record.port).then_some((record, token))
+}
+
+/// Whether server `pid` is the lock's holder. Windows hosts write no pid into the lock, so
+/// there a held lock is all the launcher can see.
+pub(crate) fn holds_lock(pid: u32, holder: Option<&Holder>) -> bool {
+    match holder.map(|h| h.pid) {
+        None => false,
+        Some(Some(holder)) => holder == pid,
+        Some(None) => cfg!(windows),
+    }
+}
+
+/// `url` with any `user:password@` replaced, for the log.
+pub(crate) fn redact_url(url: &str) -> String {
+    let Some((scheme, rest)) = url.split_once("://") else { return url.to_owned() };
+    let host_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
+    match rest[..host_end].rfind('@') {
+        Some(at) => format!("{scheme}://***@{}", &rest[at + 1..]),
+        None => url.to_owned(),
+    }
 }
 
 fn base_url(port: u16) -> String {
@@ -173,13 +200,14 @@ fn config(paths: &Paths, base_url: String, token: Option<String>) -> client::Con
 enum Proc {
     None,
     Owned(Server),
-    /// A server another launch started: probed over `/health`, never stopped.
-    Adopted { misses: u32, probed: Instant },
+    /// A server another launch started: alive while it answers `/health` or holds the data
+    /// lock, never stopped.
+    Adopted { pid: u32, misses: u32, probed: Instant },
 }
 
 impl Proc {
-    fn adopted() -> Proc {
-        Proc::Adopted { misses: 0, probed: Instant::now() }
+    fn adopted(pid: u32) -> Proc {
+        Proc::Adopted { pid, misses: 0, probed: Instant::now() }
     }
 }
 
@@ -192,6 +220,8 @@ struct Runner {
     proc: Proc,
     supervisor: Supervisor,
     sink: Sink,
+    /// A restarted server that has not answered `/health` yet: until when it may take.
+    starting: Option<Instant>,
 }
 
 impl Runner {
@@ -205,6 +235,7 @@ impl Runner {
             proc,
             supervisor: Supervisor::running(Instant::now()),
             sink: Arc::default(),
+            starting: None,
         }
     }
 
@@ -247,8 +278,10 @@ impl Runner {
             if let Some(status) = self.exited(now) {
                 log::warn!("[launcher] server stopped ({status})");
                 self.proc = Proc::None;
+                self.starting = None;
                 self.step(Event::Exited { at: now, status });
             }
+            self.check_ready(now);
             self.step(Event::Tick { at: now });
         }
     }
@@ -257,13 +290,15 @@ impl Runner {
         match &mut self.proc {
             Proc::None => None,
             Proc::Owned(server) => server.exited(),
-            Proc::Adopted { misses, probed } => {
+            Proc::Adopted { pid, misses, probed } => {
                 if now.duration_since(*probed) < PROBE_EVERY {
                     return None;
                 }
                 *probed = now;
-                *misses = if process::healthy(self.port) { 0 } else { *misses + 1 };
-                (*misses >= 2).then(|| "the reused server stopped answering".to_owned())
+                let alive = process::healthy(self.port)
+                    || holds_lock(*pid, data_lock::holder(&self.paths.data_dir).ok().flatten().as_ref());
+                *misses = if alive { 0 } else { *misses + 1 };
+                (*misses >= 2).then(|| "the reused server stopped answering and let go of the data dir".to_owned())
             }
         }
     }
@@ -276,12 +311,30 @@ impl Runner {
         }
     }
 
+    /// A restarted server counts as back once it answers `/health`; one that never does within
+    /// the ready timeout is stopped and counts as an exit.
+    fn check_ready(&mut self, now: Instant) {
+        let Some(deadline) = self.starting else { return };
+        if process::healthy(self.port) {
+            self.starting = None;
+            self.step(Event::Started { at: now });
+        } else if now >= deadline {
+            self.starting = None;
+            if let Proc::Owned(server) = &mut self.proc {
+                server.stop();
+            }
+            self.proc = Proc::None;
+            let status = format!("it did not answer /health within {} s", process::READY_TIMEOUT.as_secs());
+            self.step(Event::Exited { at: now, status });
+        }
+    }
+
     fn respawn(&mut self) {
         let now = Instant::now();
         match process::spawn(&self.bin, &self.paths, self.port, &self.token, self.keep_alive) {
             Ok(server) => {
                 self.adopt(server);
-                self.step(Event::Started { at: now });
+                self.starting = Some(now + process::READY_TIMEOUT);
             }
             Err(e) => {
                 log::error!("[launcher] restart failed: {e}");

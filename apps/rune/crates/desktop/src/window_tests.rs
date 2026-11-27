@@ -1,6 +1,6 @@
 use rune::WindowPlacement;
 
-use super::{Frame, MIN_SIZE, load, options};
+use super::{Frame, MIN_SIZE, load, off_screen, options};
 
 fn placement(maximized: bool, restore: Option<((i32, i32), (u32, u32))>) -> WindowPlacement {
     WindowPlacement {
@@ -63,4 +63,16 @@ fn the_window_opens_hidden_at_its_saved_frame() {
     assert_eq!(opts.physical_size, Some((1300, 850)));
     let fresh = options(None);
     assert_eq!((fresh.position, fresh.physical_size), (None, None));
+}
+
+#[test]
+fn a_frame_on_a_gone_monitor_is_off_screen() {
+    let on = |position, display| WindowPlacement { position, display, ..placement(false, None) };
+    let laptop = Some(((0, 0), (1600, 1000)));
+    assert!(!off_screen(&on((40, 30), laptop)), "inside");
+    assert!(!off_screen(&on((1500, 900), laptop)), "100 x 100 px still showing");
+    assert!(off_screen(&on((2600, 100), laptop)), "saved on a right-hand monitor that is gone");
+    assert!(off_screen(&on((-1550, 100), laptop)), "only 50 px left of it");
+    assert!(!off_screen(&on((2600, 100), Some(((1600, 0), (2560, 1440))))), "that monitor is back");
+    assert!(!off_screen(&on((99_000, 0), None)), "no display reported: leave it");
 }

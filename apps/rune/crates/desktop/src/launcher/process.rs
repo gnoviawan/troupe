@@ -191,7 +191,7 @@ pub fn spawn(bin: &Path, paths: &Paths, port: u16, token: &str, keep_alive: bool
     };
     if !keep_alive {
         #[cfg(unix)]
-        watchdog(std::process::id(), pid);
+        let _ = watchdog(std::process::id(), pid);
         #[cfg(windows)]
         {
             server._job = windows::Job::kill_on_close(&server.child)
@@ -218,12 +218,13 @@ pub fn wait_ready(server: &mut Server, port: u16) -> Result<Duration, String> {
     Err(format!("the server did not answer /health within {} s", READY_TIMEOUT.as_secs()))
 }
 
-/// Opens `server.log` fresh, keeping the last run's as `server.log.prev`.
-fn server_log(path: &Path) -> std::io::Result<File> {
+/// Opens `server.log` for appending. It moves to `server.log.prev` only past 5 MB, so a
+/// failed restart never rotates away the run that explains it.
+pub(crate) fn server_log(path: &Path) -> std::io::Result<File> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
-    if path.exists() {
+    if fs::metadata(path).is_ok_and(|m| m.len() > MAX_SERVER_LOG) {
         let _ = fs::rename(path, path.with_extension("log.prev"));
     }
     let mut options = OpenOptions::new();
@@ -236,25 +237,44 @@ fn server_log(path: &Path) -> std::io::Result<File> {
     options.open(path)
 }
 
-/// The detached watchdog: an `sh` loop reparented to init, so it outlives a killed app.
+const MAX_SERVER_LOG: u64 = 5 * 1024 * 1024;
+
+/// The detached watchdog: an `sh` loop reparented to init in its own process group, ignoring
+/// SIGHUP and SIGINT, so neither a killed app nor a closed terminal ends it before the server.
+/// Returns its pid.
 #[cfg(unix)]
-pub(crate) fn watchdog(app: u32, server: u32) {
+pub(crate) fn watchdog(app: u32, server: u32) -> Option<u32> {
+    use std::os::unix::process::CommandExt;
     const SCRIPT: &str = r#"(
+  trap '' HUP INT
   while kill -0 "$1" 2>/dev/null && kill -0 "$2" 2>/dev/null; do sleep 1; done
   kill -0 "$2" 2>/dev/null || exit 0
   kill -TERM "$2" 2>/dev/null
   i=0
   while [ "$i" -lt 10 ] && kill -0 "$2" 2>/dev/null; do sleep 1; i=$((i + 1)); done
   kill -KILL "$2" 2>/dev/null
-) </dev/null >/dev/null 2>&1 &"#;
+) </dev/null >/dev/null 2>&1 &
+echo $!"#;
     let started = Command::new("/bin/sh")
         .args(["-c", SCRIPT, "troupe-watchdog", &app.to_string(), &server.to_string()])
         .stdin(Stdio::null())
-        .status();
+        .stderr(Stdio::null())
+        .process_group(0)
+        .output();
     match started {
-        Ok(status) if status.success() => log::info!("[launcher] watchdog armed for server {server}"),
-        Ok(status) => log::warn!("[launcher] watchdog did not start ({status})"),
-        Err(e) => log::warn!("[launcher] watchdog did not start: {e}"),
+        Ok(out) if out.status.success() => {
+            let pid = String::from_utf8_lossy(&out.stdout).trim().parse().ok();
+            log::info!("[launcher] watchdog {pid:?} armed for server {server}");
+            pid
+        }
+        Ok(out) => {
+            log::warn!("[launcher] watchdog did not start ({})", out.status);
+            None
+        }
+        Err(e) => {
+            log::warn!("[launcher] watchdog did not start: {e}");
+            None
+        }
     }
 }
 
