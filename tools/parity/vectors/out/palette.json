@@ -252,6 +252,684 @@
  },
  {
   "store": "palette",
+  "name": "chat_filter",
+  "initial": {
+   "recentCommandIds": [],
+   "pinnedCommandIds": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      ""
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c1",
+     "c2",
+     "c3",
+     "c4"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "login"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c1",
+     "c4"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "LOGIN"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c1",
+     "c4"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "agent"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c2"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "codex"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c3"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "r9c"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c2"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "gpt"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c4"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      " opus "
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [
+     "c1"
+    ],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "filterChatCards",
+     "args": [
+      [
+       {
+        "entry": {
+         "id": "c1",
+         "title": "Fix the login redirect"
+        },
+        "agentName": "Claude Code",
+        "indexModel": "Opus 4.5",
+        "branch": "main"
+       },
+       {
+        "entry": {
+         "id": "c2",
+         "title": "Port settings"
+        },
+        "agentName": null,
+        "indexModel": null,
+        "branch": "rune/r9c"
+       },
+       {
+        "entry": {
+         "id": "c3",
+         "title": "Untitled Chat"
+        },
+        "agentName": "Codex",
+        "indexModel": null,
+        "branch": ""
+       },
+       {
+        "entry": {
+         "id": "c4",
+         "title": "Review PR"
+        },
+        "agentName": null,
+        "indexModel": "gpt-5",
+        "branch": "feature/LOGIN"
+       }
+      ],
+      "zzz"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": [],
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   }
+  ]
+ },
+ {
+  "store": "palette",
+  "name": "chat_item_scores",
+  "initial": {
+   "recentCommandIds": [],
+   "pinnedCommandIds": []
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "chat:c1",
+      "login",
+      [
+       "Fix the login redirect",
+       "Claude Code",
+       "main",
+       "Opus 4.5"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "chat:c2",
+      "r9c",
+      [
+       "Port settings",
+       "rune/r9c",
+       "Agent"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.792,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "chat:c4",
+      "gpt",
+      [
+       "Review PR",
+       "feature/LOGIN",
+       "gpt-5"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "chat:c3",
+      "agent",
+      [
+       "Untitled Chat",
+       "Codex"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Fix the login redirect quick-chat:q1",
+      "login",
+      [
+       "Fix the login redirect",
+       "quick chat"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Notes quick-chat:q2",
+      "no",
+      [
+       "Notes",
+       "quick chat"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.989901,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   },
+   {
+    "event": {
+     "action": "commandScore",
+     "args": [
+      "Plan quick-chat:q3",
+      "quick",
+      [
+       "Plan",
+       "quick chat"
+      ]
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": 0.891,
+    "state": {
+     "recentCommandIds": [],
+     "pinnedCommandIds": []
+    }
+   }
+  ]
+ },
+ {
+  "store": "palette",
   "name": "command_scores",
   "initial": {
    "recentCommandIds": [],

@@ -9,7 +9,11 @@
 //! server (the app logs and drops them) and the idle window is read from the host after boot.
 
 mod normalize;
+pub mod mcp;
+pub mod mcp_catalog;
 pub mod palette;
+pub mod profiles;
+pub mod project;
 pub mod routes;
 
 use serde::{Deserialize, Serialize};

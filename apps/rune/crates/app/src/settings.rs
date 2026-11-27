@@ -27,9 +27,10 @@ impl State {
         self.read_settings_look();
     }
 
-    /// One setting, written as `useUpdateAppSetting` does.
+    /// One setting, written as `useUpdateAppSetting` does. Only the key reaches the log: a value
+    /// can hold secrets, such as a terminal profile's environment.
     pub(crate) fn set_setting(&mut self, key: &str, value: Value) {
-        log::info!("[settings] {key} = {value}");
+        log::info!("[settings] {key} changed");
         self.settings_step(Event::UpdateSetting(key.to_owned(), value));
     }
 
