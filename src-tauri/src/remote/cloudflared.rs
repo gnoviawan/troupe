@@ -268,18 +268,6 @@ pub async fn log_tunnel_reachability(url: String) {
     }
 }
 
-/// Spawn `cloudflared tunnel --url http://localhost:{port}` and wait (up to
-/// [`TUNNEL_URL_TIMEOUT_SECS`]) for the ephemeral trycloudflare URL.
-///
-/// # Errors
-/// - `cloudflared binary not found at <path>: <io>` — spawn failed (binary
-///   not installed / not bundled / PATH miss).
-/// - `cloudflared exited before producing a tunnel URL` — the process died
-///   without printing the URL.
-/// - `tunnel URL not received within <N>s` — cloudflared ran but never
-///   printed the URL (no internet, registration rejected, slow cold start).
-///
-/// On any error the child is killed before returning — no orphaned process.
 /// The quick tunnel's arguments. `config` is an isolated config file, so a
 /// user's `~/.cloudflared/config.yml` (a named tunnel, a catch-all ingress)
 /// can never take over the quick tunnel.
@@ -306,6 +294,19 @@ pub(crate) fn write_isolated_config() -> Result<std::path::PathBuf, String> {
     Ok(path)
 }
 
+/// Spawn `cloudflared tunnel --config <isolated> --url http://localhost:{port}`
+/// and wait (up to
+/// [`TUNNEL_URL_TIMEOUT_SECS`]) for the ephemeral trycloudflare URL.
+///
+/// # Errors
+/// - `cloudflared binary not found at <path>: <io>` — spawn failed (binary
+///   not installed / not bundled / PATH miss).
+/// - `cloudflared exited before producing a tunnel URL` — the process died
+///   without printing the URL.
+/// - `tunnel URL not received within <N>s` — cloudflared ran but never
+///   printed the URL (no internet, registration rejected, slow cold start).
+///
+/// On any error the child is killed before returning — no orphaned process.
 pub async fn start_quick_tunnel(port: u16) -> Result<QuickTunnel, String> {
     let config = write_isolated_config()?;
     let started = start_quick_tunnel_on(port, &config).await;
