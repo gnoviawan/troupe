@@ -312,9 +312,14 @@ pub enum AnnotationGuideAxis {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BrowserAnnotationCommand {
     SetActive { active: bool },
-    SetTool { tool: AnnotationOverlayTool },
+    SetTool {
+        tool: AnnotationOverlayTool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        axis: Option<AnnotationGuideAxis>,
+    },
     SetPause { paused: bool },
     SetPinsHidden { hidden: bool },
+    SetCaptureHidden { hidden: bool },
     PlaceGuide { axis: AnnotationGuideAxis },
     Clear {
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -606,6 +611,7 @@ pub(crate) fn process_outbox_item(
     store: &crate::agentation::store::SqliteStore,
     tab_id: &str,
     expected_nonce: &str,
+    fallback_session_id: Option<&str>,
     raw: serde_json::Value,
 ) -> OutboxOutcome {
     use crate::agentation::types::{
@@ -635,7 +641,12 @@ pub(crate) fn process_outbox_item(
     } else {
         env.url
     };
-    let session_id = match env.session_id.as_deref() {
+    let requested_sid = env
+        .session_id
+        .as_deref()
+        .filter(|sid| !sid.is_empty())
+        .or(fallback_session_id);
+    let session_id = match requested_sid {
         Some(sid) if !sid.is_empty() && store.get_session(sid).is_some() => sid.to_string(),
         _ => store.create_session(&page_url, None).id,
     };
@@ -738,6 +749,19 @@ pub(crate) fn process_outbox_item(
     }
 }
 
+fn should_log_outbox_warn(last_secs: &std::sync::atomic::AtomicU64, interval_secs: u64) -> bool {
+    use std::sync::atomic::Ordering;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let prev = last_secs.load(Ordering::Relaxed);
+    now.saturating_sub(prev) >= interval_secs
+        && last_secs
+            .compare_exchange(prev, now, Ordering::SeqCst, Ordering::Relaxed)
+            .is_ok()
+}
+
 /// Drain any queued overlay annotation/action messages from a user browser tab's
 /// DOM outbox via the isolated engine bridge (immune to page CSP, mixed-content,
 /// and HTTPS->HTTP loopback blocks) and persist them into `AgentationService`.
@@ -747,7 +771,10 @@ pub async fn browser_tab_poll_annotation_outbox(
     webview: Webview,
     browser_manager: State<'_, Arc<BrowserTabManager>>,
 ) -> Result<IpcResult<usize>, String> {
+    use std::sync::atomic::AtomicU64;
     use tauri::Manager;
+    static LAST_MISSING_SVC_WARN: AtomicU64 = AtomicU64::new(0);
+    static LAST_DRAIN_ERR_WARN: AtomicU64 = AtomicU64::new(0);
 
     require_main_webview(&webview, "browser_tab_poll_annotation_outbox")?;
     if !crate::host_perimeter::agentation_allowed(&tab_id)
@@ -759,13 +786,20 @@ pub async fn browser_tab_poll_annotation_outbox(
         .app_handle()
         .try_state::<crate::agentation::AgentationService>()
     else {
+        if should_log_outbox_warn(&LAST_MISSING_SVC_WARN, 30) {
+            log::warn!("[BrowserTab] AgentationService unavailable while polling outbox tab={tab_id}");
+        }
         return Ok(IpcResult::success(0));
     };
 
     let items = match crate::browser_automation::drain_annotation_outbox(&tab_id).await {
         Ok(items) => items,
         Err(e) => {
-            log::debug!("[BrowserTab] Outbox drain skipped tab={tab_id}: {e}");
+            if !e.contains("TabNotFound") && should_log_outbox_warn(&LAST_DRAIN_ERR_WARN, 10) {
+                log::warn!("[BrowserTab] Outbox drain failed tab={tab_id}: {e}");
+            } else {
+                log::debug!("[BrowserTab] Outbox drain skipped tab={tab_id}: {e}");
+            }
             return Ok(IpcResult::success(0));
         }
     };
@@ -775,10 +809,18 @@ pub async fn browser_tab_poll_annotation_outbox(
 
     let expected_nonce = browser_manager.agentation_bridge_nonce();
     let mut processed = 0usize;
+    let mut batch_session_id: Option<String> = None;
     for raw in items {
-        if let OutboxOutcome::Ack(ack) =
-            process_outbox_item(&service.store, &tab_id, expected_nonce, raw)
-        {
+        if let OutboxOutcome::Ack(ack) = process_outbox_item(
+            &service.store,
+            &tab_id,
+            expected_nonce,
+            batch_session_id.as_deref(),
+            raw,
+        ) {
+            if let Some(sid) = ack.session_id.as_ref() {
+                batch_session_id = Some(sid.clone());
+            }
             processed += 1;
             if let Ok(json) = serde_json::to_string(&ack) {
                 if let Err(e) = browser_manager.send_annotation_command(&tab_id, &json) {

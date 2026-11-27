@@ -17,6 +17,9 @@ mod agent_switch;
 #[cfg(test)]
 mod agent_switch_tests;
 mod answers;
+mod bug_report;
+#[cfg(test)]
+mod bug_report_tests;
 mod automation_canvas;
 mod automation_editor;
 mod automation_editor_view;
@@ -46,6 +49,10 @@ mod controls;
 mod editor_host;
 mod viewer_host;
 mod explorer_host;
+mod first_run;
+mod first_run_view;
+#[cfg(test)]
+mod first_run_tests;
 mod phone_files;
 #[cfg(test)]
 mod explorer_host_tests;
@@ -95,6 +102,10 @@ mod settings_shortcuts;
 #[cfg(test)]
 mod settings_tests;
 mod settings_view;
+mod snapshots;
+mod snapshots_view;
+#[cfg(test)]
+mod snapshots_tests;
 mod sync;
 mod term_host;
 mod term_input;
@@ -124,6 +135,8 @@ pub use view::view;
 pub enum Route {
     #[default]
     Workspace,
+    /// The workspace snapshots page (`/snapshots`).
+    Snapshots,
     /// The URL named no screen (`*` in the web client's router); holds the path it named.
     NotFound(String),
 }
@@ -133,6 +146,7 @@ impl Route {
     pub fn from_hash(hash: &str) -> Route {
         match hash.trim_start_matches('#') {
             "" | "/" => Route::Workspace,
+            "/snapshots" => Route::Snapshots,
             path => Route::NotFound(path.to_owned()),
         }
     }
@@ -144,6 +158,17 @@ impl Route {
 pub struct Launch {
     pub config: Option<Config>,
     pub route: Route,
+}
+
+/// A bar the desktop shell draws above the frame (the in-window app menu on Linux and
+/// Windows). It may push its open menus onto the overlay layer.
+pub type ShellBar = fn(&State, &'static Tokens, &mut Vec<rune::El>) -> rune::El;
+
+static SHELL_BAR: OnceLock<ShellBar> = OnceLock::new();
+
+/// Sets the shell's bar; call before the app runs.
+pub fn set_shell_bar(bar: ShellBar) {
+    let _ = SHELL_BAR.set(bar);
 }
 
 static LAUNCH: OnceLock<Launch> = OnceLock::new();
@@ -208,8 +233,16 @@ pub struct State {
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
+    /// The Report a Bug dialog.
+    pub bug: bug_report::BugReportUi,
+    /// The web client's setup wizard, token screen and first-run onboarding.
+    pub first_run: first_run::FirstRun,
+    /// The snapshots page, its dialogs and `model::snapshots`.
+    pub snapshots: snapshots::SnapshotsUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
+    /// The window's waker, kept for `reload`.
+    pub(crate) waker: Option<Waker>,
 }
 
 /// A resizable edge of the shell.
@@ -270,7 +303,11 @@ impl Default for State {
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
+            bug: bug_report::BugReportUi::default(),
+            first_run: first_run::FirstRun::default(),
+            snapshots: snapshots::SnapshotsUi::default(),
             automations: automations::AutomationsUi::default(),
+            waker: None,
         }
     }
 }
@@ -335,12 +372,33 @@ fn seed() -> u64 {
     (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
 }
 
+/// Drops every connection and all view state, then connects again as at launch: the desktop
+/// menu's Reload, as a webview reload rebuilds the React client.
+pub fn reload(state: &mut State) {
+    let Some(wake) = state.waker.clone() else { return };
+    log::info!("[app] reload");
+    *state = State::default();
+    setup(state, wake);
+}
+
+/// The shell's bar above the frame, if the entry has one.
+pub(crate) fn shell_bar() -> Option<ShellBar> {
+    SHELL_BAR.get().copied()
+}
+
 fn setup(state: &mut State, wake: Waker) {
+    state.waker = Some(wake.clone());
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     state.viewers.images = Some(rune::ImageCache::new(wake.clone()));
     state.viewers.waker = Some(wake.clone());
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
+        // The web client asks `/health` first: a server in setup mode or one that refuses its
+        // token shows a first-run screen before the link starts.
+        if cfg!(target_arch = "wasm32") {
+            state.first_run_start(config, wake);
+            return;
+        }
         state.terms.host = Some(term_host::TermHost::connect(config.clone(), wake.clone()));
         state.connect(Host::connect(config, wake));
     }
@@ -373,6 +431,11 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_catalog = state.catalog_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
+    let next_first_run = state.first_run_tick(now);
+    state.bug_report_tick(tx);
+    if state.route == Route::Snapshots {
+        state.load_snapshots();
+    }
     let next_automation = state.automations_tick(now);
     let next_preview = state.automation_editor_tick(now);
     let waits = [
@@ -386,6 +449,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_git,
         next_github,
         next_mcp,
+        next_first_run,
         next_catalog,
         next_completion,
         next_automation,
@@ -405,10 +469,16 @@ fn on_key(state: &mut State, key: &KeyEvent, tx: &mut Tx) -> bool {
 /// The app for `launch`. The entries call `run` on it, the desktop one after linking the live
 /// driver. Call it once per process.
 pub fn app(launch: Launch) -> rune::App<State> {
+    app_with(spec(launch))
+}
+
+/// The app's spec for `launch`, for a shell that changes the window before `app_with` builds
+/// it. Call it once per process.
+pub fn spec(launch: Launch) -> AppSpec<State> {
     if LAUNCH.set(launch).is_err() {
         log::warn!("[app] launched twice; keeping the first launch");
     }
-    let spec = AppSpec {
+    AppSpec {
         fonts: theme::FONTS,
         families: theme::FAMILIES,
         setup: Some(setup),
@@ -416,7 +486,10 @@ pub fn app(launch: Launch) -> rune::App<State> {
         on_key: Some(on_key),
         min_size: Some((360.0, 400.0)),
         ..AppSpec::new("Troupe", (1280.0, 800.0), State::default, view)
-    };
+    }
+}
+
+pub fn app_with(spec: AppSpec<State>) -> rune::App<State> {
     // Chromium's text on Linux: the autohinted outline on whole-pixel pens.
     rune::App::new(spec).font_smoothing(FontSmoothing::HintedGpu).on_ime(editor_host::on_ime)
 }

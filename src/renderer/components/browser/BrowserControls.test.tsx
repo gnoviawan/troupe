@@ -202,8 +202,67 @@ describe('BrowserControls', () => {
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
     expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
       type: 'set_tool',
-      tool: 'ruler'
+      tool: 'ruler',
+      axis: 'vertical'
     })
+  })
+
+  it('opens Ruler orientation dropdown with occlusion and activates Horizontal or Vertical ruler with visual icons', async () => {
+    const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
+    const { isNativeWebviewOccluded, resetNativeWebviewOcclusionForTests } = await import(
+      '@/hooks/use-native-webview-occlusion'
+    )
+    ;(window as unknown as { __TAURI_INTERNALS__?: Record<string, unknown> }).__TAURI_INTERNALS__ =
+      {}
+
+    try {
+      useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+      useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+      renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+      const trigger = screen.getByTestId('annotation-ruler-trigger')
+      expect(isNativeWebviewOccluded()).toBe(false)
+
+      fireEvent.click(trigger)
+      expect(isNativeWebviewOccluded()).toBe(true)
+
+      const verticalOpt = screen.getByTestId('annotation-ruler-option-vertical')
+      const horizontalOpt = screen.getByTestId('annotation-ruler-option-horizontal')
+      expect(verticalOpt.querySelector('[data-ruler-axis-icon="vertical"]')).toBeTruthy()
+      expect(horizontalOpt.querySelector('[data-ruler-axis-icon="horizontal"]')).toBeTruthy()
+
+      fireEvent.click(horizontalOpt)
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateTool).toBe('ruler')
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.rulerAxis).toBe('horizontal')
+      expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+        type: 'set_tool',
+        tool: 'ruler',
+        axis: 'horizontal'
+      })
+      expect(isNativeWebviewOccluded()).toBe(false)
+      expect(trigger.querySelector('[data-ruler-axis-icon="horizontal"]')).toBeTruthy()
+
+      // Reopening shows Horizontal checked and allows switching to Vertical
+      fireEvent.click(trigger)
+      expect(
+        screen.getByTestId('annotation-ruler-option-horizontal').getAttribute('aria-checked')
+      ).toBe('true')
+      expect(
+        screen.getByTestId('annotation-ruler-option-vertical').getAttribute('aria-checked')
+      ).toBe('false')
+
+      fireEvent.click(screen.getByTestId('annotation-ruler-option-vertical'))
+      expect(useBrowserSessionStore.getState().getTab('tab-1')?.rulerAxis).toBe('vertical')
+      expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+        type: 'set_tool',
+        tool: 'ruler',
+        axis: 'vertical'
+      })
+      expect(trigger.querySelector('[data-ruler-axis-icon="vertical"]')).toBeTruthy()
+    } finally {
+      delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__
+      resetNativeWebviewOcclusionForTests()
+    }
   })
 
   it('copies visible screenshot to clipboard without queuing into pending annotations', async () => {
@@ -222,6 +281,82 @@ describe('BrowserControls', () => {
     expect(browserTabScreenshot).toHaveBeenCalledWith('tab-1')
     expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('AA==')
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+    expect(screen.getByTestId('browser-screenshot-copied-pill').textContent).toContain('Copied')
+  })
+
+  it('temporarily hides and restores annotation overlay around Visible screenshot when annotating', async () => {
+    const { browserTabAnnotationCmd, browserTabScreenshot } = await import('@/lib/browser-api')
+    const callOrder: string[] = []
+    vi.mocked(browserTabAnnotationCmd).mockImplementation(async (_id, cmd) => {
+      callOrder.push(`cmd:${cmd.type}:${'hidden' in cmd ? String(cmd.hidden) : ''}`)
+      return { success: true }
+    })
+    vi.mocked(browserTabScreenshot).mockImplementation(async () => {
+      callOrder.push('screenshot')
+      return { success: true, data: { base64: 'AA==', mimeType: 'image/png' } }
+    })
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    fireEvent.click(screen.getByLabelText('Screenshot visible viewport'))
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+
+    expect(callOrder).toEqual([
+      'cmd:set_capture_hidden:true',
+      'screenshot',
+      'cmd:set_capture_hidden:false'
+    ])
+    expect(screen.getByTestId('browser-screenshot-copied-pill').textContent).toContain('Copied')
+  })
+
+  it('does not show stale Copied pill on remount when lastScreenshotCopiedAt is expired', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.setState((state) => {
+      const next = new Map(state.tabs)
+      const tab = next.get('tab-1')
+      if (tab) {
+        next.set('tab-1', { ...tab, lastScreenshotCopiedAt: Date.now() - 5000 })
+      }
+      return { tabs: next }
+    })
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+    expect(screen.queryByTestId('browser-screenshot-copied-pill')).toBeNull()
+  })
+
+  it('ignores concurrent Visible screenshot requests on the same tab until the active capture finishes', async () => {
+    const { browserTabScreenshot } = await import('@/lib/browser-api')
+    let resolveShot:
+      | ((v: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveShot = resolve
+        })
+    )
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    const visibleBtn = screen.getByLabelText('Screenshot visible viewport')
+    fireEvent.click(visibleBtn)
+    fireEvent.click(visibleBtn)
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+    expect(browserTabScreenshot).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+    })
   })
 
   it('gives the Eye toggle explicit annotations & guides labels and sends set_pins_hidden', async () => {
