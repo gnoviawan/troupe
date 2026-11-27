@@ -96,6 +96,8 @@ pub struct ComposerUi {
     pub drafts: BTreeMap<Host, Draft>,
     /// The skills `/skills` listed, per project folder.
     pub skills: BTreeMap<String, Vec<Skill>>,
+    /// The folders whose `/skills` read is out.
+    pub skills_loading: std::collections::BTreeSet<String>,
     /// The folders the mention menu's Explorer read, by absolute path.
     pub listings: BTreeMap<String, Listing>,
     pub agents: Vec<AgentConfig>,
@@ -281,10 +283,16 @@ impl State {
     /// Asks the host for the project's skills once per folder (`skillsApi.listSkills`).
     fn fetch_skills(&mut self, host: &Host) {
         let root = self.root_of(host).unwrap_or_default();
+        self.fetch_skills_for(root);
+    }
+
+    /// `skillsApi.listSkills(root)`, once per folder; an empty root lists the global ones.
+    pub(crate) fn fetch_skills_for(&mut self, root: String) {
         if self.composer.skills.contains_key(&root) {
             return;
         }
         self.composer.skills.insert(root.clone(), Vec::new());
+        self.composer.skills_loading.insert(root.clone());
         let path = if root.is_empty() {
             "/skills".to_owned()
         } else {
@@ -297,6 +305,7 @@ impl State {
     }
 
     pub(crate) fn skills_listed(&mut self, root: String, result: Result<Value, client::http::HttpError>) {
+        self.composer.skills_loading.remove(&root);
         match result.map(serde_json::from_value::<Vec<Skill>>) {
             Ok(Ok(list)) => {
                 log::info!("[composer] {} skills for {root:?}", list.len());

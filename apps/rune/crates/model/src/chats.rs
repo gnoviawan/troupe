@@ -19,6 +19,22 @@ pub struct Chat {
     /// The folder the chat's agent runs in.
     #[serde(default)]
     pub cwd: Option<String>,
+    /// Epoch milliseconds.
+    #[serde(default)]
+    pub created_at: f64,
+    /// `quick` for a quick chat.
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub discovered: bool,
+    #[serde(default)]
+    pub model_name: Option<String>,
+    #[serde(default)]
+    pub model_id: Option<String>,
+    #[serde(default)]
+    pub worktree_path: Option<String>,
+    #[serde(default)]
+    pub worktree_branch: Option<String>,
 }
 
 impl Chat {

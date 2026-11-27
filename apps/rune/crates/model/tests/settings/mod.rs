@@ -190,14 +190,33 @@ pub fn replay_routes(vector: &Value) -> Result<usize, String> {
 
 /// The palette's lists, and cmdk's score as a read.
 pub fn replay_palette(vector: &Value) -> Result<usize, String> {
-    use model::settings::palette::{Commands, command_score};
+    use model::settings::palette::{ChatCard, Commands, command_score};
+    let text = |v: &Value| v.as_str().map(str::to_owned);
+    let chat_card = |c: &Value| ChatCard {
+        id: text(&c["entry"]["id"]).unwrap_or_default(),
+        title: text(&c["entry"]["title"]).unwrap_or_default(),
+        agent_name: text(&c["agentName"]),
+        index_model: text(&c["indexModel"]),
+        branch: text(&c["branch"]).unwrap_or_default(),
+    };
     let mut state = Commands::default();
     let steps = vector["steps"].as_array().ok_or("no steps")?;
     for (index, step) in steps.iter().enumerate() {
         let event = &step["event"];
+        if event["action"] == "filterChatCards" {
+            let args = &event["args"];
+            let cards: Vec<ChatCard> = args[0].as_array().ok_or("no cards")?.iter().map(chat_card).collect();
+            let query = args[1].as_str().unwrap_or_default();
+            let got: Vec<&str> = cards.iter().filter(|c| c.matches(query)).map(|c| c.id.as_str()).collect();
+            if let Some(problem) = diff(&format!("step {index} chats"), &step["result"], &json!(got)) {
+                return Err(problem);
+            }
+            continue;
+        }
         if step.get("query").is_some() {
             let args = &event["args"];
-            let got = command_score(args[0].as_str().unwrap_or_default(), args[1].as_str().unwrap_or_default(), &[]);
+            let keywords: Vec<String> = args.get(2).and_then(Value::as_array).into_iter().flatten().filter_map(|k| k.as_str().map(str::to_owned)).collect();
+            let got = command_score(args[0].as_str().unwrap_or_default(), args[1].as_str().unwrap_or_default(), &keywords);
             let want = step["result"].as_f64().ok_or("no score")?;
             if (got - want).abs() > 1e-12 {
                 return Err(format!("step {index}: score of {:?} for {:?}: want {want}, got {got}", args[0], args[1]));
@@ -206,6 +225,113 @@ pub fn replay_palette(vector: &Value) -> Result<usize, String> {
         }
         state.step(crate::common::call(event)?);
         if let Some(problem) = diff(&format!("step {index} state"), &step["state"], &to_value(&state)) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
+
+/// Replays the Profiles page's reads: each step's `result` is what the TypeScript lib returned.
+pub fn replay_terminal_profiles(vector: &Value) -> Result<usize, String> {
+    use model::settings::profiles::{Draft, Profile};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "parse" => match parse::<Draft>(&args[0])?.parse(args[1].as_str().unwrap_or_default()) {
+                Ok(profile) => json!({ "ok": true, "profile": profile }),
+                Err(errors) => json!({ "ok": false, "errors": errors }),
+            },
+            "toDraft" => to_value(&Draft::of(&parse::<Profile>(&args[0])?)),
+            "commandLine" => json!(parse::<Profile>(&args[0])?.command_line()),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
+
+/// Replays the project settings window's reads: the `.env` import and the shell select.
+pub fn replay_project_settings(vector: &Value) -> Result<usize, String> {
+    use model::prefs::EnvVar;
+    use model::settings::project::{self, Shell};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let shells = |i: usize| -> Result<Vec<Shell>, String> {
+            if args[i].is_null() { Ok(Vec::new()) } else { parse::<Vec<Shell>>(&args[i]["available"]) }
+        };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "envPath" => json!(project::env_path(text(0))),
+            "parseEnv" => to_value(&project::parse_env(text(0))),
+            "mergeEnv" => to_value(&project::merge_env(&parse::<Vec<EnvVar>>(&args[0])?, &parse::<Vec<EnvVar>>(&args[1])?)),
+            "shellValue" => json!(project::shell_value(text(0), &shells(1)?)),
+            "shellOptions" => to_value(&project::shell_options(text(0), &shells(1)?, text(2))),
+            "shellFromValue" => json!(project::shell_from_value(text(0))),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}
+
+/// Replays the MCP servers page's reads: the registry, the form's draft and the status word.
+pub fn replay_mcp_servers(vector: &Value) -> Result<usize, String> {
+    use model::settings::mcp::{self, Auth, Draft, Object};
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let text = |i: usize| args[i].as_str().unwrap_or_default();
+        let object = |i: usize| -> Result<Object, String> { parse::<Object>(&args[i]) };
+        let draft = || -> Result<Draft, String> { parse::<Draft>(&args[0]) };
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "normalize" => to_value(&mcp::normalize_registry(&args[0])),
+            "validate" => to_value(&mcp::validate(&object(0)?)),
+            "sameLaunch" => json!(mcp::same_launch(&object(0)?, &object(1)?)),
+            "tokenize" => to_value(&mcp::tokenize(text(0))),
+            "join" => json!(mcp::join(&parse::<Vec<String>>(&args[0])?)),
+            "transportForUrl" => json!(mcp::transport_for_url(text(0)).as_str()),
+            "liftEnvPrefix" => to_value(&mcp::lift_env_prefix(&draft()?.local)),
+            "rowProblem" => json!(mcp::row_problem(&mcp::Row::new(text(0), text(1)))),
+            "toConfig" => match mcp::draft_to_config(&draft()?) {
+                Ok(config) => json!({ "config": config }),
+                Err(errors) => {
+                    let map: Map<String, Value> = errors.into_iter().map(|(f, m)| (to_value(&f).as_str().unwrap_or_default().to_owned(), json!(m))).collect();
+                    json!({ "errors": map })
+                }
+            },
+            "uncheckedConfig" => Value::Object(mcp::unchecked_config(&draft()?)),
+            "fromServer" => to_value(&mcp::draft_from_server(&object(0)?)),
+            "withUrl" => {
+                let mut d = draft()?;
+                d.remote = mcp::with_url(&d.remote, text(1));
+                to_value(&d)
+            }
+            "withAuth" => {
+                let mut d = draft()?;
+                d.remote = mcp::with_auth(&d.remote, parse::<Auth>(&args[1])?);
+                to_value(&d)
+            }
+            "status" => to_value(&mcp::status(args[0].as_bool().unwrap_or_default(), args[1].as_bool().unwrap_or_default(), args[2].as_str())),
+            "target" => json!(mcp::target(&object(0)?)),
+            "toolCount" => json!(mcp::tool_count(args[0].as_u64().unwrap_or_default() as usize)),
+            "reasonText" => json!(model::settings::mcp_catalog::reason_text(&args[0])),
+            "stateLabel" => json!(model::settings::mcp_catalog::state_label(text(0))),
+            "sampleText" => json!(model::settings::mcp_catalog::sample_text(&args[0])),
+            "syncText" => json!(model::settings::mcp_catalog::sync_text(&args[0], "")),
+            "syncErrorText" => json!(model::settings::mcp_catalog::sync_error_text(text(0))),
+            "updatedText" => json!(model::settings::mcp_catalog::updated_text(None, "")),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
             return Err(problem);
         }
     }
