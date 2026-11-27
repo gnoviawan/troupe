@@ -135,6 +135,17 @@ pub struct Launch {
     pub route: Route,
 }
 
+/// A bar the desktop shell draws above the frame (the in-window app menu on Linux and
+/// Windows). It may push its open menus onto the overlay layer.
+pub type ShellBar = fn(&State, &'static Tokens, &mut Vec<rune::El>) -> rune::El;
+
+static SHELL_BAR: OnceLock<ShellBar> = OnceLock::new();
+
+/// Sets the shell's bar; call before the app runs.
+pub fn set_shell_bar(bar: ShellBar) {
+    let _ = SHELL_BAR.set(bar);
+}
+
 static LAUNCH: OnceLock<Launch> = OnceLock::new();
 
 /// The overlay key of the phone shell's rail drawer.
@@ -197,6 +208,8 @@ pub struct State {
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
+    /// The window's waker, kept for `reload`.
+    pub(crate) waker: Option<Waker>,
 }
 
 /// A resizable edge of the shell.
@@ -257,6 +270,7 @@ impl Default for State {
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
+            waker: None,
         }
     }
 }
@@ -321,7 +335,22 @@ fn seed() -> u64 {
     (js_sys::Math::random() * 9_007_199_254_740_992.0) as u64 ^ js_sys::Date::now() as u64
 }
 
+/// Drops every connection and all view state, then connects again as at launch: the desktop
+/// menu's Reload, as a webview reload rebuilds the React client.
+pub fn reload(state: &mut State) {
+    let Some(wake) = state.waker.clone() else { return };
+    log::info!("[app] reload");
+    *state = State::default();
+    setup(state, wake);
+}
+
+/// The shell's bar above the frame, if the entry has one.
+pub(crate) fn shell_bar() -> Option<ShellBar> {
+    SHELL_BAR.get().copied()
+}
+
 fn setup(state: &mut State, wake: Waker) {
+    state.waker = Some(wake.clone());
     ui::overlay::history::install(wake.clone());
     state.chat.images = Some(chat_images::ChatImages::new(wake.clone()));
     state.viewers.images = Some(rune::ImageCache::new(wake.clone()));

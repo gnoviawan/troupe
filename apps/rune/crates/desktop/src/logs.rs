@@ -4,6 +4,8 @@
 //! file. Debug builds also print to stderr. `RUST_LOG` sets the level (`info` by default: the
 //! GPU and socket crates' debug lines fill megabytes a minute). Panics land in the file.
 //!
+//! The Help menu's log actions read the same file.
+//!
 
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
@@ -130,6 +132,30 @@ fn civil(days: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (yoe + era * 400 + i64::from(m <= 2), m, d)
+}
+
+/// Where "Export Log to Default Directory" writes: Downloads, else the Desktop, as the Tauri
+/// app does.
+pub fn default_export_dir(env: impl Fn(&str) -> Option<String>) -> Option<PathBuf> {
+    let home = env("HOME").or_else(|| env("USERPROFILE")).map(PathBuf::from)?;
+    ["Downloads", "Desktop"]
+        .into_iter()
+        .map(|dir| home.join(dir))
+        .find(|dir| dir.is_dir())
+}
+
+/// Copies the log to `dest`, after flushing what is buffered.
+pub fn export(log_file: &Path, dest: &Path) -> Result<(), String> {
+    log::logger().flush();
+    if !log_file.exists() {
+        return Err("Log file does not exist yet".into());
+    }
+    fs::copy(log_file, dest).map(|_| ()).map_err(|e| format!("Failed to export log file: {e}"))
+}
+
+pub fn contents(log_file: &Path) -> Result<String, String> {
+    log::logger().flush();
+    fs::read_to_string(log_file).map_err(|e| format!("Failed to read log file: {e}"))
 }
 
 #[cfg(test)]

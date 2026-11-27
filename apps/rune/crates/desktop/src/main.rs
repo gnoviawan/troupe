@@ -1,6 +1,7 @@
 //! `troupe-preview`: the Rune desktop app. One process per data dir (a second launch focuses
 //! the first), a supervised local `troupe-server` on loopback (`launcher`), and the workspace
-//! shell in a native window that opens hidden and shows on its first frame (`window`).
+//! shell in a native window that opens hidden and shows on its first frame (`window`), with
+//! the app menu (`menu`), the tray, notifications and the log actions (`services`).
 //!
 //! It opens the Tauri app's data (`paths`), so it refuses to start while the Tauri app runs
 //! (`data_lock`). `TROUPE_SERVER_URL` attaches to a server instead of managing one,
@@ -12,8 +13,10 @@
 mod data_lock;
 mod launcher;
 mod logs;
+mod menu;
 mod paths;
 mod refusal;
+mod services;
 mod window;
 
 use std::sync::Mutex;
@@ -33,6 +36,7 @@ fn main() {
         }
     };
     let log_file = logs::init(&paths.log_dir);
+    services::set_log_file(log_file.clone());
     log::info!(
         "[startup] troupe-preview v{} | {} {} | pid {} | data={} | log={}",
         env!("CARGO_PKG_VERSION"),
@@ -66,6 +70,7 @@ fn main() {
     };
     log::info!("[startup] server {:?} at {}", started.mode, started.config.base_url);
     let app = build(Launch { config: Some(started.config), route }, started.control.as_ref(), &paths);
+    let _tray = services::tray(app.handle());
     *CONTROL.lock().unwrap_or_else(|e| e.into_inner()) = started.control;
     // Rune ends the process right after the quit hooks, so the server stops in its last step.
     rune::fast_exit(stop_server);
@@ -87,10 +92,13 @@ fn stop_server() {
 fn build(launch: Launch, control: Option<&Control>, paths: &Paths) -> rune::App<State> {
     let saved = window::load(&paths.window_file());
     window::track(&paths.window_file());
+    if paths::Os::CURRENT != paths::Os::Mac {
+        troupe_app::set_shell_bar(menu::bar);
+    }
     let mut spec = troupe_app::spec(launch);
     spec.size = window::DEFAULT_SIZE;
     spec.min_size = Some(window::MIN_SIZE);
-    let app = troupe_app::app_with(spec)
+    let mut app = troupe_app::app_with(spec)
         .window_options(window::options(saved.as_ref()))
         .chrome(window::chrome())
         .maximized(saved.as_ref().is_some_and(|f| f.maximized))
@@ -112,16 +120,39 @@ fn build(launch: Launch, control: Option<&Control>, paths: &Paths) -> rune::App<
             window.focus();
             true
         });
+    // Close hides the window on Linux and macOS, as the Tauri app hides to its tray there;
+    // File > Quit and the tray's Quit end the app. Windows closes for good.
+    if !cfg!(target_os = "windows") {
+        app = app.keep_running();
+    }
+    if paths::Os::CURRENT == paths::Os::Mac {
+        app = app.standard_menus();
+        for item in menu::native_items() {
+            app = app.menu_item(item);
+        }
+    }
     if let Some(control) = control {
         let handle = app.handle();
-        control.on_notice(move |notice| handle.update(move |s, _| toast(s, notice)));
+        control.on_notice(move |notice| {
+            let (_, title, detail) = notice_text(&notice);
+            if !handle.is_visible() {
+                services::notify(title, &detail);
+            }
+            handle.update(move |s, _| toast(s, notice));
+        });
     }
     automation::install(app)
 }
 
-/// What the window says when the server stops and comes back.
+/// What the window says when the server stops and comes back. A hidden window says it in a
+/// system notification as well.
 fn toast(s: &mut State, notice: Notice) {
-    let (kind, title, detail) = match notice {
+    let (kind, title, detail) = notice_text(&notice);
+    s.toasts.push(s.now, kind, title, (!detail.is_empty()).then_some(detail.as_str()));
+}
+
+fn notice_text(notice: &Notice) -> (ToastKind, &'static str, String) {
+    match notice {
         Notice::Restarting { status, .. } => {
             (ToastKind::Warning, "Troupe server stopped", format!("{status}. Restarting…"))
         }
@@ -131,6 +162,5 @@ fn toast(s: &mut State, notice: Notice) {
             "Troupe server keeps stopping",
             format!("It stopped {exits} times in a row. Open Troupe Preview again to retry; its log is server.log."),
         ),
-    };
-    s.toasts.push(s.now, kind, title, (!detail.is_empty()).then_some(detail.as_str()));
+    }
 }

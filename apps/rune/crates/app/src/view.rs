@@ -55,7 +55,13 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
                 |id| Some(Box::new(move |s: &mut State| s.run_undo(id)) as Box<dyn Fn(&mut State)>),
             )),
     );
-    ui::overlay::root(root, layer)
+    match crate::shell_bar().filter(|_| !phone) {
+        Some(bar) => {
+            let bar = bar(s, t, &mut layer);
+            ui::overlay::root(col().w_full().h_full().child(bar).child(root.grow(1.0).min_h(0.0)), layer)
+        }
+        None => ui::overlay::root(root, layer),
+    }
 }
 
 fn workspace(s: &mut State) -> &mut ui::workspace::Workspace {
