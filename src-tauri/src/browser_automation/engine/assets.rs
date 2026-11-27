@@ -64,7 +64,7 @@ pub const CHECKED_STATE: Helper = helper!("checked_state");
 pub const SELECT_OPTION: Helper = helper!("select_option");
 pub const FRAME_ORIGIN: Helper = helper!("frame_origin");
 pub const FOCUSED_FRAME: Helper = helper!("focused_frame");
-#[cfg(any(test, target_os = "windows"))]
+#[cfg_attr(not(target_os = "windows"), allow(dead_code, reason = "only WebView2 resolves frame owners natively"))]
 pub const OWNER_PATH: Helper = helper!("owner_path");
 #[cfg_attr(target_os = "windows", allow(dead_code, reason = "WebView2 reads the console through CDP"))]
 pub const CONSOLE_PULL: Helper = helper!("console_pull");
@@ -76,8 +76,8 @@ pub const FRAME_SOURCES: Helper = helper!("frame_sources");
 /// The conformance suite's probe of the agent overlay.
 #[cfg(any(test, feature = "conformance"))]
 pub const OVERLAY_STATE: Helper = helper!("overlay_state");
-/// Only CDP engines set a file input through the element itself.
-#[cfg(any(test, target_os = "windows"))]
+/// Only CDP engines (WebView2, Chromium) set a file input through the
+/// element itself.
 pub const FILE_INPUT: Helper = helper!("file_input");
 /// WebKit engines set a file input by answering the chooser it opens.
 #[cfg(any(test, target_os = "macos", target_os = "linux"))]
@@ -187,7 +187,7 @@ pub fn frame_origin(path: &str) -> Script {
 
 /// The path of the element the call is bound to (`this`), for engines
 /// that resolve a frame's owner element natively.
-#[cfg(any(test, target_os = "windows"))]
+#[cfg_attr(not(target_os = "windows"), allow(dead_code, reason = "only WebView2 resolves frame owners natively"))]
 pub fn owner_path() -> Script {
     Script::new(OWNER_PATH, json!({}))
 }
@@ -262,7 +262,6 @@ pub fn card_fields() -> Script {
 
 /// The file input at `path` itself, for engines that set its files by
 /// element handle; null when `path` names anything else.
-#[cfg(any(test, target_os = "windows"))]
 pub fn file_input(path: &str) -> Script {
     Script::new(FILE_INPUT, json!({ "path": path }))
 }
