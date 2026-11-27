@@ -183,11 +183,9 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
   useEffect(() => {
     if (!isVisible || !annotateMode) return
     const subCreated = onAgentationAnnotationCreated((payload) => {
-      if (payload.tabId) {
-        if (payload.tabId !== browserTabId) return
-      } else if (!sameOriginAndPath(payload.url, url)) {
-        return
-      }
+      if (payload.tabId && payload.tabId !== browserTabId) return
+      if (!sameOriginAndPath(payload.url, url)) return
+      const expectedPageUrl = payload.url || url
       const kind =
         payload.kind === 'rectangle' || payload.kind === 'guide' || payload.kind === 'measurement'
           ? payload.kind
@@ -226,6 +224,10 @@ export function BrowserPanel({ browserTabId, isVisible }: BrowserPanelProps): Re
         }
         if (removedAnnotationIdsRef.current.has(payload.id)) {
           removedAnnotationIdsRef.current.delete(payload.id)
+          return
+        }
+        const liveUrl = useBrowserSessionStore.getState().getTab(browserTabId)?.url ?? ''
+        if (!sameOriginAndPath(expectedPageUrl, liveUrl)) {
           return
         }
         addPendingAnnotation(browserTabId, {

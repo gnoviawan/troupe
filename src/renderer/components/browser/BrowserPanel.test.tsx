@@ -535,6 +535,53 @@ describe('BrowserPanel', () => {
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
   })
 
+  it('discards an in-flight annotation completion if the tab navigates to a different page before crop finishes', async () => {
+    const { browserTabScreenshot } = await import('@/lib/browser-api')
+    let resolveShot:
+      | ((v: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveShot = resolve
+        })
+    )
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id/pricing')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    act(() => {
+      annotationListeners[0]?.({
+        id: 'ann-old-page',
+        tabId: 'tab-1',
+        url: 'https://absenin.id/pricing',
+        kind: 'feedback',
+        element: 'h1',
+        elementPath: 'h1',
+        comment: 'Old page comment'
+      })
+    })
+    await waitFor(() => expect(resolveShot).not.toBeNull())
+
+    act(() => {
+      useBrowserSessionStore.getState().updateUrl('tab-1', 'https://absenin.id/about')
+    })
+
+    await act(async () => {
+      resolveShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+  })
+
   it('renders frozen occlusion snapshot image behind open dropdowns when provided by useBrowserWebview', () => {
     mockOcclusionPreview.current = 'data:image/png;base64,AA=='
     useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
