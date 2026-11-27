@@ -174,6 +174,7 @@ impl ChromiumEngine {
 /// - file choosers: intercepted and cancelled, inputs set by element;
 /// - permissions: `--deny-permission-prompts` refuses every request;
 /// - external apps: headless Chromium has no prompt to launch one.
+///
 /// The console and the network are not observed yet.
 pub fn capability_table() -> CapabilityTable {
     CapabilityTable::unavailable("not implemented on the Chromium engine yet")
