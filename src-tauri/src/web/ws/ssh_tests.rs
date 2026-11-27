@@ -383,3 +383,20 @@ async fn pending_connects_are_capped() {
     }
     server.abort();
 }
+
+#[test]
+fn the_tauri_commands_save_and_open_through_the_same_service() {
+    // The desktop app's commands must apply the same rules as these routes:
+    // no client-claimed stored secret, no secret reused across targets.
+    let commands = include_str!("../../commands/ssh.rs");
+    assert!(commands.contains("service::save_profile(&ssh_manager, profile)"));
+    assert!(commands.contains("service::open_session("));
+    assert!(
+        !commands.contains("profiles.save("),
+        "ssh_save_profile bypasses ssh::service"
+    );
+    assert!(
+        !commands.contains("cached_secret("),
+        "ssh_session_open uses the target-blind cache"
+    );
+}

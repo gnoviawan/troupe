@@ -223,7 +223,9 @@ impl SshSessionManager {
         })
     }
 
-    /// The secret kept for a host with a live session, if any.
+    /// The secret kept for a profile with a live session, whatever its
+    /// target (a probe for tests; callers use [`Self::cached_secret_for`]).
+    #[cfg(test)]
     pub fn cached_secret(&self, profile_id: &str) -> Option<String> {
         lock(&self.secrets)
             .get(profile_id)
