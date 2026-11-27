@@ -133,6 +133,36 @@ fn the_rail_lists_the_server_projects_and_switches_between_them() {
 }
 
 #[test]
+fn a_chat_without_a_title_still_lists_every_chat_in_the_rail() {
+    let mut s = connected();
+    for call in 1..=5 {
+        s.apply(read_reply(call, Value::Null));
+    }
+    s.apply(projects_frame());
+    // `list_persisted_sessions` from a v0.6.0 host: a chat nobody has prompted yet has a null title.
+    let untitled = json!({
+        "storageKey": "d982272d", "sessionId": "chat-untitled", "stableAgentNamespace": "config:custom-chat-scenario",
+        "projectId": "p-b", "cwd": "/w/beta", "title": null, "createdAt": 1795765631829u64,
+        "lastActivityAt": 1795765631845u64, "status": "active", "messageCount": 0, "toolCount": 0,
+        "lastSeq": 1, "discovered": false, "resumeEligible": true
+    });
+    let titled = json!({
+        "storageKey": "d4f43b84", "sessionId": "chat-1", "stableAgentNamespace": "config:custom-chat-scenario",
+        "projectId": "p-a", "cwd": "/w/alpha", "title": "How does the web client decide",
+        "titleSource": "derived_first_message", "createdAt": 1795765627438u64,
+        "lastActivityAt": 1795765631675u64, "status": "active", "messageCount": 11, "toolCount": 12,
+        "lastSeq": 131, "discovered": false, "resumeEligible": true
+    });
+    s.apply(Output::Reply { call: 6, result: Ok(Some(json!([untitled, titled]))) });
+    let mut rt = Runtime::new(s, view, (1280.0, 800.0), Env::new(true, 1.0));
+    rt.frame(0.0);
+    rt.frame(0.016);
+    assert!(present(&rt, "rail-chat-chat-1"), "alpha's chat row");
+    assert!(present(&rt, "rail-chat-chat-untitled"), "beta's untitled chat row");
+    assert_eq!(rt.state.chats.get("chat-untitled").map(model::chats::Chat::label), Some("New chat"));
+}
+
+#[test]
 fn the_tool_strip_opens_switches_and_closes_the_side_panel() {
     let mut rt = runtime();
     assert!(!present(&rt, "side-panel"));
