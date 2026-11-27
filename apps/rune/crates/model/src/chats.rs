@@ -11,7 +11,8 @@ pub struct Chat {
     pub session_id: String,
     #[serde(default)]
     pub project_id: Option<String>,
-    #[serde(default)]
+    /// A chat nobody has prompted yet comes with `"title": null`.
+    #[serde(default, deserialize_with = "null_as_empty")]
     pub title: String,
     /// Epoch milliseconds.
     #[serde(default)]
@@ -35,6 +36,10 @@ pub struct Chat {
     pub worktree_path: Option<String>,
     #[serde(default)]
     pub worktree_branch: Option<String>,
+}
+
+fn null_as_empty<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    Option::<String>::deserialize(d).map(Option::unwrap_or_default)
 }
 
 impl Chat {
