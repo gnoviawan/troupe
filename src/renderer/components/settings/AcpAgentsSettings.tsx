@@ -477,6 +477,7 @@ export function AcpAgentsSettings(): React.JSX.Element {
       id="settings-available-agents"
       className="scroll-mt-4"
       title="Available agents"
+      description="Installed coding agents and registry updates."
       meta={
         lastCheckedAt
           ? `${

@@ -262,6 +262,69 @@
         "pasted_json_imports_like_the_dialog",
         "install_form_values_and_retry"
       ]
+    },
+    "github": {
+      "sources": {
+        "src/renderer/stores/github-store.ts": "54ff83e5eef923c52ffc7371c34782bb8c984eab"
+      },
+      "vectors": [
+        "context, filter and list",
+        "every filter field keys its own list",
+        "a slower older read never overwrites a newer one",
+        "item, checks, log and repository meta",
+        "merge re-reads checks, list and item",
+        "comments show before the re-read",
+        "label create, edit and state writes"
+      ]
+    },
+    "github-routes": {
+      "sources": {
+        "src/renderer/lib/github-api.ts": "a934ceba3f6af82012c9703725e84bfb5d401bd7"
+      },
+      "vectors": [
+        "reads",
+        "writes"
+      ]
+    },
+    "automation-draft": {
+      "sources": {
+        "src/renderer/components/automations/canvas/draft/draft.ts": "c9fa003e6eeb3c4b5ba8e9714486dd72c2136121",
+        "src/renderer/components/automations/canvas/draft/apply-op.ts": "ec9678e8b6bb3da5624fadce3efab953d1c24501",
+        "src/renderer/components/automations/canvas/draft/inverse.ts": "4866f28887cb9c0da354a77c3ae3e7b385626317",
+        "src/renderer/components/automations/canvas/draft/gestures.ts": "15801231d1ca053b0d9854ccc51e04ff8a78d37e",
+        "src/renderer/components/automations/canvas/layout.ts": "091f786c38fc5a573ac8056f056ffa392773909b",
+        "src/renderer/components/automations/canvas/ports.ts": "367d78cf46816161c37c883eaa0519bf951a13e7",
+        "src/renderer/components/automations/canvas/palette/node-kinds.ts": "40b91799d62a92edb2a7359f3dff4aafccbf34c3"
+      },
+      "vectors": [
+        "each fixture batch as a gesture, undone and redone",
+        "add, connect, move and remove on a placed canvas",
+        "dry runs land only on the pending list they ran",
+        "save keeps the history on our own revision only",
+        "a new head replaces a clean draft and waits behind a dirty one",
+        "a rebase replays the edits that still apply and names the rest"
+      ]
+    },
+    "automation-run": {
+      "sources": {
+        "src/renderer/components/automations/canvas/run/run-overlay.ts": "bf0154c60f85338d779d65a91e5d15405ef26282",
+        "src/renderer/components/automations/canvas/inspector/template-scope.ts": "4ebf1a09cdae69ba7a130db7fa4d7167af52124b",
+        "src/renderer/components/automations/automation-format.ts": "8c6b83a0cd67520bff43a132b056cc7a6d423bbb"
+      },
+      "vectors": [
+        "the fixture runs on their own graphs",
+        "how automations read",
+        "new nodes from the add menu"
+      ]
+    },
+    "automation-routes": {
+      "sources": {
+        "src/renderer/lib/automation-api.ts": "3eabd5fbed55e434697c4f559fa6b7439bb431bb",
+        "src/renderer/lib/ipc/http.ts": "b565af78afbf93a5f85e2f180fa891fda0da6e33"
+      },
+      "vectors": [
+        "every route the Rune client calls"
+      ]
     }
   }
 }

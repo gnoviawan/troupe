@@ -528,6 +528,9 @@ export function ProjectSettingsModal() {
                 openAppSettings('provider')
               }}
             />
+            <p className="mt-2 text-2xs text-muted-foreground @[52rem]/settings:pl-[272px]">
+              Other providers get their own group here when they support accounts.
+            </p>
           </SettingsSection>
 
           <ProjectBrowserSection projectId={settingsProject?.id} />
