@@ -2283,8 +2283,8 @@
         "fs",
         "store",
         "terminals",
-        "chat_activity",
-        "browser_screencast"
+        "browser_screencast",
+        "chat_activity"
       ],
       "type": "string"
     },

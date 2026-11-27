@@ -332,8 +332,8 @@ wire_enum! {
         Fs = "fs",
         Store = "store",
         Terminals = "terminals",
-        ChatActivity = "chat_activity",
         BrowserScreencast = "browser_screencast",
+        ChatActivity = "chat_activity",
     }
 }
 

@@ -1332,8 +1332,8 @@ export type WsWatchName =
   | 'fs'
   | 'store'
   | 'terminals'
-  | 'chat_activity'
   | 'browser_screencast'
+  | 'chat_activity'
 
 export const WsWatchNameValues = [
   'projects',
@@ -1342,8 +1342,8 @@ export const WsWatchNameValues = [
   'fs',
   'store',
   'terminals',
-  'chat_activity',
-  'browser_screencast'
+  'browser_screencast',
+  'chat_activity'
 ] as const
 
 /** `watch` reply payload. */
