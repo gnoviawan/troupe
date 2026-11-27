@@ -30,7 +30,7 @@ import {
   antigravityAccountReadiness
 } from './antigravity-account-status'
 import { AccountAvatar, DefaultPill } from './ClaudeAccountRow'
-import { ProviderGroupHeader } from './ProviderGroupHeader'
+import { ProviderGroup } from './ProviderGroupHeader'
 
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
@@ -131,30 +131,29 @@ export function AntigravityProviderSettings(): React.JSX.Element {
   const removingProjects = removing ? (projectsByAccount[removing.id] ?? []) : []
 
   return (
-    <div className="flex flex-col gap-3" data-testid="antigravity-provider-settings">
-      <ProviderGroupHeader
-        iconKey="acp:antigravity-acp"
-        name="Antigravity"
-        count={
-          snapshot && !failed
-            ? accounts.length === 1
-              ? '1 account'
-              : `${accounts.length} accounts`
-            : undefined
-        }
-        lastChecked={null}
-        refreshing={refreshingUsage}
-        action={
-          canManage &&
-          !failed && (
-            <Button type="button" size="xs" variant="outline" onClick={() => setAddOpen(true)}>
-              <Plus />
-              Add account
-            </Button>
-          )
-        }
-      />
-
+    <ProviderGroup
+      data-testid="antigravity-provider-settings"
+      iconKey="acp:antigravity-acp"
+      name="Antigravity"
+      count={
+        snapshot && !failed
+          ? accounts.length === 1
+            ? '1 account'
+            : `${accounts.length} accounts`
+          : undefined
+      }
+      lastChecked={null}
+      refreshing={refreshingUsage}
+      action={
+        canManage &&
+        !failed && (
+          <Button type="button" size="xs" variant="outline" onClick={() => setAddOpen(true)}>
+            <Plus />
+            Add account
+          </Button>
+        )
+      }
+    >
       {loading && (
         <div className="py-4 text-xs text-muted-foreground" aria-busy="true">
           Loading Antigravity accounts…
@@ -338,6 +337,6 @@ export function AntigravityProviderSettings(): React.JSX.Element {
           </div>
         )}
       </ConfirmDialog>
-    </div>
+    </ProviderGroup>
   )
 }

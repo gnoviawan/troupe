@@ -23,7 +23,7 @@ import {
 } from './account-status'
 import { AccountAvatar, DefaultPill } from './ClaudeAccountRow'
 import { LinkSignInDialog } from './LinkSignInDialog'
-import { oldestCheck, ProviderGroupHeader } from './ProviderGroupHeader'
+import { oldestCheck, ProviderGroup } from './ProviderGroupHeader'
 
 /** Option id for "Follow default"; Account ids are hex, so it cannot collide. */
 const FOLLOW_DEFAULT = 'follow-default'
@@ -188,32 +188,23 @@ export function ProjectProviderSettings({
     event.preventDefault()
   }
 
-  const header = (
-    <ProviderGroupHeader
-      iconKey="acp:claude-acp"
-      name="Claude Code"
-      lastChecked={snapshot ? oldestCheck(usage) : null}
-      refreshing={refreshingUsage}
-      onRefresh={snapshot ? () => void refreshUsage(true) : undefined}
-      action={
-        <Button
-          type="button"
-          size="xs"
-          variant="ghost"
-          onClick={onManageAccounts}
-          className="text-secondary-foreground"
-        >
-          Manage accounts
-          <ExternalLink size={12} />
-        </Button>
-      }
-    />
-  )
+  const groupProps = {
+    iconKey: 'acp:claude-acp',
+    name: 'Claude Code',
+    lastChecked: snapshot ? oldestCheck(usage) : null,
+    refreshing: refreshingUsage,
+    onRefresh: snapshot ? () => void refreshUsage(true) : undefined,
+    action: (
+      <Button type="button" size="xs" variant="outline" onClick={onManageAccounts}>
+        Manage accounts
+        <ExternalLink size={12} />
+      </Button>
+    )
+  }
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-3">
-        {header}
+      <ProviderGroup {...groupProps}>
         <div className="flex flex-col gap-1" aria-hidden="true">
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex items-center gap-3.5 px-3 py-2.5">
@@ -225,14 +216,13 @@ export function ProjectProviderSettings({
             </div>
           ))}
         </div>
-      </div>
+      </ProviderGroup>
     )
   }
 
   if (error || !snapshot) {
     return (
-      <div className="flex flex-col gap-3">
-        {header}
+      <ProviderGroup {...groupProps}>
         <div className="flex items-center justify-between gap-3 py-2 text-xs">
           <span className="text-muted-foreground">
             Claude accounts are not available right now{error ? `: ${error}` : '.'}
@@ -241,7 +231,7 @@ export function ProjectProviderSettings({
             Try again
           </Button>
         </div>
-      </div>
+      </ProviderGroup>
     )
   }
 
@@ -289,9 +279,7 @@ export function ProjectProviderSettings({
   const defaultReadiness = readinessOf(null)
 
   return (
-    <div className="flex flex-col gap-3">
-      {header}
-
+    <ProviderGroup {...groupProps}>
       <div
         ref={listRef}
         role="listbox"
@@ -441,10 +429,6 @@ export function ProjectProviderSettings({
         Claude Agent chats here use this account. Open chats restart on it when you save.
       </p>
 
-      <p className="mt-1 border-t border-border/60 px-3 pt-3 text-2xs text-muted-foreground">
-        Other providers get their own group here when they support accounts.
-      </p>
-
       <LinkSignInDialog
         account={linkSignIn}
         onClose={() => setLinkSignIn(null)}
@@ -453,6 +437,6 @@ export function ProjectProviderSettings({
           void signedIn(account)
         }}
       />
-    </div>
+    </ProviderGroup>
   )
 }

@@ -99,7 +99,7 @@ function AppearanceGroup(): React.JSX.Element {
   }
 
   return (
-    <SettingsGroup title="Appearance">
+    <SettingsGroup title="Appearance" description="Theme, interface zoom, and window chrome.">
       <SettingsCard>
         <SettingsRow
           id={rowId('color-theme')}
@@ -153,7 +153,10 @@ function NotificationsGroup(): React.JSX.Element {
   const notifyOnAgentChatTurnFinished = useNotifyOnAgentChatTurnFinished()
   const notifyOnAgentChatNeedsYou = useNotifyOnAgentChatNeedsYou()
   return (
-    <SettingsGroup title="Notifications">
+    <SettingsGroup
+      title="Notifications"
+      description="Choose when Troupe alerts you in the background."
+    >
       <SettingsCard>
         <SettingsSwitchRow
           id="notify-needs-you"
@@ -186,7 +189,7 @@ function LinksGroup(): React.JSX.Element {
   const linkOpenMode = useLinkOpenMode()
   const clickKey = isMac ? '⌘' : 'Ctrl'
   return (
-    <SettingsGroup title="Links">
+    <SettingsGroup title="Links" description="Control where links from chats and terminals open.">
       <SettingsCard>
         <SettingsRow
           id={rowId('link-open-mode')}
@@ -233,7 +236,7 @@ function EditorGroup(): React.JSX.Element {
   }
 
   return (
-    <SettingsGroup title="Editor">
+    <SettingsGroup title="Editor" description="How edited files are written to disk.">
       <SettingsCard>
         <SettingsRow
           id={rowId('editor-auto-save')}
@@ -258,7 +261,7 @@ function NewProjectsGroup(): React.JSX.Element {
   const updateSetting = useUpdateAppSetting()
   const defaultProjectColor = useDefaultProjectColor() as ProjectColor
   return (
-    <SettingsGroup title="New projects">
+    <SettingsGroup title="New projects" description="Defaults applied when you add a project.">
       <SettingsCard>
         <SettingsRow
           id={rowId('default-project-color')}

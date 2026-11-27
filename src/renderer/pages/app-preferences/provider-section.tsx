@@ -18,7 +18,7 @@ export function ProviderSection(): React.JSX.Element {
       <CodexProviderSettings />
       <AntigravityProviderSettings />
       {canManage && (
-        <p className="mt-6 flex items-center gap-1.5 text-2xs text-muted-foreground">
+        <p className="mt-2 flex items-center gap-1.5 text-2xs text-muted-foreground @[52rem]/settings:pl-[272px]">
           <Info size={12} aria-hidden="true" className="shrink-0" />
           Choose an account per project in Project settings → Accounts.
         </p>
