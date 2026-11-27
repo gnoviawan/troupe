@@ -144,6 +144,19 @@ pub fn default_export_dir(env: impl Fn(&str) -> Option<String>) -> Option<PathBu
         .find(|dir| dir.is_dir())
 }
 
+/// `dir/name`, or `name (1)`, `name (2)`, ... before its extension when that file exists, so
+/// an export never replaces an earlier one.
+pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((stem, ext)) if !stem.is_empty() => (stem, format!(".{ext}")),
+        _ => (name, String::new()),
+    };
+    std::iter::once(dir.join(name))
+        .chain((1..).map(|n| dir.join(format!("{stem} ({n}){ext}"))))
+        .find(|p| !p.exists())
+        .expect("an unused name")
+}
+
 /// Copies the log to `dest`, after flushing what is buffered.
 pub fn export(log_file: &Path, dest: &Path) -> Result<(), String> {
     log::logger().flush();

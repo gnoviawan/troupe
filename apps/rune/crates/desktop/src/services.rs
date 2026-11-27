@@ -60,7 +60,7 @@ pub fn export_log_default(s: &mut State) {
         s.toast_error("Could not export the log", "No Downloads or Desktop folder");
         return;
     };
-    let dest = dir.join(logs::FILE_NAME);
+    let dest = logs::unique_path(&dir, logs::FILE_NAME);
     exported(s, logs::export(&log_file(), &dest).map(|()| dest));
 }
 
