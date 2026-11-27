@@ -633,7 +633,7 @@ fn the_displayed_url_cuts_long_queries_and_keeps_the_byte_count() {
 
 #[tokio::test]
 async fn comu_ticket_carries_escaped_app_metadata_and_enforces_answer_floor() {
-    let (recorder, tickets) = tickets(Duration::from_millis(50));
+    let (recorder, tickets) = tickets(Duration::from_secs(60));
     let request = ComuTicketRequest {
         id: TicketId::mint(),
         session_id: "s1".into(),
@@ -661,7 +661,7 @@ async fn comu_ticket_carries_escaped_app_metadata_and_enforces_answer_floor() {
         tickets.answer(Approver::Desktop, &id, Some("allow_session")),
         Err(AnswerError::TooEarly)
     );
-    tokio::time::sleep(Duration::from_millis(60)).await;
+    tickets.backdate_pending_for_test(&id, Duration::from_secs(61));
     assert_eq!(
         tickets.answer(Approver::Desktop, &id, Some("allow_project")),
         Ok(ConsentOption::AllowProject)
@@ -671,4 +671,54 @@ async fn comu_ticket_carries_escaped_app_metadata_and_enforces_answer_floor() {
         TicketOutcome::Answered(ConsentOption::AllowProject)
     );
 }
+
+#[tokio::test]
+async fn cancel_comu_session_leaves_pending_browser_tickets_open() {
+    let (recorder, tickets) = tickets(Duration::ZERO);
+    let browser_waiting = tokio::spawn({
+        let tickets = tickets.clone();
+        async move {
+            tickets
+                .request(ticket("s1", "https://example.com"), Duration::from_secs(5))
+                .await
+        }
+    });
+    let browser_id = raised(&tickets, &recorder).await;
+
+    let comu_req = ComuTicketRequest {
+        id: TicketId::mint(),
+        session_id: "s1".into(),
+        project_id: "proj-1".into(),
+        app_name: "Calculator".into(),
+        app_id: "com.apple.calculator".into(),
+        action: ComuConsentAction::DriveApp,
+        tool_name: "comu_click".into(),
+        options: &ConsentOption::ALL,
+    };
+    let comu_id = comu_req.id.as_str().to_string();
+    let comu_waiting = tokio::spawn({
+        let tickets = tickets.clone();
+        async move { tickets.request_comu(comu_req, Duration::from_secs(5)).await }
+    });
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while !tickets.is_pending(&comu_id) {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+
+    tickets.cancel_comu_session("s1");
+    assert_eq!(comu_waiting.await.unwrap(), TicketOutcome::Cancelled);
+    assert!(tickets.is_pending(&browser_id));
+    assert_eq!(
+        tickets.answer(Approver::Desktop, &browser_id, Some("allow_session")),
+        Ok(ConsentOption::AllowSession)
+    );
+    assert_eq!(
+        browser_waiting.await.unwrap(),
+        TicketOutcome::Answered(ConsentOption::AllowSession)
+    );
+}
+
 

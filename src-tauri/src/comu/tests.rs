@@ -60,37 +60,44 @@ impl ComuTicketPort for ScriptedTickets {
         Box::pin(async move { outcome })
     }
 
-    fn cancel_session(&self, session_id: &str) {
+    fn cancel_comu_session(&self, session_id: &str) {
         self.cancelled_sessions.lock().push(session_id.to_string());
     }
 }
 
 struct FakeComuBackend {
     windows: Mutex<Vec<WindowOwnerInfo>>,
-    calls: AtomicUsize,
+    calls: Arc<AtomicUsize>,
     cursor_states: Mutex<Vec<(String, bool, Option<String>)>>,
     ended_sessions: Mutex<Vec<String>>,
-    hold_calls: Option<Arc<Notify>>,
+    started_calls: Option<Arc<Notify>>,
+    hold_calls: Mutex<Option<Arc<Notify>>>,
 }
 
 impl FakeComuBackend {
     fn new(windows: Vec<WindowOwnerInfo>) -> Arc<Self> {
         Arc::new(Self {
             windows: Mutex::new(windows),
-            calls: AtomicUsize::new(0),
+            calls: Arc::new(AtomicUsize::new(0)),
             cursor_states: Mutex::new(Vec::new()),
             ended_sessions: Mutex::new(Vec::new()),
-            hold_calls: None,
+            started_calls: None,
+            hold_calls: Mutex::new(None),
         })
     }
 
-    fn blocking(windows: Vec<WindowOwnerInfo>, hold: Arc<Notify>) -> Arc<Self> {
+    fn blocking(
+        windows: Vec<WindowOwnerInfo>,
+        started: Arc<Notify>,
+        hold: Arc<Notify>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             windows: Mutex::new(windows),
-            calls: AtomicUsize::new(0),
+            calls: Arc::new(AtomicUsize::new(0)),
             cursor_states: Mutex::new(Vec::new()),
             ended_sessions: Mutex::new(Vec::new()),
-            hold_calls: Some(hold),
+            started_calls: Some(started),
+            hold_calls: Mutex::new(Some(hold)),
         })
     }
 
@@ -110,10 +117,15 @@ impl ComuBackend for FakeComuBackend {
         tool_name: &'a str,
         _args: Value,
     ) -> ComuFuture<'a, ComuCallOutput> {
-        self.calls.fetch_add(1, Ordering::SeqCst);
-        let hold = self.hold_calls.clone();
+        let calls = Arc::clone(&self.calls);
+        let started = self.started_calls.clone();
+        let hold = self.hold_calls.lock().take();
         let name = tool_name.to_string();
         Box::pin(async move {
+            calls.fetch_add(1, Ordering::SeqCst);
+            if let Some(s) = started {
+                s.notify_waiters();
+            }
             if let Some(notify) = hold {
                 notify.notified().await;
             }
@@ -367,8 +379,9 @@ async fn stop_latch_interrupts_inflight_call_blocks_followup_and_clears_on_user_
     let dir = TempDir::new().unwrap();
     let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
     let tickets = ScriptedTickets::new([TicketOutcome::Answered(ConsentOption::AllowSession)]);
+    let started = Arc::new(Notify::new());
     let hold = Arc::new(Notify::new());
-    let backend = FakeComuBackend::blocking(sample_windows(), hold.clone());
+    let backend = FakeComuBackend::blocking(sample_windows(), started.clone(), hold.clone());
     let host = DesktopComuHost::with_backend(
         backend,
         vec![],
@@ -379,6 +392,7 @@ async fn stop_latch_interrupts_inflight_call_blocks_followup_and_clears_on_user_
     );
     set_comu_host(host.clone());
 
+    let started_waiter = started.notified();
     let host_for_task = host.clone();
     let inflight = tokio::spawn(async move {
         host_for_task
@@ -391,7 +405,9 @@ async fn stop_latch_interrupts_inflight_call_blocks_followup_and_clears_on_user_
             .await
     });
 
-    tokio::time::sleep(Duration::from_millis(25)).await;
+    tokio::time::timeout(Duration::from_secs(2), started_waiter)
+        .await
+        .expect("backend call_tool should start before Stop");
     assert!(host.stop("sess-stop"));
 
     let interrupted = inflight.await.unwrap();
@@ -405,8 +421,69 @@ async fn stop_latch_interrupts_inflight_call_blocks_followup_and_clears_on_user_
     assert!(!blocked.ok);
     assert_eq!(refusal_code(&blocked), Some("stopped_by_user"));
 
-    // User's next prompt turn clears Stop.
+    // User's next prompt turn clears Stop and allows new calls to succeed.
     host.user_turn("sess-stop");
+    let resumed = host
+        .execute("sess-stop", "a1", "comu_list_windows", json!({}))
+        .await;
+    assert!(resumed.ok);
     hold.notify_waiters();
+
+    // Idle Stop (zero active receivers) followed by user_turn also recovers cleanly.
+    assert!(host.stop("sess-idle"));
+    host.user_turn("sess-idle");
+    let after_idle_stop = host
+        .execute("sess-idle", "a1", "comu_list_windows", json!({}))
+        .await;
+    assert!(after_idle_stop.ok);
+
     clear_comu_host();
 }
+
+#[tokio::test]
+async fn distinct_bundle_ids_sharing_display_name_do_not_cross_authorize() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    let tickets = ScriptedTickets::new([
+        TicketOutcome::Answered(ConsentOption::AllowSession),
+        TicketOutcome::Answered(ConsentOption::Deny),
+    ]);
+    let windows = vec![
+        WindowOwnerInfo {
+            window_id: 301,
+            pid: 9101,
+            app_name: "Helper".to_string(),
+            bundle_id: Some("com.vendor-a.helper".to_string()),
+            bounds: Some([0.0, 0.0, 400.0, 400.0]),
+        },
+        WindowOwnerInfo {
+            window_id: 302,
+            pid: 9102,
+            app_name: "Helper".to_string(),
+            bundle_id: Some("com.vendor-b.helper".to_string()),
+            bounds: Some([500.0, 0.0, 400.0, 400.0]),
+        },
+    ];
+    let backend = FakeComuBackend::new(windows);
+    let host = DesktopComuHost::with_backend(
+        backend,
+        vec![],
+        tickets.clone(),
+        policy,
+        Arc::new(|_| "proj-1".to_string()),
+        OWN_PID,
+    );
+
+    let first = host
+        .execute("s1", "a1", "comu_click", json!({ "window_id": 301, "x": 10.0, "y": 10.0 }))
+        .await;
+    assert!(first.ok);
+    assert_eq!(tickets.prompt_count(), 1);
+
+    let second = host
+        .execute("s1", "a1", "comu_click", json!({ "window_id": 302, "x": 510.0, "y": 10.0 }))
+        .await;
+    assert!(!second.ok);
+    assert_eq!(tickets.prompt_count(), 2);
+}
+

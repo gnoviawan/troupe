@@ -12,10 +12,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use serde_json::Value;
+use serde_json::{json, Value};
+use tokio::sync::Mutex as AsyncMutex;
 use troupe_comu_engine::{
-    ComuCallOutput, ComuEngine, ComuEngineOptions, OsPermissionKind, OsPermissionsStatus,
-    WindowOwnerInfo,
+    ComuCallOutput, ComuContentBlock, ComuEngine, ComuEngineOptions, OsPermissionKind,
+    OsPermissionsStatus, WindowOwnerInfo,
 };
 
 use crate::web::EventSink;
@@ -23,7 +24,7 @@ use crate::web::EventSink;
 use super::consent::{ComuAuthRefusal, ComuConsentGate, ComuTicketPort};
 use super::policy::ComuPolicyService;
 use super::self_guard::check_not_self_target;
-use super::stop::ComuStopRegistry;
+use super::stop::{ComuStopRegistry, ComuStopToken};
 use super::{ComuFuture, ComuHost};
 
 /// Resolves the owning project ID for a bound ACP `session_id`.
@@ -102,6 +103,46 @@ impl ComuBackend for ComuEngine {
     }
 }
 
+struct CursorCoordinators {
+    generations: Mutex<HashMap<String, u64>>,
+    locks: Mutex<HashMap<String, Arc<AsyncMutex<()>>>>,
+}
+
+impl Default for CursorCoordinators {
+    fn default() -> Self {
+        Self {
+            generations: Mutex::new(HashMap::new()),
+            locks: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+impl CursorCoordinators {
+    fn bump(&self, session_id: &str) -> u64 {
+        let mut map = self.generations.lock();
+        let entry = map.entry(session_id.to_string()).or_insert(0);
+        *entry = entry.saturating_add(1);
+        *entry
+    }
+
+    fn current(&self, session_id: &str) -> u64 {
+        self.generations.lock().get(session_id).copied().unwrap_or(0)
+    }
+
+    fn lock_for(&self, session_id: &str) -> Arc<AsyncMutex<()>> {
+        let mut map = self.locks.lock();
+        Arc::clone(
+            map.entry(session_id.to_string())
+                .or_insert_with(|| Arc::new(AsyncMutex::new(()))),
+        )
+    }
+
+    fn forget(&self, session_id: &str) {
+        self.generations.lock().remove(session_id);
+        self.locks.lock().remove(session_id);
+    }
+}
+
 pub struct DesktopComuHost {
     backend: Arc<dyn ComuBackend>,
     policy: Arc<ComuPolicyService>,
@@ -109,6 +150,8 @@ pub struct DesktopComuHost {
     stop: ComuStopRegistry,
     project_of: ProjectResolver,
     agent_names: Mutex<HashMap<String, String>>,
+    cursor_coord: Arc<CursorCoordinators>,
+    runtime: Option<tokio::runtime::Handle>,
     own_pid: u32,
 }
 
@@ -122,12 +165,16 @@ impl DesktopComuHost {
         project_of: ProjectResolver,
     ) -> Result<Arc<Self>, String> {
         let engine = ComuEngine::new(options)?;
-        Ok(Self::with_backend(
+        let runtime = tokio::runtime::Handle::try_current()
+            .ok()
+            .or_else(|| Some(tauri::async_runtime::handle().inner().clone()));
+        Ok(Self::build(
             engine,
             sinks,
             tickets,
             policy,
             project_of,
+            runtime,
             std::process::id(),
         ))
     }
@@ -142,6 +189,27 @@ impl DesktopComuHost {
         project_of: ProjectResolver,
         own_pid: u32,
     ) -> Arc<Self> {
+        let runtime = tokio::runtime::Handle::try_current().ok();
+        Self::build(
+            backend,
+            sinks,
+            tickets,
+            policy,
+            project_of,
+            runtime,
+            own_pid,
+        )
+    }
+
+    fn build(
+        backend: Arc<dyn ComuBackend>,
+        sinks: Vec<Arc<dyn EventSink>>,
+        tickets: Arc<dyn ComuTicketPort>,
+        policy: Arc<ComuPolicyService>,
+        project_of: ProjectResolver,
+        runtime: Option<tokio::runtime::Handle>,
+        own_pid: u32,
+    ) -> Arc<Self> {
         Arc::new(Self {
             backend,
             consent: ComuConsentGate::new(tickets, Arc::clone(&policy)),
@@ -149,6 +217,8 @@ impl DesktopComuHost {
             stop: ComuStopRegistry::new(sinks),
             project_of,
             agent_names: Mutex::new(HashMap::new()),
+            cursor_coord: Arc::new(CursorCoordinators::default()),
+            runtime,
             own_pid,
         })
     }
@@ -160,6 +230,150 @@ impl DesktopComuHost {
             .cloned()
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "Troupe Agent".to_string())
+    }
+
+    fn spawn_host_task<F>(&self, future: F)
+    where
+        F: std::future::Future<Output = ()> + Send + 'static,
+    {
+        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            handle.spawn(future);
+            return;
+        }
+        if let Some(handle) = &self.runtime {
+            handle.spawn(future);
+            return;
+        }
+        // Synchronous teardown outside any Tokio context: run on a short-lived worker thread
+        // so backend session cleanup is never silently dropped.
+        std::thread::spawn(move || {
+            if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
+                rt.block_on(future);
+            }
+        });
+    }
+
+    fn spawn_cursor_disable(&self, session_id: &str, expected_gen: u64) {
+        let backend = Arc::clone(&self.backend);
+        let coord = Arc::clone(&self.cursor_coord);
+        let sid = session_id.to_string();
+        self.spawn_host_task(async move {
+            let lock = coord.lock_for(&sid);
+            let _guard = lock.lock().await;
+            if coord.current(&sid) == expected_gen {
+                backend.configure_session_cursor(&sid, false, None).await;
+            }
+        });
+    }
+
+    async fn dispatch_checked(
+        &self,
+        session_id: &str,
+        tool_name: &str,
+        args: Value,
+        stop_token: &mut ComuStopToken,
+    ) -> Option<ComuCallOutput> {
+        if (tool_name == "comu_run_steps" || tool_name == "run_steps")
+            && args.get("steps").is_some_and(Value::is_array)
+        {
+            return self
+                .dispatch_multi_steps_checked(session_id, args, stop_token)
+                .await;
+        }
+        tokio::select! {
+            biased;
+            () = stop_token.wait_stopped() => None,
+            out = self.backend.call_tool(session_id, tool_name, args) => Some(out),
+        }
+    }
+
+    /// Execute `comu_run_steps` one step at a time, re-validating `self_guard`
+    /// against fresh window bounds before each step so window movement mid-batch
+    /// cannot cause later steps to hit Troupe's own window.
+    async fn dispatch_multi_steps_checked(
+        &self,
+        session_id: &str,
+        args: Value,
+        stop_token: &mut ComuStopToken,
+    ) -> Option<ComuCallOutput> {
+        let stop_on_error = args
+            .get("stop_on_error")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        let inherited_pid = args.get("pid").cloned();
+        let inherited_wid = args.get("window_id").cloned();
+        let steps = args
+            .get("steps")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+
+        let mut results = Vec::with_capacity(steps.len());
+        let mut all_ok = true;
+        for (idx, step) in steps.into_iter().enumerate() {
+            if stop_token.is_stopped() {
+                return None;
+            }
+            let step_tool = step
+                .get("tool")
+                .and_then(Value::as_str)
+                .unwrap_or("comu_click")
+                .to_string();
+            let mut merged = step
+                .get("args")
+                .cloned()
+                .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
+            if let Some(obj) = merged.as_object_mut() {
+                if !obj.contains_key("pid") {
+                    if let Some(p) = &inherited_pid {
+                        obj.insert("pid".to_string(), p.clone());
+                    }
+                }
+                if !obj.contains_key("window_id") {
+                    if let Some(w) = &inherited_wid {
+                        obj.insert("window_id".to_string(), w.clone());
+                    }
+                }
+            }
+
+            if needs_window_snapshot(&step_tool) {
+                let fresh_windows = self.backend.list_windows_snapshot(session_id).await;
+                if let Err(reason) =
+                    check_not_self_target(self.own_pid, &step_tool, &merged, &fresh_windows)
+                {
+                    return Some(ComuCallOutput::error_text("self_target_blocked", reason));
+                }
+            }
+
+            if stop_token.is_stopped() {
+                return None;
+            }
+            let step_out = tokio::select! {
+                biased;
+                () = stop_token.wait_stopped() => return None,
+                out = self.backend.call_tool(session_id, &step_tool, merged) => out,
+            };
+            let ok = step_out.ok;
+            results.push(json!({ "step": idx, "tool": step_tool, "ok": ok }));
+            if !ok {
+                all_ok = false;
+                if stop_on_error {
+                    return Some(step_out);
+                }
+            }
+        }
+
+        let summary = json!({ "status": if all_ok { "completed" } else { "partial" }, "steps": results });
+        Some(ComuCallOutput {
+            ok: all_ok,
+            blocks: vec![ComuContentBlock::Text {
+                text: summary.to_string(),
+            }],
+            structured: Some(summary),
+        })
     }
 
     async fn run_call(
@@ -211,8 +425,9 @@ impl DesktopComuHost {
 
         let project_id = (self.project_of)(session_id);
         let auth_outcome = tokio::select! {
-            res = self.consent.authorize(session_id, &project_id, tool_name, &args, &windows) => Some(res),
+            biased;
             () = stop_token.wait_stopped() => None,
+            res = self.consent.authorize(session_id, &project_id, tool_name, &args, &windows) => Some(res),
         };
         match auth_outcome {
             None => {
@@ -231,25 +446,54 @@ impl DesktopComuHost {
             Some(Ok(())) => {}
         }
 
+        // Re-validate self-target protection against current window bounds after consent
+        // so window movement while the consent card was open cannot hit Troupe.
+        if needs_window_snapshot(tool_name) {
+            let post_windows = self.backend.list_windows_snapshot(session_id).await;
+            if let Err(reason) =
+                check_not_self_target(self.own_pid, tool_name, &args, &post_windows)
+            {
+                log::warn!(
+                    "[comu] blocked self-target post-consent: tool={tool_name} agent={agent_id} session={redacted_sid}"
+                );
+                return ComuCallOutput::error_text("self_target_blocked", reason);
+            }
+        }
+
+        if stop_token.is_stopped() {
+            return stopped_output();
+        }
+
         if !is_passive_probe(tool_name) {
             self.stop.mark_active(session_id);
         }
 
         if uses_agent_cursor(tool_name) {
+            let my_gen = self.cursor_coord.bump(session_id);
             let badge = self.agent_badge(agent_id);
-            self.backend
-                .configure_session_cursor(
-                    session_id,
-                    app_policy.cursor_enabled,
-                    Some(badge.as_str()),
-                )
-                .await;
+            let lock = self.cursor_coord.lock_for(session_id);
+            let _guard = lock.lock().await;
+            if self.cursor_coord.current(session_id) == my_gen && !stop_token.is_stopped() {
+                self.backend
+                    .configure_session_cursor(
+                        session_id,
+                        app_policy.cursor_enabled,
+                        Some(badge.as_str()),
+                    )
+                    .await;
+            }
         }
 
-        let exec_outcome = tokio::select! {
-            out = self.backend.call_tool(session_id, tool_name, args) => Some(out),
-            () = stop_token.wait_stopped() => None,
-        };
+        if stop_token.is_stopped() {
+            log::info!(
+                "[comu] stopped before backend dispatch: tool={tool_name} agent={agent_id} session={redacted_sid}"
+            );
+            return stopped_output();
+        }
+
+        let exec_outcome = self
+            .dispatch_checked(session_id, tool_name, args, &mut stop_token)
+            .await;
 
         match exec_outcome {
             Some(out) => {
@@ -260,10 +504,14 @@ impl DesktopComuHost {
                 out
             }
             None => {
-                let _ = self
-                    .backend
-                    .configure_session_cursor(session_id, false, None)
-                    .await;
+                let gen_now = self.cursor_coord.bump(session_id);
+                let lock = self.cursor_coord.lock_for(session_id);
+                let _guard = lock.lock().await;
+                if self.cursor_coord.current(session_id) == gen_now {
+                    self.backend
+                        .configure_session_cursor(session_id, false, None)
+                        .await;
+                }
                 log::info!(
                     "[comu] interrupted by Stop: tool={tool_name} agent={agent_id} session={redacted_sid}"
                 );
@@ -300,11 +548,8 @@ impl ComuHost for DesktopComuHost {
     fn stop(&self, session_id: &str) -> bool {
         let newly_stopped = self.stop.stop(session_id);
         self.consent.cancel_pending_prompts(session_id);
-        let backend = Arc::clone(&self.backend);
-        let sid = session_id.to_string();
-        spawn_detached(async move {
-            backend.configure_session_cursor(&sid, false, None).await;
-        });
+        let gen_at_stop = self.cursor_coord.bump(session_id);
+        self.spawn_cursor_disable(session_id, gen_at_stop);
         log::info!(
             "[comu] Stop latched for session {} (newly_stopped={newly_stopped})",
             crate::logging::redact_session_id(session_id)
@@ -313,23 +558,22 @@ impl ComuHost for DesktopComuHost {
     }
 
     fn user_turn(&self, session_id: &str) {
+        self.cursor_coord.bump(session_id);
         self.stop.resume_on_user_turn(session_id);
     }
 
     fn turn_ended(&self, session_id: &str) {
-        let backend = Arc::clone(&self.backend);
-        let sid = session_id.to_string();
-        spawn_detached(async move {
-            backend.configure_session_cursor(&sid, false, None).await;
-        });
+        let gen_at_end = self.cursor_coord.current(session_id);
+        self.spawn_cursor_disable(session_id, gen_at_end);
     }
 
     fn session_ended(&self, session_id: &str) {
         self.stop.forget_session(session_id);
         self.consent.revoke_session(session_id);
+        self.cursor_coord.forget(session_id);
         let backend = Arc::clone(&self.backend);
         let sid = session_id.to_string();
-        spawn_detached(async move {
+        self.spawn_host_task(async move {
             backend.end_session(&sid).await;
         });
     }
@@ -348,15 +592,6 @@ impl ComuHost for DesktopComuHost {
     }
 }
 
-fn spawn_detached<F>(future: F)
-where
-    F: std::future::Future<Output = ()> + Send + 'static,
-{
-    if let Ok(handle) = tokio::runtime::Handle::try_current() {
-        handle.spawn(future);
-    }
-}
-
 fn stopped_output() -> ComuCallOutput {
     ComuCallOutput::error_text(
         "stopped_by_user",
@@ -368,11 +603,17 @@ fn needs_window_snapshot(tool_name: &str) -> bool {
     !matches!(
         tool_name,
         "comu_get_screen_size"
+            | "get_screen_size"
             | "comu_get_cursor_position"
+            | "get_cursor_position"
             | "comu_check_permissions"
+            | "check_permissions"
             | "comu_list_apps"
+            | "list_apps"
             | "comu_clipboard_read"
+            | "clipboard_read"
             | "comu_clipboard_write"
+            | "clipboard_write"
     )
 }
 
@@ -380,10 +621,15 @@ fn is_passive_probe(tool_name: &str) -> bool {
     matches!(
         tool_name,
         "comu_check_permissions"
+            | "check_permissions"
             | "comu_get_screen_size"
+            | "get_screen_size"
             | "comu_get_cursor_position"
+            | "get_cursor_position"
             | "comu_list_apps"
+            | "list_apps"
             | "comu_list_windows"
+            | "list_windows"
     )
 }
 
@@ -391,14 +637,24 @@ fn uses_agent_cursor(tool_name: &str) -> bool {
     matches!(
         tool_name,
         "comu_click"
+            | "click"
             | "comu_double_click"
+            | "double_click"
             | "comu_right_click"
+            | "right_click"
             | "comu_drag"
+            | "drag"
             | "comu_scroll"
+            | "scroll"
             | "comu_move_cursor"
+            | "move_cursor"
             | "comu_type_text"
+            | "type_text"
             | "comu_press_key"
+            | "press_key"
             | "comu_hotkey"
+            | "hotkey"
             | "comu_run_steps"
+            | "run_steps"
     )
 }

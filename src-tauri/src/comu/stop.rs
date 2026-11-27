@@ -16,11 +16,13 @@ pub const EVENT_COMU_STOP_CHANGED: &str = "acp:comu_stop_changed";
 
 struct SessionSlot {
     epoch: u64,
+    seq: u64,
     stopped: bool,
     tx: watch::Sender<u64>,
 }
 
-/// Token held by an in-flight Comu call; resolves as soon as Stop is pressed.
+/// Token held by an in-flight Comu call; resolves as soon as Stop is pressed
+/// or the session slot is dropped on teardown.
 #[derive(Clone)]
 pub struct ComuStopToken {
     epoch: u64,
@@ -28,10 +30,15 @@ pub struct ComuStopToken {
 }
 
 impl ComuStopToken {
+    #[must_use]
+    pub fn is_stopped(&mut self) -> bool {
+        *self.rx.borrow_and_update() != self.epoch || self.rx.has_changed().is_err()
+    }
+
     pub async fn wait_stopped(&mut self) {
         while *self.rx.borrow_and_update() == self.epoch {
             if self.rx.changed().await.is_err() {
-                std::future::pending::<()>().await;
+                return;
             }
         }
     }
@@ -61,6 +68,7 @@ impl ComuStopRegistry {
             let (tx, _rx) = watch::channel(0);
             SessionSlot {
                 epoch: 0,
+                seq: 0,
                 stopped: false,
                 tx,
             }
@@ -87,60 +95,57 @@ impl ComuStopRegistry {
     }
 
     /// Latch `session_id` stopped and cancel any in-flight call. Returns `true`
-    /// when newly stopped.
+    /// when newly stopped. Emits `EVENT_COMU_STOP_CHANGED` while holding the
+    /// slot lock so latch transitions arrive in strict causal order.
     pub fn stop(&self, session_id: &str) -> bool {
-        let newly_stopped = {
-            let mut slots = self.slots.lock();
-            let slot = slots.entry(session_id.to_string()).or_insert_with(|| {
-                let (tx, _rx) = watch::channel(0);
-                SessionSlot {
-                    epoch: 0,
-                    stopped: false,
-                    tx,
-                }
-            });
-            let first = !slot.stopped;
-            slot.stopped = true;
-            slot.epoch = slot.epoch.saturating_add(1);
-            let _ = slot.tx.send(slot.epoch);
-            first
-        };
+        let mut slots = self.slots.lock();
+        let slot = slots.entry(session_id.to_string()).or_insert_with(|| {
+            let (tx, _rx) = watch::channel(0);
+            SessionSlot {
+                epoch: 0,
+                seq: 0,
+                stopped: false,
+                tx,
+            }
+        });
+        let newly_stopped = !slot.stopped;
+        slot.stopped = true;
+        slot.epoch = slot.epoch.saturating_add(1);
+        slot.seq = slot.seq.saturating_add(1);
+        let _ = slot.tx.send_replace(slot.epoch);
+        let seq = slot.seq;
         crate::acp::events::fan_out(
             &self.sinks,
             Some(session_id),
             EVENT_COMU_STOP_CHANGED,
-            &json!({ "sessionId": session_id, "stopped": true }),
+            &json!({ "sessionId": session_id, "stopped": true, "seq": seq }),
         );
         newly_stopped
     }
 
     /// Clear Stop on the user's next prompt turn.
     pub fn resume_on_user_turn(&self, session_id: &str) -> bool {
-        let cleared = {
-            let mut slots = self.slots.lock();
-            if let Some(slot) = slots.get_mut(session_id) {
-                if slot.stopped {
-                    slot.stopped = false;
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
+        let mut slots = self.slots.lock();
+        let Some(slot) = slots.get_mut(session_id) else {
+            return false;
         };
-        if cleared {
-            crate::acp::events::fan_out(
-                &self.sinks,
-                Some(session_id),
-                EVENT_COMU_STOP_CHANGED,
-                &json!({ "sessionId": session_id, "stopped": false }),
-            );
+        if !slot.stopped {
+            return false;
         }
-        cleared
+        slot.stopped = false;
+        slot.seq = slot.seq.saturating_add(1);
+        let seq = slot.seq;
+        crate::acp::events::fan_out(
+            &self.sinks,
+            Some(session_id),
+            EVENT_COMU_STOP_CHANGED,
+            &json!({ "sessionId": session_id, "stopped": false, "seq": seq }),
+        );
+        true
     }
 
-    /// Drop session state on close.
+    /// Drop session state on close; dropping `slot.tx` immediately wakes any
+    /// `ComuStopToken::wait_stopped` awaiting on that session.
     pub fn forget_session(&self, session_id: &str) {
         self.slots.lock().remove(session_id);
         if self.active_sessions.lock().remove(session_id) {

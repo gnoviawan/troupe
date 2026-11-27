@@ -9,16 +9,15 @@ use std::time::Duration;
 use parking_lot::Mutex;
 use serde_json::Value;
 use tokio::sync::Mutex as AsyncMutex;
+use tokio::time::Instant;
 use troupe_comu_engine::WindowOwnerInfo;
 
 use crate::acp::host_ticket::{ComuConsentAction, ComuTicketRequest, HostTickets};
-use crate::browser_automation::core::ports::{
-    ConsentOption, PermissionRequest, TicketId, TicketOutcome,
-};
+use crate::browser_automation::core::ports::{ConsentOption, TicketId, TicketOutcome};
 
-use super::policy::ComuPolicyService;
+use super::policy::{validate_project_id, ComuPolicyService};
 
-/// Maximum time an agent call waits for the user to answer a Comu consent card.
+/// Maximum total time an agent call waits across all interactive Comu consent prompts.
 pub const CONSENT_WAIT_TIMEOUT: Duration = Duration::from_secs(300);
 
 pub type ConsentFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -30,7 +29,7 @@ pub trait ComuTicketPort: Send + Sync {
         ticket: ComuTicketRequest,
         wait: Duration,
     ) -> ConsentFuture<'_, TicketOutcome>;
-    fn cancel_session(&self, session_id: &str);
+    fn cancel_comu_session(&self, session_id: &str);
 }
 
 impl ComuTicketPort for HostTickets {
@@ -42,15 +41,33 @@ impl ComuTicketPort for HostTickets {
         HostTickets::request_comu(self, ticket, wait)
     }
 
-    fn cancel_session(&self, session_id: &str) {
-        PermissionRequest::cancel_session(self, session_id);
+    fn cancel_comu_session(&self, session_id: &str) {
+        HostTickets::cancel_comu_session(self, session_id);
+    }
+}
+
+/// Scoped session grant key: stable bundle/AUMID/path/PID identities live in a
+/// separate namespace from fallback display names so two apps sharing a display
+/// name with different bundle IDs never cross-authorize each other.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum AppGrantKey {
+    StableId(String),
+    UnidentifiedName(String),
+}
+
+impl AppGrantKey {
+    fn from_target(target: &ResolvedAppTarget) -> Self {
+        if target.has_stable_id {
+            Self::StableId(target.app_id.to_ascii_lowercase())
+        } else {
+            Self::UnidentifiedName(target.app_name.to_ascii_lowercase())
+        }
     }
 }
 
 #[derive(Default)]
 struct SessionGrants {
-    /// Canonical lowercase app identifiers approved for this session.
-    apps: HashSet<String>,
+    apps: HashSet<AppGrantKey>,
     /// True once foreground/desktop takeover was approved for this session.
     foreground_desktop: bool,
 }
@@ -81,20 +98,20 @@ impl ComuConsentGate {
         )
     }
 
-    /// Cancel any open consent prompt for `session_id` (e.g. when Stop is pressed).
+    /// Cancel any open Comu consent prompt for `session_id` (leaving Browser tickets intact).
     pub fn cancel_pending_prompts(&self, session_id: &str) {
-        self.tickets.cancel_session(session_id);
+        self.tickets.cancel_comu_session(session_id);
     }
 
-    /// Revoke all in-memory grants and cancel open consent cards for `session_id`.
+    /// Revoke all in-memory grants and cancel open Comu consent cards for `session_id`.
     pub fn revoke_session(&self, session_id: &str) {
         self.grants.lock().remove(session_id);
         self.prompt_locks.lock().remove(session_id);
-        self.tickets.cancel_session(session_id);
+        self.tickets.cancel_comu_session(session_id);
     }
 
     /// Authorize `tool_name` + `args` against `ComuPolicyService` and session grants,
-    /// raising a `HostTickets` prompt when required.
+    /// raising `HostTickets` prompts within one shared `CONSENT_WAIT_TIMEOUT` deadline.
     pub async fn authorize(
         &self,
         session_id: &str,
@@ -108,12 +125,11 @@ impl ComuConsentGate {
             return Err(ComuAuthRefusal::Disabled);
         }
 
-        // Pure discovery/diagnostic reads require no consent ticket.
         if is_discovery_only(tool_name) {
             return Ok(());
         }
 
-        // Serialize consent prompts per session so parallel tool calls never stack cards.
+        let deadline = Instant::now() + CONSENT_WAIT_TIMEOUT;
         let lock = self.session_prompt_lock(session_id);
         let _guard = lock.lock().await;
 
@@ -130,6 +146,7 @@ impl ComuConsentGate {
                 ComuConsentAction::ClipboardRead,
                 tool_name,
                 &ConsentOption::ONCE_OR_DENY,
+                deadline,
             )
             .await?;
             return Ok(());
@@ -158,6 +175,7 @@ impl ComuConsentGate {
                     ComuConsentAction::ForegroundDesktop,
                     tool_name,
                     &ConsentOption::ONCE_OR_DENY,
+                    deadline,
                 )
                 .await?;
             if decision == ConsentOption::AllowSession {
@@ -171,8 +189,9 @@ impl ComuConsentGate {
 
         // 3. Per-application consent check (including every step in `comu_run_steps`).
         if app_policy.ask_before_driving_apps {
+            let can_persist_project = validate_project_id(project_id).is_ok();
             for target in collect_target_apps(tool_name, args, windows) {
-                if self.has_app_grant(session_id, &target.app_id, &target.app_name) {
+                if self.has_app_grant(session_id, &target) {
                     continue;
                 }
                 if self
@@ -180,9 +199,16 @@ impl ComuConsentGate {
                     .is_app_allowlisted(project_id, &target.app_id, &target.app_name)
                     .await
                 {
-                    self.record_session_app_grant(session_id, &target.app_id, &target.app_name);
+                    self.record_session_app_grant(session_id, &target);
                     continue;
                 }
+                let can_save_this_app =
+                    can_persist_project && !target.app_id.starts_with("pid:");
+                let options: &'static [ConsentOption] = if can_save_this_app {
+                    &ConsentOption::ALL
+                } else {
+                    &ConsentOption::ONCE_OR_DENY
+                };
                 let decision = self
                     .prompt_once(
                         session_id,
@@ -191,13 +217,19 @@ impl ComuConsentGate {
                         &target.app_id,
                         ComuConsentAction::DriveApp,
                         tool_name,
-                        &ConsentOption::ALL,
+                        options,
+                        deadline,
                     )
                     .await?;
-                self.record_session_app_grant(session_id, &target.app_id, &target.app_name);
-                if decision == ConsentOption::AllowProject {
+                self.record_session_app_grant(session_id, &target);
+                if decision == ConsentOption::AllowProject && can_save_this_app {
+                    let entry = if target.has_stable_id {
+                        &target.app_id
+                    } else {
+                        &target.app_name
+                    };
                     self.policy
-                        .record_project_approval(project_id, &target.app_id)
+                        .record_project_approval(project_id, entry)
                         .await;
                 }
             }
@@ -213,24 +245,22 @@ impl ComuConsentGate {
             .is_some_and(|g| g.foreground_desktop)
     }
 
-    fn has_app_grant(&self, session_id: &str, app_id: &str, app_name: &str) -> bool {
-        let guard = self.grants.lock();
-        let Some(grants) = guard.get(session_id) else {
-            return false;
-        };
-        grants.apps.contains(&app_id.to_ascii_lowercase())
-            || (!app_name.is_empty() && grants.apps.contains(&app_name.to_ascii_lowercase()))
+    fn has_app_grant(&self, session_id: &str, target: &ResolvedAppTarget) -> bool {
+        let key = AppGrantKey::from_target(target);
+        self.grants
+            .lock()
+            .get(session_id)
+            .is_some_and(|g| g.apps.contains(&key))
     }
 
-    fn record_session_app_grant(&self, session_id: &str, app_id: &str, app_name: &str) {
-        let mut guard = self.grants.lock();
-        let entry = guard.entry(session_id.to_string()).or_default();
-        if !app_id.is_empty() {
-            entry.apps.insert(app_id.to_ascii_lowercase());
-        }
-        if !app_name.is_empty() {
-            entry.apps.insert(app_name.to_ascii_lowercase());
-        }
+    fn record_session_app_grant(&self, session_id: &str, target: &ResolvedAppTarget) {
+        let key = AppGrantKey::from_target(target);
+        self.grants
+            .lock()
+            .entry(session_id.to_string())
+            .or_default()
+            .apps
+            .insert(key);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -243,7 +273,14 @@ impl ComuConsentGate {
         action: ComuConsentAction,
         tool_name: &str,
         options: &'static [ConsentOption],
+        deadline: Instant,
     ) -> Result<ConsentOption, ComuAuthRefusal> {
+        let Some(wait) = deadline.checked_duration_since(Instant::now()) else {
+            return Err(ComuAuthRefusal::TimedOut);
+        };
+        if wait.is_zero() {
+            return Err(ComuAuthRefusal::TimedOut);
+        }
         let ticket = ComuTicketRequest {
             id: TicketId::mint(),
             session_id: session_id.to_string(),
@@ -254,7 +291,7 @@ impl ComuConsentGate {
             tool_name: tool_name.to_string(),
             options,
         };
-        match self.tickets.request_comu(ticket, CONSENT_WAIT_TIMEOUT).await {
+        match self.tickets.request_comu(ticket, wait).await {
             TicketOutcome::Answered(ConsentOption::Deny) => Err(ComuAuthRefusal::Denied),
             TicketOutcome::Answered(opt) => Ok(opt),
             TicketOutcome::Unattended => Err(ComuAuthRefusal::Unattended),
@@ -305,6 +342,7 @@ impl ComuAuthRefusal {
 struct ResolvedAppTarget {
     app_id: String,
     app_name: String,
+    has_stable_id: bool,
 }
 
 fn is_discovery_only(tool_name: &str) -> bool {
@@ -363,8 +401,14 @@ fn collect_target_apps(
     windows: &[WindowOwnerInfo],
 ) -> Vec<ResolvedAppTarget> {
     let mut out: Vec<ResolvedAppTarget> = Vec::new();
+    let mut push_unique = |target: ResolvedAppTarget| {
+        let key = AppGrantKey::from_target(&target);
+        if !out.iter().any(|existing| AppGrantKey::from_target(existing) == key) {
+            out.push(target);
+        }
+    };
     if let Some(t) = resolve_target_app(tool_name, args, windows) {
-        out.push(t);
+        push_unique(t);
     }
     if tool_name == "comu_run_steps" || tool_name == "run_steps" {
         if let Some(steps) = args.get("steps").and_then(Value::as_array) {
@@ -372,9 +416,7 @@ fn collect_target_apps(
                 let st = step.get("tool").and_then(Value::as_str).unwrap_or_default();
                 if let Some(sa) = step.get("args") {
                     if let Some(t) = resolve_target_app(st, sa, windows) {
-                        if !out.iter().any(|e| e.app_id.eq_ignore_ascii_case(&t.app_id)) {
-                            out.push(t);
-                        }
+                        push_unique(t);
                     }
                 }
             }
@@ -400,30 +442,29 @@ fn resolve_target_app(
         return None;
     }
 
-    // Launch app: inspect bundle_id / aumid / name / path.
     if tool_name == "comu_launch_app" || tool_name == "launch_app" {
-        let id = args
+        let stable_id = args
             .get("bundle_id")
             .or_else(|| args.get("aumid"))
-            .or_else(|| args.get("name"))
             .or_else(|| args.get("path"))
             .or_else(|| args.get("launch_path"))
             .and_then(Value::as_str)
             .map(str::trim)
-            .filter(|s| !s.is_empty())?;
-        let name = args
+            .filter(|s| !s.is_empty());
+        let raw_name = args
             .get("name")
             .and_then(Value::as_str)
             .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .unwrap_or(id);
+            .filter(|s| !s.is_empty());
+        let id = stable_id.or(raw_name)?;
+        let name = raw_name.unwrap_or(id);
         return Some(ResolvedAppTarget {
             app_id: id.to_string(),
             app_name: name.to_string(),
+            has_stable_id: stable_id.is_some(),
         });
     }
 
-    // Window ID lookup first.
     let wid = args
         .get("window_id")
         .or_else(|| args.pointer("/target/window_id"))
@@ -434,7 +475,6 @@ fn resolve_target_app(
         }
     }
 
-    // PID lookup next.
     let pid = args
         .get("pid")
         .or_else(|| args.pointer("/target/pid"))
@@ -446,6 +486,7 @@ fn resolve_target_app(
         return Some(ResolvedAppTarget {
             app_id: format!("pid:{pid}"),
             app_name: format!("Process {pid}"),
+            has_stable_id: true,
         });
     }
 
@@ -453,17 +494,29 @@ fn resolve_target_app(
 }
 
 fn target_from_window(win: &WindowOwnerInfo) -> ResolvedAppTarget {
+    let stable_bundle = win
+        .bundle_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
     let app_name = if win.app_name.trim().is_empty() {
-        win.bundle_id
+        stable_bundle
             .clone()
             .unwrap_or_else(|| format!("Process {}", win.pid))
     } else {
         win.app_name.clone()
     };
-    let app_id = win
-        .bundle_id
-        .clone()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| app_name.clone());
-    ResolvedAppTarget { app_id, app_name }
+    match stable_bundle {
+        Some(bundle_id) => ResolvedAppTarget {
+            app_id: bundle_id,
+            app_name,
+            has_stable_id: true,
+        },
+        None => ResolvedAppTarget {
+            app_id: app_name.clone(),
+            app_name,
+            has_stable_id: false,
+        },
+    }
 }

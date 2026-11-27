@@ -689,8 +689,14 @@ impl HostPlanServer {
             FrameKind::Describe => describe_reply(),
             FrameKind::DescribeComu => comu::describe_comu_reply(),
             FrameKind::Comu => {
-                self.comu_call(&real_session_id, &auth.agent_id, req.comu_tool, req.comu_input)
-                    .await
+                self.comu_call(
+                    &real_session_id,
+                    &auth.agent_id,
+                    req.comu_tool,
+                    req.comu_input,
+                    hung_up,
+                )
+                .await
             }
             FrameKind::Canvas => {
                 self.canvas_call(

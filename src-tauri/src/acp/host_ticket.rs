@@ -328,8 +328,15 @@ fn request_payload(ticket: &TicketRequest) -> Value {
     })
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TicketKind {
+    Browser,
+    Comu,
+}
+
 struct Pending {
     session_id: String,
+    kind: TicketKind,
     options: &'static [ConsentOption],
     shown_at: Instant,
     tx: oneshot::Sender<TicketOutcome>,
@@ -503,6 +510,7 @@ impl PermissionRequest for HostTickets {
             id.clone(),
             Pending {
                 session_id: session.clone(),
+                kind: TicketKind::Browser,
                 options: ticket.options,
                 shown_at: Instant::now(),
                 tx,
@@ -656,6 +664,7 @@ impl HostTickets {
             id.clone(),
             Pending {
                 session_id: session.clone(),
+                kind: TicketKind::Comu,
                 options: ticket.options,
                 shown_at: Instant::now(),
                 tx,
@@ -678,6 +687,30 @@ impl HostTickets {
                 }
             }
         })
+    }
+
+    /// Cancel only pending Comu tickets for `session_id`, leaving Browser tickets intact.
+    pub fn cancel_comu_session(&self, session_id: &str) {
+        let ids: Vec<String> = self
+            .state
+            .lock()
+            .pending
+            .iter()
+            .filter(|(_, p)| p.session_id == session_id && p.kind == TicketKind::Comu)
+            .map(|(id, _)| id.clone())
+            .collect();
+        for id in ids {
+            self.withdraw(&id, TicketOutcome::Cancelled, "cancelled");
+        }
+    }
+
+    #[cfg(test)]
+    pub fn backdate_pending_for_test(&self, request_id: &str, age: Duration) {
+        if let Some(pending) = self.state.lock().pending.get_mut(request_id) {
+            if let Some(earlier) = Instant::now().checked_sub(age) {
+                pending.shown_at = earlier;
+            }
+        }
     }
 }
 
