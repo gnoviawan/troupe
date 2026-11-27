@@ -212,3 +212,31 @@ fn a_plan_that_answers_after_cancel_is_cancelled_too() {
     assert_eq!(posted(&rt, "/mcp-catalog/install/cancel"), [json!({ "planId": "plan-1234567890", "clientInstanceId": "" })]);
     assert_eq!(rt.state.mcp_ui.install.flow, Flow::Idle);
 }
+
+#[test]
+fn a_save_the_registry_refuses_fails_the_install_and_frees_the_page() {
+    let mut rt = at_consent();
+    tap(&mut rt, "approve");
+    let mut refused = committed();
+    refused["provenance"] = Value::Null;
+    answer(&mut rt, InstallFetch::Commit, Ok(refused));
+    assert!(matches!(rt.state.mcp_ui.install.flow, Flow::Failed { .. }), "{:?}", rt.state.mcp_ui.install.flow);
+    assert!(present(&rt, "failure"));
+    assert!(rt.state.mcp_ui.actions.is_empty(), "the refused write leaves no page action behind");
+    assert!(!rt.state.toasts.visible().iter().any(|t| t.title == "Could not send your message"));
+    assert!(registry_calls(&rt).iter().all(|(_, k, _)| *k != WsRequestType::StoreWrite), "nothing was written");
+    tap(&mut rt, "close");
+    assert!(!rt.state.overlays.is_open(INSTALL), "the dialog closes");
+    edit(&mut rt, |s| s.open_mcp_add());
+    tap(&mut rt, "kind-local");
+    edit(&mut rt, |s| {
+        let d = s.mcp_ui.dialog.as_mut().unwrap();
+        d.name = TextEdit::new("docs");
+        d.command = TextEdit::new("npx docs");
+    });
+    tap(&mut rt, "save");
+    let (call, _, _) = registry_calls(&rt).into_iter().rfind(|(_, k, _)| *k == WsRequestType::StoreWrite).expect("the add is written");
+    store_reply(&mut rt, call, Ok(json!({ "revision": 5 })));
+    assert!(rt.state.toasts.visible().iter().any(|t| t.title == "Added 1 MCP server"), "the next write takes its own action");
+    assert!(rt.state.mcp_ui.dialog.is_none());
+}

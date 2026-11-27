@@ -267,7 +267,7 @@ impl State {
                         };
                     }
                 };
-                self.mcp_ui.install.saving = committed["launchDigest"].as_str().map(str::to_owned);
+                self.mcp_ui.install.saving = Some(committed["launchDigest"].as_str().unwrap_or_default().to_owned());
                 self.mcp_write(Action::Install, Event::SaveCatalogInstall(committed));
             }
         }
@@ -280,6 +280,21 @@ impl State {
         for (id, v) in values {
             self.mcp_ui.install.edits.insert(id, TextEdit::new(v));
         }
+    }
+
+    /// Whether the approved commit waits for its registry write.
+    pub(crate) fn install_awaits_save(&self) -> bool {
+        self.mcp_ui.install.saving.is_some() && matches!(self.mcp_ui.install.flow, Flow::Committing { .. })
+    }
+
+    /// The model refused the install's registry write before sending it (`saveCatalogInstall`
+    /// threw): its queued page action goes, and the flow fails as React's `fail('save')` does.
+    pub(crate) fn install_refused(&mut self, message: &str) {
+        log::warn!("{LOG} the registry refused the install: {message}");
+        if let Some(at) = self.mcp_ui.actions.iter().position(|a| matches!(a, Action::Install)) {
+            self.mcp_ui.actions.remove(at);
+        }
+        self.install_saved(false);
     }
 
     /// The registry write of the commit answered.
