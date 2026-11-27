@@ -630,3 +630,45 @@ fn the_displayed_url_cuts_long_queries_and_keeps_the_byte_count() {
     assert!(is_host_ticket_id(TicketId::mint().as_str()));
     assert!(!is_host_ticket_id("perm-123"));
 }
+
+#[tokio::test]
+async fn comu_ticket_carries_escaped_app_metadata_and_enforces_answer_floor() {
+    let (recorder, tickets) = tickets(Duration::from_millis(50));
+    let request = ComuTicketRequest {
+        id: TicketId::mint(),
+        session_id: "s1".into(),
+        project_id: "proj-1".into(),
+        app_name: "Calc\u{202E}ulator".into(),
+        app_id: "com.apple.calculator".into(),
+        action: ComuConsentAction::DriveApp,
+        tool_name: "comu_click".into(),
+        options: &ConsentOption::ALL,
+    };
+    let req_id = request.id.as_str().to_string();
+    let waiting = tokio::spawn({
+        let tickets = tickets.clone();
+        async move { tickets.request_comu(request, Duration::from_secs(5)).await }
+    });
+    let id = raised(&tickets, &recorder).await;
+    assert_eq!(id, req_id);
+    let payload = recorder.0.lock()[0].2.clone();
+    assert_eq!(payload["_meta"]["termul"]["origin_kind"], "comu");
+    assert_eq!(
+        payload["_meta"]["termul"]["comu"]["appName"],
+        "Calc\u{27E8}U+202E\u{27E9}ulator"
+    );
+    assert_eq!(
+        tickets.answer(Approver::Desktop, &id, Some("allow_session")),
+        Err(AnswerError::TooEarly)
+    );
+    tokio::time::sleep(Duration::from_millis(60)).await;
+    assert_eq!(
+        tickets.answer(Approver::Desktop, &id, Some("allow_project")),
+        Ok(ConsentOption::AllowProject)
+    );
+    assert_eq!(
+        waiting.await.unwrap(),
+        TicketOutcome::Answered(ConsentOption::AllowProject)
+    );
+}
+

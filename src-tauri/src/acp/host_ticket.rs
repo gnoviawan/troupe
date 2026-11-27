@@ -542,6 +542,145 @@ impl PermissionRequest for HostTickets {
     }
 }
 
+/// Action class of a Troupe Comu consent ticket.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ComuConsentAction {
+    /// Observe or drive a specific desktop application in the background.
+    DriveApp,
+    /// Take foreground focus or capture/drive the whole desktop display.
+    ForegroundDesktop,
+    /// Read plain text from the system clipboard.
+    ClipboardRead,
+}
+
+impl ComuConsentAction {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::DriveApp => "drive_app",
+            Self::ForegroundDesktop => "foreground_desktop",
+            Self::ClipboardRead => "clipboard_read",
+        }
+    }
+
+    fn one_at_a_time(self) -> bool {
+        matches!(self, Self::ClipboardRead)
+    }
+}
+
+/// Host-originated consent request for Troupe Comu (local Computer Use).
+#[derive(Debug, Clone)]
+pub struct ComuTicketRequest {
+    pub id: TicketId,
+    pub session_id: String,
+    pub project_id: String,
+    pub app_name: String,
+    pub app_id: String,
+    pub action: ComuConsentAction,
+    pub tool_name: String,
+    pub options: &'static [ConsentOption],
+}
+
+fn comu_ticket_title(ticket: &ComuTicketRequest) -> String {
+    let app = display_safe(&ticket.app_name);
+    match ticket.action {
+        ComuConsentAction::DriveApp => format!("Control {app} with Computer Use"),
+        ComuConsentAction::ForegroundDesktop => {
+            if app.is_empty() {
+                "Use foreground Computer Use on your desktop".to_string()
+            } else {
+                format!("Bring {app} to the front with Computer Use")
+            }
+        }
+        ComuConsentAction::ClipboardRead => "Read text from your clipboard".to_string(),
+    }
+}
+
+fn comu_request_payload(ticket: &ComuTicketRequest) -> Value {
+    let one_at_a_time = ticket.action.one_at_a_time();
+    let options: Vec<Value> = ticket
+        .options
+        .iter()
+        .map(|&option| {
+            let mut entry = json!({
+                "optionId": option_key(option),
+                "name": option_name(option, one_at_a_time),
+                "kind": option.acp_kind(),
+            });
+            if let Some(scope) = option_scope(option, one_at_a_time) {
+                entry["_meta"] = json!({ "termul": { "scope": scope } });
+            }
+            entry
+        })
+        .collect();
+    json!({
+        "sessionId": ticket.session_id,
+        "requestId": ticket.id.as_str(),
+        "toolCall": {
+            "toolCallId": null,
+            "title": comu_ticket_title(ticket),
+            "kind": "execute",
+            "status": "pending",
+        },
+        "options": options,
+        "_meta": { "termul": {
+            "origin_kind": "comu",
+            "comu": {
+                "appName": display_safe(&ticket.app_name),
+                "appId": display_safe(&ticket.app_id),
+                "action": ticket.action.as_str(),
+                "toolName": display_safe(&ticket.tool_name),
+                "projectId": ticket.project_id,
+            },
+        }},
+    })
+}
+
+impl HostTickets {
+    /// Raise a Troupe Comu consent ticket on the shared `host:<uuid>` channel.
+    pub fn request_comu(
+        &self,
+        ticket: ComuTicketRequest,
+        wait: Duration,
+    ) -> PortFuture<'_, TicketOutcome> {
+        let session = ticket.session_id.clone();
+        if !(self.attached)(&session) {
+            log::info!(
+                "[host-ticket] comu ticket not raised reason=unattended session={}",
+                crate::logging::redact_session_id(&session)
+            );
+            return Box::pin(async { TicketOutcome::Unattended });
+        }
+        let id = ticket.id.as_str().to_string();
+        let (tx, rx) = oneshot::channel();
+        self.state.lock().pending.insert(
+            id.clone(),
+            Pending {
+                session_id: session.clone(),
+                options: ticket.options,
+                shown_at: Instant::now(),
+                tx,
+            },
+        );
+        crate::acp::events::fan_out(
+            &self.sinks,
+            Some(&session),
+            EVENT_PERMISSION_REQUEST,
+            &comu_request_payload(&ticket),
+        );
+        Box::pin(async move {
+            let guard = Withdraw { tickets: self, id };
+            match tokio::time::timeout(wait, rx).await {
+                Ok(Ok(outcome)) => outcome,
+                Ok(Err(_)) => TicketOutcome::Cancelled,
+                Err(_) => {
+                    self.withdraw(&guard.id, TicketOutcome::TimedOut, "timed_out");
+                    TicketOutcome::TimedOut
+                }
+            }
+        })
+    }
+}
+
 /// `TicketId::parse` for callers outside the browser core.
 pub fn is_host_ticket_id(request_id: &str) -> bool {
     TicketId::parse(request_id).is_some()

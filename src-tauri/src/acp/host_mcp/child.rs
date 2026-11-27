@@ -32,6 +32,7 @@ use serde::Deserialize;
 
 use crate::acp::host_mcp::canvas_skill::{self, GetCanvasStyleInput, ReadCanvasGuideInput};
 use crate::acp::host_mcp::canvas_tools;
+use crate::acp::host_mcp::comu_tools::{self, ReadComuGuideInput};
 use crate::acp::host_mcp::{
     session_instructions, FrameKind, FrameReply, FrameRequest, TermulAskUserInput,
     TermulPlanInput, TermulSetTitleInput, ENV_AGENT_ID, ENV_PORT, ENV_SESSION_ID, ENV_TOKEN,
@@ -136,7 +137,7 @@ struct DescribedTool {
 }
 
 impl TermulPlanServer {
-    fn new(config: ChildConfig, browser: Option<DescribedTool>) -> Self {
+    fn new(config: ChildConfig, browser: Option<DescribedTool>, comu_tools: Vec<Tool>) -> Self {
         let mut tool_router = Self::tool_router()
             + Self::automation_tool_router()
             + Self::read_chat_tool_router()
@@ -145,6 +146,9 @@ impl TermulPlanServer {
             + Self::subagent_tool_router();
         for tool in canvas_tools::tools() {
             tool_router.add_route(canvas_route(tool));
+        }
+        for tool in comu_tools {
+            tool_router.add_route(comu_route(tool));
         }
         if let Some(tool) = browser {
             tool_router.add_route(browser_route(tool));
@@ -286,6 +290,21 @@ fn canvas_route(tool: Tool) -> ToolRoute<TermulPlanServer> {
     })
 }
 
+fn comu_route(tool: Tool) -> ToolRoute<TermulPlanServer> {
+    ToolRoute::new_dyn(tool, |context: ToolCallContext<'_, TermulPlanServer>| {
+        let config = context.service.config.clone();
+        let name = context.name.to_string();
+        let arguments = context
+            .arguments
+            .map_or_else(|| json!({}), Value::Object);
+        Box::pin(async move {
+            Ok(comu_tools::call_tool(config, name, arguments)
+                .await
+                .into())
+        })
+    })
+}
+
 fn browser_route(tool: DescribedTool) -> ToolRoute<TermulPlanServer> {
     let round_trip = std::time::Duration::from_millis(tool.round_trip_ms);
     let attr = rmcp::model::Tool::new("browser", tool.description, tool.input_schema);
@@ -393,6 +412,20 @@ impl TermulPlanServer {
     ) -> Result<String, String> {
         canvas_skill::get_style(input.name.as_deref())
             .inspect_err(|e| eprintln!("[host-mcp-child] get_canvas_style: {e}"))
+    }
+
+    #[tool(
+        name = "comu_guide",
+        description = "Troupe Comu (local Computer Use) operating guide. Call with no `topic` before your first `comu_*` action in a session to read the overview and topic index, then request `workflow`, `macos`, `windows`, `linux`, or `troubleshooting` as needed. Explains background-first window targeting, `element_token` refs, `comu_run_steps` batching, and OS permission setup. Returns Markdown.",
+        annotations(read_only_hint = true, open_world_hint = false)
+    )]
+    async fn comu_guide(
+        &self,
+        Parameters(input): Parameters<ReadComuGuideInput>,
+    ) -> Result<String, String> {
+        troupe_comu_engine::read_guide(input.topic.as_deref())
+            .map(str::to_string)
+            .inspect_err(|e| eprintln!("[host-mcp-child] comu_guide: {e}"))
     }
 
     #[tool(
@@ -600,7 +633,8 @@ where
         let _ = copy_with_discover_meta(stdin, shim_side).await;
     });
     let browser = describe_browser_tool(&config).await;
-    let service = TermulPlanServer::new(config, browser);
+    let comu = comu_tools::describe_tools(&config).await;
+    let service = TermulPlanServer::new(config, browser, comu);
     let running = serve_server(service, (server_read, stdout))
         .await
         .map_err(|e| format!("mcp server initialize failed: {e}"))?;

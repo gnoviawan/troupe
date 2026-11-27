@@ -17,6 +17,9 @@ mod browser_tab_saved_grants;
 // unconditionally so the standalone `termul-server` mounts the same routes.
 pub mod canvas;
 mod commands;
+// Local Computer Use (Troupe Comu): runtime-neutral policy + ComuHost trait
+// shared with web routes; DesktopComuHost is registered only in desktop setup.
+pub mod comu;
 // One host per durable path (AD-14): sidecar `File::try_lock` locks taken before
 // any store opens. Tauri-free so the desktop and `termul-server` share it.
 pub mod data_lock;
@@ -1975,6 +1978,23 @@ pub fn run() {
                     }
                 })
             };
+            let comu_policy_service = {
+                let comu_policy_root = handle
+                    .path()
+                    .app_data_dir()
+                    .map_err(|e| format!("comu policy: app_data_dir: {e}"))?
+                    .join("comu-policy");
+                let service = Arc::new(comu::policy::ComuPolicyService::new(
+                    comu_policy_root,
+                    vec![ws_relay.clone()],
+                ));
+                comu::policy::install(Arc::clone(&service));
+                app.manage(Arc::clone(&service));
+                service
+            };
+            let comu_tickets = Arc::clone(&host_tickets);
+            let comu_project_of = Arc::clone(&project_of);
+
             let browser_host = browser_automation::DesktopBrowserHost::new(
                 handle.clone(),
                 browser_tab_manager.clone(),
@@ -1991,6 +2011,26 @@ pub fn run() {
             );
             profile_control.attach(browser_host.profile_control());
             browser_automation::set_browser_host(browser_host);
+
+            let _ = troupe_comu_engine::ComuEngine::attach_macos_overlay_on_main_thread();
+            match comu::host::DesktopComuHost::new(
+                troupe_comu_engine::ComuEngineOptions {
+                    host_bundle_id: Some(handle.config().identifier.clone()),
+                    ..troupe_comu_engine::ComuEngineOptions::default()
+                },
+                vec![ws_relay.clone()],
+                comu_tickets,
+                comu_policy_service,
+                comu_project_of,
+            ) {
+                Ok(comu_host) => {
+                    comu::set_comu_host(comu_host);
+                    log::info!("[comu] desktop Computer Use host registered");
+                }
+                Err(error) => {
+                    log::error!("[comu] failed to initialize desktop Computer Use host: {error}");
+                }
+            }
 
             app.manage(Arc::clone(&acp_manager));
             app.manage(Arc::clone(&ws_relay));
