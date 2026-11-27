@@ -63,6 +63,8 @@ pub struct SubagentsUi {
     /// Changes not answered yet, oldest first; the first is on the wire once `sending`.
     pub queued: VecDeque<Change>,
     sending: bool,
+    /// A refused change reads the host again; the next change waits for that read.
+    rereading: bool,
     pub expanded: Option<String>,
     pub menu: Option<String>,
     /// The open row's name and note fields.
@@ -116,6 +118,9 @@ impl State {
     }
 
     pub(crate) fn subagents_answered(&mut self, call: SubagentCall, result: Result<Option<Value>, WsError>) {
+        if call == SubagentCall::Read && std::mem::take(&mut self.subagents_ui.rereading) {
+            self.subagents_ui.sending = false;
+        }
         match (call, result) {
             (SubagentCall::Read, Ok(view)) => {
                 self.subagents_ui.host = view;
@@ -135,6 +140,8 @@ impl State {
                         self.toasts.push(self.now, ui::overlay::ToastKind::Error, "Could not save the sub-agent setting.", Some(&e.message));
                         log::warn!("[SubagentSettingsGroup] Failed to set subagent settings: {}", e.message);
                         self.subagents_refused(change);
+                        self.subagents_ui.sending = true;
+                        self.subagents_ui.rereading = true;
                         self.subagents_opened();
                     }
                 }

@@ -123,3 +123,20 @@ fn add_and_delete_profiles() {
     let del = calls(&rt, WsRequestType::SubagentSettingsSet).pop().unwrap();
     assert_eq!(del.1, json!({ "deleteProfiles": ["codex-2"] }));
 }
+
+#[test]
+fn after_a_refusal_the_next_change_waits_for_the_host_to_be_read_again() {
+    let mut rt = opened();
+    tap(&mut rt, "max-running-inc");
+    tap(&mut rt, "max-depth-inc");
+    let (call, _) = calls(&rt, WsRequestType::SubagentSettingsSet).pop().unwrap();
+    reply(&mut rt, call, Err(WsError { code: "FORBIDDEN".into(), message: "read-only".into(), details: None }));
+    assert_eq!(calls(&rt, WsRequestType::SubagentSettingsSet).len(), 1, "the depth change waits for the re-read");
+    let (read, _) = calls(&rt, WsRequestType::SubagentSettingsGet).pop().unwrap();
+    let mut fresh = view();
+    fresh["maxDepth"] = json!(3);
+    reply(&mut rt, read, Ok(fresh));
+    let sets = calls(&rt, WsRequestType::SubagentSettingsSet);
+    assert_eq!(sets.len(), 2);
+    assert_eq!(sets[1].1, json!({ "maxDepth": 2 }), "the change is built on what the host holds now");
+}

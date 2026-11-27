@@ -136,6 +136,10 @@ impl State {
 
     /// A refusal the model raised while it read an MCP answer: true when it was shown here.
     pub(crate) fn mcp_rejected(&mut self, message: &str) -> bool {
+        if self.install_awaits_save() {
+            self.install_refused(message);
+            return true;
+        }
         let Some(on_reject) = self.mcp_ui.rejection.take() else { return false };
         log::warn!("[settings.McpServersSettings] {message}");
         if let OnReject::Toast(text) = on_reject {
