@@ -1,5 +1,5 @@
 //! The window: 1200x800 by default, 800x600 at least, hidden until its first frame is ready,
-//! the overlay title bar with the traffic lights at (14, 16) on macOS, and the frame saved on
+//! the overlay title bar with the traffic lights at (22, 24) on macOS, and the frame saved on
 //! close and quit and restored at the next launch (`window.json`, physical pixels). Wayland
 //! hides window placement, so nothing is saved there.
 
@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_SIZE: (f32, f32) = (1200.0, 800.0);
 pub const MIN_SIZE: (f32, f32) = (800.0, 600.0);
-pub const TRAFFIC_LIGHTS: (f32, f32) = (14.0, 16.0);
+/// The Tauri app's `trafficLightPosition` (`tauri.conf.json`).
+pub const TRAFFIC_LIGHTS: (f32, f32) = (22.0, 24.0);
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Frame {
@@ -43,6 +44,30 @@ impl Frame {
             return previous.map(|f| Frame { maximized, ..f });
         }
         Some(Frame { position: placement.position, size: placement.content_size, maximized })
+    }
+}
+
+/// Whether a window at `placement` shows too little of itself on its display to be grabbed:
+/// a frame saved on a monitor that is gone. The display is the one winit reports the window
+/// on, or the primary one when it overlaps none.
+pub fn off_screen(placement: &rune::WindowPlacement) -> bool {
+    const VISIBLE: i64 = 64;
+    let Some(((dx, dy), (dw, dh))) = placement.display else { return false };
+    let (x, y) = placement.position;
+    let (w, h) = placement.content_size;
+    let overlap = |a: i32, len_a: u32, b: i32, len_b: u32| {
+        let start = i64::from(a.max(b));
+        let end = (i64::from(a) + i64::from(len_a)).min(i64::from(b) + i64::from(len_b));
+        end - start
+    };
+    overlap(x, w, dx, dw) < VISIBLE || overlap(y, h, dy, dh) < VISIBLE
+}
+
+/// Centres a window whose restored frame lands off every display. Call once it exists.
+pub fn keep_on_screen(window: &WindowHandle) {
+    if let Some(placement) = window.placement().filter(off_screen) {
+        log::info!("[window] saved frame at {:?} is off screen; centring", placement.position);
+        window.center();
     }
 }
 

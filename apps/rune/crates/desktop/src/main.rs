@@ -53,6 +53,10 @@ fn main() {
         return;
     }
     rune::set_app_id("troupe-preview");
+    // The instance id canonicalizes the folder, which needs it to exist.
+    if let Err(e) = std::fs::create_dir_all(&paths.data_dir) {
+        log::warn!("[startup] cannot create {}: {e}", paths.data_dir.display());
+    }
     if !rune::single_instance(&paths.instance_id()) {
         log::info!("[instance] troupe-preview already runs on this data dir; it takes focus");
         return;
@@ -104,6 +108,7 @@ fn build(launch: Launch, control: Option<&Control>, paths: &Paths) -> rune::App<
         .maximized(saved.as_ref().is_some_and(|f| f.maximized))
         .on_window(window::created)
         .on_ready(|w| {
+            window::keep_on_screen(w);
             w.show();
             w.focus();
             log::info!("[window] first frame ready; shown");

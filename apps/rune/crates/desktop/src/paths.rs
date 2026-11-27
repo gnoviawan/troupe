@@ -108,10 +108,12 @@ impl Paths {
     }
 
     /// The single-instance id: one running app per data dir, so a test run under its own
-    /// data dir never hands its launch to the user's app.
+    /// data dir never hands its launch to the user's app. Aliases of one folder (a symlink,
+    /// `a/../a`) share an id once the folder exists.
     pub fn instance_id(&self) -> String {
+        let dir = std::fs::canonicalize(&self.data_dir).unwrap_or_else(|_| self.data_dir.clone());
         let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
-        for byte in self.data_dir.to_string_lossy().bytes() {
+        for byte in dir.to_string_lossy().bytes() {
             hash = (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3);
         }
         format!("{IDENTIFIER}.preview-{hash:016x}")

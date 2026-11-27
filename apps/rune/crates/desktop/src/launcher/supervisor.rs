@@ -1,7 +1,8 @@
 //! When to restart the server. The runner feeds it what happened and carries out what it
 //! returns; it never touches a process. A server that exits is started again after 250 ms,
 //! 1 s, 2 s, then 5 s. Five exits in a row, each within 30 s of its start, stop the restarts
-//! until the user retries. A server that ran longer than that resets the count.
+//! until the user retries. A server that ran longer than that resets the count. A restarted
+//! server counts as back only once it answers `/health` (`Started`).
 
 use std::time::{Duration, Instant};
 
@@ -19,13 +20,15 @@ pub const MAX_FAST_EXITS: u32 = 5;
 pub enum Phase {
     Running { since: Instant },
     Restarting { due: Instant },
+    /// A new server was spawned and has not answered `/health` yet.
+    Starting,
     GaveUp,
     Stopped,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Event {
-    /// A server process started (the first, a restart, or a retry).
+    /// A server started and answered `/health` (the first, a restart, or a retry).
     Started { at: Instant },
     /// The server exited or stopped answering; `status` says how.
     Exited { at: Instant, status: String },
@@ -84,12 +87,16 @@ impl Supervisor {
                 self.phase = Phase::Restarting { due: at + delay };
                 Some(Effect::Notify(Notice::Restarting { status, delay }))
             }
-            (Phase::Restarting { due }, Event::Tick { at }) if at >= *due => Some(Effect::Spawn),
-            (Phase::GaveUp, Event::Retry) => {
-                self.fast_exits = 0;
+            (Phase::Restarting { due }, Event::Tick { at }) if at >= *due => {
+                self.phase = Phase::Starting;
                 Some(Effect::Spawn)
             }
-            (Phase::Restarting { .. } | Phase::GaveUp, Event::Started { at }) => {
+            (Phase::GaveUp, Event::Retry) => {
+                self.fast_exits = 0;
+                self.phase = Phase::Starting;
+                Some(Effect::Spawn)
+            }
+            (Phase::Starting, Event::Started { at }) => {
                 self.phase = Phase::Running { since: at };
                 Some(Effect::Notify(Notice::Recovered))
             }
