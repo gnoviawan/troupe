@@ -1,8 +1,8 @@
-var host = document.getElementById(p.hostId);
+var host = BY_ID[9](document, p.hostId);
 if (!host) return [];
-var raw = host.getAttribute(p.attr);
+var raw = attr(host, p.attr);
 if (!raw) return [];
-host.removeAttribute(p.attr);
+Element.prototype.removeAttribute.call(host, p.attr);
 try {
   var parsed = JSON.parse(raw);
   return Array.isArray(parsed) ? parsed : [];

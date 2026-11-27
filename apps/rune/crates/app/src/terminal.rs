@@ -126,12 +126,18 @@ impl State {
     /// [`Self::spawn_terminal`] in `cwd` instead of the project's folder (the explorer's Open in
     /// Terminal).
     pub(crate) fn spawn_terminal_in(&mut self, pane: Option<String>, cwd: Option<String>) -> Option<CallId> {
+        self.spawn_terminal_with(pane, cwd, None)
+    }
+
+    /// [`Self::spawn_terminal_in`] with a shell (a snapshot's restore).
+    pub(crate) fn spawn_terminal_with(&mut self, pane: Option<String>, cwd: Option<String>, shell: Option<String>) -> Option<CallId> {
         let Some(project) = self.active_project().cloned() else {
             log::warn!("[term] new terminal with no project shown");
             return None;
         };
         let (cols, rows) = DEFAULT_SIZE;
         let options = TerminalSpawnOptions {
+            shell,
             cwd: cwd.or_else(|| project.path.clone()),
             cols: Some(cols),
             rows: Some(rows),
@@ -234,6 +240,7 @@ impl State {
             return;
         }
         self.terminal_attach(&s.id, &s.claim, cols, rows);
+        self.snapshot_terminal_named(call, &s.id);
         match restarted {
             Some(old) => self.terminal_restarted(&old, &s.id),
             None => {

@@ -1,0 +1,3105 @@
+[
+ {
+  "store": "snapshots",
+  "name": "loads_a_projects_list_and_an_empty_one",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p2"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "creates_on_top_of_the_saved_list",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "createSnapshot",
+     "args": [
+      "Before deploy",
+      "",
+      "p1",
+      [
+       {
+        "id": "a",
+        "name": "Terminal 1",
+        "shell": "bash",
+        "cwd": "/w/alpha",
+        "scrollback": [
+         "$ git status",
+         "clean"
+        ]
+       },
+       {
+        "id": "b",
+        "name": "Logs",
+        "shell": "bash",
+        "cwd": "/w/alpha/logs",
+        "scrollback": []
+       }
+      ],
+      "b"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "1795168800000-4fzzzxjyl",
+         "projectId": "p1",
+         "name": "Before deploy",
+         "createdAt": "2026-11-20T10:00:00.000Z",
+         "terminals": [
+          {
+           "id": "a",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ git status",
+            "clean"
+           ]
+          },
+          {
+           "id": "b",
+           "name": "Logs",
+           "shell": "bash",
+           "cwd": "/w/alpha/logs",
+           "scrollback": []
+          }
+         ],
+         "activeTerminalId": "b"
+        },
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "First",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.createSnapshot",
+      "message": "snapshot create ok project=p1"
+     }
+    ],
+    "result": {
+     "ok": {
+      "id": "1795168800000-4fzzzxjyl",
+      "projectId": "p1",
+      "name": "Before deploy",
+      "createdAt": "2026-11-20T10:00:00.000Z",
+      "paneCount": 2,
+      "processCount": 0
+     }
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "1795168800000-4fzzzxjyl",
+       "projectId": "p1",
+       "name": "Before deploy",
+       "createdAt": "2026-11-20T10:00:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "createSnapshot",
+     "args": [
+      "With notes",
+      "Two terminals",
+      "p1",
+      [],
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "1795168800000-4fzzzxjyl",
+         "projectId": "p1",
+         "name": "With notes",
+         "description": "Two terminals",
+         "createdAt": "2026-11-20T10:00:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null
+        },
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "First",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.createSnapshot",
+      "message": "snapshot create ok project=p1"
+     }
+    ],
+    "result": {
+     "ok": {
+      "id": "1795168800000-4fzzzxjyl",
+      "projectId": "p1",
+      "name": "With notes",
+      "description": "Two terminals",
+      "createdAt": "2026-11-20T10:00:00.000Z",
+      "paneCount": 0,
+      "processCount": 0
+     }
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "1795168800000-4fzzzxjyl",
+       "projectId": "p1",
+       "name": "With notes",
+       "description": "Two terminals",
+       "createdAt": "2026-11-20T10:00:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      },
+      {
+       "id": "1795168800000-4fzzzxjyl",
+       "projectId": "p1",
+       "name": "Before deploy",
+       "createdAt": "2026-11-20T10:00:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "creates_the_first_snapshot_of_a_project",
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSnapshot",
+     "args": [
+      "First",
+      null,
+      "p2",
+      [
+       {
+        "id": "a",
+        "name": "Terminal 1",
+        "shell": "bash",
+        "cwd": "/w/alpha",
+        "scrollback": [
+         "$ git status",
+         "clean"
+        ]
+       },
+       {
+        "id": "b",
+        "name": "Logs",
+        "shell": "bash",
+        "cwd": "/w/alpha/logs",
+        "scrollback": []
+       }
+      ],
+      null
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p2",
+      "record": {
+       "snapshots": [
+        {
+         "id": "1795168800000-4fzzzxjyl",
+         "projectId": "p2",
+         "name": "First",
+         "createdAt": "2026-11-20T10:00:00.000Z",
+         "terminals": [
+          {
+           "id": "a",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ git status",
+            "clean"
+           ]
+          },
+          {
+           "id": "b",
+           "name": "Logs",
+           "shell": "bash",
+           "cwd": "/w/alpha/logs",
+           "scrollback": []
+          }
+         ],
+         "activeTerminalId": null
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.createSnapshot",
+      "message": "snapshot create ok project=p2"
+     }
+    ],
+    "result": {
+     "ok": {
+      "id": "1795168800000-4fzzzxjyl",
+      "projectId": "p2",
+      "name": "First",
+      "createdAt": "2026-11-20T10:00:00.000Z",
+      "paneCount": 2,
+      "processCount": 0
+     }
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "1795168800000-4fzzzxjyl",
+       "projectId": "p2",
+       "name": "First",
+       "createdAt": "2026-11-20T10:00:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "create_rolls_back_when_the_list_cannot_be_read",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   },
+   "readFailures": {
+    "snapshots/p1": "IO_ERROR"
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "createSnapshot",
+     "args": [
+      "Lost",
+      "never saved",
+      "p1",
+      [
+       {
+        "id": "a",
+        "name": "Terminal 1",
+        "shell": "bash",
+        "cwd": "/w/alpha",
+        "scrollback": [
+         "$ git status",
+         "clean"
+        ]
+       },
+       {
+        "id": "b",
+        "name": "Logs",
+        "shell": "bash",
+        "cwd": "/w/alpha/logs",
+        "scrollback": []
+       }
+      ],
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.createSnapshot",
+      "message": "snapshot create failed project=p1 Failed to read persisted snapshots: code=IO_ERROR error=snapshots/p1"
+     }
+    ],
+    "result": {
+     "error": "Failed to read persisted snapshots: code=IO_ERROR error=snapshots/p1"
+    },
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "create_rolls_back_when_the_write_fails",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   },
+   "writeFailures": {
+    "snapshots/p1": "disk full"
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "createSnapshot",
+     "args": [
+      "Lost",
+      null,
+      "p1",
+      [
+       {
+        "id": "a",
+        "name": "Terminal 1",
+        "shell": "bash",
+        "cwd": "/w/alpha",
+        "scrollback": [
+         "$ git status",
+         "clean"
+        ]
+       },
+       {
+        "id": "b",
+        "name": "Logs",
+        "shell": "bash",
+        "cwd": "/w/alpha/logs",
+        "scrollback": []
+       }
+      ],
+      "a"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "1795168800000-4fzzzxjyl",
+         "projectId": "p1",
+         "name": "Lost",
+         "createdAt": "2026-11-20T10:00:00.000Z",
+         "terminals": [
+          {
+           "id": "a",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ git status",
+            "clean"
+           ]
+          },
+          {
+           "id": "b",
+           "name": "Logs",
+           "shell": "bash",
+           "cwd": "/w/alpha/logs",
+           "scrollback": []
+          }
+         ],
+         "activeTerminalId": "a"
+        },
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "First",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.createSnapshot",
+      "message": "snapshot create failed project=p1 Failed to persist snapshot: disk full"
+     }
+    ],
+    "result": {
+     "error": "Failed to persist snapshot: disk full"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "renames_and_deletes_only_the_picked_snapshot",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "renameSnapshot",
+     "args": [
+      "s2",
+      "After the refactor"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "After the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "First",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.renameSnapshot",
+      "message": "snapshot rename ok project=p1"
+     }
+    ],
+    "result": {
+     "ok": true
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "After the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "deleteSnapshot",
+     "args": [
+      "s3"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "First",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.deleteSnapshot",
+      "message": "snapshot delete ok project=p1"
+     }
+    ],
+    "result": {
+     "ok": true
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "After the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "renameSnapshot",
+     "args": [
+      "nope",
+      "x"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": true
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "After the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "deleteSnapshot",
+     "args": [
+      "nope"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "result": {
+     "ok": true
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "After the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "rename_rolls_back_when_the_write_fails_or_the_list_is_gone",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   },
+   "writeFailures": {
+    "snapshots/p1": "disk full"
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "renameSnapshot",
+     "args": [
+      "s1",
+      "Renamed"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "s1",
+         "projectId": "p1",
+         "name": "Renamed",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [],
+         "activeTerminalId": null,
+         "description": "Empty workspace"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.renameSnapshot",
+      "message": "snapshot rename failed project=p1 Failed to persist snapshot rename: disk full"
+     }
+    ],
+    "result": {
+     "error": "Failed to persist snapshot rename: disk full"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "deleteSnapshot",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "writeSnapshots",
+      "key": "snapshots/p1",
+      "record": {
+       "snapshots": [
+        {
+         "id": "s3",
+         "projectId": "p1",
+         "name": "Release candidate",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": [
+            "$ ls",
+            "README.md"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1",
+         "description": "Green CI",
+         "tag": "stable"
+        },
+        {
+         "id": "s2",
+         "projectId": "p1",
+         "name": "Before the refactor",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w/alpha",
+           "scrollback": []
+          },
+          {
+           "id": "t2",
+           "name": "Server",
+           "shell": "bash",
+           "cwd": "/w/alpha/server",
+           "scrollback": [
+            "listening on 8080"
+           ]
+          }
+         ],
+         "activeTerminalId": "t1"
+        }
+       ]
+      }
+     },
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.deleteSnapshot",
+      "message": "snapshot delete failed project=p1 Failed to persist snapshot delete: disk full"
+     }
+    ],
+    "result": {
+     "error": "Failed to persist snapshot delete: disk full"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "hostForgets",
+     "args": [
+      "snapshots/p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "renameSnapshot",
+     "args": [
+      "s3",
+      "Gone"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.renameSnapshot",
+      "message": "snapshot rename failed project=p1 snapshot list unreadable for rename: snapshots/p1"
+     }
+    ],
+    "result": {
+     "error": "snapshot list unreadable for rename: snapshots/p1"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "delete_keeps_the_local_removal_when_the_list_is_missing_or_unreadable",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "hostForgets",
+     "args": [
+      "snapshots/p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "deleteSnapshot",
+     "args": [
+      "s2"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "info",
+      "source": "snapshot-store.deleteSnapshot",
+      "message": "snapshot delete ok project=p1"
+     }
+    ],
+    "result": {
+     "ok": true
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "hostFails",
+     "args": [
+      "snapshots/p1",
+      "IO_ERROR"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "deleteSnapshot",
+     "args": [
+      "s1"
+     ]
+    },
+    "ids": [],
+    "effects": [
+     {
+      "kind": "log",
+      "level": "error",
+      "source": "snapshot-store.deleteSnapshot",
+      "message": "snapshot delete failed project=p1 Failed to read persisted snapshots for delete: snapshots/p1"
+     }
+    ],
+    "result": {
+     "error": "Failed to read persisted snapshots for delete: snapshots/p1"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "gets_a_snapshot_with_its_terminals",
+  "context": {
+   "reads": {
+    "snapshots/p1": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": [
+          "$ ls",
+          "README.md"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1",
+       "description": "Green CI",
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [
+        {
+         "id": "t1",
+         "name": "Terminal 1",
+         "shell": "bash",
+         "cwd": "/w/alpha",
+         "scrollback": []
+        },
+        {
+         "id": "t2",
+         "name": "Server",
+         "shell": "bash",
+         "cwd": "/w/alpha/server",
+         "scrollback": [
+          "listening on 8080"
+         ]
+        }
+       ],
+       "activeTerminalId": "t1"
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "terminals": [],
+       "activeTerminalId": null,
+       "description": "Empty workspace"
+      }
+     ],
+     "updatedAt": "2026-11-19T09:00:00.000Z"
+    }
+   }
+  },
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "loadSnapshots",
+     "args": [
+      "p1"
+     ]
+    },
+    "ids": [],
+    "effects": [],
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "getSnapshot",
+     "args": [
+      "s2"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "id": "s2",
+     "projectId": "p1",
+     "name": "Before the refactor",
+     "createdAt": "2026-11-19T08:30:00.000Z",
+     "terminals": [
+      {
+       "id": "t1",
+       "name": "Terminal 1",
+       "shell": "bash",
+       "cwd": "/w/alpha",
+       "scrollback": []
+      },
+      {
+       "id": "t2",
+       "name": "Server",
+       "shell": "bash",
+       "cwd": "/w/alpha/server",
+       "scrollback": [
+        "listening on 8080"
+       ]
+      }
+     ],
+     "activeTerminalId": "t1"
+    },
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "getSnapshot",
+     "args": [
+      "nope"
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": null,
+    "state": {
+     "snapshots": [
+      {
+       "id": "s3",
+       "projectId": "p1",
+       "name": "Release candidate",
+       "description": "Green CI",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 1,
+       "processCount": 0,
+       "tag": "stable"
+      },
+      {
+       "id": "s2",
+       "projectId": "p1",
+       "name": "Before the refactor",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 2,
+       "processCount": 0
+      },
+      {
+       "id": "s1",
+       "projectId": "p1",
+       "name": "First",
+       "description": "Empty workspace",
+       "createdAt": "2026-11-19T08:30:00.000Z",
+       "paneCount": 0,
+       "processCount": 0
+      }
+     ],
+     "isLoading": false
+    }
+   }
+  ]
+ },
+ {
+  "store": "snapshots",
+  "name": "trims_output_first_then_the_oldest_snapshots",
+  "initial": {
+   "snapshots": [],
+   "isLoading": false
+  },
+  "steps": [
+   {
+    "event": {
+     "action": "trim",
+     "args": [
+      {
+       "snapshots": [
+        {
+         "id": "n",
+         "projectId": "p1",
+         "name": "Snapshot n",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "o",
+         "projectId": "p1",
+         "name": "Snapshot o",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        }
+       ],
+       "updatedAt": "2026-11-19T09:00:00.000Z"
+      },
+      100000
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "list": {
+      "snapshots": [
+       {
+        "id": "n",
+        "projectId": "p1",
+        "name": "Snapshot n",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [
+           "line 0",
+           "line 1",
+           "line 2",
+           "line 3"
+          ]
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [],
+          "transcript": "first\nsecond\nthird\nfourth\n"
+         }
+        ],
+        "activeTerminalId": "t1"
+       },
+       {
+        "id": "o",
+        "projectId": "p1",
+        "name": "Snapshot o",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [
+           "line 0",
+           "line 1",
+           "line 2",
+           "line 3"
+          ]
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [],
+          "transcript": "first\nsecond\nthird\nfourth\n"
+         }
+        ],
+        "activeTerminalId": "t1"
+       }
+      ],
+      "updatedAt": "2026-11-19T09:00:00.000Z"
+     },
+     "shrunk": 0,
+     "droppedIds": []
+    },
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "trim",
+     "args": [
+      {
+       "snapshots": [
+        {
+         "id": "n",
+         "projectId": "p1",
+         "name": "Snapshot n",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6",
+            "line 7",
+            "line 8",
+            "line 9",
+            "line 10",
+            "line 11",
+            "line 12",
+            "line 13",
+            "line 14",
+            "line 15",
+            "line 16",
+            "line 17",
+            "line 18",
+            "line 19",
+            "line 20",
+            "line 21",
+            "line 22",
+            "line 23",
+            "line 24",
+            "line 25",
+            "line 26",
+            "line 27",
+            "line 28",
+            "line 29",
+            "line 30",
+            "line 31",
+            "line 32",
+            "line 33",
+            "line 34",
+            "line 35",
+            "line 36",
+            "line 37",
+            "line 38",
+            "line 39"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "o",
+         "projectId": "p1",
+         "name": "Snapshot o",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6",
+            "line 7",
+            "line 8",
+            "line 9",
+            "line 10",
+            "line 11",
+            "line 12",
+            "line 13",
+            "line 14",
+            "line 15",
+            "line 16",
+            "line 17",
+            "line 18",
+            "line 19",
+            "line 20",
+            "line 21",
+            "line 22",
+            "line 23",
+            "line 24",
+            "line 25",
+            "line 26",
+            "line 27",
+            "line 28",
+            "line 29",
+            "line 30",
+            "line 31",
+            "line 32",
+            "line 33",
+            "line 34",
+            "line 35",
+            "line 36",
+            "line 37",
+            "line 38",
+            "line 39"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        }
+       ],
+       "updatedAt": "2026-11-19T09:00:00.000Z"
+      },
+      1200
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "list": {
+      "snapshots": [
+       {
+        "id": "n",
+        "projectId": "p1",
+        "name": "Snapshot n",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [
+           "line 0",
+           "line 1",
+           "line 2",
+           "line 3",
+           "line 4",
+           "line 5",
+           "line 6",
+           "line 7",
+           "line 8",
+           "line 9",
+           "line 10",
+           "line 11",
+           "line 12",
+           "line 13",
+           "line 14",
+           "line 15",
+           "line 16",
+           "line 17",
+           "line 18",
+           "line 19",
+           "line 20",
+           "line 21",
+           "line 22",
+           "line 23",
+           "line 24",
+           "line 25",
+           "line 26",
+           "line 27",
+           "line 28",
+           "line 29",
+           "line 30",
+           "line 31",
+           "line 32",
+           "line 33",
+           "line 34",
+           "line 35",
+           "line 36",
+           "line 37",
+           "line 38",
+           "line 39"
+          ]
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [],
+          "transcript": "first\nsecond\nthird\nfourth\n"
+         }
+        ],
+        "activeTerminalId": "t1"
+       },
+       {
+        "id": "o",
+        "projectId": "p1",
+        "name": "Snapshot o",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w"
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w"
+         }
+        ],
+        "activeTerminalId": "t1"
+       }
+      ],
+      "updatedAt": "2026-11-19T09:00:00.000Z"
+     },
+     "shrunk": 1,
+     "droppedIds": []
+    },
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "trim",
+     "args": [
+      {
+       "snapshots": [
+        {
+         "id": "n",
+         "projectId": "p1",
+         "name": "Snapshot n",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6",
+            "line 7",
+            "line 8",
+            "line 9",
+            "line 10",
+            "line 11",
+            "line 12",
+            "line 13",
+            "line 14",
+            "line 15",
+            "line 16",
+            "line 17",
+            "line 18",
+            "line 19",
+            "line 20",
+            "line 21",
+            "line 22",
+            "line 23",
+            "line 24",
+            "line 25",
+            "line 26",
+            "line 27",
+            "line 28",
+            "line 29",
+            "line 30",
+            "line 31",
+            "line 32",
+            "line 33",
+            "line 34",
+            "line 35",
+            "line 36",
+            "line 37",
+            "line 38",
+            "line 39"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "o",
+         "projectId": "p1",
+         "name": "Snapshot o",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        }
+       ],
+       "updatedAt": "2026-11-19T09:00:00.000Z"
+      },
+      700
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "list": {
+      "snapshots": [
+       {
+        "id": "n",
+        "projectId": "p1",
+        "name": "Snapshot n",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w",
+          "scrollback": [
+           "line 29",
+           "line 30",
+           "line 31",
+           "line 32",
+           "line 33",
+           "line 34",
+           "line 35",
+           "line 36",
+           "line 37",
+           "line 38",
+           "line 39"
+          ]
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w",
+          "transcript": "fourth\n"
+         }
+        ],
+        "activeTerminalId": "t1"
+       },
+       {
+        "id": "o",
+        "projectId": "p1",
+        "name": "Snapshot o",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w"
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w"
+         }
+        ],
+        "activeTerminalId": "t1"
+       }
+      ],
+      "updatedAt": "2026-11-19T09:00:00.000Z"
+     },
+     "shrunk": 2,
+     "droppedIds": []
+    },
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   },
+   {
+    "event": {
+     "action": "trim",
+     "args": [
+      {
+       "snapshots": [
+        {
+         "id": "n",
+         "projectId": "p1",
+         "name": "Snapshot n",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "o",
+         "projectId": "p1",
+         "name": "Snapshot o",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        },
+        {
+         "id": "p",
+         "projectId": "p1",
+         "name": "Snapshot p",
+         "createdAt": "2026-11-19T08:30:00.000Z",
+         "terminals": [
+          {
+           "id": "t1",
+           "name": "Terminal 1",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [
+            "line 0",
+            "line 1",
+            "line 2",
+            "line 3"
+           ]
+          },
+          {
+           "id": "t2",
+           "name": "Agent",
+           "shell": "bash",
+           "cwd": "/w",
+           "scrollback": [],
+           "transcript": "first\nsecond\nthird\nfourth\n"
+          }
+         ],
+         "activeTerminalId": "t1"
+        }
+       ],
+       "updatedAt": "2026-11-19T09:00:00.000Z"
+      },
+      500
+     ]
+    },
+    "query": true,
+    "ids": [],
+    "effects": [],
+    "result": {
+     "list": {
+      "snapshots": [
+       {
+        "id": "n",
+        "projectId": "p1",
+        "name": "Snapshot n",
+        "createdAt": "2026-11-19T08:30:00.000Z",
+        "terminals": [
+         {
+          "id": "t1",
+          "name": "Terminal 1",
+          "shell": "bash",
+          "cwd": "/w"
+         },
+         {
+          "id": "t2",
+          "name": "Agent",
+          "shell": "bash",
+          "cwd": "/w"
+         }
+        ],
+        "activeTerminalId": "t1"
+       }
+      ],
+      "updatedAt": "2026-11-19T09:00:00.000Z"
+     },
+     "shrunk": 3,
+     "droppedIds": [
+      "p",
+      "o"
+     ]
+    },
+    "state": {
+     "snapshots": [],
+     "isLoading": false
+    }
+   }
+  ]
+ }
+]

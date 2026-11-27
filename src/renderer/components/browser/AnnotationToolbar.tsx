@@ -16,6 +16,8 @@ import {
 } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import {
+  MENU_CONTENT_CLASS,
+  MENU_ITEM_CLASS,
   MENU_MOTION_CLASS,
   MENU_SHORTCUT_CLASS,
   OVERLAY_PANEL_SURFACE_CLASS
@@ -33,10 +35,15 @@ import { formatBatchAnnotationsForChat } from '@/lib/browser-screenshot'
 import { logFrontendError } from '@/lib/log-api'
 import { isMac } from '@/lib/platform'
 import { cn } from '@/lib/utils'
-import { type AnnotateTool, useBrowserSessionStore } from '@/stores/browser-session-store'
+import {
+  type AnnotateTool,
+  type RulerAxis,
+  useBrowserSessionStore
+} from '@/stores/browser-session-store'
 
 interface AnnotationToolbarProps {
   browserTabId: string
+  copiedScreenshot?: boolean
   onExit: () => void
   onCaptureVisible: () => Promise<void>
   onSendToChat: (
@@ -45,25 +52,71 @@ interface AnnotationToolbarProps {
   ) => Promise<boolean> | boolean
 }
 
-const CORE_TOOLS: ReadonlyArray<{
-  id: Exclude<AnnotateTool, 'screenshot-area'>
+const DIRECT_TOOLS: ReadonlyArray<{
+  id: 'comment' | 'rectangle'
   label: string
   shortcut: string
 }> = [
   { id: 'comment', label: 'Comment', shortcut: 'C' },
-  { id: 'rectangle', label: 'Rectangle', shortcut: 'R' },
-  { id: 'ruler', label: 'Ruler', shortcut: 'M' }
+  { id: 'rectangle', label: 'Rectangle', shortcut: 'R' }
 ]
+
+const RULER_ORIENTATIONS: ReadonlyArray<{
+  axis: RulerAxis
+  label: string
+}> = [
+  { axis: 'vertical', label: 'Vertical ruler' },
+  { axis: 'horizontal', label: 'Horizontal ruler' }
+]
+
+function RulerOrientationIcon({
+  axis,
+  size = 14
+}: {
+  axis: RulerAxis
+  size?: number
+}): React.JSX.Element {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+      data-ruler-axis-icon={axis}
+    >
+      {axis === 'vertical' ? (
+        <>
+          <rect x="9" y="3" width="6" height="18" rx="1" />
+          <path d="M9 7.5h2.5M9 12h3.5M9 16.5h2.5" />
+        </>
+      ) : (
+        <>
+          <rect x="3" y="9" width="18" height="6" rx="1" />
+          <path d="M7.5 9v2.5M12 9v3.5M16.5 9v2.5" />
+        </>
+      )}
+    </svg>
+  )
+}
 
 export function AnnotationToolbar({
   browserTabId,
+  copiedScreenshot = false,
   onExit,
   onCaptureVisible,
   onSendToChat
 }: AnnotationToolbarProps): React.JSX.Element {
   const tab = useBrowserSessionStore((s) => s.tabs.get(browserTabId))
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
+  const setRulerAxis = useBrowserSessionStore((s) => s.setRulerAxis)
   const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
+  const bumpScreenshotAreaToken = useBrowserSessionStore((s) => s.bumpScreenshotAreaToken)
   const toggleAnimationsPaused = useBrowserSessionStore((s) => s.toggleAnimationsPaused)
   const togglePinsHidden = useBrowserSessionStore((s) => s.togglePinsHidden)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
@@ -72,6 +125,7 @@ export function AnnotationToolbar({
 
   const [copied, setCopied] = useState(false)
   const [queueOpen, setQueueOpen] = useState(false)
+  const [rulerOpen, setRulerOpen] = useState(false)
   const copyTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -83,6 +137,7 @@ export function AnnotationToolbar({
   }, [])
 
   const activeTool = tab?.annotateTool ?? 'comment'
+  const rulerAxis = tab?.rulerAxis ?? 'vertical'
   const paused = tab?.animationsPaused ?? false
   const pinsHidden = tab?.pinsHidden ?? false
   const pending = tab?.pendingAnnotations ?? []
@@ -106,6 +161,13 @@ export function AnnotationToolbar({
   const selectTool = (tool: AnnotateTool) => {
     setAnnotateTool(browserTabId, tool)
     sendCmd({ type: 'set_tool', tool })
+  }
+
+  const selectRulerOrientation = (axis: RulerAxis) => {
+    setRulerAxis(browserTabId, axis)
+    setAnnotateTool(browserTabId, 'ruler')
+    sendCmd({ type: 'set_tool', tool: 'ruler', axis })
+    setRulerOpen(false)
   }
 
   const handleTogglePause = () => {
@@ -206,7 +268,7 @@ export function AnnotationToolbar({
           aria-label="Annotation tools"
           className={cn(SEGMENTED_TRACK_CLASS, 'h-7 shrink-0 bg-card')}
         >
-          {CORE_TOOLS.map((tool) => {
+          {DIRECT_TOOLS.map((tool) => {
             const selected = activeTool === tool.id
             return (
               <button
@@ -221,15 +283,74 @@ export function AnnotationToolbar({
               >
                 {tool.id === 'comment' ? (
                   <MessageSquare size={12} aria-hidden="true" />
-                ) : tool.id === 'rectangle' ? (
-                  <Square size={12} aria-hidden="true" />
                 ) : (
-                  <Ruler size={12} aria-hidden="true" />
+                  <Square size={12} aria-hidden="true" />
                 )}
                 <span className="hidden md:inline">{tool.label}</span>
               </button>
             )
           })}
+
+          <Popover open={rulerOpen} onOpenChange={setRulerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTool === 'ruler'}
+                aria-haspopup="menu"
+                aria-expanded={rulerOpen}
+                aria-label="Ruler"
+                data-testid="annotation-ruler-trigger"
+                title="Ruler (M)"
+                className={cn(
+                  segmentClass(activeTool === 'ruler' || rulerOpen),
+                  'h-[22px] gap-1 px-2'
+                )}
+              >
+                {activeTool === 'ruler' ? (
+                  <RulerOrientationIcon axis={rulerAxis} size={12} />
+                ) : (
+                  <Ruler size={12} aria-hidden="true" />
+                )}
+                <span className="hidden md:inline">Ruler</span>
+                <ChevronDown size={10} className="opacity-70" aria-hidden="true" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              sideOffset={6}
+              role="menu"
+              aria-label="Ruler orientation"
+              className={cn(MENU_CONTENT_CLASS, MENU_MOTION_CLASS, 'w-48')}
+            >
+              {RULER_ORIENTATIONS.map((option) => {
+                const picked = activeTool === 'ruler' && rulerAxis === option.axis
+                return (
+                  <button
+                    key={option.axis}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={picked}
+                    data-state={picked ? 'checked' : 'unchecked'}
+                    data-testid={`annotation-ruler-option-${option.axis}`}
+                    onClick={() => selectRulerOrientation(option.axis)}
+                    className={cn(
+                      MENU_ITEM_CLASS,
+                      'w-full justify-between text-foreground',
+                      picked
+                        ? 'bg-foreground/10 hover:bg-foreground/10'
+                        : 'hover:bg-foreground/[0.06]'
+                    )}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <RulerOrientationIcon axis={option.axis} size={14} />
+                      <span>{option.label}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="hidden h-[18px] w-[0.5px] shrink-0 bg-border lg:block" />
@@ -238,6 +359,7 @@ export function AnnotationToolbar({
           <button
             type="button"
             onClick={() => {
+              bumpScreenshotAreaToken(browserTabId)
               setStandaloneScreenshotArea(browserTabId, false)
               selectTool('screenshot-area')
             }}
@@ -272,6 +394,17 @@ export function AnnotationToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {copiedScreenshot && (
+          <span
+            role="status"
+            aria-live="polite"
+            data-testid="browser-screenshot-copied-pill"
+            className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-success/20 bg-success/10 px-2 text-xs font-medium text-success"
+          >
+            <Check size={12} aria-hidden="true" />
+            <span>Copied</span>
+          </span>
+        )}
         {paused ? (
           <button
             type="button"

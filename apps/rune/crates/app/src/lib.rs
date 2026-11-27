@@ -17,6 +17,9 @@ mod agent_switch;
 #[cfg(test)]
 mod agent_switch_tests;
 mod answers;
+mod bug_report;
+#[cfg(test)]
+mod bug_report_tests;
 mod automation_canvas;
 mod automation_editor;
 mod automation_editor_view;
@@ -46,6 +49,10 @@ mod controls;
 mod editor_host;
 mod viewer_host;
 mod explorer_host;
+mod first_run;
+mod first_run_view;
+#[cfg(test)]
+mod first_run_tests;
 mod phone_files;
 #[cfg(test)]
 mod explorer_host_tests;
@@ -98,6 +105,10 @@ mod settings_shortcuts;
 #[cfg(test)]
 mod settings_tests;
 mod settings_view;
+mod snapshots;
+mod snapshots_view;
+#[cfg(test)]
+mod snapshots_tests;
 mod sync;
 mod term_host;
 mod term_input;
@@ -127,6 +138,8 @@ pub use view::view;
 pub enum Route {
     #[default]
     Workspace,
+    /// The workspace snapshots page (`/snapshots`).
+    Snapshots,
     /// The URL named no screen (`*` in the web client's router); holds the path it named.
     NotFound(String),
 }
@@ -136,6 +149,7 @@ impl Route {
     pub fn from_hash(hash: &str) -> Route {
         match hash.trim_start_matches('#') {
             "" | "/" => Route::Workspace,
+            "/snapshots" => Route::Snapshots,
             path => Route::NotFound(path.to_owned()),
         }
     }
@@ -211,6 +225,12 @@ pub struct State {
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
+    /// The Report a Bug dialog.
+    pub bug: bug_report::BugReportUi,
+    /// The web client's setup wizard, token screen and first-run onboarding.
+    pub first_run: first_run::FirstRun,
+    /// The snapshots page, its dialogs and `model::snapshots`.
+    pub snapshots: snapshots::SnapshotsUi,
     /// The Automations tab's reads, selection and canvases.
     pub automations: automations::AutomationsUi,
 }
@@ -273,6 +293,9 @@ impl Default for State {
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
+            bug: bug_report::BugReportUi::default(),
+            first_run: first_run::FirstRun::default(),
+            snapshots: snapshots::SnapshotsUi::default(),
             automations: automations::AutomationsUi::default(),
         }
     }
@@ -344,6 +367,12 @@ fn setup(state: &mut State, wake: Waker) {
     state.viewers.images = Some(rune::ImageCache::new(wake.clone()));
     state.viewers.waker = Some(wake.clone());
     if let Some(config) = LAUNCH.get().and_then(|l| l.config.clone()) {
+        // The web client asks `/health` first: a server in setup mode or one that refuses its
+        // token shows a first-run screen before the link starts.
+        if cfg!(target_arch = "wasm32") {
+            state.first_run_start(config, wake);
+            return;
+        }
         state.terms.host = Some(term_host::TermHost::connect(config.clone(), wake.clone()));
         state.connect(Host::connect(config, wake));
     }
@@ -376,6 +405,11 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_catalog = state.catalog_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
+    let next_first_run = state.first_run_tick(now);
+    state.bug_report_tick(tx);
+    if state.route == Route::Snapshots {
+        state.load_snapshots();
+    }
     let next_automation = state.automations_tick(now);
     let next_preview = state.automation_editor_tick(now);
     let waits = [
@@ -389,6 +423,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_git,
         next_github,
         next_mcp,
+        next_first_run,
         next_catalog,
         next_completion,
         next_automation,
