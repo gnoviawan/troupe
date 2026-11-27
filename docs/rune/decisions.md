@@ -382,3 +382,68 @@ and the first frame run off the UI thread. Clips larger than 8K
 (7680 x 4320 pixels, or 8192 a side) are refused. The web client hands the bytes to a hidden `<video>` element, which
 plays with sound, and copies its frames into `Pixels` every 33 ms, so Rune
 draws the picture and menus stay over it.
+
+## Desktop-only renderer sites
+
+**Question.** The React renderer refuses some operations off the Tauri
+desktop with a typed code: `WEB_UNSUPPORTED` (web client), `NOT_TAURI`
+(browser pane) and `UNSUPPORTED_SURFACE` (phone-width shell). The Rune
+desktop app talks to `troupe-server` like the web client does, so each
+refusal needs a server route for a host-local client, or an operator ruling
+that the desktop app may lose it.
+
+**Answer.** 25 sites at `46df9af5a`, found with
+`grep -rn "WEB_UNSUPPORTED\|NOT_TAURI\|UNSUPPORTED_SURFACE" src/renderer`
+(tests left out). Sites 1 to 16 refuse an operation. Sites 17 to 25 only
+react to a refusal or describe one, so they follow the site they name.
+"Host-local" means the `/ws` grant from R10b (#2177): only the desktop app
+on the server's own host, holding the owner-only credential, gets it. A route
+that acts with the host's credentials, or reveals what the host runs, is
+host-local only. A plain project operation uses the existing write
+capability and project boundary instead, so the web client gains it too.
+
+| # | Site | Refused operation | Decision |
+|---|---|---|---|
+| 1 | `lib/tauri-opener-api.ts:35` | `openWithExternalApp` | No route. The desktop app opens the path itself (`troupe-desktop` `services.rs` opener, R10a). A remote client stays refused. |
+| 2 | `lib/tauri-opener-api.ts:108` | `revealInFileManager` | No route, as 1. |
+| 3 | `lib/worktree-api.ts:30`, `removeAllManaged` | Remove every managed worktree | Route `POST /worktree/remove-all-managed`, calling `worktree_remove_all_managed_guarded` with the guards of `/worktree/remove`. |
+| 4 | `lib/worktree-api.ts:30`, `archive` | Archive a worktree | Route `POST /worktree/archive`, same guards. |
+| 5 | `lib/worktree-api.ts:30`, `restore` | Restore an archived worktree | Route `POST /worktree/restore`, same guards. |
+| 6 | `lib/worktree-api.ts:30`, `mergePreview` | Preview a merge into a branch | Route `POST /worktree/merge-preview`. It reads only, inside the project boundary. |
+| 7 | `lib/worktree-api.ts:30`, `mergeExecute` | Merge a worktree into a branch | Route `POST /worktree/merge-execute`, same guards as 3, ledgered like `/git/commit`. |
+| 8 | `lib/tauri-filesystem-api.ts:475` | `searchContentStreamStart` | `/ws` request `search_content_stream` with results as events. It needs a request and an event name in `troupe-protocol`. Until then the one-shot `POST /search/content` serves the desktop app. |
+| 9 | `lib/tauri-filesystem-api.ts:501` | `searchContentStreamCancel` | Served by the existing `POST /search/cancel` once 8 exists. |
+| 10 | `lib/browser-api.ts:84-147` | Browser tabs: create, navigate, resize, history, reload, stop, zoom, screenshot | Owned by R11 ("Host the browser pane"). Not an R10 route. |
+| 11 | `lib/browser-api.ts:155-176`, `:199` | Annotation, outbox sync, crop save, agentation injection | Owned by R11, as 10. |
+| 12 | `lib/browser-api.ts:184-189` | Local dev server discovery, local port check | Host-local `/ws` requests `discover_local_servers` and `check_local_port`. They reveal what runs on the host, so never a plain route. |
+| 13 | `lib/browser-api.ts:194` | Browser devtools | Needs operator ruling. Rune has no devtools, and R10a dropped Toggle DevTools from the menu. Default: the desktop app loses it. |
+| 14 | `lib/ssh-api.ts:110` | SSH sessions, SFTP, keys, port forwarding | Served to host-local clients by R10b (#2178). Port forwarding is not served yet: no client calls it. SSH events need an `ssh` watch name in `troupe-protocol` before they reach the client. A remote client stays refused. |
+| 15 | `lib/canvas-api.ts:31` | Canvas open on the phone-width shell | Needs operator ruling. It is a phone surface rule, not a desktop gap, so the desktop app keeps the canvas (R11). Default: the phone stays without it. |
+| 16 | `lib/web-server-api.ts:167` | Streaming search and directory watching | Streaming search is 8. Directory watching is already served by the `fs` watch, so this comment is stale. A React edit is out of scope here. |
+| 17 | `components/CommandPalette.tsx:258` | Hides Open Canvas on the phone | Follows 15. |
+| 18 | `layouts/workspace-layout/use-tab-openers.ts:72` | Canvas open path | Follows 15. |
+| 19 | `components/file-explorer/FileExplorer.tsx:42` | `.figcraft` opens as text on the phone | Follows 15. |
+| 20 | `hooks/use-mobile-web-shell.ts:124` | The phone-width predicate the canvas facade reads | Follows 15. |
+| 21 | `components/browser/BrowserControls.tsx:213` | Ignores `NOT_TAURI` from agentation | Follows 11. |
+| 22 | `components/browser/BrowserPanel.tsx:109` | Ignores `NOT_TAURI` from tab calls | Follows 10. |
+| 23 | `components/browser/AnnotationToolbar.tsx:94` | Ignores `NOT_TAURI` from annotation | Follows 11. |
+| 24 | `lib/ssh-messages.ts:175`, `components/sidebar/ssh-section.tsx:95` | "SSH runs in the desktop app" message, and the SSH panel hidden on web | Follow 14. The Rune desktop app shows the panel. |
+| 25 | `components/shell/use-chat-row-menu-actions.ts:86` | Reveal falls back to copying the path | Follows 2. |
+
+`lib/web-setup-api.ts:187` names `WEB_UNSUPPORTED` only to explain its own
+`DESKTOP_UNSUPPORTED` code, which refuses setup calls inside Tauri. It is not
+a web gap, so it is not counted.
+
+**Also needed (from R10a).** The Rune desktop app is a new device to the
+store, so it does not see the Tauri webview's per-device settings
+(`device/<tauri device>/…`). Since R10b (#2177) a host-local client takes
+over the retired `termul-data.json` import at authenticate, but not a device
+partition the Tauri webview already wrote. Proposal: a host-local `/ws`
+request `adopt_device_partition { fromDeviceId }` that copies the partition
+once, only into an empty one, and records the adoption like
+`host.desktopImported`.
+
+**Operator rulings to record in `preferences.md`.** 13 (devtools) and
+15 (canvas on the phone), each with the default above.
+
+**Source.** R10b (`reports/R10b.md`).
