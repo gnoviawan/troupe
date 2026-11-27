@@ -5,7 +5,7 @@ use model::terminal::Status;
 use model::workspace::Tab;
 use rune::{Cursor, El, Key, col, icon, row, text, text_input};
 use theme::Tokens;
-use ui::terminal::{PAD, Palette, Screen};
+use ui::terminal::{PAD, PAD_PHONE, Palette, Screen};
 use ui::type_::mono;
 
 use crate::State;
@@ -28,8 +28,8 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, touch: bool) -> Option
         .grow(1.0)
         .min_h(0.0)
         .fill(palette.bg)
-        .pl(PAD[0])
-        .pr(PAD[0])
+        .pl(if touch { PAD_PHONE } else { PAD[0] })
+        .pr(if touch { PAD_PHONE } else { PAD[0] })
         .pt(PAD[1])
         .pb(PAD[2]);
     let note = |message: String| text(message).font(mono(13.0, 400.0, 18.0)).color(t.colors.muted_foreground);
@@ -44,7 +44,7 @@ pub fn tab_body(s: &State, t: &'static Tokens, tab: &Tab, touch: bool) -> Option
     let blink_on = s.cursor_shown(terminal_id, term.cursor().blink.unwrap_or(true));
     // The command editor holds focus at a prompt, so xterm.js draws its cursor hollow.
     let editing = s.terms.editor.lines.contains_key(terminal_id);
-    let shown = Screen { term: &term, scrolled: view.scrolled, focused: !editing, blink_on, marks: &marks };
+    let shown = Screen { term: &term, scrolled: view.scrolled, focused: !editing, blink_on, marks: &marks, compact: touch };
     let id = terminal_id.clone();
     let screen = ui::terminal::screen(&format!("terminal-{terminal_id}"), &shown, &palette, &m, &view.cache)
         .cursor(if view.hover.is_some() { Cursor::Pointer } else { Cursor::Text })

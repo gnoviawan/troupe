@@ -82,6 +82,9 @@ pub struct Palette {
     pub selection: Color,
     pub selection_inactive: Color,
     pub ansi: [Color; 256],
+    /// The command status dot: a command that exited 0, and one that did not.
+    pub succeeded: Color,
+    pub failed: Color,
 }
 
 fn rgb(r: u8, g: u8, b: u8) -> Color {
@@ -113,6 +116,8 @@ impl Palette {
             selection: x.selection_background,
             selection_inactive: x.selection_inactive_background,
             ansi,
+            succeeded: t.colors.success,
+            failed: t.colors.destructive,
         }
     }
 
@@ -154,6 +159,8 @@ pub struct Screen<'a> {
     /// The blink phase: false while a blinking cursor is off.
     pub blink_on: bool,
     pub marks: &'a [Mark],
+    /// The phone shell's 6 px padding: the status dot shrinks to fit it.
+    pub compact: bool,
 }
 
 impl Screen<'_> {
@@ -216,10 +223,30 @@ pub fn screen(key: &str, screen: &Screen, palette: &Palette, m: &Metrics, cache:
             surface = surface.child(bar(i, "line", mark, line, (mark.row + 1) as f32 * m.cell_h - 1.0, 1.0));
         }
     }
+    for (row, line) in term.lines().range(screen.top()..).take(term.rows()).enumerate() {
+        if let Some(code) = line.status {
+            surface = surface.child(status_dot(key, row, code, screen.compact, palette, m));
+        }
+    }
     if on_screen && (screen.blink_on || !screen.focused) {
         surface = surface.child(cursor_box(term, screen.focused, palette, m));
     }
     surface
+}
+
+/// The success or failure dot left of a finished command's row (`.termul-command-status`), in
+/// the surface's left padding: 6 px, 5 px from the text, or 4 px and 1 px on the phone.
+fn status_dot(key: &str, row: usize, code: i64, compact: bool, palette: &Palette, m: &Metrics) -> El {
+    let (size, gap) = if compact { (4.0, 1.0) } else { (6.0, 5.0) };
+    let label = if code == 0 { "Command succeeded (exit code 0)".to_owned() } else { format!("Command failed (exit code {code})") };
+    el().key(format!("{key}-status-{row}"))
+        .absolute(-(gap + size), row as f32 * m.cell_h + (m.cell_h - size) / 2.0)
+        .w(size)
+        .h(size)
+        .radius(size / 2.0)
+        .fill(if code == 0 { palette.succeeded } else { palette.failed })
+        .role("img")
+        .label(label)
 }
 
 /// xterm.js's cursor: a block with the character in the accent colour while focused, an
