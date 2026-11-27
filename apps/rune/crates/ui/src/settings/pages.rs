@@ -75,7 +75,7 @@ pub const APP_PAGES: [Page; 11] = [
         Some("Agents"),
         "KeyRound",
         "The accounts that agent chats use, and how much of each limit is used.",
-        Owner::Later("R9c follow-up"),
+        Owner::Here,
     ),
     page(
         "ai-agents",

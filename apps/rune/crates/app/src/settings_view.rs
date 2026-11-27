@@ -123,6 +123,9 @@ impl State {
         if self.settings_page().id == crate::settings_mcp::PAGE {
             self.mcp_page_opened();
         }
+        if self.settings_page().id == crate::settings_accounts::PAGE {
+            self.accounts_opened();
+        }
         if self.settings_page().id == crate::settings_subagents::PAGE {
             self.subagents_opened();
         }

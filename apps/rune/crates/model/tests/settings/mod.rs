@@ -384,3 +384,46 @@ pub fn replay_subagents(vector: &Value) -> Result<usize, String> {
     }
     Ok(steps.len())
 }
+
+/// Replays the Accounts page's words against `model::settings::accounts`.
+pub fn replay_accounts(vector: &Value) -> Result<usize, String> {
+    use model::settings::accounts::{self as rules, AccountTone, Provider, UsageTone};
+    const NOW: f64 = 1_800_000_000_000.0;
+    let steps = vector["steps"].as_array().ok_or("no steps")?;
+    for (index, step) in steps.iter().enumerate() {
+        let event = &step["event"];
+        let args = &event["args"];
+        let got = match event["action"].as_str().unwrap_or_default() {
+            "tone" => json!(match rules::usage_tone(args[0].as_f64().unwrap_or_default()) {
+                UsageTone::Normal => "normal",
+                UsageTone::Warning => "warning",
+                UsageTone::Critical => "critical",
+            }),
+            "label" => json!(rules::claude_meter(&args[0]).label),
+            "reset" => json!(rules::format_reset(args[0].as_f64().map(|s| s * 1000.0), NOW)),
+            "checked" => json!(rules::format_checked(args[0].as_f64().unwrap_or_default(), NOW)),
+            "plan" => json!(rules::plan_label(args[0].as_str())),
+            "primary" => json!(rules::claude_primary(Some(&args[0])).map(|m| m.percent)),
+            "status" => {
+                let usage = (!args[1].is_null()).then_some(&args[1]);
+                let (tone, meta) = rules::claude_status(&args[0], usage, args[2].as_bool().unwrap_or_default(), args[3].as_u64().unwrap_or_default() as usize);
+                let tone = match tone {
+                    AccountTone::Ok => "ok",
+                    AccountTone::Warning => "warning",
+                    AccountTone::Critical => "critical",
+                    AccountTone::SignedOut => "signed-out",
+                    AccountTone::Waiting => "waiting",
+                    AccountTone::Unknown => "unknown",
+                };
+                json!({ "tone": tone, "meta": meta })
+            }
+            "codexLabel" => json!(rules::meters(Provider::Codex, Some(&json!({ "status": "ok", "windows": [args[0]] })))[0].label),
+            "antigravityLabel" => json!(rules::meters(Provider::Antigravity, Some(&json!({ "status": "ok", "windows": [args[0]] })))[0].label),
+            other => return Err(format!("step {index}: no read {other}")),
+        };
+        if let Some(problem) = diff(&format!("step {index} result"), &step["result"], &got) {
+            return Err(problem);
+        }
+    }
+    Ok(steps.len())
+}

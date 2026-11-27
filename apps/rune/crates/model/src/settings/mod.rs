@@ -9,6 +9,7 @@
 //! server (the app logs and drops them) and the idle window is read from the host after boot.
 
 mod normalize;
+pub mod accounts;
 pub mod mcp;
 pub mod mcp_catalog;
 pub mod mcp_install;

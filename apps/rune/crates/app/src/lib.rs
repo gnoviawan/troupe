@@ -72,6 +72,8 @@ mod project_settings;
 mod project_settings_view;
 mod rail_view;
 mod settings;
+mod settings_accounts;
+mod settings_accounts_dialogs;
 mod settings_mcp;
 mod settings_mcp_dialog;
 mod settings_mcp_json;
@@ -193,6 +195,7 @@ pub struct State {
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
     pub subagents_ui: settings_subagents::SubagentsUi,
+    pub accounts_ui: settings_accounts::AccountsUi,
     pub(crate) sync: sync::Sync,
 }
 
@@ -253,6 +256,7 @@ impl Default for State {
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
             subagents_ui: settings_subagents::SubagentsUi::default(),
+            accounts_ui: settings_accounts::AccountsUi::default(),
             sync: sync::Sync::default(),
         }
     }
@@ -353,6 +357,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_git = state.git_tick();
     let next_mcp = state.mcp_tick(now);
     let next_catalog = state.catalog_tick(now);
+    let next_accounts = state.accounts_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
     let waits = [
@@ -366,6 +371,7 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_git,
         next_mcp,
         next_catalog,
+        next_accounts,
         next_completion,
     ];
     for due in waits.into_iter().flatten() {

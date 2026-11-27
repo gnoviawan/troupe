@@ -272,6 +272,18 @@
         "which_profiles_may_move_or_go",
         "saving_a_profile_keeps_the_implicit_default"
       ]
+    },
+    "accounts": {
+      "sources": {
+        "src/renderer/lib/claude-usage-format.ts": "7db226efdfde02bb47bd84bc30f44492fc563397",
+        "src/renderer/lib/codex-usage-format.ts": "2d0fcdd782b26e9fd304c03fba601f45846b4d6e",
+        "src/renderer/lib/antigravity-usage-format.ts": "3d37161f25b4eb54d949d36598da8738e6806218",
+        "src/renderer/components/settings/provider/account-status.tsx": "b17d6f421f11cc78789ca9a0e26dff84c9b1299e"
+      },
+      "vectors": [
+        "usage_words",
+        "claude_rows_say_their_state"
+      ]
     }
   }
 }
