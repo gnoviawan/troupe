@@ -161,6 +161,7 @@ impl Buffer {
                 old.cells.clear();
                 old.cells.resize(cols, Cell::blank(fill));
                 old.wrapped = wrapped;
+                old.status = None;
                 old.touch();
                 self.lines.push_back(old);
                 return;
