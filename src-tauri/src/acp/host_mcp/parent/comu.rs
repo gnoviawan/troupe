@@ -1,5 +1,7 @@
 //! `Comu` and `DescribeComu` frames handled by [`HostPlanServer`].
 
+use std::future::Future;
+
 use serde_json::Value;
 
 use super::HostPlanServer;
@@ -12,12 +14,23 @@ impl HostPlanServer {
         agent_id: &str,
         tool: Option<String>,
         input: Option<Value>,
+        hung_up: impl Future<Output = ()>,
     ) -> FrameReply {
         let Some(tool_name) = tool.filter(|s| !s.trim().is_empty()) else {
             return FrameReply::err("comu frame requires `comu_tool`");
         };
         let args = input.unwrap_or_else(|| Value::Object(serde_json::Map::new()));
-        let output = crate::comu::dispatch(session_id, agent_id, &tool_name, args).await;
+        let output = tokio::select! {
+            biased;
+            () = hung_up => {
+                log::info!(
+                    "[host-mcp] comu caller disconnected before completion: tool={tool_name} agent={agent_id} session={}",
+                    crate::logging::redact_session_id(session_id)
+                );
+                return FrameReply::err_code("cancelled", "caller disconnected");
+            }
+            out = crate::comu::dispatch(session_id, agent_id, &tool_name, args) => out,
+        };
         let ok = output.ok;
         match serde_json::to_value(&output) {
             Ok(serialized) => {

@@ -1,6 +1,7 @@
 //! Atomic schema-versioned file store for Troupe Comu policy documents.
 
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -56,6 +57,25 @@ struct VersionProbe {
     version: u32,
 }
 
+/// Bijective lowercase-only storage key so distinct `project_id`s (e.g.
+/// `"proj-alpha"` vs `"PROJ-ALPHA"`) never collide on case-insensitive
+/// filesystems (Windows, macOS APFS default).
+///
+/// `[a-z0-9-]` stay literal; every other byte (including `'_'` and `'A'..='Z'`)
+/// encodes as `_{byte:02x}`.
+#[must_use]
+pub fn encode_project_storage_key(project_id: &str) -> String {
+    let mut out = String::with_capacity(project_id.len() + 8);
+    for &b in project_id.as_bytes() {
+        if b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' {
+            out.push(char::from(b));
+        } else {
+            let _ = write!(&mut out, "_{b:02x}");
+        }
+    }
+    out
+}
+
 pub struct ComuPolicyFiles {
     root: PathBuf,
     app_lock: AsyncMutex<()>,
@@ -76,17 +96,47 @@ impl ComuPolicyFiles {
         self.root.join("app.json")
     }
 
-    fn project_path(&self, project_id: &str) -> PathBuf {
-        self.root.join("projects").join(format!("{project_id}.json"))
+    fn project_path_for_key(&self, storage_key: &str) -> PathBuf {
+        self.root
+            .join("projects")
+            .join(format!("{storage_key}.json"))
     }
 
-    fn project_lock(&self, project_id: &str) -> Arc<AsyncMutex<()>> {
+    /// Fallback read path for lowercase-only legacy files written before
+    /// `encode_project_storage_key` (e.g. `__unassigned__.json` vs
+    /// `_5f_5funassigned_5f_5f.json`), restricted to IDs with no ASCII
+    /// uppercase so uppercase IDs never alias lowercase files on Windows/macOS.
+    fn legacy_project_path(&self, project_id: &str, storage_key: &str) -> Option<PathBuf> {
+        if project_id == storage_key || project_id.bytes().any(|b| b.is_ascii_uppercase()) {
+            return None;
+        }
+        Some(
+            self.root
+                .join("projects")
+                .join(format!("{project_id}.json")),
+        )
+    }
+
+    fn project_lock(&self, storage_key: &str) -> Arc<AsyncMutex<()>> {
         let mut guard = self.project_locks.lock();
         Arc::clone(
             guard
-                .entry(project_id.to_string())
+                .entry(storage_key.to_string())
                 .or_insert_with(|| Arc::new(AsyncMutex::new(()))),
         )
+    }
+
+    fn read_project_by_key(&self, project_id: &str, storage_key: &str) -> ComuProjectPolicy {
+        let primary = self.project_path_for_key(storage_key);
+        if primary.exists() {
+            return read_project_unlocked(&primary);
+        }
+        if let Some(legacy) = self.legacy_project_path(project_id, storage_key) {
+            if legacy.exists() {
+                return read_project_unlocked(&legacy);
+            }
+        }
+        ComuProjectPolicy::default()
     }
 
     pub async fn read_app(&self) -> Result<ComuAppPolicy, ComuPolicyRefusal> {
@@ -96,9 +146,10 @@ impl ComuPolicyFiles {
 
     pub async fn read_project(&self, project_id: &str) -> Result<ComuProjectPolicy, ComuPolicyRefusal> {
         validate_project_id(project_id)?;
-        let lock = self.project_lock(project_id);
+        let key = encode_project_storage_key(project_id);
+        let lock = self.project_lock(&key);
         let _guard = lock.lock().await;
-        Ok(read_project_unlocked(&self.project_path(project_id)))
+        Ok(self.read_project_by_key(project_id, &key))
     }
 
     pub async fn update_app(
@@ -130,10 +181,11 @@ impl ComuPolicyFiles {
         op: ComuProjectOp,
     ) -> Result<(ComuProjectPolicy, bool), ComuPolicyRefusal> {
         validate_project_id(project_id)?;
-        let lock = self.project_lock(project_id);
+        let key = encode_project_storage_key(project_id);
+        let lock = self.project_lock(&key);
         let _guard = lock.lock().await;
-        let path = self.project_path(project_id);
-        let mut policy = read_project_unlocked(&path);
+        let path = self.project_path_for_key(&key);
+        let mut policy = self.read_project_by_key(project_id, &key);
         if let Some(expected) = expected_revision {
             if policy.revision != expected {
                 return Err(ComuPolicyRefusal::RevisionConflict {
@@ -175,9 +227,15 @@ fn read_app_unlocked(path: &Path) -> ComuAppPolicy {
         }
     };
     if let Ok(probe) = serde_json::from_slice::<VersionProbe>(&bytes) {
-        if probe.version > SCHEMA_VERSION {
+        if probe.version != SCHEMA_VERSION {
+            log::warn!(
+                "[comu-policy] unsupported app policy schema version {} (expected {}); failing closed",
+                probe.version,
+                SCHEMA_VERSION
+            );
             return ComuAppPolicy {
                 read_only: true,
+                enabled: false,
                 ..ComuAppPolicy::default()
             };
         }
@@ -217,7 +275,7 @@ fn read_project_unlocked(path: &Path) -> ComuProjectPolicy {
         }
     };
     if let Ok(probe) = serde_json::from_slice::<VersionProbe>(&bytes) {
-        if probe.version > SCHEMA_VERSION {
+        if probe.version != SCHEMA_VERSION {
             return ComuProjectPolicy {
                 read_only: true,
                 ..ComuProjectPolicy::default()

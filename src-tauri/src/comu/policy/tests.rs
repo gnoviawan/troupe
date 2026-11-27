@@ -86,3 +86,38 @@ async fn rejects_troupe_self_entry_and_checks_project_allowlist() {
             .await
     );
 }
+
+#[tokio::test]
+async fn isolates_case_variant_project_ids_and_fails_closed_on_future_schema() {
+    let dir = tempfile::tempdir().unwrap();
+    let service = ComuPolicyService::new(dir.path().to_path_buf(), Vec::new());
+
+    assert_ne!(
+        super::store::encode_project_storage_key("proj-alpha"),
+        super::store::encode_project_storage_key("PROJ-ALPHA")
+    );
+
+    service
+        .record_project_approval("proj-alpha", "com.apple.calculator")
+        .await;
+    assert!(
+        service
+            .is_app_allowlisted("proj-alpha", "com.apple.calculator", "Calculator")
+            .await
+    );
+    assert!(
+        !service
+            .is_app_allowlisted("PROJ-ALPHA", "com.apple.calculator", "Calculator")
+            .await
+    );
+
+    std::fs::write(
+        dir.path().join("app.json"),
+        br#"{"version":99,"enabled":true}"#,
+    )
+    .unwrap();
+    let future_policy = service.read_app_policy().await;
+    assert!(future_policy.read_only);
+    assert!(!future_policy.enabled);
+}
+

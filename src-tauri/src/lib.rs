@@ -1957,12 +1957,16 @@ pub fn run() {
             }
             let project_of: browser_automation::core::ProjectResolver = {
                 let persistence = session_persistence.clone();
-                Arc::new(move |session_id| {
-                    persistence
-                        .as_ref()
-                        .and_then(|p| p.metadata(session_id).ok())
-                        .and_then(|m| m.project_id)
-                        .unwrap_or_else(|| acp::session_persistence::UNASSIGNED_PROJECT_ID.to_string())
+                Arc::new(move |session_id| match persistence.as_ref() {
+                    Some(p) => match p.metadata(session_id) {
+                        Ok(meta) => meta.project_id.unwrap_or_else(|| {
+                            acp::session_persistence::UNASSIGNED_PROJECT_ID.to_string()
+                        }),
+                        // Lookup failed: return empty string so neither Browser nor Comu
+                        // persists a project-scoped approval into the shared unassigned bucket.
+                        Err(_) => String::new(),
+                    },
+                    None => String::new(),
                 })
             };
             let root_of: browser_automation::core::RootResolver = {
