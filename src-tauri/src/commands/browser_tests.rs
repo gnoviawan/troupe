@@ -13,6 +13,7 @@ fn outbox_saves_annotation_with_valid_nonce_and_reuses_session() {
         &store,
         "tab-user-1",
         nonce,
+        None,
         json!({
             "reqId": "req-1",
             "nonce": nonce,
@@ -53,6 +54,7 @@ fn outbox_saves_annotation_with_valid_nonce_and_reuses_session() {
         &store,
         "tab-user-1",
         nonce,
+        None,
         json!({
             "reqId": "req-2",
             "nonce": nonce,
@@ -99,6 +101,7 @@ fn outbox_rejects_mismatched_or_empty_nonce() {
         &store,
         "tab-user-1",
         "expected-secret",
+        None,
         json!({
             "reqId": "req-bad",
             "nonce": "wrong-secret",
@@ -128,6 +131,7 @@ fn outbox_dispatches_action_event_on_event_bus() {
         &store,
         "tab-user-2",
         nonce,
+        None,
         json!({
             "reqId": "req-act-1",
             "nonce": nonce,
@@ -159,4 +163,65 @@ fn outbox_dispatches_action_event_on_event_bus() {
         }
     }
     assert!(saw_action, "expected ActionRequested event on bus");
+}
+
+#[test]
+fn outbox_carries_fallback_session_id_across_same_poll_batch() {
+    let store = SqliteStore::open_in_memory().unwrap();
+    let nonce = "batch-nonce";
+
+    let first = process_outbox_item(
+        &store,
+        "tab-user-3",
+        nonce,
+        None,
+        json!({
+            "reqId": "req-b1",
+            "nonce": nonce,
+            "kind": "annotation",
+            "url": "https://absenin.id",
+            "payload": {
+                "x": 10,
+                "y": 20,
+                "comment": "First in batch",
+                "element": "h1",
+                "elementPath": "h1",
+                "timestamp": 1700000100
+            }
+        }),
+    );
+    let batch_sid = match first {
+        OutboxOutcome::Ack(ack) => ack.session_id.expect("session created"),
+        OutboxOutcome::Rejected => panic!("expected ack"),
+    };
+
+    let second = process_outbox_item(
+        &store,
+        "tab-user-3",
+        nonce,
+        Some(&batch_sid),
+        json!({
+            "reqId": "req-b2",
+            "nonce": nonce,
+            "kind": "annotation",
+            "url": "https://absenin.id",
+            "payload": {
+                "x": 30,
+                "y": 40,
+                "comment": "Second in batch without sessionId",
+                "element": "p",
+                "elementPath": "p",
+                "timestamp": 1700000101
+            }
+        }),
+    );
+    match second {
+        OutboxOutcome::Ack(ack) => {
+            assert!(ack.ok);
+            assert_eq!(ack.session_id.as_deref(), Some(batch_sid.as_str()));
+        }
+        OutboxOutcome::Rejected => panic!("expected ack"),
+    }
+    assert_eq!(store.list_sessions().len(), 1);
+    assert_eq!(store.get_pending_annotations(&batch_sid).len(), 2);
 }

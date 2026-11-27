@@ -34,12 +34,15 @@ import {
 
 type AnnotateTool = 'comment' | 'rectangle' | 'ruler' | 'screenshot-area'
 
+declare const __troupeBridgeNonce: string | undefined
+
 interface OverlayCommand {
   type:
     | 'set_active'
     | 'set_tool'
     | 'set_pause'
     | 'set_pins_hidden'
+    | 'set_capture_hidden'
     | 'place_guide'
     | 'clear'
     | 'outbox_ack'
@@ -63,6 +66,7 @@ interface PlacedPin {
   x: number
   y: number
   rect?: { x: number; y: number; width: number; height: number }
+  guideId?: string
   comment: string
   element: string
 }
@@ -92,6 +96,11 @@ class TroupeAnnotationOverlay {
   private active = false
   private tool: AnnotateTool = 'comment'
   private pinsHidden = false
+  private captureHidden = false
+  private selectedRect: {
+    rect: { x: number; y: number; width: number; height: number }
+    isRectangle: boolean
+  } | null = null
   private pins: PlacedPin[] = []
   private guides: PlacedGuide[] = []
   private dragStart: { x: number; y: number } | null = null
@@ -103,7 +112,7 @@ class TroupeAnnotationOverlay {
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null
   private onWindowKeyUp: ((e: KeyboardEvent) => void) | null = null
 
-  constructor() {
+  constructor(bridgeNonce?: string | null) {
     const existing = document.getElementById(HOST_ID)
     if (existing) existing.remove()
 
@@ -111,7 +120,7 @@ class TroupeAnnotationOverlay {
     this.host.id = HOST_ID
     document.body.appendChild(this.host)
     this.shadow = this.host.attachShadow({ mode: 'open' })
-    this.transport = new OverlayTransport(this.host)
+    this.transport = new OverlayTransport(this.host, bridgeNonce)
 
     const style = document.createElement('style')
     style.textContent = OVERLAY_CSS
@@ -142,13 +151,23 @@ class TroupeAnnotationOverlay {
     this.shadow.appendChild(this.previewGuideBadge)
 
     this.guidesContainer = document.createElement('div')
+    this.guidesContainer.className = 'guides-layer'
     this.shadow.appendChild(this.guidesContainer)
 
     this.pinsContainer = document.createElement('div')
+    this.pinsContainer.className = 'pins-layer'
     this.shadow.appendChild(this.pinsContainer)
 
     this.host.style.display = 'none'
     this.bindEvents()
+  }
+
+  public setBridgeNonce(nonce: string | null | undefined): void {
+    this.transport.setBridgeNonce(nonce)
+  }
+
+  private syncHostVisibility(): void {
+    this.host.style.display = this.active && !this.captureHidden ? '' : 'none'
   }
 
   private hideHoverVisuals(): void {
@@ -164,15 +183,17 @@ class TroupeAnnotationOverlay {
     rect: { x: number; y: number; width: number; height: number },
     isRectangle: boolean
   ): void {
+    this.selectedRect = { rect, isRectangle }
     this.selectedBox.className = isRectangle ? 'selected-box rect' : 'selected-box'
     this.selectedBox.style.left = `${rect.x}px`
     this.selectedBox.style.top = `${rect.y}px`
     this.selectedBox.style.width = `${rect.width}px`
     this.selectedBox.style.height = `${rect.height}px`
-    this.selectedBox.style.display = 'block'
+    this.selectedBox.style.display = this.pinsHidden ? 'none' : 'block'
   }
 
   private hideSelectedBox(): void {
+    this.selectedRect = null
     this.selectedBox.style.display = 'none'
   }
 
@@ -229,8 +250,8 @@ class TroupeAnnotationOverlay {
         this.transport.handleOutboxAck(cmd as OutboxAckMessage)
         break
       case 'set_active':
-        this.transport.captureBridgeNonce()
         this.active = Boolean(cmd.active)
+        this.captureHidden = false
         this.clearGuideReopenTimer()
         if (!this.active) {
           this.activeGuideDragCleanup?.()
@@ -239,9 +260,9 @@ class TroupeAnnotationOverlay {
           this.hideRulerPreview()
           this.dragStart = null
           this.dragBox.style.display = 'none'
-          this.host.style.display = 'none'
+          this.syncHostVisibility()
         } else {
-          this.host.style.display = ''
+          this.syncHostVisibility()
           this.renderPinsAndGuides()
         }
         this.syncLayerMode()
@@ -265,8 +286,16 @@ class TroupeAnnotationOverlay {
           this.clearGuideReopenTimer()
           this.hideHoverVisuals()
           this.hideRulerPreview()
+          this.selectedBox.style.display = 'none'
+          this.dragBox.style.display = 'none'
+        } else if (this.popoverEl && this.selectedRect) {
+          this.showSelectedBox(this.selectedRect.rect, this.selectedRect.isRectangle)
         }
         this.renderPinsAndGuides()
+        break
+      case 'set_capture_hidden':
+        this.captureHidden = Boolean(cmd.hidden)
+        this.syncHostVisibility()
         break
       case 'place_guide':
         if (cmd.axis) {
@@ -306,6 +335,10 @@ class TroupeAnnotationOverlay {
 
   private syncLayerMode(): void {
     this.layer.className = 'layer'
+    const passthrough =
+      this.active && (this.tool === 'rectangle' || this.tool === 'screenshot-area')
+    this.guidesContainer.classList.toggle('passthrough', passthrough)
+    this.pinsContainer.classList.toggle('passthrough', passthrough)
     if (!this.active) return
     if (this.tool === 'rectangle' || this.tool === 'screenshot-area') {
       this.layer.classList.add('capture')
@@ -319,7 +352,7 @@ class TroupeAnnotationOverlay {
   private elementUnderPoint(x: number, y: number): Element | null {
     this.host.style.display = 'none'
     const el = document.elementFromPoint(x, y)
-    this.host.style.display = ''
+    this.syncHostVisibility()
     if (!el || el === document.documentElement || el === document.body) return null
     return el
   }
@@ -331,6 +364,10 @@ class TroupeAnnotationOverlay {
       if (!this.active || this.popoverEl || this.draggingGuideId) return
 
       if (this.dragStart && (this.tool === 'rectangle' || this.tool === 'screenshot-area')) {
+        if (this.pinsHidden) {
+          this.dragBox.style.display = 'none'
+          return
+        }
         const left = Math.min(this.dragStart.x, e.clientX)
         const top = Math.min(this.dragStart.y, e.clientY)
         const width = Math.abs(e.clientX - this.dragStart.x)
@@ -351,7 +388,7 @@ class TroupeAnnotationOverlay {
 
       this.hideRulerPreview()
 
-      if (this.tool === 'screenshot-area' || this.tool === 'rectangle') {
+      if (this.tool === 'screenshot-area' || this.tool === 'rectangle' || this.pinsHidden) {
         this.hideHoverVisuals()
         return
       }
@@ -710,6 +747,17 @@ class TroupeAnnotationOverlay {
       },
       onRemoveGuide: (guideId) => {
         this.clearGuideReopenTimer()
+        const removedPinIds = this.pins.filter((p) => p.guideId === guideId).map((p) => p.id)
+        if (removedPinIds.length > 0) {
+          const drop = new Set(removedPinIds)
+          this.pins = this.pins
+            .filter((p) => !drop.has(p.id))
+            .map((p, idx) => ({ ...p, num: idx + 1 }))
+          void this.transport.postAction({
+            kind: 'annotations_removed',
+            ids: removedPinIds
+          })
+        }
         this.guides = this.guides.filter((g) => g.id !== guideId)
         this.closePopover()
         this.renderPinsAndGuides()
@@ -720,8 +768,10 @@ class TroupeAnnotationOverlay {
         this.selectedBox.style.display = 'none'
         return had
       },
-      onRestoreSelectionAfterError: (had) => {
-        if (had) this.selectedBox.style.display = 'block'
+      onRestoreSelectionAfterError: (pop, had) => {
+        if (had && pop.isConnected && this.popoverEl === pop && !this.pinsHidden) {
+          this.selectedBox.style.display = 'block'
+        }
       },
       onSubmit: (payload) => this.transport.postAnnotation(payload),
       onSaved: (popoverEl, id, comment, pinX, pinY) => {
@@ -733,6 +783,7 @@ class TroupeAnnotationOverlay {
           x: pinX,
           y: pinY,
           rect: opts.rect,
+          guideId: opts.guide?.id,
           comment,
           element: opts.summary?.element ?? opts.title
         })
@@ -781,7 +832,7 @@ class TroupeAnnotationOverlay {
   }
 }
 
-function mountOverlay(): TroupeAnnotationOverlay {
+function mountOverlay(bridgeNonce?: string | null): TroupeAnnotationOverlay {
   const win = window as unknown as {
     __TROUPE_ANNOTATE__?: {
       dispatch: (cmd: OverlayCommand) => void
@@ -795,9 +846,10 @@ function mountOverlay(): TroupeAnnotationOverlay {
   }
   const existing = win.__TROUPE_ANNOTATE_INSTANCE__
   if (win.__TROUPE_ANNOTATE__ && existing?.isConnected()) {
+    existing.setBridgeNonce(bridgeNonce)
     return existing
   }
-  const overlay = new TroupeAnnotationOverlay()
+  const overlay = new TroupeAnnotationOverlay(bridgeNonce)
   win.__TROUPE_ANNOTATE_INSTANCE__ = overlay
   win.__TROUPE_ANNOTATE__ = {
     dispatch: (cmd) => overlay.dispatch(cmd),
@@ -805,7 +857,7 @@ function mountOverlay(): TroupeAnnotationOverlay {
   }
   win.TermulAgentation = {
     mount: () => {
-      const live = mountOverlay()
+      const live = mountOverlay(bridgeNonce)
       live.dispatch({ type: 'set_active', active: true })
     },
     unmount: () => win.__TROUPE_ANNOTATE_INSTANCE__?.destroy()
@@ -815,12 +867,13 @@ function mountOverlay(): TroupeAnnotationOverlay {
 
 function init(): void {
   if (typeof document === 'undefined') return
+  const injectedNonce = typeof __troupeBridgeNonce === 'string' ? __troupeBridgeNonce : undefined
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      mountOverlay()
+      mountOverlay(injectedNonce)
     })
   } else {
-    mountOverlay()
+    mountOverlay(injectedNonce)
   }
 }
 

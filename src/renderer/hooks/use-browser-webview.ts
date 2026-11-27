@@ -37,7 +37,7 @@ function measureLogicalBounds(el: HTMLElement): BrowserBounds {
 }
 
 const ZOOM_EPSILON = 0.001
-const OCCLUSION_SNAPSHOT_TIMEOUT_MS = 220
+const OCCLUSION_SNAPSHOT_TIMEOUT_MS = 350
 
 export function useBrowserWebview(
   browserTabId: string,
@@ -363,7 +363,11 @@ export function useBrowserWebview(
         if (cancelled || !visibilityRef.current || !createdRef.current) return
         browserTabShow(browserTabId)
           .then((r) => {
-            if (!r.success) {
+            if (r.success) {
+              if (!cancelled && token === occlusionTokenRef.current) {
+                setOcclusionPreviewUrl(null)
+              }
+            } else {
               void logFrontendError({
                 message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
                 source: 'useBrowserWebview'
@@ -377,11 +381,6 @@ export function useBrowserWebview(
               }`,
               source: 'useBrowserWebview'
             })
-          })
-          .finally(() => {
-            if (!cancelled && token === occlusionTokenRef.current) {
-              setOcclusionPreviewUrl(null)
-            }
           })
       })
     } else if (occluded && paneVisible && hasDocument) {

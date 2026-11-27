@@ -77,21 +77,55 @@ export function computeGuideBadgeLayout(
   }
 
   // Horizontal guides: badges live along the left edge and shift right when close vertically.
+  // When horizontal lanes exceed the viewport width (e.g. 320px), reflow overflow badges
+  // vertically into the column with the lowest occupied bottom edge instead of clamping onto
+  // an already-occupied position.
   const horizontals = guides.filter((g) => g.axis === 'horizontal').sort((a, b) => a.pos - b.pos)
-  const laneBottomEdges: number[] = []
+  const columns: Array<{ left: number; bottomEdge: number }> = []
   for (const guide of horizontals) {
     const text = formatGuideBadgeText(guide)
     const width = estimateBadgeWidth(text)
-    const top = Math.max(8, Math.min(vh - 28, guide.pos + 6))
-    let lane = laneBottomEdges.findIndex((edge) => edge + HORIZONTAL_MIN_Y_GAP_PX <= top)
-    if (lane === -1) {
-      lane = laneBottomEdges.length
-      laneBottomEdges.push(top)
-    } else {
-      laneBottomEdges[lane] = top
-    }
+    const desiredTop = Math.max(8, Math.min(vh - 28, guide.pos + 6))
     const maxLeft = Math.max(8, vw - width - 8)
-    const left = Math.min(maxLeft, HORIZONTAL_BASE_LEFT_PX + lane * HORIZONTAL_LANE_STEP_PX)
+
+    let chosenCol = columns.findIndex(
+      (col) => col.left <= maxLeft && col.bottomEdge + HORIZONTAL_MIN_Y_GAP_PX <= desiredTop
+    )
+    let left: number
+    let top: number
+
+    if (chosenCol !== -1) {
+      left = columns[chosenCol].left
+      top = desiredTop
+      columns[chosenCol].bottomEdge = top
+    } else {
+      const nextLeft = HORIZONTAL_BASE_LEFT_PX + columns.length * HORIZONTAL_LANE_STEP_PX
+      const canAddColumn =
+        columns.length === 0 ||
+        (nextLeft <= maxLeft &&
+          nextLeft >= columns[columns.length - 1].left + BADGE_MIN_WIDTH_PX + BADGE_LANE_GAP_PX)
+
+      if (canAddColumn) {
+        left = Math.min(maxLeft, nextLeft)
+        top = desiredTop
+        columns.push({ left, bottomEdge: top })
+      } else {
+        // Overflow: reflow into the existing column with the lowest occupied bottom edge
+        chosenCol = 0
+        for (let i = 1; i < columns.length; i += 1) {
+          if (columns[i].bottomEdge < columns[chosenCol].bottomEdge) {
+            chosenCol = i
+          }
+        }
+        left = Math.min(maxLeft, columns[chosenCol].left)
+        top = Math.min(
+          vh - 28,
+          Math.max(desiredTop, columns[chosenCol].bottomEdge + HORIZONTAL_MIN_Y_GAP_PX)
+        )
+        columns[chosenCol].bottomEdge = top
+      }
+    }
+
     placements.set(guide.id, {
       id: guide.id,
       axis: 'horizontal',

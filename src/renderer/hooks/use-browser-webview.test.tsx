@@ -387,6 +387,33 @@ describe('useBrowserWebview bounds updates', () => {
     visible.unmount()
     resetNativeWebviewOcclusionForTests()
   })
+
+  it('keeps the occlusion preview intact when browserTabShow fails on reveal', async () => {
+    const OccluderHarness = ({ open }: { open: boolean }): null => {
+      useNativeWebviewOcclusion(open)
+      return null
+    }
+    const visible = render(<BrowserWebviewHarness />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalled())
+
+    const occluder = render(<OccluderHarness open />)
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeTruthy())
+
+    vi.mocked(browserTabShow).mockResolvedValueOnce({
+      success: false,
+      error: 'Webview failed to show'
+    })
+    occluder.rerender(<OccluderHarness open={false} />)
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(visible.queryByTestId('occlusion-preview')).toBeTruthy()
+    occluder.unmount()
+    visible.unmount()
+    resetNativeWebviewOcclusionForTests()
+  })
 })
 
 describe('useBrowserWebview agent control', () => {

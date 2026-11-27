@@ -113,6 +113,7 @@ export function BrowserControls({
   const viewportPreset = tab?.viewportPreset ?? 'desktop'
   const annotateMode = tab?.annotateMode ?? false
   const pendingCount = tab?.pendingAnnotations.length ?? 0
+  const lastScreenshotCopiedAt = tab?.lastScreenshotCopiedAt
 
   const agentSessionId = useAgentTabSession(browserTabId)
   const agentStopped = useSessionBrowserStopped(agentSessionId)
@@ -122,15 +123,19 @@ export function BrowserControls({
   const setAnnotateMode = useBrowserSessionStore((s) => s.setAnnotateMode)
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
   const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
+  const bumpScreenshotAreaToken = useBrowserSessionStore((s) => s.bumpScreenshotAreaToken)
+  const markScreenshotCopied = useBrowserSessionStore((s) => s.markScreenshotCopied)
 
   const [inputUrl, setInputUrl] = useState(tabUrl)
   const [urlFocused, setUrlFocused] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [copiedScreenshot, setCopiedScreenshot] = useState(false)
   const [screenshotOpen, setScreenshotOpen] = useState(false)
   const [stopPending, setStopPending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const annotateReqIdRef = useRef(0)
   const copyTimerRef = useRef<number | null>(null)
+  const screenshotCopyTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!urlFocused) {
@@ -139,9 +144,24 @@ export function BrowserControls({
   }, [tabUrl, urlFocused])
 
   useEffect(() => {
+    if (!lastScreenshotCopiedAt) return
+    setCopiedScreenshot(true)
+    if (screenshotCopyTimerRef.current !== null) {
+      window.clearTimeout(screenshotCopyTimerRef.current)
+    }
+    screenshotCopyTimerRef.current = window.setTimeout(() => {
+      setCopiedScreenshot(false)
+      screenshotCopyTimerRef.current = null
+    }, 2000)
+  }, [lastScreenshotCopiedAt])
+
+  useEffect(() => {
     return () => {
       if (copyTimerRef.current !== null) {
         window.clearTimeout(copyTimerRef.current)
+      }
+      if (screenshotCopyTimerRef.current !== null) {
+        window.clearTimeout(screenshotCopyTimerRef.current)
       }
     }
   }, [])
@@ -236,9 +256,16 @@ export function BrowserControls({
 
   const handleQuickScreenshotArea = useCallback(() => {
     setScreenshotOpen(false)
+    bumpScreenshotAreaToken(browserTabId)
     setStandaloneScreenshotArea(browserTabId, !annotateMode)
     activateOverlay('screenshot-area', 'Could not start area capture.')
-  }, [activateOverlay, annotateMode, browserTabId, setStandaloneScreenshotArea])
+  }, [
+    activateOverlay,
+    annotateMode,
+    browserTabId,
+    bumpScreenshotAreaToken,
+    setStandaloneScreenshotArea
+  ])
 
   const handleExitAnnotate = useCallback(() => {
     annotateReqIdRef.current += 1
@@ -279,19 +306,36 @@ export function BrowserControls({
   const handleCaptureVisible = useCallback(async () => {
     setScreenshotOpen(false)
     await waitForOcclusionClear()
-    const res = await browserTabScreenshot(browserTabId)
-    if (!res.success) {
-      toast.error(res.error || 'Could not capture screenshot.')
-      logControlError('browserTabScreenshot', res.error ?? res.code)
-      return
+    const wasAnnotating =
+      useBrowserSessionStore.getState().getTab(browserTabId)?.annotateMode === true
+    if (wasAnnotating) {
+      await browserTabAnnotationCmd(browserTabId, { type: 'set_capture_hidden', hidden: true })
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve())
+        })
+      })
     }
-    const copied = await copyBase64PngToClipboard(res.data.base64)
-    if (copied.ok) {
-      toast.success('Screenshot copied to clipboard')
-    } else {
-      toast.error(copied.error)
+    try {
+      const res = await browserTabScreenshot(browserTabId)
+      if (!res.success) {
+        toast.error(res.error || 'Could not capture screenshot.')
+        logControlError('browserTabScreenshot', res.error ?? res.code)
+        return
+      }
+      const copied = await copyBase64PngToClipboard(res.data.base64)
+      if (copied.ok) {
+        markScreenshotCopied(browserTabId)
+        toast.success('Screenshot copied to clipboard')
+      } else {
+        toast.error(copied.error)
+      }
+    } finally {
+      if (wasAnnotating) {
+        void browserTabAnnotationCmd(browserTabId, { type: 'set_capture_hidden', hidden: false })
+      }
     }
-  }, [browserTabId])
+  }, [browserTabId, markScreenshotCopied])
 
   const handleStopAgent = useCallback(() => {
     if (!agentSessionId || stopPending) return
@@ -449,6 +493,7 @@ export function BrowserControls({
               >
                 <AnnotationToolbar
                   browserTabId={browserTabId}
+                  copiedScreenshot={copiedScreenshot}
                   onExit={handleExitAnnotate}
                   onCaptureVisible={handleCaptureVisible}
                   onSendToChat={handleDefaultSendToChat}
@@ -622,6 +667,17 @@ export function BrowserControls({
 
                 {/* Canonical 4 right-hand controls: Device · Screenshot · Annotate · More */}
                 <div className="flex shrink-0 items-center gap-1">
+                  {copiedScreenshot && (
+                    <span
+                      role="status"
+                      aria-live="polite"
+                      data-testid="browser-screenshot-copied-pill"
+                      className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-success/20 bg-success/10 px-2 text-xs font-medium text-success"
+                    >
+                      <Check size={12} aria-hidden="true" />
+                      <span>Copied</span>
+                    </span>
+                  )}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button

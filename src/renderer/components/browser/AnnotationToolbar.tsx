@@ -37,6 +37,7 @@ import { type AnnotateTool, useBrowserSessionStore } from '@/stores/browser-sess
 
 interface AnnotationToolbarProps {
   browserTabId: string
+  copiedScreenshot?: boolean
   onExit: () => void
   onCaptureVisible: () => Promise<void>
   onSendToChat: (
@@ -57,6 +58,7 @@ const CORE_TOOLS: ReadonlyArray<{
 
 export function AnnotationToolbar({
   browserTabId,
+  copiedScreenshot = false,
   onExit,
   onCaptureVisible,
   onSendToChat
@@ -64,6 +66,7 @@ export function AnnotationToolbar({
   const tab = useBrowserSessionStore((s) => s.tabs.get(browserTabId))
   const setAnnotateTool = useBrowserSessionStore((s) => s.setAnnotateTool)
   const setStandaloneScreenshotArea = useBrowserSessionStore((s) => s.setStandaloneScreenshotArea)
+  const bumpScreenshotAreaToken = useBrowserSessionStore((s) => s.bumpScreenshotAreaToken)
   const toggleAnimationsPaused = useBrowserSessionStore((s) => s.toggleAnimationsPaused)
   const togglePinsHidden = useBrowserSessionStore((s) => s.togglePinsHidden)
   const removePendingAnnotation = useBrowserSessionStore((s) => s.removePendingAnnotation)
@@ -238,6 +241,7 @@ export function AnnotationToolbar({
           <button
             type="button"
             onClick={() => {
+              bumpScreenshotAreaToken(browserTabId)
               setStandaloneScreenshotArea(browserTabId, false)
               selectTool('screenshot-area')
             }}
@@ -272,6 +276,17 @@ export function AnnotationToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {copiedScreenshot && (
+          <span
+            role="status"
+            aria-live="polite"
+            data-testid="browser-screenshot-copied-pill"
+            className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-success/20 bg-success/10 px-2 text-xs font-medium text-success"
+          >
+            <Check size={12} aria-hidden="true" />
+            <span>Copied</span>
+          </span>
+        )}
         {paused ? (
           <button
             type="button"

@@ -27,32 +27,34 @@ interface PendingOutboxRequest {
 interface BridgeGlobals {
   __TERMUL_AGENTATION_ENDPOINT__?: string
   __TERMUL_AGENTATION_SESSION_ID__?: string
-  __TERMUL_AGENTATION_NONCE__?: string
   __TERMUL_TAB_ID__?: string
+}
+
+interface HostBridgeResult {
+  ok: boolean
+  id?: string
+  error?: string
+  /** True when the envelope was already drained by the host before timeout. */
+  drained?: boolean
 }
 
 export class OverlayTransport {
   private host: HTMLElement
   private sessionId: string | null = null
   private sessionPromise: Promise<string | null> | null = null
+  private bridgeSessionInit: Promise<void> | null = null
   private bridgeNonce: string | null = null
   private reqSeq = 0
   private pendingOutbox = new Map<string, PendingOutboxRequest>()
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, bridgeNonce?: string | null) {
     this.host = host
-    this.captureBridgeNonce()
+    this.setBridgeNonce(bridgeNonce)
   }
 
-  public captureBridgeNonce(): void {
-    const win = window as unknown as BridgeGlobals
-    if (typeof win.__TERMUL_AGENTATION_NONCE__ === 'string' && win.__TERMUL_AGENTATION_NONCE__) {
-      this.bridgeNonce = win.__TERMUL_AGENTATION_NONCE__
-      try {
-        delete win.__TERMUL_AGENTATION_NONCE__
-      } catch {
-        // Non-configurable in some environments
-      }
+  public setBridgeNonce(nonce: string | null | undefined): void {
+    if (typeof nonce === 'string' && nonce.length > 0) {
+      this.bridgeNonce = nonce
     }
   }
 
@@ -85,22 +87,65 @@ export class OverlayTransport {
     })
   }
 
+  /**
+   * Remove a queued envelope by `reqId` from `OUTBOX_ATTR`.
+   * Returns `true` if it was still in the DOM outbox and reclaimed before the
+   * host drained it, or `false` if the host already drained it.
+   */
+  private removeFromOutbox(reqId: string): boolean {
+    const existing = this.host.getAttribute(OUTBOX_ATTR)
+    if (!existing) return false
+    try {
+      const parsed = JSON.parse(existing)
+      if (!Array.isArray(parsed)) return false
+      const next = parsed.filter(
+        (item) =>
+          !(item && typeof item === 'object' && (item as { reqId?: string }).reqId === reqId)
+      )
+      if (next.length === parsed.length) return false
+      if (next.length === 0) {
+        this.host.removeAttribute(OUTBOX_ATTR)
+      } else {
+        this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(next))
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
   public destroy(): void {
-    for (const [, pending] of this.pendingOutbox) {
+    for (const [reqId, pending] of this.pendingOutbox) {
       window.clearTimeout(pending.timer)
+      this.removeFromOutbox(reqId)
       pending.resolve({ ok: false, error: 'Overlay unmounted' })
     }
     this.pendingOutbox.clear()
+    this.bridgeSessionInit = null
   }
 
-  private sendViaHostBridge(
+  private async sendViaHostBridge(
     kind: 'annotation' | 'action',
     payload: Record<string, unknown>
-  ): Promise<{ ok: boolean; id?: string; error?: string }> {
-    this.captureBridgeNonce()
+  ): Promise<HostBridgeResult> {
     if (!this.bridgeNonce) {
-      return Promise.resolve({ ok: false, error: 'Host bridge unavailable' })
+      return { ok: false, error: 'Host bridge unavailable', drained: false }
     }
+
+    // Coalesce concurrent initial bridge submissions until the first ack sets
+    // `this.sessionId`, matching `sessionPromise` on the HTTP path.
+    while (!this.sessionId && this.bridgeSessionInit) {
+      await this.bridgeSessionInit
+    }
+
+    let finishInit: (() => void) | null = null
+    if (!this.sessionId) {
+      const initPromise = new Promise<void>((resolve) => {
+        finishInit = resolve
+      })
+      this.bridgeSessionInit = initPromise
+    }
+
     const reqId = `ov-${Date.now()}-${++this.reqSeq}`
     const envelope = {
       reqId,
@@ -124,13 +169,23 @@ export class OverlayTransport {
     queue.push(envelope)
     this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(queue))
 
-    return new Promise((resolve) => {
+    const result = await new Promise<HostBridgeResult>((resolve) => {
       const timer = window.setTimeout(() => {
         this.pendingOutbox.delete(reqId)
-        resolve({ ok: false, error: 'Host bridge timed out' })
+        const reclaimed = this.removeFromOutbox(reqId)
+        resolve({ ok: false, error: 'Host bridge timed out', drained: !reclaimed })
       }, OUTBOX_TIMEOUT_MS)
-      this.pendingOutbox.set(reqId, { resolve, timer })
+      this.pendingOutbox.set(reqId, {
+        resolve: (ack) => resolve({ ...ack, drained: false }),
+        timer
+      })
     })
+
+    if (finishInit) {
+      this.bridgeSessionInit = null
+      ;(finishInit as () => void)()
+    }
+    return result
   }
 
   private async ensureHttpSession(): Promise<string | null> {
@@ -170,7 +225,6 @@ export class OverlayTransport {
   public async postAnnotation(
     payload: Record<string, unknown>
   ): Promise<{ ok: boolean; id?: string }> {
-    this.captureBridgeNonce()
     const body = {
       url: window.location.href,
       timestamp: Date.now(),
@@ -182,7 +236,9 @@ export class OverlayTransport {
     if (this.preferHostBridge()) {
       const bridged = await this.sendViaHostBridge('annotation', body)
       if (bridged.ok) return { ok: true, id: bridged.id }
-      // Fall through to HTTP attempt only if bridge failed unexpectedly
+      // Never fall back to HTTP if the host already drained the outbox envelope,
+      // otherwise a slow host ack plus HTTP fallback would duplicate the annotation.
+      if (bridged.drained) return { ok: false }
     }
 
     const ep = this.getEndpoint()
@@ -217,7 +273,6 @@ export class OverlayTransport {
   }
 
   public async postAction(payload: Record<string, unknown>): Promise<boolean> {
-    this.captureBridgeNonce()
     const output = JSON.stringify({
       viewportWidth: window.innerWidth,
       ...payload,
@@ -227,6 +282,7 @@ export class OverlayTransport {
     if (this.preferHostBridge()) {
       const bridged = await this.sendViaHostBridge('action', { output })
       if (bridged.ok) return true
+      if (bridged.drained) return false
     }
 
     const ep = this.getEndpoint()

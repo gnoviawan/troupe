@@ -360,12 +360,125 @@ describe('BrowserPanel', () => {
     })
 
     await waitFor(() => expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('CROPPED=='))
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_capture_hidden',
+      hidden: true
+    })
+    expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
+      type: 'set_capture_hidden',
+      hidden: false
+    })
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(false)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.lastScreenshotCopiedAt).toBeDefined()
     expect(browserTabAnnotationCmd).toHaveBeenCalledWith('tab-1', {
       type: 'set_active',
       active: false
     })
+  })
+
+  it('scopes area-capture cleanup by capture token so late completion cannot cancel a newer capture', async () => {
+    const { browserTabScreenshot } = await import('@/lib/browser-api')
+    let resolveFirstShot:
+      | ((v: { success: true; data: { base64: string; mimeType: string } }) => void)
+      | null = null
+    vi.mocked(browserTabScreenshot).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirstShot = resolve
+        })
+    )
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    useBrowserSessionStore.getState().setAnnotateTool('tab-1', 'screenshot-area')
+    useBrowserSessionStore.getState().setStandaloneScreenshotArea('tab-1', true)
+    useBrowserSessionStore.getState().bumpScreenshotAreaToken('tab-1')
+
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    act(() => {
+      actionListeners[0]?.({
+        tabId: 'tab-1',
+        output: JSON.stringify({
+          kind: 'screenshot_area',
+          tabId: 'tab-1',
+          rect: { x: 10, y: 20, width: 100, height: 80 }
+        })
+      })
+    })
+
+    await waitFor(() => expect(resolveFirstShot).not.toBeNull())
+
+    // User starts a second area capture before the first screenshot resolves
+    act(() => {
+      useBrowserSessionStore.getState().bumpScreenshotAreaToken('tab-1')
+    })
+
+    await act(async () => {
+      resolveFirstShot?.({ success: true, data: { base64: 'AA==', mimeType: 'image/png' } })
+      await Promise.resolve()
+    })
+
+    await waitFor(() => expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('CROPPED=='))
+    // Second capture remains active and undisturbed
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.annotateMode).toBe(true)
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.standaloneScreenshotArea).toBe(true)
+  })
+
+  it('removes guide annotations on annotations_removed action and clears pending annotations across cross-origin navigation', async () => {
+    const { browserAnnotationsSync } = await import('@/lib/browser-api')
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    useBrowserSessionStore.getState().addPendingAnnotation('tab-1', {
+      id: 'ann-g1',
+      kind: 'guide',
+      element: 'Vertical guide',
+      elementPath: 'div.hero',
+      comment: 'Align'
+    })
+    useBrowserSessionStore.getState().addPendingAnnotation('tab-1', {
+      id: 'ann-keep',
+      kind: 'feedback',
+      element: 'h1',
+      elementPath: 'h1',
+      comment: 'Keep until navigation'
+    })
+
+    render(
+      <TooltipProvider>
+        <BrowserPanel browserTabId="tab-1" isVisible />
+      </TooltipProvider>
+    )
+
+    act(() => {
+      actionListeners[0]?.({
+        tabId: 'tab-1',
+        output: JSON.stringify({
+          kind: 'annotations_removed',
+          tabId: 'tab-1',
+          ids: ['ann-g1']
+        })
+      })
+    })
+
+    expect(
+      useBrowserSessionStore
+        .getState()
+        .getTab('tab-1')
+        ?.pendingAnnotations.map((a) => a.id)
+    ).toEqual(['ann-keep'])
+    expect(browserAnnotationsSync).toHaveBeenCalledWith('delete', ['ann-g1'])
+
+    // Navigating to another origin clears stale pending annotations from the previous site
+    act(() => {
+      useBrowserSessionStore.getState().updateUrl('tab-1', 'http://127.0.0.1:18765/')
+    })
+    expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
   })
 
   it('renders frozen occlusion snapshot image behind open dropdowns when provided by useBrowserWebview', () => {

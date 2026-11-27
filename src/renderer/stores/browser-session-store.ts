@@ -54,6 +54,10 @@ export interface BrowserTab {
   annotateMode: boolean
   annotateTool: AnnotateTool
   standaloneScreenshotArea?: boolean
+  /** Monotonic counter scoping async area-capture cleanup to the capture that started it. */
+  screenshotAreaToken?: number
+  /** Timestamp of the most recent screenshot copy for transient top-chrome feedback. */
+  lastScreenshotCopiedAt?: number
   animationsPaused: boolean
   pinsHidden: boolean
   pendingAnnotations: PendingAnnotationItem[]
@@ -129,6 +133,17 @@ function parseUrlParts(rawUrl: string): { host: string; path: string } | null {
   }
 }
 
+function isSameAnnotationPage(a: string, b: string): boolean {
+  if (!a || !b) return true
+  try {
+    const ua = new URL(a)
+    const ub = new URL(b)
+    return ua.origin === ub.origin && ua.pathname === ub.pathname
+  } catch {
+    return a === b
+  }
+}
+
 export interface BrowserSessionState {
   tabs: Map<string, BrowserTab>
   recentUrls: RecentBrowserUrl[]
@@ -152,6 +167,8 @@ export interface BrowserSessionState {
   setAnnotateMode: (id: string, active: boolean) => void
   setAnnotateTool: (id: string, tool: AnnotateTool) => void
   setStandaloneScreenshotArea: (id: string, active: boolean) => void
+  bumpScreenshotAreaToken: (id: string) => number
+  markScreenshotCopied: (id: string) => void
   toggleAnimationsPaused: (id: string) => boolean
   togglePinsHidden: (id: string) => boolean
   addPendingAnnotation: (id: string, item: Omit<PendingAnnotationItem, 'num'>) => void
@@ -241,7 +258,16 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
         existing.url && existing.url !== url && !existing.loadError
           ? existing.url
           : existing.previousUrl
-      next.set(id, { ...existing, url, previousUrl, loadError: null, loading: Boolean(url) })
+      const pageChanged =
+        Boolean(existing.url) && Boolean(url) && !isSameAnnotationPage(existing.url, url)
+      next.set(id, {
+        ...existing,
+        url,
+        previousUrl,
+        loadError: null,
+        loading: Boolean(url),
+        pendingAnnotations: pageChanged ? [] : existing.pendingAnnotations
+      })
       return {
         tabs: next,
         recentUrls: url ? recordRecent(state.recentUrls, url) : state.recentUrls
@@ -254,6 +280,8 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
       const t = state.tabs.get(view.tabId)
       if (!t) return state
       const next = new Map(state.tabs)
+      const pageChanged =
+        Boolean(t.url) && Boolean(view.url) && !isSameAnnotationPage(t.url, view.url)
       next.set(view.tabId, {
         ...t,
         url: view.url,
@@ -261,7 +289,8 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
         loading: view.loading,
         agentControlled: view.agentControlled,
         epoch: view.epoch,
-        loadError: view.loading ? null : t.loadError
+        loadError: view.loading ? null : t.loadError,
+        pendingAnnotations: pageChanged ? [] : t.pendingAnnotations
       })
       return {
         tabs: next,
@@ -335,6 +364,15 @@ export const useBrowserSessionStore = create<BrowserSessionState>((set, get) => 
 
   setStandaloneScreenshotArea: (id, active) =>
     set((state) => updateTab(state, id, (t) => ({ ...t, standaloneScreenshotArea: active }))),
+
+  bumpScreenshotAreaToken: (id) => {
+    const next = (get().tabs.get(id)?.screenshotAreaToken ?? 0) + 1
+    set((state) => updateTab(state, id, (t) => ({ ...t, screenshotAreaToken: next })))
+    return next
+  },
+
+  markScreenshotCopied: (id) =>
+    set((state) => updateTab(state, id, (t) => ({ ...t, lastScreenshotCopiedAt: Date.now() }))),
 
   toggleAnimationsPaused: (id) => {
     const next = !(get().tabs.get(id)?.animationsPaused ?? false)

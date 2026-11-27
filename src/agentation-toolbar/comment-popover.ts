@@ -32,7 +32,7 @@ export interface CommentPopoverCallbacks {
     meta: { comment: string; pinX: number; pinY: number }
   ) => Promise<{ ok: boolean; id?: string }>
   onHideSelectionForCapture: () => boolean
-  onRestoreSelectionAfterError: (hadSelected: boolean) => void
+  onRestoreSelectionAfterError: (pop: HTMLDivElement, hadSelected: boolean) => void
   onSaved: (
     pop: HTMLDivElement,
     id: string | undefined,
@@ -178,8 +178,9 @@ export function createCommentPopover(
     const saved = await callbacks.onSubmit(payload, { comment, pinX, pinY })
     submitting = false
     if (!saved.ok) {
+      if (!pop.isConnected) return
       pop.style.display = 'flex'
-      callbacks.onRestoreSelectionAfterError(hadSelected)
+      callbacks.onRestoreSelectionAfterError(pop, hadSelected)
       addBtn.disabled = false
       addBtn.textContent = 'Retry'
       errorEl.textContent = 'Could not save annotation. Try again.'

@@ -222,6 +222,37 @@ describe('BrowserControls', () => {
     expect(browserTabScreenshot).toHaveBeenCalledWith('tab-1')
     expect(mockCopyBase64PngToClipboard).toHaveBeenCalledWith('AA==')
     expect(useBrowserSessionStore.getState().getTab('tab-1')?.pendingAnnotations).toHaveLength(0)
+    expect(screen.getByTestId('browser-screenshot-copied-pill').textContent).toContain('Copied')
+  })
+
+  it('temporarily hides and restores annotation overlay around Visible screenshot when annotating', async () => {
+    const { browserTabAnnotationCmd, browserTabScreenshot } = await import('@/lib/browser-api')
+    const callOrder: string[] = []
+    vi.mocked(browserTabAnnotationCmd).mockImplementation(async (_id, cmd) => {
+      callOrder.push(`cmd:${cmd.type}:${'hidden' in cmd ? String(cmd.hidden) : ''}`)
+      return { success: true }
+    })
+    vi.mocked(browserTabScreenshot).mockImplementation(async () => {
+      callOrder.push('screenshot')
+      return { success: true, data: { base64: 'AA==', mimeType: 'image/png' } }
+    })
+
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.getState().setAnnotateMode('tab-1', true)
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+
+    fireEvent.click(screen.getByLabelText('Screenshot visible viewport'))
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60))
+    })
+
+    expect(callOrder).toEqual([
+      'cmd:set_capture_hidden:true',
+      'screenshot',
+      'cmd:set_capture_hidden:false'
+    ])
+    expect(screen.getByTestId('browser-screenshot-copied-pill').textContent).toContain('Copied')
   })
 
   it('gives the Eye toggle explicit annotations & guides labels and sends set_pins_hidden', async () => {
