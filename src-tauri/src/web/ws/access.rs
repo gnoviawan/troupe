@@ -23,9 +23,10 @@ impl ConnectionAccess {
         }
     }
 
-    /// `authenticate` succeeded: resolve capabilities once.
-    pub(super) fn grant(&mut self) {
-        self.capabilities = self.policy.resolve();
+    /// `authenticate` succeeded: resolve capabilities once. `host_credential`:
+    /// the client presented the host-local credential.
+    pub(super) fn grant(&mut self, host_credential: bool) {
+        self.capabilities = self.policy.resolve(host_credential);
     }
 
     pub(super) fn carrier(&self) -> Carrier {
@@ -46,7 +47,7 @@ impl ConnectionAccess {
     #[cfg(test)]
     pub(super) fn granted(policy: CapabilityPolicy) -> Self {
         let mut access = Self::new(policy);
-        access.capabilities = policy.resolve();
+        access.capabilities = policy.resolve(false);
         access
     }
 }

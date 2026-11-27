@@ -274,9 +274,15 @@ fn main() -> ExitCode {
                     warn_plaintext_transport();
                 }
             }
+            if launch.desktop {
+                issue_host_local_credential(&auth, &data_paths.state_dir);
+            }
             Some(auth)
         }
     };
+    if launch.desktop && !gate_active {
+        warn!("troupe-server: --desktop without a web auth token: no client is host-local");
+    }
 
     // gh-1105: capture the resolved gate token's TEXT for the setup-mode
     // `/setup/apply` reply (`webAuthToken`) — the browser lands on the
@@ -647,6 +653,24 @@ fn main() -> ExitCode {
             }
         }
     })
+}
+
+/// The Rune desktop app proves it runs on this host, as this user, by
+/// reading the owner-only credential file `web::host_local` writes here.
+fn issue_host_local_credential(
+    auth: &termul_manager_lib::web::auth::WebAuth,
+    state_dir: &Path,
+) {
+    match termul_manager_lib::web::host_local::issue(state_dir) {
+        Ok((credential, path)) => {
+            auth.set_host_local_credential(credential);
+            info!(
+                "troupe-server: host-local credential written to {}",
+                path.display()
+            );
+        }
+        Err(error) => warn!("troupe-server: no host-local clients this run: {error}"),
+    }
 }
 
 /// Durable plaintext-transport warning for gated public binds (AGENTS.md

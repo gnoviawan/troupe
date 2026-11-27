@@ -192,6 +192,8 @@ pub async fn content(
             let stdout = String::from_utf8_lossy(&output.stdout);
             let mut grouped: BTreeMap<String, Vec<FileSearchMatch>> = BTreeMap::new();
             let mut truncated = false;
+            let secrets = crate::web::host_secrets::snapshot();
+            let mut withheld: std::collections::HashSet<String> = std::collections::HashSet::new();
 
             for line in stdout.lines() {
                 let parsed: serde_json::Value = match serde_json::from_str(line) {
@@ -231,7 +233,18 @@ pub async fn content(
                     .trim_end_matches(['\r', '\n'])
                     .to_string();
 
+                if withheld.contains(&file_path) {
+                    continue;
+                }
                 if !grouped.contains_key(&file_path) {
+                    let on_disk = std::path::Path::new(&file_path)
+                        .canonicalize()
+                        .unwrap_or_else(|_| std::path::PathBuf::from(&file_path));
+                    if secrets.covers(&on_disk) {
+                        tracing::warn!("[Security] Content search withheld a host credential file");
+                        withheld.insert(file_path);
+                        continue;
+                    }
                     if grouped.len() >= max_files_with_matches {
                         truncated = true;
                         break;

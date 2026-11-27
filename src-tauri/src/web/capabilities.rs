@@ -9,8 +9,17 @@
 //! A connection without [`Capabilities::write`] is *view-only*: it may read,
 //! ping, subscribe and write `device/<its deviceId>/…` store keys, and every
 //! other mutation is refused with the stable `forbidden` code.
+//!
+//! [`Capabilities::host_local`] is the narrower grant for requests that act
+//! with the host's own credentials: a `/ws` connection from a loopback peer,
+//! on a token-gated host that does not deny writes, whose upgrade names no
+//! proxy ([`PROXY_HEADERS`]), and that presented the host-local credential
+//! (`web::host_local`) at `authenticate`. `--allow-remote-writes` never
+//! grants it.
 
 use std::net::SocketAddr;
+
+use axum::http::HeaderMap;
 
 use crate::web::ws::{AppState, ClientIdentity};
 
@@ -119,6 +128,9 @@ pub struct Capabilities {
     pub carrier: Carrier,
     /// May mutate host state (otherwise view-only).
     pub write: bool,
+    /// Runs on the host as the server's user and may act with the host's own
+    /// credentials (see the module doc).
+    pub host_local: bool,
 }
 
 impl Capabilities {
@@ -128,6 +140,7 @@ impl Capabilities {
         Self {
             carrier,
             write: false,
+            host_local: false,
         }
     }
 
@@ -156,8 +169,33 @@ impl Capabilities {
         Self {
             carrier,
             write: decision.is_allowed(),
+            host_local: false,
         }
     }
+}
+
+/// Headers a reverse proxy or tunnel adds to a forwarded request. Their
+/// presence on a loopback upgrade means the client is somewhere else.
+/// Defense in depth behind the host-local credential: nginx adds none of
+/// them by default.
+pub const PROXY_HEADERS: [&str; 11] = [
+    "forwarded",
+    "via",
+    "x-forwarded-for",
+    "x-forwarded-host",
+    "x-forwarded-proto",
+    "x-real-ip",
+    "x-client-ip",
+    "true-client-ip",
+    "cf-connecting-ip",
+    "cf-ray",
+    "tailscale-user-login",
+];
+
+/// Whether `headers` carry any of [`PROXY_HEADERS`].
+#[must_use]
+pub fn names_a_proxy(headers: &HeaderMap) -> bool {
+    PROXY_HEADERS.iter().any(|name| headers.contains_key(*name))
 }
 
 /// Everything needed to resolve [`Capabilities`] at `authenticate`, captured
@@ -167,6 +205,10 @@ pub struct CapabilityPolicy {
     pub carrier: Carrier,
     pub peer: SocketAddr,
     pub flags: WriteFlags,
+    /// The host requires the bearer token at `authenticate`.
+    pub token_gated: bool,
+    /// The upgrade carried a [`PROXY_HEADERS`] header.
+    pub proxied: bool,
 }
 
 impl CapabilityPolicy {
@@ -177,13 +219,55 @@ impl CapabilityPolicy {
             carrier,
             peer,
             flags: WriteFlags::from_state(state),
+            token_gated: state.web_auth.is_some(),
+            proxied: false,
         }
     }
 
-    /// Resolve the connection's capabilities (called once, at authenticate).
+    /// The same policy for an upgrade that did (`true`) or did not carry a
+    /// proxy header.
     #[must_use]
-    pub fn resolve(&self) -> Capabilities {
-        Capabilities::resolve(self.carrier, self.peer, self.flags)
+    pub const fn through_proxy(mut self, proxied: bool) -> Self {
+        self.proxied = proxied;
+        self
+    }
+
+    /// Resolve the connection's capabilities (called once, at authenticate).
+    /// `host_credential`: the client presented the host-local credential.
+    #[must_use]
+    pub fn resolve(&self, host_credential: bool) -> Capabilities {
+        let mut capabilities = Capabilities::resolve(self.carrier, self.peer, self.flags);
+        if !host_credential {
+            return capabilities;
+        }
+        let refusal = if self.carrier != Carrier::Ws {
+            Some("not the /ws carrier")
+        } else if !self.token_gated {
+            Some("the host is not token-gated")
+        } else if self.proxied {
+            Some("the upgrade carried a proxy header")
+        } else if write_decision(self.peer, self.flags) != WriteDecision::Allowed {
+            Some("the peer is not a loopback writer")
+        } else {
+            None
+        };
+        capabilities.host_local = refusal.is_none();
+        match refusal {
+            None => tracing::info!(
+                target: "termul::web::capabilities",
+                carrier = self.carrier.as_str(),
+                peer = %self.peer,
+                "connection is host-local",
+            ),
+            Some(reason) => tracing::warn!(
+                target: "termul::web::capabilities",
+                carrier = self.carrier.as_str(),
+                peer = %self.peer,
+                reason,
+                "host-local credential presented but refused",
+            ),
+        }
+        capabilities
     }
 }
 
