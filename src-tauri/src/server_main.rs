@@ -24,6 +24,7 @@ use termul_manager_lib::server_update::{
 };
 use termul_manager_lib::web::auth::{resolve as resolve_web_auth, WebAuthResolution};
 use termul_manager_lib::web::config::{BindMode, ParseCliError};
+use termul_manager_lib::web::desktop_mode::{self, LaunchFlags};
 use termul_manager_lib::web::project_registry::RootCheck;
 use termul_manager_lib::web::server_config_file;
 use termul_manager_lib::web::setup;
@@ -122,6 +123,18 @@ fn main() -> ExitCode {
         return termul_manager_lib::antigravity_admin::run(&raw_args[1..]);
     }
 
+    // `--desktop` and `--parent-pid` belong to this binary only, so they come
+    // off argv before the shared parser sees it.
+    let (launch, raw_args) = match LaunchFlags::take(raw_args) {
+        Ok(split) => split,
+        Err(msg) => {
+            eprintln!("error: {msg}");
+            eprintln!();
+            eprintln!("{}", usage());
+            return ExitCode::from(2);
+        }
+    };
+
     // Parse CLI BEFORE any tokio / app setup (AC2).
     let cfg = match ServerConfig::from_args(raw_args) {
         Ok(cfg) => cfg,
@@ -175,6 +188,19 @@ fn main() -> ExitCode {
     } else {
         cfg.bind_mode()
     };
+    // The desktop app reaches its server over loopback only; remote access
+    // is a separate, explicit opt-in. Refuse rather than widen the bind.
+    if launch.desktop && (setup_required || effective_bind_mode != Some(BindMode::Localhost)) {
+        error!("troupe-server: --desktop needs an explicit loopback --host, refusing to start");
+        eprintln!("troupe-server: --desktop needs an explicit loopback --host (127.0.0.1)");
+        return ExitCode::from(2);
+    }
+    if launch.desktop {
+        info!(
+            "troupe-server: desktop launch mode on '{}'",
+            data_paths.state_dir.display()
+        );
+    }
 
     // QA remediation Story 1 (CAP-1 interim): resolve the web auth gate
     // BEFORE any binding/serving setup. Fail-closed: a public bind whose
@@ -322,6 +348,9 @@ fn main() -> ExitCode {
     };
 
     runtime.block_on(async move {
+        if let Some(pid) = launch.parent_pid {
+            termul_manager_lib::web::parent_watch::spawn(pid);
+        }
         // Story 1.4: construct the LIVE relay sink (per-session event logs +
         // seq counters + subscriber set) and pass it to BOTH the ACP manager
         // (as an event sink) and `serve` (so `/ws` can subscribe clients +
@@ -357,7 +386,15 @@ fn main() -> ExitCode {
             // The retired workspace manifests move into the first device that
             // adopts the store (renamed afterwards).
             Ok(store) => {
-                Arc::new(store.with_legacy_manifests(legacy_manifests_dir(&data_paths.state_dir)))
+                let store =
+                    store.with_legacy_manifests(legacy_manifests_dir(&data_paths.state_dir));
+                // The retired plugin-store file `termul-data.json` of the
+                // Tauri app moves into the first desktop device.
+                Arc::new(if launch.desktop {
+                    desktop_mode::with_desktop_legacy(store, &data_paths.state_dir)
+                } else {
+                    store
+                })
             }
             Err(error) => {
                 error!("troupe-server: refusing to start: {error}");
@@ -373,6 +410,13 @@ fn main() -> ExitCode {
                 return ExitCode::from(1);
             }
         };
+        if launch.desktop {
+            desktop_mode::spawn_legacy_history_import(
+                Arc::clone(&persistence),
+                &data_paths.state_dir,
+            );
+            tokio::task::spawn_blocking(desktop_mode::keychain_self_test);
+        }
         tokio::spawn(termul_manager_lib::mcp_catalog::McpCatalogService::run(
             data_paths.state_dir.join("mcp-catalog"),
         ));
@@ -574,7 +618,11 @@ fn main() -> ExitCode {
         // steer the loop even on an argv-pinned install. A bad signature
         // keeps the current binary running (verify-before-swap), so an
         // unattended server is never bricked by a failed update attempt.
-        spawn_periodic_update_loop(&data_paths.state_dir);
+        // The desktop app bundle owns the binary, so a desktop server never
+        // swaps itself.
+        if !launch.desktop {
+            spawn_periodic_update_loop(&data_paths.state_dir);
+        }
         match serve(
             acp,
             pty,
@@ -1078,6 +1126,14 @@ OPTIONS:
     --rune-web-dir <DIR>          The built Rune web bundle (index.html, *.js,
                                   *_bg.wasm, fonts) to serve at /rune/.
                                   [env: TROUPE_RUNE_WEB_DIR]
+
+  Desktop app:
+    --desktop                     Run as the Rune desktop app's server on the
+                                  Tauri app's data directory: import the
+                                  retired termul-data.json and the legacy chat
+                                  history, and check the OS keychain. Needs an
+                                  explicit loopback --host; never self-updates.
+    --parent-pid <PID>            Stop gracefully when process PID exits.
 
   Security & updates:
     --allow-remote-writes         Admit non-loopback peers on all guarded write
