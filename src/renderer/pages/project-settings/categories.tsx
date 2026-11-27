@@ -1,5 +1,6 @@
-import { Braces, Globe, KeyRound, Link2, Settings, Terminal } from '@/components/icons'
+import { Braces, Globe, KeyRound, Link2, Monitor, Settings, Terminal } from '@/components/icons'
 import { BROWSER_ANCHORS } from '@/components/settings/browser-policy-copy'
+import { COMU_ANCHORS } from '@/components/settings/ComuPolicySettings'
 import { rowId } from '@/components/settings/row-id'
 import type { SettingsCategory } from '@/components/settings/SettingsLayout'
 import type { SettingsSearchEntry } from '@/lib/settings-search'
@@ -51,6 +52,13 @@ export const PROJECT_SETTINGS_CATEGORIES: SettingsCategory[] = [
     description: 'Which sites agents may browse in this project without asking.',
     icon: <Globe size={16} />,
     group: 'Agents'
+  },
+  {
+    id: 'comu',
+    label: 'Computer Use',
+    description: 'Which desktop apps agents may operate in this project without asking.',
+    icon: <Monitor size={16} />,
+    group: 'Agents'
   }
 ]
 
@@ -81,6 +89,13 @@ export const PROJECT_SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
     description: 'Actions agents may take on a site in this project without asking.',
     keywords: ['browser', 'password', 'payment', 'upload', 'download', 'approve'],
     anchorId: BROWSER_ANCHORS.projectPreapprovals
+  },
+  {
+    categoryId: 'comu',
+    label: 'Allowed apps in this project',
+    description: 'Desktop apps agents operate in this project without asking.',
+    keywords: ['comu', 'computer use', 'allowed apps', 'allowlist', 'desktop', 'native'],
+    anchorId: COMU_ANCHORS.projectAllowedApps
   },
   {
     categoryId: 'general',

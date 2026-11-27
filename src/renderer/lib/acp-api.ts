@@ -883,6 +883,8 @@ export const ACP_EVENTS = {
   browserAgentTab: 'acp:browser_agent_tab',
   browserTicketClosed: 'acp:browser_ticket_closed',
   browserStopChanged: 'acp:browser_stop_changed',
+  comuSessionActive: 'acp:comu_session_active',
+  comuStopChanged: 'acp:comu_stop_changed',
   /** An agent tab's URL, title, loading state or epoch changed. The
    *  desktop pane mirrors the Tauri event of the same name instead. */
   browserTabUpdated: 'acp:browser_tab_updated',
@@ -898,6 +900,18 @@ export interface BrowserTicketClosedEvent {
 
 /** Stop latched (`stopped: true`) or the user's next message cleared it. */
 export interface BrowserStopChangedEvent {
+  sessionId: string
+  stopped: boolean
+}
+
+/** Computer Use became active (`active: true`) or ended (`active: false`) in a session. */
+export interface ComuSessionActiveEvent {
+  sessionId: string
+  active: boolean
+}
+
+/** Computer Use Stop latched (`stopped: true`) or cleared on the next user turn. */
+export interface ComuStopChangedEvent {
   sessionId: string
   stopped: boolean
 }

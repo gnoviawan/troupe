@@ -3885,3 +3885,138 @@ describe('Standalone troupe-server QR parity (CLI, Web tool strip, Settings -> S
     expect(serverSection).toMatch(/<ServerQrPanel/)
   })
 })
+
+describe('Troupe Comu parity (desktop, web, shared-live, standalone server)', () => {
+  const SRC_TAURI = join(LIB_DIR, '..', '..', '..', 'src-tauri', 'src')
+  const PolicyFacade = join(LIB_DIR, 'comu-policy-api.ts')
+  const ConsentFacade = join(LIB_DIR, 'comu-consent-api.ts')
+  const RouterRust = join(SRC_TAURI, 'web', 'router', 'mod.rs')
+  const RouteRust = join(SRC_TAURI, 'web', 'comu_api.rs')
+  const CommandsRust = join(SRC_TAURI, 'commands', 'comu.rs')
+  const LibRust = join(SRC_TAURI, 'lib.rs')
+  const ServerMainRust = join(SRC_TAURI, 'server_main.rs')
+  const ModelRust = join(SRC_TAURI, 'comu', 'policy', 'model.rs')
+  const ServiceRust = join(SRC_TAURI, 'comu', 'policy', 'mod.rs')
+  const SourcesRust = join(SRC_TAURI, 'web', 'watch', 'sources.rs')
+  const ContractTs = join(LIB_DIR, '..', '..', 'shared', 'types', 'comu.types.ts')
+
+  const OPERATIONS = [
+    {
+      method: 'getProject',
+      command: 'comu_policy_get_project',
+      route: '/host/comu/policy/project',
+      backendCall: '.project_view('
+    },
+    {
+      method: 'getApp',
+      command: 'comu_policy_get_app',
+      route: '/host/comu/policy/app',
+      backendCall: '.app_view('
+    },
+    {
+      method: 'applyProject',
+      command: 'comu_policy_apply_project',
+      route: '/host/comu/policy/project',
+      backendCall: '.apply_project('
+    },
+    {
+      method: 'applyApp',
+      command: 'comu_policy_apply_app',
+      route: '/host/comu/policy/app',
+      backendCall: '.apply_app('
+    },
+    {
+      method: 'getPermissions',
+      command: 'comu_permissions_status',
+      route: '/host/comu/permissions',
+      backendCall: 'comu::os_permissions_status('
+    },
+    {
+      method: 'requestPermission',
+      command: 'comu_request_permission',
+      route: '/host/comu/permissions/request',
+      backendCall: 'comu::request_os_permission('
+    }
+  ] as const
+
+  for (const op of OPERATIONS) {
+    it(`${op.method} goes through ${op.command} on desktop and ${op.route} on web`, () => {
+      const facade = readFileSync(PolicyFacade, 'utf-8')
+      expect(facade).toContain(`${op.method}:`)
+      expect(facade).toContain(`'${op.command}'`)
+      expect(facade).toContain('COMU_BASE')
+      expect(facade).toMatch(/isTauriContext\(\) \? desktopComuPolicyApi : webComuPolicyApi/)
+      expect(readFileSync(RouteRust, 'utf-8')).toContain(`"${op.route}"`)
+    })
+
+    it(`${op.command} is registered in lib.rs and shares backend call ${op.backendCall} with ${op.route}`, () => {
+      const commands = readFileSync(CommandsRust, 'utf-8')
+      expect(commands).toContain(`pub async fn ${op.command}(`)
+      expect(commands).toContain(op.backendCall)
+      expect(readFileSync(LibRust, 'utf-8')).toContain(`commands::${op.command},`)
+      expect(readFileSync(RouteRust, 'utf-8')).toContain(op.backendCall)
+    })
+  }
+
+  it('consent and Stop facade branches cleanly across desktop commands and remote endpoints', () => {
+    const consent = readFileSync(ConsentFacade, 'utf-8')
+    expect(consent).toMatch(/invokeIpc<null>\('browser_ticket_respond'/)
+    expect(consent).toMatch(/getAcpTransport\(\)\.respondPermission\(/)
+    expect(consent).toMatch(/invokeIpc<boolean>\('comu_stop'/)
+    expect(consent).toMatch(/postJsonOnce<boolean>\('\/host\/comu\/stop'/)
+    expect(readFileSync(CommandsRust, 'utf-8')).toContain('pub async fn comu_stop(')
+    expect(readFileSync(LibRust, 'utf-8')).toContain('commands::comu_stop,')
+    expect(readFileSync(RouteRust, 'utf-8')).toContain('"/host/comu/stop"')
+  })
+
+  it('router/mod.rs merges comu_router in BOTH router variants under bearer-gated /host/ and main-webview guard', () => {
+    const router = readFileSync(RouterRust, 'utf-8')
+    expect(router.split('comu_router(').length - 1).toBe(2)
+    expect(readFileSync(CommandsRust, 'utf-8')).toMatch(/webview\.label\(\) != "main"/)
+  })
+
+  it('the TypeScript policy operations and Rust wire operations are the exact same set', () => {
+    const rust = readFileSync(ModelRust, 'utf-8')
+    const ts = readFileSync(ContractTs, 'utf-8')
+    const variants: Record<string, string> = {
+      set_enabled: 'SetEnabled',
+      set_cursor_enabled: 'SetCursorEnabled',
+      set_ask_before_driving_apps: 'SetAskBeforeDrivingApps',
+      set_ask_before_foreground_desktop: 'SetAskBeforeForegroundDesktop',
+      set_ask_before_clipboard_read: 'SetAskBeforeClipboardRead',
+      add_app: 'AddApp',
+      remove_app: 'RemoveApp'
+    }
+    for (const [name, variant] of Object.entries(variants)) {
+      expect(ts, name).toContain(`op: '${name}'`)
+      expect(rust, name).toContain(variant)
+    }
+    const tsOps = new Set([...ts.matchAll(/op: '([a-z_]+)'/g)].map((m) => m[1]))
+    expect(tsOps).toEqual(new Set(Object.keys(variants)))
+  })
+
+  it('comu_policy_changed events fan out from ComuPolicyService through agents watch to roster watch', () => {
+    expect(readFileSync(ServiceRust, 'utf-8')).toContain('"acp:comu_policy_changed"')
+    expect(readFileSync(SourcesRust, 'utf-8')).toMatch(
+      /AGENT_TRANSIENT_EVENTS[^;]*"comu_policy_changed"/s
+    )
+    const roster = readFileSync(
+      join(LIB_DIR, '..', 'stores', 'acp-store', 'agent-roster-watch.ts'),
+      'utf-8'
+    )
+    expect(roster).toContain("'comu_policy_changed'")
+    expect(roster).toContain('publishComuPolicyChange')
+  })
+
+  it('mounts ComuConsentCardHost in both renderer roots and keeps standalone server headless', () => {
+    expect(readFileSync(join(LIB_DIR, '..', 'TauriApp.tsx'), 'utf-8')).toContain(
+      '<ComuConsentCardHost />'
+    )
+    expect(readFileSync(join(LIB_DIR, '..', 'App.tsx'), 'utf-8')).toContain(
+      '<ComuConsentCardHost />'
+    )
+    expect(readFileSync(LibRust, 'utf-8')).toContain('comu::set_comu_host(')
+    expect(readFileSync(ServerMainRust, 'utf-8')).not.toContain('comu::set_comu_host(')
+    expect(readFileSync(PolicyFacade, 'utf-8')).toContain("from './log-api'")
+  })
+})

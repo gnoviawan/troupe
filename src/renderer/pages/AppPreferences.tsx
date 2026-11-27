@@ -27,6 +27,7 @@ import { AboutSection } from './app-preferences/about-section'
 import { AiAgentsSection } from './app-preferences/ai-agents-section'
 import { BrowserSection } from './app-preferences/browser-section'
 import { appPrefCategories, appPrefSearchIndex } from './app-preferences/categories'
+import { ComuSection } from './app-preferences/comu-section'
 import { McpServersSection } from './app-preferences/mcp-servers-section'
 import { PreferencesSection } from './app-preferences/preferences-section'
 import { ProviderSection } from './app-preferences/provider-section'
@@ -165,6 +166,7 @@ export function AppPreferencesModal(): React.JSX.Element {
           <ProviderSection />
           <McpServersSection />
           <BrowserSection />
+          <ComuSection />
           <ShortcutsSection
             shortcuts={shortcuts}
             updateShortcut={updateShortcut}

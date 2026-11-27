@@ -44,6 +44,11 @@ use crate::web::browser_policy_api::{self as browser_policy, ApplyAppBody, Apply
 use crate::web::canvas_api::{CanvasCloseRequest, CanvasOpenRequest};
 use crate::web::canvas_persistence_api as canvas;
 use crate::web::catalog_api::CatalogQuery;
+use crate::web::comu_api::{
+    ComuApplyAppBody, ComuApplyProjectBody, ComuOsPermissionsView, ComuProjectQuery,
+    ComuRequestPermissionBody, ComuStopBody,
+};
+use crate::comu::policy::{ComuAppPolicyView, ComuProjectPolicyView};
 use crate::web::fs_api::{
     CopyRequest, DeleteRequest, DirectoryEntryDto, FileContentDto, FileInfoDto, GitInitRequest,
     MkdirRequest, PathQuery, RenameRequest, WriteRequest,
@@ -148,6 +153,27 @@ pub static ROUTES: &[ApiRoute] = &[
         .json::<ApplyProjectBody>()
         .ipc::<ProjectPolicyView>()
         .describe("A stale `expectedRevision` is refused with `revision_conflict`."),
+    ApiRoute::get("/host/comu/policy/app", Tag::Host, "App-wide Computer Use policy")
+        .ipc::<ComuAppPolicyView>(),
+    ApiRoute::post("/host/comu/policy/app", Tag::Host, "Change the app-wide Computer Use policy")
+        .json::<ComuApplyAppBody>()
+        .ipc::<ComuAppPolicyView>()
+        .describe("A stale `expectedRevision` is refused with `revision_conflict`."),
+    ApiRoute::get("/host/comu/policy/project", Tag::Host, "A project's Computer Use policy")
+        .query::<ComuProjectQuery>()
+        .ipc::<ComuProjectPolicyView>(),
+    ApiRoute::post("/host/comu/policy/project", Tag::Host, "Change a project's Computer Use policy")
+        .json::<ComuApplyProjectBody>()
+        .ipc::<ComuProjectPolicyView>()
+        .describe("A stale `expectedRevision` is refused with `revision_conflict`."),
+    ApiRoute::get("/host/comu/permissions", Tag::Host, "OS-level Computer Use permission status")
+        .ipc::<ComuOsPermissionsView>(),
+    ApiRoute::post("/host/comu/permissions/request", Tag::Host, "Prompt for an OS-level Computer Use permission")
+        .json::<ComuRequestPermissionBody>()
+        .ipc::<ComuOsPermissionsView>(),
+    ApiRoute::post("/host/comu/stop", Tag::Host, "Stop Computer Use in a chat session until the next user turn")
+        .json::<ComuStopBody>()
+        .ipc::<bool>(),
     // Realtime
     ApiRoute::get("/ws", Tag::Realtime, "Event and request WebSocket")
         .reply(Reply::Upgrade)

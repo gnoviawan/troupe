@@ -3,11 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Info } from '@/components/icons'
+import { ComuProjectPolicy } from '@/components/settings/ComuPolicySettings'
 import { AntigravityProjectAccountSettings } from '@/components/settings/provider/AntigravityProjectAccountSettings'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
 import { CodexProjectAccountSettings } from '@/components/settings/provider/CodexProjectAccountSettings'
 import { ProjectProviderSettings } from '@/components/settings/provider/ProjectProviderSettings'
 import { SettingsLayout, SettingsSection } from '@/components/settings/SettingsLayout'
+import { SettingsNotice } from '@/components/settings/SettingsNotice'
 import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import { Button } from '@/components/ui/button'
 import { useProjectAntigravityAccountDraft } from '@/hooks/use-project-antigravity-account-draft'
@@ -534,6 +536,14 @@ export function ProjectSettingsModal() {
           </SettingsSection>
 
           <ProjectBrowserSection projectId={settingsProject?.id} />
+
+          <SettingsSection id="comu">
+            {settingsProject?.id ? (
+              <ComuProjectPolicy key={settingsProject.id} projectId={settingsProject.id} />
+            ) : (
+              <SettingsNotice>Open a project to set its Computer Use rules.</SettingsNotice>
+            )}
+          </SettingsSection>
         </SettingsLayout>
       </SettingsWindow>
 
