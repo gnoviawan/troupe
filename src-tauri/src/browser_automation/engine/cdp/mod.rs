@@ -52,7 +52,11 @@ pub enum CdpMethod {
     TargetCreateBrowserContext,
     TargetDisposeBrowserContext,
     TargetSetDiscoverTargets,
+    TargetDetachFromTarget,
+    RuntimeRunIfWaitingForDebugger,
     BrowserClose,
+    BrowserSetDownloadBehavior,
+    BrowserCancelDownload,
 }
 
 impl CdpMethod {
@@ -89,7 +93,11 @@ impl CdpMethod {
             CdpMethod::TargetCreateBrowserContext => "Target.createBrowserContext",
             CdpMethod::TargetDisposeBrowserContext => "Target.disposeBrowserContext",
             CdpMethod::TargetSetDiscoverTargets => "Target.setDiscoverTargets",
+            CdpMethod::TargetDetachFromTarget => "Target.detachFromTarget",
+            CdpMethod::RuntimeRunIfWaitingForDebugger => "Runtime.runIfWaitingForDebugger",
             CdpMethod::BrowserClose => "Browser.close",
+            CdpMethod::BrowserSetDownloadBehavior => "Browser.setDownloadBehavior",
+            CdpMethod::BrowserCancelDownload => "Browser.cancelDownload",
         }
     }
 }

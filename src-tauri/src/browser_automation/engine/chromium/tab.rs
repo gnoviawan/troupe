@@ -3,6 +3,7 @@
 //! [`TabEvents`].
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
@@ -16,7 +17,9 @@ use super::pipe::CdpEvent;
 use super::BrowserSource;
 use crate::browser_automation::budgets::TAB_CONFIRM;
 use crate::browser_automation::engine::cdp::{self, CdpMethod};
-use crate::browser_automation::engine::events::{DialogAnswer, DialogKind, TabEvent, TabEvents};
+use crate::browser_automation::engine::events::{
+    DialogAnswer, DialogKind, DownloadSize, TabEvent, TabEvents,
+};
 use crate::browser_automation::engine::profile::DataStore;
 use crate::browser_automation::engine::{EngineError, EngineErrorKind};
 
@@ -32,6 +35,8 @@ pub struct Tab {
     dialog: Mutex<Option<u64>>,
     /// Fires when the event loop ended and published `Closed`.
     ended: Mutex<Option<oneshot::Receiver<()>>>,
+    /// Downloads the core accepted, by guid, to the path it chose.
+    downloads: Mutex<HashMap<String, PathBuf>>,
 }
 
 impl Tab {
@@ -104,6 +109,12 @@ impl Tabs {
             ),
             _ => None,
         };
+        if let Some(context) = &context {
+            browser
+                .hold_downloads(Some(context))
+                .await
+                .map_err(|_| "the ephemeral context refused to hand downloads to the host")?;
+        }
         let mut params = json!({ "url": "about:blank" });
         if let Some(context) = &context {
             params["browserContextId"] = json!(context);
@@ -147,6 +158,7 @@ impl Tabs {
             events,
             dialog: Mutex::new(None),
             ended: Mutex::new(Some(ended_rx)),
+            downloads: Mutex::new(HashMap::new()),
         });
         self.open.lock().insert(label.to_string(), tab.clone());
         self.source.tab_opened(label);
@@ -343,6 +355,16 @@ fn on_event(tabs: &Arc<Tabs>, tab: &Arc<Tab>, event: CdpEvent) -> bool {
             let id = tab.events.dialog_opened(kind, message, default_text);
             *tab.dialog.lock() = Some(id);
         }
+        "Page.windowOpen" => {
+            // The popup itself was closed before it ran (`browser.rs`).
+            if let Some(url) = str_at("/url") {
+                tab.events.publish(TabEvent::NewWindowRequested {
+                    url: url.to_string(),
+                });
+            }
+        }
+        "Browser.downloadWillBegin" => download_starting(tab, params),
+        "Browser.downloadProgress" => download_progress(tab, params),
         "Page.javascriptDialogClosed" => {
             tab.dialog.lock().take();
         }
@@ -401,4 +423,104 @@ async fn decide_request(policy: Policy, tab: Arc<Tab>, params: Value) {
     if reply.is_err() {
         log::debug!("[chromium] a paused request was already gone");
     }
+}
+
+/// The core decides a download the tab started: where it goes, or no.
+fn download_starting(tab: &Arc<Tab>, params: &Value) {
+    let Some(guid) = params.get("guid").and_then(Value::as_str) else {
+        return;
+    };
+    let url = params
+        .get("url")
+        .and_then(Value::as_str)
+        .and_then(|u| Url::parse(u).ok());
+    let name = params
+        .get("suggestedFilename")
+        .and_then(Value::as_str)
+        .and_then(|n| std::path::Path::new(n).file_name())
+        .map_or_else(|| PathBuf::from("download"), PathBuf::from);
+    let chosen = match (url, tab.browser.staged(guid)) {
+        (Some(url), Some(staged)) if tab.events.holds_downloads() => {
+            let suggested = staged.with_file_name(name);
+            tab.events.download_starting(&url, &suggested)
+        }
+        _ => None,
+    };
+    match chosen {
+        Some(path) => {
+            tab.downloads.lock().insert(guid.to_string(), path);
+        }
+        None => cancel_download(tab, guid),
+    }
+}
+
+/// Feed Chromium's progress to the core; land the file when it completes.
+fn download_progress(tab: &Arc<Tab>, params: &Value) {
+    let Some(guid) = params.get("guid").and_then(Value::as_str) else {
+        return;
+    };
+    let Some(path) = tab.downloads.lock().get(guid).cloned() else {
+        return;
+    };
+    let received = params
+        .get("receivedBytes")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0);
+    let total = params
+        .get("totalBytes")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0);
+    match params.get("state").and_then(Value::as_str) {
+        Some("inProgress") => {
+            let size = DownloadSize {
+                received: received.max(0.0) as u64,
+                announced: (total > 0.0).then_some(total as u64),
+            };
+            if !tab.events.download_progress(&path, size) {
+                cancel_download(tab, guid);
+            }
+        }
+        Some("completed") => {
+            tab.downloads.lock().remove(guid);
+            tab.browser.unroute_download(guid);
+            let (tab, staged) = (tab.clone(), tab.browser.staged(guid));
+            tokio::spawn(async move {
+                let landed = match staged {
+                    Some(staged) => {
+                        let to = path.clone();
+                        tokio::task::spawn_blocking(move || land(&staged, &to))
+                            .await
+                            .is_ok_and(|moved| moved.is_ok())
+                    }
+                    None => false,
+                };
+                tab.events.download_finished(&path, landed);
+            });
+        }
+        Some("canceled") => {
+            tab.downloads.lock().remove(guid);
+            tab.browser.unroute_download(guid);
+            tab.events.download_finished(&path, false);
+        }
+        _ => {}
+    }
+}
+
+/// Move a staged download to the path the core chose (copy across file
+/// systems).
+fn land(staged: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+    if std::fs::rename(staged, to).is_ok() {
+        return Ok(());
+    }
+    std::fs::copy(staged, to)?;
+    std::fs::remove_file(staged)
+}
+
+fn cancel_download(tab: &Arc<Tab>, guid: &str) {
+    let (browser, guid) = (tab.browser.clone(), guid.to_string());
+    tokio::spawn(async move {
+        let _ = browser
+            .call(CdpMethod::BrowserCancelDownload, json!({ "guid": guid }))
+            .await;
+    });
 }
