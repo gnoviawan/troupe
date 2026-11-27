@@ -159,7 +159,7 @@ fn a_chat_without_a_title_still_lists_every_chat_in_the_rail() {
     rt.frame(0.016);
     assert!(present(&rt, "rail-chat-chat-1"), "alpha's chat row");
     assert!(present(&rt, "rail-chat-chat-untitled"), "beta's untitled chat row");
-    assert_eq!(rt.state.chats.get("chat-untitled").map(model::chats::Chat::label), Some("New chat"));
+    assert_eq!(rt.state.chats.get("chat-untitled").map(model::chats::Chat::label), Some("Untitled Chat"));
 }
 
 #[test]

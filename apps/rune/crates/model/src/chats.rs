@@ -11,8 +11,9 @@ pub struct Chat {
     pub session_id: String,
     #[serde(default)]
     pub project_id: Option<String>,
-    /// A chat nobody has prompted yet comes with `"title": null`.
-    #[serde(default, deserialize_with = "null_as_empty")]
+    /// A chat nobody has prompted yet comes with `"title": null`, which reads as
+    /// `UNTITLED_HOST_TITLE` (`fromPersistedSessionSummary`).
+    #[serde(default, deserialize_with = "null_as_untitled")]
     pub title: String,
     /// Epoch milliseconds.
     #[serde(default)]
@@ -38,8 +39,8 @@ pub struct Chat {
     pub worktree_branch: Option<String>,
 }
 
-fn null_as_empty<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
-    Option::<String>::deserialize(d).map(Option::unwrap_or_default)
+fn null_as_untitled<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    Option::<String>::deserialize(d).map(|title| title.unwrap_or_else(|| "Untitled Chat".to_owned()))
 }
 
 impl Chat {
