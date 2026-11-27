@@ -102,21 +102,6 @@ impl ComuPolicyFiles {
             .join(format!("{storage_key}.json"))
     }
 
-    /// Fallback read path for lowercase-only legacy files written before
-    /// `encode_project_storage_key` (e.g. `__unassigned__.json` vs
-    /// `_5f_5funassigned_5f_5f.json`), restricted to IDs with no ASCII
-    /// uppercase so uppercase IDs never alias lowercase files on Windows/macOS.
-    fn legacy_project_path(&self, project_id: &str, storage_key: &str) -> Option<PathBuf> {
-        if project_id == storage_key || project_id.bytes().any(|b| b.is_ascii_uppercase()) {
-            return None;
-        }
-        Some(
-            self.root
-                .join("projects")
-                .join(format!("{project_id}.json")),
-        )
-    }
-
     fn project_lock(&self, storage_key: &str) -> Arc<AsyncMutex<()>> {
         let mut guard = self.project_locks.lock();
         Arc::clone(
@@ -126,17 +111,8 @@ impl ComuPolicyFiles {
         )
     }
 
-    fn read_project_by_key(&self, project_id: &str, storage_key: &str) -> ComuProjectPolicy {
-        let primary = self.project_path_for_key(storage_key);
-        if primary.exists() {
-            return read_project_unlocked(&primary);
-        }
-        if let Some(legacy) = self.legacy_project_path(project_id, storage_key) {
-            if legacy.exists() {
-                return read_project_unlocked(&legacy);
-            }
-        }
-        ComuProjectPolicy::default()
+    fn read_project_by_key(&self, storage_key: &str) -> ComuProjectPolicy {
+        read_project_unlocked(&self.project_path_for_key(storage_key))
     }
 
     pub async fn read_app(&self) -> Result<ComuAppPolicy, ComuPolicyRefusal> {
@@ -149,7 +125,7 @@ impl ComuPolicyFiles {
         let key = encode_project_storage_key(project_id);
         let lock = self.project_lock(&key);
         let _guard = lock.lock().await;
-        Ok(self.read_project_by_key(project_id, &key))
+        Ok(self.read_project_by_key(&key))
     }
 
     pub async fn update_app(
@@ -185,7 +161,7 @@ impl ComuPolicyFiles {
         let lock = self.project_lock(&key);
         let _guard = lock.lock().await;
         let path = self.project_path_for_key(&key);
-        let mut policy = self.read_project_by_key(project_id, &key);
+        let mut policy = self.read_project_by_key(&key);
         if let Some(expected) = expected_revision {
             if policy.revision != expected {
                 return Err(ComuPolicyRefusal::RevisionConflict {

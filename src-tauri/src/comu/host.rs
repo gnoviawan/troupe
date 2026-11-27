@@ -276,6 +276,9 @@ impl DesktopComuHost {
         args: Value,
         stop_token: &mut ComuStopToken,
     ) -> Option<ComuCallOutput> {
+        if stop_token.is_stopped() {
+            return None;
+        }
         if (tool_name == "comu_run_steps" || tool_name == "run_steps")
             && args.get("steps").is_some_and(Value::is_array)
         {
@@ -286,19 +289,22 @@ impl DesktopComuHost {
         tokio::select! {
             biased;
             () = stop_token.wait_stopped() => None,
-            out = self.backend.call_tool(session_id, tool_name, args) => Some(out),
+            out = async { self.backend.call_tool(session_id, tool_name, args).await } => Some(out),
         }
     }
 
-    /// Execute `comu_run_steps` one step at a time, re-validating `self_guard`
-    /// against fresh window bounds before each step so window movement mid-batch
-    /// cannot cause later steps to hit Troupe's own window.
+    /// Execute `comu_run_steps` one step at a time, normalizing raw step names,
+    /// rejecting nested `run_steps`, re-validating `self_guard` against fresh
+    /// window bounds before each step, and preserving per-step structured/error/image outputs.
     async fn dispatch_multi_steps_checked(
         &self,
         session_id: &str,
         args: Value,
         stop_token: &mut ComuStopToken,
     ) -> Option<ComuCallOutput> {
+        if let Err(out) = validate_run_steps_args(&args) {
+            return Some(out);
+        }
         let stop_on_error = args
             .get("stop_on_error")
             .and_then(Value::as_bool)
@@ -312,16 +318,22 @@ impl DesktopComuHost {
             .unwrap_or_default();
 
         let mut results = Vec::with_capacity(steps.len());
+        let mut extra_blocks: Vec<ComuContentBlock> = Vec::new();
         let mut all_ok = true;
         for (idx, step) in steps.into_iter().enumerate() {
             if stop_token.is_stopped() {
                 return None;
             }
-            let step_tool = step
+            let raw_step_tool = step
                 .get("tool")
                 .and_then(Value::as_str)
-                .unwrap_or("comu_click")
-                .to_string();
+                .unwrap_or_default();
+            let Some(step_tool) = resolve_public_step_tool(raw_step_tool) else {
+                return Some(ComuCallOutput::error_text(
+                    "disallowed_step_tool",
+                    format!("step {idx} references disallowed or unknown tool `{raw_step_tool}`"),
+                ));
+            };
             let mut merged = step
                 .get("args")
                 .cloned()
@@ -339,10 +351,10 @@ impl DesktopComuHost {
                 }
             }
 
-            if needs_window_snapshot(&step_tool) {
+            if needs_window_snapshot(step_tool) {
                 let fresh_windows = self.backend.list_windows_snapshot(session_id).await;
                 if let Err(reason) =
-                    check_not_self_target(self.own_pid, &step_tool, &merged, &fresh_windows)
+                    check_not_self_target(self.own_pid, step_tool, &merged, &fresh_windows)
                 {
                     return Some(ComuCallOutput::error_text("self_target_blocked", reason));
                 }
@@ -354,24 +366,64 @@ impl DesktopComuHost {
             let step_out = tokio::select! {
                 biased;
                 () = stop_token.wait_stopped() => return None,
-                out = self.backend.call_tool(session_id, &step_tool, merged) => out,
+                out = async { self.backend.call_tool(session_id, step_tool, merged).await } => out,
             };
             let ok = step_out.ok;
-            results.push(json!({ "step": idx, "tool": step_tool, "ok": ok }));
             if !ok {
                 all_ok = false;
                 if stop_on_error {
                     return Some(step_out);
                 }
             }
+
+            let error_texts: Vec<String> = if ok {
+                Vec::new()
+            } else {
+                step_out
+                    .blocks
+                    .iter()
+                    .filter_map(|b| match b {
+                        ComuContentBlock::Text { text } => Some(text.clone()),
+                        ComuContentBlock::Image { .. } => None,
+                    })
+                    .collect()
+            };
+            let mut entry = json!({
+                "step": idx,
+                "tool": step_tool,
+                "ok": ok,
+                "structured": step_out.structured.clone(),
+            });
+            if !ok && !error_texts.is_empty() {
+                entry["error"] = json!(error_texts.join("\n"));
+            }
+            results.push(entry);
+
+            for block in step_out.blocks {
+                match block {
+                    ComuContentBlock::Image { .. } => extra_blocks.push(block),
+                    ComuContentBlock::Text { text } if !ok => {
+                        extra_blocks.push(ComuContentBlock::Text {
+                            text: format!("step {idx} ({step_tool}): {text}"),
+                        });
+                    }
+                    ComuContentBlock::Text { .. } => {}
+                }
+            }
         }
 
-        let summary = json!({ "status": if all_ok { "completed" } else { "partial" }, "steps": results });
+        let summary = json!({
+            "status": if all_ok { "completed" } else { "partial" },
+            "steps": results,
+        });
+        let mut blocks = Vec::with_capacity(1 + extra_blocks.len());
+        blocks.push(ComuContentBlock::Text {
+            text: summary.to_string(),
+        });
+        blocks.extend(extra_blocks);
         Some(ComuCallOutput {
             ok: all_ok,
-            blocks: vec![ComuContentBlock::Text {
-                text: summary.to_string(),
-            }],
+            blocks,
             structured: Some(summary),
         })
     }
@@ -409,6 +461,17 @@ impl DesktopComuHost {
             );
             return stopped_output();
         };
+
+        if (tool_name == "comu_run_steps" || tool_name == "run_steps")
+            && args.get("steps").is_some_and(Value::is_array)
+        {
+            if let Err(out) = validate_run_steps_args(&args) {
+                log::warn!(
+                    "[comu] rejected invalid comu_run_steps batch: agent={agent_id} session={redacted_sid}"
+                );
+                return out;
+            }
+        }
 
         let windows = if needs_window_snapshot(tool_name) {
             self.backend.list_windows_snapshot(session_id).await
@@ -657,4 +720,44 @@ fn uses_agent_cursor(tool_name: &str) -> bool {
             | "comu_run_steps"
             | "run_steps"
     )
+}
+
+/// Normalize a step tool name (either `comu_*` or raw driver name) to its curated
+/// public `comu_*` tool name, rejecting nested `run_steps`/`comu_run_steps` and unknown tools.
+fn resolve_public_step_tool(step_tool: &str) -> Option<&'static str> {
+    if step_tool == "comu_run_steps" || step_tool == "run_steps" {
+        return None;
+    }
+    super::COMU_TOOL_PAIRS
+        .iter()
+        .find_map(|(public_name, raw_name)| {
+            (*public_name == step_tool || *raw_name == step_tool).then_some(*public_name)
+        })
+}
+
+fn validate_run_steps_args(args: &Value) -> Result<(), ComuCallOutput> {
+    let Some(steps) = args.get("steps").and_then(Value::as_array) else {
+        return Ok(());
+    };
+    for (idx, step) in steps.iter().enumerate() {
+        let Some(step_obj) = step.as_object() else {
+            return Err(ComuCallOutput::error_text(
+                "invalid_arguments",
+                format!("step {idx} must be an object"),
+            ));
+        };
+        let Some(tool_name) = step_obj.get("tool").and_then(Value::as_str) else {
+            return Err(ComuCallOutput::error_text(
+                "invalid_arguments",
+                format!("step {idx} is missing a string `tool` name"),
+            ));
+        };
+        if resolve_public_step_tool(tool_name).is_none() {
+            return Err(ComuCallOutput::error_text(
+                "disallowed_step_tool",
+                format!("step {idx} references disallowed or unknown tool `{tool_name}`"),
+            ));
+        }
+    }
+    Ok(())
 }
