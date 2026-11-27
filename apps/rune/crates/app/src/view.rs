@@ -44,6 +44,8 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::term_menu::build(s, t, &mut layer);
     crate::command_history::build(s, t, phone, window.1, &mut layer);
     crate::git_view::dialogs(s, t, &mut layer);
+    crate::automations_view::dialogs(s, t, &mut layer);
+    crate::automation_editor_view::dialogs(s, t, &mut layer);
     crate::settings_view::build(s, t, phone, window.1, &mut layer);
     layer.push(
         row()
@@ -199,6 +201,7 @@ fn main_area(
                 .or_else(|| crate::git_diff::tab_body(s, t, tab))
                 .or_else(|| crate::github_item_view::tab_body(s, t, tab, false, &mut menus.borrow_mut()))
                 .or_else(|| editor_body(s, t, tab))
+                .or_else(|| crate::automations_view::tab_body(s, t, tab, false))
         };
         let slots = ui::workspace::Slots {
             leading,
@@ -436,6 +439,11 @@ fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     // A file the Files sheet opened.
     if let Some(tab @ model::workspace::Tab::Editor { .. }) = active_phone_tab(s)
         && let Some(body) = editor_body(s, t, tab)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
+    if let Some(tab @ model::workspace::Tab::Automations { .. }) = active_phone_tab(s)
+        && let Some(body) = crate::automations_view::tab_body(s, t, tab, true)
     {
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }

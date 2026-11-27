@@ -17,6 +17,17 @@ mod agent_switch;
 #[cfg(test)]
 mod agent_switch_tests;
 mod answers;
+mod automation_canvas;
+mod automation_editor;
+mod automation_editor_view;
+mod automation_fields;
+mod automation_inspector;
+mod automation_policy;
+mod automation_run_view;
+mod automations;
+#[cfg(test)]
+mod automations_tests;
+mod automations_view;
 #[cfg(test)]
 mod answers_tests;
 #[cfg(test)]
@@ -197,6 +208,8 @@ pub struct State {
     /// The MCP servers page, its dialogs and the host side of the registry.
     pub mcp_ui: settings_mcp::McpUi,
     pub(crate) sync: sync::Sync,
+    /// The Automations tab's reads, selection and canvases.
+    pub automations: automations::AutomationsUi,
 }
 
 /// A resizable edge of the shell.
@@ -257,6 +270,7 @@ impl Default for State {
             project_ui: project_settings::ProjectSettingsUi::default(),
             mcp_ui: settings_mcp::McpUi::default(),
             sync: sync::Sync::default(),
+            automations: automations::AutomationsUi::default(),
         }
     }
 }
@@ -359,6 +373,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
     let next_catalog = state.catalog_tick(now);
     let next_completion = state.pump_command_editors(tx);
     state.history_tick();
+    let next_automation = state.automations_tick(now);
+    let next_preview = state.automation_editor_tick(now);
     let waits = [
         state.toasts.next_expiry(),
         next_retry,
@@ -372,6 +388,8 @@ fn poll(state: &mut State, now: f64, tx: &mut Tx) -> bool {
         next_mcp,
         next_catalog,
         next_completion,
+        next_automation,
+        next_preview,
     ];
     for due in waits.into_iter().flatten() {
         tx.wake_at(due);

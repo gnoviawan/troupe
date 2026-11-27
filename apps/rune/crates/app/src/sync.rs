@@ -336,6 +336,7 @@ impl State {
                 crate::host::Fetch::Mcp(effect) => self.mcp_fetched(*effect, result),
                 crate::host::Fetch::McpPoll(url) => self.mcp_polled(&url, result),
                 crate::host::Fetch::Catalog(tag) => self.catalog_fetched(tag, result),
+                crate::host::Fetch::Automation(tag) => self.automation_replied(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }

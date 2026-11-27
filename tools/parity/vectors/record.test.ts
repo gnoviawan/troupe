@@ -244,6 +244,15 @@ const { projectSettingsRecorder, projectSettingsScenarios } = await import(
   './stores/project-settings'
 )
 const { mcpServersRecorder, mcpServersScenarios } = await import('./stores/mcp-servers')
+const {
+  automationDraftRecorder,
+  automationDraftScenarios,
+  automationRunRecorder,
+  automationRunScenarios,
+  automationRoutesRecorder,
+  automationRoutesScenarios
+} = await import('./stores/automations')
+const { webAutomationTransport } = await import(`${lib}/automation-api`)
 const { realGitApi } = (await import(`${lib}/git-api`)) as unknown as {
   realGitApi: Record<string, (...args: unknown[]) => unknown>
 }
@@ -264,7 +273,15 @@ const STORES: Array<[StoreRecorder, Scenario[]]> = [
   [projectSettingsRecorder, projectSettingsScenarios],
   [mcpServersRecorder, mcpServersScenarios],
   [githubRecorder, githubScenarios],
-  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios]
+  [githubRoutesRecorder(realGithubApi), githubRoutesScenarios],
+  [automationDraftRecorder, automationDraftScenarios],
+  [automationRunRecorder, automationRunScenarios],
+  [
+    automationRoutesRecorder(
+      webAutomationTransport as unknown as Record<string, (...args: unknown[]) => unknown>
+    ),
+    automationRoutesScenarios
+  ]
 ]
 
 const write = process.env.RECORD_VECTORS === '1'
