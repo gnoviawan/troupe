@@ -20,7 +20,13 @@ export interface OutboxAckMessage {
 }
 
 interface PendingOutboxRequest {
-  resolve: (ack: { ok: boolean; id?: string; sessionId?: string; error?: string }) => void
+  resolve: (ack: {
+    ok: boolean
+    id?: string
+    sessionId?: string
+    error?: string
+    drained?: boolean
+  }) => void
   timer: number
 }
 
@@ -117,8 +123,8 @@ export class OverlayTransport {
   public destroy(): void {
     for (const [reqId, pending] of this.pendingOutbox) {
       window.clearTimeout(pending.timer)
-      this.removeFromOutbox(reqId)
-      pending.resolve({ ok: false, error: 'Overlay unmounted' })
+      const reclaimed = this.removeFromOutbox(reqId)
+      pending.resolve({ ok: false, error: 'Overlay unmounted', drained: !reclaimed })
     }
     this.pendingOutbox.clear()
     this.bridgeSessionInit = null
@@ -146,46 +152,47 @@ export class OverlayTransport {
       this.bridgeSessionInit = initPromise
     }
 
-    const reqId = `ov-${Date.now()}-${++this.reqSeq}`
-    const envelope = {
-      reqId,
-      nonce: this.bridgeNonce,
-      kind,
-      url: window.location.href,
-      sessionId: this.sessionId ?? undefined,
-      payload
-    }
+    try {
+      const reqId = `ov-${Date.now()}-${++this.reqSeq}`
+      const envelope = {
+        reqId,
+        nonce: this.bridgeNonce,
+        kind,
+        url: window.location.href,
+        sessionId: this.sessionId ?? undefined,
+        payload
+      }
 
-    let queue: unknown[] = []
-    const existing = this.host.getAttribute(OUTBOX_ATTR)
-    if (existing) {
-      try {
-        const parsed = JSON.parse(existing)
-        if (Array.isArray(parsed)) queue = parsed
-      } catch {
-        queue = []
+      let queue: unknown[] = []
+      const existing = this.host.getAttribute(OUTBOX_ATTR)
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing)
+          if (Array.isArray(parsed)) queue = parsed
+        } catch {
+          queue = []
+        }
+      }
+      queue.push(envelope)
+      this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(queue))
+
+      return await new Promise<HostBridgeResult>((resolve) => {
+        const timer = window.setTimeout(() => {
+          this.pendingOutbox.delete(reqId)
+          const reclaimed = this.removeFromOutbox(reqId)
+          resolve({ ok: false, error: 'Host bridge timed out', drained: !reclaimed })
+        }, OUTBOX_TIMEOUT_MS)
+        this.pendingOutbox.set(reqId, {
+          resolve: (ack) => resolve({ drained: false, ...ack }),
+          timer
+        })
+      })
+    } finally {
+      if (finishInit) {
+        this.bridgeSessionInit = null
+        ;(finishInit as () => void)()
       }
     }
-    queue.push(envelope)
-    this.host.setAttribute(OUTBOX_ATTR, JSON.stringify(queue))
-
-    const result = await new Promise<HostBridgeResult>((resolve) => {
-      const timer = window.setTimeout(() => {
-        this.pendingOutbox.delete(reqId)
-        const reclaimed = this.removeFromOutbox(reqId)
-        resolve({ ok: false, error: 'Host bridge timed out', drained: !reclaimed })
-      }, OUTBOX_TIMEOUT_MS)
-      this.pendingOutbox.set(reqId, {
-        resolve: (ack) => resolve({ ...ack, drained: false }),
-        timer
-      })
-    })
-
-    if (finishInit) {
-      this.bridgeSessionInit = null
-      ;(finishInit as () => void)()
-    }
-    return result
   }
 
   private async ensureHttpSession(): Promise<string | null> {

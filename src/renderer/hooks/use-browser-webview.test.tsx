@@ -388,7 +388,7 @@ describe('useBrowserWebview bounds updates', () => {
     resetNativeWebviewOcclusionForTests()
   })
 
-  it('keeps the occlusion preview intact when browserTabShow fails on reveal', async () => {
+  it('retries browserTabShow once on reveal failure and clears preview if retry also fails', async () => {
     const OccluderHarness = ({ open }: { open: boolean }): null => {
       useNativeWebviewOcclusion(open)
       return null
@@ -399,17 +399,20 @@ describe('useBrowserWebview bounds updates', () => {
     const occluder = render(<OccluderHarness open />)
     await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeTruthy())
 
-    vi.mocked(browserTabShow).mockResolvedValueOnce({
-      success: false,
-      error: 'Webview failed to show'
-    })
-    occluder.rerender(<OccluderHarness open={false} />)
-    await act(async () => {
-      await Promise.resolve()
-      await Promise.resolve()
-    })
+    vi.mocked(browserTabShow).mockClear()
+    vi.mocked(browserTabShow)
+      .mockResolvedValueOnce({ success: false, error: 'Transient show failure' })
+      .mockResolvedValueOnce({ success: false, error: 'Permanent show failure' })
 
+    occluder.rerender(<OccluderHarness open={false} />)
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(1))
+    // Preview stays visible while retry is pending
     expect(visible.queryByTestId('occlusion-preview')).toBeTruthy()
+
+    // Retry fires and clears preview if show still fails so no frozen overlay remains stuck
+    await waitFor(() => expect(browserTabShow).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(visible.queryByTestId('occlusion-preview')).toBeNull())
+
     occluder.unmount()
     visible.unmount()
     resetNativeWebviewOcclusionForTests()

@@ -358,30 +358,57 @@ export function useBrowserWebview(
         })
     }
 
+    let retryTimerId: number | null = null
     if (isVisible) {
       void updateBounds().then(() => {
         if (cancelled || !visibilityRef.current || !createdRef.current) return
-        browserTabShow(browserTabId)
-          .then((r) => {
-            if (r.success) {
-              if (!cancelled && token === occlusionTokenRef.current) {
-                setOcclusionPreviewUrl(null)
+        const clearPreviewIfCurrent = () => {
+          if (!cancelled && token === occlusionTokenRef.current) {
+            setOcclusionPreviewUrl(null)
+          }
+        }
+        const revealNative = (attempt: number) => {
+          browserTabShow(browserTabId)
+            .then((r) => {
+              if (r.success) {
+                clearPreviewIfCurrent()
+                return
               }
-            } else {
               void logFrontendError({
-                message: `browserTabShow failed for tab ${browserTabId}: ${r.error}`,
+                message: `browserTabShow failed for tab ${browserTabId} (attempt ${attempt}): ${r.error}`,
                 source: 'useBrowserWebview'
               })
-            }
-          })
-          .catch((err) => {
-            void logFrontendError({
-              message: `browserTabShow rejected for tab ${browserTabId}: ${
-                err instanceof Error ? err.message : String(err)
-              }`,
-              source: 'useBrowserWebview'
+              if (attempt === 1 && !cancelled && token === occlusionTokenRef.current) {
+                retryTimerId = window.setTimeout(() => {
+                  retryTimerId = null
+                  if (!cancelled && visibilityRef.current && createdRef.current) {
+                    revealNative(2)
+                  }
+                }, 120)
+              } else {
+                clearPreviewIfCurrent()
+              }
             })
-          })
+            .catch((err) => {
+              void logFrontendError({
+                message: `browserTabShow rejected for tab ${browserTabId} (attempt ${attempt}): ${
+                  err instanceof Error ? err.message : String(err)
+                }`,
+                source: 'useBrowserWebview'
+              })
+              if (attempt === 1 && !cancelled && token === occlusionTokenRef.current) {
+                retryTimerId = window.setTimeout(() => {
+                  retryTimerId = null
+                  if (!cancelled && visibilityRef.current && createdRef.current) {
+                    revealNative(2)
+                  }
+                }, 120)
+              } else {
+                clearPreviewIfCurrent()
+              }
+            })
+        }
+        revealNative(1)
       })
     } else if (occluded && paneVisible && hasDocument) {
       void (async () => {
@@ -430,6 +457,9 @@ export function useBrowserWebview(
     }
     return () => {
       cancelled = true
+      if (retryTimerId !== null) {
+        window.clearTimeout(retryTimerId)
+      }
     }
   }, [isVisible, occluded, paneVisible, hasDocument, browserTabId, updateBounds])
 

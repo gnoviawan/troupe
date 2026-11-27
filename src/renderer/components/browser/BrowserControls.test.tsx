@@ -255,6 +255,20 @@ describe('BrowserControls', () => {
     expect(screen.getByTestId('browser-screenshot-copied-pill').textContent).toContain('Copied')
   })
 
+  it('does not show stale Copied pill on remount when lastScreenshotCopiedAt is expired', () => {
+    useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')
+    useBrowserSessionStore.setState((state) => {
+      const next = new Map(state.tabs)
+      const tab = next.get('tab-1')
+      if (tab) {
+        next.set('tab-1', { ...tab, lastScreenshotCopiedAt: Date.now() - 5000 })
+      }
+      return { tabs: next }
+    })
+    renderWithProvider(<BrowserControls browserTabId="tab-1" isVisible />)
+    expect(screen.queryByTestId('browser-screenshot-copied-pill')).toBeNull()
+  })
+
   it('gives the Eye toggle explicit annotations & guides labels and sends set_pins_hidden', async () => {
     const { browserTabAnnotationCmd } = await import('@/lib/browser-api')
     useBrowserSessionStore.getState().createTab('tab-1', 'https://absenin.id')

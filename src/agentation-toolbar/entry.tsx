@@ -364,7 +364,7 @@ class TroupeAnnotationOverlay {
       if (!this.active || this.popoverEl || this.draggingGuideId) return
 
       if (this.dragStart && (this.tool === 'rectangle' || this.tool === 'screenshot-area')) {
-        if (this.pinsHidden) {
+        if (this.pinsHidden && this.tool === 'rectangle') {
           this.dragBox.style.display = 'none'
           return
         }
@@ -413,7 +413,13 @@ class TroupeAnnotationOverlay {
 
     this.layer.addEventListener('pointerdown', (e) => {
       if (!this.active || e.button !== 0) return
-      if (this.tool === 'rectangle' || this.tool === 'screenshot-area') {
+      if (this.tool === 'screenshot-area') {
+        this.dragStart = { x: e.clientX, y: e.clientY }
+        this.dragBox.style.display = 'none'
+        return
+      }
+      if (this.pinsHidden) return
+      if (this.tool === 'rectangle') {
         this.dragStart = { x: e.clientX, y: e.clientY }
         this.dragBox.style.display = 'none'
         return
@@ -500,7 +506,7 @@ class TroupeAnnotationOverlay {
         }
         return
       }
-      if (this.popoverEl) return
+      if (this.popoverEl || this.pinsHidden) return
       if (this.tool === 'ruler' && (e.key === 'h' || e.key === 'H')) {
         this.addGuide('horizontal', Math.round(window.innerHeight / 4))
       } else if (this.tool === 'ruler' && (e.key === 'v' || e.key === 'V')) {

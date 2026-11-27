@@ -292,11 +292,22 @@ describe('TroupeAnnotationOverlay', () => {
     overlay.dispatch({ type: 'set_pins_hidden', hidden: false })
     expect(selectedBox.style.display).toBe('block')
 
-    // Close popover, hide visuals, then move pointer in Comment mode -> hoverBox stays hidden
+    // Close popover, hide visuals, then verify comment hover/click, rectangle, and ruler are gated while screenshot-area still works
     ;(shadow.querySelector('.btn-sec') as HTMLButtonElement).click()
     overlay.dispatch({ type: 'set_pins_hidden', hidden: true })
     dispatchPointer(layer, 'pointermove', { clientX: 300, clientY: 160 })
     expect(hoverBox.style.display).toBe('none')
+    dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+    expect(shadow.querySelector('.popover')).toBeNull()
+
+    overlay.dispatch({ type: 'set_tool', tool: 'ruler' })
+    dispatchPointer(layer, 'pointerdown', { clientX: 320, clientY: 160, button: 0 })
+    expect(shadow.querySelector('.popover')).toBeNull()
+
+    overlay.dispatch({ type: 'set_tool', tool: 'screenshot-area' })
+    dispatchPointer(layer, 'pointerdown', { clientX: 100, clientY: 100, button: 0 })
+    dispatchPointer(layer, 'pointermove', { clientX: 250, clientY: 220 })
+    expect((shadow.querySelector('.drag-box') as HTMLDivElement).style.display).toBe('block')
   })
 
   it('enables passthrough on guides and pins during screenshot-area and rectangle tools', () => {
@@ -475,6 +486,39 @@ describe('TroupeAnnotationOverlay', () => {
       host.removeAttribute(OUTBOX_ATTR)
 
       await vi.advanceTimersByTimeAsync(6500)
+      expect(fetchMock).not.toHaveBeenCalled()
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: origLocation })
+    }
+  })
+
+  it('skips HTTP fallback when overlay is destroyed after host already drained the outbox', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'dup' }) })
+    vi.stubGlobal('fetch', fetchMock)
+    ;(window as unknown as Record<string, unknown>).__TERMUL_AGENTATION_ENDPOINT__ =
+      'http://127.0.0.1:9999/secret'
+
+    const origLocation = window.location
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { ...origLocation, protocol: 'https:', href: 'https://absenin.id/' }
+    })
+
+    try {
+      const { overlay, host, shadow, layer } = setupOverlay()
+      dispatchPointer(layer, 'pointerdown', { clientX: 300, clientY: 160, button: 0 })
+      ;(shadow.querySelector('.pop-input') as HTMLTextAreaElement).value = 'Drained before unmount'
+      ;(shadow.querySelector('.btn-pri') as HTMLButtonElement).click()
+
+      await vi.waitFor(() => {
+        expect(host.getAttribute(OUTBOX_ATTR)).toBeTruthy()
+      })
+      // Host drains the attribute before overlay unmounts
+      host.removeAttribute(OUTBOX_ATTR)
+      overlay.destroy()
+
+      await Promise.resolve()
+      await Promise.resolve()
       expect(fetchMock).not.toHaveBeenCalled()
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: origLocation })

@@ -145,6 +145,8 @@ export function BrowserControls({
 
   useEffect(() => {
     if (!lastScreenshotCopiedAt) return
+    const remainingMs = 2000 - (Date.now() - lastScreenshotCopiedAt)
+    if (remainingMs <= 0) return
     setCopiedScreenshot(true)
     if (screenshotCopyTimerRef.current !== null) {
       window.clearTimeout(screenshotCopyTimerRef.current)
@@ -152,7 +154,7 @@ export function BrowserControls({
     screenshotCopyTimerRef.current = window.setTimeout(() => {
       setCopiedScreenshot(false)
       screenshotCopyTimerRef.current = null
-    }, 2000)
+    }, remainingMs)
   }, [lastScreenshotCopiedAt])
 
   useEffect(() => {
