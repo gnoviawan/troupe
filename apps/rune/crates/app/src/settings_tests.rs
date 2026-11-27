@@ -208,3 +208,13 @@ fn a_narrow_window_keeps_groups_stacked() {
     assert_eq!(head[2], column[2], "the heading spans the 680 px column");
     assert!(!rt.find("notifications/rule").is_some());
 }
+
+#[test]
+fn the_agents_page_keeps_the_suggest_switch_in_the_chats_card() {
+    let mut rt = desktop();
+    open(&mut rt);
+    tap(&mut rt, "page-ai-agents");
+    assert!(rt.find("chats/split/body/chats-card/suggest-automations").is_some(), "the switch is a row of the Chats card");
+    assert!(rt.find("available-agents/split/body/agents-later").is_some(), "the not-yet note sits in the Available agents section");
+    assert!(rt.find("available-agents/rule").is_none(), "Available agents leads the page");
+}

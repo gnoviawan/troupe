@@ -565,6 +565,19 @@ fn agents(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
             s.settings_step(Event::SetAgentIdleWindow(secs));
         },
     );
+    // `AcpAgentsSettings` heads the page in React; the list itself is not ported yet.
+    let available = described(
+        t,
+        "available-agents",
+        "Available agents",
+        "Installed coding agents and registry updates.",
+        vec![],
+        vec![notice(
+            t,
+            "agents-later",
+            "The agent list, updates and custom agents are not in the Rune client yet; open this page in the web client for them.",
+        )],
+    );
     let chats = described(
         t,
         "chats",
@@ -575,13 +588,23 @@ fn agents(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
             card(
                 t,
                 "chats-card",
-                vec![setting(
-                    t,
-                    "agent-idle-window",
-                    "Close idle chats after",
-                    "A chat with no turn running and no open view closes after this long. Reopen it from the rail.",
-                    Some(idle_select),
-                )],
+                vec![
+                    setting(
+                        t,
+                        "agent-idle-window",
+                        "Close idle chats after",
+                        "A chat with no turn running and no open view closes after this long. Reopen it from the rail.",
+                        Some(idle_select),
+                    ),
+                    toggle(
+                        s,
+                        t,
+                        "suggest-automations",
+                        "Suggest automations from repeated chats",
+                        "Offer to schedule something you ask on several days.",
+                        "suggestAutomations",
+                    ),
+                ],
             ),
             notice(
                 t,
@@ -652,24 +675,7 @@ fn agents(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> Vec<El> {
         limit_label(&TURN, secs(s, "acpTurnTimeoutSecs"), "No limit")
     );
     let limits = disclosure(s, t, "agents-limits", "Advanced: time limits", "Response and startup timeouts for agent chats.", &summary, rows);
-    let suggest = card(
-        t,
-        "suggest-card",
-        vec![toggle(
-            s,
-            t,
-            "suggest-automations",
-            "Suggest automations from repeated chats",
-            "Offer to schedule something you ask on several days.",
-            "suggestAutomations",
-        )],
-    );
-    let later = notice(
-        t,
-        "agents-later",
-        "The agent list, updates and custom agents are not in the Rune client yet; open this page in the web client for them.",
-    );
-    vec![chats, limits, suggest, later]
+    vec![available, chats, limits]
 }
 
 impl State {

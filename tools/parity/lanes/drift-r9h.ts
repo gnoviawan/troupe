@@ -20,7 +20,7 @@ import { REFERENCE_ARGS } from '../drivers/chromium'
 import { runeWebArgs } from '../drivers/rune-web'
 import { REPO_DIR } from '../server'
 import { createWorld, ensureProject } from '../world'
-import { type Client, inReact, inRune, type LaneOptions, shot, writePairs } from './kit'
+import { type Client, inReact, inRune, type LaneOptions, shot, until, writePairs } from './kit'
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
@@ -52,6 +52,25 @@ async function runeButton(client: Client, name: string): Promise<void> {
     return Boolean(last)
   }, name)
   if (!pressed) throw new Error(`no Rune button named "${name}"`)
+}
+
+/** Both a success dot and a failure dot show: xterm decorations in React, mirror images in Rune. */
+async function hasDots(client: Client): Promise<boolean> {
+  return client.page.evaluate((react) => {
+    if (react) {
+      return (
+        document.querySelector('.termul-command-status--success') !== null &&
+        document.querySelector('.termul-command-status--failure') !== null
+      )
+    }
+    const labels = [
+      ...(document.querySelector('[data-rune-a11y]')?.querySelectorAll('[aria-label]') ?? [])
+    ].map((el) => el.getAttribute('aria-label') ?? '')
+    return (
+      labels.includes('Command succeeded (exit code 0)') &&
+      labels.includes('Command failed (exit code 2)')
+    )
+  }, client.name === 'react')
 }
 
 async function run(client: Client): Promise<string[]> {
@@ -137,7 +156,7 @@ async function run(client: Client): Promise<string[]> {
       await client.page.keyboard.press('Enter')
       await settle(2000)
     }
-    await step('terminal-dots', () => client.sees('Terminal 1', 5_000))
+    await step('terminal-dots', () => until(() => hasDots(client), 5_000))
   }
   return seen
 }
@@ -162,8 +181,9 @@ try {
   await world.server.stop()
 }
 writePairs(options.root)
+const want = options.phone ? 2 : 6
 const counts = Object.values(results).map((r) => r.length)
-const ok = counts.length > 0 && counts.every((n) => n === counts[0])
+const ok = counts.length > 0 && counts.every((n) => n === want)
 console.log(
   ok ? `PASS: both clients passed ${counts[0]} steps` : `FAIL: ${JSON.stringify(results)}`
 )
