@@ -175,16 +175,61 @@ impl From<&SSHProfile> for StoredSSHProfile {
     }
 }
 
-/// Where the profile file is read and written.
-enum Backing {
-    /// tauri-plugin-store, in the Tauri app.
-    Plugin(AppHandle),
-    /// The same file, read and written directly.
-    File(PathBuf),
+/// Where the profile file is read and written. A trait object, so the
+/// plugin-store code is linked only where the Tauri app constructs it and
+/// `troupe-server` stays free of GUI libraries.
+trait ProfileFile: Send + Sync {
+    /// The stored `profiles` value, if any.
+    fn load(&self) -> Result<Option<serde_json::Value>, String>;
+    fn save(&self, value: serde_json::Value) -> Result<(), String>;
+}
+
+/// tauri-plugin-store, in the Tauri app.
+struct PluginFile(AppHandle);
+
+impl ProfileFile for PluginFile {
+    fn load(&self) -> Result<Option<serde_json::Value>, String> {
+        Ok(self
+            .0
+            .store(STORE_FILE)
+            .map_err(|e| format!("Failed to open SSH store: {}", e))?
+            .get(STORE_KEY))
+    }
+
+    fn save(&self, value: serde_json::Value) -> Result<(), String> {
+        let store = self
+            .0
+            .store(STORE_FILE)
+            .map_err(|e| format!("Failed to open SSH store: {}", e))?;
+        store.set(STORE_KEY, value);
+        store
+            .save()
+            .map_err(|e| format!("Failed to save SSH store: {}", e))
+    }
+}
+
+/// The same file, read and written directly in the plugin's format.
+struct DirectFile(PathBuf);
+
+impl ProfileFile for DirectFile {
+    fn load(&self) -> Result<Option<serde_json::Value>, String> {
+        Ok(read_store_file(&self.0)?.remove(STORE_KEY))
+    }
+
+    fn save(&self, value: serde_json::Value) -> Result<(), String> {
+        let mut file = read_store_file(&self.0)?;
+        file.insert(STORE_KEY.to_string(), value);
+        let bytes = serde_json::to_vec_pretty(&file)
+            .map_err(|e| format!("Failed to serialize profiles: {}", e))?;
+        write_store_file(&self.0, &bytes).map_err(|e| {
+            log::error!("[SSH] Failed to write the profile store: {}", e);
+            format!("Failed to save SSH store: {}", e)
+        })
+    }
 }
 
 pub struct ProfileManager {
-    backing: Backing,
+    file: Box<dyn ProfileFile>,
     /// In-memory cache of profiles for fast access
     cache: Mutex<Option<Vec<SSHProfile>>>,
 }
@@ -220,7 +265,7 @@ fn write_store_file(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 impl ProfileManager {
     pub fn new(app_handle: AppHandle) -> Self {
         Self {
-            backing: Backing::Plugin(app_handle),
+            file: Box::new(PluginFile(app_handle)),
             cache: Mutex::new(None),
         }
     }
@@ -229,21 +274,14 @@ impl ProfileManager {
     /// plugin store keeps there.
     pub fn in_dir(data_dir: &Path) -> Self {
         Self {
-            backing: Backing::File(data_dir.join(STORE_FILE)),
+            file: Box::new(DirectFile(data_dir.join(STORE_FILE))),
             cache: Mutex::new(None),
         }
     }
 
     /// Load profiles from store (secrets are NOT loaded here)
     fn load_from_store(&self) -> Result<Vec<SSHProfile>, String> {
-        let value = match &self.backing {
-            Backing::Plugin(app_handle) => app_handle
-                .store(STORE_FILE)
-                .map_err(|e| format!("Failed to open SSH store: {}", e))?
-                .get(STORE_KEY),
-            Backing::File(path) => read_store_file(path)?.remove(STORE_KEY),
-        }
-        .unwrap_or(serde_json::json!([]));
+        let value = self.file.load()?.unwrap_or(serde_json::json!([]));
 
         let stored: Vec<StoredSSHProfile> = serde_json::from_value(value)
             .map_err(|e| format!("Failed to deserialize SSH profiles: {}", e))?;
@@ -258,27 +296,7 @@ impl ProfileManager {
         let value = serde_json::to_value(&stored)
             .map_err(|e| format!("Failed to serialize profiles: {}", e))?;
 
-        match &self.backing {
-            Backing::Plugin(app_handle) => {
-                let store = app_handle
-                    .store(STORE_FILE)
-                    .map_err(|e| format!("Failed to open SSH store: {}", e))?;
-                store.set(STORE_KEY, value);
-                store
-                    .save()
-                    .map_err(|e| format!("Failed to save SSH store: {}", e))
-            }
-            Backing::File(path) => {
-                let mut file = read_store_file(path)?;
-                file.insert(STORE_KEY.to_string(), value);
-                let bytes = serde_json::to_vec_pretty(&file)
-                    .map_err(|e| format!("Failed to serialize profiles: {}", e))?;
-                write_store_file(path, &bytes).map_err(|e| {
-                    log::error!("[SSH] Failed to write the profile store: {}", e);
-                    format!("Failed to save SSH store: {}", e)
-                })
-            }
-        }
+        self.file.save(value)
     }
 
     /// Get all profiles (uses cache). Secrets are NOT included in the returned profiles.
