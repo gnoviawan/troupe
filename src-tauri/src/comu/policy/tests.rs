@@ -119,5 +119,20 @@ async fn isolates_case_variant_project_ids_and_fails_closed_on_future_schema() {
     let future_policy = service.read_app_policy().await;
     assert!(future_policy.read_only);
     assert!(!future_policy.enabled);
+
+    // Distinct project IDs `_` (`_5f.json`) and `_5f` (`_5f5f.json`) must never alias.
+    service
+        .record_project_approval("_", "com.apple.calculator")
+        .await;
+    assert!(
+        service
+            .is_app_allowlisted("_", "com.apple.calculator", "")
+            .await
+    );
+    assert!(
+        !service
+            .is_app_allowlisted("_5f", "com.apple.calculator", "")
+            .await
+    );
 }
 

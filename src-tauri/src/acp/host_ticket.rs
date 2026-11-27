@@ -676,8 +676,9 @@ impl HostTickets {
             EVENT_PERMISSION_REQUEST,
             &comu_request_payload(&ticket),
         );
+        let guard = Withdraw { tickets: self, id };
         Box::pin(async move {
-            let guard = Withdraw { tickets: self, id };
+            let guard = guard;
             match tokio::time::timeout(wait, rx).await {
                 Ok(Ok(outcome)) => outcome,
                 Ok(Err(_)) => TicketOutcome::Cancelled,
@@ -701,15 +702,6 @@ impl HostTickets {
             .collect();
         for id in ids {
             self.withdraw(&id, TicketOutcome::Cancelled, "cancelled");
-        }
-    }
-
-    #[cfg(test)]
-    pub fn backdate_pending_for_test(&self, request_id: &str, age: Duration) {
-        if let Some(pending) = self.state.lock().pending.get_mut(request_id) {
-            if let Some(earlier) = Instant::now().checked_sub(age) {
-                pending.shown_at = earlier;
-            }
         }
     }
 }

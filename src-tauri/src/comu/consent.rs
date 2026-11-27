@@ -194,9 +194,14 @@ impl ComuConsentGate {
                 if self.has_app_grant(session_id, &target) {
                     continue;
                 }
+                let saved_name = if target.has_stable_id {
+                    ""
+                } else {
+                    target.app_name.as_str()
+                };
                 if self
                     .policy
-                    .is_app_allowlisted(project_id, &target.app_id, &target.app_name)
+                    .is_app_allowlisted(project_id, &target.app_id, saved_name)
                     .await
                 {
                     self.record_session_app_grant(session_id, &target);
@@ -395,34 +400,49 @@ fn requires_foreground_or_desktop(tool_name: &str, args: &Value) -> bool {
     false
 }
 
+const MAX_STEP_CONSENT_DEPTH: usize = 4;
+
 fn collect_target_apps(
     tool_name: &str,
     args: &Value,
     windows: &[WindowOwnerInfo],
 ) -> Vec<ResolvedAppTarget> {
     let mut out: Vec<ResolvedAppTarget> = Vec::new();
+    collect_target_apps_inner(tool_name, args, windows, 0, &mut out);
+    out
+}
+
+fn collect_target_apps_inner(
+    tool_name: &str,
+    args: &Value,
+    windows: &[WindowOwnerInfo],
+    depth: usize,
+    out: &mut Vec<ResolvedAppTarget>,
+) {
     let mut push_unique = |target: ResolvedAppTarget| {
         let key = AppGrantKey::from_target(&target);
-        if !out.iter().any(|existing| AppGrantKey::from_target(existing) == key) {
+        if !out
+            .iter()
+            .any(|existing| AppGrantKey::from_target(existing) == key)
+        {
             out.push(target);
         }
     };
     if let Some(t) = resolve_target_app(tool_name, args, windows) {
         push_unique(t);
     }
+    if depth >= MAX_STEP_CONSENT_DEPTH {
+        return;
+    }
     if tool_name == "comu_run_steps" || tool_name == "run_steps" {
         if let Some(steps) = args.get("steps").and_then(Value::as_array) {
             for step in steps {
                 let st = step.get("tool").and_then(Value::as_str).unwrap_or_default();
-                if let Some(sa) = step.get("args") {
-                    if let Some(t) = resolve_target_app(st, sa, windows) {
-                        push_unique(t);
-                    }
-                }
+                let sa = step.get("args").unwrap_or(&Value::Null);
+                collect_target_apps_inner(st, sa, windows, depth + 1, out);
             }
         }
     }
-    out
 }
 
 fn resolve_target_app(
@@ -443,14 +463,14 @@ fn resolve_target_app(
     }
 
     if tool_name == "comu_launch_app" || tool_name == "launch_app" {
-        let stable_id = args
-            .get("bundle_id")
-            .or_else(|| args.get("aumid"))
-            .or_else(|| args.get("path"))
-            .or_else(|| args.get("launch_path"))
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|s| !s.is_empty());
+        let stable_id = ["bundle_id", "aumid", "path", "launch_path"]
+            .into_iter()
+            .find_map(|key| {
+                args.get(key)
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+            });
         let raw_name = args
             .get("name")
             .and_then(Value::as_str)

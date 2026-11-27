@@ -115,19 +115,38 @@ impl ComuBackend for FakeComuBackend {
         &'a self,
         _session_id: &'a str,
         tool_name: &'a str,
-        _args: Value,
+        args: Value,
     ) -> ComuFuture<'a, ComuCallOutput> {
         let calls = Arc::clone(&self.calls);
         let started = self.started_calls.clone();
         let hold = self.hold_calls.lock().take();
         let name = tool_name.to_string();
         Box::pin(async move {
+            if troupe_comu_engine::resolve_driver_tool_name(&name).is_none() {
+                return ComuCallOutput::error_text(
+                    "unknown_tool",
+                    format!("unknown Troupe Comu tool `{name}`"),
+                );
+            }
             calls.fetch_add(1, Ordering::SeqCst);
             if let Some(s) = started {
                 s.notify_waiters();
             }
             if let Some(notify) = hold {
                 notify.notified().await;
+            }
+            if args.get("simulate_error").and_then(Value::as_bool) == Some(true) {
+                return ComuCallOutput::error_text("step_failed", "simulated step failure");
+            }
+            if name == "comu_zoom" {
+                return ComuCallOutput {
+                    ok: true,
+                    blocks: vec![ComuContentBlock::Image {
+                        data: "iVBORw0KGgo=".to_string(),
+                        mime_type: "image/png".to_string(),
+                    }],
+                    structured: Some(json!({ "status": "completed", "tool": name })),
+                };
             }
             ComuCallOutput {
                 ok: true,
@@ -486,4 +505,159 @@ async fn distinct_bundle_ids_sharing_display_name_do_not_cross_authorize() {
     assert!(!second.ok);
     assert_eq!(tickets.prompt_count(), 2);
 }
+
+#[tokio::test]
+async fn saved_display_name_entry_does_not_authorize_stable_id_app_and_empty_bundle_id_falls_back() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    // Persist a display-name-only approval ("Helper") in proj-1.
+    policy.record_project_approval("proj-1", "Helper").await;
+
+    let tickets = ScriptedTickets::new([
+        // 1. Stable-ID app with display name "Helper" MUST still prompt (Deny proves it prompted).
+        TicketOutcome::Answered(ConsentOption::Deny),
+        // 2. Launch with empty bundle_id + non-empty path MUST fall back to path and prompt.
+        TicketOutcome::Answered(ConsentOption::AllowSession),
+    ]);
+    let windows = vec![
+        WindowOwnerInfo {
+            window_id: 401,
+            pid: 9201,
+            app_name: "Helper".to_string(),
+            bundle_id: None,
+            bounds: Some([0.0, 0.0, 300.0, 300.0]),
+        },
+        WindowOwnerInfo {
+            window_id: 402,
+            pid: 9202,
+            app_name: "Helper".to_string(),
+            bundle_id: Some("com.vendor-b.helper".to_string()),
+            bounds: Some([400.0, 0.0, 300.0, 300.0]),
+        },
+    ];
+    let backend = FakeComuBackend::new(windows);
+    let host = DesktopComuHost::with_backend(
+        backend,
+        vec![],
+        tickets.clone(),
+        policy,
+        Arc::new(|_| "proj-1".to_string()),
+        OWN_PID,
+    );
+
+    // Unidentified target with display name "Helper" matches the saved display-name entry.
+    let unidentified = host
+        .execute("s1", "a1", "comu_click", json!({ "window_id": 401, "x": 10.0, "y": 10.0 }))
+        .await;
+    assert!(unidentified.ok);
+    assert_eq!(tickets.prompt_count(), 0);
+
+    // Stable-ID target sharing display name "Helper" does NOT match the saved display name.
+    let stable = host
+        .execute("s1", "a1", "comu_click", json!({ "window_id": 402, "x": 410.0, "y": 10.0 }))
+        .await;
+    assert!(!stable.ok);
+    assert_eq!(refusal_code(&stable), Some("consent_denied"));
+    assert_eq!(tickets.prompt_count(), 1);
+
+    // Empty bundle_id does not mask launch path.
+    let launched = host
+        .execute(
+            "s1",
+            "a1",
+            "comu_launch_app",
+            json!({ "bundle_id": "  ", "path": "C:\\Tools\\helper.exe" }),
+        )
+        .await;
+    assert!(launched.ok);
+    assert_eq!(tickets.prompt_count(), 2);
+    assert_eq!(
+        tickets.requests.lock()[1].app_id,
+        "C:\\Tools\\helper.exe"
+    );
+}
+
+#[tokio::test]
+async fn run_steps_rejects_nested_batches_normalizes_raw_names_and_preserves_step_outputs() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    let tickets = ScriptedTickets::new([TicketOutcome::Answered(ConsentOption::AllowSession)]);
+    let backend = FakeComuBackend::new(sample_windows());
+    let host = DesktopComuHost::with_backend(
+        backend.clone(),
+        vec![],
+        tickets.clone(),
+        policy,
+        Arc::new(|_| "proj-1".to_string()),
+        OWN_PID,
+    );
+
+    // 1. Nested run_steps is rejected before prompting or dispatching.
+    let nested = host
+        .execute(
+            "s1",
+            "a1",
+            "comu_run_steps",
+            json!({
+                "steps": [
+                    {
+                        "tool": "run_steps",
+                        "args": {
+                            "steps": [{ "tool": "click", "args": { "window_id": 200, "x": 920.0, "y": 150.0 } }]
+                        }
+                    }
+                ]
+            }),
+        )
+        .await;
+    assert!(!nested.ok);
+    assert_eq!(refusal_code(&nested), Some("disallowed_step_tool"));
+    assert_eq!(tickets.prompt_count(), 0);
+    assert_eq!(backend.call_count(), 0);
+
+    // 2. Raw step names (`get_screen_size`, `zoom`, `click`) normalize to `comu_*`
+    //    and `stop_on_error: false` preserves structured output, image blocks, and error text.
+    let batch = host
+        .execute(
+            "s1",
+            "a1",
+            "comu_run_steps",
+            json!({
+                "window_id": 200,
+                "stop_on_error": false,
+                "steps": [
+                    { "tool": "get_screen_size", "args": {} },
+                    { "tool": "zoom", "args": { "x": 910.0, "y": 120.0 } },
+                    { "tool": "click", "args": { "x": 920.0, "y": 150.0, "simulate_error": true } }
+                ]
+            }),
+        )
+        .await;
+    assert!(!batch.ok);
+    let summary = batch.structured.expect("batch summary");
+    assert_eq!(summary["status"], "partial");
+    assert_eq!(summary["steps"][0]["tool"], "comu_get_screen_size");
+    assert_eq!(summary["steps"][0]["ok"], true);
+    assert_eq!(summary["steps"][0]["structured"]["tool"], "comu_get_screen_size");
+    assert_eq!(summary["steps"][2]["ok"], false);
+    assert_eq!(
+        summary["steps"][2]["structured"]["refusal"]["code"],
+        "step_failed"
+    );
+    assert!(
+        batch
+            .blocks
+            .iter()
+            .any(|b| matches!(b, ComuContentBlock::Image { .. })),
+        "expected zoom image block to be preserved in batch blocks"
+    );
+    assert!(
+        batch.blocks.iter().any(|b| match b {
+            ComuContentBlock::Text { text } => text.contains("simulated step failure"),
+            ComuContentBlock::Image { .. } => false,
+        }),
+        "expected failing step error text in batch blocks"
+    );
+}
+
 

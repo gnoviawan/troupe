@@ -23,8 +23,11 @@ use crate::comu::{ComuCallOutput, ComuContentBlock};
 /// Maximum reply payload size for `FrameKind::Comu` (64 MiB covers multi-display PNG captures).
 pub const MAX_COMU_REPLY_BYTES: u64 = 64 * 1024 * 1024;
 
-/// Maximum round-trip duration for a Comu call (5m30s covers 5m interactive consent + execution).
-pub const COMU_ROUND_TRIP: std::time::Duration = std::time::Duration::from_secs(330);
+/// Maximum round-trip duration for a Comu call: matches the single shared
+/// [`crate::comu::consent::CONSENT_WAIT_TIMEOUT`] deadline across all interactive
+/// consent prompts plus 30s of driver execution headroom.
+pub const COMU_ROUND_TRIP: std::time::Duration =
+    crate::comu::consent::CONSENT_WAIT_TIMEOUT.saturating_add(std::time::Duration::from_secs(30));
 
 /// Input schema for `comu_guide`.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, schemars::JsonSchema)]
