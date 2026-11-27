@@ -133,7 +133,7 @@ export function AiAgentsSection({
   return (
     <SettingsSection id="ai-agents">
       <AcpAgentsSettings />
-      <SettingsGroup title="Chats">
+      <SettingsGroup title="Chats" description="Idle cleanup and automation suggestions.">
         <SettingsCard>
           <TimeoutRow
             id="agent-idle-window"
@@ -157,7 +157,11 @@ export function AiAgentsSection({
           </SettingsNotice>
         ) : null}
       </SettingsGroup>
-      <SettingsDisclosure title="Advanced: time limits" summary={timeLimitsSummary}>
+      <SettingsDisclosure
+        title="Advanced: time limits"
+        description="Response and startup timeouts for agent chats."
+        summary={timeLimitsSummary}
+      >
         {isDesktop ? (
           <>
             <TimeoutRow

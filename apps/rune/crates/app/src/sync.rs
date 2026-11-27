@@ -331,6 +331,7 @@ impl State {
                 crate::host::Fetch::Listing { dir, root } => self.listing_read(dir, &root, result),
                 tag @ (crate::host::Fetch::ExplorerList(_) | crate::host::Fetch::ExplorerOp(_)) => self.explorer_fetched(tag, result),
                 crate::host::Fetch::Git(task) => self.git_replied(task, result),
+                crate::host::Fetch::Github(task) => self.github_replied(task, result),
                 crate::host::Fetch::History(tag) => self.history_replied(tag, result),
                 crate::host::Fetch::Settings(tag) => self.idle_replied(tag, result),
                 crate::host::Fetch::Shells => self.shells_listed(result),
@@ -339,6 +340,7 @@ impl State {
                 crate::host::Fetch::Mcp(effect) => self.mcp_fetched(*effect, result),
                 crate::host::Fetch::McpPoll(url) => self.mcp_polled(&url, result),
                 crate::host::Fetch::Catalog(tag) => self.catalog_fetched(tag, result),
+                crate::host::Fetch::Automation(tag) => self.automation_replied(tag, result),
                 tag => self.editor_fetched(tag, result),
             }
         }

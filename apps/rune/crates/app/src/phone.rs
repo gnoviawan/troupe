@@ -196,7 +196,10 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
             s.close(DRAWER);
             s.open_files();
         }))
-        .child(tab("Github", "GitHub", false).on_press(|s: &mut State| s.toast_later("GitHub")));
+        .child(tab("Github", "GitHub", false).on_press(|s: &mut State| {
+            s.close(DRAWER);
+            s.overlays.open(crate::github::GITHUB_SHEET);
+        }));
     let search = el()
         .key("drawer-search")
         .mx(8.0)
@@ -309,7 +312,14 @@ fn drawer(s: &State, t: &'static Tokens) -> El {
         }))
         .child(foot("Camera", "Screenshot", "Screenshots"))
         .child(foot("History", "Git history", "Git history"))
-        .child(foot("CalendarClock", "Automations", "Automations"))
+        .child(
+            mobile::icon_button(t, glyph("CalendarClock"), "Automations")
+                .key("drawer-automations")
+                .on_press(|s: &mut State| {
+                    s.open_automations();
+                    s.close(DRAWER);
+                }),
+        )
         .child(new_chat);
     col()
         .key(DRAWER)
@@ -402,6 +412,14 @@ pub fn sheets(s: &State, t: &'static Tokens, window: (f32, f32), layer: &mut Vec
             crate::model_sheet::MODEL_SHEET => crate::model_sheet::model_sheet(s, t, window, layer),
             ui::explorer::FILES => crate::phone_files::files_sheet(s, t, window, layer),
             crate::phone_files::FILE_ACTIONS => crate::phone_files::actions_sheet(s, t, window, layer),
+            crate::github::GITHUB_SHEET => {
+                sheet(crate::github::GITHUB_SHEET, "GitHub".to_owned(), s)
+                    .child(col().w_full().h((window.1 * 0.9 - 72.0).max(320.0)).child(crate::github_view::panel(s, t, true, layer)))
+                    .build(t, window, layer);
+            }
+            // The desktop draws these two as a popover and a menu.
+            crate::github::PICKER if window.0 <= ui::shell::PHONE_MAX_WIDTH => crate::github_view::picker_sheet(s, t, window, layer),
+            crate::github::ITEM_MENU if window.0 <= ui::shell::PHONE_MAX_WIDTH => crate::github_item_view::item_sheet(s, t, window, layer),
             crate::git::GIT_SHEET => {
                 sheet(crate::git::GIT_SHEET, "Git changes".to_owned(), s)
                     .child(crate::git_view::phone_panel(s, t, window, layer))

@@ -50,47 +50,53 @@ export function AboutSection({ onResetAll }: { onResetAll: () => void }): React.
     <SettingsSection id="about">
       {isDesktop ? (
         <>
-          <VersionCard isAurUpdater={isAurUpdater} />
+          <SettingsGroup title="Version" description="Current build and update status.">
+            <VersionCard isAurUpdater={isAurUpdater} />
+          </SettingsGroup>
           <UpdatesGroup isAurUpdater={isAurUpdater} />
         </>
       ) : (
         <>
-          <SettingsCard>
-            <SettingsRow
-              id={rowId('server-version')}
-              label={`termul-server ${APP_VERSION}`}
-              description="The web client is served by the termul-server and updates together with it. Reload the page after the server updates."
-            />
-          </SettingsCard>
+          <SettingsGroup title="Version" description="Current server build.">
+            <SettingsCard>
+              <SettingsRow
+                id={rowId('server-version')}
+                label={`termul-server ${APP_VERSION}`}
+                description="The web client is served by the termul-server and updates together with it. Reload the page after the server updates."
+              />
+            </SettingsCard>
+          </SettingsGroup>
           <ServerSection />
         </>
       )}
       <LogsGroup isDesktop={isDesktop} />
-      <div
-        id={rowId('reset-settings')}
-        data-settings-row=""
-        className={cn(
-          'flex scroll-mt-4 items-center gap-6 px-4 py-3.5 data-[settings-target]:shadow-[inset_2px_0_0_oklch(var(--foreground))]',
-          SETTINGS_CARD_CLASS
-        )}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium leading-4 text-foreground">Reset all settings</p>
-          <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-            Every setting goes back to its default, including keyboard shortcuts. Terminal profiles
-            stay.
-          </p>
-        </div>
-        <Button
-          type="button"
-          size="xs"
-          variant="secondary"
-          className="text-destructive hover:text-destructive"
-          onClick={onResetAll}
+      <SettingsGroup title="Reset" description="Restore all preferences and shortcuts to defaults.">
+        <div
+          id={rowId('reset-settings')}
+          data-settings-row=""
+          className={cn(
+            'flex scroll-mt-4 items-center gap-6 px-4 py-3.5 data-[settings-target]:shadow-[inset_2px_0_0_oklch(var(--foreground))]',
+            SETTINGS_CARD_CLASS
+          )}
         >
-          Reset settings
-        </Button>
-      </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium leading-4 text-foreground">Reset all settings</p>
+            <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
+              Every setting goes back to its default, including keyboard shortcuts. Terminal
+              profiles stay.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="xs"
+            variant="secondary"
+            className="text-destructive hover:text-destructive"
+            onClick={onResetAll}
+          >
+            Reset settings
+          </Button>
+        </div>
+      </SettingsGroup>
     </SettingsSection>
   )
 }
@@ -100,7 +106,7 @@ function UpdatesGroup({ isAurUpdater }: { isAurUpdater: boolean }): React.JSX.El
   const { setAutoUpdateEnabled, setUpdateChannel } = useUpdaterActions()
   const channel = CHANNELS.find((option) => option.value === updateChannel) ?? CHANNELS[0]
   return (
-    <SettingsGroup title="Updates">
+    <SettingsGroup title="Updates" description="Release channel and automatic update checks.">
       <SettingsCard>
         {!isAurUpdater && (
           <SettingsRow
@@ -150,7 +156,10 @@ function UpdatesGroup({ isAurUpdater }: { isAurUpdater: boolean }): React.JSX.El
 
 function LogsGroup({ isDesktop }: { isDesktop: boolean }): React.JSX.Element {
   return (
-    <SettingsGroup title="Logs and bug reports">
+    <SettingsGroup
+      title="Logs and bug reports"
+      description="Diagnostics for troubleshooting issues."
+    >
       <SettingsCard>
         <SettingsRow
           id={rowId('report-bug')}

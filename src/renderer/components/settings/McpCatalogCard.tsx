@@ -29,6 +29,15 @@ const ESTIMATED_CARD_HEIGHT = 140
 const CARD_GAP = 12
 /** The grid goes to two columns from this width. */
 const TWO_COLUMNS_FROM = 520
+/** The grid goes to three columns from this width. */
+const THREE_COLUMNS_FROM = 860
+
+/** Columns for a catalog grid container width: 1 narrow, 2 medium, 3 wide. */
+export function catalogColumnsForWidth(width: number): 1 | 2 | 3 {
+  if (width >= THREE_COLUMNS_FROM) return 3
+  if (width >= TWO_COLUMNS_FROM) return 2
+  return 1
+}
 /** Fetch the next page once the last rendered card is this close to the end. */
 const LOAD_AHEAD_CARDS = 8
 
@@ -146,15 +155,15 @@ function CatalogCard({
   )
 }
 
-/** Columns for a container `width`: one when narrow, else two. */
-function useColumns(ref: React.RefObject<HTMLElement>): number {
-  const [columns, setColumns] = useState(2)
+/** Columns for a container `width`: one when narrow, two medium, three wide. */
+function useColumns(ref: React.RefObject<HTMLElement>): 1 | 2 | 3 {
+  const [columns, setColumns] = useState<1 | 2 | 3>(2)
   useEffect(() => {
     const element = ref.current
     if (!element || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
       const width = entry?.contentRect.width ?? 0
-      if (width > 0) setColumns(width >= TWO_COLUMNS_FROM ? 2 : 1)
+      if (width > 0) setColumns(catalogColumnsForWidth(width))
     })
     observer.observe(element)
     return () => observer.disconnect()
@@ -163,10 +172,10 @@ function useColumns(ref: React.RefObject<HTMLElement>): number {
 }
 
 /**
- * The catalog as a virtualised grid of cards (two columns, one on a narrow
- * page). It virtualises rows, not cards, so the cards in a row share one
- * height and the rows line up. It asks for the next page when the last cards
- * come into view.
+ * The catalog as a virtualised grid of cards (one, two, or three columns by
+ * available width). It virtualises rows, not cards, so the cards in a row
+ * share one height and the rows line up. It asks for the next page when the
+ * last cards come into view.
  */
 export function CatalogGrid({
   rows,
@@ -198,7 +207,8 @@ export function CatalogGrid({
       onNearEnd?.()
   }, [lastRenderedCard, rows.length, onNearEnd])
 
-  const cardWidth = columns === 2 ? `calc(50% - ${CARD_GAP / 2}px)` : '100%'
+  const cardWidth =
+    columns === 1 ? '100%' : `calc((100% - ${(columns - 1) * CARD_GAP}px) / ${columns})`
   return (
     <div
       ref={scrollRef}

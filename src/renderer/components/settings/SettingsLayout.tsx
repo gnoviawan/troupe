@@ -71,7 +71,7 @@ export const SETTINGS_TARGET_MS = 2000
 export const SETTINGS_REVEAL_EVENT = 'settings:reveal'
 
 /** Width of the page column on every page, so nothing jumps sideways between pages. */
-export const SETTINGS_COLUMN_CLASS = 'mx-auto w-full max-w-[640px]'
+export const SETTINGS_COLUMN_CLASS = '@container/settings mx-auto w-full max-w-[1080px]'
 
 const ActivePageContext = createContext<string | undefined>(undefined)
 const SectionVisibleContext = createContext(true)
@@ -117,7 +117,7 @@ export function SettingsSection({
       id={`settings-section-${id}`}
       data-settings-section={id}
       hidden={hidden}
-      className={cn('flex flex-col gap-8', className)}
+      className={cn('flex flex-col gap-8 @[52rem]/settings:gap-6', className)}
     >
       <SectionVisibleContext.Provider value={!hidden}>{children}</SectionVisibleContext.Provider>
     </section>
@@ -126,7 +126,7 @@ export function SettingsSection({
 
 /**
  * Shared full-window settings shell: a rail with "Back to app", search and
- * grouped pages, and one page at a time in a 640px column. Search results open
+ * grouped pages, and one page at a time in a 1080px column. Search results open
  * the page, scroll to the setting and mark it for {@link SETTINGS_TARGET_MS}.
  * Under the `md` breakpoint the rail becomes a top bar with a scrolling strip
  * and a Close button.
@@ -458,7 +458,7 @@ export function SettingsLayout({
           )}
           <div
             ref={bodyRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-20 pt-6 md:px-8 md:pt-4"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-20 pt-6 md:px-10 md:pt-5"
           >
             <div className={SETTINGS_COLUMN_CLASS}>
               {active && !activeIsSubpage && (
@@ -475,7 +475,7 @@ export function SettingsLayout({
             </div>
           </div>
           {footer && (
-            <div className="shrink-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-8">
+            <div className="shrink-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-10">
               <div className={SETTINGS_COLUMN_CLASS}>{footer}</div>
             </div>
           )}

@@ -847,4 +847,20 @@ describe('ChatMessageList scroll ownership', () => {
     )
     expect(scrollToEnd).toHaveBeenCalledTimes(2)
   })
+
+  it('hands the stream follow to native scroll anchoring when the browser supports it', () => {
+    vi.stubGlobal('CSS', { supports: (property: string) => property === 'overflow-anchor' })
+    try {
+      const seen: Array<Record<string, unknown>> = []
+      virtualizerOverride.current = windowedVirtualizer(seen, () => undefined)
+      render(<ChatMessageList items={items} sessionId="session-1" showRunningIndicator={false} />)
+
+      // Still end-anchored, so a history prepend keeps the reading position,
+      // but the virtualizer no longer writes scrollTop as the tail grows.
+      expect(seen.at(-1)).toMatchObject({ anchorTo: 'end', followOnAppend: false })
+      expect(seen.at(-1)?.scrollEndThreshold).toBeLessThan(0)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 })
