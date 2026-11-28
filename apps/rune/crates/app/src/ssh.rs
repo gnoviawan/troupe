@@ -318,6 +318,14 @@ impl State {
                 }
             },
             Call::Transfer { conn, remote, local, upload } => {
+                if upload && failed.as_ref().is_some_and(|(code, _)| code == "SFTP_ALREADY_EXISTS") {
+                    let dir = sftp::parent_path(&remote);
+                    self.ssh.confirm = Some(RemoteConfirm::Replace {
+                        conn: conn.clone(), dir, locals: vec![local.clone()],
+                        conflicts: vec![sftp::local_file_name(&remote)], host: self.host_of(&conn),
+                    });
+                    self.overlays.open(REMOTE_CONFIRM);
+                }
                 let direction = if upload { "upload" } else { "download" };
                 let name = sftp::local_file_name(&remote);
                 let result = failed.map_or(Ok(()), |(_, message)| Err(message));
@@ -613,7 +621,12 @@ impl State {
                 let call = Call::Changed { conn, what: format!("delete {}", entry.name), done: format!("Deleted {}", entry.name) };
                 self.command(WsRequestType::SftpDelete, payload, Pending::Ssh(call));
             }
-            RemoteConfirm::Replace { conn, dir, locals, .. } => self.sftp_send(&conn, &dir, &locals),
+            RemoteConfirm::Replace { conn, dir, locals, conflicts, .. } => {
+                for local in locals {
+                    let overwrite = conflicts.contains(&sftp::local_file_name(&local));
+                    self.sftp_send(&conn, &dir, &[local], overwrite);
+                }
+            },
         }
     }
 
@@ -639,18 +652,18 @@ impl State {
         let dir = explorer.cwd.clone();
         let conflicts = sftp::conflicts(&locals, &explorer.entries);
         if conflicts.is_empty() {
-            return self.sftp_send(conn, &dir, &locals);
+            return self.sftp_send(conn, &dir, &locals, false);
         }
         self.ssh.confirm = Some(RemoteConfirm::Replace { conn: conn.to_owned(), dir, locals, conflicts, host: self.host_of(conn) });
         self.overlays.open(REMOTE_CONFIRM);
     }
 
-    fn sftp_send(&mut self, conn: &str, dir: &str, locals: &[String]) {
+    fn sftp_send(&mut self, conn: &str, dir: &str, locals: &[String], overwrite: bool) {
         for local in locals {
             let remote = sftp::join_path(dir, &sftp::local_file_name(local));
             log::info!("[ssh] SFTP upload started: {}", sftp::local_file_name(local));
             self.ssh.model.transfer_started(conn, &remote, local, "upload");
-            let payload = json!({ "request": { "connectionId": conn, "remotePath": remote, "localPath": local } });
+            let payload = json!({ "request": { "connectionId": conn, "remotePath": remote, "localPath": local, "overwrite": overwrite } });
             let call = Call::Transfer { conn: conn.to_owned(), remote, local: local.clone(), upload: true };
             self.command(WsRequestType::SftpUpload, payload, Pending::Ssh(call));
         }

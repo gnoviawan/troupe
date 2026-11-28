@@ -123,3 +123,21 @@ fn closing_the_ssh_editor_clears_secrets_on_cancel_and_escape() {
         assert!(s.ssh.form.passphrase.text.is_empty());
     }
 }
+
+#[test]
+fn an_upload_conflict_from_a_stale_listing_requires_explicit_replace() {
+    let mut s = with_hosts();
+    s.ssh.explorers.insert("c1".into(), crate::ssh::Explorer { cwd: "/home".into(), ..Default::default() });
+    s.sftp_upload("c1", vec!["/tmp/new.txt".into()]);
+    let (call, upload, _) = sent(&s, WsRequestType::SftpUpload).pop().unwrap();
+    assert_eq!(upload["request"]["overwrite"], false);
+    s.apply(Output::Reply { call, result: Err(client::ws::WsError {
+        code: "SFTP_ALREADY_EXISTS".into(), message: "exists".into(), details: None,
+    }) });
+    assert!(s.overlays.is_open(REMOTE_CONFIRM));
+    assert!(matches!(&s.ssh.confirm, Some(RemoteConfirm::Replace { conflicts, .. }) if conflicts == &["new.txt"]));
+    s.sftp_confirm();
+    let (_, replace, _) = sent(&s, WsRequestType::SftpUpload).pop().unwrap();
+    assert_eq!(replace["request"]["overwrite"], true);
+    assert_eq!(replace["request"]["remotePath"], "/home/new.txt");
+}
