@@ -176,14 +176,11 @@ fn parse<T: serde::de::DeserializeOwned>(payload: &Value) -> Result<T, (WsErrorC
     })
 }
 
-/// The authenticated client principal for this connection, matching the
-/// `device_id` identity used by per-device store and presence checks.
+/// Server-verified auth class. Client-chosen deviceId is display/routing data,
+/// never a credential. All holders of this host's token are one user.
 #[cfg(unix)]
 fn caller_principal(env: &HandlerEnv) -> Option<String> {
-    env.identity
-        .get()
-        .map(|identity| identity.device_id.clone())
-        .filter(|id| !id.is_empty())
+    env.browser_principal.get().cloned()
 }
 
 /// The persisted project id of `session_id`, when session persistence knows it.
@@ -204,7 +201,11 @@ fn resolve_owner(host: &BrowserHost, tab_id: &str) -> Option<TabOwner> {
         return Some(owner);
     }
     let (session_id, project_id) = crate::browser_automation::agent_tab_owner(tab_id)?;
-    Some(TabOwner::new(session_id, project_id, None))
+    Some(TabOwner::new(
+        session_id,
+        project_id,
+        Some("host-token".into()),
+    ))
 }
 
 #[cfg(unix)]
@@ -227,6 +228,14 @@ fn authorize_tab(
         return Err((
             WsErrorCode::Forbidden,
             "tab belongs to another project".to_string(),
+        ));
+    }
+    if caller_principal(env).as_deref() == Some("remote-read-only")
+        || caller_principal(env).is_none()
+    {
+        return Err((
+            WsErrorCode::Forbidden,
+            "browser requires authenticated write access".into(),
         ));
     }
     let subscribed = !env.subscriptions.clients_for(&owner.session_id).is_empty();
@@ -270,6 +279,15 @@ async fn open(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
+    if !matches!(
+        caller_principal(env).as_deref(),
+        Some("host-token" | "host-local" | "host-ungated")
+    ) {
+        return Err((
+            WsErrorCode::Forbidden,
+            "browser requires authenticated write access".into(),
+        ));
+    }
     if payload.session_id.is_empty() {
         return Err((
             WsErrorCode::Unsupported,

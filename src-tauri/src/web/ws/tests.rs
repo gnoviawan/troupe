@@ -70,7 +70,9 @@ async fn connection_cleanup_unregisters_once_after_writer_first_shutdown() {
     relay.set_rendezvous(Arc::clone(&permissions));
     relay.set_question_rendezvous(Arc::clone(&questions));
     relay.seed_session_for_test("session-cleanup");
-    let (client_id, _rx, replay, _) = relay.subscribe("session-cleanup", None, None, &CancellationToken::new()).await;
+    let (client_id, _rx, replay, _) = relay
+        .subscribe("session-cleanup", None, None, &CancellationToken::new())
+        .await;
     assert!(matches!(replay, ReplayResult::Ok(0)));
     permissions.register(
         "permission-cleanup".to_string(),
@@ -99,9 +101,7 @@ async fn connection_cleanup_unregisters_once_after_writer_first_shutdown() {
 
     tokio::time::timeout(Duration::from_secs(1), async {
         loop {
-            if relay.session_subscriber_count("session-cleanup") == 0
-                && subscribed.is_empty()
-            {
+            if relay.session_subscriber_count("session-cleanup") == 0 && subscribed.is_empty() {
                 break;
             }
             tokio::task::yield_now().await;
@@ -119,7 +119,14 @@ async fn connection_cleanup_unregisters_once_after_writer_first_shutdown() {
 async fn connection_cleanup_runs_when_relay_future_is_cancelled() {
     let relay = Arc::new(WsRelaySink::new());
     relay.seed_session_for_test("session-cancelled-relay");
-    let (client_id, _rx, replay, _) = relay.subscribe("session-cancelled-relay", None, None, &CancellationToken::new()).await;
+    let (client_id, _rx, replay, _) = relay
+        .subscribe(
+            "session-cancelled-relay",
+            None,
+            None,
+            &CancellationToken::new(),
+        )
+        .await;
     assert!(matches!(replay, ReplayResult::Ok(0)));
     let subscribed = subscriptions_with("session-cancelled-relay", client_id);
 
@@ -152,7 +159,8 @@ async fn requests_past_the_inflight_cap_are_refused_without_rate_limited() {
     let mut conn = ConnState::authenticated(test_access());
     let exec = KeyedExecutor::new(CancellationToken::new());
     for _ in 0..MAX_INFLIGHT_REQUESTS {
-        exec.submit(None, std::future::pending::<()>()).expect("under the cap");
+        exec.submit(None, std::future::pending::<()>())
+            .expect("under the cap");
     }
 
     let env = test_env(&acp, &relay, &registry, &tx, &conn.subscriptions);
@@ -199,7 +207,12 @@ async fn long_prompt_dispatch_does_not_block_ping_request() {
         .expect("prompt gate signal");
 
     tokio::time::timeout(Duration::from_millis(100), async {
-        dispatch_connection_text(r#"{"id":"ping-1","type":"ping","payload":{}}"#, &mut conn, &test_env(&acp, &relay, &registry, &tx, &subscriptions), &exec)
+        dispatch_connection_text(
+            r#"{"id":"ping-1","type":"ping","payload":{}}"#,
+            &mut conn,
+            &test_env(&acp, &relay, &registry, &tx, &subscriptions),
+            &exec,
+        )
         .await
     })
     .await
@@ -463,7 +476,9 @@ async fn accepted_prompt_survives_disconnect_and_persists_completion_for_reconne
         event.type_ == "prompt_complete" && event.payload["turnId"] == "turn-resume"
     }));
 
-    let (_client_id, _events, reconnect_replay, _) = relay.subscribe("session-resume", Some(0), None, &CancellationToken::new()).await;
+    let (_client_id, _events, reconnect_replay, _) = relay
+        .subscribe("session-resume", Some(0), None, &CancellationToken::new())
+        .await;
     assert!(matches!(reconnect_replay, ReplayResult::Ok(replayed) if replayed >= 2));
     persistence.shutdown().await.unwrap();
     let _ = std::fs::remove_dir_all(root);
@@ -488,7 +503,13 @@ async fn handle_request_with_catalog(
     let (tx, _rx) = test_outbound();
     let subs = Arc::new(Subscriptions::default());
     let registry = Arc::new(ProjectRegistry::new());
-    route(text, &HandlerEnv { acp_catalog: Some(catalog.clone()), ..test_env(&acp, &relay, &registry, &tx, &subs) })
+    route(
+        text,
+        &HandlerEnv {
+            acp_catalog: Some(catalog.clone()),
+            ..test_env(&acp, &relay, &registry, &tx, &subs)
+        },
+    )
     .await
 }
 
@@ -567,8 +588,7 @@ async fn handle_request_without_catalog(text: &str) -> WsReply {
     let (tx, _rx) = test_outbound();
     let subs = Arc::new(Subscriptions::default());
     let registry = Arc::new(ProjectRegistry::new());
-    route(text, &test_env(&acp, &relay, &registry, &tx, &subs))
-    .await
+    route(text, &test_env(&acp, &relay, &registry, &tx, &subs)).await
 }
 
 #[tokio::test]
@@ -651,9 +671,14 @@ fn store_identity(device: &str) -> Arc<std::sync::OnceLock<ClientIdentity>> {
 }
 
 fn open_store(label: &str) -> (Arc<WebStore>, std::path::PathBuf) {
-    let dir = std::env::temp_dir().join(format!("termul-ws-store-{label}-{}", uuid::Uuid::new_v4()));
+    let dir =
+        std::env::temp_dir().join(format!("termul-ws-store-{label}-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
-    let store = WebStore::open(dir.join("store.json"), crate::web::store::StorePolicy::default()).unwrap();
+    let store = WebStore::open(
+        dir.join("store.json"),
+        crate::web::store::StorePolicy::default(),
+    )
+    .unwrap();
     (Arc::new(store), dir)
 }
 
@@ -694,7 +719,9 @@ async fn store_write_then_read_roundtrips_with_a_stamp() {
     .await;
     assert_eq!(
         read.payload,
-        Some(json!({ "value": { "theme": "dark" }, "revision": 1, "clientInstanceId": "tab-dev-a" }))
+        Some(
+            json!({ "value": { "theme": "dark" }, "revision": 1, "clientInstanceId": "tab-dev-a" })
+        )
     );
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -725,7 +752,9 @@ async fn store_delete_removes_and_reports_existed() {
     .await;
     for (id, existed) in [("r1", true), ("r2", false)] {
         let del = handle_request_with_store(
-            &format!(r#"{{"id":"{id}","type":"store_delete","payload":{{"key":"device/dev-a/k"}}}}"#),
+            &format!(
+                r#"{{"id":"{id}","type":"store_delete","payload":{{"key":"device/dev-a/k"}}}}"#
+            ),
             &store,
         )
         .await;
@@ -765,7 +794,11 @@ async fn store_empty_key_is_validation_error() {
     ] {
         let reply = handle_request_with_store(frame, &store).await;
         assert!(!reply.ok, "empty-key {frame} must fail");
-        assert_eq!(reply.err.as_ref().unwrap().code, "VALIDATION_ERROR", "{frame}");
+        assert_eq!(
+            reply.err.as_ref().unwrap().code,
+            "VALIDATION_ERROR",
+            "{frame}"
+        );
     }
 
     // Over-long key (> 1024 bytes): same VALIDATION_ERROR on all three ops.
@@ -777,10 +810,21 @@ async fn store_empty_key_is_validation_error() {
     ] {
         let reply = handle_request_with_store(&frame, &store).await;
         assert!(!reply.ok, "over-long-key {frame} must fail");
-        assert_eq!(reply.err.as_ref().unwrap().code, "VALIDATION_ERROR", "{frame}");
-        assert_eq!(reply.err.as_ref().unwrap().message, "key too long", "{frame}");
+        assert_eq!(
+            reply.err.as_ref().unwrap().code,
+            "VALIDATION_ERROR",
+            "{frame}"
+        );
+        assert_eq!(
+            reply.err.as_ref().unwrap().message,
+            "key too long",
+            "{frame}"
+        );
     }
-    assert!(!dir.join("store.json").exists(), "a refused request never writes the file");
+    assert!(
+        !dir.join("store.json").exists(),
+        "a refused request never writes the file"
+    );
     let _ = std::fs::remove_dir_all(dir);
 }
 
@@ -826,7 +870,11 @@ async fn store_malformed_payload_returns_validation_error() {
     ] {
         let reply = handle_request_with_store(frame, &store).await;
         assert!(!reply.ok, "{frame}");
-        assert_eq!(reply.err.as_ref().unwrap().code, "VALIDATION_ERROR", "{frame}");
+        assert_eq!(
+            reply.err.as_ref().unwrap().code,
+            "VALIDATION_ERROR",
+            "{frame}"
+        );
     }
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -959,11 +1007,11 @@ fn tier_of_answers_every_event_type_as_the_linear_scan_did() {
             .find(|known| known.as_str() == type_)
             .map_or(ReliabilityTier::Reliable, |known| known.tier())
     };
-    for name in WsEventType::ALL
-        .iter()
-        .map(|known| known.as_str())
-        .chain(["unknown_type", "", "MESSAGE_CHUNK"])
-    {
+    for name in WsEventType::ALL.iter().map(|known| known.as_str()).chain([
+        "unknown_type",
+        "",
+        "MESSAGE_CHUNK",
+    ]) {
         assert_eq!(tier_of(name), linear_scan(name), "{name}");
     }
 }
@@ -1084,7 +1132,11 @@ fn ws_reply_ok_and_err_shape() {
 
 /// A loopback, write-capable connection — what a standalone server's local
 /// browser gets. Tests that need a view-only peer build their own policy.
-pub(super) fn test_policy(peer: [u8; 4], allow_remote_writes: bool, shared_live_writes_denied: bool) -> CapabilityPolicy {
+pub(super) fn test_policy(
+    peer: [u8; 4],
+    allow_remote_writes: bool,
+    shared_live_writes_denied: bool,
+) -> CapabilityPolicy {
     CapabilityPolicy {
         carrier: Carrier::Ws,
         peer: SocketAddr::from((peer, 40000)),
@@ -1135,6 +1187,7 @@ pub(super) fn test_env(
         acp_install: None,
         store: None,
         identity: Arc::new(std::sync::OnceLock::new()),
+        browser_principal: Arc::new(std::sync::OnceLock::new()),
         carrier: Carrier::Ws,
         web_auth: None,
         out_tx: out_tx.clone(),
@@ -1174,16 +1227,17 @@ fn handle_request_pre_auth_rejects_non_authenticate() {
 #[test]
 fn handle_request_authenticate_marks_authed() {
     let mut authed = false;
-    let reply = handle_sync(
-        &auth_frame("r1", Some("any")),
-        &mut authed,
-    );
+    let reply = handle_sync(&auth_frame("r1", Some("any")), &mut authed);
     assert!(reply.ok);
     assert!(authed, "authenticate must flip authed");
 }
 /// Like `handle_sync` but with the web auth gate threaded through
 /// (`Some(&gate)` = gated server; `None` = legacy ungated behavior).
-fn handle_sync_with_auth(text: &str, authed: &mut bool, web_auth: Option<&Arc<WebAuth>>) -> WsReply {
+fn handle_sync_with_auth(
+    text: &str,
+    authed: &mut bool,
+    web_auth: Option<&Arc<WebAuth>>,
+) -> WsReply {
     let mut identity = None;
     handle_sync_with_identity(text, authed, &mut identity, web_auth)
 }
@@ -1284,11 +1338,7 @@ fn gated_authenticate_rejects_wrong_token() {
     // QA repro (P1): a wrong token on a gated server must NOT authenticate.
     let gate = test_gate();
     let mut authed = false;
-    let reply = handle_sync_with_auth(
-        &auth_frame("r1", Some("WRONG")),
-        &mut authed,
-        Some(&gate),
-    );
+    let reply = handle_sync_with_auth(&auth_frame("r1", Some("WRONG")), &mut authed, Some(&gate));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "unauthorized");
     assert!(!authed, "wrong token must not flip authed (retry allowed)");
@@ -1298,11 +1348,7 @@ fn gated_authenticate_rejects_wrong_token() {
 fn gated_authenticate_rejects_missing_token() {
     let gate = test_gate();
     let mut authed = false;
-    let reply = handle_sync_with_auth(
-        &auth_frame("r1", None),
-        &mut authed,
-        Some(&gate),
-    );
+    let reply = handle_sync_with_auth(&auth_frame("r1", None), &mut authed, Some(&gate));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "unauthorized");
     assert!(!authed);
@@ -1334,11 +1380,7 @@ fn gated_retry_after_wrong_token_succeeds_on_same_connection() {
     // correct token authenticates.
     let gate = test_gate();
     let mut authed = false;
-    let wrong = handle_sync_with_auth(
-        &auth_frame("r1", Some("WRONG")),
-        &mut authed,
-        Some(&gate),
-    );
+    let wrong = handle_sync_with_auth(&auth_frame("r1", Some("WRONG")), &mut authed, Some(&gate));
     assert!(!wrong.ok);
     let right = handle_sync_with_auth(
         &auth_frame("r2", Some("s3cret-token")),
@@ -1361,11 +1403,7 @@ fn ungated_authenticate_accepts_any_token() {
     // Frozen contract: an ungated server accepts any token byte-identical
     // to the pre-gate behavior.
     let mut authed = false;
-    let reply = handle_sync_with_auth(
-        &auth_frame("r1", Some("WRONG")),
-        &mut authed,
-        None,
-    );
+    let reply = handle_sync_with_auth(&auth_frame("r1", Some("WRONG")), &mut authed, None);
     assert!(reply.ok, "ungated server accepts any token");
     assert!(authed);
 }
@@ -1478,7 +1516,10 @@ fn authenticate_accepts_identity_at_the_length_limit_verbatim() {
     assert!(reply.ok);
     let identity = identity.expect("identity recorded");
     assert_eq!(identity.device_id, max);
-    assert_eq!(identity.client_instance_id, " tab ", "ids stored as received");
+    assert_eq!(
+        identity.client_instance_id, " tab ",
+        "ids stored as received"
+    );
 }
 
 #[test]
@@ -1520,7 +1561,10 @@ fn authenticate_checks_version_then_identity_then_token() {
 #[test]
 fn post_auth_authenticate_is_idempotent_ok_without_revalidation() {
     let mut authed = true;
-    let reply = handle_sync(r#"{"id":"r1","type":"authenticate","payload":{}}"#, &mut authed);
+    let reply = handle_sync(
+        r#"{"id":"r1","type":"authenticate","payload":{}}"#,
+        &mut authed,
+    );
     assert!(reply.ok);
     assert!(authed);
 }
@@ -1528,15 +1572,27 @@ fn post_auth_authenticate_is_idempotent_ok_without_revalidation() {
 #[test]
 fn ws_error_code_wire_strings_for_handshake_capability_and_reserved_codes() {
     for (code, wire) in [
-        (WsErrorCode::ProtocolVersionMismatch, "protocol_version_mismatch"),
-        (WsErrorCode::InvalidClientIdentity, "invalid_client_identity"),
+        (
+            WsErrorCode::ProtocolVersionMismatch,
+            "protocol_version_mismatch",
+        ),
+        (
+            WsErrorCode::InvalidClientIdentity,
+            "invalid_client_identity",
+        ),
         (WsErrorCode::TerminalLimit, "terminal_limit"),
         (WsErrorCode::ProjectBusy, "project_busy"),
         (WsErrorCode::OutcomeUnknown, "outcome_unknown"),
         (WsErrorCode::DestructiveOpBlocked, "destructive_op_blocked"),
-        (WsErrorCode::ProviderQuotaExceeded, "provider_quota_exceeded"),
+        (
+            WsErrorCode::ProviderQuotaExceeded,
+            "provider_quota_exceeded",
+        ),
         (WsErrorCode::ProviderSessionLimit, "provider_session_limit"),
-        (WsErrorCode::ProviderRequestRejected, "provider_request_rejected"),
+        (
+            WsErrorCode::ProviderRequestRejected,
+            "provider_request_rejected",
+        ),
         (WsErrorCode::Forbidden, "forbidden"),
         (WsErrorCode::AlreadyResolved, "already_resolved"),
     ] {
@@ -1546,10 +1602,9 @@ fn ws_error_code_wire_strings_for_handshake_capability_and_reserved_codes() {
 
 #[test]
 fn ws_request_parses_command_id_and_reply_skips_unset_visible_at() {
-    let with: WsRequest = serde_json::from_str(
-        r#"{"id":"r1","type":"write","payload":{},"command_id":"cmd-1"}"#,
-    )
-    .expect("parse");
+    let with: WsRequest =
+        serde_json::from_str(r#"{"id":"r1","type":"write","payload":{},"command_id":"cmd-1"}"#)
+            .expect("parse");
     assert_eq!(with.command_id.as_deref(), Some("cmd-1"));
     let without: WsRequest =
         serde_json::from_str(r#"{"id":"r1","type":"ping","payload":{}}"#).expect("parse");
@@ -1797,7 +1852,10 @@ async fn handle_list_agents_returns_identity_summaries() {
     let (tx, _rx) = test_outbound();
     let subs = Arc::new(Subscriptions::default());
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = route(r#"{"id":"r1","type":"list_agents","payload":{}}"#, &test_env(&acp, &relay, &registry, &tx, &subs))
+    let reply = route(
+        r#"{"id":"r1","type":"list_agents","payload":{}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    )
     .await;
     assert!(reply.ok, "list_agents should succeed");
     let entries = reply
@@ -1892,7 +1950,9 @@ async fn delete_session_removes_host_persisted_record() {
     let (out, mut rx) = outbound_channel(16, 15);
     relay
         .watches()
-        .subscribe(crate::web::watch::WatchKind::ChatHistory, "", &out, || json!([]))
+        .subscribe(crate::web::watch::WatchKind::ChatHistory, "", &out, || {
+            json!([])
+        })
         .expect("watch");
     let _state = rx.try_recv().expect("full-state frame");
 
@@ -1972,9 +2032,14 @@ async fn delete_session_malformed_or_empty_payload_is_rejected() {
     let relay = Arc::new(WsRelaySink::with_persistence(8, persistence.clone()));
     let acp = Arc::new(crate::acp::AcpManager::new(vec![]));
 
-    let missing =
-        handle_delete_session("r1".to_string(), &json!({}), &relay, &acp, HistoryMode::Server)
-            .await;
+    let missing = handle_delete_session(
+        "r1".to_string(),
+        &json!({}),
+        &relay,
+        &acp,
+        HistoryMode::Server,
+    )
+    .await;
     assert!(!missing.ok, "missing sessionId must fail");
     assert_eq!(missing.err.unwrap().code, "unsupported");
 
@@ -2088,7 +2153,10 @@ pub(super) async fn ws_write_frame(stream: &mut tokio::net::TcpStream, opcode: u
         }
         _ => payload,
     };
-    assert!(payload.len() <= 0xFFFF, "test frames fit the 16-bit length form");
+    assert!(
+        payload.len() <= 0xFFFF,
+        "test frames fit the 16-bit length form"
+    );
     let mask = [0x12u8, 0x34, 0x56, 0x78];
     let mut frame = vec![0x80 | opcode];
     if payload.len() <= 125 {
@@ -2117,7 +2185,8 @@ async fn binary_frame_receives_error_reply_then_close_1003() {
         let _ = axum::serve(
             listener,
             app.into_make_service_with_connect_info::<SocketAddr>(),
-        ).await;
+        )
+        .await;
     });
 
     let interaction = async {
@@ -2277,7 +2346,13 @@ async fn install_acp_agent_unknown_agent_returns_catalog_agent_not_found() {
     let registry = Arc::new(ProjectRegistry::new());
     let (tx, _rx) = test_outbound();
     let subs = Arc::new(Subscriptions::default());
-    let reply = route(r#"{"id":"r1","type":"install_acp_agent","payload":{"agentId":"does-not-exist"}}"#, &HandlerEnv { acp_install: Some(store.clone()), ..test_env(&acp, &relay, &registry, &tx, &subs) })
+    let reply = route(
+        r#"{"id":"r1","type":"install_acp_agent","payload":{"agentId":"does-not-exist"}}"#,
+        &HandlerEnv {
+            acp_install: Some(store.clone()),
+            ..test_env(&acp, &relay, &registry, &tx, &subs)
+        },
+    )
     .await;
     assert!(!reply.ok, "unknown agent must fail");
     assert_eq!(reply.err.unwrap().code, "CATALOG_AGENT_NOT_FOUND");
@@ -2534,7 +2609,10 @@ fn handle_respond_permission_malformed_payload_is_unsupported() {
         .enable_all()
         .build()
         .expect("runtime")
-        .block_on(route(r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+        .block_on(route(
+            r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1"}}"#,
+            &test_env(&acp, &relay, &registry, &tx, &subs),
+        ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "unsupported");
 }
@@ -2557,7 +2635,8 @@ fn relay_with_subscribed_permission(
     // Subscribe a client to the session (populates subscribed_clients via
     // the production subscribe path).
     relay.seed_session_for_test(session_id);
-    let (client_id, _rx, _replay, _) = block_on(relay.subscribe(session_id, None, None, &CancellationToken::new()));
+    let (client_id, _rx, _replay, _) =
+        block_on(relay.subscribe(session_id, None, None, &CancellationToken::new()));
     let subs = subscriptions_with(session_id, client_id);
     // Emit a permission_request event through the sink (production path) so
     // the rendezvous snapshots a ticket.
@@ -2598,7 +2677,10 @@ fn handle_respond_permission_wrong_agent_is_permission_denied() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a2","requestId":"perm-1","optionId":"allow"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a2","requestId":"perm-1","optionId":"allow"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "permission_denied");
 }
@@ -2616,7 +2698,8 @@ fn handle_respond_permission_needs_no_subscription() {
         crate::web::permissions::PermissionRendezvous::default(),
     ));
     relay.seed_session_for_test("sess-B");
-    let (_other_client, _rx, _replay, _) = block_on(relay.subscribe("sess-B", None, None, &CancellationToken::new()));
+    let (_other_client, _rx, _replay, _) =
+        block_on(relay.subscribe("sess-B", None, None, &CancellationToken::new()));
     let subs = subscriptions_with("sess-B", ClientId::new());
     relay.emit(&AcpEvent {
         sid: Some("sess-A".to_string()),
@@ -2628,7 +2711,10 @@ fn handle_respond_permission_needs_no_subscription() {
     });
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-A","optionId":"allow"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-A","optionId":"allow"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(reply.ok, "ticket-only answer");
 }
 
@@ -2643,10 +2729,16 @@ fn handle_respond_permission_resolves_then_second_is_already_resolved() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let ok_reply = block_on(route(r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"allow"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let ok_reply = block_on(route(
+        r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"allow"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(ok_reply.ok, "first response wins");
     // Second frame for the same requestId → already_resolved (tombstone).
-    let stale_reply = block_on(route(r#"{"id":"r2","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"allow"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let stale_reply = block_on(route(
+        r#"{"id":"r2","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"allow"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!stale_reply.ok);
     assert_eq!(stale_reply.err.unwrap().code, "already_resolved");
 }
@@ -2660,7 +2752,10 @@ fn handle_respond_permission_invalid_option_is_permission_denied() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"escalate"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"respond_permission","payload":{"agentId":"a1","requestId":"perm-1","optionId":"escalate"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "permission_denied");
 }
@@ -2681,7 +2776,8 @@ fn relay_with_subscribed_question(
         crate::web::permissions::QuestionRendezvous::default(),
     ));
     relay.seed_session_for_test(session_id);
-    let (client_id, _rx, _replay, _) = block_on(relay.subscribe(session_id, None, None, &CancellationToken::new()));
+    let (client_id, _rx, _replay, _) =
+        block_on(relay.subscribe(session_id, None, None, &CancellationToken::new()));
     let subs = subscriptions_with(session_id, client_id);
     let options_value = serde_json::Value::Array(
         options
@@ -2728,7 +2824,10 @@ fn handle_answer_question_malformed_payload_is_unsupported() {
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
     let subs = Arc::new(Subscriptions::default());
-    let reply = block_on(route(r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1"}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "unsupported");
 }
@@ -2741,7 +2840,10 @@ fn handle_answer_question_wrong_agent_is_permission_denied() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a2","questionId":"q-1","values":["plan-a"]}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a2","questionId":"q-1","values":["plan-a"]}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "permission_denied");
 }
@@ -2757,7 +2859,8 @@ fn handle_answer_question_needs_no_subscription() {
         crate::web::permissions::QuestionRendezvous::default(),
     ));
     relay.seed_session_for_test("sess-B");
-    let (_other_client, _rx, _replay, _) = block_on(relay.subscribe("sess-B", None, None, &CancellationToken::new()));
+    let (_other_client, _rx, _replay, _) =
+        block_on(relay.subscribe("sess-B", None, None, &CancellationToken::new()));
     let subs = subscriptions_with("sess-B", ClientId::new());
     relay.emit(&AcpEvent {
         sid: Some("sess-A".to_string()),
@@ -2769,7 +2872,10 @@ fn handle_answer_question_needs_no_subscription() {
     });
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-A","values":["plan-a"]}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-A","values":["plan-a"]}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(reply.ok, "ticket-only answer");
 }
 
@@ -2782,9 +2888,15 @@ fn handle_answer_question_resolves_then_second_is_already_resolved() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let ok_reply = block_on(route(r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["plan-a"]}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let ok_reply = block_on(route(
+        r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["plan-a"]}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(ok_reply.ok, "first answer wins");
-    let stale_reply = block_on(route(r#"{"id":"r2","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["plan-a"]}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let stale_reply = block_on(route(
+        r#"{"id":"r2","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["plan-a"]}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!stale_reply.ok);
     assert_eq!(stale_reply.err.unwrap().code, "already_resolved");
 }
@@ -2797,7 +2909,10 @@ fn handle_answer_question_invalid_option_is_permission_denied() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _rx) = test_outbound();
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = block_on(route(r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["escalate"]}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+    let reply = block_on(route(
+        r#"{"id":"r1","type":"answer_question","payload":{"agentId":"a1","questionId":"q-1","values":["escalate"]}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "permission_denied");
 }
@@ -2840,7 +2955,10 @@ fn handle_subscribe_ok_and_stale() {
         .enable_all()
         .build()
         .unwrap()
-        .block_on(route(r#"{"id":"sub1","type":"subscribe","payload":{"sessionId":"s1","lastSeq":0}}"#, &test_env(&acp, &relay, &registry, &tx, &subs)));
+        .block_on(route(
+            r#"{"id":"sub1","type":"subscribe","payload":{"sessionId":"s1","lastSeq":0}}"#,
+            &test_env(&acp, &relay, &registry, &tx, &subs),
+        ));
     assert!(!reply.ok);
     assert_eq!(reply.err.unwrap().code, "stale");
 
@@ -2850,7 +2968,10 @@ fn handle_subscribe_ok_and_stale() {
         .enable_all()
         .build()
         .unwrap()
-        .block_on(route(r#"{"id":"sub2","type":"subscribe","payload":{"sessionId":"fresh"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs2)));
+        .block_on(route(
+            r#"{"id":"sub2","type":"subscribe","payload":{"sessionId":"fresh"}}"#,
+            &test_env(&acp, &relay, &registry, &tx, &subs2),
+        ));
     assert!(reply_ok.ok);
     assert_eq!(subs2.len(), 1);
 
@@ -2859,7 +2980,10 @@ fn handle_subscribe_ok_and_stale() {
         .enable_all()
         .build()
         .unwrap()
-        .block_on(route(r#"{"id":"sub3","type":"subscribe","payload":{"sessionId":"fresh"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs2)));
+        .block_on(route(
+            r#"{"id":"sub3","type":"subscribe","payload":{"sessionId":"fresh"}}"#,
+            &test_env(&acp, &relay, &registry, &tx, &subs2),
+        ));
     assert!(reply_resub.ok);
     assert_eq!(subs2.len(), 1);
 
@@ -2869,7 +2993,10 @@ fn handle_subscribe_ok_and_stale() {
         .enable_all()
         .build()
         .unwrap()
-        .block_on(route(r#"{"id":"sub4","type":"subscribe","payload":{"sessionId":"s1"}}"#, &test_env(&acp, &relay, &registry, &tx, &subs3)));
+        .block_on(route(
+            r#"{"id":"sub4","type":"subscribe","payload":{"sessionId":"s1"}}"#,
+            &test_env(&acp, &relay, &registry, &tx, &subs3),
+        ));
     assert!(reply_live.ok);
 
     // Drain any replay/live.
@@ -3195,7 +3322,10 @@ async fn record_agent_switch_writes_durable_marker_and_replies_ok() {
         .await
         .unwrap();
     let relay = Arc::new(WsRelaySink::with_persistence(8, persistence.clone()));
-    let acp = Arc::new(AcpManager::with_persistence(vec![relay.clone()], persistence.clone()));
+    let acp = Arc::new(AcpManager::with_persistence(
+        vec![relay.clone()],
+        persistence.clone(),
+    ));
 
     let reply = handle_record_agent_switch(
         "r1".to_string(),
@@ -3338,14 +3468,21 @@ async fn recover_session_snapshot_reply_watermark_is_the_log_head() {
     assert!(reply.ok, "{reply:?}");
     let payload = reply.payload.unwrap();
     assert_eq!(payload["watermark"], 4);
-    assert_eq!(payload["watermark"], relay.session_watermark("session-head"));
+    assert_eq!(
+        payload["watermark"],
+        relay.session_watermark("session-head")
+    );
     let seqs: Vec<u64> = payload["events"]
         .as_array()
         .unwrap()
         .iter()
         .map(|event| event["seq"].as_u64().unwrap())
         .collect();
-    assert_eq!(seqs, vec![1, 2, 3], "snapshot holds the durable events up to the head");
+    assert_eq!(
+        seqs,
+        vec![1, 2, 3],
+        "snapshot holds the durable events up to the head"
+    );
 
     persistence.shutdown().await.unwrap();
     let _ = std::fs::remove_dir_all(root);
@@ -3357,7 +3494,8 @@ async fn recover_session_snapshot_reply_watermark_is_the_log_head() {
 #[tokio::test]
 async fn recover_session_snapshot_subscription_closes_the_connection_on_reliable_overflow() {
     use crate::web::sink::{AcpEvent, EventSink};
-    let root = std::env::temp_dir().join(format!("termul-ws-snap-overflow-{}", uuid::Uuid::new_v4()));
+    let root =
+        std::env::temp_dir().join(format!("termul-ws-snap-overflow-{}", uuid::Uuid::new_v4()));
     let cwd = root.join("cwd");
     std::fs::create_dir_all(&cwd).unwrap();
     let persistence = crate::acp::SessionPersistence::open(root.join("sessions"))
@@ -3444,7 +3582,10 @@ async fn record_agent_switch_writer_gone_session_replies_not_found() {
         .await
         .unwrap();
     let relay = Arc::new(WsRelaySink::with_persistence(8, reopened.clone()));
-    let acp = Arc::new(AcpManager::with_persistence(vec![relay.clone()], reopened.clone()));
+    let acp = Arc::new(AcpManager::with_persistence(
+        vec![relay.clone()],
+        reopened.clone(),
+    ));
 
     let reply = handle_record_agent_switch(
         "r1".to_string(),
@@ -3765,7 +3906,8 @@ fn project_summary_for_test(
 async fn handle_set_default_project_updates_host_default_and_persists() {
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("projects.json");
-    let registry = Arc::new(ProjectRegistry::open_durable(&file, crate::acp::RootCheck::Lenient).unwrap());
+    let registry =
+        Arc::new(ProjectRegistry::open_durable(&file, crate::acp::RootCheck::Lenient).unwrap());
     registry.set(
         vec![
             project_summary_for_test("p-1", Some("/a"), false),
@@ -3776,7 +3918,13 @@ async fn handle_set_default_project_updates_host_default_and_persists() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let relay = Arc::new(WsRelaySink::new());
     let (tx, _rx) = test_outbound();
-    let env = test_env(&acp, &relay, &registry, &tx, &Arc::new(Subscriptions::default()));
+    let env = test_env(
+        &acp,
+        &relay,
+        &registry,
+        &tx,
+        &Arc::new(Subscriptions::default()),
+    );
 
     let reply = route(
         r#"{"id":"r1","type":"set_default_project","payload":{"projectId":"p-2"}}"#,
@@ -3799,7 +3947,8 @@ async fn handle_set_default_project_updates_host_default_and_persists() {
 async fn handle_set_default_project_unknown_id_is_not_found() {
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("projects.json");
-    let registry = Arc::new(ProjectRegistry::open_durable(&file, crate::acp::RootCheck::Lenient).unwrap());
+    let registry =
+        Arc::new(ProjectRegistry::open_durable(&file, crate::acp::RootCheck::Lenient).unwrap());
     registry.set(
         vec![
             project_summary_for_test("p-1", Some("/a"), false),
@@ -3812,19 +3961,28 @@ async fn handle_set_default_project_unknown_id_is_not_found() {
     let acp = Arc::new(AcpManager::new(vec![]));
     let relay = Arc::new(WsRelaySink::new());
     let (tx, _rx) = test_outbound();
-    let env = test_env(&acp, &relay, &registry, &tx, &Arc::new(Subscriptions::default()));
+    let env = test_env(
+        &acp,
+        &relay,
+        &registry,
+        &tx,
+        &Arc::new(Subscriptions::default()),
+    );
     for bad in ["missing", "p-archived", "p-pathless"] {
-        let reply = handle_set_default_project(
-            "r1".to_string(),
-            &json!({ "projectId": bad }),
-            &env,
-        )
-        .await;
+        let reply =
+            handle_set_default_project("r1".to_string(), &json!({ "projectId": bad }), &env).await;
         assert!(!reply.ok, "{bad} should be rejected");
         assert_eq!(reply.err.unwrap().code, "not_found");
-        assert_eq!(registry.snapshot().default_project_id.as_deref(), Some("p-1"));
+        assert_eq!(
+            registry.snapshot().default_project_id.as_deref(),
+            Some("p-1")
+        );
     }
-    assert_eq!(std::fs::read(&file).unwrap(), written, "nothing was rewritten");
+    assert_eq!(
+        std::fs::read(&file).unwrap(),
+        written,
+        "nothing was rewritten"
+    );
 }
 
 /// `set_default_project` changes the host default and publishes the project
@@ -3833,24 +3991,31 @@ async fn handle_set_default_project_unknown_id_is_not_found() {
 async fn handle_set_default_project_publishes_to_all_watchers() {
     let relay = Arc::new(WsRelaySink::new());
     let registry = Arc::new(ProjectRegistry::new());
-    registry.set(vec![project_summary_for_test("p-1", Some("/a"), false)], None);
+    registry.set(
+        vec![project_summary_for_test("p-1", Some("/a"), false)],
+        None,
+    );
     // A watcher with no session subscription proves the delta reaches it.
     let (out, mut rx) = outbound_channel(16, 15);
     relay
         .watches()
-        .subscribe(crate::web::watch::WatchKind::Projects, "", &out, || json!(null))
+        .subscribe(crate::web::watch::WatchKind::Projects, "", &out, || {
+            json!(null)
+        })
         .expect("watch");
     let _state = rx.try_recv().expect("full-state frame");
     let acp = Arc::new(AcpManager::new(vec![]));
     let (tx, _out) = test_outbound();
-    let env = test_env(&acp, &relay, &registry, &tx, &Arc::new(Subscriptions::default()));
+    let env = test_env(
+        &acp,
+        &relay,
+        &registry,
+        &tx,
+        &Arc::new(Subscriptions::default()),
+    );
 
-    let reply = handle_set_default_project(
-        "r1".to_string(),
-        &json!({ "projectId": "p-1" }),
-        &env,
-    )
-    .await;
+    let reply =
+        handle_set_default_project("r1".to_string(), &json!({ "projectId": "p-1" }), &env).await;
     assert!(reply.ok);
     let mut deltas = Vec::new();
     while let Ok(Outbound::Watch(frame)) = rx.try_recv() {
@@ -3912,7 +4077,10 @@ async fn handle_list_agents_reports_owned_sessions() {
     let (tx, _rx) = test_outbound();
     let subs = Arc::new(Subscriptions::default());
     let registry = Arc::new(ProjectRegistry::new());
-    let reply = route(r#"{"id":"r1","type":"list_agents","payload":{}}"#, &test_env(&acp, &relay, &registry, &tx, &subs))
+    let reply = route(
+        r#"{"id":"r1","type":"list_agents","payload":{}}"#,
+        &test_env(&acp, &relay, &registry, &tx, &subs),
+    )
     .await;
     assert!(reply.ok, "list_agents should succeed");
     let entries = reply
@@ -3957,7 +4125,13 @@ fn reply_code(reply: &WsReply) -> Option<String> {
 
 /// Route one `watch` / `unwatch` request over the given fixture.
 async fn watch_request(
-    fixture: &(Arc<WsRelaySink>, Arc<ProjectRegistry>, std::path::PathBuf, OutboundSender, OutboundReceiver),
+    fixture: &(
+        Arc<WsRelaySink>,
+        Arc<ProjectRegistry>,
+        std::path::PathBuf,
+        OutboundSender,
+        OutboundReceiver,
+    ),
     type_: &str,
     payload: Value,
 ) -> WsReply {
@@ -3965,7 +4139,11 @@ async fn watch_request(
     let acp = Arc::new(AcpManager::new(vec![]));
     let subs = Arc::new(Subscriptions::default());
     let frame = json!({ "id": type_, "type": type_, "payload": payload });
-    route(&frame.to_string(), &test_env(&acp, relay, registry, tx, &subs)).await
+    route(
+        &frame.to_string(),
+        &test_env(&acp, relay, registry, tx, &subs),
+    )
+    .await
 }
 
 #[tokio::test]
@@ -3979,7 +4157,9 @@ async fn fs_watch_and_unwatch_manage_the_connections_subscription() {
     assert!(reply.ok, "watch of a registered project succeeds");
     assert_eq!(relay.fs_watches().subscriber_count(project), 1);
     assert_eq!(
-        relay.watches().subscriber_count(crate::web::watch::WatchKind::Fs, project),
+        relay
+            .watches()
+            .subscriber_count(crate::web::watch::WatchKind::Fs, project),
         1
     );
 
@@ -3987,7 +4167,9 @@ async fn fs_watch_and_unwatch_manage_the_connections_subscription() {
     assert!(reply.ok);
     assert_eq!(relay.fs_watches().watched_project_count(), 0);
     assert_eq!(
-        relay.watches().subscriber_count(crate::web::watch::WatchKind::Fs, project),
+        relay
+            .watches()
+            .subscriber_count(crate::web::watch::WatchKind::Fs, project),
         0
     );
 
@@ -4009,8 +4191,17 @@ async fn fs_watch_refuses_unknown_archived_and_malformed_and_unwatch_is_idempote
     // Unwatch is idempotent: an id the connection never watched is a success.
     assert!(watch_request(&fixture, "unwatch", unknown).await.ok);
     assert!(registry.update(project, None, None, Some(true)));
-    let w = watch_request(&fixture, "watch", json!({ "watch": "fs", "scope": project })).await;
-    assert_eq!(reply_code(&w).as_deref(), Some("not_found"), "archived project");
+    let w = watch_request(
+        &fixture,
+        "watch",
+        json!({ "watch": "fs", "scope": project }),
+    )
+    .await;
+    assert_eq!(
+        reply_code(&w).as_deref(),
+        Some("not_found"),
+        "archived project"
+    );
 
     // No scope, a blank scope, an unknown watch: refused as unsupported.
     for payload in [
@@ -4040,8 +4231,12 @@ async fn connection_cleanup_releases_fs_watch_subscriptions() {
     let subscribed = Arc::new(Subscriptions::default());
 
     for use_run in [true, false] {
-        let reply =
-            watch_request(&fixture, "watch", json!({ "watch": "fs", "scope": project })).await;
+        let reply = watch_request(
+            &fixture,
+            "watch",
+            json!({ "watch": "fs", "scope": project }),
+        )
+        .await;
         assert!(reply.ok);
         assert_eq!(relay.fs_watches().subscriber_count(project), 1);
         let cleanup = ConnectionCleanup::new(Arc::clone(&relay), Arc::clone(&subscribed))
@@ -4054,7 +4249,9 @@ async fn connection_cleanup_releases_fs_watch_subscriptions() {
         assert_eq!(relay.fs_watches().subscriber_count(project), 0);
         assert_eq!(relay.fs_watches().watched_project_count(), 0);
         assert_eq!(
-            relay.watches().subscriber_count(crate::web::watch::WatchKind::Fs, project),
+            relay
+                .watches()
+                .subscriber_count(crate::web::watch::WatchKind::Fs, project),
             0
         );
     }
@@ -4073,15 +4270,23 @@ async fn unwatch_after_the_project_was_archived_succeeds() {
     assert!(watch_request(&fixture, "watch", payload.clone()).await.ok);
     // Archive only once the watcher is live, so a LIVE subscription is what
     // gets ended (not a task that finds the project gone on first lookup).
-    assert!(relay.fs_watches().wait_armed(project, Duration::from_secs(10)).await);
+    assert!(
+        relay
+            .fs_watches()
+            .wait_armed(project, Duration::from_secs(10))
+            .await
+    );
     assert!(registry.update(project, None, None, Some(true)));
     let deadline = tokio::time::Instant::now() + Duration::from_secs(8);
-    while relay.fs_watches().watched_project_count() != 0 && tokio::time::Instant::now() < deadline {
+    while relay.fs_watches().watched_project_count() != 0 && tokio::time::Instant::now() < deadline
+    {
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
     assert_eq!(relay.fs_watches().watched_project_count(), 0);
     assert_eq!(
-        relay.watches().subscriber_count(crate::web::watch::WatchKind::Fs, project),
+        relay
+            .watches()
+            .subscriber_count(crate::web::watch::WatchKind::Fs, project),
         0,
         "the host released the hub subscription with its notice"
     );
@@ -4170,8 +4375,14 @@ async fn log_epoch_rides_subscribe_snapshot_and_cursor_replies() {
     // Another epoch, and a cursor ahead of the head: stale, nothing registered.
     let other_subs = Arc::new(Subscriptions::default());
     for (id, body) in [
-        ("s2", json!({"sessionId": "session-epoch", "lastSeq": 1, "logEpoch": "epoch-from-before-restart"})),
-        ("s3", json!({"sessionId": "session-epoch", "lastSeq": 50, "logEpoch": epoch})),
+        (
+            "s2",
+            json!({"sessionId": "session-epoch", "lastSeq": 1, "logEpoch": "epoch-from-before-restart"}),
+        ),
+        (
+            "s3",
+            json!({"sessionId": "session-epoch", "lastSeq": 50, "logEpoch": epoch}),
+        ),
     ] {
         let reply = handle_subscribe(id.to_string(), &body, &relay, &tx, &other_subs).await;
         assert!(!reply.ok);
@@ -4233,29 +4444,30 @@ async fn log_epoch_rides_subscribe_snapshot_and_cursor_replies() {
 fn a_ledgered_request_without_a_command_id_is_refused_and_the_rest_runs_as_before() {
     let unstamped = |text: &str| {
         let mut authed = true;
-        handle_sync_unstamped(
-            text,
-            &mut authed,
-            &mut None,
-            &mut test_access(),
-            None,
-        )
+        handle_sync_unstamped(text, &mut authed, &mut None, &mut test_access(), None)
     };
 
     for (kind, payload) in [
         ("create_session", r#"{"agentId":"a1","cwd":"/tmp"}"#),
-        ("spawn_agent", r#"{"config":{"name":"n","command":"c","args":[],"env":{}}}"#),
+        (
+            "spawn_agent",
+            r#"{"config":{"name":"n","command":"c","args":[],"env":{}}}"#,
+        ),
         ("close_session", r#"{"agentId":"a1","sessionId":"s1"}"#),
         ("install_acp_agent", r#"{"agentId":"x"}"#),
     ] {
-        let reply = unstamped(&format!(r#"{{"id":"r1","type":"{kind}","payload":{payload}}}"#));
+        let reply = unstamped(&format!(
+            r#"{{"id":"r1","type":"{kind}","payload":{payload}}}"#
+        ));
         assert!(!reply.ok, "{kind}");
         assert_eq!(reply.err.unwrap().code, "invalid_command_id", "{kind}");
     }
 
     // Idempotent and read types are not ledgered: no id needed.
     for kind in ["list_agents", "kill_agent", "set_mode"] {
-        let reply = unstamped(&format!(r#"{{"id":"r1","type":"{kind}","payload":{{"agentId":"a1","sessionId":"s1","modeId":"m"}}}}"#));
+        let reply = unstamped(&format!(
+            r#"{{"id":"r1","type":"{kind}","payload":{{"agentId":"a1","sessionId":"s1","modeId":"m"}}}}"#
+        ));
         assert_ne!(
             reply.err.map(|error| error.code),
             Some("invalid_command_id".to_string()),

@@ -115,6 +115,14 @@ impl TestRig {
         }
         let env = test_env(&self.acp, &self.relay, &self.registry, &tx, &subscriptions);
         if let Some(device) = device_id {
+            let _ = env.browser_principal.set(
+                if device == "device-b" {
+                    "host-local"
+                } else {
+                    "host-token"
+                }
+                .into(),
+            );
             let _ = env.identity.set(ClientIdentity {
                 device_id: device.to_string(),
                 client_instance_id: format!("inst-{}", uuid::Uuid::new_v4()),
@@ -159,7 +167,7 @@ fn reconnect_recovery_regrants_screencast_and_preserves_tab_control() {
         let (orig_env, orig_tx, _orig_rx) = rig.client_env(&["chat-a"], Some("device-a"));
         rig.host.claim_user_tab(
             USER_TAB,
-            TabOwner::new("chat-a", "proj-1", Some("device-a".into())),
+            TabOwner::new("chat-a", "proj-1", Some("host-token".into())),
         );
         rig.host.mark_test_tab_live(USER_TAB);
         rig.host.grant(USER_TAB, &orig_tx);
@@ -267,7 +275,7 @@ fn cross_chat_project_and_principal_refused_by_all_real_handlers() {
         let rig = TestRig::new().await;
         rig.host.claim_user_tab(
             USER_TAB,
-            TabOwner::new("chat-a", "proj-1", Some("device-a".into())),
+            TabOwner::new("chat-a", "proj-1", Some("host-token".into())),
         );
         rig.host.mark_test_tab_live(USER_TAB);
 
@@ -378,7 +386,7 @@ async fn read_only_connection_is_refused_every_pane_request_and_screencast_watch
     let rig = TestRig::new().await;
     rig.host.claim_user_tab(
         USER_TAB,
-        TabOwner::new("chat-a", "proj-1", Some("device-a".into())),
+        TabOwner::new("chat-a", "proj-1", Some("host-token".into())),
     );
     rig.host.mark_test_tab_live(USER_TAB);
 
@@ -561,4 +569,70 @@ async fn open_handler_enforces_session_subscription_and_project_binding() {
     )
     .await;
     assert_eq!(err_code(&unsubscribed), "forbidden");
+}
+
+// Exercise the production authenticate dispatcher rather than injecting identity.
+async fn authenticated_browser_env(rig: &TestRig, device: &str, read_only: bool) -> HandlerEnv {
+    let (tx, mut rx) = test_outbound();
+    let mut conn = ConnState::new(
+        ConnectionAccess::new(test_policy([127, 0, 0, 1], false, read_only)),
+        Arc::new(Subscriptions::default()),
+    );
+    let env = HandlerEnv {
+        identity: Arc::clone(&conn.identity),
+        browser_principal: Arc::clone(&conn.browser_principal),
+        web_auth: Some(Arc::new(WebAuth::new(
+            crate::web::auth::WebAuthToken::new("test-token").unwrap(),
+        ))),
+        ..test_env(
+            &rig.acp,
+            &rig.relay,
+            &rig.registry,
+            &tx,
+            &conn.subscriptions,
+        )
+    };
+    let frame = json!({"id":"auth", "type":"authenticate", "payload": {"protocolVersion":WS_PROTOCOL_VERSION,"deviceId":device,"clientInstanceId":"test-instance","token":"test-token"}}).to_string();
+    let exec = KeyedExecutor::new(CancellationToken::new());
+    assert!(dispatch_connection_text(&frame, &mut conn, &env, &exec).await);
+    match rx.recv().await {
+        Some(Outbound::Reply(reply)) => assert!(reply.ok),
+        _ => panic!("missing auth reply"),
+    }
+    env.subscriptions.replace("chat-a", &[], ClientId::new());
+    env
+}
+
+#[tokio::test]
+async fn authenticate_spoofed_device_cannot_cross_auth_class() {
+    let rig = TestRig::new().await;
+    let env = authenticated_browser_env(&rig, "victim-device", false).await;
+    rig.host.claim_user_tab(
+        USER_TAB,
+        TabOwner::new("chat-a", "proj-1", Some("host-local".into())),
+    );
+    assert!(authorize_tab(&rig.host, USER_TAB, None, None, &env).is_err());
+}
+
+#[tokio::test]
+async fn authenticate_remote_read_only_cannot_recover_host_tab() {
+    let rig = TestRig::new().await;
+    let env = authenticated_browser_env(&rig, "victim-device", true).await;
+    rig.host.claim_user_tab(
+        USER_TAB,
+        TabOwner::new("chat-a", "proj-1", Some("host-token".into())),
+    );
+    assert!(authorize_tab(&rig.host, USER_TAB, None, None, &env).is_err());
+}
+
+#[tokio::test]
+async fn authenticate_same_chat_reconnect_recovers_with_new_device_id() {
+    let rig = TestRig::new().await;
+    let first = authenticated_browser_env(&rig, "first-device", false).await;
+    rig.host.claim_user_tab(
+        USER_TAB,
+        TabOwner::new("chat-a", "proj-1", caller_principal(&first)),
+    );
+    let reconnect = authenticated_browser_env(&rig, "new-device", false).await;
+    assert!(authorize_tab(&rig.host, USER_TAB, None, None, &reconnect).is_ok());
 }

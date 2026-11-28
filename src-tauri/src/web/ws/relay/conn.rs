@@ -95,6 +95,7 @@ pub(in crate::web::ws) struct ConnState {
     /// The validated `authenticate` identity (AD-4). Shared with every
     /// request task through [`HandlerEnv`]; set once, by `authenticate`.
     pub(in crate::web::ws) identity: Arc<OnceLock<ClientIdentity>>,
+    pub(in crate::web::ws) browser_principal: Arc<OnceLock<String>>,
     /// Capabilities resolved at `authenticate`, plus the connection's id.
     pub(in crate::web::ws) access: ConnectionAccess,
     /// Registered subscriptions, shared with request tasks and the cleanup.
@@ -105,10 +106,14 @@ pub(in crate::web::ws) struct ConnState {
 }
 
 impl ConnState {
-    pub(in crate::web::ws) fn new(access: ConnectionAccess, subscriptions: Arc<Subscriptions>) -> Self {
+    pub(in crate::web::ws) fn new(
+        access: ConnectionAccess,
+        subscriptions: Arc<Subscriptions>,
+    ) -> Self {
         Self {
             authed: false,
             identity: Arc::new(OnceLock::new()),
+            browser_principal: Arc::new(OnceLock::new()),
             access,
             subscriptions,
             presence: None,
@@ -139,6 +144,7 @@ pub(in crate::web::ws) struct HandlerEnv {
     /// The connection's authenticated identity; empty until `authenticate`
     /// succeeds (request tasks only run after it).
     pub(in crate::web::ws) identity: Arc<OnceLock<ClientIdentity>>,
+    pub(in crate::web::ws) browser_principal: Arc<OnceLock<String>>,
     /// The carrier the connection arrived on (the desktop's `store_*` requests
     /// claim the pending plugin-store import).
     pub(in crate::web::ws) carrier: Carrier,
@@ -166,6 +172,7 @@ impl HandlerEnv {
             acp_install: state.acp_install.clone(),
             store: state.store.clone(),
             identity: Arc::clone(&conn.identity),
+            browser_principal: Arc::clone(&conn.browser_principal),
             carrier: conn.access.carrier(),
             web_auth: state.web_auth.clone(),
             out_tx,
@@ -360,7 +367,11 @@ fn pre_auth_reply(request: &WsRequest, conn: &mut ConnState, env: &HandlerEnv) -
                 token_presented = !presented.is_empty(),
                 "web auth gate refused /ws authenticate (invalid or missing token)"
             );
-            return WsReply::err(id, WsErrorCode::Unauthorized, "invalid or missing auth token");
+            return WsReply::err(
+                id,
+                WsErrorCode::Unauthorized,
+                "invalid or missing auth token",
+            );
         }
     }
     info!(
@@ -373,10 +384,25 @@ fn pre_auth_reply(request: &WsRequest, conn: &mut ConnState, env: &HandlerEnv) -
     // Capabilities are resolved ONCE, here (carrier + deployment flags + peer
     // + the host-local credential), and the device joins presence.
     conn.access.grant(host_credential_accepted(request, env));
+    let caps = conn.access.capabilities();
+    let principal = if !caps.write {
+        "remote-read-only"
+    } else if caps.host_local {
+        "host-local"
+    } else if env.web_auth.is_some() {
+        "host-token"
+    } else {
+        "host-ungated"
+    };
+    let _ = env.browser_principal.set(principal.to_string());
     if conn.access.capabilities().host_local {
         claim_desktop_import(env.store.as_ref(), &validated);
     }
-    conn.presence = Some(env.relay.presence().register(&validated, conn.access.carrier()));
+    conn.presence = Some(
+        env.relay
+            .presence()
+            .register(&validated, conn.access.carrier()),
+    );
     // First authenticate wins; the connection is authed from here on.
     let _ = conn.identity.set(validated);
     conn.authed = true;
