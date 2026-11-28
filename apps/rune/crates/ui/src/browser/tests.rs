@@ -95,13 +95,7 @@ fn strips_text_when_ctrl_modifier_is_held() {
 #[test]
 fn maps_wheel_pointer_touch_and_ime_utf16_offsets() {
     let wheel = wheel_event(
-        &WheelEvent {
-            x: 100.0,
-            y: 200.0,
-            dx: 10.0,
-            dy: -120.0,
-            lines: false,
-        },
+        &WheelEvent::new(10.0, -120.0).at(100.0, 200.0),
         0,
     );
     assert_eq!(wheel["kind"], "wheel");
@@ -118,7 +112,7 @@ fn maps_wheel_pointer_touch_and_ime_utf16_offsets() {
     assert_eq!(touch_end["points"].as_array().map(Vec::len), Some(0));
 
     // "日本" is 6 UTF-8 bytes and 2 UTF-16 code units.
-    let preedit = ime_event(&Ime::Preedit("日本".into(), Some((0, 6)), None)).expect("preedit");
+    let preedit = ime_event(&Ime::Preedit("日本".into(), Some((0, 6)), Vec::new())).expect("preedit");
     assert_eq!(preedit["kind"], "ime");
     assert_eq!(preedit["selectionStart"], 0);
     assert_eq!(preedit["selectionEnd"], 2);
