@@ -245,7 +245,7 @@ pub(super) fn valid_target_fields(request_type: &str, payload: &Value) -> bool {
             && !payload.get("connectionId").is_some()
             && payload
                 .get("request")
-                .map_or(false, |r| r.get(other).is_none())
+                .is_some_and(|r| r.get(other).is_none())
     } else {
         payload.get("connectionId").is_none() && payload.get("request").is_none()
     }
