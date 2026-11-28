@@ -6,6 +6,7 @@ fn lenient_entries_and_keys() {
     let configs = parse(json!({"_version":1,"data":[
         {"id":"old","configId":" acp-registry:gemini ","name":"Gemini","command":"gemini","templateId":"extra","future":true},
         {"id":"codex-acp","configId":" ","name":"Codex","command":"codex"},
+        {"id":"codex-acp","name":"Codex copy","command":"codex"},
         {"id":"bad"}
     ]})).unwrap();
     assert_eq!(
@@ -15,6 +16,7 @@ fn lenient_entries_and_keys() {
             .collect::<Vec<_>>(),
         vec!["acp-registry:gemini", "codex-acp"]
     );
+    assert_eq!(configs[1].name, "Codex");
 }
 
 #[test]

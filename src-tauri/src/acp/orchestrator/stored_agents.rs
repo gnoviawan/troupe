@@ -31,6 +31,7 @@ pub(super) fn read(store: Option<&WebStore>) -> Option<Vec<AgentConfig>> {
 
 fn parse(value: serde_json::Value) -> Option<Vec<AgentConfig>> {
     let entries = value.get("data")?.as_array()?;
+    let mut seen = std::collections::HashSet::new();
     Some(
         entries
             .iter()
@@ -42,7 +43,9 @@ fn parse(value: serde_json::Value) -> Option<Vec<AgentConfig>> {
                     .map(str::trim)
                     .filter(|s| !s.is_empty())
                     .unwrap_or(entry.id.trim());
-                if key.is_empty() || entry.command.trim().is_empty() {
+                // Two configs under one key read as the first, as the composer lists them.
+                if key.is_empty() || entry.command.trim().is_empty() || !seen.insert(key.to_owned())
+                {
                     return None;
                 }
                 Some(AgentConfig {

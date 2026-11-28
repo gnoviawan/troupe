@@ -78,9 +78,11 @@ impl OrchestratorEngine {
         if let Some(configs) = &stored {
             agents = configs
                 .iter()
-                .map(|config| LaunchableAgent {
-                    key: config.config_id.clone().unwrap(),
-                    name: config.name.clone(),
+                .filter_map(|config| {
+                    Some(LaunchableAgent {
+                        key: config.config_id.clone()?,
+                        name: config.name.clone(),
+                    })
                 })
                 .collect();
         }
