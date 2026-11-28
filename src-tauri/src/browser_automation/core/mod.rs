@@ -12,10 +12,10 @@ pub(crate) mod dispatch;
 mod downloads;
 mod events;
 mod frames;
-mod observe;
 mod input_actions;
 mod link_hops;
 pub(crate) mod local_files;
+mod observe;
 mod page_events;
 pub mod ports;
 mod profile;
@@ -26,9 +26,9 @@ mod stop;
 pub(crate) mod surface;
 mod tabs;
 mod teardown;
-mod uploads;
 #[cfg(test)]
 pub mod test_support;
+mod uploads;
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
@@ -41,11 +41,11 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
 pub use boundary::BrowserError;
 pub use dispatch::{expected_args_text, schema, ToolSchema};
+pub(crate) use events::TabProjection;
 pub use reply::{
     Success, ERR_CAPABILITY, ERR_CONFIRMATION, ERR_INTERNAL, ERR_INVALID_PARAMS, ERR_STALE_REF,
     ERR_TAB_NOT_FOUND, ERR_TIMEOUT,
 };
-pub(crate) use events::TabProjection;
 pub use tabs::TabView;
 #[cfg(any(test, feature = "conformance"))]
 pub use teardown::session_dir;
@@ -59,8 +59,8 @@ use crate::browser_tab_manager::{BrowserBounds, BrowserTabManager};
 use crate::web::EventSink;
 use authz::{DenyReason, HopVerdict};
 use consent::ConsentGate;
-use reply::PageData;
 use ports::{PermissionRequest, PolicyStore};
+use reply::PageData;
 use surface::{PaneSurface, TabSurface};
 use tabs::{FirstLoad, TabRegistry};
 
@@ -120,7 +120,10 @@ impl DesktopBrowserHost {
 
     /// A host over a windowless tab surface and its engine: the server's
     /// Chromium (`browser_automation::hosted`), which runs on Unix only.
-    #[cfg_attr(not(unix), allow(dead_code, reason = "the hosted surface is Unix only"))]
+    #[cfg_attr(
+        not(unix),
+        allow(dead_code, reason = "the hosted surface is Unix only")
+    )]
     pub(crate) fn hosted(
         surface: Arc<dyn TabSurface>,
         engine: Arc<dyn BrowserEngine>,
@@ -158,7 +161,13 @@ impl DesktopBrowserHost {
             events: tx,
         });
         let (registry, surface, sinks) = consumer;
-        spawn(events::consume(rx, registry, surface, sinks, Arc::downgrade(&host)));
+        spawn(events::consume(
+            rx,
+            registry,
+            surface,
+            sinks,
+            Arc::downgrade(&host),
+        ));
         host
     }
 
@@ -193,7 +202,13 @@ impl DesktopBrowserHost {
         let built = match self.data_store(label) {
             Ok(store) => {
                 self.surface
-                    .create(label, first.build_url(), bounds, self.tab_events(label), store)
+                    .create(
+                        label,
+                        first.build_url(),
+                        bounds,
+                        self.tab_events(label),
+                        store,
+                    )
                     .await
             }
             Err(message) => Err(message),
@@ -240,7 +255,12 @@ impl DesktopBrowserHost {
             (view, session)
         };
         let projection = TabProjection::Updated(view.clone());
-        events::publish(self.surface.as_ref(), &self.sinks, session.as_deref(), &projection);
+        events::publish(
+            self.surface.as_ref(),
+            &self.sinks,
+            session.as_deref(),
+            &projection,
+        );
         log::info!("[browser-tab] tab {} live", events::label_prefix(label));
         Ok(view)
     }
@@ -269,7 +289,10 @@ impl NavPolicy for HopPolicy {
             return NavVerdict::Deny;
         }
         let allowed = self.surface.allows_navigation(tab, url)
-            && self.host.upgrade().is_some_and(|host| host.agent_hop_allowed(tab, url, false));
+            && self
+                .host
+                .upgrade()
+                .is_some_and(|host| host.agent_hop_allowed(tab, url, false));
         if allowed {
             NavVerdict::Allow
         } else {
@@ -279,7 +302,10 @@ impl NavPolicy for HopPolicy {
 
     fn decide_frame(&self, tab: &str, url: &Url) -> NavVerdict {
         let allowed = url.scheme() != "file"
-            || self.host.upgrade().is_some_and(|host| host.agent_hop_allowed(tab, url, true));
+            || self
+                .host
+                .upgrade()
+                .is_some_and(|host| host.agent_hop_allowed(tab, url, true));
         if allowed {
             NavVerdict::Allow
         } else {
@@ -305,7 +331,9 @@ impl NavPolicy for HopPolicy {
     }
 
     fn download_progress(&self, tab: &str, path: &Path, size: DownloadSize) -> bool {
-        self.host.upgrade().is_some_and(|host| host.download_progress(tab, path, size))
+        self.host
+            .upgrade()
+            .is_some_and(|host| host.download_progress(tab, path, size))
     }
 
     fn download_finished(&self, tab: &str, path: &Path, success: bool) {
@@ -345,19 +373,26 @@ impl DesktopBrowserHost {
         match self.gate.check_hop(&session_id, url) {
             HopVerdict::Allow => {
                 if self.gate.opened_unasked(&session_id, url) {
-                    log::debug!("[browser-agent] navigation hop allowed without a prompt tab={tab}");
+                    log::debug!(
+                        "[browser-agent] navigation hop allowed without a prompt tab={tab}"
+                    );
                 }
                 true
             }
             HopVerdict::Deny(reason) => {
-                log::info!("[browser-agent] navigation hop cancelled tab={tab} reason={}", reason.as_str());
+                log::info!(
+                    "[browser-agent] navigation hop cancelled tab={tab} reason={}",
+                    reason.as_str()
+                );
                 if reason == DenyReason::FileNotGranted && !frame {
                     self.file_link_cancelled(tab_id, &session_id, url);
                 }
                 false
             }
             HopVerdict::Ungranted(..) => {
-                log::info!("[browser-agent] navigation hop cancelled tab={tab} reason=ungranted_origin");
+                log::info!(
+                    "[browser-agent] navigation hop cancelled tab={tab} reason=ungranted_origin"
+                );
                 false
             }
         }
@@ -387,15 +422,18 @@ impl BrowserHost for DesktopBrowserHost {
         _agent_id: &'a str,
         call: BrowserCall,
         deadline: Deadline,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Success, BrowserError>> + Send + 'a>>
-    {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Success, BrowserError>> + Send + 'a>,
+    > {
         Box::pin(async move {
             let token = self.gate.begin(session_id)?;
             let mut call = call;
             let spec = dispatch::admit(&call.action, &mut call.args, self.engine.facts())?;
             if self.registry.lock().is_closing(session_id) {
-                return Err(BrowserError::new(ERR_TAB_NOT_FOUND, "this session has ended")
-                    .with_reason("session_ended"));
+                return Err(
+                    BrowserError::new(ERR_TAB_NOT_FOUND, "this session has ended")
+                        .with_reason("session_ended"),
+                );
             }
             self.refuse_if_blocked(session_id, spec.verb, &call.args)?;
             token
@@ -420,7 +458,10 @@ impl BrowserHost for DesktopBrowserHost {
                     let done = self.act_watched(session_id, spec, call, deadline).await;
                     let reads_page = |success: &Success| {
                         spec.verb == dispatch::Verb::Screenshot
-                            || success.page.as_ref().is_some_and(PageData::carries_page_text)
+                            || success
+                                .page
+                                .as_ref()
+                                .is_some_and(PageData::carries_page_text)
                     };
                     if done.as_ref().is_ok_and(reads_page) {
                         self.gate.taint(session_id);
@@ -517,6 +558,22 @@ impl BrowserHost for DesktopBrowserHost {
                 &json!({ "sessionId": session_id, "stopped": false }),
             );
         }
+    }
+
+    fn agent_tab_owner(&self, label: &str) -> Option<(String, String)> {
+        if tabs::parse_label(label) != Some(tabs::LabelKind::Agent) {
+            return None;
+        }
+        let session_id = {
+            let registry = self.registry.lock();
+            let record = registry.get(label)?;
+            if !record.is_live() {
+                return None;
+            }
+            record.session_id()?.to_string()
+        };
+        let project_id = (self.project_of)(&session_id);
+        Some((session_id, project_id))
     }
 }
 
