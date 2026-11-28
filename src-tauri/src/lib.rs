@@ -10,6 +10,8 @@ pub mod automation;
 // TROUPE_* environment variables with the TERMUL_* names as a fallback.
 pub mod brand_env;
 mod browser_automation;
+#[cfg(unix)]
+mod browser_host;
 mod browser_tab_manager;
 mod browser_tab_permissions;
 mod browser_tab_saved_grants;
