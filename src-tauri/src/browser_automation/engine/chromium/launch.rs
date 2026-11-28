@@ -213,24 +213,45 @@ fn pipe() -> io::Result<(OwnedFd, OwnedFd)> {
 
 /// Private browser state must never be shared with another local user.
 fn prepare_profile(path: &Path) -> io::Result<()> {
-    use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt, PermissionsExt};
-    std::fs::DirBuilder::new()
-        .recursive(true)
-        .mode(0o700)
-        .create(path)?;
-    // Open without following a final symlink; inspect and chmod the same inode.
-    let directory = std::fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW)
-        .open(path)?;
-    let metadata = directory.metadata()?;
-    if metadata.uid() != unsafe { libc::geteuid() } {
-        return Err(io::Error::new(
-            io::ErrorKind::PermissionDenied,
-            "browser profile belongs to another user",
-        ));
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt};
+    // Profiles live at <state>/browser-host/profiles/<profile>.
+    let base = path.ancestors().nth(3).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::PermissionDenied, "missing state directory")
+    })?;
+    let mut current = base.to_path_buf();
+    let validate = |directory: &Path| -> io::Result<()> {
+        let metadata = std::fs::symlink_metadata(directory)?;
+        if !metadata.is_dir()
+            || metadata.uid() != unsafe { libc::geteuid() }
+            || metadata.mode() & 0o022 != 0
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "browser profile chain must contain only user-owned non-writable directories",
+            ));
+        }
+        Ok(())
+    };
+    validate(&current)?;
+    for component in path
+        .strip_prefix(base)
+        .map_err(io::Error::other)?
+        .components()
+    {
+        if !matches!(component, std::path::Component::Normal(_)) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "invalid profile path",
+            ));
+        }
+        current.push(component);
+        match std::fs::DirBuilder::new().mode(0o700).create(&current) {
+            Ok(()) => {}
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
+            Err(e) => return Err(e),
+        }
+        validate(&current)?;
     }
-    directory.set_permissions(std::fs::Permissions::from_mode(0o700))?;
     Ok(())
 }
 
