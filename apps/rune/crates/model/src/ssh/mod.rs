@@ -492,7 +492,7 @@ impl State {
     }
 
     /// A host-key question (a `host_key` delta, or one listed in the watch state). Nobody can
-    /// answer one for an unknown attempt, so it is rejected and the connect fails closed.
+    /// answer one for an unknown attempt; ignore it without cancelling its owner.
     pub fn host_key_asked(&mut self, prompt: HostKeyPrompt) -> Vec<Effect> {
         let attempt = prompt.session_id.clone();
         match self.by_attempt(&attempt) {
@@ -503,11 +503,7 @@ impl State {
                 }
                 Vec::new()
             }
-            None => vec![Effect::Request {
-                kind: "ssh_session_respond_host_key",
-                payload: json!({ "sessionId": attempt, "trust": false }),
-                ledgered: true,
-            }],
+            None => Vec::new(),
         }
     }
 
@@ -518,6 +514,15 @@ impl State {
             session.host_key_prompt = None;
             session.status = Status::Connecting;
         }
+    }
+
+    /// Answer only the question captured by the displayed controls.
+    pub fn respond_host_key_shown(&mut self, tab: &str, attempt: &str, fingerprint: &str, trust: bool) -> Vec<Effect> {
+        let Some(session) = self.session(tab) else { return Vec::new() };
+        if session.attempt_id != attempt || session.host_key_prompt.as_ref().map(|p| p.fingerprint.as_str()) != Some(fingerprint) {
+            return Vec::new();
+        }
+        self.respond_host_key(tab, trust)
     }
 
     /// `respondSSHHostKey`. Trusting names the fingerprint the prompt showed.

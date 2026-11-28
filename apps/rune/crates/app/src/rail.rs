@@ -103,6 +103,10 @@ impl State {
     fn forget(&mut self, key: &str) {
         let r = &mut self.rail;
         match key {
+            crate::ssh::EDITOR => {
+                self.ssh.form.password = TextEdit::default();
+                self.ssh.form.passphrase = TextEdit::default();
+            }
             PROJECT_MENU | MOVE_MENU | SHELL_MENU => r.at = r.at.filter(|_| self.overlays.is_open(COLOUR)),
             COLOUR => r.paint = None,
             NEW_PROJECT => {

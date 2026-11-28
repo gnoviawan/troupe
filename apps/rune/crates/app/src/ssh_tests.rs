@@ -1,3 +1,4 @@
+use rune::TextEdit;
 use client::ws::{Command, Output};
 use serde_json::{Value, json};
 use troupe_protocol::ws::{WsRequestType, WsWatchName};
@@ -49,7 +50,7 @@ fn a_changed_host_key_from_the_watch_is_trusted_only_by_its_fingerprint() {
     let prompt = s.ssh.model.session(&tab).unwrap().host_key_prompt.clone().expect("the question shows");
     assert_eq!(prompt.previous_fingerprints, ["SHA256:old"]);
 
-    s.ssh_answer_host_key(&tab, true);
+    s.ssh_answer_host_key_shown(&tab, &attempt, &prompt.fingerprint, true);
     let (_, answer, ledgered) = sent(&s, WsRequestType::SshSessionRespondHostKey).pop().unwrap();
     assert_eq!(answer, json!({ "sessionId": attempt, "trust": true, "fingerprint": "SHA256:new" }));
     assert!(ledgered);
@@ -108,4 +109,17 @@ fn a_typed_password_leaves_the_form_with_its_save() {
     assert_eq!(save["profile"]["password"], "hunter2");
     assert!(!ledgered, "a save is idempotent and never ledgered with its secret");
     assert!(s.ssh.form.password.text.is_empty());
+}
+
+#[test]
+fn closing_the_ssh_editor_clears_secrets_on_cancel_and_escape() {
+    for escape in [false, true] {
+        let mut s = with_hosts();
+        s.ssh.form.password = TextEdit::new("secret");
+        s.ssh.form.passphrase = TextEdit::new("passphrase");
+        s.overlays.open(crate::ssh::EDITOR);
+        if escape { s.close_top(); } else { s.close(crate::ssh::EDITOR); }
+        assert!(s.ssh.form.password.text.is_empty());
+        assert!(s.ssh.form.passphrase.text.is_empty());
+    }
 }

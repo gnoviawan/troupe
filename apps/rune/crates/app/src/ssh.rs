@@ -505,8 +505,8 @@ impl State {
 
     // ---- sessions ----
 
-    pub(crate) fn ssh_answer_host_key(&mut self, tab: &str, trust: bool) {
-        let effects = self.ssh.model.respond_host_key(tab, trust);
+    pub(crate) fn ssh_answer_host_key_shown(&mut self, tab: &str, attempt: &str, fingerprint: &str, trust: bool) {
+        let effects = self.ssh.model.respond_host_key_shown(tab, attempt, fingerprint, trust);
         self.ssh_run(effects);
     }
 

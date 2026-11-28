@@ -100,14 +100,14 @@ fn a_changed_key_waits_for_explicit_trust_naming_the_shown_fingerprint() {
 }
 
 #[test]
-fn a_rejection_names_no_fingerprint_and_an_orphan_question_is_rejected() {
+fn a_rejection_names_no_fingerprint_and_an_orphan_question_is_ignored() {
     let mut s = State::default();
     s.open_session("t1", "p1");
     s.host_key_asked(prompt("t1", "unknown"));
     assert_eq!(request(&s.respond_host_key("t1", false)[0]).1, json!({ "sessionId": "t1", "trust": false }));
 
     let effects = s.host_key_asked(prompt("nobody", "unknown"));
-    assert_eq!(request(&effects[0]).1, json!({ "sessionId": "nobody", "trust": false }));
+    assert!(effects.is_empty(), "another client owns this attempt");
 }
 
 #[test]
@@ -230,4 +230,19 @@ fn an_upload_over_an_existing_file_is_a_conflict_and_a_transfer_keeps_its_bytes(
     });
     s.transfer_finished("c1", "/d/a.txt", "/tmp/a.txt", "upload", Ok(()));
     assert_eq!((s.transfers[0].bytes_transferred, s.transfers[0].status.as_str()), (12, "completed"));
+}
+
+#[test]
+fn a_displayed_answer_cannot_approve_a_replaced_question() {
+    let mut s = State::default();
+    s.open_session("t1", "p1");
+    s.host_key_asked(prompt("t1", "unknown"));
+    let mut replacement = prompt("t1", "changed");
+    replacement.fingerprint = "SHA256:replacement".into();
+    s.host_key_asked(replacement);
+    assert!(s.respond_host_key_shown("t1", "t1", "SHA256:new", true).is_empty());
+    assert!(s.session("t1").unwrap().host_key_prompt.is_some());
+    assert!(s.respond_host_key_shown("t1", "other", "SHA256:replacement", true).is_empty());
+    let answer = s.respond_host_key_shown("t1", "t1", "SHA256:replacement", true);
+    assert_eq!(request(&answer[0]).1["fingerprint"], "SHA256:replacement");
 }

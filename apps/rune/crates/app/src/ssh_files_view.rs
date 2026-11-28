@@ -34,6 +34,8 @@ fn fingerprint(t: &Tokens, value: &str, key: String) -> El {
 pub fn host_key_question(t: &'static Tokens, tab: &str, prompt: &HostKeyPrompt) -> El {
     let c = &t.colors;
     let changed = prompt.changed();
+    let (trust_attempt, reject_attempt) = (prompt.session_id.clone(), prompt.session_id.clone());
+    let (trust_key, reject_key) = (prompt.fingerprint.clone(), prompt.fingerprint.clone());
     let (trust, reject) = (tab.to_owned(), tab.to_owned());
     let mut body = col()
         .key("ssh-host-key")
@@ -71,13 +73,13 @@ pub fn host_key_question(t: &'static Tokens, tab: &str, prompt: &HostKeyPrompt) 
                 .size(ButtonSize::Sm)
                 .build(t)
                 .key("ssh-host-key-cancel")
-                .on_press(move |s: &mut State| s.ssh_answer_host_key(&reject, false));
+                .on_press(move |s: &mut State| s.ssh_answer_host_key_shown(&reject, &reject_attempt, &reject_key, false));
             let mut accept = Button::new(prompt.trust_label())
                 .variant(if changed { ButtonVariant::Destructive } else { ButtonVariant::Default })
                 .size(ButtonSize::Sm)
                 .build(t)
                 .key("ssh-host-key-trust")
-                .on_press(move |s: &mut State| s.ssh_answer_host_key(&trust, true));
+                .on_press(move |s: &mut State| s.ssh_answer_host_key_shown(&trust, &trust_attempt, &trust_key, true));
             if changed {
                 cancel = cancel.autofocus();
             } else {
