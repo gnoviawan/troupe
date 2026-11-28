@@ -131,7 +131,7 @@ fn an_upload_conflict_from_a_stale_listing_requires_explicit_replace() {
     s.sftp_upload("c1", vec!["/tmp/new.txt".into()]);
     let (call, upload, _) = sent(&s, WsRequestType::SftpUpload).pop().unwrap();
     assert_eq!(upload["request"]["overwrite"], false);
-    s.apply(Output::Reply { call, result: Err(client::ws::WsError {
+    s.apply(Output::Reply { call, result: Err(troupe_protocol::ws::WsError {
         code: "SFTP_ALREADY_EXISTS".into(), message: "exists".into(), details: None,
     }) });
     assert!(s.overlays.is_open(REMOTE_CONFIRM));
