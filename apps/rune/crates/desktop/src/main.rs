@@ -146,7 +146,7 @@ fn build(launch: Launch, control: Option<&Control>, paths: &Paths) -> rune::App<
             handle.update(move |s, _| toast(s, notice));
         });
     }
-    automation::install(app)
+    automation::install_with(app, troupe_canvas::CanvasCompositor::new())
 }
 
 /// What the window says when the server stops and comes back. A hidden window says it in a

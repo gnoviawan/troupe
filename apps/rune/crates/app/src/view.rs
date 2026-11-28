@@ -55,6 +55,8 @@ pub fn view(s: &State, cx: &mut Cx<State>) -> El {
     crate::settings_view::build(s, t, phone, window, &mut layer);
     crate::snapshots_view::dialogs(s, t, phone, &mut layer);
     crate::bug_report::build(s, t, phone, &mut layer);
+    ui::canvas::view::unmount_confirms(s, |s: &State| &s.canvases, |s: &mut State| &mut s.canvases, t, &mut layer);
+    s.sync_canvas_slots(cx, phone, !layer.is_empty());
     layer.push(
         row()
             .key("toaster-layer")
@@ -219,6 +221,7 @@ fn main_area(
                 .or_else(|| crate::github_item_view::tab_body(s, t, tab, false, &mut menus.borrow_mut()))
                 .or_else(|| editor_body(s, t, tab))
                 .or_else(|| crate::automations_view::tab_body(s, t, tab, false))
+                .or_else(|| s.canvas_tab_body(t, tab, false))
         };
         let slots = ui::workspace::Slots {
             leading,
@@ -461,6 +464,11 @@ fn workspace_main(s: &State, t: &'static Tokens, layer: &mut Vec<El>) -> El {
     }
     if let Some(tab @ model::workspace::Tab::Automations { .. }) = active_phone_tab(s)
         && let Some(body) = crate::automations_view::tab_body(s, t, tab, true)
+    {
+        return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
+    }
+    if let Some(tab @ model::workspace::Tab::Canvas { .. }) = active_phone_tab(s)
+        && let Some(body) = s.canvas_tab_body(t, tab, true)
     {
         return col().key("workspace-main").grow(1.0).w_full().min_h(0.0).child(body);
     }
