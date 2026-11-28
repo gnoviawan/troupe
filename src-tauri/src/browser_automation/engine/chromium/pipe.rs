@@ -13,6 +13,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 use parking_lot::Mutex;
 use serde_json::{json, Value};
@@ -79,6 +80,17 @@ impl Connection {
         method: CdpMethod,
         params: Value,
     ) -> Result<Value, EngineError> {
+        self.call_within(session, method, params, CDP_RESULT).await
+    }
+
+    /// [`Connection::call`] with its own reply budget.
+    pub async fn call_within(
+        &self,
+        session: Option<&str>,
+        method: CdpMethod,
+        params: Value,
+        budget: Duration,
+    ) -> Result<Value, EngineError> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
         let (tx, rx) = oneshot::channel();
         match self.pending.lock().as_mut() {
@@ -96,7 +108,7 @@ impl Connection {
             self.forget(id);
             return Err(EngineError::new(EngineErrorKind::Dispatch));
         }
-        match tokio::time::timeout(CDP_RESULT, rx).await {
+        match tokio::time::timeout(budget, rx).await {
             Err(_) => {
                 self.forget(id);
                 Err(EngineError::new(EngineErrorKind::Timeout))
