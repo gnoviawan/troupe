@@ -219,6 +219,7 @@ pub async fn destroy_tab(label: &str) {
 }
 
 /// The owning `(session_id, project_id)` of a live agent tab, if any.
+#[cfg(unix)]
 pub fn agent_tab_owner(label: &str) -> Option<(String, String)> {
     browser_host().and_then(|host| host.agent_tab_owner(label))
 }
