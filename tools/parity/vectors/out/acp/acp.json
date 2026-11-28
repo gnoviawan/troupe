@@ -31164,6 +31164,16 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -31345,6 +31355,16 @@
          {
           "value": "b",
           "name": "B",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "default",
+        "availableModes": [
+         {
+          "id": "default",
+          "name": "default",
           "description": null
          }
         ]
@@ -37285,6 +37305,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -54490,6 +54511,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -54901,6 +54935,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -55495,6 +55530,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -55769,6 +55817,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -56144,6 +56205,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -56764,6 +56838,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -57018,6 +57093,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000002000
       }
      }
@@ -57516,6 +57592,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -57776,6 +57853,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -58232,6 +58310,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -58601,6 +58680,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -58925,6 +59005,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -60780,6 +60861,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -60822,6 +60904,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -61208,6 +61291,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -61852,6 +61936,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -61894,6 +61979,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -62147,6 +62233,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -62513,6 +62600,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -62890,6 +62978,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -62932,6 +63021,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -62984,6 +63074,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -63341,6 +63432,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      }
@@ -63655,6 +63759,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      }
@@ -64368,6 +64485,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -64423,6 +64541,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -64797,6 +64916,7 @@
          }
         ]
        },
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -65221,6 +65341,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -65253,6 +65386,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -65295,6 +65441,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -65329,6 +65488,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -65757,6 +65929,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -66179,6 +66364,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -66217,6 +66415,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -66509,6 +66720,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000002000
       }
      },
@@ -66541,6 +66765,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -66910,6 +67147,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -66943,6 +67193,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -66979,6 +67242,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -67388,6 +67664,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -67433,6 +67722,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -67485,6 +67787,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -67856,6 +68171,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -68224,6 +68552,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -68640,6 +68981,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -68672,6 +69026,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -69084,6 +69451,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      }
@@ -69490,6 +69870,19 @@
          {
           "value": "m2",
           "name": "M2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -163530,6 +163923,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -164261,6 +164667,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -165204,6 +165623,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000004000
       }
      },
@@ -166024,6 +166456,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000002000
       }
      },
@@ -168370,6 +168815,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000003000
       }
      },
@@ -177135,6 +177593,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -177423,6 +177894,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -177754,6 +178238,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -178081,6 +178578,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -178412,6 +178922,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -178754,6 +179277,24 @@
     "ids": [],
     "effects": [
      {
+      "kind": "persistModelCatalog",
+      "configId": "claude",
+      "catalog": {
+       "models": null,
+       "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000002000
+      }
+     },
+     {
       "kind": "refreshSessionIndex"
      }
     ],
@@ -178980,6 +179521,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "code",
+          "description": null
+         },
+         {
+          "id": "ask",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000004000
       }
      },
@@ -179566,6 +180120,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000005000
       }
      },
@@ -180079,6 +180646,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000004000
       }
      },
@@ -180374,6 +180954,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -180969,6 +181562,19 @@
         ]
        },
        "modelOption": null,
+       "modes": {
+        "currentModeId": "ask",
+        "availableModes": [
+         {
+          "id": "ask",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -208378,6 +208984,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -208400,6 +209007,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -209044,6 +209652,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -209066,6 +209675,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -209684,6 +210294,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -209706,6 +210317,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -210441,6 +211053,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -210463,6 +211076,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -210637,6 +211251,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -210659,6 +211274,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -210925,6 +211541,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -210947,6 +211564,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -211428,6 +212046,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -211450,6 +212069,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -211629,6 +212249,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -211651,6 +212272,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -211918,6 +212540,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -211940,6 +212563,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -212264,6 +212888,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -212286,6 +212911,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -212741,6 +213367,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000003000
       }
      },
@@ -212950,6 +213577,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -212972,6 +213600,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -213283,6 +213912,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -213305,6 +213935,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -213750,6 +214381,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000003000
       }
      },
@@ -213772,6 +214404,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000003000
       }
      },
@@ -214786,6 +215419,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -214808,6 +215442,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -215565,6 +216200,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -215587,6 +216223,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -215953,6 +216590,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -215975,6 +216613,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -216346,6 +216985,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -216368,6 +217008,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -216547,6 +217188,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -216569,6 +217211,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -216974,6 +217617,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -216996,6 +217640,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -217686,6 +218331,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -217708,6 +218354,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000001000
       }
      },
@@ -217869,6 +218516,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -217891,6 +218539,7 @@
         ]
        },
        "modelOption": null,
+       "modes": null,
        "updatedAt": 1700000002000
       }
      },
@@ -236365,6 +237014,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -236408,6 +237070,19 @@
          }
         ]
        },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
        "updatedAt": 1700000001000
       }
      },
@@ -236446,6 +237121,19 @@
          {
           "value": "m2",
           "name": "m2",
+          "description": null
+         }
+        ]
+       },
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
           "description": null
          }
         ]
@@ -252620,6 +253308,28 @@
       "sessionId": "s2"
      },
      {
+      "kind": "persistModelCatalog",
+      "configId": "codex",
+      "catalog": {
+       "models": null,
+       "modelOption": null,
+       "modes": {
+        "currentModeId": "chat",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
+     },
+     {
       "kind": "readComposerOptions",
       "configId": "codex"
      },
@@ -252628,6 +253338,28 @@
       "agentId": "agent-9",
       "sessionId": "s2",
       "modeId": "code"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "codex",
+      "catalog": {
+       "models": null,
+       "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
      },
      {
       "kind": "readComposerOptions",
@@ -252646,6 +253378,28 @@
       "sessionId": "s2",
       "configId": "thought_level",
       "value": "max"
+     },
+     {
+      "kind": "persistModelCatalog",
+      "configId": "codex",
+      "catalog": {
+       "models": null,
+       "modelOption": null,
+       "modes": {
+        "currentModeId": "code",
+        "availableModes": [
+         {
+          "id": "chat",
+          "description": null
+         },
+         {
+          "id": "code",
+          "description": null
+         }
+        ]
+       },
+       "updatedAt": 1700000001000
+      }
      },
      {
       "kind": "persistComposerOptions",

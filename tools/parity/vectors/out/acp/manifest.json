@@ -23,7 +23,7 @@
         "src/renderer/components/chat/background-commands.ts": "a3b2fed0cbddc14463d2cc8c628672ac6a284147",
         "src/renderer/components/chat/chat-input-bar-config.ts": "59774f5aa55f2b02b967f069902679af61beda1d",
         "src/renderer/components/chat/agent-model-selector/selector-model.ts": "8db12afbbee65c1a8c6f93e88ada02aeb3848e42",
-        "src/renderer/stores/acp-store/model-catalog.ts": "35c2383fce1c05e8f5557ddfdaa9f5e2dbbe2450",
+        "src/renderer/stores/acp-store/model-catalog.ts": "26e2e5288c84945e77daba0f08fc419050d2e1bc",
         "src/renderer/stores/acp-reuse-keys.ts": "c1a2366a2d0a8bb686a4f3f937af608265c68d3f",
         "src/renderer/lib/command-engine.ts": "e5864037def9d4dbbbd68550758302d551b04c01",
         "src/renderer/stores/acp-store/slices/session.ts": "7661bc4f5a09a3d6cb1b6fede5ec4cd5853a4852",
