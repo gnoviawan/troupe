@@ -127,6 +127,7 @@ impl Engine {
             }
             Err(panic) => {
                 self.crash(&panic_text(panic.as_ref()));
+                self.reply(id, mount_seq, Err(HostError { code: Code::EngineError, message: "the editor stopped".into() }));
                 return;
             }
         }

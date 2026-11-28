@@ -143,3 +143,13 @@ fn ui_call_returns_canvas_hidden_when_off_screen() {
     assert_eq!(reply["ok"], false);
     assert_eq!(reply["error"]["code"], "CANVAS_HIDDEN");
 }
+
+#[test]
+fn malformed_document_is_answered_without_unwinding() {
+    let mut engine = boot(17);
+    let reply = call(&mut engine, 99, 17, "host.openDocument", json!({
+        "bytes": base64::engine::general_purpose::STANDARD.encode(b"not a figcraft archive")
+    }));
+    assert_eq!(reply["ok"], false);
+    assert_eq!(reply["error"]["code"], "ENGINE_ERROR");
+}
