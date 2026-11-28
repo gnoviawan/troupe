@@ -75,7 +75,9 @@ pub trait BrowserHost: Send + Sync {
         agent_id: &'a str,
         call: BrowserCall,
         deadline: Deadline,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Success, BrowserError>> + Send + 'a>>;
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Success, BrowserError>> + Send + 'a>,
+    >;
     fn end_session(&self, session_id: &str);
     /// `browser_tab_create`: the registry validates the label, builds the
     /// webview and admits the tab once the engine confirmed it.
@@ -113,6 +115,12 @@ pub trait BrowserHost: Send + Sync {
     }
     /// The user submitted a prompt in the session: clears Stop.
     fn user_turn(&self, _session_id: &str) {}
+    /// The owning `(session_id, project_id)` of a live agent tab, if any.
+    /// Mirrors `core::tabs::TabRegistry::resolve`: only a live `agent-<uuid>`
+    /// tab resolves, never falling back to another tab.
+    fn agent_tab_owner(&self, _label: &str) -> Option<(String, String)> {
+        None
+    }
     /// The registered engine's frozen capability table and traits.
     fn engine_facts(&self) -> EngineFacts;
 }
@@ -208,6 +216,11 @@ pub async fn destroy_tab(label: &str) {
     if let Some(host) = browser_host() {
         host.destroy_tab(label).await;
     }
+}
+
+/// The owning `(session_id, project_id)` of a live agent tab, if any.
+pub fn agent_tab_owner(label: &str) -> Option<(String, String)> {
+    browser_host().and_then(|host| host.agent_tab_owner(label))
 }
 
 /// Capture a native PNG screenshot of a browser tab's visible viewport.

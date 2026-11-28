@@ -1,25 +1,29 @@
 //! The browser pane's `/ws` requests, served by the server's browser host
 //! (`troupe-server --browser-host`):
 //!
-//! - `browser_tab_open {projectId, url, width?, height?}` → `{tabId, tab}`;
-//! - `browser_tab_attach {tabId}` → `{}`, to watch a tab this connection did
-//!   not open (an agent's);
-//! - `browser_tab_close {tabId}`, `browser_tab_navigate {tabId, url}`,
-//!   `browser_tab_resize {tabId, width, height, mobile?}`;
-//! - `browser_tab_input {tabId, event}`, one pointer, wheel, key, text, IME
-//!   or touch event (`browser_host::input::PaneInput`).
+//! - `browser_tab_open {projectId, sessionId, url, width?, height?}` → `{tabId, tab}`;
+//! - `browser_tab_attach {tabId, sessionId?, projectId?}` → `{}`, to attach or
+//!   re-attach after reconnect to a tab this chat owns (including an agent's);
+//! - `browser_tab_close {tabId, sessionId?, projectId?}`,
+//!   `browser_tab_navigate {tabId, url, sessionId?, projectId?}`,
+//!   `browser_tab_resize {tabId, width, height, mobile?, sessionId?, projectId?}`;
+//! - `browser_tab_input {tabId, event, sessionId?, projectId?}`, one pointer,
+//!   wheel, key, text, IME or touch event (`browser_host::input::PaneInput`).
 //!
 //! None of them is on the view allow-list (`capabilities::ws_requirement`),
 //! so each needs the write capability: read-only links, shared-live
 //! viewers and remote peers without `--allow-remote-writes` are refused
-//! before these handlers run. Open and attach also grant the connection the
-//! tab's `browser_screencast` watch. Logs carry the request type and the
-//! outcome, never a URL or an input event.
+//! before these handlers run. Each tab stores a stable owner (chat/session
+//! id, project id, and authenticated principal when present) so ownership
+//! survives WebSocket reconnects while refusing other chats and principals.
+//! Open and attach also grant the calling connection the tab's
+//! `browser_screencast` watch. Logs carry the request type and the outcome,
+//! never a URL or an input event.
 
 use super::*;
 
 #[cfg(unix)]
-use crate::browser_host::{self, input::PaneInput, BrowserHost};
+use crate::browser_host::{self, input::PaneInput, BrowserHost, TabOwner};
 
 const NO_HOST: &str = "capability_unavailable";
 
@@ -28,6 +32,7 @@ const NO_HOST: &str = "capability_unavailable";
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct OpenPayload {
     project_id: String,
+    session_id: String,
     url: String,
     #[serde(default)]
     width: Option<f64>,
@@ -40,6 +45,10 @@ struct OpenPayload {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct TabPayload {
     tab_id: String,
+    #[serde(default)]
+    session_id: Option<String>,
+    #[serde(default)]
+    project_id: Option<String>,
 }
 
 #[cfg(unix)]
@@ -48,6 +57,10 @@ struct TabPayload {
 struct NavigatePayload {
     tab_id: String,
     url: String,
+    #[serde(default)]
+    session_id: Option<String>,
+    #[serde(default)]
+    project_id: Option<String>,
 }
 
 #[cfg(unix)]
@@ -59,6 +72,10 @@ struct ResizePayload {
     height: u32,
     #[serde(default)]
     mobile: bool,
+    #[serde(default)]
+    session_id: Option<String>,
+    #[serde(default)]
+    project_id: Option<String>,
 }
 
 #[cfg(unix)]
@@ -67,6 +84,10 @@ struct ResizePayload {
 struct InputPayload {
     tab_id: String,
     event: PaneInput,
+    #[serde(default)]
+    session_id: Option<String>,
+    #[serde(default)]
+    project_id: Option<String>,
 }
 
 /// The largest viewport a pane may ask for, in CSS px.
@@ -108,13 +129,24 @@ pub(super) async fn handle(id: String, type_: &str, payload: &Value, env: &Handl
             "this server has no browser host (--browser-host)",
         );
     };
+    handle_with_host(id, type_, payload, env, &host).await
+}
+
+#[cfg(unix)]
+async fn handle_with_host(
+    id: String,
+    type_: &str,
+    payload: &Value,
+    env: &HandlerEnv,
+    host: &Arc<BrowserHost>,
+) -> WsReply {
     let reply = match type_ {
-        "browser_tab_open" => open(&host, parse(payload), env).await,
-        "browser_tab_attach" => attach(&host, parse(payload), env),
-        "browser_tab_close" => close(&host, parse(payload), env).await,
-        "browser_tab_navigate" => navigate(&host, parse(payload), env).await,
-        "browser_tab_resize" => resize(&host, parse(payload), env).await,
-        "browser_tab_input" => input(&host, parse(payload), env).await,
+        "browser_tab_open" => open(host, parse(payload), env).await,
+        "browser_tab_attach" => attach(host, parse(payload), env),
+        "browser_tab_close" => close(host, parse(payload), env).await,
+        "browser_tab_navigate" => navigate(host, parse(payload), env).await,
+        "browser_tab_resize" => resize(host, parse(payload), env).await,
+        "browser_tab_input" => input(host, parse(payload), env).await,
         _ => Err((
             WsErrorCode::Unsupported,
             "unknown browser pane request".to_string(),
@@ -144,18 +176,84 @@ fn parse<T: serde::de::DeserializeOwned>(payload: &Value) -> Result<T, (WsErrorC
     })
 }
 
+/// The authenticated client principal for this connection, matching the
+/// `device_id` identity used by per-device store and presence checks.
+#[cfg(unix)]
+fn caller_principal(env: &HandlerEnv) -> Option<String> {
+    env.identity
+        .get()
+        .map(|identity| identity.device_id.clone())
+        .filter(|id| !id.is_empty())
+}
+
+/// The persisted project id of `session_id`, when session persistence knows it.
+#[cfg(unix)]
+fn persisted_session_project(env: &HandlerEnv, session_id: &str) -> Option<String> {
+    env.relay
+        .persistence()
+        .and_then(|persistence| persistence.metadata(session_id).ok())
+        .and_then(|meta| meta.project_id)
+}
+
+/// Resolve the stable owner of `tab_id`: user tabs record their owner on
+/// `BrowserHost` at open time; live agent tabs resolve through the core
+/// `TabRegistry` with the same live-agent check as `core/tabs.rs:595-605`.
+#[cfg(unix)]
+fn resolve_owner(host: &BrowserHost, tab_id: &str) -> Option<TabOwner> {
+    if let Some(owner) = host.tab_owner(tab_id) {
+        return Some(owner);
+    }
+    let (session_id, project_id) = crate::browser_automation::agent_tab_owner(tab_id)?;
+    Some(TabOwner::new(session_id, project_id, None))
+}
+
+#[cfg(unix)]
+fn authorize_tab(
+    host: &BrowserHost,
+    tab_id: &str,
+    claimed_session: Option<&str>,
+    claimed_project: Option<&str>,
+    env: &HandlerEnv,
+) -> Result<(), (WsErrorCode, String)> {
+    let Some(owner) = resolve_owner(host, tab_id) else {
+        return Err((
+            WsErrorCode::Forbidden,
+            "tab belongs to another chat".to_string(),
+        ));
+    };
+    if persisted_session_project(env, &owner.session_id)
+        .is_some_and(|persisted_project| persisted_project != owner.project_id)
+    {
+        return Err((
+            WsErrorCode::Forbidden,
+            "tab belongs to another project".to_string(),
+        ));
+    }
+    let subscribed = !env.subscriptions.clients_for(&owner.session_id).is_empty();
+    let principal = caller_principal(env);
+    if !owner.allows(
+        subscribed,
+        claimed_session,
+        claimed_project,
+        principal.as_deref(),
+    ) {
+        return Err((
+            WsErrorCode::Forbidden,
+            "tab belongs to another chat".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(unix)]
 fn known_tab(
     host: &BrowserHost,
     tab_id: &str,
+    claimed_session: Option<&str>,
+    claimed_project: Option<&str>,
     env: &HandlerEnv,
 ) -> Result<Arc<crate::browser_automation::engine::chromium::Tabs>, (WsErrorCode, String)> {
-    if !host.may_watch(tab_id, &env.out_tx) {
-        return Err((
-            WsErrorCode::Forbidden,
-            "tab belongs to another connection".to_string(),
-        ));
-    }
+    authorize_tab(host, tab_id, claimed_session, claimed_project, env)?;
     let tabs = host.tabs().ok_or((
         WsErrorCode::NotFound,
         "the browser host is shutting down".to_string(),
@@ -172,8 +270,32 @@ async fn open(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
+    if payload.session_id.is_empty() {
+        return Err((
+            WsErrorCode::Unsupported,
+            "sessionId is required".to_string(),
+        ));
+    }
     if env.registry.canonical_root(&payload.project_id).is_none() {
         return Err((WsErrorCode::NotFound, "project not found".to_string()));
+    }
+    if env
+        .subscriptions
+        .clients_for(&payload.session_id)
+        .is_empty()
+    {
+        return Err((
+            WsErrorCode::Forbidden,
+            "subscribe to the session before opening a browser tab".to_string(),
+        ));
+    }
+    if persisted_session_project(env, &payload.session_id)
+        .is_some_and(|persisted_project| persisted_project != payload.project_id)
+    {
+        return Err((
+            WsErrorCode::Forbidden,
+            "session belongs to another project".to_string(),
+        ));
     }
     let label = format!("tab-{}", uuid::Uuid::new_v4());
     let side = |value: Option<f64>, default: f64| {
@@ -188,15 +310,22 @@ async fn open(
         width: side(payload.width, 1280.0),
         height: side(payload.height, 800.0),
     };
-    host.claim_user_tab(&label, &payload.project_id);
-    let view = crate::browser_automation::create_tab(&label, &payload.url, bounds)
-        .await
-        .map_err(|e| {
-            (
+    let owner = TabOwner::new(
+        payload.session_id,
+        payload.project_id,
+        caller_principal(env),
+    );
+    host.claim_user_tab(&label, owner);
+    let view = match crate::browser_automation::create_tab(&label, &payload.url, bounds).await {
+        Ok(view) => view,
+        Err(e) => {
+            host.release_tab_claim(&label);
+            return Err((
                 WsErrorCode::Unsupported,
                 format!("{}: {}", e.code, e.message),
-            )
-        })?;
+            ));
+        }
+    };
     host.grant(&label, &env.out_tx);
     log::info!("[ws] browser_tab_open ok");
     Ok(json!({ "tabId": label, "tab": view }))
@@ -209,7 +338,16 @@ fn attach(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    known_tab(host, &payload.tab_id, env)?;
+    authorize_tab(
+        host,
+        &payload.tab_id,
+        payload.session_id.as_deref(),
+        payload.project_id.as_deref(),
+        env,
+    )?;
+    if !host.tab_is_live(&payload.tab_id) {
+        return Err((WsErrorCode::NotFound, "tab not found".to_string()));
+    }
     host.grant(&payload.tab_id, &env.out_tx);
     Ok(json!({}))
 }
@@ -221,7 +359,16 @@ async fn close(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    known_tab(host, &payload.tab_id, env)?;
+    authorize_tab(
+        host,
+        &payload.tab_id,
+        payload.session_id.as_deref(),
+        payload.project_id.as_deref(),
+        env,
+    )?;
+    if !host.tab_is_live(&payload.tab_id) {
+        return Err((WsErrorCode::NotFound, "tab not found".to_string()));
+    }
     crate::browser_automation::destroy_tab(&payload.tab_id).await;
     Ok(json!({}))
 }
@@ -233,7 +380,13 @@ async fn navigate(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id, env)?;
+    let tabs = known_tab(
+        host,
+        &payload.tab_id,
+        payload.session_id.as_deref(),
+        payload.project_id.as_deref(),
+        env,
+    )?;
     tabs.navigate(&payload.tab_id, &payload.url)
         .await
         .map_err(|e| (WsErrorCode::Unsupported, e))?;
@@ -247,7 +400,13 @@ async fn resize(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id, env)?;
+    let tabs = known_tab(
+        host,
+        &payload.tab_id,
+        payload.session_id.as_deref(),
+        payload.project_id.as_deref(),
+        env,
+    )?;
     let (width, height) = (
         payload.width.min(MAX_VIEWPORT),
         payload.height.min(MAX_VIEWPORT),
@@ -270,7 +429,13 @@ async fn input(
     env: &HandlerEnv,
 ) -> PaneResult {
     let payload = payload?;
-    let tabs = known_tab(host, &payload.tab_id, env)?;
+    let tabs = known_tab(
+        host,
+        &payload.tab_id,
+        payload.session_id.as_deref(),
+        payload.project_id.as_deref(),
+        env,
+    )?;
     let (method, params) = payload
         .event
         .to_cdp()
@@ -286,8 +451,8 @@ async fn input(
     Ok(json!({}))
 }
 
-/// `watch browser_screencast <tabId>`: only for a connection a pane request
-/// granted the tab. Starts the tab's stream once subscribed.
+/// `watch browser_screencast <tabId>`: only for a connection a write-gated pane
+/// request granted the tab, and still matching the tab's stable owner.
 #[cfg(unix)]
 pub(super) fn screencast_watch_allowed(
     id: &str,
@@ -301,12 +466,25 @@ pub(super) fn screencast_watch_allowed(
             "this server has no browser host (--browser-host)",
         )));
     };
+    screencast_watch_allowed_with_host(id, scope, env, host)
+}
+
+#[cfg(unix)]
+fn screencast_watch_allowed_with_host(
+    id: &str,
+    scope: &str,
+    env: &HandlerEnv,
+    host: Arc<BrowserHost>,
+) -> Result<Arc<BrowserHost>, Box<WsReply>> {
     if !host.may_watch(scope, &env.out_tx) {
         return Err(Box::new(WsReply::err(
             id,
             WsErrorCode::Forbidden,
             "open or attach the tab before watching it",
         )));
+    }
+    if let Err((code, message)) = authorize_tab(&host, scope, None, None, env) {
+        return Err(Box::new(WsReply::err(id, code, message)));
     }
     Ok(host)
 }

@@ -66,6 +66,61 @@ impl ProfileKey {
     }
 }
 
+/// Stable ownership of a browser pane tab, surviving WebSocket reconnects.
+///
+/// Mirrors the identity other per-chat `/ws` resources use: the owning
+/// chat/session id, its project id, and the authenticated client principal
+/// (`ClientIdentity::device_id`) when the opener presented one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TabOwner {
+    pub session_id: String,
+    pub project_id: String,
+    pub principal: Option<String>,
+}
+
+impl TabOwner {
+    pub fn new(
+        session_id: impl Into<String>,
+        project_id: impl Into<String>,
+        principal: Option<String>,
+    ) -> Self {
+        Self {
+            session_id: session_id.into(),
+            project_id: project_id.into(),
+            principal: principal.filter(|p| !p.is_empty()),
+        }
+    }
+
+    /// Whether a caller on a connection subscribed (`subscribed_to_owner`) to
+    /// `self.session_id`, optionally claiming a session/project and presenting
+    /// an authenticated `principal`, matches this tab's owner.
+    pub fn allows(
+        &self,
+        subscribed_to_owner: bool,
+        claimed_session: Option<&str>,
+        claimed_project: Option<&str>,
+        principal: Option<&str>,
+    ) -> bool {
+        if self.session_id.is_empty() || self.project_id.is_empty() || !subscribed_to_owner {
+            return false;
+        }
+        if claimed_session.is_some_and(|session| session != self.session_id) {
+            return false;
+        }
+        if claimed_project.is_some_and(|project| project != self.project_id) {
+            return false;
+        }
+        if self
+            .principal
+            .as_deref()
+            .is_some_and(|expected| principal != Some(expected))
+        {
+            return false;
+        }
+        true
+    }
+}
+
 struct Running {
     browser: Arc<Browser>,
     open_tabs: usize,
@@ -89,9 +144,13 @@ pub struct BrowserHost {
     tab_profile: Mutex<HashMap<String, ProfileKey>>,
     /// The project a pane asked a user tab for, until the tab opens.
     user_project: Mutex<HashMap<String, String>>,
-    /// Which connections may watch which tab.
+    /// Stable owner of each pane-opened tab, surviving reconnects.
+    tab_owners: Mutex<HashMap<String, TabOwner>>,
+    /// Which live connections may currently watch which tab's screencast.
     grants: Mutex<Vec<(String, OutboundSender)>>,
     tabs: Mutex<Weak<Tabs>>,
+    #[cfg(test)]
+    test_live_tabs: Mutex<std::collections::HashSet<String>>,
 }
 
 impl BrowserHost {
@@ -115,8 +174,11 @@ impl BrowserHost {
             launching: tokio::sync::Mutex::new(()),
             tab_profile: Mutex::new(HashMap::new()),
             user_project: Mutex::new(HashMap::new()),
+            tab_owners: Mutex::new(HashMap::new()),
             grants: Mutex::new(Vec::new()),
             tabs: Mutex::new(Weak::new()),
+            #[cfg(test)]
+            test_live_tabs: Mutex::new(std::collections::HashSet::new()),
         })
     }
 
@@ -130,11 +192,38 @@ impl BrowserHost {
         self.tabs.lock().upgrade()
     }
 
-    /// The next user tab `label` belongs to `project`.
-    pub fn claim_user_tab(&self, label: &str, project: &str) {
+    /// Record the stable owner and project of a user tab before it opens.
+    pub fn claim_user_tab(&self, label: &str, owner: TabOwner) {
         self.user_project
             .lock()
-            .insert(label.to_string(), project.to_string());
+            .insert(label.to_string(), owner.project_id.clone());
+        self.tab_owners.lock().insert(label.to_string(), owner);
+    }
+
+    /// Drop a pre-registered tab claim after an open failure.
+    pub fn release_tab_claim(&self, label: &str) {
+        self.user_project.lock().remove(label);
+        self.tab_owners.lock().remove(label);
+        self.grants.lock().retain(|(l, _)| l != label);
+    }
+
+    /// Stable owner recorded for `label`, if any.
+    pub fn tab_owner(&self, label: &str) -> Option<TabOwner> {
+        self.tab_owners.lock().get(label).cloned()
+    }
+
+    /// Whether `label` is currently open in the engine.
+    pub fn tab_is_live(&self, label: &str) -> bool {
+        #[cfg(test)]
+        if self.test_live_tabs.lock().contains(label) {
+            return true;
+        }
+        self.tabs().is_some_and(|tabs| tabs.get(label).is_ok())
+    }
+
+    #[cfg(test)]
+    pub fn mark_test_tab_live(&self, label: &str) {
+        self.test_live_tabs.lock().insert(label.to_string());
     }
 
     /// Let `out` watch `label`'s screencast.
@@ -150,10 +239,12 @@ impl BrowserHost {
     }
 
     pub fn may_watch(&self, label: &str, out: &OutboundSender) -> bool {
-        self.grants
-            .lock()
-            .iter()
-            .any(|(l, o)| l == label && o.same_channel(out))
+        !out.closing().is_cancelled()
+            && self
+                .grants
+                .lock()
+                .iter()
+                .any(|(l, o)| l == label && o.same_channel(out) && !o.closing().is_cancelled())
     }
 
     fn watchers(&self, label: &str) -> usize {
@@ -277,6 +368,10 @@ impl BrowserSource for BrowserHost {
 
     fn tab_closed(&self, label: &str) {
         self.grants.lock().retain(|(l, _)| l != label);
+        self.tab_owners.lock().remove(label);
+        self.user_project.lock().remove(label);
+        #[cfg(test)]
+        self.test_live_tabs.lock().remove(label);
         let Some(key) = self.tab_profile.lock().remove(label) else {
             return;
         };
