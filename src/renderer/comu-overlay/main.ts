@@ -16,14 +16,20 @@ declare global {
 
 const root = document.getElementById('comu-overlay')
 if (root) {
-  window.__comuOverlay = (state) => applyComuOverlayState(root, state)
+  let updated = false
+  window.__comuOverlay = (state) => {
+    updated = true
+    applyComuOverlayState(root, state)
+  }
   const initial = window.__comuOverlayState
   if (initial) {
     // Set the label now, and turn on after the resting "off" frame has
-    // painted so the enter transition runs.
+    // painted so the enter transition runs. A pushed update is newer and wins.
     applyComuOverlayState(root, { ...initial, on: false })
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => applyComuOverlayState(root, initial))
+      requestAnimationFrame(() => {
+        if (!updated) applyComuOverlayState(root, initial)
+      })
     })
   }
 }

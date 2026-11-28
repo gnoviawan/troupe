@@ -113,6 +113,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .comu-overlay-glow,
   .comu-overlay-glow::before,
+  [data-state="on"] .comu-overlay-glow::before,
   .comu-overlay-pill {
     animation: none;
     transition: none;

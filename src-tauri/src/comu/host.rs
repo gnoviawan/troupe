@@ -550,13 +550,12 @@ impl DesktopComuHost {
             return stopped_output();
         }
 
-        if !is_passive_probe(tool_name) {
+        if is_acting_call(tool_name, &args) {
             self.stop.mark_active(session_id);
-            self.indicator.session_driving(
-                session_id,
-                &self.agent_badge(agent_id),
-                app_policy.screen_indicator_enabled,
-            );
+            // Read again: the user may have changed it during the consent wait.
+            let indicator_enabled = self.policy.read_app_policy().await.screen_indicator_enabled;
+            self.indicator
+                .session_driving(session_id, &self.agent_badge(agent_id), indicator_enabled);
         }
 
         if uses_agent_cursor(tool_name) {
@@ -710,6 +709,24 @@ fn needs_window_snapshot(tool_name: &str) -> bool {
             | "comu_clipboard_write"
             | "clipboard_write"
     )
+}
+
+/// Whether the call acts on the computer: not a read-only probe, and for a
+/// `comu_run_steps` batch, at least one step that is not one.
+fn is_acting_call(tool_name: &str, args: &Value) -> bool {
+    if tool_name != "comu_run_steps" && tool_name != "run_steps" {
+        return !is_passive_probe(tool_name);
+    }
+    args.get("steps")
+        .and_then(Value::as_array)
+        .is_some_and(|steps| {
+            steps.iter().any(|step| {
+                step.get("tool")
+                    .and_then(Value::as_str)
+                    .and_then(resolve_public_step_tool)
+                    .is_some_and(|step_tool| !is_passive_probe(step_tool))
+            })
+        })
 }
 
 fn is_passive_probe(tool_name: &str) -> bool {

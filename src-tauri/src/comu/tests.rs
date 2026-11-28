@@ -845,3 +845,31 @@ async fn self_guard_hit_test_skips_the_screen_indicator_window() {
         .await;
     assert_eq!(refusal_code(&overlay_by_id), Some("self_target_blocked"));
 }
+
+/// A `comu_run_steps` batch only counts as driving when a step acts.
+#[tokio::test]
+async fn screen_indicator_ignores_read_only_batches() {
+    let dir = TempDir::new().unwrap();
+    let policy = Arc::new(ComuPolicyService::new(dir.path().to_path_buf(), vec![]));
+    let indicator = Arc::new(RecordingIndicator::default());
+    let host = indicator_host(sample_windows(), policy, indicator.clone());
+    host.name_agent("a1", "Claude");
+
+    let read_only = json!({ "steps": [{ "tool": "comu_list_windows", "args": {} }] });
+    host.execute("s1", "a1", "comu_run_steps", read_only).await;
+    host.execute("s1", "a1", "comu_run_steps", json!({ "steps": [] }))
+        .await;
+    assert!(indicator.calls.lock().is_empty());
+
+    let acting = json!({
+        "steps": [
+            { "tool": "comu_list_windows", "args": {} },
+            { "tool": "comu_click", "args": calculator_click() }
+        ]
+    });
+    host.execute("s1", "a1", "comu_run_steps", acting).await;
+    assert_eq!(
+        *indicator.calls.lock(),
+        vec!["show:Claude is using this computer"]
+    );
+}

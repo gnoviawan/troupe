@@ -6,7 +6,6 @@
 //! (`scripts/check-server-no-gui-libs.sh`).
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use parking_lot::Mutex;
@@ -39,12 +38,19 @@ pub fn indicator_label(agent_names: &[String]) -> Option<String> {
 #[derive(Default)]
 pub struct IndicatorState {
     port: OnceLock<Arc<dyn ComuScreenIndicator>>,
+    /// Held across each decision and its port call, so overlapping session
+    /// changes reach the port in the order they were decided.
+    inner: Mutex<Inner>,
+}
+
+#[derive(Default)]
+struct Inner {
     /// Session id -> display name of the agent driving it.
-    driving: Mutex<HashMap<String, String>>,
-    /// The app policy's `screen_indicator_enabled` as of the last tool call.
-    enabled: AtomicBool,
+    driving: HashMap<String, String>,
+    /// The app policy's `screen_indicator_enabled` as of the last acting call.
+    enabled: bool,
     /// Whether `show` was the last call made on the port.
-    shown: AtomicBool,
+    shown: bool,
 }
 
 impl IndicatorState {
@@ -57,33 +63,39 @@ impl IndicatorState {
 
     /// Native ids of the indicator windows (empty without a port).
     pub fn window_ids(&self) -> Vec<i64> {
-        self.port.get().map(|port| port.window_ids()).unwrap_or_default()
+        self.port
+            .get()
+            .map(|port| port.window_ids())
+            .unwrap_or_default()
     }
 
     /// `session_id` drove the computer for `agent_name`; `enabled` is the
     /// current policy value.
     pub fn session_driving(&self, session_id: &str, agent_name: &str, enabled: bool) {
-        self.enabled.store(enabled, Ordering::SeqCst);
-        self.driving
-            .lock()
+        let mut inner = self.inner.lock();
+        inner.enabled = enabled;
+        inner
+            .driving
             .insert(session_id.to_string(), agent_name.to_string());
-        self.refresh();
+        self.refresh(&mut inner);
     }
 
     /// `session_id` stopped driving: turn end, Stop, or close.
     pub fn session_released(&self, session_id: &str) {
-        let removed = self.driving.lock().remove(session_id).is_some();
-        if removed {
-            self.refresh();
+        let mut inner = self.inner.lock();
+        if inner.driving.remove(session_id).is_some() {
+            self.refresh(&mut inner);
         }
     }
 
-    fn refresh(&self) {
+    /// Apply the current sessions to the port. The port only schedules work,
+    /// so calling it under the lock does not block.
+    fn refresh(&self, inner: &mut Inner) {
         let Some(port) = self.port.get() else {
             return;
         };
-        let label = if self.enabled.load(Ordering::SeqCst) {
-            let mut names: Vec<String> = self.driving.lock().values().cloned().collect();
+        let label = if inner.enabled {
+            let mut names: Vec<String> = inner.driving.values().cloned().collect();
             names.sort();
             indicator_label(&names)
         } else {
@@ -91,13 +103,15 @@ impl IndicatorState {
         };
         match label {
             Some(label) => {
-                if !self.shown.swap(true, Ordering::SeqCst) {
+                if !inner.shown {
+                    inner.shown = true;
                     log::info!("[comu] screen indicator shown");
                 }
                 port.show(&label);
             }
             None => {
-                if self.shown.swap(false, Ordering::SeqCst) {
+                if inner.shown {
+                    inner.shown = false;
                     log::info!("[comu] screen indicator hidden");
                     port.hide();
                 }
