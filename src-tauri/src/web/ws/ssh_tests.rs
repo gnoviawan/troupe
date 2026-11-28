@@ -544,3 +544,11 @@ async fn a_moved_key_profile_loses_its_stored_passphrase() {
         );
     }
 }
+
+#[test]
+fn ownership_uses_the_handlers_payload_shape_even_with_extra_fields() {
+    let answer = serde_json::json!({"sessionId": "victim", "request": {}});
+    assert_eq!(super::ssh::request_attempt("ssh_session_respond_host_key", &answer), Some("victim"));
+    let upload = serde_json::json!({"sessionId": "decoy", "request": {"connectionId": "actual"}});
+    assert_eq!(super::ssh::request_attempt("sftp_upload", &upload), Some("actual"));
+}

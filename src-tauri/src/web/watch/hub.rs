@@ -106,11 +106,9 @@ impl WatchKind {
     #[must_use]
     pub fn accepts_scope(self, scope: &str) -> bool {
         match self {
-            Self::Projects
-            | Self::ChatHistory
-            | Self::Agents
-            | Self::ChatActivity
-            | Self::Ssh => scope.is_empty(),
+            Self::Projects | Self::ChatHistory | Self::Agents | Self::ChatActivity | Self::Ssh => {
+                scope.is_empty()
+            }
             Self::Fs | Self::Store | Self::Terminals => {
                 !scope.trim().is_empty() && scope.len() <= MAX_SCOPE_BYTES
             }
@@ -149,7 +147,11 @@ impl WatchFrame {
         Self {
             type_: WS_WATCH_TYPE,
             watch: kind.as_str(),
-            scope: scope.to_string(),
+            scope: if kind == WatchKind::Ssh {
+                String::new()
+            } else {
+                scope.to_string()
+            },
             revision,
             reset: Some(true),
             state: Some(state),
@@ -161,7 +163,11 @@ impl WatchFrame {
         Self {
             type_: WS_WATCH_TYPE,
             watch: kind.as_str(),
-            scope: scope.to_string(),
+            scope: if kind == WatchKind::Ssh {
+                String::new()
+            } else {
+                scope.to_string()
+            },
             revision,
             reset: None,
             state: None,
@@ -422,7 +428,14 @@ impl WatchHub {
                 host_epoch: host_epoch.clone(),
                 n: subscriber.n,
             };
-            let frame = || Outbound::Watch(WatchFrame::delta(kind, scope, revision.clone(), delta.clone()));
+            let frame = || {
+                Outbound::Watch(WatchFrame::delta(
+                    kind,
+                    scope,
+                    revision.clone(),
+                    delta.clone(),
+                ))
+            };
             if subscriber.out.try_enqueue(frame()) == EnqueueOutcome::Full {
                 let out = subscriber.out.clone();
                 let frame = frame();
