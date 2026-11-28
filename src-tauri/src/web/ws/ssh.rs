@@ -213,6 +213,13 @@ async fn run(
     }
 }
 
+/// Stable per-install/window ownership also survives transport reconnects.
+pub(super) fn ssh_owner(env: &HandlerEnv) -> Option<String> {
+    env.identity
+        .get()
+        .map(|i| serde_json::json!([i.device_id, i.client_instance_id]).to_string())
+}
+
 /// Run one SSH request on the host's SSH manager.
 pub(super) async fn handle_ssh_request(
     id: String,
@@ -223,6 +230,64 @@ pub(super) async fn handle_ssh_request(
     let Some(ssh) = env.relay.ssh() else {
         return WsReply::err(id, WsErrorCode::Unsupported, "this host does not serve SSH");
     };
+    let Some(owner) = ssh_owner(env) else {
+        return WsReply::err(
+            id,
+            WsErrorCode::Unauthorized,
+            "SSH requires an authenticated principal",
+        );
+    };
+    let request = payload.get("request").unwrap_or(payload);
+    let attempt = request
+        .get("sessionId")
+        .or_else(|| request.get("connectionId"))
+        .and_then(Value::as_str);
+    if let Some(attempt) = attempt {
+        let mut owners = ssh.owners.lock();
+        if request_type == "ssh_session_open" {
+            match owners.get(attempt) {
+                Some(existing) if existing != &owner => {
+                    return WsReply::err(
+                        id,
+                        WsErrorCode::Unauthorized,
+                        "SSH attempt belongs to another principal",
+                    )
+                }
+                _ => {
+                    owners.insert(attempt.to_owned(), owner.clone());
+                }
+            }
+        } else if owners.get(attempt) != Some(&owner) {
+            return WsReply::err(
+                id,
+                WsErrorCode::Unauthorized,
+                "SSH attempt belongs to another principal",
+            );
+        }
+    }
+    if request_type == "ssh_session_list" {
+        let sessions: Vec<_> = ssh
+            .sessions
+            .list()
+            .into_iter()
+            .filter(|s| ssh.owners.lock().get(&s.session_id) == Some(&owner))
+            .map(|session| {
+                let claim = session
+                    .terminal_id
+                    .as_deref()
+                    .and_then(|id| env.pty.reissue_unbound_claim(id));
+                service::SSHLiveSession { session, claim }
+            })
+            .collect();
+        return match serde_json::to_value(sessions) {
+            Ok(value) => WsReply::ok(id, Some(value)),
+            Err(_) => WsReply::err(
+                id,
+                WsErrorCode::Unsupported,
+                "SSH session serialization failed",
+            ),
+        };
+    }
     match run(&ssh, &env.pty, request_type, payload).await {
         Ok(value) => WsReply::ok(id, Some(value)),
         Err(failure) => {
