@@ -145,7 +145,7 @@ pub fn spawn(spec: &LaunchSpec) -> Result<Launched, LaunchError> {
     if !spec.no_sandbox && unsafe { libc::geteuid() } == 0 {
         return Err(LaunchError::RootNeedsNoSandbox);
     }
-    std::fs::create_dir_all(&spec.profile_dir).map_err(LaunchError::Io)?;
+    prepare_profile(&spec.profile_dir).map_err(LaunchError::Io)?;
     let (child_reads, host_writes) = pipe().map_err(LaunchError::Io)?;
     let (host_reads, child_writes) = pipe().map_err(LaunchError::Io)?;
     let (r, w) = (child_reads.as_raw_fd(), child_writes.as_raw_fd());
@@ -210,3 +210,30 @@ fn pipe() -> io::Result<(OwnedFd, OwnedFd)> {
     }
     Ok((read, write))
 }
+
+/// Private browser state must never be shared with another local user.
+fn prepare_profile(path: &Path) -> io::Result<()> {
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt, PermissionsExt};
+    std::fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(path)?;
+    // Open without following a final symlink; inspect and chmod the same inode.
+    let directory = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW)
+        .open(path)?;
+    let metadata = directory.metadata()?;
+    if metadata.uid() != unsafe { libc::geteuid() } {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "browser profile belongs to another user",
+        ));
+    }
+    directory.set_permissions(std::fs::Permissions::from_mode(0o700))?;
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "launch_security_tests.rs"]
+mod security_tests;
