@@ -310,3 +310,7 @@ pub(super) fn screencast_watch_allowed(
     }
     Ok(host)
 }
+
+#[cfg(all(test, unix))]
+#[path = "browser_pane_security_tests.rs"]
+mod security_tests;
