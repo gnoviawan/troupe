@@ -60,13 +60,30 @@ fn token(dir: &Path) -> String {
         .to_string()
 }
 
+fn non_ephemeral_lan_test_port() -> u16 {
+    const FIRST_NON_EPHEMERAL_PORT: u16 = 20_000;
+    const NON_EPHEMERAL_PORT_COUNT: u32 = 10_000;
+    let seed = std::process::id();
+    for offset in 0..NON_EPHEMERAL_PORT_COUNT {
+        let port = FIRST_NON_EPHEMERAL_PORT
+            + (seed.wrapping_add(offset) % NON_EPHEMERAL_PORT_COUNT) as u16;
+        if std::net::TcpListener::bind((std::net::Ipv4Addr::UNSPECIFIED, port)).is_ok() {
+            return port;
+        }
+    }
+    panic!("no LAN test port is free");
+}
+
 #[tokio::test]
 async fn a_lan_listener_starts_and_stops_while_an_agent_keeps_running() {
     let dir = tempfile::tempdir().unwrap();
     let acp = running_agent();
     let listeners = listeners(dir.path(), &acp);
 
-    let started = listeners.start_lan(0).await.unwrap();
+    let started = listeners
+        .start_lan(non_ephemeral_lan_test_port())
+        .await
+        .unwrap();
     let port = started.lan.as_ref().expect("the LAN listener runs").port;
     assert!(!started.remote_writes);
     assert!(
@@ -107,7 +124,13 @@ async fn rotating_the_token_replaces_it_and_keeps_the_lan_listener() {
     let acp = running_agent();
     let listeners = listeners(dir.path(), &acp);
 
-    let first_port = listeners.start_lan(0).await.unwrap().lan.unwrap().port;
+    let first_port = listeners
+        .start_lan(non_ephemeral_lan_test_port())
+        .await
+        .unwrap()
+        .lan
+        .unwrap()
+        .port;
     let before = token(dir.path());
     let rotated = listeners.rotate_token().await.unwrap();
     let after = token(dir.path());

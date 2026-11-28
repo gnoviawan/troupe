@@ -41,6 +41,9 @@ use crate::web::{serve_router, ServerConfig};
 /// hanging on a connection that never finishes.
 pub const STOP_BOUND: Duration = Duration::from_secs(5);
 
+const ROTATE_BIND_ATTEMPTS: u32 = 5;
+const ROTATE_BIND_BACKOFF: Duration = Duration::from_millis(50);
+
 /// End every HTML preview session: a `/preview/<token>/` URL a remote
 /// device learned must stop serving once its access goes.
 fn close_previews() {
@@ -160,12 +163,16 @@ impl Listeners {
         if let Some(running) = lan.take() {
             stop_lan(running).await;
         }
-        *lan = Some(self.bind_lan(port).await?);
+        *lan = Some(
+            self.bind_lan(port)
+                .await
+                .map_err(LanBindError::into_message)?,
+        );
         Ok(self.status_with(lan.as_ref()))
     }
 
-    async fn bind_lan(&self, port: u16) -> Result<Lan, String> {
-        let auth = self.remote_gate()?;
+    async fn bind_lan(&self, port: u16) -> Result<Lan, LanBindError> {
+        let auth = self.remote_gate().map_err(LanBindError::Other)?;
         let (shutdown, stopped) = oneshot::channel::<()>();
         let parts = &self.parts;
         let (addr, serve) = serve_router(
@@ -190,7 +197,7 @@ impl Listeners {
             None,
         )
         .await
-        .map_err(|error| format!("cannot bind the LAN listener on port {port}: {error}"))?;
+        .map_err(|error| LanBindError::from_serve_error(port, error))?;
         warn!(
             target: "termul::web::listeners",
             port = addr.port(),
@@ -203,6 +210,28 @@ impl Listeners {
             shutdown,
             serve,
         })
+    }
+
+    async fn rebind_lan_after_rotation(&self, port: u16) -> Result<Lan, String> {
+        let mut attempt = 0;
+        loop {
+            attempt += 1;
+            match self.bind_lan(port).await {
+                Ok(lan) => return Ok(lan),
+                Err(error) if error.is_addr_in_use() && attempt < ROTATE_BIND_ATTEMPTS => {
+                    let backoff = ROTATE_BIND_BACKOFF * attempt;
+                    warn!(
+                        target: "termul::web::listeners",
+                        port,
+                        attempt,
+                        backoff_ms = backoff.as_millis() as u64,
+                        "LAN port still in use while rotating the token; retrying"
+                    );
+                    tokio::time::sleep(backoff).await;
+                }
+                Err(error) => return Err(error.into_message()),
+            }
+        }
     }
 
     /// Unbind the LAN listener, close its sockets and the preview sessions.
@@ -317,7 +346,7 @@ impl Listeners {
         close_previews();
         info!(target: "termul::web::listeners", "remote token rotated");
         if let Some(port) = lan_port {
-            *lan = Some(self.bind_lan(port).await?);
+            *lan = Some(self.rebind_lan_after_rotation(port).await?);
         }
         if tunnel_running {
             self.open_tunnel().await?;
@@ -332,6 +361,38 @@ impl Listeners {
         }
         let _ = self.tunnel.stop().await;
         close_previews();
+    }
+}
+
+enum LanBindError {
+    AddrInUse(String),
+    Other(String),
+}
+
+impl LanBindError {
+    fn from_serve_error(
+        port: u16,
+        error: Box<dyn std::error::Error + Send + Sync>,
+    ) -> LanBindError {
+        let message = format!("cannot bind the LAN listener on port {port}: {error}");
+        if error
+            .downcast_ref::<std::io::Error>()
+            .is_some_and(|io| io.kind() == std::io::ErrorKind::AddrInUse)
+        {
+            LanBindError::AddrInUse(message)
+        } else {
+            LanBindError::Other(message)
+        }
+    }
+
+    fn is_addr_in_use(&self) -> bool {
+        matches!(self, LanBindError::AddrInUse(_))
+    }
+
+    fn into_message(self) -> String {
+        match self {
+            LanBindError::AddrInUse(message) | LanBindError::Other(message) => message,
+        }
     }
 }
 
