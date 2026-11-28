@@ -213,6 +213,13 @@ async fn run(
     }
 }
 
+pub(super) fn request_attempt<'a>(request_type: &str, payload: &'a Value) -> Option<&'a str> {
+    let request = if request_type == "ssh_session_open" || request_type.starts_with("sftp_") {
+        payload.get("request")?
+    } else { payload };
+    request.get("sessionId").or_else(|| request.get("connectionId")).and_then(Value::as_str)
+}
+
 /// Stable per-install/window ownership also survives transport reconnects.
 pub(super) fn ssh_owner(env: &HandlerEnv) -> Option<String> {
     env.identity
@@ -237,11 +244,7 @@ pub(super) async fn handle_ssh_request(
             "SSH requires an authenticated principal",
         );
     };
-    let request = payload.get("request").unwrap_or(payload);
-    let attempt = request
-        .get("sessionId")
-        .or_else(|| request.get("connectionId"))
-        .and_then(Value::as_str);
+    let attempt = request_attempt(request_type, payload);
     if let Some(attempt) = attempt {
         let mut owners = ssh.owners.lock();
         if request_type == "ssh_session_open" {
