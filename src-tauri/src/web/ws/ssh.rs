@@ -214,10 +214,41 @@ async fn run(
 }
 
 pub(super) fn request_attempt<'a>(request_type: &str, payload: &'a Value) -> Option<&'a str> {
-    let request = if request_type == "ssh_session_open" || request_type.starts_with("sftp_") {
-        payload.get("request")?
-    } else { payload };
-    request.get("sessionId").or_else(|| request.get("connectionId")).and_then(Value::as_str)
+    let (request, field) = match request_type {
+        "ssh_session_open" => (payload.get("request")?, "sessionId"),
+        "ssh_session_respond_host_key" | "ssh_session_cancel" | "ssh_session_close" => {
+            (payload, "sessionId")
+        }
+        route if SSH_WS_REQUESTS.contains(&route) && route.starts_with("sftp_") => {
+            (payload.get("request")?, "connectionId")
+        }
+        _ => return None,
+    };
+    request.get(field).and_then(Value::as_str)
+}
+
+/// Reject alternate target identifiers before either authorization or dispatch.
+pub(super) fn valid_target_fields(request_type: &str, payload: &Value) -> bool {
+    let nested = request_type == "ssh_session_open" || request_type.starts_with("sftp_");
+    let field = if request_type.starts_with("sftp_") {
+        "connectionId"
+    } else {
+        "sessionId"
+    };
+    let other = if field == "sessionId" {
+        "connectionId"
+    } else {
+        "sessionId"
+    };
+    if nested {
+        !payload.get("sessionId").is_some()
+            && !payload.get("connectionId").is_some()
+            && payload
+                .get("request")
+                .map_or(false, |r| r.get(other).is_none())
+    } else {
+        payload.get("connectionId").is_none() && payload.get("request").is_none()
+    }
 }
 
 /// Stable per-install/window ownership also survives transport reconnects.
@@ -244,6 +275,13 @@ pub(super) async fn handle_ssh_request(
             "SSH requires an authenticated principal",
         );
     };
+    if !valid_target_fields(request_type, payload) {
+        return WsReply::err(
+            id,
+            WsErrorCode::Unauthorized,
+            "Conflicting SSH target fields",
+        );
+    }
     let attempt = request_attempt(request_type, payload);
     if let Some(attempt) = attempt {
         let mut owners = ssh.owners.lock();
