@@ -7,9 +7,8 @@ use std::sync::Arc;
 
 use tauri::Url;
 
-use super::events::TabProjection;
-use super::surface::{HistoryStep, SurfaceFuture, TabSurface};
-use super::{spawn, BrowserEngine, DesktopBrowserHost, HostServices};
+use super::core::surface::{HistoryStep, SurfaceFuture, TabSurface};
+use super::core::TabProjection;
 use crate::acp::events as acp_events;
 use crate::browser_automation::engine::chromium::Tabs;
 use crate::browser_automation::engine::events::TabEvents;
@@ -118,16 +117,17 @@ impl TabSurface for HostedSurface {
     }
 }
 
-impl DesktopBrowserHost {
-    /// A host over a windowless surface and its engine, for the server.
-    pub(crate) fn hosted(
-        surface: HostedSurface,
-        engine: Arc<dyn BrowserEngine>,
-        sinks: Vec<Arc<dyn EventSink>>,
-        services: HostServices,
-    ) -> Arc<Self> {
-        let surface: Arc<dyn TabSurface> = Arc::new(surface);
-        super::teardown::spawn_startup_sweep(surface.clone());
-        Self::with_parts(surface, engine, sinks, services)
+/// Run `fut` on the current runtime when there is one, else on tauri's.
+fn spawn<F>(fut: F)
+where
+    F: std::future::Future<Output = ()> + Send + 'static,
+{
+    match tokio::runtime::Handle::try_current() {
+        Ok(handle) => {
+            handle.spawn(fut);
+        }
+        Err(_) => {
+            tauri::async_runtime::spawn(fut);
+        }
     }
 }

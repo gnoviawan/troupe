@@ -18,6 +18,8 @@
 pub mod budgets;
 pub mod core;
 pub mod engine;
+#[cfg(unix)]
+pub mod hosted;
 
 #[cfg(test)]
 pub use self::core::boundary::BROWSER_CALL_FAILED_PREFIX;

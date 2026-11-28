@@ -15,7 +15,8 @@ use crate::acp::browser_policy::{self, BrowserPolicyService, LateProfileControl}
 use crate::acp::host_ticket::HostTickets;
 use crate::acp::session_persistence::UNASSIGNED_PROJECT_ID;
 use crate::acp::SessionPersistence;
-use crate::browser_automation::core::{HostedSurface, ProjectResolver, RootResolver};
+use crate::browser_automation::core::{ProjectResolver, RootResolver};
+use crate::browser_automation::hosted::HostedSurface;
 use crate::browser_automation::engine::chromium::perimeter::{InternalAddresses, Perimeter};
 use crate::browser_automation::engine::chromium::{launch, ChromiumEngine, LocalSource, Tabs};
 use crate::browser_automation::{self, DesktopBrowserHost, HostServices};
@@ -77,12 +78,12 @@ pub async fn install(
     browser_policy::install(Arc::clone(&policy_service));
 
     let host = DesktopBrowserHost::hosted(
-        HostedSurface {
+        Arc::new(HostedSurface {
             tabs: tabs.clone(),
             sinks: sinks.clone(),
             artifacts: root.join("artifacts"),
             sessions: root.join("sessions"),
-        },
+        }),
         Arc::new(ChromiumEngine::new(tabs)),
         sinks,
         HostServices {
@@ -150,12 +151,12 @@ pub async fn conformance_host(
     ));
     let tabs = Arc::new(Tabs::new(source, policy));
     let host = DesktopBrowserHost::hosted(
-        HostedSurface {
+        Arc::new(HostedSurface {
             tabs: tabs.clone(),
             sinks: sinks.clone(),
             artifacts: data.join("artifacts"),
             sessions: data.join("browser-sessions"),
-        },
+        }),
         Arc::new(ChromiumEngine::new(tabs.clone())),
         sinks,
         services,
