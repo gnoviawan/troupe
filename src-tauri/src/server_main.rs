@@ -481,6 +481,7 @@ fn main() -> ExitCode {
             termul_manager_lib::codex_limit::CodexLimitHandle::channel();
         let (antigravity_limit, antigravity_limit_inbox) =
             termul_manager_lib::antigravity_limit::AntigravityLimitHandle::channel();
+        let orchestrator_wake = termul_manager_lib::orchestrator::wake_sink();
         let acp = Arc::new(
             AcpManager::with_persistence_and_host_agents(
                 vec![
@@ -488,6 +489,7 @@ fn main() -> ExitCode {
                     claude_limit.sink(),
                     codex_limit.sink(),
                     antigravity_limit.sink(),
+                    orchestrator_wake.clone(),
                 ],
                 Arc::clone(&persistence),
                 claude_agent,
@@ -613,6 +615,8 @@ fn main() -> ExitCode {
             .collect();
         termul_manager_lib::orchestrator::install(
             Arc::clone(&acp),
+            Arc::clone(&ws_relay),
+            orchestrator_wake,
             cfg.service_account_state_dir(),
             acp_install.clone(),
             sweep_roots,

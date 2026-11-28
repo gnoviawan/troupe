@@ -11,8 +11,10 @@ use parking_lot::Mutex;
 use crate::acp::config::{AgentId, SessionId};
 use crate::acp::manager::{AcpManager, StartedPrompt};
 use crate::acp::orchestrator::engine::{OrchestratorEngine, StartProgress};
-use crate::acp::orchestrator::run::{bounded, ChildRun, QueuedPrompt, RunBody, RunEnd, RunId};
-use crate::acp::orchestrator::run::{StopError, StopOutcome};
+use crate::acp::orchestrator::run::{
+    bounded, ChildRun, QueuedPrompt, RunBody, RunEnd, RunId, StopError, StopOrigin, StopOutcome,
+};
+use crate::acp::orchestrator::wake::WakeNotice;
 use crate::acp::subagents::{Subagent, SubagentWorkspaceMode};
 
 /// After a stop, how long the cancel has to settle before the child is
@@ -246,13 +248,19 @@ impl OrchestratorEngine {
     }
 
     /// Settle the run (first wins), resolve its waiters, compute the diff
-    /// stat, and send the settle card with the result the watcher
-    /// captured.
+    /// stat, send the settle card with the result the watcher captured, and
+    /// enqueue a wake notice for the root chat when applicable.
     pub(super) async fn finish(self: &Arc<Self>, run: &RunId, end: RunEnd) {
-        let (parent_agent, mut record, content, base_commit) = {
+        let (parent_agent, mut record, content, base_commit, wake_draft) = {
             let mut ledger = self.ledger.lock();
             let Some(entry) = ledger.runs.get_mut(run) else {
                 return;
+            };
+            let should_wake = match (&end, entry.stop_origin) {
+                (_, Some(StopOrigin::ChatClosed)) => false,
+                (RunEnd::Completed | RunEnd::Failed(_), _) => true,
+                (RunEnd::Cancelled, None) => true,
+                (RunEnd::Cancelled, Some(StopOrigin::Parent | StopOrigin::User)) => false,
             };
             if !entry.settle(end, now_millis()) {
                 return;
@@ -271,8 +279,23 @@ impl OrchestratorEngine {
                 .clone()
                 .filter(|_| entry.workspace.mode == SubagentWorkspaceMode::Worktree);
             let root = entry.root.clone();
+            let summary = entry.summary();
+            let wake_draft = (should_wake && entry.parent_run.is_none()).then(|| {
+                (
+                    root.clone(),
+                    WakeNotice {
+                        run_id: entry.run.clone(),
+                        title: entry.title.clone(),
+                        agent_name: entry.identity.name.clone(),
+                        state: summary.state,
+                        result: summary.result,
+                        error: summary.error,
+                        workspace: summary.workspace,
+                    },
+                )
+            });
             ledger.evict_settled(&root);
-            (parent_agent, record, content, base_commit)
+            (parent_agent, record, content, base_commit, wake_draft)
         };
         if let Some(workspace) = &mut record.workspace {
             if workspace.mode == SubagentWorkspaceMode::Worktree {
@@ -285,7 +308,8 @@ impl OrchestratorEngine {
                 }
             }
         }
-        if let Some(diff_stat) = record.workspace.as_ref().and_then(|w| w.diff_stat.clone()) {
+        let updated_workspace = record.workspace.clone();
+        if let Some(diff_stat) = updated_workspace.as_ref().and_then(|w| w.diff_stat.clone()) {
             let mut ledger = self.ledger.lock();
             if let Some(entry) = ledger.runs.get_mut(run) {
                 entry.workspace.diff_stat = Some(diff_stat);
@@ -317,6 +341,18 @@ impl OrchestratorEngine {
             "[orchestrator] run {} settled",
             crate::logging::redact_session_id(run.as_str())
         );
+        if let Some((root, mut notice)) = wake_draft {
+            let closed_meanwhile = self
+                .ledger
+                .lock()
+                .runs
+                .get(run)
+                .is_some_and(|entry| entry.stop_origin == Some(StopOrigin::ChatClosed));
+            if !closed_meanwhile {
+                notice.workspace = updated_workspace;
+                self.enqueue_and_deliver(root, notice);
+            }
+        }
     }
 
     /// `None` when the ledger holds no run of `root` with this id: the
@@ -328,6 +364,7 @@ impl OrchestratorEngine {
         self: &Arc<Self>,
         run: &RunId,
         root: &str,
+        origin: StopOrigin,
     ) -> Option<Result<StopOutcome, StopError>> {
         let (cancel, starting) = {
             let mut ledger = self.ledger.lock();
@@ -339,6 +376,7 @@ impl OrchestratorEngine {
             if !entry.is_live() && starting.is_none() {
                 return Some(Ok(StopOutcome::AlreadyEnded));
             }
+            entry.stop_origin.get_or_insert(origin);
             (entry.begin_stop(now_millis()), starting)
         };
         // A run still starting has its start cancelled: the start cleans up
@@ -404,14 +442,23 @@ impl OrchestratorEngine {
         root: &str,
         record_id: &str,
     ) -> Option<Result<StopOutcome, StopError>> {
-        self.stop_run(&RunId(record_id.to_string()), root).await
+        self.stop_run(&RunId(record_id.to_string()), root, StopOrigin::User)
+            .await
     }
 
-    /// Stop every live run of a closed chat.
+    /// Stop every live run of a closed chat and dispose its wake mailbox.
     pub(crate) async fn chat_closed(self: &Arc<Self>, root: &str) {
+        self.wake.dispose_root(root);
         let (runs, starts) = {
-            let ledger = self.ledger.lock();
+            let mut ledger = self.ledger.lock();
             let starts = ledger.cancel_starts(|start| start.root == root);
+            if let Some(ids) = ledger.by_root.get(root).cloned() {
+                for id in ids {
+                    if let Some(entry) = ledger.runs.get_mut(&id) {
+                        entry.stop_origin = Some(StopOrigin::ChatClosed);
+                    }
+                }
+            }
             (ledger.live_runs_of_root(root), starts)
         };
         if starts > 0 {

@@ -88,6 +88,15 @@ pub trait EventSink: Send + Sync {
     fn as_ws_relay(&self) -> Option<&WsRelaySink> {
         None
     }
+
+    /// Notification that a durable prompt turn was accepted on `session_id`
+    /// (with its optional `turn_id`), invoked on the driver thread from the
+    /// prompt's accept hook. Default no-op.
+    fn note_prompt_accepted(&self, _session_id: &str, _turn_id: Option<&str>) {}
+
+    /// Notification that a turnless prompt claim was released for `session_id`
+    /// after its turn completed. Default no-op.
+    fn note_turn_claim_released(&self, _session_id: &str) {}
 }
 
 /// Live WS relay sink (Story 1.4 — replaces the Story 1.1 in-memory recorder).
