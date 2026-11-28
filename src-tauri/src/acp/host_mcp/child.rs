@@ -308,7 +308,7 @@ fn comu_route(tool: Tool) -> ToolRoute<TermulPlanServer> {
                     "the Computer Use call was cancelled by the client",
                 )]),
             };
-            Ok(result)
+            Ok(result.into())
         })
     })
 }

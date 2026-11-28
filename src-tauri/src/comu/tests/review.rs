@@ -6,7 +6,7 @@ use super::*;
 fn host_with(
     tickets: Arc<dyn ComuTicketPort>,
     policy: Arc<ComuPolicyService>,
-) -> (DesktopComuHost, Arc<FakeComuBackend>) {
+) -> (Arc<DesktopComuHost>, Arc<FakeComuBackend>) {
     let backend = FakeComuBackend::new(sample_windows());
     let host = DesktopComuHost::with_backend(
         backend.clone(),
