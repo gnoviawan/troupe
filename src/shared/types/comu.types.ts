@@ -9,6 +9,7 @@ export interface AppComuPolicy {
   readOnly: boolean
   enabled: boolean
   cursorEnabled: boolean
+  screenIndicatorEnabled: boolean
   askBeforeDrivingApps: boolean
   askBeforeForegroundDesktop: boolean
   askBeforeClipboardRead: boolean
@@ -25,6 +26,7 @@ export interface ProjectComuPolicy {
 export type AppComuPolicyOp =
   | { op: 'set_enabled'; enabled: boolean }
   | { op: 'set_cursor_enabled'; enabled: boolean }
+  | { op: 'set_screen_indicator_enabled'; enabled: boolean }
   | { op: 'set_ask_before_driving_apps'; enabled: boolean }
   | { op: 'set_ask_before_foreground_desktop'; enabled: boolean }
   | { op: 'set_ask_before_clipboard_read'; enabled: boolean }

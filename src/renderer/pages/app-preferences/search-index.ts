@@ -345,6 +345,13 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   },
   {
     categoryId: 'comu',
+    label: 'Show screen-edge indicator',
+    description: 'Glow around the screen edges while an agent uses this computer.',
+    keywords: ['comu', 'computer use', 'screen', 'edge', 'glow', 'border', 'remote', 'indicator'],
+    anchorId: COMU_ANCHORS.appScreenIndicator
+  },
+  {
+    categoryId: 'comu',
     label: 'Allowed apps in every project',
     description: 'Desktop apps agents may operate across all projects without asking.',
     keywords: ['comu', 'computer use', 'allowed apps', 'allowlist', 'bundle id'],

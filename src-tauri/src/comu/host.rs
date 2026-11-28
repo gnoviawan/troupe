@@ -22,6 +22,7 @@ use troupe_comu_engine::{
 use crate::web::EventSink;
 
 use super::consent::{ComuAuthRefusal, ComuConsentGate, ComuTicketPort};
+use super::indicator::{ComuScreenIndicator, IndicatorState};
 use super::policy::ComuPolicyService;
 use super::self_guard::check_not_self_target;
 use super::stop::{ComuStopRegistry, ComuStopToken};
@@ -151,6 +152,7 @@ pub struct DesktopComuHost {
     project_of: ProjectResolver,
     agent_names: Mutex<HashMap<String, String>>,
     cursor_coord: Arc<CursorCoordinators>,
+    indicator: IndicatorState,
     runtime: Option<tokio::runtime::Handle>,
     own_pid: u32,
 }
@@ -218,9 +220,40 @@ impl DesktopComuHost {
             project_of,
             agent_names: Mutex::new(HashMap::new()),
             cursor_coord: Arc::new(CursorCoordinators::default()),
+            indicator: IndicatorState::default(),
             runtime,
             own_pid,
         })
+    }
+
+    /// Install the desktop screen-edge indicator (`lib.rs` setup). Only the
+    /// first call takes effect.
+    pub fn install_screen_indicator(&self, port: Arc<dyn ComuScreenIndicator>) {
+        self.indicator.install(port);
+    }
+
+    /// `session_id` starts acting on the computer: show the chat banner and
+    /// the screen-edge indicator.
+    async fn begin_driving(
+        &self,
+        session_id: &str,
+        agent_id: &str,
+        stop_token: &mut ComuStopToken,
+    ) {
+        self.stop.mark_active(session_id);
+        // Read now: the user may have changed it during the consent wait.
+        let enabled = self
+            .policy
+            .read_app_policy()
+            .await
+            .screen_indicator_enabled;
+        self.indicator
+            .session_driving(session_id, &self.agent_badge(agent_id), enabled);
+        // Stop releases the session; one that landed during the read above
+        // released it before this registration.
+        if stop_token.is_stopped() {
+            self.indicator.session_released(session_id);
+        }
     }
 
     fn agent_badge(&self, agent_id: &str) -> String {
@@ -272,6 +305,7 @@ impl DesktopComuHost {
     async fn dispatch_checked(
         &self,
         session_id: &str,
+        agent_id: &str,
         tool_name: &str,
         args: Value,
         stop_token: &mut ComuStopToken,
@@ -279,11 +313,9 @@ impl DesktopComuHost {
         if stop_token.is_stopped() {
             return None;
         }
-        if (tool_name == "comu_run_steps" || tool_name == "run_steps")
-            && args.get("steps").is_some_and(Value::is_array)
-        {
+        if is_batch_call(tool_name, &args) {
             return self
-                .dispatch_multi_steps_checked(session_id, args, stop_token)
+                .dispatch_multi_steps_checked(session_id, agent_id, args, stop_token)
                 .await;
         }
         tokio::select! {
@@ -299,6 +331,7 @@ impl DesktopComuHost {
     async fn dispatch_multi_steps_checked(
         &self,
         session_id: &str,
+        agent_id: &str,
         args: Value,
         stop_token: &mut ComuStopToken,
     ) -> Option<ComuCallOutput> {
@@ -319,6 +352,8 @@ impl DesktopComuHost {
 
         let mut results = Vec::with_capacity(steps.len());
         let mut extra_blocks: Vec<ComuContentBlock> = Vec::new();
+        // The batch drives the computer from its first acting step on.
+        let mut driving = false;
         let mut all_ok = true;
         for (idx, step) in steps.into_iter().enumerate() {
             if stop_token.is_stopped() {
@@ -353,13 +388,21 @@ impl DesktopComuHost {
 
             if needs_window_snapshot(step_tool) {
                 let fresh_windows = self.backend.list_windows_snapshot(session_id).await;
-                if let Err(reason) =
-                    check_not_self_target(self.own_pid, step_tool, &merged, &fresh_windows)
-                {
+                if let Err(reason) = check_not_self_target(
+                    self.own_pid,
+                    step_tool,
+                    &merged,
+                    &fresh_windows,
+                    &self.indicator.window_ids(),
+                ) {
                     return Some(ComuCallOutput::error_text("self_target_blocked", reason));
                 }
             }
 
+            if !driving && !is_passive_probe(step_tool) {
+                self.begin_driving(session_id, agent_id, stop_token).await;
+                driving = true;
+            }
             if stop_token.is_stopped() {
                 return None;
             }
@@ -479,7 +522,13 @@ impl DesktopComuHost {
             Vec::new()
         };
 
-        if let Err(reason) = check_not_self_target(self.own_pid, tool_name, &args, &windows) {
+        if let Err(reason) = check_not_self_target(
+            self.own_pid,
+            tool_name,
+            &args,
+            &windows,
+            &self.indicator.window_ids(),
+        ) {
             log::warn!(
                 "[comu] blocked self-target: tool={tool_name} agent={agent_id} session={redacted_sid}"
             );
@@ -513,9 +562,13 @@ impl DesktopComuHost {
         // so window movement while the consent card was open cannot hit Troupe.
         if needs_window_snapshot(tool_name) {
             let post_windows = self.backend.list_windows_snapshot(session_id).await;
-            if let Err(reason) =
-                check_not_self_target(self.own_pid, tool_name, &args, &post_windows)
-            {
+            if let Err(reason) = check_not_self_target(
+                self.own_pid,
+                tool_name,
+                &args,
+                &post_windows,
+                &self.indicator.window_ids(),
+            ) {
                 log::warn!(
                     "[comu] blocked self-target post-consent: tool={tool_name} agent={agent_id} session={redacted_sid}"
                 );
@@ -527,8 +580,10 @@ impl DesktopComuHost {
             return stopped_output();
         }
 
-        if !is_passive_probe(tool_name) {
-            self.stop.mark_active(session_id);
+        // A batch starts driving at its first acting step.
+        if !is_batch_call(tool_name, &args) && !is_passive_probe(tool_name) {
+            self.begin_driving(session_id, agent_id, &mut stop_token)
+                .await;
         }
 
         if uses_agent_cursor(tool_name) {
@@ -555,7 +610,7 @@ impl DesktopComuHost {
         }
 
         let exec_outcome = self
-            .dispatch_checked(session_id, tool_name, args, &mut stop_token)
+            .dispatch_checked(session_id, agent_id, tool_name, args, &mut stop_token)
             .await;
 
         match exec_outcome {
@@ -610,6 +665,7 @@ impl ComuHost for DesktopComuHost {
 
     fn stop(&self, session_id: &str) -> bool {
         let newly_stopped = self.stop.stop(session_id);
+        self.indicator.session_released(session_id);
         self.consent.cancel_pending_prompts(session_id);
         let gen_at_stop = self.cursor_coord.bump(session_id);
         self.spawn_cursor_disable(session_id, gen_at_stop);
@@ -627,12 +683,14 @@ impl ComuHost for DesktopComuHost {
 
     fn turn_ended(&self, session_id: &str) {
         self.stop.mark_inactive(session_id);
+        self.indicator.session_released(session_id);
         let gen_at_end = self.cursor_coord.current(session_id);
         self.spawn_cursor_disable(session_id, gen_at_end);
     }
 
     fn session_ended(&self, session_id: &str) {
         self.stop.forget_session(session_id);
+        self.indicator.session_released(session_id);
         self.consent.revoke_session(session_id);
         self.cursor_coord.forget(session_id);
         let backend = Arc::clone(&self.backend);
@@ -679,6 +737,11 @@ fn needs_window_snapshot(tool_name: &str) -> bool {
             | "comu_clipboard_write"
             | "clipboard_write"
     )
+}
+
+fn is_batch_call(tool_name: &str, args: &Value) -> bool {
+    (tool_name == "comu_run_steps" || tool_name == "run_steps")
+        && args.get("steps").is_some_and(Value::is_array)
 }
 
 fn is_passive_probe(tool_name: &str) -> bool {

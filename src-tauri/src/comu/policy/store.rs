@@ -33,6 +33,8 @@ struct AppFile {
     #[serde(default = "default_true")]
     cursor_enabled: bool,
     #[serde(default = "default_true")]
+    screen_indicator_enabled: bool,
+    #[serde(default = "default_true")]
     ask_before_driving_apps: bool,
     #[serde(default = "default_true")]
     ask_before_foreground_desktop: bool,
@@ -222,6 +224,7 @@ fn read_app_unlocked(path: &Path) -> ComuAppPolicy {
             read_only: false,
             enabled: file.enabled,
             cursor_enabled: file.cursor_enabled,
+            screen_indicator_enabled: file.screen_indicator_enabled,
             ask_before_driving_apps: file.ask_before_driving_apps,
             ask_before_foreground_desktop: file.ask_before_foreground_desktop,
             ask_before_clipboard_read: file.ask_before_clipboard_read,
@@ -280,6 +283,7 @@ fn write_app_unlocked(path: &Path, policy: &ComuAppPolicy) -> Result<(), ComuPol
         revision: policy.revision,
         enabled: policy.enabled,
         cursor_enabled: policy.cursor_enabled,
+        screen_indicator_enabled: policy.screen_indicator_enabled,
         ask_before_driving_apps: policy.ask_before_driving_apps,
         ask_before_foreground_desktop: policy.ask_before_foreground_desktop,
         ask_before_clipboard_read: policy.ask_before_clipboard_read,

@@ -14,6 +14,7 @@ import { SettingsRow, settingsDescriptionId } from './SettingsRow'
 export const COMU_ANCHORS = {
   appEnabled: 'settings-comu-enabled',
   appCursor: 'settings-comu-cursor',
+  appScreenIndicator: 'settings-comu-screen-indicator',
   appPermissions: 'settings-comu-permissions',
   appAskApps: 'settings-comu-ask-apps',
   appAskForeground: 'settings-comu-ask-foreground',
@@ -280,6 +281,17 @@ export function ComuAppPolicy(): React.JSX.Element {
             disabled={locked || !policy.enabled}
             onToggle={(enabled) => {
               void edit({ op: 'set_cursor_enabled', enabled }).then(settle)
+            }}
+          />
+          <SwitchRow
+            id={COMU_ANCHORS.appScreenIndicator}
+            controlId="comu-screen-indicator-enabled"
+            label="Show screen-edge indicator"
+            description="Glow around every screen edge, with a label naming the agent, while an agent uses this computer."
+            checked={policy.screenIndicatorEnabled}
+            disabled={locked || !policy.enabled}
+            onToggle={(enabled) => {
+              void edit({ op: 'set_screen_indicator_enabled', enabled }).then(settle)
             }}
           />
         </SettingsCard>

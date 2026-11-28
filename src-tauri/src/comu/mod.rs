@@ -9,6 +9,7 @@
 
 pub mod consent;
 pub mod host;
+pub mod indicator;
 pub mod policy;
 pub mod self_guard;
 pub mod stop;

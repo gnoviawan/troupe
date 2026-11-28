@@ -3981,6 +3981,7 @@ describe('Troupe Comu parity (desktop, web, shared-live, standalone server)', ()
     const variants: Record<string, string> = {
       set_enabled: 'SetEnabled',
       set_cursor_enabled: 'SetCursorEnabled',
+      set_screen_indicator_enabled: 'SetScreenIndicatorEnabled',
       set_ask_before_driving_apps: 'SetAskBeforeDrivingApps',
       set_ask_before_foreground_desktop: 'SetAskBeforeForegroundDesktop',
       set_ask_before_clipboard_read: 'SetAskBeforeClipboardRead',
