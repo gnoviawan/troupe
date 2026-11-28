@@ -97,18 +97,17 @@ fn a_session_without_a_project_is_canvas_closed() {
 }
 
 #[test]
-fn a_call_outside_a_turn_is_no_active_turn_not_a_closed_canvas() {
+fn an_open_sessions_bridge_call_succeeds_outside_a_turn() {
     let (harness, configs) = Harness::new(&[("sess-1", Some("proj-1"))]);
     let _seen = mount_renderer(&harness.router(), "conn-a", "proj-1", 1, |_| {
         Some(Ok("{}".into()))
     });
     harness.server().end_turn(&configs[0].agent_id, "sess-1");
     let mut bridge = Bridge::new(configs[0].clone());
-    let error = error_of(bridge.call("document.inspect", json!({})));
-    assert_eq!(error["code"], "NO_ACTIVE_TURN");
-    let message = error["message"].as_str().unwrap();
-    assert!(message.starts_with("no active turn. "), "{message}");
-    assert!(!message.contains("Canvas button"), "{message}");
+    assert_eq!(
+        bridge.call("document.inspect", json!({})).unwrap(),
+        json!({})
+    );
 }
 
 #[test]
